@@ -1,0 +1,22 @@
+{
+  "name": "myth-and-blood",
+  "version": "1.0.0",
+  "description": "Myth and Blood — Fantasy Tactical Warfare",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "play": "electron .",
+    "serve": "python -m http.server 8765",
+    "sim": "node scripts/headless-sim.mjs",
+    "test:crossover": "node scripts/verify-crossover.js",
+    "test:crossover:runtime": "node scripts/headless-crossover.mjs"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^42.5.0"
+  },
+  "allowScripts": {
+    "electron@42.5.0": true
+  }
+}

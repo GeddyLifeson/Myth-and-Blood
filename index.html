@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Myth and Blood — Fantasy Tactical Warfare</title>
+  <script>
+    (function () {
+      var REF_W = 1280, REF_H = 800;
+      var scale = 1;
+      try {
+        var raw = localStorage.getItem('myth-and-blood-settings-v1')
+          || localStorage.getItem('myth-and-blood-ux-settings');
+        var o = raw ? JSON.parse(raw) : {};
+        var w = window.innerWidth || REF_W;
+        var h = window.innerHeight || REF_H;
+        if (o.uiScaleMode === 'manual') {
+          scale = o.uiScaleManual || 1;
+        } else {
+          scale = Math.min(w / REF_W, h / REF_H);
+        }
+        scale = Math.max(0.6, Math.min(1.5, scale));
+      } catch (_) { /* ignore */ }
+      document.documentElement.style.setProperty('--ui-scale', String(scale));
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="app">
+    <canvas id="game-canvas"></canvas>
+    <div id="ui-overlay">
+      <div id="left-panel">
+        <div class="panel-header">TROOPS</div>
+        <button class="deploy-btn" data-unit="footman"><canvas class="btn-icon" data-sprite="footman" width="28" height="28"></canvas><span>Footman</span><span class="cost">3</span></button>
+        <button class="deploy-btn" data-unit="archer"><canvas class="btn-icon" data-sprite="archer" width="28" height="28"></canvas><span>Archer</span><span class="cost">4</span></button>
+        <button class="deploy-btn" data-unit="mage"><canvas class="btn-icon" data-sprite="mage" width="28" height="28"></canvas><span>Mage</span><span class="cost">6</span></button>
+        <button class="deploy-btn" data-unit="cavalry"><canvas class="btn-icon" data-sprite="cavalry" width="28" height="28"></canvas><span>Cavalry</span><span class="cost">7</span></button>
+        <button class="deploy-btn" data-unit="healer"><canvas class="btn-icon" data-sprite="healer" width="28" height="28"></canvas><span>Healer</span><span class="cost">5</span></button>
+        <button class="deploy-btn" data-unit="knight"><canvas class="btn-icon" data-sprite="knight" width="28" height="28"></canvas><span>Knight</span><span class="cost">8</span></button>
+        <button class="deploy-btn" data-unit="sapper"><canvas class="btn-icon" data-sprite="sapper" width="28" height="28"></canvas><span>Sapper</span><span class="cost">5</span></button>
+        <button class="deploy-btn" data-unit="scout"><canvas class="btn-icon" data-sprite="scout" width="28" height="28"></canvas><span>Scout</span><span class="cost">4</span></button>
+        <button class="deploy-btn" data-unit="bard"><canvas class="btn-icon" data-sprite="bard" width="28" height="28"></canvas><span>Bard</span><span class="cost">5</span></button>
+        <button class="deploy-btn" data-unit="ballista"><canvas class="btn-icon" data-sprite="ballista" width="28" height="28"></canvas><span>Ballista</span><span class="cost">6</span></button>
+        <button class="deploy-btn" data-unit="pikeman"><canvas class="btn-icon" data-sprite="pikeman" width="28" height="28"></canvas><span>Pikeman</span><span class="cost">4</span></button>
+        <button class="deploy-btn" data-unit="general"><canvas class="btn-icon" data-sprite="general" width="28" height="28"></canvas><span>General</span><span class="cost">12</span></button>
+        <button class="deploy-btn secret-btn" id="doomslayer-deploy" data-unit="doomslayer_hero" style="display:none"><span>Doomslayer</span><span class="cost">10000</span></button>
+        <div class="panel-divider"></div>
+        <div class="panel-header">SPECIALISTS</div>
+        <button class="deploy-btn" data-unit="builder"><canvas class="btn-icon" data-sprite="builder" width="28" height="28"></canvas><span>Builder</span><span class="cost">5</span></button>
+        <button class="deploy-btn" data-unit="courier"><canvas class="btn-icon" data-sprite="courier" width="28" height="28"></canvas><span>Courier</span><span class="cost">4</span></button>
+        <div class="panel-divider"></div>
+        <div class="panel-header">BUILD</div>
+        <button class="build-btn" data-build="outpost"><span>Outpost</span><span class="cost">4</span></button>
+        <button class="build-btn" data-build="wall"><span>Wall</span><span class="cost">6</span></button>
+        <button class="build-btn" data-build="castle"><span>Castle</span><span class="cost">50</span></button>
+        <button class="build-btn" data-build="medical_tent"><span>Med Tent</span><span class="cost">5</span></button>
+        <button class="build-btn" data-build="mess_hall"><span>Mess Hall</span><span class="cost">5</span></button>
+        <button class="build-btn" data-build="watchtower"><span>Watchtower</span><span class="cost">5</span></button>
+        <button class="build-btn" data-build="spike_trap"><span>Spike Trap</span><span class="cost">3</span></button>
+        <button class="build-btn" data-build="quarry"><span>Quarry</span><span class="cost">30</span></button>
+        <button class="build-btn" data-build="trade_outpost"><span>Trade Post</span><span class="cost">38</span></button>
+        <button class="build-btn settlement-btn" data-build="fortress_upgrade"><span>Fortify</span><span class="cost">50</span></button>
+        <button class="build-btn settlement-btn" data-build="hamlet"><span>Hamlet</span><span class="cost">100</span></button>
+        <button class="build-btn settlement-btn" data-build="merchant_guild"><span>Guild</span><span class="cost">150</span></button>
+        <p class="panel-hint">Hamlet/Guild: 5 Builders · huge & siegeable — protect behind walls.</p>
+        <div class="panel-divider"></div>
+        <div class="panel-header">ACADEMIES</div>
+        <button class="build-btn academy-btn" data-build="academy_footman"><span>Foot Acad</span><span class="cost">40</span></button>
+        <button class="build-btn academy-btn" data-build="academy_archer"><span>Arch Acad</span><span class="cost">45</span></button>
+        <button class="build-btn academy-btn" data-build="academy_mage"><span>Mage Acad</span><span class="cost">55</span></button>
+        <button class="build-btn academy-btn" data-build="academy_cavalry"><span>Cav Acad</span><span class="cost">60</span></button>
+        <button class="build-btn academy-btn" data-build="academy_knight"><span>Knt Acad</span><span class="cost">65</span></button>
+        <button class="build-btn academy-btn" data-build="academy_sapper"><span>Sap Acad</span><span class="cost">45</span></button>
+        <button class="build-btn academy-btn" data-build="academy_healer"><span>Heal Acad</span><span class="cost">48</span></button>
+        <button class="build-btn academy-btn" data-build="academy_builder"><span>Bldr Acad</span><span class="cost">48</span></button>
+        <button class="build-btn academy-btn" data-build="academy_courier"><span>Cour Acad</span><span class="cost">40</span></button>
+        <button class="build-btn academy-btn" data-build="academy_general"><span>Gen Acad</span><span class="cost">100</span></button>
+        <button class="build-btn academy-btn" data-build="academy_scout"><span>Scout Acad</span><span class="cost">40</span></button>
+        <button class="build-btn academy-btn" data-build="academy_bard"><span>Bard Acad</span><span class="cost">45</span></button>
+        <button class="build-btn academy-btn" data-build="academy_ballista"><span>Ballista Acad</span><span class="cost">55</span></button>
+        <button class="build-btn academy-btn" data-build="academy_pikeman"><span>Pike Acad</span><span class="cost">40</span></button>
+        <p class="panel-hint">Academies need a max-rank (Immortal) mentor of that unit type on the field, then train 1 free unit each round.</p>
+        <div class="panel-divider"></div>
+        <div class="panel-header">STRIKES</div>
+        <button class="ability-btn" data-ability="fireball"><canvas class="btn-icon ability-icon" data-ability-icon="fireball" width="28" height="28"></canvas><span>Fireball</span><span class="cost">9</span></button>
+        <button class="ability-btn" data-ability="lightning"><canvas class="btn-icon ability-icon" data-ability-icon="lightning" width="28" height="28"></canvas><span>Lightning</span><span class="cost">6</span></button>
+        <button class="ability-btn" data-ability="heal"><canvas class="btn-icon ability-icon" data-ability-icon="heal" width="28" height="28"></canvas><span>Heal Rain</span><span class="cost">6</span></button>
+        <button class="ability-btn" data-ability="reinforce"><canvas class="btn-icon ability-icon" data-ability-icon="reinforce" width="28" height="28"></canvas><span>Reinforce</span><span class="cost">12</span></button>
+        <button class="ability-btn" data-ability="rally"><canvas class="btn-icon ability-icon" data-ability-icon="rally" width="28" height="28"></canvas><span>Rally</span><span class="cost">6</span></button>
+        <button class="ability-btn" data-ability="meteor"><canvas class="btn-icon ability-icon" data-ability-icon="meteor" width="28" height="28"></canvas><span>Meteor</span><span class="cost">14</span></button>
+        <button class="ability-btn" data-ability="frost_nova"><canvas class="btn-icon ability-icon" data-ability-icon="frost_nova" width="28" height="28"></canvas><span>Frost Nova</span><span class="cost">8</span></button>
+        <button class="ability-btn" data-ability="scout_flare"><canvas class="btn-icon ability-icon" data-ability-icon="scout_flare" width="28" height="28"></canvas><span>Flare</span><span class="cost">4</span></button>
+        <button class="ability-btn" data-ability="fortify"><canvas class="btn-icon ability-icon" data-ability-icon="fortify" width="28" height="28"></canvas><span>Fortify</span><span class="cost">7</span></button>
+        <div class="panel-divider"></div>
+        <button id="demolish-btn" class="meta-btn structure-btn">DEMOLISH</button>
+        <button id="move-building-btn" class="meta-btn structure-btn">MOVE</button>
+        <button id="rotate-wall-btn" class="meta-btn structure-btn">ROTATE</button>
+        <button id="hunt-toggle" class="meta-btn">HUNT: ON</button>
+        <button id="builder-repair-toggle" class="meta-btn">REPAIR: ON</button>
+        <button id="speed-toggle" class="meta-btn" title="Cycle game speed">SPEED: 1×</button>
+        <button id="wwe-academy-open" class="meta-btn secret-panel-btn" style="display:none">WWE ACADEMY</button>
+        <button id="crossover-hub-open" class="meta-btn secret-panel-btn" style="display:none">CROSSOVER HQ</button>
+        <div id="perk-build-section" class="perk-build-section" style="display:none">
+          <div class="panel-divider"></div>
+          <div class="panel-header">PERK-A-COLA</div>
+          <button class="build-btn perk-btn" data-build="perk_jugger_nog"><span>Jugger-Nog</span><span class="cost">12</span></button>
+          <button class="build-btn perk-btn" data-build="perk_quick_revive"><span>Quick Revive</span><span class="cost">10</span></button>
+          <button class="build-btn perk-btn" data-build="perk_speed_cola"><span>Speed Cola</span><span class="cost">9</span></button>
+          <button class="build-btn perk-btn" data-build="perk_stamin_up"><span>Stamin-Up</span><span class="cost">9</span></button>
+          <button class="build-btn perk-btn" data-build="perk_deadshot_daiquiri"><span>Deadshot</span><span class="cost">11</span></button>
+          <button class="build-btn perk-btn" data-build="perk_elemental_pop"><span>Elem Pop</span><span class="cost">12</span></button>
+          <button class="build-btn perk-btn" data-build="perk_phd_flopper"><span>PhD Flopper</span><span class="cost">11</span></button>
+          <button class="build-btn perk-btn" data-build="perk_melee_macchiato"><span>Melee Mac</span><span class="cost">10</span></button>
+          <button class="build-btn perk-btn" data-build="perk_vulture_aid"><span>Vulture Aid</span><span class="cost">10</span></button>
+          <button class="build-btn perk-btn" data-build="perk_tombstone"><span>Tombstone</span><span class="cost">14</span></button>
+          <button class="build-btn perk-btn" data-build="perk_double_tap"><span>Double Tap</span><span class="cost">11</span></button>
+          <button class="build-btn perk-btn" data-build="perk_mule_kick"><span>Mule Kick</span><span class="cost">10</span></button>
+          <button class="build-btn perk-btn" data-build="perk_sleight"><span>Sleight</span><span class="cost">10</span></button>
+          <p class="panel-hint">Heroes collect perks at night (max 4). Tombstone = General only.</p>
+        </div>
+      </div>
+
+      <div id="right-panel">
+        <div class="panel-header">SPY NETWORK</div>
+        <button class="spy-btn" data-spy="steal"><span>Steal Chest</span><span class="cost">4</span></button>
+        <button class="spy-btn" data-spy="disrupt"><span>Disrupt Lines</span><span class="cost">5</span></button>
+        <button class="spy-btn" data-spy="assassin"><span>Assassinate</span><span class="cost">6</span></button>
+        <button class="spy-btn" data-spy="scout"><span>Scout Report</span><span class="cost">2</span></button>
+        <button class="spy-btn" data-spy="poison"><span>Poison Caches</span><span class="cost">4</span></button>
+        <button class="spy-btn" data-spy="sabotage"><span>Sabotage</span><span class="cost">5</span></button>
+        <button class="spy-btn" data-spy="infiltrate"><span>Infiltrate</span><span class="cost">3</span></button>
+        <button class="spy-btn" data-spy="bribery"><span>Bribe</span><span class="cost">6</span></button>
+        <button class="spy-btn" data-spy="muster"><span>Muster</span><span class="cost">5</span></button>
+        <button class="spy-btn" data-spy="war_chest"><span>War Chest</span><span class="cost">4</span></button>
+        <button class="spy-btn" data-spy="forge_maps"><span>Forge Maps</span><span class="cost">3</span></button>
+        <button class="spy-btn" data-spy="tunnel"><span>Tunnel</span><span class="cost">5</span></button>
+        <p class="panel-hint">One spy action per wave. Scout/Infiltrate = exact roster.</p>
+        <div class="panel-divider"></div>
+        <div class="panel-header">COURIER MSGS</div>
+        <button class="courier-btn" data-courier="reinforce"><span>Reinforce</span><span class="cost">3</span></button>
+        <button class="courier-btn" data-courier="decree"><span>Decree</span><span class="cost">2</span></button>
+        <button class="courier-btn" data-courier="levy"><span>Tax Levy</span><span class="cost">0</span></button>
+        <button class="courier-btn" data-courier="banner"><span>Call Banner</span><span class="cost">5</span></button>
+        <button class="courier-btn" data-courier="supplies"><span>Supplies</span><span class="cost">3</span></button>
+        <button class="courier-btn" data-courier="truce"><span>Truce</span><span class="cost">4</span></button>
+        <button class="courier-btn" data-courier="evacuate"><span>Med Evac</span><span class="cost">4</span></button>
+        <button class="courier-btn" data-courier="herald"><span>Herald</span><span class="cost">3</span></button>
+        <button class="courier-btn" data-courier="muster"><span>Emergency</span><span class="cost">4</span></button>
+        <button class="courier-btn" data-courier="war_chest"><span>War Chest</span><span class="cost">2</span></button>
+        <div id="loadout-section" class="loadout-section" style="display:none">
+          <div class="panel-divider"></div>
+          <div class="panel-header">LOADOUT</div>
+          <button class="loadout-btn meta-btn" data-loadout="balanced">Balanced</button>
+          <button class="loadout-btn meta-btn" data-loadout="shield">Shield Wall</button>
+          <button class="loadout-btn meta-btn" data-loadout="arrows">Arrow Storm</button>
+          <button class="loadout-btn meta-btn" data-loadout="siege">Siege Crew</button>
+          <button class="loadout-btn meta-btn" data-loadout="court">Royal Court</button>
+        </div>
+        <p class="panel-hint">One message per wave. Courier must be on field.</p>
+      </div>
+
+      <div id="top-bar">
+        <span id="window-drag-handle" class="window-drag-handle" title="Drag to move window" aria-hidden="true">⋮⋮</span>
+        <div class="stat-group">
+          <span class="stat-label">TACTICAL PTS</span>
+          <div class="stat-bar"><div id="tp-fill" class="stat-fill tp"></div></div>
+          <span id="tp-text" class="stat-value">6</span>
+        </div>
+        <div class="stat-group">
+          <span class="stat-label">MISSES</span>
+          <span id="misses-text" class="stat-value">0 / 10</span>
+        </div>
+        <div class="stat-group">
+          <span class="stat-label">TP/ROUND</span>
+          <span id="tp-round-text" class="stat-value">+8</span>
+        </div>
+        <div class="stat-group wave-group">
+          <span class="stat-label">WAVE</span>
+          <span id="wave-text" class="stat-value">0</span>
+          <div class="stat-bar wave-bar"><div id="wave-fill" class="stat-fill wave"></div></div>
+        </div>
+        <div class="stat-group cycle-hud">
+          <span class="stat-label">CYCLE</span>
+          <span id="cycle-text" class="stat-value cycle-day">DAY</span>
+          <button id="begin-day-btn" class="cycle-btn" style="display:none" title="Start the assault now (D)">BEGIN DAY</button>
+        </div>
+        <div class="stat-group">
+          <span class="stat-label">ARMY</span>
+          <span id="army-text" class="stat-value">0</span>
+        </div>
+        <div class="stat-group colony-hud">
+          <span class="stat-label">KINGDOM</span>
+          <span id="colony-value-text" class="stat-value colony-value" title="">—</span>
+        </div>
+        <div class="stat-group cmd-hud">
+          <span class="stat-label">COMMAND</span>
+          <span id="cmd-text" class="stat-value cmd-value">—</span>
+        </div>
+        <div class="stat-group threat-hud">
+          <span class="stat-label">THREAT</span>
+          <span id="threat-text" class="stat-value threat-value">N</span>
+        </div>
+        <div class="stat-group intel-hud">
+          <span class="stat-label">INTEL</span>
+          <span id="wave-intel-text" class="stat-value intel-value" title="">—</span>
+        </div>
+        <div class="stat-group syn-hud" id="syn-hud" style="display:none">
+          <span class="stat-label">SYN</span>
+          <span id="syn-text" class="stat-value syn-value" title="">—</span>
+        </div>
+        <div class="stat-group diff-hud">
+          <span class="stat-label">DIFF</span>
+          <span id="diff-text" class="stat-value diff-value">Normal</span>
+        </div>
+        <button id="top-pause-btn" class="pause-top-btn" title="Pause menu (Esc)" aria-label="Pause menu">⏸</button>
+        <button id="top-settings-btn" class="settings-top-btn" title="Settings">⚙</button>
+        <button id="sound-toggle" class="sound-top-btn" title="Toggle sound (V)">🔊</button>
+        <button id="encyclopedia-btn" class="ency-top-btn" title="Encyclopedia (I)">📖</button>
+        <button id="achievements-btn" class="ach-top-btn" title="Achievements (A)">
+          🏆 <span id="ach-top-count">0/1450</span>
+          <span class="ach-top-progress"><span id="ach-top-progress-fill"></span></span>
+        </button>
+        <button id="creative-panel-toggle" class="creative-top-btn" title="Creative Lab (P)" style="display:none">🧪</button>
+        <button id="perf-toggle" class="perf-top-btn" title="Performance monitor (F3)" aria-label="Performance monitor">📊</button>
+      </div>
+      <div id="perf-overlay" class="perf-overlay" aria-live="polite">
+        <div class="perf-overlay-title">PERF</div>
+        <div id="perf-overlay-body"></div>
+      </div>
+      <div id="creative-panel" class="creative-panel" style="display:none">
+        <div class="creative-panel-head">
+          <span class="creative-panel-title">CREATIVE LAB</span>
+          <button id="creative-close-panel" class="creative-close-btn" title="Close (P)">✕</button>
+        </div>
+        <p class="creative-panel-sub">Sandbox playtest — like BTD6 practice mode. No achievements, no game over.</p>
+        <p id="creative-mastery-hint" class="creative-panel-sub creative-mastery-hint"></p>
+        <div class="creative-section">
+          <div class="creative-section-head">SANDBOX RULES</div>
+          <label class="creative-toggle"><input type="checkbox" id="creative-free-tp" checked> Free TP (deploy, build, strikes)</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-no-death" checked> No game over (miss limit off)</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-manual-waves" checked> Manual day/night &amp; waves</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-instant-build" checked> Instant build placement</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-unlock-all" checked> Unlock all rosters &amp; perks</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-academy-off" checked> Academy-era troop deploy</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-campaign-rules"> Use campaign rules (TP, misses, auto-cycle)</label>
+          <label class="creative-toggle"><input type="checkbox" id="creative-enable-ach"> Enable achievements (campaign tracking)</label>
+        </div>
+        <p id="creative-sandbox-stats" class="creative-sandbox-stats"></p>
+        <div class="creative-section">
+          <div class="creative-section-head">SCENARIO TEMPLATES</div>
+          <div class="creative-row">
+            <select id="creative-template-select" class="creative-select wide-select"></select>
+            <button id="creative-apply-template" class="creative-btn primary">Load</button>
+          </div>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">WAVE COMPOSER</div>
+          <textarea id="creative-wave-composer" class="creative-textarea" rows="3" placeholder="goblin*10, orc*5, war_chief*1, harpy*2"></textarea>
+          <div class="creative-row">
+            <label class="creative-label">Int</label>
+            <input type="number" id="creative-wave-interval" class="creative-input narrow" min="12" value="50">
+            <button id="creative-parse-wave" class="creative-btn">Queue</button>
+            <button id="creative-launch-wave" class="creative-btn primary">Launch</button>
+          </div>
+          <p id="creative-wave-preview" class="creative-hint"></p>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">WAVE &amp; CYCLE</div>
+          <div class="creative-row">
+            <label class="creative-label">Wave</label>
+            <input type="number" id="creative-wave-input" class="creative-input" min="0" value="0">
+            <button id="creative-wave-apply" class="creative-btn">Set</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-add-tp" class="creative-btn">+500 TP</button>
+            <button id="creative-force-night" class="creative-btn">Force Night</button>
+            <button id="creative-force-day" class="creative-btn">Force Day</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-start-wave" class="creative-btn primary">Start Wave</button>
+            <button id="creative-clear-wave" class="creative-btn">Clear Wave</button>
+          </div>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">SPAWN TOOLS</div>
+          <p id="creative-tool-status" class="creative-tool-status">Click tool: none (select unit / build normally)</p>
+          <div class="creative-row">
+            <select id="creative-enemy-select" class="creative-select"></select>
+            <button id="creative-arm-enemy" class="creative-btn">Arm Enemy</button>
+          </div>
+          <div class="creative-row">
+            <select id="creative-enemy-build-select" class="creative-select"></select>
+            <button id="creative-arm-enemy-building" class="creative-btn">Arm Building</button>
+          </div>
+          <button id="creative-disarm-tool" class="creative-btn wide">Disarm Tool</button>
+          <div class="creative-row">
+            <select id="creative-ally-select" class="creative-select"></select>
+            <button id="creative-arm-ally" class="creative-btn">Arm Ally</button>
+          </div>
+          <div class="creative-row">
+            <select id="creative-ally-build-select" class="creative-select"></select>
+            <button id="creative-arm-ally-build" class="creative-btn">Arm Bldg</button>
+          </div>
+          <div class="creative-row">
+            <select id="creative-squad-select" class="creative-select">
+              <option value="line">Line Squad</option>
+              <option value="cavalry">Cavalry Squad</option>
+              <option value="siege">Siege Squad</option>
+              <option value="casters">Caster Squad</option>
+              <option value="elites">Elite Squad</option>
+            </select>
+            <button id="creative-arm-squad" class="creative-btn">Arm Squad</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-clear-enemies" class="creative-btn">Clear Enemies</button>
+            <button id="creative-clear-enemy-buildings" class="creative-btn">Clear Enemy Bldgs</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-heal-all" class="creative-btn">Heal All Allies</button>
+            <button id="creative-max-morale" class="creative-btn">Max Morale</button>
+          </div>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">SELECTED UNIT</div>
+          <p id="creative-unit-info" class="creative-unit-info">Click a unit on the map to select it.</p>
+          <div class="creative-btn-row">
+            <button id="creative-rank-up" class="creative-btn">Rank Up</button>
+            <button id="creative-max-stars" class="creative-btn">Max Stars</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-heal-unit" class="creative-btn">Heal Unit</button>
+            <button id="creative-kill-unit" class="creative-btn danger">Kill Unit</button>
+          </div>
+          <button id="creative-promote-gen" class="creative-btn wide">Promote to General</button>
+          <div class="creative-stat-grid">
+            <label>HP <input type="number" id="creative-stat-hp" class="creative-stat-input"></label>
+            <label>DMG <input type="number" id="creative-stat-dmg" class="creative-stat-input"></label>
+            <label>ACC <input type="number" id="creative-stat-acc" class="creative-stat-input"></label>
+            <label>SPD <input type="number" id="creative-stat-spd" class="creative-stat-input" step="0.05"></label>
+            <label>RNG <input type="number" id="creative-stat-rng" class="creative-stat-input"></label>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-apply-stats" class="creative-btn">Apply Stats</button>
+            <button id="creative-reset-stats" class="creative-btn">Hot-Reload Def</button>
+          </div>
+          <div id="creative-preset-row" class="creative-preset-row"></div>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">STRESS TEST</div>
+          <div class="creative-row">
+            <select id="creative-stress-type" class="creative-select"></select>
+            <input type="number" id="creative-stress-rate" class="creative-input narrow" min="8" value="30" title="Ticks between spawns">
+            <input type="number" id="creative-stress-max" class="creative-input narrow" min="20" value="150" title="Max enemies">
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-stress-start" class="creative-btn danger">Start Horde</button>
+            <button id="creative-stress-stop" class="creative-btn">Stop</button>
+            <button id="creative-perf-hint" class="creative-btn" title="Toggle F3 perf overlay">Perf F3</button>
+          </div>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">REPLAY &amp; SHARING</div>
+          <div class="creative-btn-row">
+            <button id="creative-record-start" class="creative-btn">Record</button>
+            <button id="creative-record-stop" class="creative-btn">Stop</button>
+            <button id="creative-replay-step" class="creative-btn">Step ▶</button>
+            <button id="creative-replay-back" class="creative-btn">◀ Back</button>
+          </div>
+          <div class="creative-btn-row">
+            <button id="creative-export-scenario" class="creative-btn">Export Scenario</button>
+            <button id="creative-import-scenario" class="creative-btn">Import</button>
+            <button id="creative-export-replay" class="creative-btn">Export Replay</button>
+          </div>
+          <textarea id="creative-import-area" class="creative-textarea" rows="2" placeholder="Paste scenario/replay JSON here"></textarea>
+          <p id="creative-replay-status" class="creative-hint"></p>
+        </div>
+        <div class="creative-section">
+          <div class="creative-section-head">DESIGNER HOTKEYS</div>
+          <div class="creative-btn-row">
+            <button id="creative-regen-map" class="creative-btn">Regen Map</button>
+            <button id="creative-reload-panel" class="creative-btn">Refresh Panel</button>
+          </div>
+        </div>
+      </div>
+      <div id="unit-info-panel" class="unit-info-panel" aria-hidden="true">
+        <div id="unit-info-body"></div>
+      </div>
+      <div id="minimap-panel" class="minimap-panel" title="Strategic overview — click to pan">
+        <canvas id="minimap-canvas" width="140" height="100" aria-label="Minimap"></canvas>
+      </div>
+      <div id="message-box" role="status" aria-live="polite"></div>
+      <div id="hint-bar"><span class="hint-text">Day = assault · Night = 1 min prep (+35% build) · D to skip dawn · Shift+drag box-select · Space pause · ] cycle speed</span><button id="hint-log-btn" class="hint-log-btn" title="Message history" aria-label="Open message log">📜</button></div>
+      <div id="message-log-panel" class="message-log-panel" aria-label="Message history">
+        <div class="message-log-head"><span>MESSAGE LOG</span><button id="message-log-close" class="message-log-close" aria-label="Close">✕</button></div>
+        <div id="message-log-list" class="message-log-list"></div>
+      </div>
+      <div id="tutorial-callout" class="tutorial-callout" role="complementary" aria-label="Tutorial">
+        <div class="tutorial-title"></div>
+        <div class="tutorial-body"></div>
+        <div class="tutorial-actions">
+          <button id="tutorial-next" class="tutorial-btn">Next tip</button>
+          <button id="tutorial-dismiss" class="tutorial-btn secondary">Dismiss tutorial</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="sr-live-region" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+    <div id="pause-screen" class="screen pause-screen">
+      <div class="menu-content pause-content">
+        <h2 class="pause-title">PAUSED</h2>
+        <div id="pause-stats" class="pause-stats"></div>
+        <div id="pause-scaling-tips" class="pause-scaling-tips"></div>
+        <div class="pause-actions">
+          <button id="pause-resume" class="menu-btn primary">RESUME</button>
+          <button id="pause-quicksave" class="menu-btn">QUICK SAVE</button>
+          <button id="pause-quickload" class="menu-btn">QUICK LOAD</button>
+          <button id="pause-restart-wave" class="menu-btn">RESTART WAVE</button>
+          <button id="pause-menu" class="menu-btn">MAIN MENU</button>
+        </div>
+        <p id="pause-quicksave-status" class="pause-quicksave-status"></p>
+        <div class="pause-util-row">
+          <button id="pause-encyclopedia-btn" class="menu-btn small-btn">ENCYCLOPEDIA</button>
+          <button id="pause-settings-btn" class="menu-btn small-btn">SETTINGS</button>
+        </div>
+        <div class="pause-settings save-slots-section">
+          <div class="pause-settings-head">SAVE SLOTS</div>
+          <div id="save-slots" class="save-slots"></div>
+        </div>
+        <button id="pause-perf-toggle" class="menu-btn small-btn">PERF MONITOR (F3)</button>
+        <p class="pause-hotkeys"><kbd>Space</kbd> resume · <kbd>I</kbd> encyclopedia · <kbd>F3</kbd> perf · <kbd>1-9</kbd> deploy · <kbd>Shift</kbd>+drag select</p>
+      </div>
+    </div>
+
+    <div id="menu-screen" class="screen active">
+      <button id="menu-settings-fab" class="menu-settings-fab" type="button" title="Settings" aria-label="Open settings">⚙</button>
+      <div class="menu-content menu-scroll">
+        <h1 class="game-title">MYTH <span class="accent">&</span> BLOOD</h1>
+        <p class="subtitle">Fantasy Tactical Warfare</p>
+        <button id="menu-settings-btn" class="menu-btn small-btn menu-settings-prominent" type="button">⚙ SETTINGS</button>
+        <canvas id="title-art" width="400" height="240"></canvas>
+        <div id="difficulty-picker">
+          <div class="diff-header">DIFFICULTY</div>
+          <div class="diff-buttons">
+            <button class="diff-btn" data-diff="baby">Baby</button>
+            <button class="diff-btn selected" data-diff="normal">Normal</button>
+            <button class="diff-btn" data-diff="chad">Chad</button>
+            <button class="diff-btn" data-diff="doomslayer">Doomslayer</button>
+          </div>
+          <p id="diff-tagline" class="diff-tagline">Balanced tactical defense.</p>
+          <p id="advanced-diff-pct" class="diff-pct-display">Effective: 100%</p>
+          <button id="advanced-diff-btn" class="menu-btn small-btn">ADVANCED DIFFICULTY</button>
+        </div>
+        <div id="game-modes-picker" class="game-modes-picker"></div>
+        <div class="mode-import-row">
+          <input id="mode-import-input" class="panel-search" type="text" placeholder="Paste MYTH: seed share code…" autocomplete="off">
+          <button id="mode-import-seed" class="menu-btn small-btn">IMPORT SEED</button>
+        </div>
+        <p class="launch-hint">Double-click <strong>Play Myth and Blood.bat</strong> to run as a desktop app — no server needed.</p>
+        <p class="launch-hint audio-hint">Sound is procedural (no files). Click <strong>Begin Defense</strong> or anywhere to unlock audio — toggle with 🔊 or <kbd>V</kbd>.</p>
+        <button id="start-btn" class="menu-btn primary">BEGIN DEFENSE</button>
+        <button id="creative-start-btn" class="menu-btn creative-menu-btn">CREATIVE MODE</button>
+        <button id="howto-btn" class="menu-btn">HOW TO PLAY</button>
+        <button id="howto-interactive-btn" class="menu-btn small-btn">INTERACTIVE TUTORIAL</button>
+        <button id="menu-achievements-btn" class="menu-btn">ACHIEVEMENTS</button>
+        <button id="menu-encyclopedia-btn" class="menu-btn">ENCYCLOPEDIA</button>
+        <button id="menu-cheats-btn" class="menu-btn secret-menu-btn">CHEATS</button>
+        <button id="menu-quit-btn" class="menu-btn menu-quit-btn">QUIT TO DESKTOP</button>
+        <div id="howto-panel" class="hidden">
+          <p><strong>TP</strong> is awarded once per round when you clear a wave (+8, scaling).</p>
+          <p><strong>Builder</strong>: deploy, select BUILD, click map. Builds outposts, walls, castles, med tents, and mess halls (2 projects at once).</p>
+          <p><strong>Castle</strong>: large compound with 4 walls (2 footman slots each), corner outposts, central Keep, med tent, and mess hall.</p>
+          <p><strong>General</strong> (12 TP): enemies hunt him globally. Station in the Keep to grow a command aura and assign footmen to wall slots inside the compound.</p>
+          <p><strong>Medical Tent</strong> (5 TP): wounded allies below 38% HP retreat here to heal; without a tent they fight to the death.</p>
+          <p><strong>Mess Hall</strong> (5 TP): steady morale boost to troops nearby.</p>
+          <p><strong>Courier</strong>: deploy on field, click a message in the right panel to dispatch to the King.</p>
+          <p><strong>Spy</strong>: one off-field action per wave — steal TP, disrupt, scout, poison.</p>
+          <p><strong>Difficulty</strong>: Baby, Normal, Chad, or Doomslayer — pick before you begin.</p>
+          <p><strong>Waves</strong> never end — each wave brings more, tougher enemies. Siege towers every 5 waves.</p>
+          <p><strong>Territory</strong>: every 10 waves the map expands (+90 wide, +110 deep) — more room to build and defend as you hold the realm.</p>
+          <p><strong>Multi-front</strong>: every 25 waves enemies attack from a new flank (East 25, West 50, South 75) until all four sides assault at once.</p>
+          <p><strong>Academies</strong>: Available from wave 1 — each trains 1 free unit per round when complete. Needs a max-rank (Immortal) mentor of that type on the field. Healer Academy: waves ÷5. General Academy: waves ÷10, requires a promoted Footman. Builder/Courier Academies: only if none on field. TP deploy stays available alongside academy training.</p>
+          <p><strong>Settlements</strong>: <strong>Hamlet</strong> (100 TP, 5 Builders, 5 waves): +5 TP/round. <strong>Merchant Guild</strong> (150 TP, 5 Builders): +1 TP/round per guild within hamlet range. Both are large, siegeable economy targets — wall them in.</p>
+          <p><strong>RTS Escalation (Wave 100+)</strong>: Enemy hordes swell and settlement raids intensify.</p>
+          <p><strong>Enemy RTS (Wave 200)</strong>: Map expands; enemies erect mirror hamlets and guilds (+spawn pressure). TP storage is uncapped.</p>
+          <p><strong>Hunt mode</strong>: soldiers pathfind toward enemies. Click to override with manual move.</p>
+          <p><strong>Honor names</strong>: earn 3 gold stars in your role to be named by the Crown (e.g. Syr Gwyn). Generals keep their name; stars reset on promotion and only boost command aura.</p>
+          <p><kbd>1-9, 0</kbd> Deploy troops (0=General) · <kbd>Q/W/E/R/T</kbd> Strikes (T=Rally) · <kbd>O/L/C/N/M</kbd> Build (N=Med, M=Mess)</p>
+          <p><kbd>H</kbd> Hunt · <kbd>Esc</kbd> Cancel · <kbd>Space</kbd> Pause · Fighters: bronze ★ from kills · Specialists rank when they work (once/wave)</p>
+          <p>Elite enemies glow purple. Sappers demolish walls. Mage bolts splash. Knights resist damage.</p>
+          <p><kbd>A</kbd> Achievements · <kbd>I</kbd> Encyclopedia — bestiary, chronicles, legacy, campaign beats, and classified lore.</p>
+          <p><kbd>G</kbd> Hamlet · <kbd>U</kbd> Merchant Guild · <kbd>`</kbd> Cheats · <kbd>P</kbd> Creative Lab (Creative Mode) · Advanced Difficulty on main menu.</p>
+          <p><strong>Creative Mode</strong> (main menu): sandbox playtest — spawn enemies, set waves, rank units, instant builds. No achievements.</p>
+          <p><strong>Map navigation</strong>: click-drag to pan, mouse wheel to zoom, arrow keys to scroll. Works while paused.</p>
+          <p><strong>1,000 Achievements</strong> — at 316 unlocks, join the 316 Club and reveal the WWE Academy.</p>
+          <p><strong>Doomslayer hero</strong> (10,000 TP): survive wave 200 on Doomslayer difficulty.</p>
+        </div>
+      </div>
+    </div>
+    <div id="achievement-toast">
+      <div class="ach-toast-label">ACHIEVEMENT UNLOCKED</div>
+      <div class="ach-toast-tier"></div>
+      <div class="ach-toast-name"></div>
+      <div class="ach-toast-desc"></div>
+      <div class="ach-toast-reward"></div>
+      <div class="ach-toast-progress"></div>
+    </div>
+    <div id="wave-summary-ach" class="wave-summary-ach"></div>
+
+    <div id="achievements-screen" class="screen">
+      <div class="menu-content achievements-panel">
+        <h2 class="ach-title">ACHIEVEMENTS</h2>
+        <p id="achievements-count" class="ach-count">0 / 1450</p>
+        <div class="ach-progress-wrap">
+          <div class="ach-progress-bar"><div id="achievements-progress-fill" class="ach-progress-fill"></div></div>
+          <span id="achievements-progress-text" class="ach-progress-text">0% to Millennium</span>
+        </div>
+        <div class="ach-search-row">
+          <input id="achievements-search" class="panel-search" type="search" placeholder="Search achievements…" autocomplete="off" aria-label="Search achievements">
+          <select id="achievements-tier-filter" class="panel-filter" aria-label="Filter by tier">
+            <option value="all">All tiers</option>
+            <option value="bronze">Bronze</option>
+            <option value="silver">Silver</option>
+            <option value="gold">Gold</option>
+            <option value="meta">Meta</option>
+          </select>
+          <label class="panel-filter-check"><input type="checkbox" id="achievements-unlocked-only"> Unlocked only</label>
+        </div>
+        <p id="ach-filter-count" class="ach-filter-count"></p>
+        <div id="achievements-tabs" class="achievements-tabs"></div>
+        <div id="achievements-crossover-tabs" class="achievements-crossover-tabs" style="display:none"></div>
+        <div id="achievements-recent" class="achievements-recent"></div>
+        <div id="achievements-grid" class="achievements-grid"></div>
+        <button id="achievements-close" class="menu-btn primary">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="encyclopedia-screen" class="screen">
+      <div class="menu-content encyclopedia-panel">
+        <h2 class="ency-title">ENCYCLOPEDIA</h2>
+        <p class="ency-subtitle">Bestiary, campaign chronicles, legacy records — plus classified crossover lore</p>
+        <input id="encyclopedia-search" class="panel-search wide" type="search" placeholder="Search encyclopedia…" autocomplete="off" aria-label="Search encyclopedia">
+        <div id="encyclopedia-tabs" class="encyclopedia-tabs"></div>
+        <div id="encyclopedia-list" class="encyclopedia-list"></div>
+        <button id="encyclopedia-close" class="menu-btn primary">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="settings-screen" class="screen settings-screen">
+      <div class="menu-content settings-panel">
+        <h2 class="settings-title">SETTINGS</h2>
+        <div class="settings-tabs">
+          <button class="settings-tab active" data-tab="display">Display</button>
+          <button class="settings-tab" data-tab="audio">Audio</button>
+          <button class="settings-tab" data-tab="accessibility">Accessibility</button>
+          <button class="settings-tab" data-tab="gameplay">Gameplay</button>
+        </div>
+
+        <div class="settings-tab-panel active" data-tab="display">
+          <div class="settings-group">
+            <div class="settings-group-head">UI SCALE</div>
+            <label class="settings-row">
+              <span>Scale mode</span>
+              <select id="set-ui-scale-mode">
+                <option value="auto">Auto (fit window)</option>
+                <option value="manual">Manual</option>
+              </select>
+            </label>
+            <p class="settings-hint">Auto scale: <span id="set-ui-scale-auto-val">100%</span> · Effective: <span id="set-ui-scale-val">100%</span></p>
+            <div id="set-ui-scale-manual-wrap" class="settings-row">
+              <span>Manual scale</span>
+              <input type="range" id="set-ui-scale-manual" min="0.6" max="1.5" step="0.05" value="1">
+            </div>
+            <label class="settings-row">
+              <span>HUD panel opacity</span>
+              <input type="range" id="set-panel-opacity" min="0.15" max="1" step="0.05" value="0.95">
+              <span id="set-panel-opacity-val">95%</span>
+            </label>
+            <label class="settings-row">
+              <span>Performance mode</span>
+              <select id="set-performance-mode">
+                <option value="auto">Auto (adjusts to FPS)</option>
+                <option value="high">High — full effects</option>
+                <option value="normal">Normal — balanced</option>
+                <option value="reduced">Reduced — wave 100+</option>
+                <option value="potato">Potato — lowest-end PCs</option>
+              </select>
+            </label>
+            <p class="settings-hint">Auto lowers draw detail when FPS drops or unit count spikes. F3 overlay shows the active tier.</p>
+            <p class="settings-hint">Controls transparency of in-game side panels, top bar, unit info, and minimap.</p>
+            <div class="panel-opacity-preview" aria-hidden="true">
+              <div class="panel-opacity-preview-label">PREVIEW — side panel &amp; top bar</div>
+              <div class="panel-opacity-preview-frame">
+                <div id="panel-opacity-preview-side" class="panel-opacity-preview-side">
+                  <span class="panel-opacity-preview-head">TROOPS</span>
+                  <span class="panel-opacity-preview-btn">Footman</span>
+                  <span class="panel-opacity-preview-btn">Archer</span>
+                </div>
+                <div class="panel-opacity-preview-main">
+                  <div id="panel-opacity-preview-top" class="panel-opacity-preview-top">TACTICAL PTS · WAVE · ARMY</div>
+                  <div class="panel-opacity-preview-map">Battlefield (unchanged)</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-head">WINDOW</div>
+            <p id="settings-window-note" class="settings-hint"></p>
+            <div class="settings-btn-row">
+              <button class="settings-mode-btn selected" data-window-mode="windowed" id="set-window-windowed">Windowed</button>
+              <button class="settings-mode-btn" data-window-mode="borderless" id="set-window-borderless">Borderless</button>
+              <button class="settings-mode-btn" data-window-mode="fullscreen">Fullscreen</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-tab-panel" data-tab="audio">
+          <div class="settings-group">
+            <div class="settings-group-head">VOLUME</div>
+            <label class="settings-row"><span>Master</span><input type="range" id="set-master-volume" min="0" max="1" step="0.05" value="0.75"><span id="set-master-volume-val">75%</span></label>
+            <label class="settings-row"><span>Music</span><input type="range" id="set-music-volume" min="0" max="1" step="0.05" value="0.28"><span id="set-music-volume-val">28%</span></label>
+            <label class="settings-row"><span>Sound effects</span><input type="range" id="set-sfx-volume" min="0" max="1" step="0.05" value="0.55"><span id="set-sfx-volume-val">55%</span></label>
+            <label class="settings-row check"><input type="checkbox" id="set-muted"> Mute all audio</label>
+          </div>
+        </div>
+
+        <div class="settings-tab-panel" data-tab="accessibility">
+          <div class="settings-group">
+            <div class="settings-group-head">VISUAL</div>
+            <label class="settings-row"><span>Color-blind palette</span>
+              <select id="set-colorblind">
+                <option value="none">Default</option>
+                <option value="deuteranopia">Deuteranopia</option>
+                <option value="protanopia">Protanopia</option>
+                <option value="tritanopia">Tritanopia</option>
+              </select>
+            </label>
+            <label class="settings-row"><span>Font scale</span><input type="range" id="set-font-scale" min="0.85" max="1.35" step="0.05" value="1"><span id="set-font-scale-val">100%</span></label>
+            <label class="settings-row check"><input type="checkbox" id="set-high-contrast"> High contrast HUD</label>
+            <label class="settings-row check"><input type="checkbox" id="set-reduced-motion"> Reduced motion</label>
+            <label class="settings-row check"><input type="checkbox" id="set-screen-reader"> Screen reader hints</label>
+            <label class="settings-row check"><input type="checkbox" id="set-large-hitboxes"> Larger touch hitboxes</label>
+          </div>
+        </div>
+
+        <div class="settings-tab-panel" data-tab="gameplay">
+          <div class="settings-group">
+            <div class="settings-group-head">HUD &amp; HELP</div>
+            <label class="settings-row check"><input type="checkbox" id="set-show-minimap" checked> Show minimap</label>
+            <label class="settings-row check"><input type="checkbox" id="set-show-hint-bar" checked> Show hint bar</label>
+            <label class="settings-row check"><input type="checkbox" id="set-tutorial" checked> Progressive tutorial (waves 1–20)</label>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-head">CAMERA</div>
+            <label class="settings-row"><span>Scroll zoom speed</span><input type="range" id="set-camera-zoom" min="0.5" max="2" step="0.1" value="1"><span id="set-camera-zoom-val">100%</span></label>
+          </div>
+          <div class="settings-group">
+            <div class="settings-group-head">SIMULATION</div>
+            <div class="settings-row settings-speed-row">
+              <span>Game speed</span>
+              <div class="speed-control settings-speed-control">
+                <button type="button" class="speed-btn" data-speed="1">1×</button>
+                <button type="button" class="speed-btn" data-speed="1.5">1.5×</button>
+                <button type="button" class="speed-btn" data-speed="2">2×</button>
+                <button type="button" class="speed-btn" data-speed="3">3×</button>
+                <button type="button" class="speed-btn" data-speed="4">4×</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="settings-actions">
+          <button id="settings-reset" class="menu-btn small-btn">RESET TO DEFAULTS</button>
+          <button id="settings-close" class="menu-btn primary">CLOSE</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="advanced-diff-screen" class="screen">
+      <div class="menu-content advanced-diff-panel">
+        <h2 class="adv-title">ADVANCED DIFFICULTY</h2>
+        <p class="adv-subtitle">Stack modifiers on your base difficulty. Baby 50% · Normal 100% · Chad 150% · Doomslayer 200%.</p>
+        <p id="advanced-diff-pct-panel" class="diff-pct-display">Effective: 100%</p>
+        <div id="scaling-breakdown" class="scaling-breakdown"></div>
+        <div class="adv-presets-header">PRESETS</div>
+        <div id="advanced-diff-presets" class="advanced-diff-presets"></div>
+        <div id="advanced-diff-grid" class="advanced-diff-grid"></div>
+        <button id="advanced-diff-close" class="menu-btn primary">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="cheats-screen" class="screen">
+      <div class="menu-content cheats-panel">
+        <h2 class="cheat-title">CHEAT CODES</h2>
+        <p class="cheat-subtitle">Type a code you heard somewhere. Unlocks persist between runs.</p>
+        <input id="cheat-input" class="cheat-input" type="text" placeholder="Enter cheat code" autocomplete="off">
+        <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
+        <p id="cheat-result" class="cheat-result"></p>
+        <button id="cheats-close" class="menu-btn">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="crossover-screen" class="screen">
+      <div class="menu-content wwe-panel crossover-panel">
+        <h2 class="wwe-title">CROSSOVER HQ</h2>
+        <p class="wwe-subtitle">All crossover rosters — build barracks in-game, then recruit here.</p>
+        <div id="crossover-faction-tabs" class="crossover-faction-tabs"></div>
+        <div class="wwe-actions">
+          <button id="crossover-build-btn" class="menu-btn">SELECT BARRACKS BUILD</button>
+          <button id="crossover-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
+        </div>
+        <p id="crossover-selected-detail" class="wwe-detail">Select an operative below.</p>
+        <div id="crossover-roster-grid" class="wwe-roster-grid"></div>
+        <button id="crossover-close" class="menu-btn">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="wwe-screen" class="screen">
+      <div class="menu-content wwe-panel">
+        <h2 class="wwe-title">WWE ACADEMY</h2>
+        <p class="wwe-subtitle">Recruit Superstars · Build academy: 1000 TP, 10 Builders (hamlets & guilds recommended)</p>
+        <div class="wwe-actions">
+          <button id="wwe-build-btn" class="menu-btn">SELECT WWE ACADEMY BUILD</button>
+          <button id="wwe-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
+        </div>
+        <p id="wwe-selected-detail" class="wwe-detail">Select a superstar below.</p>
+        <div id="wwe-roster-grid" class="wwe-roster-grid"></div>
+        <button id="wwe-close" class="menu-btn">CLOSE</button>
+      </div>
+    </div>
+
+    <div id="gameover-screen" class="screen">
+      <div class="menu-content">
+        <h2 id="result-title">VICTORY</h2>
+        <p id="result-stats"></p>
+        <div id="result-highlights" class="result-highlights"></div>
+        <button id="restart-btn" class="menu-btn primary">FIGHT AGAIN</button>
+      </div>
+    </div>
+  </div>
+  <script src="js/floatingText.js"></script>
+  <script src="js/pathfinding.js"></script>
+  <script src="js/spatial.js"></script>
+  <script src="js/gfx-quality.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/visual-polish.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/strike-fx.js"></script>
+  <script src="js/units.js"></script>
+  <script src="js/content-expansion.js"></script>
+  <script src="js/meta-progress.js"></script>
+  <script src="js/crossover.js"></script>
+  <script src="js/faction-depth.js"></script>
+  <script src="js/perks.js"></script>
+  <script src="js/wwe.js"></script>
+  <script src="js/achievements-data.js"></script>
+  <script src="js/achievements.js"></script>
+  <script src="js/cheats.js"></script>
+  <script src="js/advanced-difficulty.js"></script>
+  <script src="js/game-modes.js"></script>
+  <script src="js/legacy.js"></script>
+  <script src="js/chronicles.js"></script>
+  <script src="js/lore-data.js"></script>
+  <script src="js/encyclopedia.js"></script>
+  <script src="js/creative-tools.js"></script>
+  <script src="js/creative.js"></script>
+  <script src="js/game-depth.js"></script>
+  <script src="js/colony-value.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/perf.js"></script>
+  <script src="js/save.js"></script>
+  <script src="js/settings.js"></script>
+  <script src="js/tooltips.js"></script>
+  <script src="js/ux.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

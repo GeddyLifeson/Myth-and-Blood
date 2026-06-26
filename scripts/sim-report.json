@@ -1,0 +1,382 @@
+{
+  "runs": 103,
+  "elapsedSec": 883.5,
+  "bestWave": 41,
+  "avgWave": 8,
+  "avgUpdateMs": 0.16,
+  "reached1000": [],
+  "issueCounts": {
+    "DOUBLE_TP": 41,
+    "TP_SPIKE": 2
+  },
+  "issues": [
+    {
+      "runId": 15,
+      "code": "DOUBLE_TP",
+      "gain": 1007,
+      "name": "iddqd"
+    },
+    {
+      "runId": 15,
+      "code": "DOUBLE_TP",
+      "gain": 508,
+      "name": "iddqd"
+    },
+    {
+      "runId": 15,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "iddqd"
+    },
+    {
+      "runId": 15,
+      "code": "DOUBLE_TP",
+      "gain": 509,
+      "name": "iddqd"
+    },
+    {
+      "runId": 15,
+      "code": "DOUBLE_TP",
+      "gain": 1011,
+      "name": "iddqd"
+    },
+    {
+      "runId": 15,
+      "code": "TP_SPIKE",
+      "delta": 500,
+      "name": "iddqd"
+    },
+    {
+      "runId": 16,
+      "code": "DOUBLE_TP",
+      "gain": 1012,
+      "name": "rosebud"
+    },
+    {
+      "runId": 16,
+      "code": "DOUBLE_TP",
+      "gain": 1014,
+      "name": "rosebud"
+    },
+    {
+      "runId": 16,
+      "code": "DOUBLE_TP",
+      "gain": 1014,
+      "name": "rosebud"
+    },
+    {
+      "runId": 16,
+      "code": "DOUBLE_TP",
+      "gain": 1016,
+      "name": "rosebud"
+    },
+    {
+      "runId": 36,
+      "code": "DOUBLE_TP",
+      "gain": 512,
+      "name": "iddqd"
+    },
+    {
+      "runId": 36,
+      "code": "DOUBLE_TP",
+      "gain": 1013,
+      "name": "iddqd"
+    },
+    {
+      "runId": 36,
+      "code": "DOUBLE_TP",
+      "gain": 1014,
+      "name": "iddqd"
+    },
+    {
+      "runId": 36,
+      "code": "DOUBLE_TP",
+      "gain": 514,
+      "name": "iddqd"
+    },
+    {
+      "runId": 36,
+      "code": "DOUBLE_TP",
+      "gain": 1016,
+      "name": "iddqd"
+    },
+    {
+      "runId": 37,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "rosebud"
+    },
+    {
+      "runId": 37,
+      "code": "DOUBLE_TP",
+      "gain": 1010,
+      "name": "rosebud"
+    },
+    {
+      "runId": 37,
+      "code": "DOUBLE_TP",
+      "gain": 1011,
+      "name": "rosebud"
+    },
+    {
+      "runId": 37,
+      "code": "DOUBLE_TP",
+      "gain": 2013,
+      "name": "rosebud"
+    },
+    {
+      "runId": 57,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "iddqd"
+    },
+    {
+      "runId": 57,
+      "code": "DOUBLE_TP",
+      "gain": 510,
+      "name": "iddqd"
+    },
+    {
+      "runId": 57,
+      "code": "DOUBLE_TP",
+      "gain": 1011,
+      "name": "iddqd"
+    },
+    {
+      "runId": 57,
+      "code": "DOUBLE_TP",
+      "gain": 511,
+      "name": "iddqd"
+    },
+    {
+      "runId": 57,
+      "code": "DOUBLE_TP",
+      "gain": 1513,
+      "name": "iddqd"
+    },
+    {
+      "runId": 58,
+      "code": "DOUBLE_TP",
+      "gain": 1008,
+      "name": "rosebud"
+    },
+    {
+      "runId": 58,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "rosebud"
+    },
+    {
+      "runId": 58,
+      "code": "DOUBLE_TP",
+      "gain": 1010,
+      "name": "rosebud"
+    },
+    {
+      "runId": 58,
+      "code": "DOUBLE_TP",
+      "gain": 2012,
+      "name": "rosebud"
+    },
+    {
+      "runId": 78,
+      "code": "DOUBLE_TP",
+      "gain": 508,
+      "name": "iddqd"
+    },
+    {
+      "runId": 78,
+      "code": "TP_SPIKE",
+      "delta": 500,
+      "name": "iddqd"
+    },
+    {
+      "runId": 78,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "iddqd"
+    },
+    {
+      "runId": 78,
+      "code": "DOUBLE_TP",
+      "gain": 1010,
+      "name": "iddqd"
+    },
+    {
+      "runId": 78,
+      "code": "DOUBLE_TP",
+      "gain": 510,
+      "name": "iddqd"
+    },
+    {
+      "runId": 78,
+      "code": "DOUBLE_TP",
+      "gain": 1012,
+      "name": "iddqd"
+    },
+    {
+      "runId": 79,
+      "code": "DOUBLE_TP",
+      "gain": 1007,
+      "name": "rosebud"
+    },
+    {
+      "runId": 79,
+      "code": "DOUBLE_TP",
+      "gain": 1008,
+      "name": "rosebud"
+    },
+    {
+      "runId": 79,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "rosebud"
+    },
+    {
+      "runId": 79,
+      "code": "DOUBLE_TP",
+      "gain": 2011,
+      "name": "rosebud"
+    },
+    {
+      "runId": 99,
+      "code": "DOUBLE_TP",
+      "gain": 1007,
+      "name": "iddqd"
+    },
+    {
+      "runId": 99,
+      "code": "DOUBLE_TP",
+      "gain": 508,
+      "name": "iddqd"
+    },
+    {
+      "runId": 99,
+      "code": "DOUBLE_TP",
+      "gain": 1009,
+      "name": "iddqd"
+    },
+    {
+      "runId": 99,
+      "code": "DOUBLE_TP",
+      "gain": 509,
+      "name": "iddqd"
+    },
+    {
+      "runId": 99,
+      "code": "DOUBLE_TP",
+      "gain": 1011,
+      "name": "iddqd"
+    }
+  ],
+  "topRuns": [
+    {
+      "runId": 200,
+      "name": "marathon_hunt_flip",
+      "maxWave": 41,
+      "issues": [],
+      "reached1000": false,
+      "nights": 40,
+      "avgUpdateMs": 0.27
+    },
+    {
+      "runId": 201,
+      "name": "marathon_wwe_cheat",
+      "maxWave": 39,
+      "issues": [],
+      "reached1000": false,
+      "nights": 38,
+      "avgUpdateMs": 0.29
+    },
+    {
+      "runId": 202,
+      "name": "marathon_doom_cheat",
+      "maxWave": 39,
+      "issues": [],
+      "reached1000": false,
+      "nights": 38,
+      "avgUpdateMs": 0.33
+    },
+    {
+      "runId": 68,
+      "name": "spy_steal",
+      "maxWave": 8,
+      "issues": [],
+      "reached1000": false,
+      "nights": 7,
+      "avgUpdateMs": 0.14
+    },
+    {
+      "runId": 0,
+      "name": "begin_day_spam",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.15
+    },
+    {
+      "runId": 1,
+      "name": "begin_day_early",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.14
+    },
+    {
+      "runId": 2,
+      "name": "pause_at_dusk",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.09
+    },
+    {
+      "runId": 3,
+      "name": "levy_spam",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.17
+    },
+    {
+      "runId": 4,
+      "name": "decree_spam",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.13
+    },
+    {
+      "runId": 5,
+      "name": "spy_steal",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.15
+    },
+    {
+      "runId": 6,
+      "name": "spy_scout",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.16
+    },
+    {
+      "runId": 7,
+      "name": "rally_spam",
+      "maxWave": 7,
+      "issues": [],
+      "reached1000": false,
+      "nights": 6,
+      "avgUpdateMs": 0.19
+    }
+  ]
+}
