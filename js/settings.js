@@ -28,6 +28,18 @@ const Settings = (() => {
     tutorialEnabled: true,
     performanceMode: 'auto',
     gameSpeed: 1,
+    analyticsOptIn: false,
+    errorReportingOptIn: false,
+    // Combat feel / QoL
+    combatShake: true,
+    damageNumbers: true,
+    hitStop: true,
+    gore: true,
+    killStreaks: true,
+    waveSummary: true,
+    autoPauseNight: false,
+    dangerVignette: true,
+    lowHpPulse: true,
   };
 
   const COLOR_BLIND_PALETTES = {
@@ -53,7 +65,9 @@ const Settings = (() => {
         const legacy = localStorage.getItem(LEGACY_KEY);
         if (legacy) settings = { ...DEFAULT_SETTINGS, ...JSON.parse(legacy) };
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     apply();
     /* Defer window recreate so it does not interrupt the first play session. */
     const deferMode = () => queueElectronWindowMode(false);
@@ -64,7 +78,9 @@ const Settings = (() => {
   function save() {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     apply();
   }
 
@@ -98,10 +114,10 @@ const Settings = (() => {
   function getPanelInsets() {
     const s = getEffectiveUIScale();
     return {
-      left: Math.round(84 * s),
-      right: Math.round(78 * s),
-      top: Math.round(52 * s),
-      bottom: Math.round(40 * s),
+      left: Math.round(60 * s),
+      right: Math.round(56 * s),
+      top: Math.round(46 * s),
+      bottom: Math.round(36 * s),
     };
   }
 
@@ -160,12 +176,16 @@ const Settings = (() => {
     const borderless = document.getElementById('set-window-borderless');
     const windowed = document.getElementById('set-window-windowed');
     if (!isElectron()) {
-      if (note) note.textContent = 'Borderless window requires the desktop app (Play Myth and Blood.bat). Browser can use fullscreen only.';
+      if (note)
+        note.textContent =
+          'Borderless window requires the desktop app (Play Myth and Blood.bat). Browser can use fullscreen only.';
       borderless?.setAttribute('disabled', '');
       windowed?.setAttribute('disabled', '');
       return;
     }
-    if (note) note.textContent = 'Borderless = no title bar, fills your monitor. Fullscreen = exclusive fullscreen. Switching borderless reloads once.';
+    if (note)
+      note.textContent =
+        'Borderless = no title bar, fills your monitor. Fullscreen = exclusive fullscreen. Switching borderless reloads once.';
     borderless?.removeAttribute('disabled');
     windowed?.removeAttribute('disabled');
   }
@@ -179,7 +199,11 @@ const Settings = (() => {
       const mode = await window.electronAPI.setWindowMode(settings.windowMode);
       if (mode && mode !== settings.windowMode) {
         settings.windowMode = mode;
-        try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch (_) { /* ignore */ }
+        try {
+          localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        } catch (_) {
+          /* ignore */
+        }
         syncForm();
         apply();
       }
@@ -204,16 +228,25 @@ const Settings = (() => {
   }
 
   function syncForm() {
-    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-    const setCheck = (id, val) => document.getElementById(id)?.toggleAttribute('checked', !!val);
-    const setText = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val;
+    };
+    const setCheck = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = !!val;
+    };
+    const setText = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = val;
+    };
 
     setVal('set-ui-scale-mode', settings.uiScaleMode);
     setVal('set-ui-scale-manual', settings.uiScaleManual);
     setText('set-ui-scale-val', `${Math.round(getEffectiveUIScale() * 100)}%`);
     setText('set-ui-scale-auto-val', `${Math.round(computeAutoScale() * 100)}%`);
 
-    document.querySelectorAll('[data-window-mode]').forEach(btn => {
+    document.querySelectorAll('[data-window-mode]').forEach((btn) => {
       btn.classList.toggle('selected', btn.dataset.windowMode === settings.windowMode);
     });
 
@@ -236,6 +269,15 @@ const Settings = (() => {
     setCheck('set-show-minimap', settings.showMinimap);
     setCheck('set-show-hint-bar', settings.showHintBar);
     setCheck('set-tutorial', settings.tutorialEnabled);
+    setCheck('set-combat-shake', settings.combatShake !== false);
+    setCheck('set-damage-numbers', settings.damageNumbers !== false);
+    setCheck('set-hit-stop', settings.hitStop !== false);
+    setCheck('set-gore', settings.gore !== false);
+    setCheck('set-kill-streaks', settings.killStreaks !== false);
+    setCheck('set-wave-summary', settings.waveSummary !== false);
+    setCheck('set-auto-pause-night', !!settings.autoPauseNight);
+    setCheck('set-danger-vignette', settings.dangerVignette !== false);
+    setCheck('set-low-hp-pulse', settings.lowHpPulse !== false);
     setVal('set-camera-zoom', settings.cameraZoomSpeed);
     setText('set-camera-zoom-val', `${Math.round(settings.cameraZoomSpeed * 100)}%`);
     setVal('set-panel-opacity', settings.panelOpacity);
@@ -243,12 +285,20 @@ const Settings = (() => {
     setVal('set-performance-mode', settings.performanceMode || 'auto');
     if (typeof UI !== 'undefined') UI.updateSpeedControl?.(settings.gameSpeed ?? 1);
 
-    document.querySelectorAll('.settings-tab').forEach(tab => {
+    document.querySelectorAll('.settings-tab').forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.tab === activeTab);
     });
-    document.querySelectorAll('.settings-tab-panel').forEach(panel => {
+    document.querySelectorAll('.settings-tab-panel').forEach((panel) => {
       panel.classList.toggle('active', panel.dataset.tab === activeTab);
     });
+    setCheck('set-analytics-optin', settings.analyticsOptIn);
+    setCheck('set-error-reporting-optin', settings.errorReportingOptIn);
+    if (activeTab === 'mods' && typeof ModLoader !== 'undefined') ModLoader.renderSettingsList();
+    if (activeTab === 'cosmetics' && typeof Cosmetics !== 'undefined') Cosmetics.renderSettings();
+    if (activeTab === 'privacy') {
+      if (typeof Analytics !== 'undefined') Analytics.renderSettings();
+      if (typeof ErrorReporting !== 'undefined') ErrorReporting.renderSettings();
+    }
   }
 
   function bind() {
@@ -260,10 +310,11 @@ const Settings = (() => {
 
     document.getElementById('set-ui-scale-manual')?.addEventListener('input', (e) => {
       set('uiScaleManual', parseFloat(e.target.value) || 1);
-      document.getElementById('set-ui-scale-val').textContent = `${Math.round(getEffectiveUIScale() * 100)}%`;
+      document.getElementById('set-ui-scale-val').textContent =
+        `${Math.round(getEffectiveUIScale() * 100)}%`;
     });
 
-    document.querySelectorAll('[data-window-mode]').forEach(btn => {
+    document.querySelectorAll('[data-window-mode]').forEach((btn) => {
       btn.addEventListener('click', async () => {
         AudioEngine?.SFX?.click?.();
         const mode = btn.dataset.windowMode;
@@ -290,43 +341,95 @@ const Settings = (() => {
     vol('set-music-volume', 'musicVolume', 'set-music-volume-val');
     vol('set-sfx-volume', 'sfxVolume', 'set-sfx-volume-val');
 
-    document.getElementById('set-muted')?.addEventListener('change', (e) => set('muted', e.target.checked));
+    document
+      .getElementById('set-muted')
+      ?.addEventListener('change', (e) => set('muted', e.target.checked));
 
-    document.getElementById('set-colorblind')?.addEventListener('change', (e) => set('colorBlind', e.target.value));
+    document
+      .getElementById('set-colorblind')
+      ?.addEventListener('change', (e) => set('colorBlind', e.target.value));
     document.getElementById('set-font-scale')?.addEventListener('input', (e) => {
       set('fontScale', parseFloat(e.target.value) || 1);
-      document.getElementById('set-font-scale-val').textContent = `${Math.round(settings.fontScale * 100)}%`;
+      document.getElementById('set-font-scale-val').textContent =
+        `${Math.round(settings.fontScale * 100)}%`;
     });
-    document.getElementById('set-high-contrast')?.addEventListener('change', (e) => set('highContrast', e.target.checked));
-    document.getElementById('set-reduced-motion')?.addEventListener('change', (e) => set('reducedMotion', e.target.checked));
-    document.getElementById('set-screen-reader')?.addEventListener('change', (e) => set('screenReader', e.target.checked));
-    document.getElementById('set-large-hitboxes')?.addEventListener('change', (e) => set('largerHitboxes', e.target.checked));
+    document
+      .getElementById('set-high-contrast')
+      ?.addEventListener('change', (e) => set('highContrast', e.target.checked));
+    document
+      .getElementById('set-reduced-motion')
+      ?.addEventListener('change', (e) => set('reducedMotion', e.target.checked));
+    document
+      .getElementById('set-screen-reader')
+      ?.addEventListener('change', (e) => set('screenReader', e.target.checked));
+    document
+      .getElementById('set-large-hitboxes')
+      ?.addEventListener('change', (e) => set('largerHitboxes', e.target.checked));
 
-    document.getElementById('set-show-minimap')?.addEventListener('change', (e) => set('showMinimap', e.target.checked));
-    document.getElementById('set-show-hint-bar')?.addEventListener('change', (e) => set('showHintBar', e.target.checked));
+    document
+      .getElementById('set-show-minimap')
+      ?.addEventListener('change', (e) => set('showMinimap', e.target.checked));
+    document
+      .getElementById('set-show-hint-bar')
+      ?.addEventListener('change', (e) => set('showHintBar', e.target.checked));
     document.getElementById('set-tutorial')?.addEventListener('change', (e) => {
       set('tutorialEnabled', e.target.checked);
       if (e.target.checked && typeof UX !== 'undefined') UX.resetTutorial?.();
     });
+    const bindCheck = (id, key) => {
+      document.getElementById(id)?.addEventListener('change', (e) => set(key, e.target.checked));
+    };
+    bindCheck('set-combat-shake', 'combatShake');
+    bindCheck('set-damage-numbers', 'damageNumbers');
+    bindCheck('set-hit-stop', 'hitStop');
+    bindCheck('set-gore', 'gore');
+    bindCheck('set-kill-streaks', 'killStreaks');
+    bindCheck('set-wave-summary', 'waveSummary');
+    bindCheck('set-auto-pause-night', 'autoPauseNight');
+    bindCheck('set-danger-vignette', 'dangerVignette');
+    bindCheck('set-low-hp-pulse', 'lowHpPulse');
+    document.getElementById('set-analytics-optin')?.addEventListener('change', (e) => {
+      set('analyticsOptIn', e.target.checked);
+      if (typeof Analytics !== 'undefined') {
+        Analytics.setEnabled(e.target.checked);
+        Analytics.renderSettings();
+      }
+    });
+    document.getElementById('set-error-reporting-optin')?.addEventListener('change', (e) => {
+      set('errorReportingOptIn', e.target.checked);
+      if (typeof ErrorReporting !== 'undefined') {
+        ErrorReporting.onSettingsReady();
+      }
+    });
     document.getElementById('set-camera-zoom')?.addEventListener('input', (e) => {
       set('cameraZoomSpeed', parseFloat(e.target.value) || 1);
-      document.getElementById('set-camera-zoom-val').textContent = `${Math.round(settings.cameraZoomSpeed * 100)}%`;
+      document.getElementById('set-camera-zoom-val').textContent =
+        `${Math.round(settings.cameraZoomSpeed * 100)}%`;
     });
     document.getElementById('set-performance-mode')?.addEventListener('change', (e) => {
       set('performanceMode', e.target.value);
     });
 
-    document.querySelectorAll('.settings-speed-control .speed-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        AudioEngine?.SFX?.click?.();
-        const speed = parseFloat(btn.dataset.speed);
-        if (!Number.isFinite(speed)) return;
-        set('gameSpeed', speed);
-        if (typeof Game !== 'undefined' && Game.isPlaying?.()) {
-          Game.setGameSpeed?.(speed, { silent: true, skipSettings: true });
-        }
+    function onSpeedPick(speed) {
+      AudioEngine?.SFX?.click?.();
+      const n = typeof PacingTools !== 'undefined' ? PacingTools.normalizeSpeed(speed) : speed;
+      set('gameSpeed', n);
+      if (typeof Game !== 'undefined' && Game.isPlaying?.()) {
+        Game.setGameSpeed?.(n, { silent: true, skipSettings: true });
+      }
+      if (typeof UI !== 'undefined') UI.updateSpeedControl?.(n);
+    }
+    if (typeof PacingTools !== 'undefined') {
+      PacingTools.renderSpeedButtons('.settings-speed-control', settings.gameSpeed ?? 1, onSpeedPick);
+    } else {
+      document.querySelectorAll('.settings-speed-control .speed-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const speed = parseFloat(btn.dataset.speed);
+          if (!Number.isFinite(speed)) return;
+          onSpeedPick(speed);
+        });
       });
-    });
+    }
 
     document.getElementById('set-panel-opacity')?.addEventListener('input', (e) => {
       const v = parseFloat(e.target.value) || 0.95;
@@ -338,7 +441,7 @@ const Settings = (() => {
       save();
     });
 
-    document.querySelectorAll('.settings-tab').forEach(tab => {
+    document.querySelectorAll('.settings-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
         activeTab = tab.dataset.tab;
         syncForm();
@@ -357,8 +460,14 @@ const Settings = (() => {
     const openFromMenu = () => open();
     document.getElementById('menu-settings-btn')?.addEventListener('click', openFromMenu);
     document.getElementById('menu-settings-fab')?.addEventListener('click', openFromMenu);
-    document.getElementById('top-settings-btn')?.addEventListener('click', () => open({ fromPause: Game.isPlaying?.() && Game.getState()?.paused }));
-    document.getElementById('pause-settings-btn')?.addEventListener('click', () => open({ fromPause: true }));
+    document
+      .getElementById('top-settings-btn')
+      ?.addEventListener('click', () =>
+        open({ fromPause: Game.isPlaying?.() && Game.getState()?.paused })
+      );
+    document
+      .getElementById('pause-settings-btn')
+      ?.addEventListener('click', () => open({ fromPause: true }));
 
     window.addEventListener('resize', onWindowResize);
 
@@ -389,7 +498,9 @@ const Settings = (() => {
         await document.documentElement.requestFullscreen();
         set('windowMode', 'fullscreen');
       }
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function open(opts = {}) {
@@ -398,6 +509,7 @@ const Settings = (() => {
       Game.setPaused?.(true);
       returnToPause = true;
     }
+    if (returnToPause && typeof UX !== 'undefined') UX.suppressPauseForOverlay();
     settingsOpen = true;
     document.getElementById('settings-screen')?.classList.add('active');
     syncForm();
@@ -408,6 +520,12 @@ const Settings = (() => {
     settingsOpen = false;
     document.getElementById('settings-screen')?.classList.remove('active');
     AudioEngine?.SFX?.click?.();
+    if (returnToPause && Game.isPlaying?.() && Game.getState().paused) {
+      returnToPause = false;
+      if (typeof UX !== 'undefined') UX.openPauseMenu();
+    } else {
+      returnToPause = false;
+    }
   }
 
   function isOpen() {
@@ -417,6 +535,13 @@ const Settings = (() => {
   function init() {
     load();
     bind();
+    if (typeof ModLoader !== 'undefined') ModLoader.bindSettings();
+    if (typeof Cosmetics !== 'undefined') Cosmetics.init();
+    if (typeof Analytics !== 'undefined') {
+      Analytics.init();
+      Analytics.bindSettings();
+      Analytics.syncEnabled();
+    }
     updateWindowModeNote();
     syncSoundButton();
   }
@@ -442,3 +567,7 @@ const Settings = (() => {
     },
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.Settings = Settings;

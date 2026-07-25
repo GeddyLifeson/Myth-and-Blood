@@ -47,9 +47,9 @@ function dominantSide(s) {
 
 const EXPECTED = {
   '-90': 'top',
-  '90': 'bottom',
-  '0': 'right',
-  '180': 'left',
+  90: 'bottom',
+  0: 'right',
+  180: 'left',
 };
 
 app.whenReady().then(async () => {
@@ -64,7 +64,9 @@ app.whenReady().then(async () => {
   });
 
   await win.loadFile(path.join(ROOT, 'index.html'));
-  await win.webContents.executeJavaScript('new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))');
+  await win.webContents.executeJavaScript(
+    'new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))'
+  );
 
   const results = await win.webContents.executeJavaScript(`
     (() => {
@@ -99,7 +101,9 @@ app.whenReady().then(async () => {
     const expected = EXPECTED[String(row.rot)];
     const ok = side === expected;
     if (!ok) failures++;
-    console.log(`${ok ? 'OK' : 'FAIL'} ${row.type} rot=${row.rot}: weapon mass on ${side}, expected ${expected}`);
+    console.log(
+      `${ok ? 'OK' : 'FAIL'} ${row.type} rot=${row.rot}: weapon mass on ${side}, expected ${expected}`
+    );
   }
 
   await app.exit(failures > 0 ? 1 : 0);

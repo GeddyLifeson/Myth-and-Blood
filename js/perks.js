@@ -1,78 +1,122 @@
 /**
- * Perk-a-Cola machines — tag-based perk collection for roster heroes.
+ * Perk tonic machines — tag-based perk collection for roster heroes.
  */
 const PERK_MAX = 4;
 
 const PerkDefs = {
   jugger_nog: {
-    name: 'Jugger-Nog', tags: ['melee', 'support'],
+    name: 'Ironbrew',
+    tags: ['melee', 'support'],
     desc: '+35% max HP',
-    apply(u) { u.maxHp = Math.floor(u.maxHp * 1.35); u.hp = Math.min(u.hp, u.maxHp); },
+    apply(u) {
+      u.maxHp = Math.floor(u.maxHp * 1.35);
+      u.hp = Math.min(u.hp, u.maxHp);
+    },
   },
   quick_revive: {
-    name: 'Quick Revive', tags: ['support'],
+    name: 'Field Revival',
+    tags: ['support'],
     desc: 'Self-revive once per wave at 40% HP',
-    apply(u) { u.hasQuickRevive = true; },
+    apply(u) {
+      u.hasQuickRevive = true;
+    },
   },
   speed_cola: {
-    name: 'Speed Cola', tags: ['melee', 'ranged'],
+    name: 'Swiftstep Tonic',
+    tags: ['melee', 'ranged'],
     desc: '+30% attack speed',
-    apply(u) { u.attackSpeedMult = (u.attackSpeedMult || 1) * 1.3; },
+    apply(u) {
+      u.attackSpeedMult = (u.attackSpeedMult || 1) * 1.3;
+    },
   },
   stamin_up: {
-    name: 'Stamin-Up', tags: ['melee', 'ranged'],
+    name: 'Endurance Draft',
+    tags: ['melee', 'ranged'],
     desc: '+18% move speed',
-    apply(u) { u.speed *= 1.18; },
+    apply(u) {
+      u.speed *= 1.18;
+    },
   },
   deadshot_daiquiri: {
-    name: 'Deadshot Daiquiri', tags: ['ranged'],
+    name: 'Deadeye Elixir',
+    tags: ['ranged'],
     desc: '+22 accuracy',
-    apply(u) { u.accuracy = Math.min(95, u.accuracy + 22); },
+    apply(u) {
+      u.accuracy = Math.min(95, u.accuracy + 22);
+    },
   },
   elemental_pop: {
-    name: 'Elemental Pop', tags: ['ranged', 'melee'],
+    name: 'Elemental Pop',
+    tags: ['ranged', 'melee'],
     desc: 'Attacks splash nearby foes',
-    apply(u) { u.hasElementalPop = true; },
+    apply(u) {
+      u.hasElementalPop = true;
+    },
   },
   phd_flopper: {
-    name: 'PhD Flopper', tags: ['melee'],
+    name: 'Impact Ward',
+    tags: ['melee'],
     desc: 'Explosion immunity + retaliatory blast',
-    apply(u) { u.hasPhdFlopper = true; },
+    apply(u) {
+      u.hasPhdFlopper = true;
+    },
   },
   melee_macchiato: {
-    name: 'Melee Macchiato', tags: ['melee'],
+    name: 'Melee Macchiato',
+    tags: ['melee'],
     desc: '+28% melee damage',
-    apply(u) { if (!u.projectile) u.damage = Math.floor(u.damage * 1.28); },
+    apply(u) {
+      if (!u.projectile) u.damage = Math.floor(u.damage * 1.28);
+    },
   },
   vulture_aid: {
-    name: 'Vulture Aid', tags: ['ranged', 'support'],
+    name: "Scavenger's Tonic",
+    tags: ['ranged', 'support'],
     desc: 'Kills may grant +1 TP',
-    apply(u) { u.hasVultureAid = true; },
+    apply(u) {
+      u.hasVultureAid = true;
+    },
   },
   tombstone: {
-    name: 'Tombstone', tags: ['support'],
+    name: 'Last Stand',
+    tags: ['support'],
     desc: 'General only — resurrect fallen troops per wave',
     generalOnly: true,
-    apply(u) { u.hasTombstone = true; },
+    apply(u) {
+      u.hasTombstone = true;
+    },
   },
 };
 
 const PerkBuildTypes = [
-  'perk_jugger_nog', 'perk_quick_revive', 'perk_speed_cola', 'perk_stamin_up',
-  'perk_deadshot_daiquiri', 'perk_elemental_pop', 'perk_phd_flopper',
-  'perk_melee_macchiato', 'perk_vulture_aid', 'perk_tombstone',
+  'perk_jugger_nog',
+  'perk_quick_revive',
+  'perk_speed_cola',
+  'perk_stamin_up',
+  'perk_deadshot_daiquiri',
+  'perk_elemental_pop',
+  'perk_phd_flopper',
+  'perk_melee_macchiato',
+  'perk_vulture_aid',
+  'perk_tombstone',
 ];
 
 function perkMachinesUnlocked() {
   if (typeof MetaProgress === 'undefined') return false;
-  return MetaProgress.isWweUnlocked?.() ||
+  return (
+    MetaProgress.isWweUnlocked?.() ||
     MetaProgress.isDoomslayerHeroUnlocked?.() ||
-    MetaProgress.isAnyCrossoverUnlocked?.();
+    MetaProgress.isAnyCrossoverUnlocked?.()
+  );
 }
 
 function getTotalStarCount(unit) {
-  return (unit.vetBronze || 0) + (unit.vetSilver || 0) * 3 + (unit.vetGold || 0) * 9 +
-    (unit.generalStars || 0) * 9;
+  return (
+    (unit.vetBronze || 0) +
+    (unit.vetSilver || 0) * 3 +
+    (unit.vetGold || 0) * 9 +
+    (unit.generalStars || 0) * 9
+  );
 }
 
 function getPerkSlots(unit) {
@@ -130,7 +174,8 @@ function applyPerkToUnit(unit, perkId) {
 function findBestPerkBuilding(unit, buildings) {
   const slots = getPerkSlots(unit);
   if ((unit.perks || []).length >= slots) return null;
-  let best = null, bestScore = -1;
+  let best = null,
+    bestScore = -1;
   for (const b of buildings) {
     if (!b.complete || b.hp <= 0 || b.owner !== 'player' || !b.isPerkMachine) continue;
     const perkId = b.perkId;
@@ -176,3 +221,7 @@ const Perks = {
   PerkDefs,
   PerkBuildTypes,
 };
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.Perks = Perks;

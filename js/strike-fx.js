@@ -3,31 +3,47 @@
  */
 const StrikeFX = (() => {
   const MAX_STRIKES = 24;
+  const MAX_SHOCKS = 16;
+  const MAX_FLASHES = 6;
   let strikes = [];
+  let shockwaves = [];
+  let screenFlashes = [];
+  let debris = [];
 
-  const LIFE = {
-    fireball: 48,
-    lightning: 32,
-    heal: 55,
-    reinforce: 50,
-    rally: 65,
-    meteor: 58,
-    frost_nova: 46,
-    scout_flare: 42,
-    fortify: 40,
-  };
+  let LIFE =
+    typeof GameData !== 'undefined' && GameData.fxLife
+      ? { ...GameData.fxLife }
+      : {
+          fireball: 48,
+          lightning: 32,
+          heal: 55,
+          reinforce: 50,
+          rally: 65,
+          meteor: 58,
+          frost_nova: 46,
+          scout_flare: 42,
+          fortify: 40,
+          dispel: 42,
+        };
+
+  function setFxLife(map) {
+    if (map && typeof map === 'object') LIFE = { ...map };
+  }
 
   function inBounds(s, b) {
     if (!b) return true;
     const pad = s.radius || 60;
-    return s.x + pad >= b.left && s.x - pad <= b.right &&
-      s.y + pad >= b.top && s.y - pad <= b.bottom;
+    return (
+      s.x + pad >= b.left && s.x - pad <= b.right && s.y + pad >= b.top && s.y - pad <= b.bottom
+    );
   }
 
   function play(type, x, y, radius = 50, opts = {}) {
     const life = opts.life || LIFE[type] || 40;
     strikes.push({
-      type, x, y,
+      type,
+      x,
+      y,
       radius: radius || 50,
       life,
       maxLife: life,
@@ -37,10 +53,98 @@ const StrikeFX = (() => {
     if (strikes.length > MAX_STRIKES) strikes = strikes.slice(-MAX_STRIKES);
   }
 
+  function spawnDebris(x, y, count, colors) {
+    for (let i = 0; i < count; i++) {
+      const ang = Math.random() * Math.PI * 2;
+      const spd = 2 + Math.random() * 5;
+      debris.push({
+        x,
+        y,
+        vx: Math.cos(ang) * spd,
+        vy: Math.sin(ang) * spd - 1.5,
+        life: 16 + Math.floor(Math.random() * 14),
+        maxLife: 28,
+        color: colors[Math.floor(Math.random() * colors.length)],
+        size: 1.5 + Math.random() * 2.5,
+      });
+    }
+    if (debris.length > 80) debris = debris.slice(-80);
+  }
+
+  function impact(type, x, y, radius = 50, intensity = 1) {
+    const mult = Math.max(0.5, Math.min(2, intensity));
+    shockwaves.push({
+      x,
+      y,
+      radius: radius * mult,
+      life: 22,
+      maxLife: 22,
+      color: strikeColor(type),
+      width: 2 + mult,
+    });
+    if (shockwaves.length > MAX_SHOCKS) shockwaves = shockwaves.slice(-MAX_SHOCKS);
+
+    const flashColors = {
+      fireball: 'rgba(255,140,60,0.22)',
+      meteor: 'rgba(255,120,50,0.28)',
+      lightning: 'rgba(220,240,255,0.2)',
+      frost_nova: 'rgba(180,230,255,0.18)',
+      heal: 'rgba(80,220,160,0.12)',
+      rally: 'rgba(240,200,80,0.14)',
+    };
+    const flashLife = Math.max(6, Math.round(10 + mult * 4));
+    screenFlashes.push({
+      color: flashColors[type] || 'rgba(255,255,255,0.12)',
+      life: flashLife,
+      maxLife: flashLife,
+    });
+    if (screenFlashes.length > MAX_FLASHES) screenFlashes = screenFlashes.slice(-MAX_FLASHES);
+
+    if (type === 'fireball' || type === 'meteor') {
+      spawnDebris(x, y, Math.round(10 * mult), ['#ff6020', '#ff9040', '#4a2820', '#ffe080']);
+      if (typeof Particles !== 'undefined') {
+        Particles.strikeFire?.(x, y, mult);
+        if (mult >= 1.2) Particles.explosion(x, y);
+      }
+    } else if (type === 'lightning') {
+      spawnDebris(x, y, Math.round(6 * mult), ['#e0f0ff', '#a0c0ff', '#6080c0']);
+      Particles?.strikeLightning?.(x, y, mult);
+    } else if (type === 'frost_nova') {
+      spawnDebris(x, y, Math.round(8 * mult), ['#d0f0ff', '#a0d8ff', '#ffffff']);
+      Particles?.strikeFrost?.(x, y, mult);
+    } else if (type === 'heal') {
+      Particles?.strikeHeal?.(x, y);
+    }
+  }
+
+  function purgeLife(list, tickFn) {
+    let w = 0;
+    for (let i = 0; i < list.length; i++) {
+      const item = list[i];
+      if (tickFn(item)) list[w++] = item;
+    }
+    list.length = w;
+  }
+
   function update() {
-    strikes = strikes.filter(s => {
+    purgeLife(strikes, (s) => {
       s.life--;
       return s.life > 0;
+    });
+    purgeLife(shockwaves, (s) => {
+      s.life--;
+      return s.life > 0;
+    });
+    purgeLife(screenFlashes, (s) => {
+      s.life--;
+      return s.life > 0;
+    });
+    purgeLife(debris, (d) => {
+      d.life--;
+      d.x += d.vx;
+      d.y += d.vy;
+      d.vy += 0.12;
+      return d.life > 0;
     });
   }
 
@@ -80,6 +184,16 @@ const StrikeFX = (() => {
       ctx.beginPath();
       ctx.arc(x, y, r * 0.85, 0, Math.PI * 2);
       ctx.stroke();
+      if (t < 0.2) {
+        ctx.fillStyle = `rgba(255,255,220,${0.7 * (1 - t / 0.2)})`;
+        ctx.beginPath();
+        ctx.arc(x, y, 12 + t * 40, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = `rgba(60,20,10,${0.35 * (1 - t)})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y + 4, r * 0.55, r * 0.18, 0, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -91,7 +205,8 @@ const StrikeFX = (() => {
       ctx.lineWidth = 2 + flash * 2;
       ctx.beginPath();
       ctx.moveTo(x, 0);
-      let cx = x, cy = 0;
+      let cx = x,
+        cy = 0;
       const segs = 7;
       for (let i = 0; i < segs; i++) {
         cy += y / segs;
@@ -113,6 +228,29 @@ const StrikeFX = (() => {
     ctx.beginPath();
     ctx.arc(x, y, ring * 0.35, 0, Math.PI * 2);
     ctx.fill();
+    if (flash > 0.2) {
+      for (let b = 0; b < 4; b++) {
+        const bx = x + Math.sin(s.seed + b * 1.7) * radius * 0.4;
+        const by = y + Math.cos(s.seed + b * 2.3) * radius * 0.25;
+        ctx.strokeStyle = `rgba(200,230,255,${flash * 0.7})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 8);
+        let cx = x,
+          cy = y - 8;
+        for (let i = 0; i < 4; i++) {
+          cy += 12;
+          cx += Math.sin(s.seed + b + i) * 10;
+          ctx.lineTo(cx, cy);
+        }
+        ctx.lineTo(bx, by);
+        ctx.stroke();
+      }
+      ctx.fillStyle = `rgba(220,240,255,${flash * 0.25})`;
+      ctx.beginPath();
+      ctx.arc(x, y, radius * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   function drawHeal(ctx, s, prog) {
@@ -212,7 +350,10 @@ const StrikeFX = (() => {
       ctx.stroke();
     } else {
       const t = (prog - 0.45) / 0.55;
-      for (const [ox, oy, sc] of [[0, 0, 1], [0, -30, 0.65]]) {
+      for (const [ox, oy, sc] of [
+        [0, 0, 1],
+        [0, -30, 0.65],
+      ]) {
         const r = radius * sc * (0.2 + t * 0.9);
         const g = ctx.createRadialGradient(x + ox, y + oy, 0, x + ox, y + oy, r);
         g.addColorStop(0, `rgba(255,200,100,${0.85 * (1 - t * 0.4)})`);
@@ -323,6 +464,36 @@ const StrikeFX = (() => {
     ctx.fill();
   }
 
+  function drawDispel(ctx, s, prog) {
+    const { x, y, radius } = s;
+    const expand = radius * (0.55 + prog * 0.55);
+    const alpha = 1 - prog;
+    ctx.strokeStyle = `rgba(192,144,255,${0.75 * alpha})`;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(x, y, expand, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = `rgba(232,208,255,${0.55 * alpha})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(x, y, expand * 0.7, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = `rgba(160,100,255,${0.12 * alpha})`;
+    ctx.beginPath();
+    ctx.arc(x, y, expand, 0, Math.PI * 2);
+    ctx.fill();
+    // Wash rays
+    for (let i = 0; i < 8; i++) {
+      const ang = (i / 8) * Math.PI * 2 + prog * 2;
+      ctx.strokeStyle = `rgba(220,180,255,${0.4 * alpha})`;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(ang) * expand * 0.2, y + Math.sin(ang) * expand * 0.2);
+      ctx.lineTo(x + Math.cos(ang) * expand * 0.95, y + Math.sin(ang) * expand * 0.95);
+      ctx.stroke();
+    }
+  }
+
   const DRAWERS = {
     fireball: drawFireball,
     lightning: drawLightning,
@@ -333,9 +504,41 @@ const StrikeFX = (() => {
     frost_nova: drawFrostNova,
     scout_flare: drawScoutFlare,
     fortify: drawFortify,
+    dispel: drawDispel,
   };
 
+  function drawShockwaves(ctx, bounds) {
+    for (const s of shockwaves) {
+      if (!inBounds(s, bounds)) continue;
+      const prog = 1 - s.life / s.maxLife;
+      const r = s.radius * (0.2 + prog * 1.1);
+      const alpha = (1 - prog) * 0.85;
+      ctx.strokeStyle = s.color.replace(/[\d.]+\)$/, `${alpha})`);
+      ctx.lineWidth = s.width * (1 - prog * 0.5);
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = `rgba(255,255,255,${alpha * 0.35})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, r * 0.82, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+  }
+
+  function drawDebris(ctx, bounds) {
+    for (const d of debris) {
+      if (bounds && (d.x < bounds.left || d.x > bounds.right || d.y < bounds.top || d.y > bounds.bottom))
+        continue;
+      ctx.globalAlpha = d.life / d.maxLife;
+      ctx.fillStyle = d.color;
+      ctx.fillRect(d.x - d.size / 2, d.y - d.size / 2, d.size, d.size);
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function draw(ctx, bounds) {
+    drawShockwaves(ctx, bounds);
     for (const s of strikes) {
       if (!inBounds(s, bounds)) continue;
       const prog = 1 - s.life / s.maxLife;
@@ -344,6 +547,15 @@ const StrikeFX = (() => {
       ctx.save();
       drawer(ctx, s, prog);
       ctx.restore();
+    }
+    drawDebris(ctx, bounds);
+  }
+
+  function drawScreenFx(ctx, w, h) {
+    for (const f of screenFlashes) {
+      const a = (f.life / f.maxLife) * 0.85;
+      ctx.fillStyle = f.color.replace(/[\d.]+\)$/, `${a})`);
+      ctx.fillRect(0, 0, w, h);
     }
   }
 
@@ -388,6 +600,7 @@ const StrikeFX = (() => {
       frost_nova: 'rgba(160,220,255,0.35)',
       scout_flare: 'rgba(255,220,100,0.35)',
       fortify: 'rgba(100,160,220,0.3)',
+      dispel: 'rgba(180,120,255,0.32)',
     };
     return colors[type] || 'rgba(255,255,255,0.25)';
   }
@@ -419,7 +632,24 @@ const StrikeFX = (() => {
 
   function clear() {
     strikes = [];
+    shockwaves = [];
+    screenFlashes = [];
+    debris = [];
   }
 
-  return { play, update, draw, drawTargeting, drawFortifyZones, clear };
+  return {
+    play,
+    impact,
+    update,
+    draw,
+    drawScreenFx,
+    drawTargeting,
+    drawFortifyZones,
+    clear,
+    setFxLife,
+  };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.StrikeFX = StrikeFX;

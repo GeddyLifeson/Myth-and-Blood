@@ -7,7 +7,13 @@ const GfxQuality = (() => {
   const PROFILE = {
     high: {
       particleMult: 1,
+      logicInterval: 1,
       spatialInterval: 1,
+      skipAiMinUnits: 48,
+      distantAiNearPad: 0,
+      distantAiPad: 160,
+      distantAiFarPad: 280,
+      distantPlayerFarPad: 360,
       rotationStep: 1,
       sortFrameShift: 2,
       drawMorale: true,
@@ -35,10 +41,18 @@ const GfxQuality = (() => {
       chargeGlow: true,
       honorGlow: true,
       generalOverlay: true,
+      spriteLodFloor: 0,
+      spriteLodThresholds: [55, 82, 108, 132],
     },
     normal: {
       particleMult: 0.85,
+      logicInterval: 1,
       spatialInterval: 1,
+      skipAiMinUnits: 40,
+      distantAiNearPad: 0,
+      distantAiPad: 140,
+      distantAiFarPad: 260,
+      distantPlayerFarPad: 340,
       rotationStep: 15,
       sortFrameShift: 2,
       drawMorale: true,
@@ -66,10 +80,18 @@ const GfxQuality = (() => {
       chargeGlow: true,
       honorGlow: true,
       generalOverlay: true,
+      spriteLodFloor: 0,
+      spriteLodThresholds: [45, 72, 96, 120],
     },
     reduced: {
       particleMult: 0.55,
+      logicInterval: 2,
       spatialInterval: 2,
+      skipAiMinUnits: 32,
+      distantAiNearPad: 0,
+      distantAiPad: 110,
+      distantAiFarPad: 220,
+      distantPlayerFarPad: 300,
       rotationStep: 30,
       sortFrameShift: 3,
       drawMorale: false,
@@ -97,10 +119,18 @@ const GfxQuality = (() => {
       chargeGlow: false,
       honorGlow: 'selected',
       generalOverlay: true,
+      spriteLodFloor: 1,
+      spriteLodThresholds: [34, 54, 74, 96],
     },
     potato: {
       particleMult: 0.32,
+      logicInterval: 2,
       spatialInterval: 3,
+      skipAiMinUnits: 24,
+      distantAiNearPad: 0,
+      distantAiPad: 90,
+      distantAiFarPad: 180,
+      distantPlayerFarPad: 260,
       rotationStep: 45,
       sortFrameShift: 4,
       drawMorale: false,
@@ -128,6 +158,8 @@ const GfxQuality = (() => {
       chargeGlow: false,
       honorGlow: false,
       generalOverlay: true,
+      spriteLodFloor: 2,
+      spriteLodThresholds: [26, 42, 58, 78],
     },
   };
 
@@ -217,12 +249,20 @@ const GfxQuality = (() => {
     return Math.round(deg / step) * step;
   }
 
+  function quantizeScale(scale) {
+    const s = scale || 1;
+    const step = effectiveTier === 'potato' ? 0.5 : 0.25;
+    return Math.max(0.5, Math.round(s / step) * step);
+  }
+
   function flagForUnit(mode, unit, isSelected) {
     if (mode === true || mode === 'all') return true;
     if (!mode || mode === false) return false;
     if (mode === 'selected') return isSelected;
     if (mode === 'important') {
-      return isSelected || unit.isGeneral || unit.isDoomslayer || unit.isWwe || isEliteEnemy?.(unit);
+      return (
+        isSelected || unit.isGeneral || unit.isDoomslayer || unit.isWwe || isEliteEnemy?.(unit)
+      );
     }
     if (mode === 'boss') return unit.type === 'war_chief' || unit.isNamedBoss || unit.isDoomslayer;
     return false;
@@ -260,9 +300,14 @@ const GfxQuality = (() => {
     getSetting,
     getLabel,
     quantizeRotation,
+    quantizeScale,
     shouldDrawUnitOverlay,
     allowProjectileTrails,
     allowDeathFx,
     TIER_ORDER,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.GfxQuality = GfxQuality;

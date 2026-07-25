@@ -1,0 +1,10 @@
+{
+  "mods": [
+    {
+      "id": "example_legion",
+      "name": "Iron Legion (Example)",
+      "description": "Sample mod — Iron Guard melee troop and Iron Bastion outpost.",
+      "path": "example-legion"
+    }
+  ]
+}

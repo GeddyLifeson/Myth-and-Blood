@@ -1,0 +1,10 @@
+{
+  "exportConst": "GameDepth",
+  "instanceConsts": [
+    "SETTLEMENT_TP_SOFT_CAP",
+    "ACADEMY_HYBRID_WAVES",
+    "GENERAL_AURA_RADIUS",
+    "NAMED_BOSS_ROSTER",
+    "HORDE_FLAVORS"
+  ]
+}

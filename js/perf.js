@@ -126,9 +126,23 @@ const Perf = (() => {
   }
 
   let updateTick = 0;
-  function setUpdateTick(t) { updateTick = t; }
+  function setUpdateTick(t) {
+    updateTick = t;
+  }
 
   return {
-    init, tick, begin, end, count, toggleOverlay, isEnabled, getStats, setUpdateTick,
+    init,
+    tick,
+    begin,
+    end,
+    count,
+    toggleOverlay,
+    isEnabled,
+    getStats,
+    setUpdateTick,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.Perf = Perf;

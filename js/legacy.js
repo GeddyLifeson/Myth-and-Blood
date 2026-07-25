@@ -25,13 +25,17 @@ const Legacy = (() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) data = { ...data, ...JSON.parse(raw) };
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function unitLabel(type) {
@@ -83,7 +87,7 @@ const Legacy = (() => {
   }
 
   function recordDeploy(unitType) {
-    if (!unitType || (currentRun?.creative)) return;
+    if (!unitType || currentRun?.creative) return;
     data.unitDeploys[unitType] = (data.unitDeploys[unitType] || 0) + 1;
     save();
   }
@@ -135,6 +139,12 @@ const Legacy = (() => {
       currentRun = null;
       return;
     }
+    if (typeof CrownLegacies !== 'undefined') {
+      CrownLegacies.refreshUnlocks(get());
+    }
+    if (typeof EternalLegacyTree !== 'undefined') {
+      EternalLegacyTree.refreshUnlocks(get());
+    }
     const runSummary = {
       id: currentRun?.id,
       victory: !!victory,
@@ -154,13 +164,17 @@ const Legacy = (() => {
 
   function getLegacyEntries() {
     const leg = get();
-    const diffLines = Object.entries(leg.maxWaveByDiff)
-      .sort((a, b) => b[1] - a[1])
-      .map(([d, w]) => `${getDifficultyDef?.(d)?.label || d}: wave ${w}`)
-      .join(' · ') || 'No recorded runs yet.';
-    const recentHonors = leg.honorNames.slice(-6).reverse()
-      .map(h => `${h.name} (${unitLabel(h.type)}, W${h.wave})`)
-      .join(' · ') || 'None crowned yet.';
+    const diffLines =
+      Object.entries(leg.maxWaveByDiff)
+        .sort((a, b) => b[1] - a[1])
+        .map(([d, w]) => `${getDifficultyDef?.(d)?.label || d}: wave ${w}`)
+        .join(' · ') || 'No recorded runs yet.';
+    const recentHonors =
+      leg.honorNames
+        .slice(-6)
+        .reverse()
+        .map((h) => `${h.name} (${unitLabel(h.type)}, W${h.wave})`)
+        .join(' · ') || 'None crowned yet.';
     return [
       {
         cat: 'legacy',
@@ -171,9 +185,10 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Peak Survival',
         body: `Highest wave reached: ${leg.maxWaveEver || '—'}. By difficulty — ${diffLines}`,
-        classified: leg.maxWaveEver >= 200
-          ? 'The Crown\'s war council notes your name among commanders who survived the Enemy RTS era. Settlement raids and mirrored economies did not break your line.'
-          : 'Field reports beyond wave 200 remain sealed until a commander proves the realm can endure the Enemy RTS.',
+        classified:
+          leg.maxWaveEver >= 200
+            ? "The Crown's war council notes your name among commanders who survived the Enemy RTS era. Settlement raids and mirrored economies did not end you."
+            : 'Field reports beyond wave 200 remain sealed until a commander proves the realm can endure the Enemy RTS.',
         classifiedRule: 'wave:200',
       },
       {
@@ -187,9 +202,10 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Honor Roll',
         body: `${leg.honorCount} soldiers named by the Crown. Recent: ${recentHonors}`,
-        classified: leg.honorCount >= 3
-          ? 'Veteran scribes whisper that honor names are not random — each is hashed from the soldier\'s service ID, drawn from ancient prefix pools (Syr, Dame, Magister…) and a royal name ledger.'
-          : 'Earn three honor names to unlock the Crown\'s naming cipher.',
+        classified:
+          leg.honorCount >= 3
+            ? "Veteran scribes whisper that honor names are not random — each is hashed from the soldier's service ID, drawn from ancient prefix pools (Syr, Dame, Magister…) and a royal name ledger."
+            : "Earn three honor names to unlock the Crown's naming cipher.",
         classifiedRule: 'honor:3',
       },
       {
@@ -197,13 +213,13 @@ const Legacy = (() => {
         name: 'Crossover Service',
         body: leg.factionsUsed.length
           ? `Factions fielded: ${leg.factionsUsed.join(', ')}.`
-          : 'Recruit crossover operatives to log multiversal service.',
+          : 'Recruit evolved operatives to log evolved service.',
       },
       {
         cat: 'legacy',
         name: 'Last After-Action',
         body: leg.lastRun
-          ? `${leg.lastRun.victory ? 'Victory' : 'Defeat'} on ${getDifficultyDef?.(leg.lastRun.difficulty)?.label || leg.lastRun.difficulty} — wave ${leg.lastRun.wave}, ${leg.lastRun.kills} kills, ${leg.lastRun.misses} breakthroughs.`
+          ? `${leg.lastRun.victory ? 'Victory' : 'Defeat'} on ${getDifficultyDef?.(leg.lastRun.difficulty)?.label || leg.lastRun.difficulty} — wave ${leg.lastRun.wave}, ${leg.lastRun.kills} kills, ${leg.lastRun.playerDeaths ?? leg.lastRun.misses ?? 0} losses.`
           : 'Complete a run to see your last summary here.',
       },
     ];
@@ -212,7 +228,20 @@ const Legacy = (() => {
   load();
 
   return {
-    load, save, get, onRunStart, recordDeploy, recordKill, recordFaction,
-    recordHonor, onWaveComplete, onGameEnd, getLegacyEntries,
+    load,
+    save,
+    get,
+    onRunStart,
+    recordDeploy,
+    recordKill,
+    recordFaction,
+    recordHonor,
+    onWaveComplete,
+    onGameEnd,
+    getLegacyEntries,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.Legacy = Legacy;

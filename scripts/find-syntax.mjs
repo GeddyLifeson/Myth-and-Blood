@@ -2,7 +2,10 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 
-const lines = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', 'js', 'game.js'), 'utf8').split(/\n/);
+const lines = readFileSync(
+  join(dirname(fileURLToPath(import.meta.url)), '..', 'js', 'game.js'),
+  'utf8'
+).split(/\n/);
 let depth = 0;
 let lastDepth1 = 0;
 for (let i = 0; i < lines.length; i++) {

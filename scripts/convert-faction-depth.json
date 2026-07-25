@@ -1,0 +1,11 @@
+{
+  "exportConst": "FactionDepth",
+  "ctxField": "ctx",
+  "instanceConsts": [
+    "FIELD_SOFT_CAP",
+    "STANDARD_BARRACKS_COST",
+    "STANDARD_BARRACKS_BUILDERS",
+    "PLANET_WARFARE_WAVE"
+  ],
+  "extraConstructor": ["this.activeSynergies = [];", "this.sessionChallenges = new Set();"]
+}

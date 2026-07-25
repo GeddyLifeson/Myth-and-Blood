@@ -1,0 +1,98 @@
+{
+  "abilities": {
+    "fireball": {
+      "name": "Fireball Barrage",
+      "cost": 9,
+      "damage": 80,
+      "radius": 60
+    },
+    "lightning": {
+      "name": "Lightning Strike",
+      "cost": 6,
+      "damage": 55,
+      "radius": 50
+    },
+    "heal": {
+      "name": "Healing Rain",
+      "cost": 6,
+      "healAmount": 35,
+      "radius": 150
+    },
+    "reinforce": {
+      "name": "Reinforcements",
+      "cost": 12,
+      "units": [
+        "footman",
+        "footman",
+        "archer"
+      ]
+    },
+    "rally": {
+      "name": "Battle Rally",
+      "cost": 6,
+      "moraleBoost": 8,
+      "duration": 300
+    },
+    "dispel": {
+      "name": "Arcane Dispel",
+      "cost": 5,
+      "radius": 85,
+      "requiresMage": true,
+      "desc": "Purge void, burn pits, plague, and other faction blights. Requires a living Mage in cast range."
+    }
+  },
+  "spyActions": {
+    "steal": {
+      "name": "Steal War Chest",
+      "cost": 4,
+      "desc": "+4 TP, enemy loses 2 units next wave"
+    },
+    "disrupt": {
+      "name": "Disrupt Supply Lines",
+      "cost": 5,
+      "desc": "Next wave -35% enemy count"
+    },
+    "assassin": {
+      "name": "Assassinate Captain",
+      "cost": 6,
+      "desc": "No elite enemies next wave"
+    },
+    "scout": {
+      "name": "Scout Report",
+      "cost": 2,
+      "desc": "Exact next wave roster revealed"
+    },
+    "poison": {
+      "name": "Poison Caches",
+      "cost": 4,
+      "desc": "Next wave enemies -20% HP"
+    },
+    "sabotage": {
+      "name": "Sabotage Siege",
+      "cost": 5,
+      "desc": "Delay enemy spawns 2 seconds"
+    },
+    "infiltrate": {
+      "name": "Deep Infiltration",
+      "cost": 3,
+      "desc": "Exact roster + flank directions"
+    },
+    "bribery": {
+      "name": "Bribe Informant",
+      "cost": 6,
+      "desc": "50% chance -3 foes; reveals flanks"
+    }
+  },
+  "fxLife": {
+    "fireball": 48,
+    "lightning": 32,
+    "heal": 55,
+    "reinforce": 50,
+    "rally": 65,
+    "meteor": 58,
+    "frost_nova": 46,
+    "scout_flare": 42,
+    "fortify": 40,
+    "dispel": 42
+  }
+}

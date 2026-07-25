@@ -3,18 +3,88 @@
   "version": "1.0.0",
   "description": "Myth and Blood — Fantasy Tactical Warfare",
   "main": "electron/main.js",
-  "scripts": {
-    "start": "electron .",
-    "play": "electron .",
-    "serve": "python -m http.server 8765",
-    "sim": "node scripts/headless-sim.mjs",
-    "test:crossover": "node scripts/verify-crossover.js",
-    "test:crossover:runtime": "node scripts/headless-crossover.mjs"
-  },
   "author": "",
   "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "start:dist": "npm run build && cross-env MB_USE_DIST=1 electron .",
+    "play": "electron .",
+    "serve": "python -m http.server 8765",
+    "serve:dist": "npm run build && node scripts/serve-dist.mjs 8765",
+    "build": "node scripts/build.mjs",
+    "build:dev": "node scripts/build.mjs --dev",
+    "build:verify": "node scripts/verify-build.mjs",
+    "test:compression": "node scripts/test-compression.mjs",
+    "build:all": "npm run build && npm run build:verify",
+    "pack": "npm run build && electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "dist:win": "npm run build && electron-builder --win",
+    "sim": "node scripts/headless-sim.mjs",
+    "test:crossover": "node scripts/verify-crossover.js",
+    "test:crossover:runtime": "node scripts/headless-crossover.mjs",
+    "test:headless": "node scripts/headless-crossover.mjs && node scripts/headless-sim.mjs",
+    "test:all": "node scripts/run-all-tests.mjs",
+    "test:input": "node scripts/test-input-sweep.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "build:ts": "tsc -p tsconfig.json && node scripts/format-emitted-core.mjs",
+    "check": "npm run build:ts && npm run lint && npm run format:check",
+    "gen:eslint-globals": "node scripts/gen-eslint-globals.mjs"
+  },
   "devDependencies": {
-    "electron": "^42.5.0"
+    "@eslint/js": "^10.0.1",
+    "cross-env": "^7.0.3",
+    "electron": "^42.5.0",
+    "electron-builder": "^25.1.8",
+    "esbuild": "^0.25.12",
+    "eslint": "^10.6.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.7.0",
+    "prettier": "^3.9.4",
+    "typescript": "^6.0.3"
+  },
+  "build": {
+    "appId": "com.mythandblood.game",
+    "productName": "Myth and Blood",
+    "copyright": "Copyright © 2026 Myth and Blood",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "artifactName": "Myth-and-Blood-${version}-${os}-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Myth and Blood"
+    },
+    "portable": {
+      "artifactName": "Myth-and-Blood-${version}-portable.${ext}"
+    }
   },
   "allowScripts": {
     "electron@42.5.0": true

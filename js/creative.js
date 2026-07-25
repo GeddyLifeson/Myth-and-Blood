@@ -18,9 +18,9 @@ const CreativeMode = (() => {
   let panelOpen = true;
 
   function enemySpawnOptions() {
-    return Object.entries(EnemyDefs).map(([id, d]) =>
-      `<option value="${id}">${d.name}</option>`
-    ).join('');
+    return Object.entries(EnemyDefs)
+      .map(([id, d]) => `<option value="${id}">${d.name}</option>`)
+      .join('');
   }
 
   function allySpawnOptions() {
@@ -28,10 +28,12 @@ const CreativeMode = (() => {
     const crossover = typeof CrossoverDefs !== 'undefined' ? Object.keys(CrossoverDefs) : [];
     const wwe = typeof WweDefs !== 'undefined' ? Object.keys(WweDefs) : [];
     const all = [...new Set([...ids, ...crossover, ...wwe, 'doomslayer_hero'])];
-    return all.map(id => {
-      const d = getPlayerUnitDef?.(id) || CrossoverDefs?.[id] || WweDefs?.[id] || EnemyDefs[id];
-      return `<option value="${id}">${d?.name || id}</option>`;
-    }).join('');
+    return all
+      .map((id) => {
+        const d = getPlayerUnitDef?.(id) || CrossoverDefs?.[id] || WweDefs?.[id] || EnemyDefs[id];
+        return `<option value="${id}">${d?.name || id}</option>`;
+      })
+      .join('');
   }
 
   function playerBuildingOptions() {
@@ -69,8 +71,13 @@ const CreativeMode = (() => {
   function renderSandboxStats(gs) {
     const el = document.getElementById('creative-sandbox-stats');
     if (!el) return;
-    const s = gs?.sandboxStats || (typeof CreativeTools !== 'undefined' ? CreativeTools.getSandboxStats() : null);
-    if (!s) { el.textContent = ''; return; }
+    const s =
+      gs?.sandboxStats ||
+      (typeof CreativeTools !== 'undefined' ? CreativeTools.getSandboxStats() : null);
+    if (!s) {
+      el.textContent = '';
+      return;
+    }
     el.textContent = `Sandbox: ${s.sessions} sessions · ${s.spawns} spawns · ${s.wavesLaunched} custom waves · achievements ${gs?.creativeSettings?.enableAchievements ? 'ON' : 'OFF'}`;
   }
 
@@ -87,21 +94,32 @@ const CreativeMode = (() => {
     const el = document.getElementById('creative-replay-status');
     if (!el) return;
     const r = gs?.replayInfo;
-    if (!r) { el.textContent = ''; return; }
-    const stress = r.stress?.active ? ` · Horde ${r.stress.type} (${gs.enemyCount || 0}/${r.stress.max})` : '';
+    if (!r) {
+      el.textContent = '';
+      return;
+    }
+    const stress = r.stress?.active
+      ? ` · Horde ${r.stress.type} (${gs.enemyCount || 0}/${r.stress.max})`
+      : '';
     el.textContent = `${r.recording ? '● REC' : r.replayPlaying ? '▶ REPLAY' : '○'} ${r.frameCount} frames @ ${r.frameIndex}${stress}`;
   }
 
   function renderPresetButtons() {
     const row = document.getElementById('creative-preset-row');
     if (!row || typeof CreativeTools === 'undefined') return;
-    row.innerHTML = CreativeTools.getUnitPresets().map(p =>
-      `<button type="button" class="creative-btn creative-preset-btn" data-preset="${p.id}">${p.label}</button>`
-    ).join('');
-    row.querySelectorAll('.creative-preset-btn').forEach(btn => {
+    row.innerHTML = CreativeTools.getUnitPresets()
+      .map(
+        (p) =>
+          `<button type="button" class="creative-btn creative-preset-btn" data-preset="${p.id}">${p.label}</button>`
+      )
+      .join('');
+    row.querySelectorAll('.creative-preset-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const u = Game.getUnitById?.(Game.getState()?.selectedUnitId);
-        if (!u) { Game.showMessage?.('Select a unit first.'); return; }
+        if (!u) {
+          Game.showMessage?.('Select a unit first.');
+          return;
+        }
         CreativeTools.applyUnitPreset(btn.dataset.preset, u);
         UI.updateHUD(true);
       });
@@ -116,8 +134,12 @@ const CreativeMode = (() => {
     document.getElementById('creative-instant-build')?.toggleAttribute('checked', !!s.instantBuild);
     document.getElementById('creative-unlock-all')?.toggleAttribute('checked', !!s.unlockAll);
     document.getElementById('creative-academy-off')?.toggleAttribute('checked', !!s.academyDeploy);
-    document.getElementById('creative-campaign-rules')?.toggleAttribute('checked', !!s.useCampaignRules);
-    document.getElementById('creative-enable-ach')?.toggleAttribute('checked', !!s.enableAchievements);
+    document
+      .getElementById('creative-campaign-rules')
+      ?.toggleAttribute('checked', !!s.useCampaignRules);
+    document
+      .getElementById('creative-enable-ach')
+      ?.toggleAttribute('checked', !!s.enableAchievements);
     const waveInput = document.getElementById('creative-wave-input');
     if (waveInput && document.activeElement !== waveInput) waveInput.value = String(gs?.wave ?? 0);
     renderSelectedUnit(gs);
@@ -133,9 +155,11 @@ const CreativeMode = (() => {
     if (panel) panel.style.display = show && panelOpen ? '' : 'none';
     if (toggle) toggle.style.display = show ? '' : 'none';
     if (hint && show) {
-      hint.textContent = 'CREATIVE LAB — P panel · F3 perf · spawn tools · wave composer · scenarios';
+      hint.textContent =
+        'CREATIVE LAB — P panel · Level Editor · spawn tools · wave composer · scenarios';
     } else if (hint && !show) {
-      hint.textContent = 'Day = assault · Night = prep (+35% build) · Drag map · Scroll zoom · Wave 100: Academy · Wave 200: Enemy settlements';
+      hint.textContent =
+        'Day = assault · Night = prep (+35% build) · Drag map · Scroll zoom · Wave 100: Academy · Wave 200: Enemy settlements';
     }
   }
 
@@ -160,10 +184,15 @@ const CreativeMode = (() => {
 
   function copyToClipboard(text) {
     if (navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(() => Game.showMessage?.('Copied to clipboard.', 140));
+      navigator.clipboard
+        .writeText(text)
+        .then(() => Game.showMessage?.('Copied to clipboard.', 140));
     } else {
       const ta = document.getElementById('creative-import-area');
-      if (ta) { ta.value = text; ta.select(); }
+      if (ta) {
+        ta.value = text;
+        ta.select();
+      }
       Game.showMessage?.('JSON placed in import box.', 140);
     }
   }
@@ -182,19 +211,21 @@ const CreativeMode = (() => {
     const tplSel = document.getElementById('creative-template-select');
     if (tplSel && typeof CreativeTools !== 'undefined') {
       tplSel.innerHTML = CreativeTools.getTemplates()
-        .map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        .map((t) => `<option value="${t.id}">${t.name}</option>`)
+        .join('');
     }
     renderPresetButtons();
   }
 
   function init() {
+    if (typeof LevelEditor !== 'undefined') LevelEditor.init();
     populateSelects();
 
     document.getElementById('creative-start-btn')?.addEventListener('click', () => {
       AudioEngine.resume().then((ok) => {
         if (ok) AudioEngine.SFX.unlockChime();
         AudioEngine.SFX.click();
-        document.getElementById('menu-screen')?.classList.remove('active');
+        UI.hideMenusForPlay?.();
         Game.setDifficulty(UI.getSelectedDifficulty?.() || 'normal');
         Game.startCreative();
         Achievements?.tryUnlock('creative_sandbox');
@@ -384,13 +415,16 @@ const CreativeMode = (() => {
     });
     document.getElementById('creative-import-scenario')?.addEventListener('click', () => {
       const raw = document.getElementById('creative-import-area')?.value?.trim();
-      if (!raw) { Game.showMessage?.('Paste JSON in the import box.'); return; }
+      if (!raw) {
+        Game.showMessage?.('Paste JSON in the import box.');
+        return;
+      }
       if (raw.includes('"type":"replay"') || raw.includes('"frames"')) {
         const n = CreativeTools?.importReplay(raw);
         Game.showMessage?.(n ? `Replay loaded: ${n} frames.` : 'Replay import failed.');
       } else {
         const res = CreativeTools?.deserializeScenario(raw);
-        Game.showMessage?.(res?.ok ? `Imported: ${res.name}` : (res?.msg || 'Import failed.'));
+        Game.showMessage?.(res?.ok ? `Imported: ${res.name}` : res?.msg || 'Import failed.');
       }
       UI.updateHUD(true);
     });
@@ -429,19 +463,31 @@ const CreativeMode = (() => {
         toolEl.textContent = `👥 Armed: squad "${gs.creativeSpawnType}" — click map`;
       }
     }
-    document.getElementById('creative-arm-enemy')?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_enemy');
-    document.getElementById('creative-arm-enemy-building')?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_enemy_building');
-    document.getElementById('creative-arm-ally')?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_player');
-    document.getElementById('creative-arm-ally-build')?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_player_building');
-    document.getElementById('creative-arm-squad')?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_squad');
+    document
+      .getElementById('creative-arm-enemy')
+      ?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_enemy');
+    document
+      .getElementById('creative-arm-enemy-building')
+      ?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_enemy_building');
+    document
+      .getElementById('creative-arm-ally')
+      ?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_player');
+    document
+      .getElementById('creative-arm-ally-build')
+      ?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_player_building');
+    document
+      .getElementById('creative-arm-squad')
+      ?.classList.toggle('armed-tool', gs.creativeTool === 'spawn_squad');
     const masteryHint = document.getElementById('creative-mastery-hint');
     if (masteryHint) {
       const skins = gs.creativeFactionSkins?.length || 0;
       const titles = Object.keys(gs.factionMasteryTitles || {}).length;
-      masteryHint.textContent = skins || titles
-        ? `Faction mastery: ${titles} title(s) · ${skins} Creative skin(s) earned`
-        : 'Earn faction mastery (tier 3 titles, tier 4 Creative skins) in campaign runs';
+      masteryHint.textContent =
+        skins || titles
+          ? `Faction mastery: ${titles} title(s) · ${skins} Creative skin(s) earned`
+          : 'Earn faction mastery (tier 3 titles, tier 4 Creative skins) in campaign runs';
     }
+    if (typeof LevelEditor !== 'undefined') LevelEditor.onHudUpdate(gs);
     syncToggles(gs);
   }
 

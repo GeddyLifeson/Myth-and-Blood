@@ -1,382 +1,171 @@
 {
-  "runs": 103,
-  "elapsedSec": 883.5,
-  "bestWave": 41,
-  "avgWave": 8,
-  "avgUpdateMs": 0.16,
-  "reached1000": [],
+  "runs": 13,
+  "elapsedSec": 676.3,
+  "bestWave": 1000,
+  "avgWave": 808.5,
+  "avgUpdateMs": 6.02,
+  "reached1000": [
+    {
+      "runId": 200,
+      "name": "marathon_hunt_flip",
+      "wave": 1000
+    },
+    {
+      "runId": 201,
+      "name": "marathon_wwe_cheat",
+      "wave": 1000
+    },
+    {
+      "runId": 202,
+      "name": "marathon_doom_cheat",
+      "wave": 1000
+    }
+  ],
   "issueCounts": {
-    "DOUBLE_TP": 41,
-    "TP_SPIKE": 2
+    "SLOW_UPDATE": 3
   },
   "issues": [
     {
-      "runId": 15,
-      "code": "DOUBLE_TP",
-      "gain": 1007,
-      "name": "iddqd"
+      "runId": 5,
+      "code": "SLOW_UPDATE",
+      "ms": 8.56,
+      "name": "spy_steal"
     },
     {
-      "runId": 15,
-      "code": "DOUBLE_TP",
-      "gain": 508,
-      "name": "iddqd"
+      "runId": 7,
+      "code": "SLOW_UPDATE",
+      "ms": 9.26,
+      "name": "rally_spam"
     },
     {
-      "runId": 15,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "iddqd"
-    },
-    {
-      "runId": 15,
-      "code": "DOUBLE_TP",
-      "gain": 509,
-      "name": "iddqd"
-    },
-    {
-      "runId": 15,
-      "code": "DOUBLE_TP",
-      "gain": 1011,
-      "name": "iddqd"
-    },
-    {
-      "runId": 15,
-      "code": "TP_SPIKE",
-      "delta": 500,
-      "name": "iddqd"
-    },
-    {
-      "runId": 16,
-      "code": "DOUBLE_TP",
-      "gain": 1012,
-      "name": "rosebud"
-    },
-    {
-      "runId": 16,
-      "code": "DOUBLE_TP",
-      "gain": 1014,
-      "name": "rosebud"
-    },
-    {
-      "runId": 16,
-      "code": "DOUBLE_TP",
-      "gain": 1014,
-      "name": "rosebud"
-    },
-    {
-      "runId": 16,
-      "code": "DOUBLE_TP",
-      "gain": 1016,
-      "name": "rosebud"
-    },
-    {
-      "runId": 36,
-      "code": "DOUBLE_TP",
-      "gain": 512,
-      "name": "iddqd"
-    },
-    {
-      "runId": 36,
-      "code": "DOUBLE_TP",
-      "gain": 1013,
-      "name": "iddqd"
-    },
-    {
-      "runId": 36,
-      "code": "DOUBLE_TP",
-      "gain": 1014,
-      "name": "iddqd"
-    },
-    {
-      "runId": 36,
-      "code": "DOUBLE_TP",
-      "gain": 514,
-      "name": "iddqd"
-    },
-    {
-      "runId": 36,
-      "code": "DOUBLE_TP",
-      "gain": 1016,
-      "name": "iddqd"
-    },
-    {
-      "runId": 37,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "rosebud"
-    },
-    {
-      "runId": 37,
-      "code": "DOUBLE_TP",
-      "gain": 1010,
-      "name": "rosebud"
-    },
-    {
-      "runId": 37,
-      "code": "DOUBLE_TP",
-      "gain": 1011,
-      "name": "rosebud"
-    },
-    {
-      "runId": 37,
-      "code": "DOUBLE_TP",
-      "gain": 2013,
-      "name": "rosebud"
-    },
-    {
-      "runId": 57,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "iddqd"
-    },
-    {
-      "runId": 57,
-      "code": "DOUBLE_TP",
-      "gain": 510,
-      "name": "iddqd"
-    },
-    {
-      "runId": 57,
-      "code": "DOUBLE_TP",
-      "gain": 1011,
-      "name": "iddqd"
-    },
-    {
-      "runId": 57,
-      "code": "DOUBLE_TP",
-      "gain": 511,
-      "name": "iddqd"
-    },
-    {
-      "runId": 57,
-      "code": "DOUBLE_TP",
-      "gain": 1513,
-      "name": "iddqd"
-    },
-    {
-      "runId": 58,
-      "code": "DOUBLE_TP",
-      "gain": 1008,
-      "name": "rosebud"
-    },
-    {
-      "runId": 58,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "rosebud"
-    },
-    {
-      "runId": 58,
-      "code": "DOUBLE_TP",
-      "gain": 1010,
-      "name": "rosebud"
-    },
-    {
-      "runId": 58,
-      "code": "DOUBLE_TP",
-      "gain": 2012,
-      "name": "rosebud"
-    },
-    {
-      "runId": 78,
-      "code": "DOUBLE_TP",
-      "gain": 508,
-      "name": "iddqd"
-    },
-    {
-      "runId": 78,
-      "code": "TP_SPIKE",
-      "delta": 500,
-      "name": "iddqd"
-    },
-    {
-      "runId": 78,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "iddqd"
-    },
-    {
-      "runId": 78,
-      "code": "DOUBLE_TP",
-      "gain": 1010,
-      "name": "iddqd"
-    },
-    {
-      "runId": 78,
-      "code": "DOUBLE_TP",
-      "gain": 510,
-      "name": "iddqd"
-    },
-    {
-      "runId": 78,
-      "code": "DOUBLE_TP",
-      "gain": 1012,
-      "name": "iddqd"
-    },
-    {
-      "runId": 79,
-      "code": "DOUBLE_TP",
-      "gain": 1007,
-      "name": "rosebud"
-    },
-    {
-      "runId": 79,
-      "code": "DOUBLE_TP",
-      "gain": 1008,
-      "name": "rosebud"
-    },
-    {
-      "runId": 79,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "rosebud"
-    },
-    {
-      "runId": 79,
-      "code": "DOUBLE_TP",
-      "gain": 2011,
-      "name": "rosebud"
-    },
-    {
-      "runId": 99,
-      "code": "DOUBLE_TP",
-      "gain": 1007,
-      "name": "iddqd"
-    },
-    {
-      "runId": 99,
-      "code": "DOUBLE_TP",
-      "gain": 508,
-      "name": "iddqd"
-    },
-    {
-      "runId": 99,
-      "code": "DOUBLE_TP",
-      "gain": 1009,
-      "name": "iddqd"
-    },
-    {
-      "runId": 99,
-      "code": "DOUBLE_TP",
-      "gain": 509,
-      "name": "iddqd"
-    },
-    {
-      "runId": 99,
-      "code": "DOUBLE_TP",
-      "gain": 1011,
-      "name": "iddqd"
+      "runId": 9,
+      "code": "SLOW_UPDATE",
+      "ms": 8.92,
+      "name": "deploy_night"
     }
   ],
   "topRuns": [
     {
       "runId": 200,
       "name": "marathon_hunt_flip",
-      "maxWave": 41,
+      "maxWave": 1000,
       "issues": [],
-      "reached1000": false,
-      "nights": 40,
-      "avgUpdateMs": 0.27
+      "reached1000": true,
+      "nights": 999,
+      "avgUpdateMs": 0.54
     },
     {
       "runId": 201,
       "name": "marathon_wwe_cheat",
-      "maxWave": 39,
+      "maxWave": 1000,
       "issues": [],
-      "reached1000": false,
-      "nights": 38,
-      "avgUpdateMs": 0.29
+      "reached1000": true,
+      "nights": 999,
+      "avgUpdateMs": 0.47
     },
     {
       "runId": 202,
       "name": "marathon_doom_cheat",
-      "maxWave": 39,
+      "maxWave": 1000,
       "issues": [],
-      "reached1000": false,
-      "nights": 38,
-      "avgUpdateMs": 0.33
-    },
-    {
-      "runId": 68,
-      "name": "spy_steal",
-      "maxWave": 8,
-      "issues": [],
-      "reached1000": false,
-      "nights": 7,
-      "avgUpdateMs": 0.14
+      "reached1000": true,
+      "nights": 999,
+      "avgUpdateMs": 0.43
     },
     {
       "runId": 0,
       "name": "begin_day_spam",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.15
+      "nights": 750,
+      "avgUpdateMs": 6.26
     },
     {
       "runId": 1,
       "name": "begin_day_early",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.14
+      "nights": 750,
+      "avgUpdateMs": 7.87
     },
     {
       "runId": 2,
       "name": "pause_at_dusk",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.09
+      "nights": 750,
+      "avgUpdateMs": 6.25
     },
     {
       "runId": 3,
       "name": "levy_spam",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.17
+      "nights": 750,
+      "avgUpdateMs": 7.13
     },
     {
       "runId": 4,
       "name": "decree_spam",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.13
+      "nights": 750,
+      "avgUpdateMs": 7.35
     },
     {
       "runId": 5,
       "name": "spy_steal",
-      "maxWave": 7,
-      "issues": [],
+      "maxWave": 751,
+      "issues": [
+        {
+          "runId": 5,
+          "code": "SLOW_UPDATE",
+          "ms": 8.56,
+          "name": "spy_steal"
+        }
+      ],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.15
+      "nights": 750,
+      "avgUpdateMs": 8.56
     },
     {
       "runId": 6,
       "name": "spy_scout",
-      "maxWave": 7,
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.16
+      "nights": 750,
+      "avgUpdateMs": 7.28
     },
     {
       "runId": 7,
       "name": "rally_spam",
-      "maxWave": 7,
+      "maxWave": 751,
+      "issues": [
+        {
+          "runId": 7,
+          "code": "SLOW_UPDATE",
+          "ms": 9.26,
+          "name": "rally_spam"
+        }
+      ],
+      "reached1000": false,
+      "nights": 750,
+      "avgUpdateMs": 9.26
+    },
+    {
+      "runId": 8,
+      "name": "tp_burst",
+      "maxWave": 751,
       "issues": [],
       "reached1000": false,
-      "nights": 6,
-      "avgUpdateMs": 0.19
+      "nights": 750,
+      "avgUpdateMs": 7.94
     }
   ]
 }

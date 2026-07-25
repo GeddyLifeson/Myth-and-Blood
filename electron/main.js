@@ -1,8 +1,33 @@
 const { app, BrowserWindow, ipcMain, screen } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
-const INDEX_PATH = path.join(__dirname, '..', 'index.html');
 const PRELOAD_PATH = path.join(__dirname, 'preload.js');
+
+function resolveIndexPath() {
+  const distIndex = path.join(__dirname, '..', 'dist', 'index.html');
+  const devIndex = path.join(__dirname, '..', 'index.html');
+  if (app.isPackaged && fs.existsSync(distIndex)) return distIndex;
+  if (process.env.MB_USE_DIST === '1' && fs.existsSync(distIndex)) return distIndex;
+  return devIndex;
+}
+
+let INDEX_PATH = resolveIndexPath();
+
+function errorLogDir() {
+  return path.join(app.getPath('userData'), 'logs');
+}
+
+function appendErrorLogFile(name, payload) {
+  try {
+    const dir = errorLogDir();
+    fs.mkdirSync(dir, { recursive: true });
+    const line = typeof payload === 'string' ? payload : JSON.stringify(payload);
+    fs.appendFileSync(path.join(dir, name), `${line}\n`, 'utf8');
+  } catch (err) {
+    console.error('appendErrorLogFile failed:', err.message);
+  }
+}
 
 const DEFAULT_WIDTH = 1280;
 const DEFAULT_HEIGHT = 800;
@@ -70,9 +95,8 @@ function workAreaBounds(win) {
     let display;
     if (win && !win.isDestroyed()) {
       const b = sanitizeBounds(win.getBounds());
-      display = b.width > 0 && b.height > 0
-        ? screen.getDisplayMatching(b)
-        : screen.getPrimaryDisplay();
+      display =
+        b.width > 0 && b.height > 0 ? screen.getDisplayMatching(b) : screen.getPrimaryDisplay();
     } else {
       display = screen.getPrimaryDisplay();
     }
@@ -139,6 +163,17 @@ function createWindow(mode = 'windowed') {
   hasFrame = windowMode !== 'borderless';
   mainWindow = new BrowserWindow(buildOptions(windowMode, savedBounds));
   attachWindowHandlers(mainWindow);
+  mainWindow.webContents.on('render-process-gone', (_event, details) => {
+    appendErrorLogFile('render-crash.log', {
+      at: Date.now(),
+      reason: details.reason,
+      exitCode: details.exitCode,
+    });
+  });
+  mainWindow.webContents.on('unresponsive', () => {
+    appendErrorLogFile('renderer.log', { at: Date.now(), level: 'warn', message: 'Renderer unresponsive' });
+  });
+  INDEX_PATH = resolveIndexPath();
   mainWindow.loadFile(INDEX_PATH);
   mainWindow.once('ready-to-show', () => {
     if (!mainWindow || mainWindow.isDestroyed()) return;
@@ -193,6 +228,7 @@ function recreateWindow(mode) {
     isSwitchingMode = false;
   });
 
+  INDEX_PATH = resolveIndexPath();
   next.loadFile(INDEX_PATH);
   return windowMode;
 }
@@ -210,8 +246,7 @@ function applyWindowMode(mode) {
   captureBounds();
 
   const needsRecreate =
-    (target === 'borderless' && hasFrame) ||
-    (target === 'windowed' && !hasFrame);
+    (target === 'borderless' && hasFrame) || (target === 'windowed' && !hasFrame);
 
   if (needsRecreate) {
     recreateWindow(target);
@@ -241,6 +276,21 @@ ipcMain.handle('window:set-mode', (_event, mode) => {
 ipcMain.handle('app:quit', () => {
   app.quit();
   return true;
+});
+ipcMain.handle('error:write-log', (_event, entry) => {
+  appendErrorLogFile('renderer.log', entry);
+  return true;
+});
+ipcMain.handle('error:get-log-dir', () => errorLogDir());
+
+process.on('uncaughtException', (err) => {
+  appendErrorLogFile('main-crash.log', {
+    at: Date.now(),
+    level: 'fatal',
+    message: err?.message || String(err),
+    stack: err?.stack || '',
+  });
+  console.error('Main process uncaughtException:', err);
 });
 
 app.whenReady().then(() => createWindow('windowed'));

@@ -3,36 +3,37 @@
  * MnB2-style: rotatable unit markers on a flat battlefield.
  */
 const SpriteGen = (() => {
-  const cache = {};
+  const CACHE_MAX = 768;
+  const cache = new Map();
   let battlefieldCache = null;
   let battlefieldCacheKey = '';
 
   const UNIT_STYLE = {
-    footman:   { body: '#5070a8', accent: '#c0c8e0', mark: '#8090c0', size: 9 },
-    archer:    { body: '#408050', accent: '#80c080', mark: '#8a6030', size: 8 },
-    mage:      { body: '#5030a0', accent: '#a080ff', mark: '#ffe040', size: 8 },
-    cavalry:   { body: '#a08040', accent: '#e0c060', mark: '#6a4020', size: 11 },
-    healer:    { body: '#3d8a62', accent: '#d8f8e8', mark: '#40c080', size: 8 },
-    orc:       { body: '#3a6830', accent: '#5a9850', mark: '#c04040', size: 10 },
-    goblin:    { body: '#506830', accent: '#709040', mark: '#802020', size: 7 },
-    dark_knight:{ body: '#2a1838', accent: '#6040a0', mark: '#c080ff', size: 11 },
-    orc_archer:{ body: '#3a5830', accent: '#5a8040', mark: '#8a5020', size: 8 },
-    builder:   { body: '#8a6030', accent: '#c0a060', mark: '#604020', size: 9 },
-    courier:   { body: '#a07040', accent: '#e0c080', mark: '#f0e040', size: 8 },
-    sapper:    { body: '#506070', accent: '#8090a0', mark: '#ff6020', size: 8 },
-    knight:    { body: '#7080a8', accent: '#c0d0e8', mark: '#e0c040', size: 10 },
-    general:   { body: '#4a3050', accent: '#c0a040', mark: '#ffd700', size: 11 },
-    scout:     { body: '#607848', accent: '#a0c080', mark: '#405830', size: 8 },
-    bard:      { body: '#704878', accent: '#c090d0', mark: '#ffd700', size: 8 },
-    ballista:  { body: '#585858', accent: '#909090', mark: '#c06030', size: 10 },
-    pikeman:   { body: '#486878', accent: '#80a0b0', mark: '#c0c0c0', size: 9 },
-    troll:     { body: '#4a5838', accent: '#6a7850', mark: '#3a2818', size: 12 },
+    footman: { body: '#5070a8', accent: '#c0c8e0', mark: '#8090c0', size: 9 },
+    archer: { body: '#408050', accent: '#80c080', mark: '#8a6030', size: 8 },
+    mage: { body: '#5030a0', accent: '#a080ff', mark: '#ffe040', size: 8 },
+    cavalry: { body: '#a08040', accent: '#e0c060', mark: '#6a4020', size: 11 },
+    healer: { body: '#3d8a62', accent: '#d8f8e8', mark: '#40c080', size: 8 },
+    orc: { body: '#3a6830', accent: '#5a9850', mark: '#c04040', size: 10 },
+    goblin: { body: '#506830', accent: '#709040', mark: '#802020', size: 7 },
+    dark_knight: { body: '#2a1838', accent: '#6040a0', mark: '#c080ff', size: 11 },
+    orc_archer: { body: '#3a5830', accent: '#5a8040', mark: '#8a5020', size: 8 },
+    builder: { body: '#8a6030', accent: '#c0a060', mark: '#604020', size: 9 },
+    courier: { body: '#a07040', accent: '#e0c080', mark: '#f0e040', size: 8 },
+    sapper: { body: '#506070', accent: '#8090a0', mark: '#ff6020', size: 8 },
+    knight: { body: '#7080a8', accent: '#c0d0e8', mark: '#e0c040', size: 10 },
+    general: { body: '#4a3050', accent: '#c0a040', mark: '#ffd700', size: 11 },
+    scout: { body: '#607848', accent: '#a0c080', mark: '#405830', size: 8 },
+    bard: { body: '#704878', accent: '#c090d0', mark: '#ffd700', size: 8 },
+    ballista: { body: '#585858', accent: '#909090', mark: '#c06030', size: 10 },
+    pikeman: { body: '#486878', accent: '#80a0b0', mark: '#c0c0c0', size: 9 },
+    troll: { body: '#4a5838', accent: '#6a7850', mark: '#3a2818', size: 12 },
     berserker: { body: '#6a3030', accent: '#a05050', mark: '#802020', size: 11 },
-    assassin:  { body: '#383848', accent: '#606078', mark: '#c04060', size: 8 },
-    necromancer:{ body: '#302848', accent: '#6040a0', mark: '#80ff80', size: 9 },
-    shaman:    { body: '#485838', accent: '#70a060', mark: '#e0c040', size: 8 },
-    warg_rider:{ body: '#5a4830', accent: '#8a6840', mark: '#4a3020', size: 10 },
-    harpy:     { body: '#506070', accent: '#90b0c0', mark: '#c0a040', size: 8 },
+    assassin: { body: '#383848', accent: '#606078', mark: '#c04060', size: 8 },
+    necromancer: { body: '#302848', accent: '#6040a0', mark: '#80ff80', size: 9 },
+    shaman: { body: '#485838', accent: '#70a060', mark: '#e0c040', size: 8 },
+    warg_rider: { body: '#5a4830', accent: '#8a6840', mark: '#4a3020', size: 10 },
+    harpy: { body: '#506070', accent: '#90b0c0', mark: '#c0a040', size: 8 },
     sky_drake: { body: '#405878', accent: '#70a0d0', mark: '#e0e0ff', size: 11 },
     abomination: { body: '#5a2848', accent: '#904070', mark: '#ff4060', size: 16 },
     behemoth: { body: '#3a4828', accent: '#5a6838', mark: '#ff6020', size: 18 },
@@ -49,9 +50,47 @@ const SpriteGen = (() => {
     boss_rotfather: { body: '#4a2038', accent: '#803060', mark: '#ff3060', size: 18 },
     boss_volk: { body: '#382828', accent: '#684040', mark: '#ffd040', size: 20 },
     boss_malachar: { body: '#281830', accent: '#503070', mark: '#ff2080', size: 22 },
+    doomslayer_hero: { body: '#3a2818', accent: '#6080a0', mark: '#40c0ff', size: 11 },
+    dark_mage: { body: '#281838', accent: '#6040a0', mark: '#ff4080', size: 8 },
+    goblin_sapper: { body: '#506830', accent: '#ff6020', mark: '#802020', size: 7 },
+    goblin_engineer: { body: '#4a6030', accent: '#90b040', mark: '#c0a040', size: 7 },
+    goblin_burrower: { body: '#485828', accent: '#708838', mark: '#604020', size: 7 },
+    bone_summoner: { body: '#383028', accent: '#a0a090', mark: '#80ff80', size: 9 },
+    plague_rat: { body: '#4a4838', accent: '#706858', mark: '#80c040', size: 6 },
+    hellbound_legionnaire: { body: '#3a2838', accent: '#7040a0', mark: '#ff4060', size: 9 },
+    nightmare_strider: { body: '#302838', accent: '#604878', mark: '#c080ff', size: 10 },
+    dreadborn_champion: { body: '#281828', accent: '#503050', mark: '#ff2040', size: 12 },
+    warp_prophet: { body: '#203048', accent: '#4080c0', mark: '#80e0ff', size: 9 },
+    grim_revenant: { body: '#283030', accent: '#507878', mark: '#a0ffff', size: 9 },
+    umbral_stalker: { body: '#181820', accent: '#303040', mark: '#8040c0', size: 8 },
+    hellmortar_pack: { body: '#403028', accent: '#806040', mark: '#ff6020', size: 10 },
+    siege_tower: { body: '#483828', accent: '#806040', mark: '#c06030', size: 14 },
+    war_chief: { body: '#2a1838', accent: '#c0a040', mark: '#ff4020', size: 12 },
+    cinderbound_juggernaut: { body: '#4a3020', accent: '#ff8040', mark: '#ff4020', size: 17 },
+    roster_ultimis: { body: '#704028', accent: '#c06030', mark: '#e0c040', size: 10 },
+    roster_primis: { body: '#805030', accent: '#d07040', mark: '#ffd700', size: 10 },
+    roster_halo: { body: '#406848', accent: '#60a060', mark: '#4080ff', size: 10 },
+    roster_gears: { body: '#506080', accent: '#8098b8', mark: '#c0a040', size: 10 },
+    roster_lotr: { body: '#405848', accent: '#70a080', mark: '#c0a040', size: 10 },
+    roster_baki: { body: '#603030', accent: '#a05050', mark: '#e0c0a0', size: 10 },
+    roster_jojo: { body: '#503070', accent: '#9060b0', mark: '#ffd700', size: 10 },
+    roster_fotns: { body: '#384868', accent: '#6090c0', mark: '#e0e0ff', size: 10 },
+    roster_dragonball: { body: '#e06040', accent: '#ffd080', mark: '#4080ff', size: 10 },
+    roster_imperium: { body: '#384858', accent: '#6080b0', mark: '#c04040', size: 10 },
+    roster_crystal: { body: '#5080c0', accent: '#a0d0f0', mark: '#c04060', size: 10 },
+    roster_warp: { body: '#402030', accent: '#8040a0', mark: '#ff4020', size: 10 },
+    roster_tes: { body: '#304860', accent: '#6080b0', mark: '#a06040', size: 10 },
+    roster_wwe: { body: '#302030', accent: '#c04040', mark: '#ffd700', size: 10 },
   };
 
-  const MONSTER_SPRITES = ['abomination', 'behemoth', 'iron_colossus', 'void_stalker', 'elder_wyrm'];
+  const MONSTER_SPRITES = [
+    'abomination',
+    'behemoth',
+    'iron_colossus',
+    'void_stalker',
+    'elder_wyrm',
+    'cinderbound_juggernaut',
+  ];
 
   const BOSS_ARCHETYPE = {
     boss_gorath: 'behemoth',
@@ -66,9 +105,123 @@ const SpriteGen = (() => {
     boss_malachar: 'behemoth',
   };
 
-  function drawMonsterUnit(ctx, type, team, frame, animState) {
-    const shape = type.startsWith('boss_') ? (BOSS_ARCHETYPE[type] || 'behemoth') : type;
-    const style = UNIT_STYLE[type] || UNIT_STYLE[shape] || UNIT_STYLE.behemoth;
+  function resolveUnitStyle(type, team, fallback = 'footman') {
+    const base = UNIT_STYLE[type] || UNIT_STYLE[fallback];
+    if (team !== 'player' || typeof Cosmetics === 'undefined') return base;
+    return Cosmetics.applyUnitSkin(base);
+  }
+
+  function drawMinimalMarker(ctx, style, team, r) {
+    ctx.fillStyle = style.body;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = teamStrokeAlt(team);
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+  }
+
+  function drawLowMarker(ctx, style, team, rotation, r, animState = 'idle') {
+    ctx.fillStyle = 'rgba(0,0,0,0.28)';
+    ctx.beginPath();
+    ctx.ellipse(0, 2, r * 0.9, r * 0.38, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = style.body;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = teamStrokeAlt(team);
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, 0, r + 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.save();
+    ctx.rotate(((rotation + 90) * Math.PI) / 180);
+    ctx.fillStyle = style.mark;
+    ctx.beginPath();
+    ctx.moveTo(0, -r - 2);
+    ctx.lineTo(-3, -r + 4);
+    ctx.lineTo(3, -r + 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+    if (animState === 'death') ctx.globalAlpha = 0.55;
+  }
+
+  function drawMediumUnit(ctx, type, rotation, team, frame, animState) {
+    if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {
+      const style = resolveUnitStyle(type, team, 'behemoth');
+      const r = style.size * 0.9;
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(0, 3, r, r * 0.45, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.body;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r, r * 0.82, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = teamStrokeAlt(team);
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.arc(-3, -2, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(3, -2, 2, 0, Math.PI * 2);
+      ctx.fill();
+      if (animState === 'death') ctx.globalAlpha = 0.55;
+      return;
+    }
+    const style = resolveUnitStyle(type, team, 'footman');
+    const r = style.size;
+    const walkBob = animState === 'walk' ? Math.sin(frame * 1.5) * 1.2 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(0, 2, r, r * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = style.body;
+    ctx.beginPath();
+    ctx.arc(0, walkBob * 0.4, r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = teamStrokeAlt(team);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(0, walkBob * 0.4, r + 1.5, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.save();
+    ctx.rotate(((rotation + 90) * Math.PI) / 180);
+    ctx.fillStyle = style.mark;
+    ctx.fillRect(-2, -r - 8, 4, 8);
+    ctx.restore();
+    ctx.fillStyle = team === 'player' ? '#d4a878' : '#8060a0';
+    ctx.beginPath();
+    ctx.arc(0, walkBob * 0.4 - 1, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    if (animState === 'death') ctx.globalAlpha = 0.55;
+  }
+
+  function drawMonsterUnit(ctx, type, team, frame, animState, lod = 0) {
+    if (lod >= 3) {
+      const style = resolveUnitStyle(type, team, 'behemoth');
+      drawMinimalMarker(ctx, style, team, style.size * 0.82);
+      return;
+    }
+    if (lod >= 2) {
+      const style = resolveUnitStyle(type, team, 'behemoth');
+      drawLowMarker(ctx, style, team, 90, style.size * 0.88, animState);
+      return;
+    }
+    if (lod >= 1) {
+      drawMediumUnit(ctx, type, 90, team, frame, animState);
+      return;
+    }
+    const shape = type.startsWith('boss_')
+      ? BOSS_ARCHETYPE[type] || 'behemoth'
+      : type === 'cinderbound_juggernaut'
+        ? 'iron_colossus'
+        : type;
+    const style = resolveUnitStyle(type, team, shape in UNIT_STYLE ? shape : 'behemoth');
     const r = style.size;
     const walkBob = animState === 'walk' ? Math.sin(frame * 1.2) * 2.5 : 0;
     const pulse = Math.sin(frame * 0.25) * 0.5 + 0.5;
@@ -93,11 +246,19 @@ const SpriteGen = (() => {
         ctx.fill();
       }
       ctx.fillStyle = style.mark;
-      ctx.beginPath(); ctx.arc(-5, -2 + walkBob, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(5, -2 + walkBob, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-5, -2 + walkBob, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(5, -2 + walkBob, 2.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#2a1810';
-      ctx.beginPath(); ctx.arc(-r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2);
+      ctx.fill();
     } else if (shape === 'iron_colossus') {
       ctx.fillStyle = style.body;
       ctx.fillRect(-r * 0.85, -r * 0.9 + walkBob, r * 1.7, r * 1.8);
@@ -106,8 +267,12 @@ const SpriteGen = (() => {
       ctx.strokeRect(-r * 0.85, -r * 0.9 + walkBob, r * 1.7, r * 1.8);
       ctx.fillStyle = style.mark;
       for (let i = -1; i <= 1; i++) {
-        ctx.beginPath(); ctx.arc(i * 8, -r * 0.5 + walkBob, 2, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(i * 8, r * 0.3 + walkBob, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath();
+        ctx.arc(i * 8, -r * 0.5 + walkBob, 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(i * 8, r * 0.3 + walkBob, 2, 0, Math.PI * 2);
+        ctx.fill();
       }
       ctx.fillStyle = `rgba(255,120,40,${0.5 + pulse * 0.4})`;
       ctx.fillRect(-6, -2 + walkBob, 12, 10);
@@ -136,8 +301,12 @@ const SpriteGen = (() => {
         ctx.fill();
       }
       ctx.fillStyle = '#ff4040';
-      ctx.beginPath(); ctx.arc(-3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2);
+      ctx.fill();
     } else if (shape === 'abomination') {
       const wobble = Math.sin(frame * 0.8) * 2;
       ctx.fillStyle = style.body;
@@ -148,7 +317,13 @@ const SpriteGen = (() => {
       ctx.ellipse(6 - wobble * 0.2, walkBob + 2, r * 0.7, r * 0.65, 0.15, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = style.mark;
-      for (const [ex, ey] of [[-6, -2], [0, -4], [7, -1], [-3, 4], [5, 5]]) {
+      for (const [ex, ey] of [
+        [-6, -2],
+        [0, -4],
+        [7, -1],
+        [-3, 4],
+        [5, 5],
+      ]) {
         ctx.beginPath();
         ctx.arc(ex + wobble * 0.2, ey + walkBob, 2 + pulse, 0, Math.PI * 2);
         ctx.fill();
@@ -172,8 +347,12 @@ const SpriteGen = (() => {
       ctx.arc(0, -r * 0.55 + walkBob, r * 0.5, Math.PI, 0);
       ctx.fill();
       ctx.fillStyle = style.mark;
-      ctx.beginPath(); ctx.arc(-4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.arc(4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(-4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.strokeStyle = style.accent;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -206,7 +385,7 @@ const SpriteGen = (() => {
         ctx.fill();
       }
     } else {
-      ctx.strokeStyle = team === 'player' ? '#4080ff' : '#ff2020';
+      ctx.strokeStyle = teamStroke(team);
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.ellipse(0, walkBob * 0.5, r + 4, r * 0.85 + 4, 0, 0, Math.PI * 2);
@@ -225,15 +404,80 @@ const SpriteGen = (() => {
       ctx.ellipse(0, 5, r * 1.2, r * 0.4, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 0.5;
+    } else {
+      ctx.globalAlpha = 1;
     }
   }
 
-  function drawUnitTopDown(ctx, type, rotation, team, frame = 0, animState = 'idle') {
-    if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {
-      drawMonsterUnit(ctx, type, team, frame, animState);
+  function drawSiegeTowerUnit(ctx, style, team, frame, animState, lod = 0) {
+    if (lod >= 3) {
+      drawMinimalMarker(ctx, style, team, style.size * 0.75);
       return;
     }
-    const style = UNIT_STYLE[type] || UNIT_STYLE.footman;
+    if (lod >= 2) {
+      drawLowMarker(ctx, style, team, 90, style.size * 0.85, animState);
+      return;
+    }
+    if (lod >= 1) {
+      const r = style.size;
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, r, r * 0.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.body;
+      ctx.fillRect(-r * 0.7, -r * 0.5, r * 1.4, r * 1.05);
+      ctx.strokeStyle = teamStrokeAlt(team);
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-r * 0.7, -r * 0.5, r * 1.4, r * 1.05);
+      return;
+    }
+    const r = style.size;
+    const walkBob = animState === 'walk' ? Math.sin(frame * 0.8) * 1.5 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.beginPath();
+    ctx.ellipse(0, 4, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = style.body;
+    ctx.fillRect(-r * 0.75, -r * 0.55 + walkBob, r * 1.5, r * 1.1);
+    ctx.fillStyle = style.accent;
+    ctx.fillRect(-r * 0.65, -r * 0.45 + walkBob, r * 1.3, r * 0.25);
+    for (const side of [-1, 1]) {
+      ctx.fillStyle = '#3a2818';
+      ctx.beginPath();
+      ctx.arc(side * r * 0.85, r * 0.45 + walkBob, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = teamStrokeAlt(team);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-r * 0.75, -r * 0.55 + walkBob, r * 1.5, r * 1.1);
+    ctx.fillStyle = style.mark;
+    ctx.fillRect(-3, -r * 0.2 + walkBob, 6, r * 0.5);
+  }
+
+  function drawUnitTopDown(ctx, type, rotation, team, frame = 0, animState = 'idle', lod = 0) {
+    if (lod >= 3) {
+      const style = resolveUnitStyle(type, team, 'footman');
+      drawMinimalMarker(ctx, style, team, style.size * 0.82);
+      return;
+    }
+    if (lod >= 2) {
+      const style = resolveUnitStyle(type, team, 'footman');
+      drawLowMarker(ctx, style, team, rotation, style.size, animState);
+      return;
+    }
+    if (lod >= 1) {
+      drawMediumUnit(ctx, type, rotation, team, frame, animState);
+      return;
+    }
+    if (type === 'siege_tower') {
+      drawSiegeTowerUnit(ctx, UNIT_STYLE.siege_tower, team, frame, animState, lod);
+      return;
+    }
+    if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {
+      drawMonsterUnit(ctx, type, team, frame, animState, lod);
+      return;
+    }
+    const style = resolveUnitStyle(type, team, 'footman');
     const r = style.size;
     const pulse = frame % 2 === 0 ? 0 : 1;
     const walkBob = animState === 'walk' ? Math.sin(frame * 1.5) * 2 : 0;
@@ -260,7 +504,7 @@ const SpriteGen = (() => {
     ctx.fill();
 
     // Team ring
-    ctx.strokeStyle = team === 'player' ? '#4080ff' : '#e04040';
+    ctx.strokeStyle = teamStrokeAlt(team);
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(0, walkBob * 0.5, r + 2, 0, Math.PI * 2);
@@ -268,7 +512,12 @@ const SpriteGen = (() => {
 
     // Attack glow
     if (animState === 'attack') {
-      ctx.fillStyle = team === 'player' ? 'rgba(255,220,100,0.35)' : 'rgba(255,80,60,0.35)';
+      ctx.fillStyle =
+        team === 'player'
+          ? 'rgba(255,220,100,0.35)'
+          : team === 'neutral'
+            ? 'rgba(200,160,64,0.35)'
+            : 'rgba(255,80,60,0.35)';
       ctx.beginPath();
       ctx.arc(0, 0, r + 6, 0, Math.PI * 2);
       ctx.fill();
@@ -276,7 +525,7 @@ const SpriteGen = (() => {
 
     // Direction + weapon
     ctx.save();
-    ctx.rotate((rotation + 90) * Math.PI / 180);
+    ctx.rotate(((rotation + 90) * Math.PI) / 180);
     ctx.translate(0, -attackLunge);
 
     ctx.fillStyle = style.accent;
@@ -289,7 +538,19 @@ const SpriteGen = (() => {
 
     // Weapon
     ctx.fillStyle = style.mark;
-    if (type === 'archer' || type === 'orc_archer') {
+    if (type === 'doomslayer_hero') {
+      ctx.fillStyle = '#6080a0';
+      ctx.fillRect(-5, -r - 10, 4, 12);
+      ctx.fillRect(1, -r - 10, 4, 12);
+      ctx.fillStyle = '#40c0ff';
+      ctx.fillRect(-4, -r - 12, 2, 4);
+      ctx.fillRect(2, -r - 12, 2, 4);
+    } else if (
+      type === 'archer' ||
+      type === 'orc_archer' ||
+      type === 'hellbound_legionnaire' ||
+      type === 'grim_revenant'
+    ) {
       ctx.fillRect(-1, -r - 14, 2, 14);
       ctx.fillStyle = '#c0a060';
       ctx.beginPath();
@@ -298,13 +559,56 @@ const SpriteGen = (() => {
       ctx.lineTo(3, -r - 10);
       ctx.closePath();
       ctx.fill();
-    } else if (type === 'mage') {
+    } else if (type === 'scout') {
+      ctx.fillStyle = '#405830';
+      ctx.fillRect(-1, -r - 12, 2, 12);
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 14);
+      ctx.lineTo(-3, -r - 8);
+      ctx.lineTo(3, -r - 8);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'bard') {
+      ctx.fillStyle = '#c090d0';
+      ctx.beginPath();
+      ctx.arc(0, -r - 8, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-1, -r - 14, 2, 6);
+    } else if (type === 'ballista' || type === 'hellmortar_pack') {
+      ctx.fillStyle = '#505050';
+      ctx.fillRect(-8, -2, 16, 4);
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-2, -r - 8, 4, 8);
+    } else if (type === 'pikeman') {
+      ctx.fillStyle = '#c0c0c0';
+      ctx.fillRect(-1, -r - 16, 2, 18);
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 18);
+      ctx.lineTo(-2, -r - 12);
+      ctx.lineTo(2, -r - 12);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type.startsWith('roster_')) {
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-2, -r - (animState === 'attack' ? 11 : 9), 4, animState === 'attack' ? 11 : 9);
+      ctx.fillStyle = style.accent;
+      ctx.fillRect(-5, -r - 4, 10, 3);
+    } else if (
+      type === 'mage' ||
+      type === 'dark_mage' ||
+      type === 'bone_summoner' ||
+      type === 'warp_prophet' ||
+      type === 'necromancer'
+    ) {
       ctx.fillStyle = pulse ? '#ffe080' : '#e0c040';
       ctx.fillRect(-1, -r - 12, 2, 12);
       ctx.beginPath();
       ctx.arc(0, -r - 14, 4, 0, Math.PI * 2);
       ctx.fill();
-    } else if (type === 'cavalry') {
+    } else if (type === 'cavalry' || type === 'warg_rider' || type === 'nightmare_strider') {
       ctx.fillStyle = '#6a4020';
       ctx.fillRect(-7, -2, 14, 5);
       ctx.fillStyle = style.mark;
@@ -334,9 +638,44 @@ const SpriteGen = (() => {
       ctx.fillRect(0, -3 + bob, 2, 10);
       ctx.fillRect(-5, 0 + bob, 10, 2);
     }
+    if (type === 'harpy' || type === 'sky_drake') {
+      ctx.fillStyle = style.accent;
+      for (const side of [-1, 1]) {
+        ctx.beginPath();
+        ctx.moveTo(side * 4, -2 + walkBob * 0.5);
+        ctx.lineTo(side * 12, -6 + walkBob * 0.5);
+        ctx.lineTo(side * 6, 2 + walkBob * 0.5);
+        ctx.closePath();
+        ctx.fill();
+      }
+    }
+    if (type === 'war_chief' || type === 'general') {
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 6 + walkBob * 0.5);
+      ctx.lineTo(-4, -r - 2 + walkBob * 0.5);
+      ctx.lineTo(4, -r - 2 + walkBob * 0.5);
+      ctx.closePath();
+      ctx.fill();
+    }
 
     // Head
-    ctx.fillStyle = team === 'player' ? '#d4a878' : (type === 'orc' || type === 'goblin' || type === 'orc_archer' ? '#5a9040' : '#8060a0');
+    const goblinLike =
+      type === 'orc' ||
+      type === 'goblin' ||
+      type === 'orc_archer' ||
+      type.startsWith('goblin_') ||
+      type === 'plague_rat' ||
+      type === 'umbral_stalker' ||
+      type === 'assassin';
+    ctx.fillStyle =
+      team === 'player'
+        ? type === 'doomslayer_hero'
+          ? '#c0a080'
+          : '#d4a878'
+        : goblinLike
+          ? '#5a9040'
+          : '#8060a0';
     ctx.beginPath();
     ctx.arc(0, walkBob * 0.5 - 1, 3, 0, Math.PI * 2);
     ctx.fill();
@@ -347,43 +686,83 @@ const SpriteGen = (() => {
       ctx.ellipse(0, 4, r + 2, r * 0.35, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.globalAlpha = 0.55;
+    } else {
+      ctx.globalAlpha = 1;
     }
   }
 
-  function getUnitCanvas(type, rotation, team, frame = 0, scale = 2, animState = 'idle') {
-    const rot = typeof GfxQuality !== 'undefined' ? GfxQuality.quantizeRotation(rotation) : Math.round(rotation);
-    const key = `${type}_${rot}_${team}_${frame}_${scale}_${animState}`;
-    if (cache[key]) return cache[key];
+  function getUnitCanvas(type, rotation, team, frame = 0, scale = 2, animState = 'idle', lod = 0) {
+    const lodLevel = Math.max(0, Math.min(3, lod | 0));
+    const rot =
+      typeof GfxQuality !== 'undefined'
+        ? GfxQuality.quantizeRotation(rotation)
+        : Math.round(rotation);
+    const qScale =
+      typeof GfxQuality !== 'undefined'
+        ? GfxQuality.quantizeScale(scale)
+        : Math.round(scale * 4) / 4;
+    const cacheFrame =
+      typeof SpriteLod !== 'undefined'
+        ? SpriteLod.cacheFrameForLod(lodLevel, frame, animState)
+        : lodLevel >= 2 && animState !== 'attack' && animState !== 'hurt' && animState !== 'death'
+          ? 0
+          : frame;
+    const cacheAnim =
+      typeof SpriteLod !== 'undefined'
+        ? SpriteLod.cacheAnimForLod(lodLevel, animState)
+        : lodLevel >= 2
+          ? 'idle'
+          : animState;
+    const key = `${type}_${rot}_${team}_${cacheFrame}_${qScale}_${cacheAnim}_l${lodLevel}`;
+    if (cache.has(key)) {
+      const hit = cache.get(key);
+      cache.delete(key);
+      cache.set(key, hit);
+      return hit;
+    }
 
-    const size = 48 * scale;
+    const size = 48 * qScale;
     const c = document.createElement('canvas');
     c.width = size;
     c.height = size;
     const ctx = c.getContext('2d');
     ctx.translate(size / 2, size / 2);
     ctx.imageSmoothingEnabled = false;
-    drawUnitTopDown(ctx, type, rot, team, frame, animState);
-    cache[key] = c;
+    drawUnitTopDown(ctx, type, rot, team, cacheFrame, cacheAnim, lodLevel);
+    ctx.globalAlpha = 1;
+    cache.set(key, c);
+    if (cache.size > CACHE_MAX) {
+      const oldest = cache.keys().next().value;
+      cache.delete(oldest);
+    }
     return c;
   }
 
-  function drawIcon(ctx, type) {
-    ctx.clearRect(0, 0, 32, 32);
+  function drawIcon(ctx, type, w = 32, h = 32) {
     ctx.save();
-    ctx.translate(16, 18);
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.globalAlpha = 1;
+    ctx.clearRect(0, 0, w, h);
+    ctx.translate(w / 2, h * 0.56);
     ctx.scale(0.9, 0.9);
     drawUnitTopDown(ctx, type, -90, 'player', 0);
+    ctx.globalAlpha = 1;
     ctx.restore();
   }
 
   function drawAbilityIcon(ctx, type) {
     ctx.clearRect(0, 0, 32, 32);
-    const cx = 16, cy = 16;
+    const cx = 16,
+      cy = 16;
     if (type === 'fireball' || type === 'meteor') {
       ctx.fillStyle = type === 'meteor' ? '#6a5040' : '#ff6020';
-      ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = type === 'meteor' ? '#ff8040' : '#ffe080';
-      ctx.beginPath(); ctx.arc(cx, cy, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+      ctx.fill();
       if (type === 'meteor') {
         ctx.strokeStyle = '#ff6020';
         ctx.lineWidth = 2;
@@ -396,12 +775,19 @@ const SpriteGen = (() => {
       if (type === 'frost_nova') {
         ctx.strokeStyle = '#a0d8ff';
         ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(cx, cy, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+        ctx.stroke();
       }
       ctx.fillStyle = type === 'frost_nova' ? '#d0f0ff' : '#ffe040';
       ctx.beginPath();
-      ctx.moveTo(cx + 4, cy - 10); ctx.lineTo(cx - 2, cy); ctx.lineTo(cx + 2, cy);
-      ctx.lineTo(cx - 4, cy + 10); ctx.lineTo(cx + 4, cy - 2); ctx.closePath(); ctx.fill();
+      ctx.moveTo(cx + 4, cy - 10);
+      ctx.lineTo(cx - 2, cy);
+      ctx.lineTo(cx + 2, cy);
+      ctx.lineTo(cx - 4, cy + 10);
+      ctx.lineTo(cx + 4, cy - 2);
+      ctx.closePath();
+      ctx.fill();
     } else if (type === 'heal' || type === 'heal_rain') {
       ctx.fillStyle = '#40e0a0';
       for (let i = -8; i <= 8; i += 4) {
@@ -428,7 +814,9 @@ const SpriteGen = (() => {
       ctx.fill();
     } else if (type === 'scout_flare') {
       ctx.fillStyle = '#ff4040';
-      ctx.beginPath(); ctx.arc(cx - 4, cy + 4, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(cx - 4, cy + 4, 3, 0, Math.PI * 2);
+      ctx.fill();
       ctx.strokeStyle = '#ffd700';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -448,18 +836,40 @@ const SpriteGen = (() => {
       ctx.fill();
       ctx.strokeStyle = '#a0c0e0';
       ctx.setLineDash([3, 3]);
-      ctx.beginPath(); ctx.arc(cx, cy, 11, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, 11, 0, Math.PI * 2);
+      ctx.stroke();
       ctx.setLineDash([]);
+    } else if (type === 'dispel') {
+      // Arcane purge — violet ring washing out blight.
+      ctx.strokeStyle = '#c090ff';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = '#e8d0ff';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 6, 0.2, Math.PI * 1.6);
+      ctx.stroke();
+      ctx.fillStyle = '#a070ff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(200,160,255,0.45)';
+      ctx.fillRect(cx - 7, cy + 5, 14, 2);
     }
   }
 
   function getBattlefieldCanvas(w, h, baseW = 400, baseH = 600) {
-    const key = `${w}x${h}_${baseW}x${baseH}`;
+    const safeW = Math.max(1, Math.floor(Number(w)) || 0);
+    const safeH = Math.max(1, Math.floor(Number(h)) || 0);
+    const key = `${safeW}x${safeH}_${baseW}x${baseH}`;
     if (battlefieldCache && battlefieldCacheKey === key) return battlefieldCache;
     const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-    drawBattlefield(c.getContext('2d'), w, h, baseW, baseH);
+    c.width = safeW;
+    c.height = safeH;
+    drawBattlefield(c.getContext('2d'), safeW, safeH, baseW, baseH);
     battlefieldCache = c;
     battlefieldCacheKey = key;
     return c;
@@ -471,11 +881,42 @@ const SpriteGen = (() => {
   }
 
   function prewarmCache() {
-    const types = ['footman', 'archer', 'mage', 'cavalry', 'healer', 'knight', 'sapper', 'general', 'orc', 'goblin', 'dark_knight'];
+    const types = [
+      'footman',
+      'archer',
+      'mage',
+      'cavalry',
+      'healer',
+      'knight',
+      'sapper',
+      'general',
+      'scout',
+      'bard',
+      'ballista',
+      'pikeman',
+      'builder',
+      'courier',
+      'doomslayer_hero',
+      'orc',
+      'goblin',
+      'dark_knight',
+      'orc_archer',
+      'troll',
+      'berserker',
+      'siege_tower',
+      'abomination',
+      'behemoth',
+      'war_chief',
+      'roster_ultimis',
+      'roster_halo',
+      'roster_jojo',
+      'roster_dragonball',
+      'roster_wwe',
+    ];
     const rots = [0, 90, 180, 270];
     for (const t of types) {
       for (const r of rots) {
-        for (const s of ['idle', 'walk', 'attack', 'death']) {
+        for (const s of ['idle', 'walk', 'attack']) {
           getUnitCanvas(t, r, 'player', 0, 1, s);
           getUnitCanvas(t, r, 'enemy', 0, 1, s);
         }
@@ -492,10 +933,16 @@ const SpriteGen = (() => {
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    const tier = Math.max(
-      Math.floor((w - baseW) / 90),
-      Math.floor((h - baseH) / 110),
-    );
+    for (let y = 0; y < h; y += 6) {
+      for (let x = 0; x < w; x += 6) {
+        const hash = (x * 73 + y * 997 + w * 3) % 100;
+        if (hash < 48) continue;
+        ctx.fillStyle = hash > 82 ? 'rgba(48,82,38,0.42)' : 'rgba(62,98,48,0.28)';
+        ctx.fillRect(x + (hash % 4), y + (hash % 3), 2, hash > 70 ? 3 : 2);
+      }
+    }
+
+    const tier = Math.max(Math.floor((w - baseW) / 90), Math.floor((h - baseH) / 110));
     if (tier > 0) {
       ctx.fillStyle = 'rgba(140,200,90,0.12)';
       if (h > baseH) ctx.fillRect(0, baseH - 8, w, h - baseH + 8);
@@ -523,28 +970,29 @@ const SpriteGen = (() => {
     ctx.strokeStyle = 'rgba(0,0,0,0.06)';
     ctx.lineWidth = 1;
     for (let x = 0; x < w; x += 20) {
-      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
     }
     for (let y = 0; y < h; y += 20) {
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
     }
 
-    ctx.fillStyle = 'rgba(60,40,30,0.3)';
-    ctx.fillRect(0, 0, w, 30);
+    ctx.fillStyle = 'rgba(60,40,30,0.22)';
+    ctx.fillRect(0, 0, w, 28);
     ctx.fillStyle = '#8a7060';
-    ctx.font = '11px Cinzel';
+    ctx.font = '10px Cinzel';
     ctx.textAlign = 'center';
-    ctx.fillText('— ENEMY LINES —', w / 2, 18);
-
-    ctx.fillStyle = 'rgba(40,60,80,0.25)';
-    ctx.fillRect(0, h - 50, w, 50);
-    ctx.fillStyle = '#6080a0';
-    ctx.fillText('— YOUR LINES —', w / 2, h - 18);
+    ctx.fillText('— FROM THE NORTH —', w / 2, 17);
   }
 
-  function drawAttackSideMarkers(ctx, w, h, sides, wave) {
+  function drawAttackSideMarkers(ctx, w, h, sides, wave, opts = {}) {
     if (typeof VisualPolish !== 'undefined') {
-      VisualPolish.drawMultiFrontIndicators(ctx, w, h, sides, wave || 0);
+      VisualPolish.drawMultiFrontIndicators(ctx, w, h, sides, wave || 0, opts);
       return;
     }
     if (!sides || sides.length <= 1) return;
@@ -585,6 +1033,36 @@ const SpriteGen = (() => {
     ctx.fill();
   }
 
+  function teamStroke(team) {
+    if (team === 'player') return '#4080ff';
+    if (team === 'neutral') return '#c0a040';
+    return '#ff2020';
+  }
+
+  function teamStrokeAlt(team) {
+    if (team === 'player') return '#4080ff';
+    if (team === 'neutral') return '#d0b050';
+    return '#e04040';
+  }
+
+  function drawNeutralDen(ctx, x, y, size = 18) {
+    const pulse = 0.85 + Math.sin(Date.now() * 0.003 + x) * 0.1;
+    ctx.fillStyle = `rgba(60, 44, 28, ${0.75 * pulse})`;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 4, size * 0.9, size * 0.45, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = `rgba(90, 68, 40, ${0.85 * pulse})`;
+    ctx.beginPath();
+    ctx.arc(x - size * 0.25, y - 2, size * 0.35, 0, Math.PI * 2);
+    ctx.arc(x + size * 0.2, y - 4, size * 0.28, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = `rgba(200, 160, 80, ${0.45 * pulse})`;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.ellipse(x, y + 5, size, size * 0.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
   function drawRock(ctx, x, y, size) {
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.beginPath();
@@ -600,10 +1078,167 @@ const SpriteGen = (() => {
     ctx.fill();
   }
 
+  function drawWallCoverArrow(ctx, x, y, facing, fillStyle) {
+    ctx.fillStyle = fillStyle;
+    ctx.beginPath();
+    switch (facing) {
+      case 'north':
+        ctx.moveTo(x, y - 18);
+        ctx.lineTo(x - 5, y - 11);
+        ctx.lineTo(x + 5, y - 11);
+        break;
+      case 'south':
+        ctx.moveTo(x, y + 12);
+        ctx.lineTo(x - 5, y + 5);
+        ctx.lineTo(x + 5, y + 5);
+        break;
+      case 'east':
+        ctx.moveTo(x + 18, y);
+        ctx.lineTo(x + 11, y - 5);
+        ctx.lineTo(x + 11, y + 5);
+        break;
+      case 'west':
+        ctx.moveTo(x - 18, y);
+        ctx.lineTo(x - 11, y - 5);
+        ctx.lineTo(x - 11, y + 5);
+        break;
+      default:
+        ctx.moveTo(x, y - 18);
+        ctx.lineTo(x - 5, y - 11);
+        ctx.lineTo(x + 5, y - 11);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawWallSegment(ctx, x, y, facing, opts = {}) {
+    const vertical = facing === 'east' || facing === 'west';
+    const stone = opts.stoneFill || '#6a6a68';
+    const cap = opts.capFill || '#8a8a88';
+    ctx.save();
+    if (opts.alpha != null) ctx.globalAlpha = opts.alpha;
+    ctx.translate(x, y);
+    if (vertical) ctx.rotate(Math.PI / 2);
+    ctx.fillStyle = stone;
+    for (let i = 0; i < 5; i++) {
+      ctx.fillRect(-24 + i * 10, -14, 8, 22);
+    }
+    ctx.fillStyle = cap;
+    ctx.fillRect(-26, 6, 52, 6);
+    if (opts.siegeTowerId) {
+      ctx.strokeStyle = '#c06030';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath();
+      ctx.moveTo(-20, -18);
+      ctx.lineTo(20, -18);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#8a5030';
+      ctx.fillRect(-10, -30, 20, 12);
+    }
+    ctx.restore();
+    drawWallCoverArrow(ctx, x, y, facing, opts.coverFill || 'rgba(200,200,180,0.5)');
+    const slots = opts.wallSlots;
+    if (slots?.length) {
+      for (const slot of slots) {
+        ctx.fillStyle = slot.unitId ? '#80a0c0' : 'rgba(200,200,220,0.25)';
+        ctx.beginPath();
+        ctx.arc(slot.slotX, slot.slotY, slot.unitId ? 4 : 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  /** Semi-transparent wall preview while placing — shows facing, cover side, and garrison slots. */
+  function drawWallPlacementGhost(ctx, x, y, facing, opts = {}) {
+    const valid = opts.valid !== false;
+    const radius =
+      opts.radius ?? (typeof BuildDefs !== 'undefined' ? BuildDefs.wall?.radius : 20) ?? 20;
+    const slots =
+      typeof getWallSlotPositions === 'function'
+        ? getWallSlotPositions(facing || 'north', x, y)
+        : [];
+
+    ctx.save();
+    ctx.setLineDash([7, 5]);
+    ctx.strokeStyle = valid ? 'rgba(120,220,150,0.72)' : 'rgba(255,90,90,0.78)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    drawWallSegment(ctx, x, y, facing || 'north', {
+      alpha: valid ? 0.48 : 0.42,
+      stoneFill: valid ? 'rgba(106,106,104,0.72)' : 'rgba(150,90,90,0.65)',
+      capFill: valid ? 'rgba(138,138,136,0.78)' : 'rgba(170,110,110,0.7)',
+      coverFill: valid ? 'rgba(160,240,180,0.82)' : 'rgba(255,150,150,0.75)',
+      wallSlots: slots,
+    });
+
+    for (const slot of slots) {
+      ctx.strokeStyle = valid ? 'rgba(180,220,255,0.65)' : 'rgba(255,180,180,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(slot.slotX, slot.slotY, 5, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = valid ? 'rgba(210,255,220,0.95)' : 'rgba(255,200,200,0.95)';
+    ctx.font = '8px Cinzel';
+    ctx.textAlign = 'center';
+    ctx.fillText(`COVER ${(facing || 'north').toUpperCase()}`, x, y - 30);
+    ctx.restore();
+  }
+
+  const PERK_MACHINE_COLORS = {
+    jugger_nog: { body: '#a03030', glow: '#ff6060', label: 'JUG' },
+    quick_revive: { body: '#3080a0', glow: '#60c0e8', label: 'REV' },
+    speed_cola: { body: '#308040', glow: '#60e080', label: 'SPD' },
+    stamin_up: { body: '#a0a030', glow: '#ffe060', label: 'STM' },
+    deadshot_daiquiri: { body: '#6030a0', glow: '#a060e0', label: 'DSH' },
+    elemental_pop: { body: '#8040a0', glow: '#ff80e0', label: 'POP' },
+    phd_flopper: { body: '#3040a0', glow: '#6080ff', label: 'PHD' },
+    melee_macchiato: { body: '#6a4030', glow: '#c08060', label: 'MAC' },
+    vulture_aid: { body: '#506030', glow: '#a0c040', label: 'VUL' },
+    tombstone: { body: '#484848', glow: '#909090', label: 'TMB' },
+    double_tap: { body: '#a05020', glow: '#ff8040', label: '2X' },
+    mule_kick: { body: '#806040', glow: '#c0a060', label: 'MUL' },
+    sleight: { body: '#302040', glow: '#8060a0', label: 'SLG' },
+  };
+
+  function drawPerkMachine(ctx, b) {
+    const perkId = b.perkId || (b.type?.startsWith('perk_') ? b.type.replace('perk_', '') : '');
+    const pal = PERK_MACHINE_COLORS[perkId] || { body: '#504060', glow: '#a080c0', label: 'PERK' };
+    const pulse = 0.65 + Math.sin(Date.now() * 0.004 + b.x) * 0.2;
+    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    ctx.fillRect(b.x - 14, b.y + 2, 28, 6);
+    ctx.fillStyle = pal.body;
+    ctx.fillRect(b.x - 12, b.y - 18, 24, 24);
+    ctx.fillStyle = `rgba(255,255,255,${0.12 * pulse})`;
+    ctx.fillRect(b.x - 10, b.y - 16, 20, 8);
+    ctx.fillStyle = pal.glow;
+    ctx.fillRect(b.x - 8, b.y - 4, 16, 8);
+    ctx.strokeStyle = `rgba(255,255,255,${0.35 * pulse})`;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(b.x - 12, b.y - 18, 24, 24);
+    ctx.fillStyle = '#f0f0f0';
+    ctx.font = '7px Cinzel';
+    ctx.textAlign = 'center';
+    ctx.fillText(pal.label, b.x, b.y - 6);
+    ctx.fillStyle = pal.glow;
+    ctx.beginPath();
+    ctx.arc(b.x, b.y - 22, 3 + pulse, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
   function drawBuilding(ctx, b) {
-    const prog = b.complete ? 1 : (b.waveBuildRequired
-      ? (b.waveBuildProgress || 0) / b.waveBuildRequired
-      : b.buildProgress / Math.max(1, b.buildTime || 1));
+    const prog = b.complete
+      ? 1
+      : b.waveBuildRequired
+        ? (b.waveBuildProgress || 0) / b.waveBuildRequired
+        : b.buildProgress / Math.max(1, b.buildTime || 1);
     const alpha = 0.4 + prog * 0.6;
     const enemyOwned = b.owner === 'enemy';
     ctx.globalAlpha = alpha;
@@ -624,58 +1259,11 @@ const SpriteGen = (() => {
         ctx.fill();
       }
     } else if (b.type === 'wall') {
-      const facing = b.facing || 'north';
-      const vertical = facing === 'east' || facing === 'west';
-      ctx.save();
-      ctx.translate(b.x, b.y);
-      if (vertical) ctx.rotate(Math.PI / 2);
-      ctx.fillStyle = '#6a6a68';
-      for (let i = 0; i < 5; i++) {
-        ctx.fillRect(-24 + i * 10, -14, 8, 22);
-      }
-      ctx.fillStyle = '#8a8a88';
-      ctx.fillRect(-26, 6, 52, 6);
-      if (b.siegeTowerId) {
-        ctx.strokeStyle = '#c06030';
-        ctx.lineWidth = 2;
-        ctx.setLineDash([4, 3]);
-        ctx.beginPath();
-        ctx.moveTo(-20, -18);
-        ctx.lineTo(20, -18);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.fillStyle = '#8a5030';
-        ctx.fillRect(-10, -30, 20, 12);
-      }
-      ctx.restore();
-      ctx.fillStyle = 'rgba(200,200,180,0.5)';
-      ctx.beginPath();
-      switch (facing) {
-        case 'north':
-          ctx.moveTo(b.x, b.y - 18); ctx.lineTo(b.x - 5, b.y - 11); ctx.lineTo(b.x + 5, b.y - 11);
-          break;
-        case 'south':
-          ctx.moveTo(b.x, b.y + 12); ctx.lineTo(b.x - 5, b.y + 5); ctx.lineTo(b.x + 5, b.y + 5);
-          break;
-        case 'east':
-          ctx.moveTo(b.x + 18, b.y); ctx.lineTo(b.x + 11, b.y - 5); ctx.lineTo(b.x + 11, b.y + 5);
-          break;
-        case 'west':
-          ctx.moveTo(b.x - 18, b.y); ctx.lineTo(b.x - 11, b.y - 5); ctx.lineTo(b.x - 11, b.y + 5);
-          break;
-        default:
-          ctx.moveTo(b.x, b.y - 18); ctx.lineTo(b.x - 5, b.y - 11); ctx.lineTo(b.x + 5, b.y - 11);
-      }
-      ctx.closePath();
-      ctx.fill();
-      if (b.wallSlots) {
-        for (const slot of b.wallSlots) {
-          ctx.fillStyle = slot.unitId ? '#80a0c0' : 'rgba(200,200,220,0.25)';
-          ctx.beginPath();
-          ctx.arc(slot.slotX, slot.slotY, slot.unitId ? 4 : 3, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      drawWallSegment(ctx, b.x, b.y, b.facing || 'north', {
+        alpha: alpha,
+        wallSlots: b.wallSlots,
+        siegeTowerId: b.siegeTowerId,
+      });
     } else if (b.type === 'medical_tent') {
       ctx.fillStyle = '#e8e8e0';
       ctx.beginPath();
@@ -694,11 +1282,19 @@ const SpriteGen = (() => {
       ctx.fillRect(b.x - 3, b.y + 2, 6, 8);
     } else if (b.type?.startsWith('academy_')) {
       const unit = b.academyUnit || b.type.replace('academy_', '');
-      const hue = {
-        footman: '#7080a0', archer: '#60a060', mage: '#8060c0', cavalry: '#a08050',
-        knight: '#9090b0', sapper: '#a07040', healer: '#60c080', builder: '#c0a060',
-        courier: '#e0c080', general: '#c0a040',
-      }[unit] || '#908070';
+      const hue =
+        {
+          footman: '#7080a0',
+          archer: '#60a060',
+          mage: '#8060c0',
+          cavalry: '#a08050',
+          knight: '#9090b0',
+          sapper: '#a07040',
+          healer: '#60c080',
+          builder: '#c0a060',
+          courier: '#e0c080',
+          general: '#c0a040',
+        }[unit] || '#908070';
       ctx.fillStyle = '#4a4038';
       ctx.fillRect(b.x - 20, b.y - 2, 40, 20);
       ctx.fillStyle = hue;
@@ -718,6 +1314,21 @@ const SpriteGen = (() => {
       for (let i = 0; i < 3; i++) ctx.fillRect(b.x - 12 + i * 10, b.y - 2, 8, 6);
       ctx.fillStyle = '#c0a040';
       ctx.fillRect(b.x - 8, b.y - 22, 16, 8);
+    } else if (b.type === 'research_lab' || b.isResearchLab) {
+      ctx.fillStyle = '#3a4a5a';
+      ctx.fillRect(b.x - 16, b.y - 2, 32, 16);
+      ctx.fillStyle = '#506878';
+      ctx.fillRect(b.x - 14, b.y - 16, 28, 16);
+      ctx.fillStyle = '#80c0e8';
+      ctx.fillRect(b.x - 10, b.y - 12, 20, 10);
+      ctx.fillStyle = '#a0e0ff';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y - 7, 4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c0e8ff';
+      ctx.font = '7px Cinzel';
+      ctx.textAlign = 'center';
+      ctx.fillText('LAB', b.x, b.y + 10);
     } else if (b.type === 'castle_keep') {
       ctx.fillStyle = '#4a4048';
       ctx.fillRect(b.x - 18, b.y - 6, 36, 22);
@@ -752,24 +1363,41 @@ const SpriteGen = (() => {
       ctx.lineTo(b.x - 6, b.y - 28);
       ctx.lineTo(b.x + 6, b.y - 28);
       ctx.fill();
-    } else if (b.type === 'hamlet' || b.type === 'enemy_hamlet') {
+    } else if (b.isHamlet || b.type === 'enemy_hamlet') {
       const wood = enemyOwned ? '#4a3028' : '#5a4838';
       const roof = enemyOwned ? '#6a3030' : '#8a6040';
       const thatch = enemyOwned ? '#5a5040' : '#a08050';
-      for (let row = 0; row < 3; row++) {
-        for (let col = 0; col < 4; col++) {
+      const tier = b.settlementTier || (b.type === 'enemy_hamlet' ? 1 : 1);
+      const cols = Math.min(6, 3 + tier);
+      const rows = Math.min(5, 2 + tier);
+      const cellW = 18 + Math.floor(tier * 0.5);
+      const cellH = 12 + Math.floor(tier * 0.4);
+      const spanW = cols * (cellW + 4);
+      const spanH = rows * (cellH + 2);
+      for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+          const px = b.x - spanW / 2 + col * (cellW + 4);
+          const py = b.y - 6 + row * (cellH + 2);
           ctx.fillStyle = wood;
-          ctx.fillRect(b.x - 44 + col * 22, b.y - 6 + row * 14, 18, 12);
+          ctx.fillRect(px, py, cellW, cellH);
           ctx.fillStyle = roof;
-          ctx.fillRect(b.x - 42 + col * 22, b.y - 14 + row * 14, 14, 8);
+          ctx.fillRect(px + 2, py - 8, cellW - 4, 8);
         }
       }
       ctx.fillStyle = thatch;
-      ctx.fillRect(b.x - 50, b.y - 28, 100, 10);
+      ctx.fillRect(b.x - spanW / 2 - 6, b.y - spanH / 2 - 14, spanW + 12, 10);
+      const labels = {
+        hamlet: 'HAMLET',
+        village: 'VILLAGE',
+        town: 'TOWN',
+        city: 'CITY',
+        metropolis: 'METRO',
+      };
+      const label = enemyOwned ? 'FOE' : labels[b.type] || 'SETTLE';
       ctx.fillStyle = enemyOwned ? '#c04040' : '#f0c040';
-      ctx.font = '7px Cinzel';
+      ctx.font = tier >= 4 ? '8px Cinzel' : '7px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText(enemyOwned ? 'FOE' : 'HAMLET', b.x, b.y - 32);
+      ctx.fillText(label, b.x, b.y - spanH / 2 - 18);
       ctx.strokeStyle = enemyOwned ? 'rgba(200,60,60,0.5)' : 'rgba(240,192,64,0.35)';
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
@@ -777,11 +1405,28 @@ const SpriteGen = (() => {
       ctx.arc(b.x, b.y, b.radius * 0.85, 0, Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
+      if (b.fortressTier > 0 && !enemyOwned) {
+        ctx.fillStyle = '#c0a040';
+        ctx.font = '6px Cinzel';
+        ctx.textAlign = 'center';
+        ctx.fillText(`FORT T${b.fortressTier}`, b.x, b.y - (b.radius || 55) - 6);
+      }
     } else if (b.isCrossoverBarracks) {
-      const hqPal = {
-        ultimis: '#c06030', primis: '#d07040', halo: '#408040', gears: '#506080',
-        lotr: '#406050', baki: '#c04040', jojo: '#8040a0', fotns: '#4080c0', dragonball: '#e06040',
-      }[b.crossoverFaction] || '#60a0c0';
+      const hqPal =
+        {
+          ultimis: '#c06030',
+          primis: '#d07040',
+          halo: '#408040',
+          gears: '#506080',
+          lotr: '#406050',
+          baki: '#c04040',
+          jojo: '#8040a0',
+          fotns: '#4080c0',
+          dragonball: '#e06040',
+          imperium: '#4060a0',
+          crystal: '#5080c0',
+          warp: '#802040',
+        }[b.crossoverFaction] || '#60a0c0';
       const r = b.radius || 48;
       ctx.fillStyle = '#2a2830';
       ctx.fillRect(b.x - r * 0.85, b.y - 6, r * 1.7, r * 0.65);
@@ -808,7 +1453,7 @@ const SpriteGen = (() => {
       ctx.fillStyle = '#ffd700';
       ctx.font = '8px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText('WWE', b.x, b.y - 12);
+      ctx.fillText('GC', b.x, b.y - 12);
       ctx.fillStyle = '#e8e8e8';
       ctx.fillRect(b.x - 30, b.y + 4, 60, 8);
     } else if (b.type === 'watchtower') {
@@ -836,24 +1481,24 @@ const SpriteGen = (() => {
         ctx.lineTo(b.x - 6 + i * 5, b.y - 4);
         ctx.fill();
       }
-    } else if (b.type === 'quarry') {
-      ctx.fillStyle = '#6a6a68';
+    } else if (b.type === 'quarry' || b.type === 'enemy_quarry') {
+      ctx.fillStyle = enemyOwned ? '#4a4a48' : '#6a6a68';
       ctx.fillRect(b.x - 18, b.y - 6, 36, 20);
-      ctx.fillStyle = '#8a8a88';
+      ctx.fillStyle = enemyOwned ? '#6a6a68' : '#8a8a88';
       for (let i = 0; i < 4; i++) ctx.fillRect(b.x - 14 + i * 9, b.y - 14, 7, 10);
-      ctx.fillStyle = '#c0a060';
+      ctx.fillStyle = enemyOwned ? '#e06060' : '#c0a060';
       ctx.font = '6px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText('TP+', b.x, b.y - 2);
-    } else if (b.type === 'trade_outpost') {
-      ctx.fillStyle = '#5a4838';
+      ctx.fillText(enemyOwned ? 'FOE TP' : 'TP+', b.x, b.y - 2);
+    } else if (b.type === 'trade_outpost' || b.type === 'enemy_trade_outpost') {
+      ctx.fillStyle = enemyOwned ? '#4a3830' : '#5a4838';
       ctx.fillRect(b.x - 16, b.y - 2, 32, 16);
-      ctx.fillStyle = '#c0a060';
+      ctx.fillStyle = enemyOwned ? '#8a4040' : '#c0a060';
       ctx.fillRect(b.x - 12, b.y - 14, 24, 12);
-      ctx.fillStyle = '#ffd700';
+      ctx.fillStyle = enemyOwned ? '#e06060' : '#ffd700';
       ctx.font = '7px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText('TRADE', b.x, b.y - 6);
+      ctx.fillText(enemyOwned ? 'FOE TRADE' : 'TRADE', b.x, b.y - 6);
     } else if (b.type === 'fortress_upgrade') {
       ctx.fillStyle = '#6a5a48';
       ctx.fillRect(b.x - 12, b.y - 8, 24, 16);
@@ -861,6 +1506,38 @@ const SpriteGen = (() => {
       ctx.font = '6px Cinzel';
       ctx.textAlign = 'center';
       ctx.fillText('FORT', b.x, b.y);
+    } else if (b.isPerkMachine || b.type?.startsWith('perk_')) {
+      drawPerkMachine(ctx, b);
+    } else if (b.type === 'enemy_shadow_academy') {
+      ctx.fillStyle = '#2a2038';
+      ctx.fillRect(b.x - 32, b.y - 4, 64, 30);
+      ctx.fillStyle = '#6040a0';
+      ctx.fillRect(b.x - 28, b.y - 24, 56, 22);
+      ctx.strokeStyle = '#9070d0';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x - 30, b.y - 26, 60, 50);
+      ctx.fillStyle = '#c0a0f0';
+      ctx.font = '7px Cinzel';
+      ctx.textAlign = 'center';
+      ctx.fillText('SHADOW', b.x, b.y - 10);
+      ctx.fillStyle = '#7040b0';
+      ctx.beginPath();
+      ctx.arc(b.x, b.y + 8, 8, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (b.type === 'enemy_war_academy') {
+      ctx.fillStyle = '#3a2828';
+      ctx.fillRect(b.x - 36, b.y - 4, 72, 32);
+      ctx.fillStyle = '#8a4040';
+      ctx.fillRect(b.x - 32, b.y - 26, 64, 24);
+      ctx.strokeStyle = '#e05050';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(b.x - 34, b.y - 28, 68, 54);
+      ctx.fillStyle = '#ffd040';
+      ctx.font = '7px Cinzel';
+      ctx.textAlign = 'center';
+      ctx.fillText('WAR', b.x, b.y - 10);
+      ctx.fillStyle = '#c04040';
+      for (let i = 0; i < 3; i++) ctx.fillRect(b.x - 20 + i * 14, b.y + 4, 8, 14);
     } else if (b.type === 'merchant_guild' || b.type === 'enemy_merchant_guild') {
       const stone = enemyOwned ? '#4a4048' : '#6a5a50';
       const trim = enemyOwned ? '#8a4040' : '#c0a060';
@@ -896,7 +1573,11 @@ const SpriteGen = (() => {
         ctx.fillStyle = '#e8d5b0';
         ctx.font = '6px Cinzel';
         ctx.textAlign = 'center';
-        ctx.fillText(`WAVE ${b.waveBuildProgress || 0}/${b.waveBuildRequired}`, b.x, b.y + (b.radius || 18) * 0.55 + 12);
+        ctx.fillText(
+          `WAVE ${b.waveBuildProgress || 0}/${b.waveBuildRequired}`,
+          b.x,
+          b.y + (b.radius || 18) * 0.55 + 12
+        );
       }
     }
     ctx.globalAlpha = 1;
@@ -944,22 +1625,97 @@ const SpriteGen = (() => {
 
   function drawHazard(ctx, h) {
     const pulse = 0.55 + Math.sin(Date.now() * 0.004 + h.x) * 0.15;
-    if (h.type === 'swamp') {
-      ctx.fillStyle = `rgba(40, 90, 50, ${0.22 * pulse})`;
+    const drawAs = h.drawType || h.type;
+    if (drawAs === 'plague' || h.type === 'goblin_plague' || h.type === 'swamp') {
+      ctx.fillStyle = `rgba(48, 110, 52, ${0.24 * pulse})`;
       ctx.beginPath();
-      ctx.ellipse(h.x, h.y, h.radius, h.radius * 0.7, 0, 0, Math.PI * 2);
+      ctx.ellipse(h.x, h.y, h.radius, h.radius * 0.72, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = `rgba(60, 140, 70, ${0.35 * pulse})`;
+      ctx.strokeStyle = `rgba(90, 180, 70, ${0.4 * pulse})`;
       ctx.lineWidth = 1.5;
       ctx.stroke();
-    } else if (h.type === 'fire') {
-      ctx.fillStyle = `rgba(200, 60, 20, ${0.2 * pulse})`;
+      for (let i = 0; i < 4; i++) {
+        const a = (Date.now() * 0.002 + i * 1.4) % (Math.PI * 2);
+        ctx.fillStyle = `rgba(120, 220, 80, ${0.2 * pulse})`;
+        ctx.beginPath();
+        ctx.arc(
+          h.x + Math.cos(a) * h.radius * 0.45,
+          h.y + Math.sin(a) * h.radius * 0.3,
+          3,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    } else if (drawAs === 'fire' || h.type === 'orc_fire_pit' || h.type === 'fire') {
+      ctx.fillStyle = `rgba(200, 60, 20, ${0.22 * pulse})`;
       ctx.beginPath();
       ctx.arc(h.x, h.y, h.radius, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = `rgba(255, 120, 40, ${0.45 * pulse})`;
+      ctx.strokeStyle = `rgba(255, 120, 40, ${0.5 * pulse})`;
       ctx.lineWidth = 2;
       ctx.stroke();
+      ctx.fillStyle = `rgba(255, 180, 60, ${0.35 * pulse})`;
+      ctx.beginPath();
+      ctx.arc(h.x, h.y, h.radius * 0.35, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (drawAs === 'void' || h.type === 'void_corruption') {
+      const rot = Date.now() * 0.0015;
+      ctx.save();
+      ctx.translate(h.x, h.y);
+      ctx.rotate(rot);
+      ctx.fillStyle = `rgba(72, 28, 120, ${0.28 * pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(0, 0, h.radius, h.radius * 0.82, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(160, 80, 255, ${0.42 * pulse})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = `rgba(200, 120, 255, ${0.22 * pulse})`;
+      for (let i = 0; i < 3; i++) {
+        const r = h.radius * (0.35 + i * 0.18);
+        ctx.beginPath();
+        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+      ctx.restore();
+    } else if (drawAs === 'miasma' || h.type === 'undead_miasma') {
+      ctx.fillStyle = `rgba(40, 70, 90, ${0.26 * pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(h.x, h.y, h.radius, h.radius * 0.68, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = `rgba(100, 140, 160, ${0.45 * pulse})`;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.fillStyle = `rgba(180, 200, 220, ${0.18 * pulse})`;
+      for (let i = 0; i < 5; i++) {
+        const a = (Date.now() * 0.0018 + i * 1.1) % (Math.PI * 2);
+        ctx.beginPath();
+        ctx.arc(
+          h.x + Math.cos(a) * h.radius * 0.4,
+          h.y + Math.sin(a) * h.radius * 0.28,
+          2.5,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    } else if (drawAs === 'rift' || h.type === 'mirror_rift_zone') {
+      ctx.save();
+      ctx.translate(h.x, h.y);
+      ctx.rotate(Date.now() * 0.002);
+      ctx.strokeStyle = `rgba(120, 170, 210, ${0.5 * pulse})`;
+      ctx.lineWidth = 2;
+      ctx.setLineDash([8, 6]);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, h.radius, h.radius * 0.55, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = `rgba(80, 120, 180, ${0.2 * pulse})`;
+      ctx.fill();
+      ctx.restore();
     }
   }
 
@@ -970,8 +1726,10 @@ const SpriteGen = (() => {
     ctx.arc(x, y, 10, 0, Math.PI * 2);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(x - 6, y); ctx.lineTo(x + 6, y);
-    ctx.moveTo(x, y - 6); ctx.lineTo(x, y + 6);
+    ctx.moveTo(x - 6, y);
+    ctx.lineTo(x + 6, y);
+    ctx.moveTo(x, y - 6);
+    ctx.lineTo(x, y + 6);
     ctx.stroke();
   }
 
@@ -1006,9 +1764,14 @@ const SpriteGen = (() => {
     const total = bronze + silver + gold;
     if (total <= 0 && !unit.vetTier) return;
 
-    const colors = typeof VET_STAR_COLORS !== 'undefined' ? VET_STAR_COLORS : {
-      bronze: '#b87333', silver: '#c8c8d8', gold: '#ffd700',
-    };
+    const colors =
+      typeof VET_STAR_COLORS !== 'undefined'
+        ? VET_STAR_COLORS
+        : {
+            bronze: '#b87333',
+            silver: '#c8c8d8',
+            gold: '#ffd700',
+          };
 
     if (unit.isGeneral && (unit.generalStars || 0) > 0) {
       ctx.fillStyle = colors.gold;
@@ -1070,18 +1833,30 @@ const SpriteGen = (() => {
       ctx.fillRect(-8, -2, 3, 4);
     } else if (type === 'fireball') {
       ctx.fillStyle = 'rgba(255,80,20,0.4)';
-      ctx.beginPath(); ctx.arc(0, 0, 8, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 8, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#ff6020';
-      ctx.beginPath(); ctx.arc(0, 0, 5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 5, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#ffe080';
-      ctx.beginPath(); ctx.arc(0, 0, 2, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 2, 0, Math.PI * 2);
+      ctx.fill();
     } else if (type === 'bolt') {
       ctx.fillStyle = 'rgba(128,64,255,0.3)';
-      ctx.beginPath(); ctx.arc(0, 0, 7, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#a060ff';
-      ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 4, 0, Math.PI * 2);
+      ctx.fill();
       ctx.fillStyle = '#fff';
-      ctx.beginPath(); ctx.arc(0, 0, 1.5, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath();
+      ctx.arc(0, 0, 1.5, 0, Math.PI * 2);
+      ctx.fill();
     }
     ctx.restore();
   }
@@ -1127,11 +1902,13 @@ const SpriteGen = (() => {
     drawBattlefield,
     drawAttackSideMarkers,
     drawTree,
+    drawNeutralDen,
     drawRock,
     drawBarricade,
     drawDestructible,
     drawHazard,
     drawBuilding,
+    drawWallPlacementGhost,
     drawMoveMarker,
     drawSelectionRing,
     drawHealthBar,
@@ -1141,5 +1918,13 @@ const SpriteGen = (() => {
     drawPathLine,
     drawTitleArt,
     UNIT_STYLE,
+    registerUnitStyle(type, style) {
+      if (!type || !style) return;
+      UNIT_STYLE[type] = style;
+    },
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.SpriteGen = SpriteGen;

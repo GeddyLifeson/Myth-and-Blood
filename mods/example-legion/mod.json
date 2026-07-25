@@ -1,0 +1,16 @@
+{
+  "id": "example_legion",
+  "name": "Iron Legion",
+  "version": "1.0.0",
+  "author": "Myth & Blood",
+  "description": "Adds Iron Guard troops and Iron Bastion outposts.",
+  "units": "units.json",
+  "buildings": "buildings.json",
+  "script": "mod.js",
+  "deploy": ["iron_guard"],
+  "build": ["iron_bastion"],
+  "hud": {
+    "deploy": true,
+    "build": true
+  }
+}

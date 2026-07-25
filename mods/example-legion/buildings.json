@@ -1,0 +1,15 @@
+{
+  "iron_bastion": {
+    "name": "Iron Bastion",
+    "cost": 8,
+    "hp": 290,
+    "cover": 0.55,
+    "radius": 24,
+    "blocksMove": true,
+    "blocksLOS": true,
+    "buildTime": 160,
+    "rangeBonus": 42,
+    "garrisonSlot": 1,
+    "facing": "north"
+  }
+}

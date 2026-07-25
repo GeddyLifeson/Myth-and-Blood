@@ -1,0 +1,234 @@
+[
+  {
+    "id": "temporal_paradox",
+    "factions": [
+      "ultimis",
+      "primis"
+    ],
+    "name": "Residue Paradox",
+    "desc": "Void Residue + First Circle on field: +12% ability proc damage.",
+    "bonus": {
+      "abilityDmg": 0.12
+    }
+  },
+  {
+    "id": "modern_warfare",
+    "factions": [
+      "halo",
+      "gears"
+    ],
+    "name": "Trench Vanguard",
+    "desc": "Orbital Vanguard + Iron Trench: +10 accuracy to ranged evolved operatives.",
+    "bonus": {
+      "rangedAcc": 10
+    }
+  },
+  {
+    "id": "last_alliance",
+    "factions": [
+      "lotr",
+      "halo"
+    ],
+    "name": "March Vanguard",
+    "desc": "Ninefold March + Orbital Vanguard: +4 morale/round to all allies.",
+    "bonus": {
+      "moraleRegen": 4
+    }
+  },
+  {
+    "id": "martial_worlds",
+    "factions": [
+      "baki",
+      "fotns"
+    ],
+    "name": "Martial Worlds",
+    "desc": "Iron Pit + North Star: +15% melee evolved ally damage.",
+    "bonus": {
+      "meleeDmg": 0.15
+    }
+  },
+  {
+    "id": "bizarre_martial",
+    "factions": [
+      "jojo",
+      "baki"
+    ],
+    "name": "Spiritual Martial Arts",
+    "desc": "Bound Spirit + Iron Pit: +8% crit chance on melee finishers.",
+    "bonus": {
+      "critChance": 0.08
+    }
+  },
+  {
+    "id": "ki_stand",
+    "factions": [
+      "dragonball",
+      "jojo"
+    ],
+    "name": "Skyburst Spirit",
+    "desc": "Skyburst + Bound Spirit: evolved ally kills heal nearest ally 8 HP.",
+    "bonus": {
+      "killHeal": 8
+    }
+  },
+  {
+    "id": "fellowship_gears",
+    "factions": [
+      "lotr",
+      "gears"
+    ],
+    "name": "March of War",
+    "desc": "Ninefold March + Iron Trench: +20% siege damage from evolved units.",
+    "bonus": {
+      "siegeDmg": 0.2
+    }
+  },
+  {
+    "id": "guest_star",
+    "factions": [
+      "wwe"
+    ],
+    "name": "Coliseum Guest",
+    "desc": "Any Grand Coliseum + second faction: +6 morale on wave start.",
+    "bonus": {
+      "waveMorale": 6
+    },
+    "requiresOtherFaction": true
+  },
+  {
+    "id": "aether_unsc",
+    "factions": [
+      "primis",
+      "halo"
+    ],
+    "name": "Circle Vanguard",
+    "desc": "First Circle + Orbital Vanguard: +6 accuracy to ranged evolved operatives.",
+    "bonus": {
+      "rangedAcc": 6
+    }
+  },
+  {
+    "id": "ki_pressure",
+    "factions": [
+      "fotns",
+      "dragonball"
+    ],
+    "name": "Ascetic Pressure",
+    "desc": "North Star + Skyburst: +10% melee evolved ally damage.",
+    "bonus": {
+      "meleeDmg": 0.1
+    }
+  },
+  {
+    "id": "ppv_siege",
+    "factions": [
+      "wwe",
+      "gears"
+    ],
+    "name": "Arena Siege",
+    "desc": "Grand Coliseum + Iron Trench: +12% siege damage from evolved units.",
+    "bonus": {
+      "siegeDmg": 0.12
+    },
+    "requiresWwe": true
+  },
+  {
+    "id": "multiversal_4",
+    "factions": [
+      "ultimis",
+      "halo",
+      "lotr",
+      "jojo"
+    ],
+    "name": "Four Worlds",
+    "desc": "Four distinct evolved factions: +5% all evolved ally damage.",
+    "bonus": {
+      "crossoverDmg": 0.05
+    },
+    "minFactions": 4
+  },
+  {
+    "id": "grim_alliance",
+    "factions": [
+      "imperium",
+      "halo"
+    ],
+    "name": "Grim Alliance",
+    "desc": "Crimson Legion + Orbital Vanguard: +8 accuracy to ranged evolved operatives.",
+    "bonus": {
+      "rangedAcc": 8
+    }
+  },
+  {
+    "id": "crystal_fellowship",
+    "factions": [
+      "crystal",
+      "lotr"
+    ],
+    "name": "Crystal March",
+    "desc": "Crystal Vanguard + Ninefold March: +3 morale/round to all allies.",
+    "bonus": {
+      "moraleRegen": 3
+    }
+  },
+  {
+    "id": "warp_paradox",
+    "factions": [
+      "warp",
+      "primis"
+    ],
+    "name": "Rift Paradox",
+    "desc": "Rift Cult + First Circle: +10% ability proc damage.",
+    "bonus": {
+      "abilityDmg": 0.1
+    }
+  },
+  {
+    "id": "eternal_war",
+    "factions": [
+      "imperium",
+      "warp"
+    ],
+    "name": "Eternal War",
+    "desc": "Crimson Legion + Rift Cult: +12% melee evolved ally damage.",
+    "bonus": {
+      "meleeDmg": 0.12
+    }
+  },
+  {
+    "id": "aether_legion",
+    "factions": [
+      "crystal",
+      "dragonball"
+    ],
+    "name": "Crystal Skyburst",
+    "desc": "Crystal Vanguard + Skyburst: evolved ally kills heal nearest ally 6 HP.",
+    "bonus": {
+      "killHeal": 6
+    }
+  },
+  {
+    "id": "prophecy_fellowship",
+    "factions": [
+      "tes",
+      "lotr"
+    ],
+    "name": "Prophecy March",
+    "desc": "Voicebound + Ninefold March: +4 morale/round to all allies.",
+    "bonus": {
+      "moraleRegen": 4
+    }
+  },
+  {
+    "id": "thuum_aether",
+    "factions": [
+      "tes",
+      "crystal"
+    ],
+    "name": "Voice & Crystal",
+    "desc": "Voicebound + Crystal Vanguard: +10% ability proc damage.",
+    "bonus": {
+      "abilityDmg": 0.1
+    }
+  }
+]

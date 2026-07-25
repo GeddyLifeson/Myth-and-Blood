@@ -1,5 +1,5 @@
 /**
- * Persistent unlocks — WWE Academy, Doomslayer hero, cheat flags.
+ * Persistent unlocks — Grand Coliseum, Doomslayer hero, cheat flags.
  */
 const MetaProgress = (() => {
   const STORAGE_KEY = 'myth-and-blood-meta-v1';
@@ -16,6 +16,11 @@ const MetaProgress = (() => {
     crossoverJojoUnlocked: false,
     crossoverFotnsUnlocked: false,
     crossoverDragonballUnlocked: false,
+    crossoverImperiumUnlocked: false,
+    crossoverCrystalUnlocked: false,
+    crossoverWarpUnlocked: false,
+    crossoverWarhammerUnlocked: false,
+    crossoverTesUnlocked: false,
     cheatsUsed: [],
     wweRecruited: [],
     crossoverRecruited: [],
@@ -27,13 +32,17 @@ const MetaProgress = (() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) data = { ...data, ...JSON.parse(raw) };
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function save() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function unlockWweAcademy() {
@@ -113,6 +122,43 @@ const MetaProgress = (() => {
     return true;
   }
 
+  function unlockImperium() {
+    if (data.crossoverImperiumUnlocked) return false;
+    data.crossoverImperiumUnlocked = true;
+    save();
+    return true;
+  }
+
+  function unlockCrystal() {
+    if (data.crossoverCrystalUnlocked) return false;
+    data.crossoverCrystalUnlocked = true;
+    save();
+    return true;
+  }
+
+  function unlockWarp() {
+    if (data.crossoverWarpUnlocked) return false;
+    data.crossoverWarpUnlocked = true;
+    save();
+    return true;
+  }
+
+  function unlockWarhammer() {
+    if (data.crossoverWarhammerUnlocked) return false;
+    data.crossoverWarhammerUnlocked = true;
+    unlockImperium();
+    unlockWarp();
+    save();
+    return true;
+  }
+
+  function unlockTes() {
+    if (data.crossoverTesUnlocked) return false;
+    data.crossoverTesUnlocked = true;
+    save();
+    return true;
+  }
+
   function unlockAllCheatContent() {
     data.wweAcademyUnlocked = true;
     data.doomslayerHeroUnlocked = true;
@@ -125,6 +171,11 @@ const MetaProgress = (() => {
     data.crossoverJojoUnlocked = true;
     data.crossoverFotnsUnlocked = true;
     data.crossoverDragonballUnlocked = true;
+    data.crossoverImperiumUnlocked = true;
+    data.crossoverCrystalUnlocked = true;
+    data.crossoverWarpUnlocked = true;
+    data.crossoverWarhammerUnlocked = true;
+    data.crossoverTesUnlocked = true;
     save();
     return true;
   }
@@ -158,15 +209,50 @@ const MetaProgress = (() => {
     return !!data.doomslayerHeroUnlocked;
   }
 
-  function is115Unlocked() { return !!data.crossover115Unlocked; }
-  function isPrimusUnlocked() { return !!data.crossoverPrimusUnlocked; }
-  function isHaloUnlocked() { return !!data.crossoverHaloUnlocked; }
-  function isGearsUnlocked() { return !!data.crossoverGearsUnlocked; }
-  function isLotrUnlocked() { return !!data.crossoverLotrUnlocked; }
-  function isBakiUnlocked() { return !!data.crossoverBakiUnlocked; }
-  function isJojoUnlocked() { return !!data.crossoverJojoUnlocked; }
-  function isFotnsUnlocked() { return !!data.crossoverFotnsUnlocked; }
-  function isDragonballUnlocked() { return !!data.crossoverDragonballUnlocked; }
+  function is115Unlocked() {
+    return !!data.crossover115Unlocked;
+  }
+  function isPrimusUnlocked() {
+    return !!data.crossoverPrimusUnlocked;
+  }
+  function isHaloUnlocked() {
+    return !!data.crossoverHaloUnlocked;
+  }
+  function isGearsUnlocked() {
+    return !!data.crossoverGearsUnlocked;
+  }
+  function isLotrUnlocked() {
+    return !!data.crossoverLotrUnlocked;
+  }
+  function isBakiUnlocked() {
+    return !!data.crossoverBakiUnlocked;
+  }
+  function isJojoUnlocked() {
+    return !!data.crossoverJojoUnlocked;
+  }
+  function isFotnsUnlocked() {
+    return !!data.crossoverFotnsUnlocked;
+  }
+  function isDragonballUnlocked() {
+    return !!data.crossoverDragonballUnlocked;
+  }
+  function isImperiumUnlocked() {
+    return !!data.crossoverImperiumUnlocked;
+  }
+  function isCrystalUnlocked() {
+    return !!data.crossoverCrystalUnlocked;
+  }
+  function isWarpUnlocked() {
+    return !!data.crossoverWarpUnlocked;
+  }
+
+  function isWarhammerUnlocked() {
+    return !!data.crossoverWarhammerUnlocked;
+  }
+
+  function isTesUnlocked() {
+    return !!data.crossoverTesUnlocked;
+  }
 
   function isCrossoverFactionUnlocked(factionId) {
     const map = {
@@ -179,14 +265,32 @@ const MetaProgress = (() => {
       jojo: isJojoUnlocked,
       fotns: isFotnsUnlocked,
       dragonball: isDragonballUnlocked,
+      imperium: isImperiumUnlocked,
+      crystal: isCrystalUnlocked,
+      warp: isWarpUnlocked,
+      warhammer: isWarhammerUnlocked,
+      tes: isTesUnlocked,
     };
     return map[factionId]?.() ?? false;
   }
 
   function isAnyCrossoverUnlocked() {
-    return is115Unlocked() || isPrimusUnlocked() || isHaloUnlocked() || isGearsUnlocked() ||
-      isLotrUnlocked() || isBakiUnlocked() || isJojoUnlocked() ||
-      isFotnsUnlocked() || isDragonballUnlocked();
+    return (
+      is115Unlocked() ||
+      isPrimusUnlocked() ||
+      isHaloUnlocked() ||
+      isGearsUnlocked() ||
+      isLotrUnlocked() ||
+      isBakiUnlocked() ||
+      isJojoUnlocked() ||
+      isFotnsUnlocked() ||
+      isDragonballUnlocked() ||
+      isImperiumUnlocked() ||
+      isCrystalUnlocked() ||
+      isWarpUnlocked() ||
+      isWarhammerUnlocked() ||
+      isTesUnlocked()
+    );
   }
 
   function getWweRecruited() {
@@ -214,6 +318,11 @@ const MetaProgress = (() => {
       crossoverJojoUnlocked: false,
       crossoverFotnsUnlocked: false,
       crossoverDragonballUnlocked: false,
+    crossoverImperiumUnlocked: false,
+    crossoverCrystalUnlocked: false,
+    crossoverWarpUnlocked: false,
+    crossoverWarhammerUnlocked: false,
+    crossoverTesUnlocked: false,
       cheatsUsed: [],
       wweRecruited: [],
       crossoverRecruited: [],
@@ -242,17 +351,57 @@ const MetaProgress = (() => {
   }
 
   return {
-    load, save, unlockWweAcademy, unlockDoomslayerHero,
-    unlock115, unlockPrimus, unlockHalo, unlockGears,
-    unlockLotr, unlockBaki, unlockJojo, unlockFotns, unlockDragonball,
+    load,
+    save,
+    unlockWweAcademy,
+    unlockDoomslayerHero,
+    unlock115,
+    unlockPrimus,
+    unlockHalo,
+    unlockGears,
+    unlockLotr,
+    unlockBaki,
+    unlockJojo,
+    unlockFotns,
+    unlockDragonball,
+    unlockImperium,
+    unlockCrystal,
+    unlockWarp,
+    unlockWarhammer,
+    unlockTes,
     unlockAllCheatContent,
-    recordCheat, recordWweRecruit, recordCrossoverRecruit,
-    isWweUnlocked, isDoomslayerHeroUnlocked,
-    is115Unlocked, isPrimusUnlocked, isHaloUnlocked, isGearsUnlocked,
-    isLotrUnlocked, isBakiUnlocked, isJojoUnlocked, isFotnsUnlocked, isDragonballUnlocked,
-    isCrossoverFactionUnlocked, isAnyCrossoverUnlocked,
-    getWweRecruited, getCrossoverRecruited, getCheatsUsed, reset,
+    recordCheat,
+    recordWweRecruit,
+    recordCrossoverRecruit,
+    isWweUnlocked,
+    isDoomslayerHeroUnlocked,
+    is115Unlocked,
+    isPrimusUnlocked,
+    isHaloUnlocked,
+    isGearsUnlocked,
+    isLotrUnlocked,
+    isBakiUnlocked,
+    isJojoUnlocked,
+    isFotnsUnlocked,
+    isDragonballUnlocked,
+    isImperiumUnlocked,
+    isCrystalUnlocked,
+    isWarpUnlocked,
+    isWarhammerUnlocked,
+    isTesUnlocked,
+    isCrossoverFactionUnlocked,
+    isAnyCrossoverUnlocked,
+    getWweRecruited,
+    getCrossoverRecruited,
+    getCheatsUsed,
+    reset,
     getData: () => ({ ...data }),
-    getFactionMasteryTitles, getEarnedCreativeUnlocks, hasCreativeSkin,
+    getFactionMasteryTitles,
+    getEarnedCreativeUnlocks,
+    hasCreativeSkin,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.MetaProgress = MetaProgress;

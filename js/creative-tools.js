@@ -10,7 +10,8 @@ const CreativeTools = (() => {
       id: 'empty',
       name: 'Empty Sandbox',
       desc: 'Four footmen, full TP, wave 0.',
-      wave: 0, tp: 9999,
+      wave: 0,
+      tp: 9999,
       allies: [{ type: 'footman', count: 4 }],
       settings: { freeResources: true, noGameOver: true, noAutoCycle: true },
     },
@@ -18,8 +19,13 @@ const CreativeTools = (() => {
       id: 'siege_drill',
       name: 'Siege Drill',
       desc: 'Walls + siege wave at wave 12.',
-      wave: 12, tp: 8000,
-      allies: [{ type: 'footman', count: 6 }, { type: 'archer', count: 4 }, { type: 'knight', count: 2 }],
+      wave: 12,
+      tp: 8000,
+      allies: [
+        { type: 'footman', count: 6 },
+        { type: 'archer', count: 4 },
+        { type: 'knight', count: 2 },
+      ],
       buildings: [{ type: 'wall', count: 8 }],
       customWave: 'siege_tower*2,goblin_sapper*2,orc*6,goblin*8',
       settings: { freeResources: true, noGameOver: true, noAutoCycle: true, instantBuild: true },
@@ -28,8 +34,13 @@ const CreativeTools = (() => {
       id: 'boss_rush',
       name: 'Boss Rush',
       desc: 'Wave 30 boss composition.',
-      wave: 30, tp: 12000,
-      allies: [{ type: 'knight', count: 4 }, { type: 'mage', count: 2 }, { type: 'healer', count: 1 }],
+      wave: 30,
+      tp: 12000,
+      allies: [
+        { type: 'knight', count: 4 },
+        { type: 'mage', count: 2 },
+        { type: 'healer', count: 1 },
+      ],
       customWave: 'war_chief*1,dark_knight*3,necromancer*2,siege_tower*2,berserker*4',
       interval: 55,
     },
@@ -37,7 +48,8 @@ const CreativeTools = (() => {
       id: 'crossover_duel',
       name: 'Crossover Duel',
       desc: 'Wave 25 — test crossover vs elites.',
-      wave: 25, tp: 15000,
+      wave: 25,
+      tp: 15000,
       customWave: 'dark_knight*4,assassin*3,harpy*2,sky_drake*1',
       settings: { unlockAll: true, academyDeploy: true, freeResources: true },
     },
@@ -45,8 +57,12 @@ const CreativeTools = (() => {
       id: 'horde_stress',
       name: 'Horde Stress',
       desc: 'Auto-spawn goblins — perf test.',
-      wave: 50, tp: 5000,
-      allies: [{ type: 'ballista', count: 2 }, { type: 'pikeman', count: 4 }],
+      wave: 50,
+      tp: 5000,
+      allies: [
+        { type: 'ballista', count: 2 },
+        { type: 'pikeman', count: 4 },
+      ],
       stress: { type: 'goblin', every: 20, max: 200 },
       settings: { freeResources: true, noGameOver: true, noAutoCycle: true },
     },
@@ -54,23 +70,29 @@ const CreativeTools = (() => {
       id: 'wall_defense',
       name: 'Wall Defense',
       desc: 'Castle compound + mixed assault.',
-      wave: 18, tp: 6000,
+      wave: 18,
+      tp: 6000,
       buildings: [{ type: 'castle', count: 1 }],
-      allies: [{ type: 'archer', count: 6 }, { type: 'footman', count: 4 }],
+      allies: [
+        { type: 'archer', count: 6 },
+        { type: 'footman', count: 4 },
+      ],
       customWave: 'orc*10,goblin*12,troll*2,warg_rider*3',
     },
     {
       id: 'academy_era',
       name: 'Academy Era',
       desc: 'Wave 105 — academy rules on.',
-      wave: 105, tp: 4000,
+      wave: 105,
+      tp: 4000,
       settings: { academyDeploy: false, freeResources: false, noGameOver: true, noAutoCycle: true },
     },
     {
       id: 'night_siege',
       name: 'Night Siege',
       desc: 'Force night + plague rats.',
-      wave: 22, tp: 7000,
+      wave: 22,
+      tp: 7000,
       customWave: 'plague_rat*8,goblin_burrower*4,orc*6,bone_summoner*1',
       forceNight: true,
     },
@@ -80,15 +102,28 @@ const CreativeTools = (() => {
     balanced: { label: 'Default', hp: null, damage: null, accuracy: null, speed: null },
     glass: { label: 'Glass Cannon', hpMult: 0.55, damageMult: 2.2, accuracy: null, speed: null },
     tank: { label: 'Tank', hpMult: 2.8, damageMult: 0.75, accuracy: null, speedMult: 0.85 },
-    sniper: { label: 'Sniper', hpMult: 0.8, damageMult: 1.5, accuracy: 95, rangeMult: 1.35, speed: null },
+    sniper: {
+      label: 'Sniper',
+      hpMult: 0.8,
+      damageMult: 1.5,
+      accuracy: 95,
+      rangeMult: 1.35,
+      speed: null,
+    },
     elite: { label: 'Elite Vet', vetGold: 3, hpMult: 1.2, damageMult: 1.15 },
     speedy: { label: 'Swift', speedMult: 1.6, hpMult: 0.9 },
   };
 
   let sandboxStats = {
-    sessions: 0, spawns: 0, wavesLaunched: 0, templatesUsed: 0,
-    scenariosExported: 0, scenariosImported: 0, replayFrames: 0,
-    stressSpawns: 0, lastSession: null,
+    sessions: 0,
+    spawns: 0,
+    wavesLaunched: 0,
+    templatesUsed: 0,
+    scenariosExported: 0,
+    scenariosImported: 0,
+    replayFrames: 0,
+    stressSpawns: 0,
+    lastSession: null,
   };
 
   let recording = false;
@@ -104,13 +139,17 @@ const CreativeTools = (() => {
     try {
       const raw = localStorage.getItem(SANDBOX_KEY);
       if (raw) sandboxStats = { ...sandboxStats, ...JSON.parse(raw) };
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
   }
 
   function saveSandboxStats() {
     try {
       localStorage.setItem(SANDBOX_KEY, JSON.stringify(sandboxStats));
-    } catch (_) { /* ignore */ }
+    } catch (_) {
+      /* ignore */
+    }
     return sandboxStats;
   }
 
@@ -127,7 +166,10 @@ const CreativeTools = (() => {
 
   function parseWaveComposer(text) {
     const queue = [];
-    const parts = String(text || '').split(/[,;\n]+/).map(s => s.trim()).filter(Boolean);
+    const parts = String(text || '')
+      .split(/[,;\n]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
     for (const part of parts) {
       const m = part.match(/^([\w]+)(?:\s*[*x×]\s*(\d+))?$/i);
       if (!m) continue;
@@ -142,7 +184,9 @@ const CreativeTools = (() => {
   function formatWaveComposer(queue) {
     const counts = {};
     for (const t of queue || []) counts[t] = (counts[t] || 0) + 1;
-    return Object.entries(counts).map(([t, n]) => `${t}*${n}`).join(', ');
+    return Object.entries(counts)
+      .map(([t, n]) => `${t}*${n}`)
+      .join(', ');
   }
 
   function captureSnapshot(label) {
@@ -157,6 +201,7 @@ const CreativeTools = (() => {
       label: label || '',
       units: Game.getUnitsSnapshot(),
       buildings: Game.getBuildingsSnapshot?.() || [],
+      decorations: Game.getDecorationsSnapshot?.() || [],
       settings: { ...gs.creativeSettings },
     };
   }
@@ -194,7 +239,9 @@ const CreativeTools = (() => {
       replayIndex = 0;
       replayPlaying = false;
       return replayFrames.length;
-    } catch (_) { return 0; }
+    } catch (_) {
+      return 0;
+    }
   }
 
   function playReplay(step = 1) {
@@ -273,7 +320,7 @@ const CreativeTools = (() => {
   }
 
   function applyTemplate(id) {
-    const tpl = TEMPLATES.find(t => t.id === id);
+    const tpl = TEMPLATES.find((t) => t.id === id);
     if (!tpl || !Game?.isCreativeMode?.()) return false;
 
     Game.creativeClearWaveSpawns?.();
@@ -324,7 +371,7 @@ const CreativeTools = (() => {
   }
 
   function getTemplates() {
-    return TEMPLATES.map(t => ({ id: t.id, name: t.name, desc: t.desc }));
+    return TEMPLATES.map((t) => ({ id: t.id, name: t.name, desc: t.desc }));
   }
 
   function getUnitPresets() {
@@ -372,3 +419,7 @@ const CreativeTools = (() => {
     getReplayInfo,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.CreativeTools = CreativeTools;

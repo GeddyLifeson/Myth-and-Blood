@@ -1,0 +1,172 @@
+{
+  "elapsedSec": 19.5,
+  "runs": 10,
+  "bestWave": 100,
+  "avgWave": 100,
+  "reached100": [
+    {
+      "runId": 0,
+      "mode": "god_speedrun",
+      "wave": 100
+    },
+    {
+      "runId": 1,
+      "mode": "speedrun",
+      "wave": 100
+    },
+    {
+      "runId": 2,
+      "mode": "army",
+      "wave": 100
+    },
+    {
+      "runId": 3,
+      "mode": "castle",
+      "wave": 100
+    },
+    {
+      "runId": 4,
+      "mode": "speedrun",
+      "wave": 100
+    },
+    {
+      "runId": 5,
+      "mode": "army",
+      "wave": 100
+    },
+    {
+      "runId": 6,
+      "mode": "castle",
+      "wave": 100
+    },
+    {
+      "runId": 7,
+      "mode": "speedrun",
+      "wave": 100
+    },
+    {
+      "runId": 8,
+      "mode": "army",
+      "wave": 100
+    },
+    {
+      "runId": 9,
+      "mode": "castle",
+      "wave": 100
+    }
+  ],
+  "issueCounts": {},
+  "issues": [],
+  "results": [
+    {
+      "runId": 0,
+      "mode": "god_speedrun",
+      "diff": "baby",
+      "maxWave": 100,
+      "maxTickMs": 60,
+      "elapsedMs": 1996,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 1,
+      "mode": "speedrun",
+      "diff": "normal",
+      "maxWave": 100,
+      "maxTickMs": 47,
+      "elapsedMs": 1907,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 2,
+      "mode": "army",
+      "diff": "chad",
+      "maxWave": 100,
+      "maxTickMs": 51,
+      "elapsedMs": 1892,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 3,
+      "mode": "castle",
+      "diff": "doomslayer",
+      "maxWave": 100,
+      "maxTickMs": 46,
+      "elapsedMs": 1864,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 4,
+      "mode": "speedrun",
+      "diff": "baby",
+      "maxWave": 100,
+      "maxTickMs": 50,
+      "elapsedMs": 1870,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 5,
+      "mode": "army",
+      "diff": "normal",
+      "maxWave": 100,
+      "maxTickMs": 48,
+      "elapsedMs": 1923,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 6,
+      "mode": "castle",
+      "diff": "chad",
+      "maxWave": 100,
+      "maxTickMs": 45,
+      "elapsedMs": 1884,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 7,
+      "mode": "speedrun",
+      "diff": "doomslayer",
+      "maxWave": 100,
+      "maxTickMs": 46,
+      "elapsedMs": 1930,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 8,
+      "mode": "army",
+      "diff": "baby",
+      "maxWave": 100,
+      "maxTickMs": 50,
+      "elapsedMs": 1950,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    },
+    {
+      "runId": 9,
+      "mode": "castle",
+      "diff": "normal",
+      "maxWave": 100,
+      "maxTickMs": 45,
+      "elapsedMs": 1897,
+      "reached100": true,
+      "ok": true,
+      "issueCodes": []
+    }
+  ]
+}

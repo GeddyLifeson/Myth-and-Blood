@@ -1,0 +1,22 @@
+{
+  "iron_guard": {
+    "name": "Iron Guard",
+    "cost": 6,
+    "hp": 135,
+    "accuracy": 40,
+    "damage": 34,
+    "range": 24,
+    "meleeRange": 24,
+    "speed": 0.95,
+    "type": "melee",
+    "morale": 20,
+    "experience": 6,
+    "canHunt": true,
+    "sprite": {
+      "body": "#505868",
+      "accent": "#9098a8",
+      "mark": "#c0a040",
+      "size": 9
+    }
+  }
+}

@@ -25,20 +25,70 @@ const AdvancedDifficulty = (() => {
     { id: 'spawn_slower', label: 'Slower Spawns', pct: -10, spawnIntervalMult: 1.25 },
     { id: 'elite_more', label: 'More Elites', pct: 12, eliteChanceMult: 1.35 },
     { id: 'elite_less', label: 'Fewer Elites', pct: -8, eliteChanceMult: 0.7 },
-    { id: 'goblin_swarm', label: 'Goblin Swarm +30%', pct: 6, enemyWeight: { goblin: 1.3, goblin_sapper: 1.2 } },
-    { id: 'orc_horde', label: 'Orc Horde +25%', pct: 8, enemyWeight: { orc: 1.25, orc_archer: 1.2 } },
-    { id: 'siege_heavy', label: 'Siege Heavy +40%', pct: 15, enemyWeight: { siege_tower: 1.4, goblin_sapper: 1.3 } },
-    { id: 'mage_storm', label: 'Dark Mage Storm', pct: 10, enemyWeight: { dark_mage: 1.5, necromancer: 1.4 } },
-    { id: 'cavalry_raiders', label: 'Warg Raider Rush', pct: 9, enemyWeight: { warg_rider: 1.45, berserker: 1.2 } },
-    { id: 'boss_heavy', label: 'Boss Pressure', pct: 18, enemyWeight: { war_chief: 1.5, troll: 1.3, dark_knight: 1.25 } },
-    { id: 'miss_tight', label: 'Tighter Breakthrough Limit', pct: 10, missLimitDelta: -2 },
-    { id: 'miss_loose', label: 'Forgiving Breakthroughs', pct: -6, missLimitDelta: 2 },
+    {
+      id: 'goblin_swarm',
+      label: 'Goblin Swarm +30%',
+      pct: 6,
+      enemyWeight: { goblin: 1.3, goblin_sapper: 1.2 },
+    },
+    {
+      id: 'orc_horde',
+      label: 'Orc Horde +25%',
+      pct: 8,
+      enemyWeight: { orc: 1.25, orc_archer: 1.2 },
+    },
+    {
+      id: 'siege_heavy',
+      label: 'Siege Heavy +40%',
+      pct: 15,
+      enemyWeight: { siege_tower: 1.4, goblin_sapper: 1.3 },
+    },
+    {
+      id: 'mage_storm',
+      label: 'Dark Mage Storm',
+      pct: 10,
+      enemyWeight: { dark_mage: 1.5, necromancer: 1.4 },
+    },
+    {
+      id: 'cavalry_raiders',
+      label: 'Warg Raider Rush',
+      pct: 9,
+      enemyWeight: { warg_rider: 1.45, berserker: 1.2 },
+    },
+    {
+      id: 'boss_heavy',
+      label: 'Boss Pressure',
+      pct: 18,
+      enemyWeight: { war_chief: 1.5, troll: 1.3, dark_knight: 1.25 },
+    },
+    { id: 'miss_tight', label: 'Harsher Attrition', pct: 10, missLimitDelta: -2 },
+    { id: 'miss_loose', label: 'Forgiving Attrition', pct: -6, missLimitDelta: 2 },
     { id: 'morale_crisis', label: 'Morale Crisis', pct: 11, playerMoraleDelta: -4 },
     { id: 'iron_resolve', label: 'Iron Resolve', pct: -7, playerMoraleDelta: 4 },
-    { id: 'flyer_swarm', label: 'Flyer Swarm +35%', pct: 9, enemyWeight: { harpy: 1.35, sky_drake: 1.25 } },
-    { id: 'burrower_wave', label: 'Burrower Infestation', pct: 8, enemyWeight: { goblin_burrower: 1.5, plague_rat: 1.2 } },
-    { id: 'undead_rise', label: 'Undead Rise', pct: 11, enemyWeight: { necromancer: 1.4, bone_summoner: 1.35, shaman: 1.15 } },
-    { id: 'assassin_hunt', label: 'Assassin Contract', pct: 13, enemyWeight: { assassin: 1.6, dark_knight: 1.2 } },
+    {
+      id: 'flyer_swarm',
+      label: 'Flyer Swarm +35%',
+      pct: 9,
+      enemyWeight: { harpy: 1.35, sky_drake: 1.25 },
+    },
+    {
+      id: 'burrower_wave',
+      label: 'Burrower Infestation',
+      pct: 8,
+      enemyWeight: { goblin_burrower: 1.5, plague_rat: 1.2 },
+    },
+    {
+      id: 'undead_rise',
+      label: 'Undead Rise',
+      pct: 11,
+      enemyWeight: { necromancer: 1.4, bone_summoner: 1.35, shaman: 1.15 },
+    },
+    {
+      id: 'assassin_hunt',
+      label: 'Assassin Contract',
+      pct: 13,
+      enemyWeight: { assassin: 1.6, dark_knight: 1.2 },
+    },
     { id: 'night_terror', label: 'Night Terror', pct: 7, nightPrepMult: 0.7 },
     { id: 'tp_drought', label: 'TP Drought -25%', pct: 9, tpMult: 0.75 },
     { id: 'builder_slow', label: 'Builder Fatigue', pct: 6, buildSpeedMult: 0.8 },
@@ -46,14 +96,100 @@ const AdvancedDifficulty = (() => {
     { id: 'ally_acc_up', label: 'Ally Accuracy +10%', pct: -8, allyAccDelta: 10 },
     { id: 'double_siege', label: 'Double Siege Waves', pct: 16, siegeWaveMult: 1.5 },
     { id: 'no_elites', label: 'No Elites (Swarm)', pct: -12, forceNoElites: true },
-    { id: 'elite_only', label: 'Elite Parade', pct: 22, eliteChanceMult: 2, enemyWeight: { dark_knight: 1.4, war_chief: 1.3 } },
+    {
+      id: 'elite_only',
+      label: 'Elite Parade',
+      pct: 22,
+      eliteChanceMult: 2,
+      enemyWeight: { dark_knight: 1.4, war_chief: 1.3 },
+    },
+    {
+      id: 'fog_of_war',
+      label: 'Fog of War',
+      pct: 12,
+      fogOfWar: true,
+      fogVisionMult: 0.78,
+    },
+    {
+      id: 'deep_fog',
+      label: 'Deep Fog',
+      pct: 17,
+      fogOfWar: true,
+      fogVisionMult: 0.55,
+    },
+    {
+      id: 'clear_skies',
+      label: 'Clear Skies',
+      pct: -7,
+      fogVisionMult: 1.28,
+    },
+    {
+      id: 'resource_scarcity',
+      label: 'Resource Scarcity',
+      pct: 11,
+      settlementTpMult: 0.65,
+      tpMult: 0.88,
+    },
+    {
+      id: 'lean_harvest',
+      label: 'Lean Harvest',
+      pct: 7,
+      settlementTpMult: 0.72,
+    },
+    {
+      id: 'harsh_winter',
+      label: 'Harsh Winter',
+      pct: 9,
+      nightPrepMult: 0.82,
+      buildSpeedMult: 0.82,
+    },
+    {
+      id: 'relentless_push',
+      label: 'Relentless Push',
+      pct: 13,
+      spawnIntervalMult: 0.72,
+      enemyDmgMult: 1.08,
+    },
+    {
+      id: 'plague_supply',
+      label: 'Plague Supply Lines',
+      pct: 10,
+      tpMult: 0.82,
+      playerMoraleDelta: -3,
+      enemyWeight: { plague_rat: 1.35, goblin_burrower: 1.15 },
+    },
+    {
+      id: 'iron_tax',
+      label: 'Iron Tax',
+      pct: 8,
+      tpMult: 0.9,
+      buildSpeedMult: 0.88,
+    },
+    {
+      id: 'scorched_earth',
+      label: 'Scorched Earth',
+      pct: 14,
+      settlementTpMult: 0.58,
+      enemyCountMult: 1.12,
+    },
   ];
 
   const CONFLICT_GROUPS = [
     ['ally_hp_up', 'ally_hp_down'],
     ['ally_dmg_up', 'ally_dmg_down'],
     ['enemy_hp_up', 'enemy_hp_down'],
-    ['tp_bonus', 'tp_drought'],
+    [
+      'tp_bonus',
+      'tp_penalty',
+      'tp_drought',
+      'resource_scarcity',
+      'lean_harvest',
+      'iron_tax',
+      'scorched_earth',
+    ],
+    ['night_terror', 'harsh_winter'],
+    // clear_skies stacks with fog (boosts vision radius) — only fog tiers conflict.
+    ['fog_of_war', 'deep_fog'],
     ['spawn_faster', 'spawn_slower'],
     ['elite_more', 'elite_less', 'no_elites', 'elite_only'],
     ['miss_tight', 'miss_loose'],
@@ -62,14 +198,78 @@ const AdvancedDifficulty = (() => {
   ];
 
   const PRESETS = [
-    { id: 'siege_nightmare', label: 'Siege Nightmare', desc: 'Heavy towers, fast spawns, tougher walls to crack.', mods: ['siege_heavy', 'spawn_faster', 'enemy_hp_up', 'double_siege'] },
-    { id: 'economy_crunch', label: 'Economy Crunch', desc: 'Tight TP and morale — plan every purchase.', mods: ['tp_drought', 'morale_crisis', 'miss_tight'] },
-    { id: 'goblin_hell', label: 'Goblin Hell', desc: 'Swarms, burrowers, and plague rats.', mods: ['goblin_swarm', 'burrower_wave', 'spawn_faster'] },
-    { id: 'elite_gauntlet', label: 'Elite Gauntlet', desc: 'Boss pressure and assassins hunting your General.', mods: ['elite_only', 'boss_heavy', 'assassin_hunt'] },
-    { id: 'iron_wall', label: 'Iron Wall', desc: 'Buffed allies, forgiving breakthroughs.', mods: ['ally_hp_up', 'ally_dmg_up', 'miss_loose', 'iron_resolve'] },
-    { id: 'blitz', label: 'Blitz Pace', desc: 'Fast spawns, fewer elites, TP bonus — race the waves.', mods: ['spawn_faster', 'elite_less', 'tp_bonus', 'night_terror'] },
-    { id: 'mage_apocalypse', label: 'Mage Apocalypse', desc: 'Dark mages and undead casters dominate.', mods: ['mage_storm', 'undead_rise', 'enemy_dmg_up'] },
-    { id: 'sky_raid', label: 'Sky Raid', desc: 'Flyers and warg riders — bring anti-air.', mods: ['flyer_swarm', 'cavalry_raiders', 'enemy_count_up'] },
+    {
+      id: 'siege_nightmare',
+      label: 'Siege Nightmare',
+      desc: 'Heavy towers, fast spawns, tougher walls to crack.',
+      mods: ['siege_heavy', 'spawn_faster', 'enemy_hp_up', 'double_siege'],
+    },
+    {
+      id: 'economy_crunch',
+      label: 'Economy Crunch',
+      desc: 'Tight TP and morale — plan every purchase.',
+      mods: ['tp_drought', 'morale_crisis', 'miss_tight'],
+    },
+    {
+      id: 'goblin_hell',
+      label: 'Goblin Hell',
+      desc: 'Swarms, burrowers, and plague rats.',
+      mods: ['goblin_swarm', 'burrower_wave', 'spawn_faster'],
+    },
+    {
+      id: 'elite_gauntlet',
+      label: 'Elite Gauntlet',
+      desc: 'Boss pressure and assassins hunting your General.',
+      mods: ['elite_only', 'boss_heavy', 'assassin_hunt'],
+    },
+    {
+      id: 'iron_wall',
+      label: 'Iron Wall',
+      desc: 'Buffed allies, forgiving attrition.',
+      mods: ['ally_hp_up', 'ally_dmg_up', 'miss_loose', 'iron_resolve'],
+    },
+    {
+      id: 'blitz',
+      label: 'Blitz Pace',
+      desc: 'Fast spawns, fewer elites, TP bonus — race the waves.',
+      mods: ['spawn_faster', 'elite_less', 'tp_bonus', 'night_terror'],
+    },
+    {
+      id: 'mage_apocalypse',
+      label: 'Mage Apocalypse',
+      desc: 'Dark mages and undead casters dominate.',
+      mods: ['mage_storm', 'undead_rise', 'enemy_dmg_up'],
+    },
+    {
+      id: 'sky_raid',
+      label: 'Sky Raid',
+      desc: 'Flyers and warg riders — bring anti-air.',
+      mods: ['flyer_swarm', 'cavalry_raiders', 'enemy_count_up'],
+    },
+    {
+      id: 'fog_siege',
+      label: 'Fog Siege',
+      desc: 'Limited vision — scouts and watchtowers under siege pressure.',
+      mods: ['fog_of_war', 'siege_heavy', 'spawn_faster'],
+    },
+    {
+      id: 'scarcity_run',
+      label: 'Scarcity Run',
+      desc: 'Tight hamlet income, TP drought, harsh attrition.',
+      mods: ['resource_scarcity', 'morale_crisis', 'miss_tight'],
+    },
+    {
+      id: 'total_war',
+      label: 'Total War',
+      desc: 'Deep fog, scarce resources, relentless host assault.',
+      mods: ['deep_fog', 'scorched_earth', 'relentless_push', 'enemy_count_up'],
+    },
+    {
+      id: 'winter_campaign',
+      label: 'Winter Campaign',
+      desc: 'Short nights, slow builders, undead pressure.',
+      mods: ['harsh_winter', 'undead_rise', 'plague_supply'],
+    },
   ];
 
   let active = new Set();
@@ -86,7 +286,7 @@ const AdvancedDifficulty = (() => {
   function conflictsWithActive(id) {
     for (const g of CONFLICT_GROUPS) {
       if (!g.includes(id)) continue;
-      if (g.some(x => x !== id && active.has(x))) return true;
+      if (g.some((x) => x !== id && active.has(x))) return true;
     }
     return false;
   }
@@ -107,7 +307,7 @@ const AdvancedDifficulty = (() => {
 
   function applyPreset(presetId) {
     if (lockedForRun) return false;
-    const p = PRESETS.find(x => x.id === presetId);
+    const p = PRESETS.find((x) => x.id === presetId);
     if (!p) return false;
     setActive(p.mods);
     return true;
@@ -131,17 +331,29 @@ const AdvancedDifficulty = (() => {
 
   function getCombinedMods() {
     const combined = {
-      allyHpMult: 1, allyDmgMult: 1, tpMult: 1,
-      enemyHpMult: 1, enemyDmgMult: 1, enemyCountMult: 1,
-      spawnIntervalMult: 1, eliteChanceMult: 1,
+      allyHpMult: 1,
+      allyDmgMult: 1,
+      tpMult: 1,
+      enemyHpMult: 1,
+      enemyDmgMult: 1,
+      enemyCountMult: 1,
+      spawnIntervalMult: 1,
+      eliteChanceMult: 1,
       enemyWeight: {},
-      missLimitDelta: 0, playerMoraleDelta: 0,
-      allyAccDelta: 0, nightPrepMult: 1, buildSpeedMult: 1,
-      siegeWaveMult: 1, forceNoElites: false,
+      missLimitDelta: 0,
+      playerMoraleDelta: 0,
+      allyAccDelta: 0,
+      nightPrepMult: 1,
+      buildSpeedMult: 1,
+      siegeWaveMult: 1,
+      settlementTpMult: 1,
+      fogOfWar: false,
+      fogVisionMult: 1,
+      forceNoElites: false,
       pctDelta: 0,
     };
     for (const id of active) {
-      const m = MODIFIERS.find(x => x.id === id);
+      const m = MODIFIERS.find((x) => x.id === id);
       if (!m) continue;
       combined.pctDelta += m.pct || 0;
       if (m.allyHpMult) combined.allyHpMult *= m.allyHpMult;
@@ -158,6 +370,9 @@ const AdvancedDifficulty = (() => {
       if (m.nightPrepMult) combined.nightPrepMult *= m.nightPrepMult;
       if (m.buildSpeedMult) combined.buildSpeedMult *= m.buildSpeedMult;
       if (m.siegeWaveMult) combined.siegeWaveMult *= m.siegeWaveMult;
+      if (m.settlementTpMult) combined.settlementTpMult *= m.settlementTpMult;
+      if (m.fogOfWar) combined.fogOfWar = true;
+      if (m.fogVisionMult) combined.fogVisionMult *= m.fogVisionMult;
       if (m.forceNoElites) combined.forceNoElites = true;
       if (m.enemyWeight) {
         for (const [k, v] of Object.entries(m.enemyWeight)) {
@@ -166,6 +381,55 @@ const AdvancedDifficulty = (() => {
       }
     }
     return combined;
+  }
+
+  function getPlayerVisionRange(unit, visionMult = 1) {
+    if (!unit || unit.team !== 'player' || unit.hp <= 0) return 0;
+    let range = 155;
+    if (unit.type === 'scout') range = 265;
+    else if (unit.type === 'knight') range = 195;
+    else if (unit.type === 'archer' || unit.combatType === 'ranged') range = 205;
+    else if (unit.type === 'general') range = 220;
+    if (unit.revealsStealth) range += 45;
+    return range * visionMult;
+  }
+
+  function isEnemySpotted(unit, ctx = {}) {
+    if (!unit || unit.team !== 'enemy' || unit.hp <= 0) return true;
+    const units = ctx.units || [];
+    const buildings = ctx.buildings || [];
+    const rallyY = ctx.rallyY ?? 500;
+    const dayPhase = ctx.isDayPhase !== false;
+    const visionMult = ctx.visionMult ?? 1;
+
+    if (dayPhase && unit.y > rallyY - 55) return true;
+
+    for (const u of units) {
+      if (u.team !== 'player' || u.hp <= 0) continue;
+      const dist = Math.hypot(u.x - unit.x, u.y - unit.y);
+      if (dist <= 88) return true;
+      if (dist <= getPlayerVisionRange(u, visionMult)) return true;
+    }
+
+    for (const b of buildings) {
+      if (b.owner !== 'player' || b.hp <= 0 || !b.complete) continue;
+      const dist = Math.hypot(b.x - unit.x, b.y - unit.y);
+      if (b.type === 'watchtower' || b.isWatchtower) {
+        const vr = (b.visionRadius || 220) * visionMult;
+        if (dist <= vr) return true;
+      }
+      if (b.type === 'castle' || b.type === 'keep') {
+        if (dist <= 300 * visionMult) return true;
+      }
+      if (b.type === 'outpost' && dist <= 180 * visionMult) return true;
+    }
+    return false;
+  }
+
+  function isEnemyFogHidden(unit, ctx = {}) {
+    const mods = getCombinedMods();
+    if (!mods.fogOfWar || !unit || unit.team !== 'enemy' || unit.hp <= 0) return false;
+    return !isEnemySpotted(unit, { ...ctx, visionMult: mods.fogVisionMult || 1 });
   }
 
   function getDifficultyPercent(baseId) {
@@ -184,10 +448,12 @@ const AdvancedDifficulty = (() => {
     if (pctPanel) pctPanel.textContent = `Effective: ${pct}`;
     const presetEl = document.getElementById('advanced-diff-presets');
     if (presetEl) {
-      presetEl.innerHTML = PRESETS.map(p => `
+      presetEl.innerHTML = PRESETS.map(
+        (p) => `
         <button type="button" class="adv-preset-btn" data-preset="${p.id}" title="${p.desc}" ${lockedForRun ? 'disabled' : ''}>${p.label}</button>
-      `).join('');
-      presetEl.querySelectorAll('.adv-preset-btn').forEach(btn => {
+      `
+      ).join('');
+      presetEl.querySelectorAll('.adv-preset-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
           if (applyPreset(btn.dataset.preset)) {
             renderPanel();
@@ -208,21 +474,27 @@ const AdvancedDifficulty = (() => {
 
     if (lockedForRun) {
       grid.innerHTML = `<p class="adv-locked-msg">Modifiers locked for this run (Roguelike / Daily / Weekly).</p>
-        ${[...active].map(id => {
-          const m = MODIFIERS.find(x => x.id === id);
-          return m ? `<div class="adv-mod-row on locked"><span class="adv-mod-label">${m.label}</span></div>` : '';
-        }).join('')}`;
+        ${[...active]
+          .map((id) => {
+            const m = MODIFIERS.find((x) => x.id === id);
+            return m
+              ? `<div class="adv-mod-row on locked"><span class="adv-mod-label">${m.label}</span></div>`
+              : '';
+          })
+          .join('')}`;
       return;
     }
 
-    grid.innerHTML = MODIFIERS.map(m => `
+    grid.innerHTML = MODIFIERS.map(
+      (m) => `
       <label class="adv-mod-row ${active.has(m.id) ? 'on' : ''} ${conflictsWithActive(m.id) && !active.has(m.id) ? 'conflict' : ''}">
         <input type="checkbox" data-mod="${m.id}" ${active.has(m.id) ? 'checked' : ''} ${conflictsWithActive(m.id) && !active.has(m.id) ? 'disabled' : ''}>
         <span class="adv-mod-label">${m.label}</span>
         <span class="adv-mod-pct">${m.pct > 0 ? '+' : ''}${m.pct}%</span>
       </label>
-    `).join('');
-    grid.querySelectorAll('input[data-mod]').forEach(inp => {
+    `
+    ).join('');
+    grid.querySelectorAll('input[data-mod]').forEach((inp) => {
       inp.addEventListener('change', () => {
         toggle(inp.dataset.mod);
         renderPanel();
@@ -246,7 +518,7 @@ const AdvancedDifficulty = (() => {
     document.getElementById('advanced-diff-close')?.addEventListener('click', () => {
       document.getElementById('advanced-diff-screen')?.classList.remove('active');
     });
-    document.querySelectorAll('.diff-btn').forEach(btn => {
+    document.querySelectorAll('.diff-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         const pctEl = document.getElementById('advanced-diff-pct');
         if (pctEl) pctEl.textContent = `${getDifficultyPercent(btn.dataset.diff)}%`;
@@ -259,9 +531,28 @@ const AdvancedDifficulty = (() => {
   }
 
   return {
-    init, toggle, setActive, getActiveIds, getActiveModCount, getCombinedMods,
-    getDifficultyPercent, getModifiers, getPresets: () => PRESETS,
-    getConflictGroups, applyPreset, lockForRun, unlockForRun, isLockedForRun,
-    renderPanel, togglePanel,
+    init,
+    toggle,
+    setActive,
+    getActiveIds,
+    getActiveModCount,
+    getCombinedMods,
+    getPlayerVisionRange,
+    isEnemySpotted,
+    isEnemyFogHidden,
+    getDifficultyPercent,
+    getModifiers,
+    getPresets: () => PRESETS,
+    getConflictGroups,
+    applyPreset,
+    lockForRun,
+    unlockForRun,
+    isLockedForRun,
+    renderPanel,
+    togglePanel,
   };
 })();
+
+// Published for GameServices.registerFromGlobals(): a top-level `const` in a
+// classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.AdvancedDifficulty = AdvancedDifficulty;

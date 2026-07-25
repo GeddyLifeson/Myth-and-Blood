@@ -1,0 +1,7 @@
+node_modules/
+package-lock.json
+js/game-data-bundle.js
+data/
+scripts/sim-report.json
+myth-and-blood.zip
+.git/
