@@ -6,3 +6,5 @@ release/
 Thumbs.db
 *.log
 .env
+# AI session handoff artifacts (contain local absolute paths — never publish)
+RESUME.md

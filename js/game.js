@@ -3576,6 +3576,22 @@ const Game = (() => {
 
   function spawnUnit(type, x, y, team, opts = {}) {
     if (team === 'player') ensurePlayerUnitDef(type);
+    // Non-finite spawn coords (NaN/Infinity from level data, mods, or creative tools)
+    // produce units that are permanently unreachable and unclickable, and poison
+    // distance/pathfinding math. Clamp to the world before the unit is ever created.
+    if (!Number.isFinite(x) || !Number.isFinite(y)) {
+      if (typeof ErrorReporting !== 'undefined') {
+        ErrorReporting.log?.('warn', 'spawnUnit received non-finite coords — clamped', {
+          kind: 'spawn-coords',
+          type,
+          team,
+          x,
+          y,
+        });
+      }
+      x = Number.isFinite(x) ? x : GS.worldW / 2;
+      y = Number.isFinite(y) ? y : GS.worldH / 2;
+    }
     const u = createUnit(type, x, y, team, { spawnWave: GS.wave, ...opts });
     if (!u) {
       if (typeof ErrorReporting !== 'undefined') {

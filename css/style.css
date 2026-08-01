@@ -199,7 +199,10 @@ body.screen-reader-hints button:focus-visible {
   position: absolute;
   top: 0;
   bottom: 0;
-  width: var(--panel-width);
+  /* Fallback is load-bearing: if --panel-width ever resolves invalid, width falls back
+     to `auto` and these absolutely-positioned rails content-size to ~1000px, burying
+     the battlefield. Keep an explicit px fallback on every panel sizing declaration. */
+  width: var(--panel-width, 62px);
   display: flex;
   flex-direction: column;
   gap: calc(2px * var(--ui-scale));
@@ -221,7 +224,7 @@ body.screen-reader-hints button:focus-visible {
 
 #right-panel {
   right: 0;
-  width: var(--panel-right-width);
+  width: var(--panel-right-width, 58px);
   background: linear-gradient(
     270deg,
     var(--hud-panel-bg) 0%,
@@ -415,8 +418,8 @@ body.screen-reader-hints button:focus-visible {
 #top-bar {
   position: absolute;
   top: 0;
-  left: var(--panel-width);
-  right: var(--panel-right-width);
+  left: var(--panel-width, 62px);
+  right: var(--panel-right-width, 58px);
   display: flex;
   flex-wrap: wrap;
   align-items: center;
