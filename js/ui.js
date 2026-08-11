@@ -1461,7 +1461,10 @@ const UI = (() => {
         typeof EternalPathFramework !== 'undefined'
           ? EternalPathFramework.formatHudLine({ wave: gs.wave })
           : epfSnap?.hudLine || '';
-      const show = !!line || !!epfSnap?.dominantPathId || (gs.wave || 0) >= 1;
+      // Only surface once the framework itself has something to say (it returns '' pre-wave-50
+      // with no dominant path). A blanket `wave >= 1` forced this into view — and its bare '?'
+      // fallback text — from turn one, before any path exists to report on.
+      const show = !!line || !!epfSnap?.dominantPathId;
       epfHud.style.display = show ? '' : 'none';
       if (show) {
         epfText.textContent = line || 'Path ?';
@@ -1517,7 +1520,9 @@ const UI = (() => {
         typeof GrandStrategyMidBranches !== 'undefined'
           ? GrandStrategyMidBranches.formatHudLine({ wave: gs.wave })
           : mbSnap?.hudLine || '';
-      const show = !!line || mbSnap?.tracking || mbSnap?.resolved || (gs.wave || 0) >= 150;
+      // Mid branches only form 150–175; don't force the badge (and its bare '?' fallback)
+      // into view at wave 150 before anything has actually started tracking.
+      const show = !!line || mbSnap?.tracking || mbSnap?.resolved;
       mbHud.style.display = show ? '' : 'none';
       if (show) {
         mbText.textContent = line || 'Branches ?';
@@ -1535,7 +1540,9 @@ const UI = (() => {
         typeof IntergalacticLateBranches !== 'undefined'
           ? IntergalacticLateBranches.formatHudLine({ wave: gs.wave })
           : lbSnap?.hudLine || '';
-      const show = !!line || lbSnap?.tracking || lbSnap?.resolved || (gs.wave || 0) >= 400;
+      // Same fix as mid-branches above — late branches form through wave 425; don't force
+      // the badge into view at wave 400 before anything has actually started tracking.
+      const show = !!line || lbSnap?.tracking || lbSnap?.resolved;
       lbHud.style.display = show ? '' : 'none';
       if (show) {
         lbText.textContent = line || 'Ascend ?';

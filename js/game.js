@@ -14915,8 +14915,11 @@ const Game = (() => {
         ? svc('GfxQuality').quantizeScale(u.spriteScale || 1)
         : Math.round((u.spriteScale || 1) * 4) / 4;
       const drawSz = 36 * sprScale;
+      // spriteType is derived from type at spawn and should always be a string; fall back
+      // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
+      // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
       const img = svc('SpriteGen').getUnitCanvas(
-        u.spriteType,
+        u.spriteType || u.type,
         drawRot,
         u.team,
         u.frame,

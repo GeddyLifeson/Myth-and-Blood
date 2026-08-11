@@ -455,6 +455,13 @@ const SpriteGen = (() => {
   }
 
   function drawUnitTopDown(ctx, type, rotation, team, frame = 0, animState = 'idle', lod = 0) {
+    // Defense-in-depth: every branch below calls type.startsWith(...) unguarded. A unit
+    // whose spriteType desyncs from its type (stale pooled field, bad save data, etc.)
+    // reaches here as undefined and throws, which aborts the ENTIRE world-layer draw for
+    // that frame (game.js wraps it in one big try/catch around all world rendering) —
+    // not just that one unit. Fall back to 'footman' so a single bad unit can never blank
+    // the whole battlefield.
+    if (typeof type !== 'string') type = 'footman';
     if (lod >= 3) {
       const style = resolveUnitStyle(type, team, 'footman');
       drawMinimalMarker(ctx, style, team, style.size * 0.82);

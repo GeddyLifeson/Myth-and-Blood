@@ -1,9 +1,9 @@
 {
   "runs": 13,
-  "elapsedSec": 676.3,
+  "elapsedSec": 479.1,
   "bestWave": 1000,
   "avgWave": 808.5,
-  "avgUpdateMs": 6.02,
+  "avgUpdateMs": 4.23,
   "reached1000": [
     {
       "runId": 200,
@@ -21,29 +21,8 @@
       "wave": 1000
     }
   ],
-  "issueCounts": {
-    "SLOW_UPDATE": 3
-  },
-  "issues": [
-    {
-      "runId": 5,
-      "code": "SLOW_UPDATE",
-      "ms": 8.56,
-      "name": "spy_steal"
-    },
-    {
-      "runId": 7,
-      "code": "SLOW_UPDATE",
-      "ms": 9.26,
-      "name": "rally_spam"
-    },
-    {
-      "runId": 9,
-      "code": "SLOW_UPDATE",
-      "ms": 8.92,
-      "name": "deploy_night"
-    }
-  ],
+  "issueCounts": {},
+  "issues": [],
   "topRuns": [
     {
       "runId": 200,
@@ -52,7 +31,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.54
+      "avgUpdateMs": 0.39
     },
     {
       "runId": 201,
@@ -61,7 +40,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.47
+      "avgUpdateMs": 0.33
     },
     {
       "runId": 202,
@@ -70,7 +49,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.43
+      "avgUpdateMs": 0.3
     },
     {
       "runId": 0,
@@ -79,7 +58,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 6.26
+      "avgUpdateMs": 4.78
     },
     {
       "runId": 1,
@@ -88,7 +67,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 7.87
+      "avgUpdateMs": 5.8
     },
     {
       "runId": 2,
@@ -97,7 +76,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 6.25
+      "avgUpdateMs": 4.44
     },
     {
       "runId": 3,
@@ -106,7 +85,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 7.13
+      "avgUpdateMs": 4.86
     },
     {
       "runId": 4,
@@ -115,23 +94,16 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 7.35
+      "avgUpdateMs": 4.9
     },
     {
       "runId": 5,
       "name": "spy_steal",
       "maxWave": 751,
-      "issues": [
-        {
-          "runId": 5,
-          "code": "SLOW_UPDATE",
-          "ms": 8.56,
-          "name": "spy_steal"
-        }
-      ],
+      "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 8.56
+      "avgUpdateMs": 5.73
     },
     {
       "runId": 6,
@@ -140,23 +112,16 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 7.28
+      "avgUpdateMs": 5.11
     },
     {
       "runId": 7,
       "name": "rally_spam",
       "maxWave": 751,
-      "issues": [
-        {
-          "runId": 7,
-          "code": "SLOW_UPDATE",
-          "ms": 9.26,
-          "name": "rally_spam"
-        }
-      ],
+      "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 9.26
+      "avgUpdateMs": 6.31
     },
     {
       "runId": 8,
@@ -165,7 +130,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 7.94
+      "avgUpdateMs": 5.6
     }
   ]
 }
