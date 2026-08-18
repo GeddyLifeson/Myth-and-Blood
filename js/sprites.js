@@ -111,6 +111,60 @@ const SpriteGen = (() => {
     return Cosmetics.applyUnitSkin(base);
   }
 
+  // ── Lighting helpers ─────────────────────────────────────────
+  // Unit sprites are rendered once per (type, rotation, team, frame, animState)
+  // combo onto a small offscreen canvas and cached (see getUnitCanvas below), so
+  // gradient construction here only costs anything on a cache miss — safe to use
+  // freely on every body fill, not a per-frame cost once the cache is warm.
+  const shadeCache = new Map();
+
+  function shadeHex(hex, amt) {
+    const key = hex + '|' + amt;
+    const hit = shadeCache.get(key);
+    if (hit) return hit;
+    const n = parseInt(hex.slice(1), 16);
+    let r = (n >> 16) & 0xff;
+    let g = (n >> 8) & 0xff;
+    let b = n & 0xff;
+    if (amt >= 0) {
+      r += (255 - r) * amt;
+      g += (255 - g) * amt;
+      b += (255 - b) * amt;
+    } else {
+      r *= 1 + amt;
+      g *= 1 + amt;
+      b *= 1 + amt;
+    }
+    const out = `rgb(${r | 0},${g | 0},${b | 0})`;
+    shadeCache.set(key, out);
+    return out;
+  }
+
+  /** Radial "lit sphere" gradient: bright highlight offset toward the light, dark rim. */
+  function bodyGradient(ctx, cx, cy, r, hex) {
+    const g = ctx.createRadialGradient(
+      cx - r * 0.35,
+      cy - r * 0.4,
+      r * 0.12,
+      cx,
+      cy,
+      r * 1.05
+    );
+    g.addColorStop(0, shadeHex(hex, 0.5));
+    g.addColorStop(0.55, hex);
+    g.addColorStop(1, shadeHex(hex, -0.4));
+    return g;
+  }
+
+  /** Vertical gradient for rectangular/tall bodies (siege engines, iron colossus). */
+  function bodyGradientV(ctx, x, y, h, hex) {
+    const g = ctx.createLinearGradient(0, y, 0, y + h);
+    g.addColorStop(0, shadeHex(hex, 0.35));
+    g.addColorStop(0.6, hex);
+    g.addColorStop(1, shadeHex(hex, -0.35));
+    return g;
+  }
+
   function drawMinimalMarker(ctx, style, team, r) {
     ctx.fillStyle = style.body;
     ctx.beginPath();
@@ -126,7 +180,7 @@ const SpriteGen = (() => {
     ctx.beginPath();
     ctx.ellipse(0, 2, r * 0.9, r * 0.38, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = style.body;
+    ctx.fillStyle = bodyGradient(ctx, 0, 0, r, style.body);
     ctx.beginPath();
     ctx.arc(0, 0, r, 0, Math.PI * 2);
     ctx.fill();
@@ -152,11 +206,15 @@ const SpriteGen = (() => {
     if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {
       const style = resolveUnitStyle(type, team, 'behemoth');
       const r = style.size * 0.9;
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fillStyle = 'rgba(0,0,0,0.2)';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, r * 1.08, r * 0.5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
       ctx.beginPath();
       ctx.ellipse(0, 3, r, r * 0.45, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradient(ctx, 0, 0, r, style.body);
       ctx.beginPath();
       ctx.ellipse(0, 0, r, r * 0.82, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -176,11 +234,15 @@ const SpriteGen = (() => {
     const style = resolveUnitStyle(type, team, 'footman');
     const r = style.size;
     const walkBob = animState === 'walk' ? Math.sin(frame * 1.5) * 1.2 : 0;
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(0, 3, r * 1.1, r * 0.52, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.fillStyle = 'rgba(0,0,0,0.3)';
     ctx.beginPath();
     ctx.ellipse(0, 2, r, r * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = style.body;
+    ctx.fillStyle = bodyGradient(ctx, 0, walkBob * 0.4, r, style.body);
     ctx.beginPath();
     ctx.arc(0, walkBob * 0.4, r, 0, Math.PI * 2);
     ctx.fill();
@@ -232,7 +294,7 @@ const SpriteGen = (() => {
     ctx.fill();
 
     if (shape === 'behemoth') {
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradient(ctx, 0, walkBob, r * 1.1, style.body);
       ctx.beginPath();
       ctx.ellipse(0, walkBob, r * 1.1, r * 0.95, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -260,7 +322,7 @@ const SpriteGen = (() => {
       ctx.arc(r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2);
       ctx.fill();
     } else if (shape === 'iron_colossus') {
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradientV(ctx, 0, -r * 0.9 + walkBob, r * 1.8, style.body);
       ctx.fillRect(-r * 0.85, -r * 0.9 + walkBob, r * 1.7, r * 1.8);
       ctx.strokeStyle = style.accent;
       ctx.lineWidth = 2;
@@ -277,7 +339,7 @@ const SpriteGen = (() => {
       ctx.fillStyle = `rgba(255,120,40,${0.5 + pulse * 0.4})`;
       ctx.fillRect(-6, -2 + walkBob, 12, 10);
     } else if (shape === 'elder_wyrm') {
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradient(ctx, 0, walkBob * 0.5, r * 0.75, style.body);
       ctx.beginPath();
       ctx.ellipse(0, walkBob * 0.5, r * 0.75, r * 0.55, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -309,10 +371,11 @@ const SpriteGen = (() => {
       ctx.fill();
     } else if (shape === 'abomination') {
       const wobble = Math.sin(frame * 0.8) * 2;
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradient(ctx, -4 + wobble * 0.3, walkBob, r * 0.85, style.body);
       ctx.beginPath();
       ctx.ellipse(-4 + wobble * 0.3, walkBob, r * 0.85, r * 0.7, -0.2, 0, Math.PI * 2);
       ctx.fill();
+      ctx.fillStyle = bodyGradient(ctx, 6 - wobble * 0.2, walkBob + 2, r * 0.7, style.body);
       ctx.beginPath();
       ctx.ellipse(6 - wobble * 0.2, walkBob + 2, r * 0.7, r * 0.65, 0.15, 0, Math.PI * 2);
       ctx.fill();
@@ -338,7 +401,7 @@ const SpriteGen = (() => {
         ctx.stroke();
       }
     } else if (shape === 'void_stalker') {
-      ctx.fillStyle = style.body;
+      ctx.fillStyle = bodyGradient(ctx, 0, walkBob, r * 0.65, style.body);
       ctx.beginPath();
       ctx.ellipse(0, walkBob, r * 0.55, r * 1.05, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -437,7 +500,7 @@ const SpriteGen = (() => {
     ctx.beginPath();
     ctx.ellipse(0, 4, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = style.body;
+    ctx.fillStyle = bodyGradientV(ctx, 0, -r * 0.55 + walkBob, r * 1.1, style.body);
     ctx.fillRect(-r * 0.75, -r * 0.55 + walkBob, r * 1.5, r * 1.1);
     ctx.fillStyle = style.accent;
     ctx.fillRect(-r * 0.65, -r * 0.45 + walkBob, r * 1.3, r * 0.25);
@@ -490,8 +553,12 @@ const SpriteGen = (() => {
     const walkBob = animState === 'walk' ? Math.sin(frame * 1.5) * 2 : 0;
     const attackLunge = animState === 'attack' ? 6 : 0;
 
-    // Shadow
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    // Shadow (soft: two overlapping alpha ellipses fake a blurred edge cheaply)
+    ctx.fillStyle = 'rgba(0,0,0,0.18)';
+    ctx.beginPath();
+    ctx.ellipse(1, 3 + walkBob * 0.3, r + 3, r * 0.75, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(0,0,0,0.32)';
     ctx.beginPath();
     ctx.ellipse(1, 2 + walkBob * 0.3, r + 1, r * 0.6, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -505,7 +572,7 @@ const SpriteGen = (() => {
     }
 
     // Body
-    ctx.fillStyle = style.body;
+    ctx.fillStyle = bodyGradient(ctx, 0, walkBob * 0.5, r, style.body);
     ctx.beginPath();
     ctx.arc(0, walkBob * 0.5, r, 0, Math.PI * 2);
     ctx.fill();
@@ -932,22 +999,64 @@ const SpriteGen = (() => {
   }
 
   function drawBattlefield(ctx, w, h, baseW = 400, baseH = 600) {
+    // Base gradient — wider luminance range than before so the field reads as lit
+    // ground rather than a flat color fill.
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#3a5028');
-    grad.addColorStop(0.4, '#4a6838');
-    grad.addColorStop(0.7, '#5a7848');
-    grad.addColorStop(1, '#3a5028');
+    grad.addColorStop(0, '#2c4420');
+    grad.addColorStop(0.4, '#4a6c34');
+    grad.addColorStop(0.7, '#628254');
+    grad.addColorStop(1, '#2c4420');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
+    // Large-scale patchy clumps (mown/wild grass variation) — coarse, cheap, drawn
+    // once and cached onto the battlefield canvas, so a bigger loop here costs
+    // nothing per frame.
+    for (let y = 0; y < h; y += 34) {
+      for (let x = 0; x < w; x += 34) {
+        const hash = (x * 131 + y * 617 + w * 7) % 100;
+        if (hash < 62) continue;
+        const cw = 20 + (hash % 14);
+        const ch = 14 + (hash % 10);
+        ctx.fillStyle = hash > 86 ? 'rgba(120,168,90,0.10)' : 'rgba(30,54,20,0.14)';
+        ctx.beginPath();
+        ctx.ellipse(
+          x + (hash % 9) - 4,
+          y + (hash % 7) - 3,
+          cw / 2,
+          ch / 2,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+
+    // Fine speckle (individual grass blades/dirt flecks).
     for (let y = 0; y < h; y += 6) {
       for (let x = 0; x < w; x += 6) {
         const hash = (x * 73 + y * 997 + w * 3) % 100;
         if (hash < 48) continue;
-        ctx.fillStyle = hash > 82 ? 'rgba(48,82,38,0.42)' : 'rgba(62,98,48,0.28)';
+        ctx.fillStyle = hash > 82 ? 'rgba(40,70,30,0.48)' : 'rgba(84,124,64,0.32)';
         ctx.fillRect(x + (hash % 4), y + (hash % 3), 2, hash > 70 ? 3 : 2);
       }
     }
+
+    // Soft vignette — darkens the far corners so the eye settles on the lane
+    // center where the action happens, without fighting the lane/tier overlays below.
+    const vign = ctx.createRadialGradient(
+      w / 2,
+      h / 2,
+      Math.max(w, h) * 0.28,
+      w / 2,
+      h / 2,
+      Math.max(w, h) * 0.72
+    );
+    vign.addColorStop(0, 'rgba(0,0,0,0)');
+    vign.addColorStop(1, 'rgba(6,10,4,0.24)');
+    ctx.fillStyle = vign;
+    ctx.fillRect(0, 0, w, h);
 
     const tier = Math.max(Math.floor((w - baseW) / 90), Math.floor((h - baseH) / 110));
     if (tier > 0) {
