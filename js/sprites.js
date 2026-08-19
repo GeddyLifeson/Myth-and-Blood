@@ -165,6 +165,107 @@ const SpriteGen = (() => {
     return g;
   }
 
+  /**
+   * Per-type weapon/prop silhouette (bow, spear, staff, lute, mount tack, ...).
+   * Caller must already be translated to the unit's local origin and rotated to
+   * face `rotation` — this only draws in that local, unrotated space. Originally
+   * only the full-LOD (LOD 0) humanoid path had per-type shapes; the far more
+   * commonly seen medium tier (LOD 1) drew one generic rectangle for every class,
+   * which is why "archer" and "footman" were hard to tell apart at a glance.
+   */
+  function drawWeaponSilhouette(ctx, type, style, r, animState, pulse) {
+    ctx.fillStyle = style.mark;
+    if (type === 'doomslayer_hero') {
+      ctx.fillStyle = '#6080a0';
+      ctx.fillRect(-5, -r - 10, 4, 12);
+      ctx.fillRect(1, -r - 10, 4, 12);
+      ctx.fillStyle = '#40c0ff';
+      ctx.fillRect(-4, -r - 12, 2, 4);
+      ctx.fillRect(2, -r - 12, 2, 4);
+    } else if (
+      type === 'archer' ||
+      type === 'orc_archer' ||
+      type === 'hellbound_legionnaire' ||
+      type === 'grim_revenant'
+    ) {
+      ctx.fillRect(-1, -r - 14, 2, 14);
+      ctx.fillStyle = '#c0a060';
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 16);
+      ctx.lineTo(-3, -r - 10);
+      ctx.lineTo(3, -r - 10);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'scout') {
+      ctx.fillStyle = '#405830';
+      ctx.fillRect(-1, -r - 12, 2, 12);
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 14);
+      ctx.lineTo(-3, -r - 8);
+      ctx.lineTo(3, -r - 8);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type === 'bard') {
+      ctx.fillStyle = '#c090d0';
+      ctx.beginPath();
+      ctx.arc(0, -r - 8, 5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-1, -r - 14, 2, 6);
+    } else if (type === 'ballista' || type === 'hellmortar_pack') {
+      ctx.fillStyle = '#505050';
+      ctx.fillRect(-8, -2, 16, 4);
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-2, -r - 8, 4, 8);
+    } else if (type === 'pikeman') {
+      ctx.fillStyle = '#c0c0c0';
+      ctx.fillRect(-1, -r - 16, 2, 18);
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 18);
+      ctx.lineTo(-2, -r - 12);
+      ctx.lineTo(2, -r - 12);
+      ctx.closePath();
+      ctx.fill();
+    } else if (type.startsWith('roster_')) {
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-2, -r - (animState === 'attack' ? 11 : 9), 4, animState === 'attack' ? 11 : 9);
+      ctx.fillStyle = style.accent;
+      ctx.fillRect(-5, -r - 4, 10, 3);
+    } else if (
+      type === 'mage' ||
+      type === 'dark_mage' ||
+      type === 'bone_summoner' ||
+      type === 'warp_prophet' ||
+      type === 'necromancer'
+    ) {
+      ctx.fillStyle = pulse ? '#ffe080' : '#e0c040';
+      ctx.fillRect(-1, -r - 12, 2, 12);
+      ctx.beginPath();
+      ctx.arc(0, -r - 14, 4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (type === 'cavalry' || type === 'warg_rider' || type === 'nightmare_strider') {
+      ctx.fillStyle = '#6a4020';
+      ctx.fillRect(-7, -2, 14, 5);
+      ctx.fillStyle = style.mark;
+      ctx.fillRect(-2, -r - 10, 4, 10);
+    } else if (type === 'healer' || type === 'shaman') {
+      ctx.fillStyle = '#c8a060';
+      ctx.fillRect(-1, -r - 18, 2, 20);
+      ctx.fillStyle = '#80e8c0';
+      ctx.beginPath();
+      ctx.arc(0, -r - 18, 3, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.fillRect(-2, -r - (animState === 'attack' ? 12 : 8), 4, animState === 'attack' ? 12 : 8);
+      if (animState === 'attack') {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(-1, -r - 14, 2, 4);
+      }
+    }
+  }
+
   function drawMinimalMarker(ctx, style, team, r) {
     ctx.fillStyle = style.body;
     ctx.beginPath();
@@ -175,7 +276,26 @@ const SpriteGen = (() => {
     ctx.stroke();
   }
 
-  function drawLowMarker(ctx, style, team, rotation, r, animState = 'idle') {
+  const RANGED_TYPES = new Set([
+    'archer',
+    'orc_archer',
+    'hellbound_legionnaire',
+    'grim_revenant',
+    'ballista',
+    'hellmortar_pack',
+  ]);
+  const CASTER_TYPES = new Set([
+    'mage',
+    'dark_mage',
+    'bone_summoner',
+    'warp_prophet',
+    'necromancer',
+    'shaman',
+    'healer',
+  ]);
+  const MOUNTED_TYPES = new Set(['cavalry', 'warg_rider', 'nightmare_strider']);
+
+  function drawLowMarker(ctx, style, team, rotation, r, animState = 'idle', type = '') {
     ctx.fillStyle = 'rgba(0,0,0,0.28)';
     ctx.beginPath();
     ctx.ellipse(0, 2, r * 0.9, r * 0.38, 0, 0, Math.PI * 2);
@@ -192,12 +312,36 @@ const SpriteGen = (() => {
     ctx.save();
     ctx.rotate(((rotation + 90) * Math.PI) / 180);
     ctx.fillStyle = style.mark;
-    ctx.beginPath();
-    ctx.moveTo(0, -r - 2);
-    ctx.lineTo(-3, -r + 4);
-    ctx.lineTo(3, -r + 4);
-    ctx.closePath();
-    ctx.fill();
+    // Too small at this LOD for full weapon art, but a distinct marker shape per
+    // broad role (ranged/caster/mounted vs. default melee) still reads at a glance —
+    // the same idea minimap icons in RTS games use.
+    if (CASTER_TYPES.has(type)) {
+      ctx.beginPath();
+      ctx.arc(0, -r - 1, 2.4, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (RANGED_TYPES.has(type)) {
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 3);
+      ctx.lineTo(-2.5, -r);
+      ctx.lineTo(0, -r + 3);
+      ctx.lineTo(2.5, -r);
+      ctx.closePath();
+      ctx.fill();
+    } else if (MOUNTED_TYPES.has(type)) {
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 2);
+      ctx.lineTo(-4, -r + 4);
+      ctx.lineTo(4, -r + 4);
+      ctx.closePath();
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.moveTo(0, -r - 2);
+      ctx.lineTo(-3, -r + 4);
+      ctx.lineTo(3, -r + 4);
+      ctx.closePath();
+      ctx.fill();
+    }
     ctx.restore();
     if (animState === 'death') ctx.globalAlpha = 0.55;
   }
@@ -234,6 +378,7 @@ const SpriteGen = (() => {
     const style = resolveUnitStyle(type, team, 'footman');
     const r = style.size;
     const walkBob = animState === 'walk' ? Math.sin(frame * 1.5) * 1.2 : 0;
+    const pulse = frame % 2 === 0 ? 0 : 1;
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
     ctx.beginPath();
     ctx.ellipse(0, 3, r * 1.1, r * 0.52, 0, 0, Math.PI * 2);
@@ -253,8 +398,10 @@ const SpriteGen = (() => {
     ctx.stroke();
     ctx.save();
     ctx.rotate(((rotation + 90) * Math.PI) / 180);
-    ctx.fillStyle = style.mark;
-    ctx.fillRect(-2, -r - 8, 4, 8);
+    // Same per-class silhouette as the full-detail tier (bow, spear, staff, ...) —
+    // this is the tier actually on screen whenever the field is busy, so this is
+    // where class readability matters most.
+    drawWeaponSilhouette(ctx, type, style, r, animState, pulse);
     ctx.restore();
     ctx.fillStyle = team === 'player' ? '#d4a878' : '#8060a0';
     ctx.beginPath();
@@ -271,7 +418,7 @@ const SpriteGen = (() => {
     }
     if (lod >= 2) {
       const style = resolveUnitStyle(type, team, 'behemoth');
-      drawLowMarker(ctx, style, team, 90, style.size * 0.88, animState);
+      drawLowMarker(ctx, style, team, 90, style.size * 0.88, animState, type);
       return;
     }
     if (lod >= 1) {
@@ -478,7 +625,7 @@ const SpriteGen = (() => {
       return;
     }
     if (lod >= 2) {
-      drawLowMarker(ctx, style, team, 90, style.size * 0.85, animState);
+      drawLowMarker(ctx, style, team, 90, style.size * 0.85, animState, 'siege_tower');
       return;
     }
     if (lod >= 1) {
@@ -532,7 +679,7 @@ const SpriteGen = (() => {
     }
     if (lod >= 2) {
       const style = resolveUnitStyle(type, team, 'footman');
-      drawLowMarker(ctx, style, team, rotation, style.size, animState);
+      drawLowMarker(ctx, style, team, rotation, style.size, animState, type);
       return;
     }
     if (lod >= 1) {
@@ -611,96 +758,7 @@ const SpriteGen = (() => {
     ctx.fill();
 
     // Weapon
-    ctx.fillStyle = style.mark;
-    if (type === 'doomslayer_hero') {
-      ctx.fillStyle = '#6080a0';
-      ctx.fillRect(-5, -r - 10, 4, 12);
-      ctx.fillRect(1, -r - 10, 4, 12);
-      ctx.fillStyle = '#40c0ff';
-      ctx.fillRect(-4, -r - 12, 2, 4);
-      ctx.fillRect(2, -r - 12, 2, 4);
-    } else if (
-      type === 'archer' ||
-      type === 'orc_archer' ||
-      type === 'hellbound_legionnaire' ||
-      type === 'grim_revenant'
-    ) {
-      ctx.fillRect(-1, -r - 14, 2, 14);
-      ctx.fillStyle = '#c0a060';
-      ctx.beginPath();
-      ctx.moveTo(0, -r - 16);
-      ctx.lineTo(-3, -r - 10);
-      ctx.lineTo(3, -r - 10);
-      ctx.closePath();
-      ctx.fill();
-    } else if (type === 'scout') {
-      ctx.fillStyle = '#405830';
-      ctx.fillRect(-1, -r - 12, 2, 12);
-      ctx.fillStyle = style.mark;
-      ctx.beginPath();
-      ctx.moveTo(0, -r - 14);
-      ctx.lineTo(-3, -r - 8);
-      ctx.lineTo(3, -r - 8);
-      ctx.closePath();
-      ctx.fill();
-    } else if (type === 'bard') {
-      ctx.fillStyle = '#c090d0';
-      ctx.beginPath();
-      ctx.arc(0, -r - 8, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = style.mark;
-      ctx.fillRect(-1, -r - 14, 2, 6);
-    } else if (type === 'ballista' || type === 'hellmortar_pack') {
-      ctx.fillStyle = '#505050';
-      ctx.fillRect(-8, -2, 16, 4);
-      ctx.fillStyle = style.mark;
-      ctx.fillRect(-2, -r - 8, 4, 8);
-    } else if (type === 'pikeman') {
-      ctx.fillStyle = '#c0c0c0';
-      ctx.fillRect(-1, -r - 16, 2, 18);
-      ctx.fillStyle = style.mark;
-      ctx.beginPath();
-      ctx.moveTo(0, -r - 18);
-      ctx.lineTo(-2, -r - 12);
-      ctx.lineTo(2, -r - 12);
-      ctx.closePath();
-      ctx.fill();
-    } else if (type.startsWith('roster_')) {
-      ctx.fillStyle = style.mark;
-      ctx.fillRect(-2, -r - (animState === 'attack' ? 11 : 9), 4, animState === 'attack' ? 11 : 9);
-      ctx.fillStyle = style.accent;
-      ctx.fillRect(-5, -r - 4, 10, 3);
-    } else if (
-      type === 'mage' ||
-      type === 'dark_mage' ||
-      type === 'bone_summoner' ||
-      type === 'warp_prophet' ||
-      type === 'necromancer'
-    ) {
-      ctx.fillStyle = pulse ? '#ffe080' : '#e0c040';
-      ctx.fillRect(-1, -r - 12, 2, 12);
-      ctx.beginPath();
-      ctx.arc(0, -r - 14, 4, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (type === 'cavalry' || type === 'warg_rider' || type === 'nightmare_strider') {
-      ctx.fillStyle = '#6a4020';
-      ctx.fillRect(-7, -2, 14, 5);
-      ctx.fillStyle = style.mark;
-      ctx.fillRect(-2, -r - 10, 4, 10);
-    } else if (type === 'healer' || type === 'shaman') {
-      ctx.fillStyle = '#c8a060';
-      ctx.fillRect(-1, -r - 18, 2, 20);
-      ctx.fillStyle = '#80e8c0';
-      ctx.beginPath();
-      ctx.arc(0, -r - 18, 3, 0, Math.PI * 2);
-      ctx.fill();
-    } else {
-      ctx.fillRect(-2, -r - (animState === 'attack' ? 12 : 8), 4, animState === 'attack' ? 12 : 8);
-      if (animState === 'attack') {
-        ctx.fillStyle = '#fff';
-        ctx.fillRect(-1, -r - 14, 2, 4);
-      }
-    }
+    drawWeaponSilhouette(ctx, type, style, r, animState, pulse);
     ctx.restore();
 
     if (type === 'healer' || type === 'shaman') {
