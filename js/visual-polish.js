@@ -103,7 +103,14 @@ const VisualPolish = (() => {
   function pickWeather(wave, tick) {
     if (wave >= 1001) return { type: 'ash', intensity: 0.35 };
     if (wave >= 200) return { type: 'mist', intensity: 0.2 };
-    if (tick % 2400 < 400) return { type: 'rain', intensity: 0.25 };
+    // Original system only ever showed clear or rain below wave 200 — most of a
+    // run. Snow fills that gap as a rarer, offset cycle so it doesn't fight rain
+    // for the same window; every third rain window intensifies into a storm.
+    if (tick % 2400 < 400) {
+      const storm = Math.floor(tick / 2400) % 3 === 0;
+      return storm ? { type: 'storm', intensity: 0.4 } : { type: 'rain', intensity: 0.25 };
+    }
+    if (tick % 5400 < 450) return { type: 'snow', intensity: 0.22 };
     return { type: 'clear', intensity: 0 };
   }
 
@@ -1009,14 +1016,35 @@ const VisualPolish = (() => {
 
     if (
       opts.weatherParticles !== false &&
-      weather.type === 'rain' &&
+      (weather.type === 'rain' || weather.type === 'storm') &&
       typeof Particles !== 'undefined'
     ) {
-      if (tick % 3 === 0) Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
+      const everyN = weather.type === 'storm' ? 2 : 3;
+      if (tick % everyN === 0) Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
     }
     if (weather.type === 'mist') {
       ctx.fillStyle = 'rgba(180,200,220,0.08)';
       ctx.fillRect(0, 0, worldW, mapH);
+    }
+    if (weather.type === 'storm') {
+      ctx.fillStyle = 'rgba(20,24,40,0.14)';
+      ctx.fillRect(0, 0, worldW, mapH);
+      // Rare lightning flash + thunder shake — reuses the existing bolt
+      // particle (originally a spell-strike effect) and screen-shake helper.
+      // Low per-frame odds keep it an occasional beat, not a constant strobe.
+      if (Math.random() < 0.004 && typeof Particles !== 'undefined') {
+        Particles.lightning(worldW * Math.random(), mapH * (0.4 + Math.random() * 0.35));
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.fillRect(0, 0, worldW, mapH);
+        addScreenShake(3);
+      }
+    }
+    if (weather.type === 'snow') {
+      ctx.fillStyle = 'rgba(210,225,245,0.05)';
+      ctx.fillRect(0, 0, worldW, mapH);
+      if (opts.weatherParticles !== false && tick % 4 === 0 && typeof Particles !== 'undefined') {
+        Particles.weatherSnow(worldW * Math.random(), mapH * Math.random() * 0.5);
+      }
     }
     if (weather.type === 'ash') {
       ctx.fillStyle = 'rgba(80,40,40,0.12)';

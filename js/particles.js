@@ -413,6 +413,25 @@ const Particles = (() => {
     trim();
   }
 
+  /** Gentle drifting snow — slow fall, near-zero gravity so it drifts rather
+   *  than accelerates, longer life than rain since it falls much slower. */
+  function weatherSnow(x, y) {
+    if (particles.length >= MAX_PARTICLES) return;
+    particles.push({
+      x,
+      y,
+      vx: (Math.random() - 0.5) * 0.5,
+      vy: 0.5 + Math.random() * 0.6,
+      life: 70,
+      maxLife: 70,
+      color: `rgba(240,248,255,${0.5 + Math.random() * 0.3})`,
+      size: 1 + Math.random() * 1.2,
+      type: 'dot',
+      gravity: 0,
+    });
+    trim();
+  }
+
   function update() {
     let w = 0;
     for (let i = 0; i < particles.length; i++) {
@@ -522,6 +541,7 @@ const Particles = (() => {
     honorBurst,
     weatherRain,
     weatherAsh,
+    weatherSnow,
     update,
     draw,
     clear,
