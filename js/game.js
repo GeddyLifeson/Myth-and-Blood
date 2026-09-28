@@ -15115,7 +15115,7 @@ const Game = (() => {
           GS.timeOfDay,
           GS.wave,
           GS.updateTick,
-          { weatherParticles: gfxQ?.weatherParticles !== false }
+          { weatherParticles: gfxQ?.weatherParticles !== false, bossActive: unitCounts.bossActive }
         );
       } else if (atm === 'simple') {
         svc('VisualPolish').drawAtmosphere(

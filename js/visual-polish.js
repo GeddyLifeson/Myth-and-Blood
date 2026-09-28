@@ -23,6 +23,8 @@ const VisualPolish = (() => {
   let titleTick = 0;
   let weather = { type: 'clear', seed: Math.random() * 1000 };
   let screenShake = { mag: 0, decay: 0.86, trauma: 0 };
+  let dreadGradient = null;
+  let dreadGradientKey = '';
   let killPunch = 0;
 
   function getEraId(wave) {
@@ -1012,6 +1014,40 @@ const VisualPolish = (() => {
       ctx.fillRect(0, 0, worldW, mapH);
       ctx.fillStyle = `rgba(255,140,60,${dusk * 0.08})`;
       ctx.fillRect(0, 0, worldW, mapH * 0.35);
+    }
+
+    // Boss dread — a slow-breathing dark-red vignette while any boss is live,
+    // regardless of weather. unitCounts.bossActive is already tracked every
+    // tick at zero extra cost, so the gate itself is free; but the first cut
+    // of this rebuilt a CanvasGradient every single frame (createRadialGradient
+    // is not cheap) and that alone was enough to push one headless sim run's
+    // avg update time over the 8ms budget (measured: 8.41ms, confirmed by a
+    // clean baseline run without this block). Fix: build the gradient once per
+    // canvas size and reuse it — bake the color stop at full strength and
+    // modulate the breathing pulse via globalAlpha instead, which is roughly
+    // free. Gradients are valid to reuse across draw calls on the same
+    // context (this ctx is the single long-lived battlefield context set once
+    // in Game.init, not recreated per frame).
+    if (opts.bossActive) {
+      const dreadPulse = 0.5 + Math.sin(tick * 0.04) * 0.5;
+      const key = `${worldW}x${mapH}`;
+      if (dreadGradientKey !== key || !dreadGradient) {
+        dreadGradient = ctx.createRadialGradient(
+          worldW / 2,
+          mapH / 2,
+          mapH * 0.15,
+          worldW / 2,
+          mapH / 2,
+          mapH * 0.9
+        );
+        dreadGradient.addColorStop(0, 'rgba(0,0,0,0)');
+        dreadGradient.addColorStop(1, 'rgba(90,10,10,1)');
+        dreadGradientKey = key;
+      }
+      ctx.globalAlpha = 0.1 + dreadPulse * 0.12;
+      ctx.fillStyle = dreadGradient;
+      ctx.fillRect(0, 0, worldW, mapH);
+      ctx.globalAlpha = 1;
     }
 
     if (
