@@ -2707,6 +2707,11 @@ const Game = (() => {
     if (!GS.creativeMode && GS.namedBossWave) {
       ach('named_boss_repelled', { wave: GS.wave, bossType: GS.namedBossWave.type, bossName: GS.namedBossWave.name });
     }
+    // countGarrisoned(playerUnits) is a genuine O(army size) scan (unlike the
+    // countPlayer*() calls around it, which are already O(1) cached-field reads)
+    // and was being run twice with the identical, unchanged playerUnits array —
+    // compute it once and reuse it for both achievement checks below.
+    const garrisonCount = countGarrisoned(playerUnits);
     ach('wave_complete', {
       wave: GS.wave,
       misses: GS.runPlayerDeaths,
@@ -2729,7 +2734,7 @@ const Game = (() => {
       units: playerUnits,
       academyCount: unitCounts.academies,
       advancedMods: svc('AdvancedDifficulty') ? svc('AdvancedDifficulty').getActiveModCount() : 0,
-      garrisonCount: countGarrisoned(playerUnits),
+      garrisonCount,
       namedBossWave: !!GS.namedBossWave,
     });
     ach('state_check', {
@@ -2744,7 +2749,7 @@ const Game = (() => {
       settlementTp: getSettlementTpBonus(),
       units: playerUnits,
       academyCount: unitCounts.academies,
-      garrisonCount: countGarrisoned(playerUnits),
+      garrisonCount,
     });
     for (let i = 0; i < playerUnits.length; i++) {
       const u = playerUnits[i];
