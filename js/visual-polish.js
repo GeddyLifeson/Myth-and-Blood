@@ -1044,10 +1044,16 @@ const VisualPolish = (() => {
         dreadGradient.addColorStop(1, 'rgba(90,10,10,1)');
         dreadGradientKey = key;
       }
-      ctx.globalAlpha = 0.1 + dreadPulse * 0.12;
-      ctx.fillStyle = dreadGradient;
-      ctx.fillRect(0, 0, worldW, mapH);
-      ctx.globalAlpha = 1;
+      // finally guarantees globalAlpha resets even if fillRect throws — a leaked
+      // alpha here would silently wash out every draw call for the rest of this
+      // frame, not just this vignette.
+      try {
+        ctx.globalAlpha = 0.1 + dreadPulse * 0.12;
+        ctx.fillStyle = dreadGradient;
+        ctx.fillRect(0, 0, worldW, mapH);
+      } finally {
+        ctx.globalAlpha = 1;
+      }
     }
 
     if (

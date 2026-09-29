@@ -116,6 +116,10 @@ const SpriteGen = (() => {
   // combo onto a small offscreen canvas and cached (see getUnitCanvas below), so
   // gradient construction here only costs anything on a cache miss — safe to use
   // freely on every body fill, not a per-frame cost once the cache is warm.
+  // Capped like the sibling sprite `cache` above (same evict-oldest pattern) —
+  // in practice this stays tiny (fixed shade amounts x the UNIT_STYLE palette),
+  // but an explicit bound keeps it consistent rather than implicit.
+  const SHADE_CACHE_MAX = 256;
   const shadeCache = new Map();
 
   function shadeHex(hex, amt) {
@@ -137,6 +141,10 @@ const SpriteGen = (() => {
     }
     const out = `rgb(${r | 0},${g | 0},${b | 0})`;
     shadeCache.set(key, out);
+    if (shadeCache.size > SHADE_CACHE_MAX) {
+      const oldest = shadeCache.keys().next().value;
+      shadeCache.delete(oldest);
+    }
     return out;
   }
 

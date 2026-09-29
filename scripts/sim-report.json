@@ -1,9 +1,9 @@
 {
   "runs": 13,
-  "elapsedSec": 478.8,
+  "elapsedSec": 1057,
   "bestWave": 1000,
   "avgWave": 808.5,
-  "avgUpdateMs": 4.14,
+  "avgUpdateMs": 9.14,
   "reached1000": [
     {
       "runId": 200,
@@ -21,8 +21,65 @@
       "wave": 1000
     }
   ],
-  "issueCounts": {},
-  "issues": [],
+  "issueCounts": {
+    "SLOW_UPDATE": 9
+  },
+  "issues": [
+    {
+      "runId": 0,
+      "code": "SLOW_UPDATE",
+      "ms": 10.81,
+      "name": "begin_day_spam"
+    },
+    {
+      "runId": 1,
+      "code": "SLOW_UPDATE",
+      "ms": 8.76,
+      "name": "begin_day_early"
+    },
+    {
+      "runId": 3,
+      "code": "SLOW_UPDATE",
+      "ms": 9.23,
+      "name": "levy_spam"
+    },
+    {
+      "runId": 4,
+      "code": "SLOW_UPDATE",
+      "ms": 11.6,
+      "name": "decree_spam"
+    },
+    {
+      "runId": 5,
+      "code": "SLOW_UPDATE",
+      "ms": 12.62,
+      "name": "spy_steal"
+    },
+    {
+      "runId": 6,
+      "code": "SLOW_UPDATE",
+      "ms": 12.81,
+      "name": "spy_scout"
+    },
+    {
+      "runId": 7,
+      "code": "SLOW_UPDATE",
+      "ms": 16.97,
+      "name": "rally_spam"
+    },
+    {
+      "runId": 8,
+      "code": "SLOW_UPDATE",
+      "ms": 16.28,
+      "name": "tp_burst"
+    },
+    {
+      "runId": 9,
+      "code": "SLOW_UPDATE",
+      "ms": 10.03,
+      "name": "deploy_night"
+    }
+  ],
   "topRuns": [
     {
       "runId": 200,
@@ -31,7 +88,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.45
+      "avgUpdateMs": 1.02
     },
     {
       "runId": 201,
@@ -40,7 +97,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.27
+      "avgUpdateMs": 0.57
     },
     {
       "runId": 202,
@@ -49,25 +106,39 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.35
+      "avgUpdateMs": 0.78
     },
     {
       "runId": 0,
       "name": "begin_day_spam",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 0,
+          "code": "SLOW_UPDATE",
+          "ms": 10.81,
+          "name": "begin_day_spam"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 5.59
+      "avgUpdateMs": 10.81
     },
     {
       "runId": 1,
       "name": "begin_day_early",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 1,
+          "code": "SLOW_UPDATE",
+          "ms": 8.76,
+          "name": "begin_day_early"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.58
+      "avgUpdateMs": 8.76
     },
     {
       "runId": 2,
@@ -76,61 +147,103 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.98
+      "avgUpdateMs": 7.36
     },
     {
       "runId": 3,
       "name": "levy_spam",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 3,
+          "code": "SLOW_UPDATE",
+          "ms": 9.23,
+          "name": "levy_spam"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.45
+      "avgUpdateMs": 9.23
     },
     {
       "runId": 4,
       "name": "decree_spam",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 4,
+          "code": "SLOW_UPDATE",
+          "ms": 11.6,
+          "name": "decree_spam"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 5.5
+      "avgUpdateMs": 11.6
     },
     {
       "runId": 5,
       "name": "spy_steal",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 5,
+          "code": "SLOW_UPDATE",
+          "ms": 12.62,
+          "name": "spy_steal"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.8
+      "avgUpdateMs": 12.62
     },
     {
       "runId": 6,
       "name": "spy_scout",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 6,
+          "code": "SLOW_UPDATE",
+          "ms": 12.81,
+          "name": "spy_scout"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 5.41
+      "avgUpdateMs": 12.81
     },
     {
       "runId": 7,
       "name": "rally_spam",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 7,
+          "code": "SLOW_UPDATE",
+          "ms": 16.97,
+          "name": "rally_spam"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 6.91
+      "avgUpdateMs": 16.97
     },
     {
       "runId": 8,
       "name": "tp_burst",
       "maxWave": 751,
-      "issues": [],
+      "issues": [
+        {
+          "runId": 8,
+          "code": "SLOW_UPDATE",
+          "ms": 16.28,
+          "name": "tp_burst"
+        }
+      ],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 6.6
+      "avgUpdateMs": 16.28
     }
   ]
 }
