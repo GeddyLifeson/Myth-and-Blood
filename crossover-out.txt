@@ -1,4 +1,0 @@
-﻿Headless crossover runtime tests
-
-FAILED (1):
-  Γ£ù damaged healer should flee toward a med tent

@@ -8,3 +8,5 @@ Thumbs.db
 .env
 # AI session handoff artifacts (contain local absolute paths — never publish)
 RESUME.md
+
+crossover-out.txt
