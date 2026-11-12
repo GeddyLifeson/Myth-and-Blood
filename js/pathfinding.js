@@ -258,14 +258,7 @@ const Pathfinding = (() => {
     const grid = ensureWalkGrid(profile, unit, isTerrainBlockedFn);
     if (!walkGridUsable(grid)) return [];
 
-    const path = PathfindingCore.findPathOnGrid(
-      grid,
-      startX,
-      startY,
-      endX,
-      endY,
-      opts.maxNodes
-    );
+    const path = PathfindingCore.findPathOnGrid(grid, startX, startY, endX, endY, opts.maxNodes);
     if (path.length) storeCache(ck, path);
     return clonePath(path);
   }

@@ -150,7 +150,8 @@ class FactionDepthSystem {
       building: 'stand_arrow_shrine',
       palette: ['#8040a0', '#e0c040'],
       identity: 'Spirit-bound operatives across eras — ripple arts, rush finishers, cavalry duels.',
-      weakness: 'Cavalry operatives need space; ripple arts weak vs necromancer hordes without walls.',
+      weakness:
+        'Cavalry operatives need space; ripple arts weak vs necromancer hordes without walls.',
       weaknessMods: { vsUndead: 0.85, vsNecromancer: 0.88, damageTakenRanged: 1.1 },
       playstyle: 'Mix eras for tags; pin specialist locks elites; cavalry pair hunts on wide maps.',
       lore: 'A spirit-binding shrine on your battlefield? Fate is bizarre, and the waves are stranger.',
@@ -784,7 +785,8 @@ class FactionDepthSystem {
       d = Math.round(d * mods.vsRanged);
     if (mods.vsArcane && this.isArcaneFoe(target)) d = Math.round(d * mods.vsArcane);
     if (mods.vsUndead && this.isUndeadFoe(target)) d = Math.round(d * mods.vsUndead);
-    if (mods.vsNecromancer && target?.type === 'necromancer') d = Math.round(d * mods.vsNecromancer);
+    if (mods.vsNecromancer && target?.type === 'necromancer')
+      d = Math.round(d * mods.vsNecromancer);
     if (mods.vsAssassin && target?.type === 'assassin') d = Math.round(d * mods.vsAssassin);
     if (mods.vsBerserker && target?.type === 'berserker') d = Math.round(d * mods.vsBerserker);
     if (mods.vsMeleeRush && target?.team === 'enemy' && this.ctx?.units) {
@@ -1052,10 +1054,14 @@ class FactionDepthSystem {
       const ab = u.wweAbility;
       const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
       const coolInt = (n, min = 1) =>
-        typeof coolAbilityInt === 'function' ? coolAbilityInt(n, min) : Math.max(min, Math.round(n * cool));
+        typeof coolAbilityInt === 'function'
+          ? coolAbilityInt(n, min)
+          : Math.max(min, Math.round(n * cool));
       if (ab === 'spartan_rage' || ab === 'oorah') {
         units
-          .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(u, a) < coolInt(100))
+          .filter(
+            (a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(u, a) < coolInt(100)
+          )
           .forEach((a) => {
             a.morale = Math.min(a.maxMorale, a.morale + coolInt(3, 0));
             a.rallyTimer = Math.max(a.rallyTimer || 0, coolInt(60));
@@ -1265,15 +1271,16 @@ class FactionDepthSystem {
     // 20% cooler character abilities — stronger procs, bigger AoEs.
     const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
     const coolInt = (n, min = 1) =>
-      typeof coolAbilityInt === 'function' ? coolAbilityInt(n, min) : Math.max(min, Math.round(n * cool));
+      typeof coolAbilityInt === 'function'
+        ? coolAbilityInt(n, min)
+        : Math.max(min, Math.round(n * cool));
     const synMult = 1 + (unit.synergyAbility || 0);
 
     const origTake = this.ctx.takeDamage?.bind(this.ctx);
     const origRad = this.ctx.damageInRadius?.bind(this.ctx);
     if (origTake) {
       // Single cool pass — damageInRadius calls takeDamage, so only scale here.
-      this.ctx.takeDamage = (t, amount, opts) =>
-        origTake(t, coolInt(Number(amount) || 0), opts);
+      this.ctx.takeDamage = (t, amount, opts) => origTake(t, coolInt(Number(amount) || 0), opts);
     }
     if (origRad) {
       // Cool the AoE footprint; damage amount is cooled inside takeDamage.
@@ -1295,7 +1302,11 @@ class FactionDepthSystem {
           }
         }
         if (splash >= (orbital ? 1 : 2)) {
-          this.procAbilityVfx(unit, orbital ? 'ORBITAL FRAG' : 'FRAG!', orbital ? '#ff8040' : '#c06030');
+          this.procAbilityVfx(
+            unit,
+            orbital ? 'ORBITAL FRAG' : 'FRAG!',
+            orbital ? '#ff8040' : '#c06030'
+          );
         }
       },
       apothicon_slam() {
@@ -1765,7 +1776,7 @@ class FactionDepthSystem {
             splash++;
           }
         }
-        if (splash >= 2) this.procAbilityVfx(unit, "FUS RO DAH", '#4068a0');
+        if (splash >= 2) this.procAbilityVfx(unit, 'FUS RO DAH', '#4068a0');
       },
       thuum_echo() {
         this.ctx.units
@@ -1814,8 +1825,7 @@ class FactionDepthSystem {
       const killHeal = syns.find((s) => s.bonus.killHeal);
       if (killHeal && target.hp <= 0 && unit.isCrossover) {
         const ally = this.ctx.units.find((a) => a.team === 'player' && a.hp > 0 && a.hp < a.maxHp);
-        if (ally)
-          ally.hp = Math.min(ally.maxHp, ally.hp + coolInt(killHeal.bonus.killHeal, 0));
+        if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + coolInt(killHeal.bonus.killHeal, 0));
       }
     } finally {
       if (origTake) this.ctx.takeDamage = origTake;

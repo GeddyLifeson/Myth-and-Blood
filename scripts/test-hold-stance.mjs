@@ -139,10 +139,7 @@ function boot(seed) {
 
 const { sb, cvs } = boot(11);
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
-const { Game, SpriteGen } = vm.runInContext(
-  `${code}\n({ Game, SpriteGen })`,
-  vm.createContext(sb)
-);
+const { Game, SpriteGen } = vm.runInContext(`${code}\n({ Game, SpriteGen })`, vm.createContext(sb));
 SpriteGen.prewarmCache = () => {};
 Game.init(cvs);
 

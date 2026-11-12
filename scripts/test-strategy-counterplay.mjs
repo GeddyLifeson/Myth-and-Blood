@@ -47,7 +47,10 @@ const wallUnits = [
   { team: 'player', hp: 100, type: 'ballista' },
 ];
 const found = StrategyCounterplay.detect(wallColony, 25, wallUnits);
-ok(found.some((s) => s.id === 'wall_fortress'), 'detects wall fortress strategy');
+ok(
+  found.some((s) => s.id === 'wall_fortress'),
+  'detects wall fortress strategy'
+);
 
 const basePressure = {
   countMult: 1.1,
@@ -76,6 +79,9 @@ const intel = StrategyCounterplay.formatCounterIntel(found);
 ok(intel.includes('Wall Fortress'), 'intel names detected strategy');
 ok(intel.includes('Sappers'), 'intel suggests player tools');
 
-ok(!StrategyCounterplay.STRATEGIES.cavalry_core.pool.includes('pikeman'), 'cavalry counter pool has no player units');
+ok(
+  !StrategyCounterplay.STRATEGIES.cavalry_core.pool.includes('pikeman'),
+  'cavalry counter pool has no player units'
+);
 
 process.exit(failed ? 1 : 0);

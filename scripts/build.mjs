@@ -74,7 +74,10 @@ function formatBytes(n) {
 
 function buildIndexHtml(bundleName, cssName) {
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-  let out = html.replace(/<link rel="stylesheet" href="css\/style\.css" \/>/, `<link rel="stylesheet" href="${cssName}" />`);
+  let out = html.replace(
+    /<link rel="stylesheet" href="css\/style\.css" \/>/,
+    `<link rel="stylesheet" href="${cssName}" />`
+  );
   out = out.replace(/\s*<script src="js\/touch-input\.js"><\/script>\s*/, '\n');
   const scriptRe = /\s*<script src="js\/[^"]+"><\/script>/g;
   const matches = out.match(scriptRe) || [];

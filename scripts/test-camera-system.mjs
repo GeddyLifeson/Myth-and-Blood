@@ -22,21 +22,11 @@ const vp = {
 };
 
 function isScreenInMapViewport(sx, sy) {
-  return (
-    sx >= vp.left &&
-    sx <= vp.left + vp.width &&
-    sy >= vp.top &&
-    sy <= vp.top + vp.height
-  );
+  return sx >= vp.left && sx <= vp.left + vp.width && sy >= vp.top && sy <= vp.top + vp.height;
 }
 
 function isScreenInMapArea(sx, sy) {
-  return (
-    sx >= insets.left &&
-    sx <= canvasW - insets.right &&
-    sy >= insets.top &&
-    sy <= canvasH
-  );
+  return sx >= insets.left && sx <= canvasW - insets.right && sy >= insets.top && sy <= canvasH;
 }
 
 function clampScreenToViewport(sx, sy) {
@@ -150,13 +140,25 @@ function makeFocusSelection(hasSelection, unitsAlive = 1) {
 // --- map area vs viewport (unit panel / hint bar live in map area, not strict viewport)
 const unitPanelY = canvasH - 36;
 {
-  ok(isScreenInMapViewport(vp.centerX, unitPanelY) === false, 'unit panel row is outside strict viewport');
-  ok(isScreenInMapArea(vp.centerX, unitPanelY) === true, 'unit panel row is inside map area for wheel');
+  ok(
+    isScreenInMapViewport(vp.centerX, unitPanelY) === false,
+    'unit panel row is outside strict viewport'
+  );
+  ok(
+    isScreenInMapArea(vp.centerX, unitPanelY) === true,
+    'unit panel row is inside map area for wheel'
+  );
 }
 
 {
-  ok(shouldMapWheelZoom(-120, vp.centerX, unitPanelY) === true, 'zoom-in allowed over unit panel band');
-  ok(shouldMapWheelZoom(120, vp.centerX, unitPanelY) === true, 'zoom-out allowed over unit panel band');
+  ok(
+    shouldMapWheelZoom(-120, vp.centerX, unitPanelY) === true,
+    'zoom-in allowed over unit panel band'
+  );
+  ok(
+    shouldMapWheelZoom(120, vp.centerX, unitPanelY) === true,
+    'zoom-out allowed over unit panel band'
+  );
 }
 
 {
@@ -183,13 +185,19 @@ const unitPanelY = canvasH - 36;
   const anchor = resolveZoomAnchor(30, vp.centerY);
   ok(anchor.sx === vp.left, 'side-panel zoom anchor clamps to viewport edge not center');
   cam.zoomTo(30, vp.centerY, cam.zoom / 1.2);
-  ok(Math.abs(cam.worldX - wxBefore) < 80, 'zoom-out from side panel does not fling camera to map center');
+  ok(
+    Math.abs(cam.worldX - wxBefore) < 80,
+    'zoom-out from side panel does not fling camera to map center'
+  );
 }
 
 // --- in-viewport uses exact cursor (not edge clamp)
 {
   const anchor = resolveZoomAnchor(vp.centerX + 40, vp.centerY + 30);
-  ok(anchor.sx === vp.centerX + 40 && anchor.sy === vp.centerY + 30, 'in-viewport zoom uses exact cursor');
+  ok(
+    anchor.sx === vp.centerX + 40 && anchor.sy === vp.centerY + 30,
+    'in-viewport zoom uses exact cursor'
+  );
 }
 
 // --- focus guard
@@ -222,7 +230,10 @@ const unitPanelY = canvasH - 36;
 {
   const cam = makeCamera({ cameraZoom: 0.4, cameraWorldX: 50000, cameraWorldY: -40000 });
   cam.clampBounds();
-  ok(cam.mapOverlapsViewport(cam.worldX, cam.worldY), 'clamped camera keeps map overlapping viewport after drift');
+  ok(
+    cam.mapOverlapsViewport(cam.worldX, cam.worldY),
+    'clamped camera keeps map overlapping viewport after drift'
+  );
   ok(cam.worldX < 50000 && cam.worldY > -40000, 'drifted camera position was corrected');
 }
 

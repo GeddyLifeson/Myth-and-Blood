@@ -417,7 +417,13 @@ const UI = (() => {
     document.getElementById('restart-btn').addEventListener('click', () => {
       gameOverShown = false;
       const goScreen = document.getElementById('gameover-screen');
-      goScreen?.classList.remove('active', 'gameover-victory', 'gameover-defeat', 'gameover-economy', 'gameover-conquest');
+      goScreen?.classList.remove(
+        'active',
+        'gameover-victory',
+        'gameover-defeat',
+        'gameover-economy',
+        'gameover-conquest'
+      );
       document.getElementById('gameover-confetti')?.replaceChildren();
       hideMenusForPlay();
       const mode = typeof GameModes !== 'undefined' ? GameModes.getMenu() : null;
@@ -678,13 +684,13 @@ const UI = (() => {
       branchesEl.innerHTML =
         foundationChips +
         snap.branches
-        .filter((b) => b.id !== 'crown_trunk' || b.investedCount > 0)
-        .map(
-          (b) =>
-            `<span class="eternal-branch-chip" style="border-color:${b.color}" title="${b.desc}">` +
-            `${b.label} ${b.investedCount}/${b.nodeCount}</span>`
-        )
-        .join('');
+          .filter((b) => b.id !== 'crown_trunk' || b.investedCount > 0)
+          .map(
+            (b) =>
+              `<span class="eternal-branch-chip" style="border-color:${b.color}" title="${b.desc}">` +
+              `${b.label} ${b.investedCount}/${b.nodeCount}</span>`
+          )
+          .join('');
     }
 
     treeEl.innerHTML = snap.nodes
@@ -933,7 +939,9 @@ const UI = (() => {
 
   function updateSpeedControl(speed) {
     const n =
-      typeof PacingTools !== 'undefined' ? PacingTools.normalizeSpeed(speed) : parseFloat(speed) || 1;
+      typeof PacingTools !== 'undefined'
+        ? PacingTools.normalizeSpeed(speed)
+        : parseFloat(speed) || 1;
     const speedBtn = document.getElementById('speed-toggle');
     if (speedBtn) {
       speedBtn.textContent = `SPEED: ${n}×`;
@@ -1128,15 +1136,10 @@ const UI = (() => {
       const stageLocked = stageReq > 0 && (gs.kingdomStage || 1) < stageReq;
       btn.classList.toggle('selected', btn.dataset.courier === gs.selectedCourierMsg);
       const courierCap =
-        (gs.courierMessagesUsedThisWave || 0) >=
-        Math.max(1, gs.courierMessagesPerWave || 1);
+        (gs.courierMessagesUsedThisWave || 0) >= Math.max(1, gs.courierMessagesPerWave || 1);
       btn.classList.toggle(
         'disabled',
-        gs.tactical < cost ||
-          !gs.hasCourier ||
-          gs.courierCooldown > 0 ||
-          courierCap ||
-          stageLocked
+        gs.tactical < cost || !gs.hasCourier || gs.courierCooldown > 0 || courierCap || stageLocked
       );
       btn.classList.toggle('kingdom-locked', stageLocked);
       if (stageLocked && typeof KINGDOM_EVOLUTION_STAGES !== 'undefined') {
@@ -1297,8 +1300,7 @@ const UI = (() => {
       const ctx = bannerCanvas.getContext('2d');
       const stage = evoMeter?.bannerStage || evo?.stage || 1;
       const fill = evoMeter?.fill ?? 0.2;
-      const bannerOpts =
-        typeof Cosmetics !== 'undefined' ? Cosmetics.getBannerOpts() : null;
+      const bannerOpts = typeof Cosmetics !== 'undefined' ? Cosmetics.getBannerOpts() : null;
       VisualPolish.drawKingdomBanner(
         ctx,
         bannerCanvas.width,
@@ -1330,14 +1332,8 @@ const UI = (() => {
             ? LayerDesign.renderStackMarkup(layerModes)
             : layerModes.stackNote || '—';
         layerStack.title =
-          layerModes.eraNote ||
-          layerModes.stackNote ||
-          layerModes.principles?.summary ||
-          '';
-        layerHud.classList.toggle(
-          'layer-modes-focused',
-          layerModes.focusedLayer !== 'tactical'
-        );
+          layerModes.eraNote || layerModes.stackNote || layerModes.principles?.summary || '';
+        layerHud.classList.toggle('layer-modes-focused', layerModes.focusedLayer !== 'tactical');
       }
     }
     if (eraBar && typeof LayerDesign !== 'undefined' && layerModes) {
@@ -1430,10 +1426,9 @@ const UI = (() => {
       if (show) {
         ascText.textContent =
           line || (ascSnap?.legacyPoints ? `${ascSnap.legacyPoints} Legacy` : '—');
-        ascHud.title =
-          ascSnap?.eraLabel
-            ? `Ascension — ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
-            : 'Ascend max veterans at Kingdom (150) and Galactic (400) era gates';
+        ascHud.title = ascSnap?.eraLabel
+          ? `Ascension — ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
+          : 'Ascend max veterans at Kingdom (150) and Galactic (400) era gates';
       }
     }
 
@@ -1449,7 +1444,8 @@ const UI = (() => {
       thematicSynHud.style.display = show ? '' : 'none';
       if (show) {
         thematicSynText.textContent = line || thematicSynSnap?.pathLabel || '—';
-        if (thematicSynSnap?.pathColor) thematicSynHud.style.borderColor = thematicSynSnap.pathColor;
+        if (thematicSynSnap?.pathColor)
+          thematicSynHud.style.borderColor = thematicSynSnap.pathColor;
         thematicSynHud.title = thematicSynSnap?.pathDesc
           ? `${thematicSynSnap.pathLabel} — ${thematicSynSnap.pathDesc}`
           : 'Cross-era synergy from your medieval foundation path';
@@ -1604,8 +1600,7 @@ const UI = (() => {
           ? PacingTools.formatHudLine({ gameSpeed: gs.gameSpeed, paused: gs.paused })
           : ptSnap?.hudLine || '';
       const q = ptSnap?.queueDepth || 0;
-      const show =
-        gs.paused || q > 0 || (gs.gameSpeed ?? 1) >= 8 || !!ptSnap?.strongPauseReason;
+      const show = gs.paused || q > 0 || (gs.gameSpeed ?? 1) >= 8 || !!ptSnap?.strongPauseReason;
       ptHud.style.display = show ? '' : 'none';
       if (show) {
         ptText.textContent = line;
@@ -1659,15 +1654,13 @@ const UI = (() => {
         const spies = gsSnap.espionage || 0;
         const autoWins = gsSnap.mobilization?.autoResolvedTotal || 0;
         const tact = gsSnap.tactical;
-        const tactNote =
-          tact?.wavesLeft > 0 && tact?.note ? ` · ${tact.note.slice(0, 18)}` : '';
+        const tactNote = tact?.wavesLeft > 0 && tact?.note ? ` · ${tact.note.slice(0, 18)}` : '';
         const alertNote =
           (events > 0 ? ` · ${events} evt!` : '') +
           (plots > 0 ? ` · ${plots} plot` : '') +
           (dynastyEvts > 0 ? ` · ${dynastyEvts} dyn` : '') +
           (spies > 0 ? ` · ${spies} spy` : '');
-        const mobNote =
-          gsSnap.mobilization?.enabled && autoWins > 0 ? ` · ${autoWins} auto` : '';
+        const mobNote = gsSnap.mobilization?.enabled && autoWins > 0 ? ` · ${autoWins} auto` : '';
         const eco = gsSnap.economy;
         const dyn = gsSnap.dynasty;
         const edicts = gsSnap.edicts;
@@ -1684,7 +1677,9 @@ const UI = (() => {
               ? ' · line weak'
               : '';
         const edictNote =
-          edicts?.remaining > 0 && typeof GrandStrategy !== 'undefined' && GrandStrategy.isPanelOpen()
+          edicts?.remaining > 0 &&
+          typeof GrandStrategy !== 'undefined' &&
+          GrandStrategy.isPanelOpen()
             ? ' · EDICT'
             : edicts?.edictsThisWave > 0
               ? ` · ${edicts.edictsThisWave} ed`
@@ -1732,19 +1727,32 @@ const UI = (() => {
         const bldNote = igSnap.planetProjects > 0 ? ` · ${igSnap.planetProjects} bld` : '';
         const crisisNote = igSnap.activeCrises > 0 ? ` · ${igSnap.activeCrises} crisis` : '';
         const empire = igSnap.empire;
-        const domNote = empire?.dominantFaction ? ` · ${empire.dominantFaction.label.split(' ').pop()}` : '';
+        const domNote = empire?.dominantFaction
+          ? ` · ${empire.dominantFaction.label.split(' ').pop()}`
+          : '';
         const unrestNote = empire?.highUnrest ? ` · ${empire.highUnrest} unrest` : '';
         const warfare = igSnap.warfare;
         const warOffer = warfare?.wars?.filter((w) => w.battleOffered).length || 0;
         const warActive = warfare?.wars?.filter((w) => w.battleActive).length || 0;
-        const warNote = warOffer ? ` · ${warOffer} war!` : warActive ? ` · ${warActive} battle` : '';
+        const warNote = warOffer
+          ? ` · ${warOffer} war!`
+          : warActive
+            ? ` · ${warActive} battle`
+            : '';
         const exp = igSnap.exploration;
         const anomNote = exp?.activeAnomalies ? ` · ${exp.activeAnomalies} anom` : '';
         const precNote = exp?.precursorClues > 0 ? ` · P${exp.precursorClues}` : '';
         const politics = igSnap.politics;
-        const fedNote = politics?.federationLabel ? ` · ${politics.federationLabel.split(' ')[0]}` : '';
+        const fedNote = politics?.federationLabel
+          ? ` · ${politics.federationLabel.split(' ')[0]}`
+          : '';
         const tradeNote = politics?.activeDeals ? ` · ${politics.activeDeals} trade` : '';
-        const spyNote = politics?.spyExposure >= 40 ? ' · exposed' : politics?.activeSpy ? ` · ${politics.activeSpy} spy` : '';
+        const spyNote =
+          politics?.spyExposure >= 40
+            ? ' · exposed'
+            : politics?.activeSpy
+              ? ` · ${politics.activeSpy} spy`
+              : '';
         const endgame = igSnap.endgame;
         const gcNote = endgame?.galacticCrisis
           ? ` · ${endgame.galacticCrisis.label.split(' ').pop()} ${endgame.galacticCrisis.severity}%`
@@ -1778,7 +1786,7 @@ const UI = (() => {
           empire?.highUnrest > 0 ||
           warOffer > 0 ||
           warActive > 0 ||
-          (exp?.activeAnomalies > 0) ||
+          exp?.activeAnomalies > 0 ||
           endgame?.galacticCrisis ||
           endgame?.empireCollapsed ||
           echoes?.active?.length > 0 ||
@@ -2088,7 +2096,8 @@ const UI = (() => {
     const hasCrossoverField = (gs.wweOnField || 0) + (gs.crossoverOnField || 0) > 0;
     if (synHud && synEl) {
       const show =
-        hasCrossoverField && (syns.length > 0 || gs.seasonalEvent || skillNote || gs.operativeSkills?.active);
+        hasCrossoverField &&
+        (syns.length > 0 || gs.seasonalEvent || skillNote || gs.operativeSkills?.active);
       synHud.style.display = show ? '' : 'none';
       if (show) {
         const parts = [];
@@ -2100,8 +2109,7 @@ const UI = (() => {
         const skillTips = (gs.operativeSkills?.factions || [])
           .filter((f) => f.purchased?.length)
           .map(
-            (f) =>
-              `${f.label}: ${f.purchased.length} node(s) · ${f.availablePoints} SP available`
+            (f) => `${f.label}: ${f.purchased.length} node(s) · ${f.availablePoints} SP available`
           )
           .join('\n');
         synEl.title = [
@@ -2254,13 +2262,9 @@ const UI = (() => {
     hudBtns.spy = [...document.querySelectorAll('.spy-btn')];
     hudBtns.courier = [...document.querySelectorAll('.courier-btn')];
     const loadoutSection = hudEls['loadout-section'];
-    hudBtns.loadout = loadoutSection
-      ? [...loadoutSection.querySelectorAll('.loadout-btn')]
-      : [];
+    hudBtns.loadout = loadoutSection ? [...loadoutSection.querySelectorAll('.loadout-btn')] : [];
     const formSection = hudEls['formation-section'];
-    hudBtns.formation = formSection
-      ? [...formSection.querySelectorAll('.formation-btn')]
-      : [];
+    hudBtns.formation = formSection ? [...formSection.querySelectorAll('.formation-btn')] : [];
   }
 
   function hudKey(gs) {
@@ -2381,7 +2385,9 @@ const UI = (() => {
       gs.biomeSpawn?.summary,
       gs.biomeSpawn?.biome,
       gs.operativeSkills?.summary,
-      (gs.operativeSkills?.factions || []).map((f) => `${f.factionId}:${f.purchased?.length}`).join(','),
+      (gs.operativeSkills?.factions || [])
+        .map((f) => `${f.factionId}:${f.purchased?.length}`)
+        .join(','),
       gs.mapEvents?.activeSummary,
       gs.mapEvents?.pending,
       gs.mapEvents?.event?.id,
@@ -2432,10 +2438,13 @@ const UI = (() => {
       });
     }
 
-    if (gs.namedBoss) chips.push({ label: `Boss: ${String(gs.namedBoss).slice(0, 18)}`, kind: 'boss' });
+    if (gs.namedBoss)
+      chips.push({ label: `Boss: ${String(gs.namedBoss).slice(0, 18)}`, kind: 'boss' });
     else if (gs.bossActive) chips.push({ label: 'Boss wave', kind: 'boss' });
-    if (gs.multiFrontSiege?.mode === 'competing') chips.push({ label: 'Multi-front', kind: 'warn' });
-    else if (gs.multiFrontSiege?.mode === 'coordinated') chips.push({ label: 'Coordinated', kind: 'warn' });
+    if (gs.multiFrontSiege?.mode === 'competing')
+      chips.push({ label: 'Multi-front', kind: 'warn' });
+    else if (gs.multiFrontSiege?.mode === 'coordinated')
+      chips.push({ label: 'Coordinated', kind: 'warn' });
     if (gs.mapEvents?.pending && gs.mapEvents?.event?.name) {
       chips.push({ label: String(gs.mapEvents.event.name).slice(0, 16), kind: 'event' });
     }
@@ -2534,9 +2543,7 @@ const UI = (() => {
         }
         const maxSec = Math.max(
           1,
-          gs.nightPrepSeconds ||
-            Math.ceil((gs.nightPrepTicks || 3600) / 60) ||
-            60
+          gs.nightPrepSeconds || Math.ceil((gs.nightPrepTicks || 3600) / 60) || 60
         );
         const pct = Math.max(0, Math.min(100, (sec / maxSec) * 100));
         bar.style.width = `${pct}%`;

@@ -18,7 +18,10 @@ function ok(cond, msg) {
 }
 
 const line = F.computeOffsets(5, 'line');
-ok(line.length === 5 && line[0].x < line[4].x && line.every((o) => o.y === 0), 'line is horizontal');
+ok(
+  line.length === 5 && line[0].x < line[4].x && line.every((o) => o.y === 0),
+  'line is horizontal'
+);
 
 const col = F.computeOffsets(4, 'column');
 ok(col.length === 4 && col.every((o) => o.x === 0) && col[0].y < col[3].y, 'column is vertical');

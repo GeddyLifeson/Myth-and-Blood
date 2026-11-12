@@ -16,7 +16,15 @@ function bootLegacyRuns(runs = 0) {
     Object,
     Array,
     String,
-    localStorage: { _d: {}, getItem(k) { return this._d[k] ?? null; }, setItem(k, v) { this._d[k] = String(v); } },
+    localStorage: {
+      _d: {},
+      getItem(k) {
+        return this._d[k] ?? null;
+      },
+      setItem(k, v) {
+        this._d[k] = String(v);
+      },
+    },
     document: {
       getElementById: (id) => (id === 'onboarding-panel' ? { hidden: true, innerHTML: '' } : null),
     },
@@ -55,7 +63,10 @@ ok(typeof Onboarding.prepareCampaignStart === 'function', 'prepareCampaignStart 
 GameModes.init();
 Onboarding.selectStart('fortify');
 const menu = GameModes.getMenu();
-ok(menu.modeId === 'campaign' && menu.seed === 'onboard-walls-v1', 'selectStart applies campaign seed');
+ok(
+  menu.modeId === 'campaign' && menu.seed === 'onboard-walls-v1',
+  'selectStart applies campaign seed'
+);
 
 const begun = GameModes.beginSession('normal');
 ok(begun.session?.seed === 'onboard-walls-v1', 'campaign session uses recommended seed');

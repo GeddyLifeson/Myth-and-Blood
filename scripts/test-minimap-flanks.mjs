@@ -21,7 +21,10 @@ function ok(cond, msg) {
   } else console.log('OK:', msg);
 }
 
-ok(!VP.getMinimapFlankLabel({ unlockedAttackSides: ['north'], attackSides: ['north'] }), 'north-only has no label');
+ok(
+  !VP.getMinimapFlankLabel({ unlockedAttackSides: ['north'], attackSides: ['north'] }),
+  'north-only has no label'
+);
 
 const multi = VP.getMinimapFlankLabel({
   unlockedAttackSides: ['north', 'east', 'west'],

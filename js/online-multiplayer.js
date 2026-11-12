@@ -23,7 +23,8 @@ const OnlineMultiplayer = (() => {
     } catch (_) {
       /* ignore */
     }
-    if (!store.playerId) store.playerId = `cmd-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+    if (!store.playerId)
+      store.playerId = `cmd-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
     if (!store.rooms) store.rooms = {};
     if (!store.pvpMatches) store.pvpMatches = {};
     save();
@@ -70,7 +71,10 @@ const OnlineMultiplayer = (() => {
   }
 
   function setPlayerName(name) {
-    store.playerName = String(name || 'Commander').trim().slice(0, 24) || 'Commander';
+    store.playerName =
+      String(name || 'Commander')
+        .trim()
+        .slice(0, 24) || 'Commander';
     save();
   }
 
@@ -221,7 +225,10 @@ const OnlineMultiplayer = (() => {
     if (raw.startsWith('COOP:')) {
       const payload = fromB64(raw.slice(5));
       if (!payload?.room) return { ok: false, error: 'Invalid co-op invite' };
-      const room = joinCoopRoom(payload.room.id, { ...payload.room, history: [{ type: 'import', at: Date.now() }] });
+      const room = joinCoopRoom(payload.room.id, {
+        ...payload.room,
+        history: [{ type: 'import', at: Date.now() }],
+      });
       return { ok: true, type: 'coop', room };
     }
 
@@ -252,7 +259,8 @@ const OnlineMultiplayer = (() => {
     if (raw.startsWith('PVP:')) {
       const id = raw.slice(4).split(':')[0];
       const match = store.pvpMatches[id];
-      if (!match) return { ok: false, error: 'PvP match not found locally — paste full PVPDATA code' };
+      if (!match)
+        return { ok: false, error: 'PvP match not found locally — paste full PVPDATA code' };
       store.activePvpId = match.id;
       save();
       if (typeof GameModes !== 'undefined') {

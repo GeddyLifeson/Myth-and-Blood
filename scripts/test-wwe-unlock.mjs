@@ -34,7 +34,11 @@ function loadModules() {
     `${wwe}\n;globalThis.WweDefs = WweDefs;\nglobalThis.isShowmanshipAbility = isShowmanshipAbility;\n${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
-  return { MetaProgress: ctx.MetaProgress, Achievements: ctx.Achievements, ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST };
+  return {
+    MetaProgress: ctx.MetaProgress,
+    Achievements: ctx.Achievements,
+    ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
+  };
 }
 
 let failed = 0;
@@ -105,7 +109,10 @@ MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
 showmanshipProc(60);
-ok(Achievements.evaluateRule('showmanship_ability_uses:60'), 'sixty showmanship ability uses milestone');
+ok(
+  Achievements.evaluateRule('showmanship_ability_uses:60'),
+  'sixty showmanship ability uses milestone'
+);
 
 if (failed) {
   console.error(`\n${failed} test(s) failed`);

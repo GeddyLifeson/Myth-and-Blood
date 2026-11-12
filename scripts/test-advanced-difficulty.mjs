@@ -7,7 +7,13 @@ import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
 
 const code = readFileSync(join(JS, 'advanced-difficulty.js'), 'utf8');
-const sb = { Math, Object, Array, Set, document: { getElementById: () => null, querySelectorAll: () => [] } };
+const sb = {
+  Math,
+  Object,
+  Array,
+  Set,
+  document: { getElementById: () => null, querySelectorAll: () => [] },
+};
 sb.window = sb;
 sb.globalThis = sb;
 const AD = vm.runInContext(`${code}\nAdvancedDifficulty`, vm.createContext(sb));
@@ -31,8 +37,14 @@ ok(fog.fogOfWar && fog.fogVisionMult < 1, 'fog of war enables hidden enemies');
 const scout = { team: 'player', hp: 100, type: 'scout', x: 100, y: 400 };
 const hidden = { team: 'enemy', hp: 100, type: 'goblin', x: 100, y: 120 };
 const near = { team: 'enemy', hp: 100, type: 'goblin', x: 130, y: 390 };
-ok(AD.isEnemyFogHidden(hidden, { units: [scout], buildings: [], rallyY: 500, isDayPhase: true }), 'distant enemy hidden in fog');
-ok(!AD.isEnemyFogHidden(near, { units: [scout], buildings: [], rallyY: 500, isDayPhase: true }), 'nearby enemy spotted in fog');
+ok(
+  AD.isEnemyFogHidden(hidden, { units: [scout], buildings: [], rallyY: 500, isDayPhase: true }),
+  'distant enemy hidden in fog'
+);
+ok(
+  !AD.isEnemyFogHidden(near, { units: [scout], buildings: [], rallyY: 500, isDayPhase: true }),
+  'nearby enemy spotted in fog'
+);
 
 AD.setActive(['resource_scarcity']);
 const scarce = AD.getCombinedMods();

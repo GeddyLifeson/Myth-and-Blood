@@ -76,17 +76,29 @@ ok(sb.getUnlockedAttackSides(500).join() === 'north,east,west,south', 'late game
 ok(sb.isEnemyRtsEra(250) === false, 'enemy RTS era off');
 
 const game = readFileSync(join(root, 'js/game.js'), 'utf8');
-ok(/function tryPlaceEnemyBuilding[\s\S]{0,120}return false/.test(game), 'tryPlaceEnemyBuilding no-ops');
-ok(/function bootstrapEnemyEconomyForWave[\s\S]{0,80}return;/.test(game), 'bootstrapEnemyEconomy no-ops');
+ok(
+  /function tryPlaceEnemyBuilding[\s\S]{0,120}return false/.test(game),
+  'tryPlaceEnemyBuilding no-ops'
+);
+ok(
+  /function bootstrapEnemyEconomyForWave[\s\S]{0,80}return;/.test(game),
+  'bootstrapEnemyEconomy no-ops'
+);
 ok(/function updateEnemyRTS\(\)[\s\S]{0,40}return;/.test(game), 'updateEnemyRTS no-ops');
-ok(/function allowsCampaignEconomyVictory[\s\S]{0,120}return false/.test(game), 'no economy victory');
+ok(
+  /function allowsCampaignEconomyVictory[\s\S]{0,120}return false/.test(game),
+  'no economy victory'
+);
 ok(/rollWaveAttackSides/.test(game), 'wave start rolls attack flanks');
 ok(/buildFrontPlan/.test(game), 'multi-front siege plans restored');
 ok(/shiftWorldEntities/.test(game), 'map growth shifts content for all-side expansion');
 ok(/populateNewTerritory/.test(game), 'new territory is populated after expand');
 
 const modes = readFileSync(join(root, 'js/game-modes.js'), 'utf8');
-ok(/function allowsEconomyVictory[\s\S]{0,40}return false/.test(modes), 'modes: no economy victory');
+ok(
+  /function allowsEconomyVictory[\s\S]{0,40}return false/.test(modes),
+  'modes: no economy victory'
+);
 
 if (failed) {
   console.error(`\n${failed} failure(s)`);

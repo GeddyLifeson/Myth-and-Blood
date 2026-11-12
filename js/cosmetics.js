@@ -95,7 +95,7 @@ const Cosmetics = (() => {
       mark: '#ff4020',
     },
     imperium_herald: {
-      label: "Crimson Legions",
+      label: 'Crimson Legions',
       unlock: 'creative_skin_imperium',
       desc: 'Unlocked at Imperium mastery tier IV.',
       body: '#384858',

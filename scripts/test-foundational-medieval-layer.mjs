@@ -42,7 +42,10 @@ function loadModules(extra = {}) {
   sb.window = sb;
   sb.globalThis = sb;
   const ctx = vm.createContext(sb);
-  return vm.runInContext(`${eternalSrc}\n;\n${foundSrc}\n({ FoundationalMedievalLayer, EternalLegacyTree })`, ctx);
+  return vm.runInContext(
+    `${eternalSrc}\n;\n${foundSrc}\n({ FoundationalMedievalLayer, EternalLegacyTree })`,
+    ctx
+  );
 }
 
 const { FoundationalMedievalLayer, EternalLegacyTree } = loadModules();
@@ -72,7 +75,10 @@ const result = FoundationalMedievalLayer.crystallize({
   addHighlight: () => {},
 });
 ok(result?.pathId === 'longbow_legacy', 'crystallizes longbow path');
-ok(FoundationalMedievalLayer.hasCrystallizedPath('longbow_legacy'), 'persists longbow crystallization');
+ok(
+  FoundationalMedievalLayer.hasCrystallizedPath('longbow_legacy'),
+  'persists longbow crystallization'
+);
 
 EternalLegacyTree.investNode('crown_first_echo');
 EternalLegacyTree.investNode('crown_age_mark');
@@ -97,8 +103,13 @@ mythRun.FoundationalMedievalLayer.recordFaction('gears', 70);
 const mythSnap = mythRun.FoundationalMedievalLayer.getRunSnapshot();
 ok(mythSnap.leading === 'mythic_alliance', 'mythic leads after crossover heroes');
 
-ok(FoundationalMedievalLayer.formatIntelNote({ wave: 100 }).includes('medieval'), 'intel at wave 100');
+ok(
+  FoundationalMedievalLayer.formatIntelNote({ wave: 100 }).includes('medieval'),
+  'intel at wave 100'
+);
 ok(FoundationalMedievalLayer.getLegacyEntries().length >= 1, 'encyclopedia entry');
 
-console.log(failed ? `\n${failed} test(s) failed` : '\nAll foundational-medieval-layer tests passed');
+console.log(
+  failed ? `\n${failed} test(s) failed` : '\nAll foundational-medieval-layer tests passed'
+);
 process.exit(failed ? 1 : 0);

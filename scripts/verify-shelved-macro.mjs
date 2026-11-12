@@ -48,7 +48,10 @@ const missing = [];
 for (const m of html.matchAll(/src="(js\/[^"]+)"/g)) {
   if (!existsSync(join(root, m[1]))) missing.push(m[1]);
 }
-ok(missing.length === 0, missing.length ? `missing scripts: ${missing.join(', ')}` : 'all index.html scripts exist');
+ok(
+  missing.length === 0,
+  missing.length ? `missing scripts: ${missing.join(', ')}` : 'all index.html scripts exist'
+);
 
 if (failed) {
   console.error(`\n${failed} failure(s)`);

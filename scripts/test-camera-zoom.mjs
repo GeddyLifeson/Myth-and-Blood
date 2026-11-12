@@ -82,12 +82,7 @@ function makeCamera(opts = {}) {
   }
 
   function isScreenInMapArea(sx, sy) {
-    return (
-      sx >= insets.left &&
-      sx <= canvasW - insets.right &&
-      sy >= insets.top &&
-      sy <= canvasH
-    );
+    return sx >= insets.left && sx <= canvasW - insets.right && sy >= insets.top && sy <= canvasH;
   }
 
   function resolveZoomAnchor(screenX, screenY) {

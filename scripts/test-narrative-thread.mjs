@@ -12,7 +12,13 @@ function loadModules() {
   const ascSrc = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
   const synSrc = readFileSync(join(JS, 'thematic-era-synergies.js'), 'utf8');
   const ntSrc = readFileSync(join(JS, 'narrative-thread.js'), 'utf8');
-  const gsSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy.js'), 'utf8'); } catch { return '/* optional missing grand-strategy.js */'; } })();
+  const gsSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy.js */';
+    }
+  })();
   const sb = {
     Math,
     Object,
@@ -62,7 +68,10 @@ const { FoundationalMedievalLayer, ThematicEraSynergies, NarrativeThread, GrandS
 const messages = [];
 NarrativeThread.resetRun();
 NarrativeThread.onRunStart({ creative: false, showMessage: (m) => messages.push(m) });
-ok(messages.some((m) => m.includes('Ancient Crown') || m.includes('cosmic time')), 'run start frames ancient crown');
+ok(
+  messages.some((m) => m.includes('Ancient Crown') || m.includes('cosmic time')),
+  'run start frames ancient crown'
+);
 
 NarrativeThread.resetRun();
 const honored = {
@@ -77,7 +86,10 @@ const honored = {
   morale: 30,
   vetTier: 4,
 };
-const leg = NarrativeThread.onHeroHonored(honored, 80, { showMessage: () => {}, addHighlight: () => {} });
+const leg = NarrativeThread.onHeroHonored(honored, 80, {
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 ok(leg?.kind === 'honored', 'honored veteran canonized as legend');
 ok(NarrativeThread.getStateSnapshot({ wave: 80 }).legendCount === 1, 'legend count tracked');
 
@@ -92,10 +104,25 @@ const champion = {
   morale: 30,
   vetTier: 4,
 };
-NarrativeThread.scanLegends([honored, champion], 100, { showMessage: () => {}, addHighlight: () => {} });
-ok(NarrativeThread.getStateSnapshot({ wave: 100 }).legendCount === 2, 'champion scanned into legends');
+NarrativeThread.scanLegends([honored, champion], 100, {
+  showMessage: () => {},
+  addHighlight: () => {},
+});
+ok(
+  NarrativeThread.getStateSnapshot({ wave: 100 }).legendCount === 2,
+  'champion scanned into legends'
+);
 
-const mythic = { id: 'u3', team: 'player', type: 'goku', hp: 200, maxHp: 200, damage: 40, maxMorale: 40, morale: 40 };
+const mythic = {
+  id: 'u3',
+  team: 'player',
+  type: 'goku',
+  hp: 200,
+  maxHp: 200,
+  damage: 40,
+  maxMorale: 40,
+  morale: 40,
+};
 NarrativeThread.scanLegends([mythic], 120, { showMessage: () => {}, addHighlight: () => {} });
 ok(NarrativeThread.getMythicLegendIds().includes('goku'), 'mythic legend id exposed for echoes');
 
@@ -114,12 +141,17 @@ FoundationalMedievalLayer.onRunStart({ creative: false });
 FoundationalMedievalLayer.recordDeploy('goku', 60);
 FoundationalMedievalLayer.recordDeploy('tank_dempsey', 65);
 if (GrandStrategy) {
-GrandStrategy?.resetRun?.();
-ThematicEraSynergies.resetRun();
-NarrativeThread.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [mythic], showMessage: () => {}, addHighlight: () => {} });
-NarrativeThread.scanLegends([mythic], 150, { showMessage: () => {}, addHighlight: () => {} });
+  GrandStrategy?.resetRun?.();
+  ThematicEraSynergies.resetRun();
+  NarrativeThread.resetRun();
+  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
+  ThematicEraSynergies.onWaveStart(150, {
+    wave: 150,
+    units: [mythic],
+    showMessage: () => {},
+    addHighlight: () => {},
+  });
+  NarrativeThread.scanLegends([mythic], 150, { showMessage: () => {}, addHighlight: () => {} });
 } else {
   console.log('SKIP GrandStrategy assertions (macro layer removed)');
 }
@@ -130,11 +162,22 @@ ok(
 );
 
 NarrativeThread.resetRun();
-NarrativeThread.onWaveStart(150, { wave: 150, units: [], showMessage: (m) => messages.push(m), addHighlight: () => {} });
-ok(messages.some((m) => m.includes('medieval kingdom') || m.includes('imperial')), 'wave 150 succession beat');
+NarrativeThread.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: (m) => messages.push(m),
+  addHighlight: () => {},
+});
+ok(
+  messages.some((m) => m.includes('medieval kingdom') || m.includes('imperial')),
+  'wave 150 succession beat'
+);
 
 const intel = NarrativeThread.formatIntelNote({ wave: 150 });
-ok(intel.toLowerCase().includes('legend') || intel.toLowerCase().includes('crown'), 'intel mentions crown legends');
+ok(
+  intel.toLowerCase().includes('legend') || intel.toLowerCase().includes('crown'),
+  'intel mentions crown legends'
+);
 
 if (failed) {
   console.error(`\n${failed} test(s) failed`);

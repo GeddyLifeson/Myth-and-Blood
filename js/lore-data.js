@@ -461,7 +461,8 @@ const LoreData = (() => {
       rule: 'meta_crossover',
     },
     sky_drake: {
-      classified: 'Orbital Vanguard and Skyburst Foundry operatives register elevated anti-air efficacy vs drakes.',
+      classified:
+        'Orbital Vanguard and Skyburst Foundry operatives register elevated anti-air efficacy vs drakes.',
       rule: 'faction:halo',
     },
     war_chief: {

@@ -154,7 +154,11 @@ const cx = Game.getWorldCenter();
 
 // Seed player army + buildings like waves 1–4 buildup.
 for (let i = 0; i < 12; i++) {
-  Game.creativeSpawnPlayerAt('footman', cx.x - 80 + (i % 4) * 40, cx.y + 60 + Math.floor(i / 4) * 28);
+  Game.creativeSpawnPlayerAt(
+    'footman',
+    cx.x - 80 + (i % 4) * 40,
+    cx.y + 60 + Math.floor(i / 4) * 28
+  );
 }
 for (let i = 0; i < 4; i++) {
   Game.creativeSpawnPlayerAt('archer', cx.x - 60 + i * 35, cx.y + 20);

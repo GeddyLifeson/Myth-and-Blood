@@ -532,7 +532,9 @@ const Research = (() => {
     const n = Math.max(0, Number(amount) || 0);
     if (n <= 0) return 0;
     const branchFx =
-      typeof TechTreeBranches !== 'undefined' ? TechTreeBranches.getCombinedEffects(ctx.wave) : null;
+      typeof TechTreeBranches !== 'undefined'
+        ? TechTreeBranches.getCombinedEffects(ctx.wave)
+        : null;
     const gainMult = (ctx.scienceGainMult || 1) * (branchFx?.scienceGainMult || 1);
     const speedMult = (ctx.researchSpeedMult || 1) * (branchFx?.researchSpeedMult || 1);
     const granted = n * gainMult;
@@ -878,7 +880,9 @@ const Research = (() => {
     }
     if (node.faction) {
       const label =
-        node.faction === 'wwe' ? 'Grand Coliseum' : `${(node.faction || '').toUpperCase()} barracks`;
+        node.faction === 'wwe'
+          ? 'Grand Coliseum'
+          : `${(node.faction || '').toUpperCase()} barracks`;
       return `Unlocks ${label} construction`;
     }
     if (node.id === 'doom_protocol') return 'Unlocks Doomslayer deployment (with meta unlock)';
@@ -1040,7 +1044,12 @@ const Research = (() => {
     treeDelegated = true;
     tree.addEventListener('click', (e) => {
       const btn = e.target?.closest?.('[data-research]');
-      if (!btn || btn.disabled || btn.classList.contains('done') || btn.classList.contains('locked'))
+      if (
+        !btn ||
+        btn.disabled ||
+        btn.classList.contains('done') ||
+        btn.classList.contains('locked')
+      )
         return;
       e.preventDefault();
       e.stopPropagation();
@@ -1070,8 +1079,7 @@ const Research = (() => {
         ? TechTreeBranches.getNodesForUI?.(wave)?.activeInfo
         : null;
 
-    const reserveLabel =
-      reserveScience > 0.05 ? ` · Reserve ${reserveScience.toFixed(1)} SP` : '';
+    const reserveLabel = reserveScience > 0.05 ? ` · Reserve ${reserveScience.toFixed(1)} SP` : '';
     // Tree rebuild only when structure changes (nodes/locks/active id). SP ticks only touch headers.
     const treeSig = [
       wave,
@@ -1124,10 +1132,7 @@ const Research = (() => {
           ${items
             .map((n) => {
               const tip = escAttr(n.lockReason || n.desc || '');
-              const disabled =
-                n.done || n.locked || (activeId && !n.active)
-                  ? 'disabled'
-                  : '';
+              const disabled = n.done || n.locked || (activeId && !n.active) ? 'disabled' : '';
               const cls = [
                 'research-node',
                 n.done ? 'done' : '',

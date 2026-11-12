@@ -162,10 +162,7 @@ try {
 ok(!!Game, 'Game loaded');
 // Avoid sprite prewarm requiring full canvas API surface.
 try {
-  const SpriteGen = vm.runInContext(
-    'typeof SpriteGen !== "undefined" ? SpriteGen : null',
-    vmCtx
-  );
+  const SpriteGen = vm.runInContext('typeof SpriteGen !== "undefined" ? SpriteGen : null', vmCtx);
   if (SpriteGen) SpriteGen.prewarmCache = () => {};
 } catch (_) {
   /* ignore */

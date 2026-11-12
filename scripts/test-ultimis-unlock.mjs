@@ -69,7 +69,10 @@ ok(!isZombieTypeEnemy('dark_knight'), 'evil operative is not zombie-type horde')
 ok(!isZombieTypeEnemy('troll'), 'troll brute is not zombie-type horde');
 
 const hordeAch = ACHIEVEMENT_LIST.find((a) => a.id === 'ultimis_horde_150');
-ok(hordeAch && hordeAch.rule === 'diff_zombie_fortress:doomslayer:150', 'ultimis horde achievement exists');
+ok(
+  hordeAch && hordeAch.rule === 'diff_zombie_fortress:doomslayer:150',
+  'ultimis horde achievement exists'
+);
 
 Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
 for (let w = 1; w <= 150; w++) {
@@ -82,12 +85,19 @@ ok(Achievements.evaluateRule('unlock:ultimis'), 'ultimis unlock rule passes');
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
-Achievements.onEvent('zombie_building_lost', { buildType: 'wall', attackerType: 'goblin', wave: 12 });
+Achievements.onEvent('zombie_building_lost', {
+  buildType: 'wall',
+  attackerType: 'goblin',
+  wave: 12,
+});
 for (let w = 1; w <= 150; w++) {
   Achievements.onEvent('wave_complete', { wave: w, difficulty: 'doomslayer', units: [] });
 }
 ok(!MetaProgress.is115Unlocked(), 'horde building loss blocks Element 115 unlock');
-ok(!Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'), 'horde loss fails fortress rule');
+ok(
+  !Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'),
+  'horde loss fails fortress rule'
+);
 
 MetaProgress.reset();
 Achievements.resetSession();

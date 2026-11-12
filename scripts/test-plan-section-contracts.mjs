@@ -39,31 +39,58 @@ const hm = read('scripts/headless-manifest.mjs');
 console.log('\n=== §0 Immediate feel-breakers ===');
 const gsOpen = gs.match(/function openPanel\(\)[\s\S]{0,900}/)?.[0] || '';
 const igOpen = ig.match(/function openPanel\(\)[\s\S]{0,900}/)?.[0] || '';
-ok(gsOpen.includes('macro-command-dock') && gsOpen.includes('StrategicMapView.open'), '0.1 GS openPanel docks + map');
+ok(
+  gsOpen.includes('macro-command-dock') && gsOpen.includes('StrategicMapView.open'),
+  '0.1 GS openPanel docks + map'
+);
 ok(!/StrategicMapView\.open\([^)]*\);\s*return;/.test(gsOpen), '0.1 GS no early-return after map');
-ok(igOpen.includes('macro-command-dock') && igOpen.includes('StrategicMapView.open'), '0.1 IG openPanel docks + map');
-ok(css.includes('macro-command-dock') && css.includes('strategic-map-actions'), '0.1 CSS dock + action bar');
+ok(
+  igOpen.includes('macro-command-dock') && igOpen.includes('StrategicMapView.open'),
+  '0.1 IG openPanel docks + map'
+);
+ok(
+  css.includes('macro-command-dock') && css.includes('strategic-map-actions'),
+  '0.1 CSS dock + action bar'
+);
 ok(
   ['Fortify', 'Recruit', 'Campaign', 'Diplomacy', 'Logistics'].every((v) => smv.includes(v)),
   '0.2 kingdom verbs'
 );
-ok(['Patrol', 'Survey', 'Blockade', 'Invade'].every((v) => smv.includes(v)), '0.2 galaxy verbs');
+ok(
+  ['Patrol', 'Survey', 'Blockade', 'Invade'].every((v) => smv.includes(v)),
+  '0.2 galaxy verbs'
+);
 ok(
   ['Assault focus', 'Consolidate', 'Deploy', 'Intel'].every((v) => smv.includes(v)),
   '0.2 planet verbs'
 );
-ok(idx.includes('strategic-map-actions') && idx.includes('strategic-map-intro'), '0.2/0.3 map HUD DOM');
+ok(
+  idx.includes('strategic-map-actions') && idx.includes('strategic-map-intro'),
+  '0.2/0.3 map HUD DOM'
+);
 ok(game.includes('intro: true') && game.includes('planet_conquest'), '0.3 conquest intro open');
-ok(smv.includes('deployToSurface') && smv.includes('if (!canvas) return false'), '0.3 deploy + fail-closed open (no canvas)');
+ok(
+  smv.includes('deployToSurface') && smv.includes('if (!canvas) return false'),
+  '0.3 deploy + fail-closed open (no canvas)'
+);
 ok(smv.includes('if (!ctx) return false'), '0.3 fail-closed open (no 2d context)');
 ok(
   fh.includes('densityMult') && fh.includes('northOnly') && fh.includes('excludeNearPlayerRally'),
   '0.4 hazard opts'
 );
-ok(game.includes('setHazardSpawnOpts') && game.includes('densityMult: 0.28'), '0.4 conquest fair spawn');
+ok(
+  game.includes('setHazardSpawnOpts') && game.includes('densityMult: 0.28'),
+  '0.4 conquest fair spawn'
+);
 ok(game.includes('ember rings') || game.includes('orc fire'), '0.4 surface burn toast');
-ok(mb.includes('bootstrapMacroStateForWave') && mb.includes('bootstrapProgressionForWave'), '0.5 macro bootstrap');
-ok(gs.includes('function bootstrapForWave') && ig.includes('function bootstrapForWave'), '0.5 GS/IG bootstrap');
+ok(
+  mb.includes('bootstrapMacroStateForWave') && mb.includes('bootstrapProgressionForWave'),
+  '0.5 macro bootstrap'
+);
+ok(
+  gs.includes('function bootstrapForWave') && ig.includes('function bootstrapForWave'),
+  '0.5 GS/IG bootstrap'
+);
 
 console.log('\n=== §1 Layer identity ===');
 ok(ld.includes('ERA_DEFS') && ld.includes('One Crown, Five Eras'), '1 era journey SSOT');
@@ -71,7 +98,10 @@ ok(
   ['defense', 'expansion', 'kingdom', 'galaxy', 'conquest'].every((e) => ld.includes(e)),
   '1 five era ids'
 );
-ok(ld.includes('openLayer') && ld.includes('renderStackMarkup') && ld.includes('renderEraBarMarkup'), '1 chips/open');
+ok(
+  ld.includes('openLayer') && ld.includes('renderStackMarkup') && ld.includes('renderEraBarMarkup'),
+  '1 chips/open'
+);
 ok(idx.includes('era-journey-panel') && idx.includes('era-journey-bar'), '1 menu+HUD journey UI');
 ok(ld.includes('getEncyclopediaEntries'), '1 encyclopedia hooks');
 ok(ld.includes('pauseContract') || ld.includes('pauseContract'), '1 pause contract documented');
@@ -79,27 +109,50 @@ ok(ld.includes('pauseContract') || ld.includes('pauseContract'), '1 pause contra
 console.log('\n=== §2 Wave defense polish ===');
 ok(ui.includes('gsUnlocked') && ui.includes('igUnlocked'), '2 soft-lock flags');
 ok(ui.includes('layer-btn-locked'), '2 soft-lock CSS class on buttons (visible+disabled)');
-ok(ld.includes('locked') && (ld.includes('data-layer-locked') || ld.includes('layer-mode-chip')), '2 locked chips');
+ok(
+  ld.includes('locked') && (ld.includes('data-layer-locked') || ld.includes('layer-mode-chip')),
+  '2 locked chips'
+);
 ok(onb.includes('onboarding-journey') || onb.includes('Defend'), '2 onboarding guided start');
 
 console.log('\n=== §3 AoE / foundations ===');
 ok(pw.includes('push north') || pw.includes('Hostile front'), '3 front announcement');
 ok(gs.includes('maybeForceFirstDecision'), '3 first GS decision');
-ok(game.includes('bootstrapAcademyEraStart') && game.includes('bootstrapProgressionForWave'), '3 academy seed');
+ok(
+  game.includes('bootstrapAcademyEraStart') && game.includes('bootstrapProgressionForWave'),
+  '3 academy seed'
+);
 
 console.log('\n=== §4 Kingdom map play ===');
 ok(smv.includes('drawArmyToken') && smv.includes('drawOrderArrow'), '4 tokens + arrows');
-ok(smv.includes('routes') || smv.includes('trade') || smv.includes('Granary') || smv.includes('route'), '4 trade lines');
-ok(gs.includes('Tactical effect:') && gs.includes('getOrdersSnapshot') && gs.includes('armyTokens'), '4 feedback+snapshots');
+ok(
+  smv.includes('routes') ||
+    smv.includes('trade') ||
+    smv.includes('Granary') ||
+    smv.includes('route'),
+  '4 trade lines'
+);
+ok(
+  gs.includes('Tactical effect:') && gs.includes('getOrdersSnapshot') && gs.includes('armyTokens'),
+  '4 feedback+snapshots'
+);
 ok(gs.includes('unrest') && smv.includes('unrest'), '4 unrest on map');
 
 console.log('\n=== §5 Galaxy map play ===');
-ok(smv.includes('fleets') && smv.includes('scienceShips') && smv.includes('surveyProgress'), '5 fleet/science/survey');
+ok(
+  smv.includes('fleets') && smv.includes('scienceShips') && smv.includes('surveyProgress'),
+  '5 fleet/science/survey'
+);
 ok(ig.includes('maybeForceFirstInvasionTutorial'), '5 first invasion tutorial');
 ok(ig.includes('queueFleetOrder') && ig.includes('queueSurveyOrder'), '5 fleet/survey APIs');
 
 console.log('\n=== §6 Planet conquest ===');
-ok(pc.includes('consolidateSector') && pc.includes('setFocusedSector') && pc.includes('getSectorCenterX'), '6 sector APIs');
+ok(
+  pc.includes('consolidateSector') &&
+    pc.includes('setFocusedSector') &&
+    pc.includes('getSectorCenterX'),
+  '6 sector APIs'
+);
 ok(fi.includes('focusFaction'), '6 intel focus');
 ok(smv.includes('WORLDHEART') || smv.includes('PLANET SECURED'), '6 boss/secured chrome');
 ok(game.includes('onPlanetConquestSurfaceDeploy'), '6 surface deploy hook');
@@ -117,7 +170,10 @@ ok(game.includes('conquestHazardGraceWaves'), '0/7 durable conquest hazard grace
 
 console.log('\n=== §8 Teaching ===');
 ok(onb.includes('onboarding-journey'), '8 onboarding journey');
-ok(idx.includes('Shift+G') || idx.includes('THE JOURNEY') || idx.includes('era-journey'), '8 menu/how-to journey');
+ok(
+  idx.includes('Shift+G') || idx.includes('THE JOURNEY') || idx.includes('era-journey'),
+  '8 menu/how-to journey'
+);
 ok(ld.includes('getEncyclopediaEntries'), '8 encyclopedia');
 
 console.log('\n=== §9 Tests & wiring ===');
@@ -132,7 +188,10 @@ ok(
     hm.includes('mythic-path-evolution.js'),
   '9 headless strategy stack (+ path evolution)'
 );
-ok(idx.includes('macro-bootstrap.js') && idx.includes('strategic-map-view.js'), '9 index.html has map+bootstrap');
+ok(
+  idx.includes('macro-bootstrap.js') && idx.includes('strategic-map-view.js'),
+  '9 index.html has map+bootstrap'
+);
 // Path modules must load before macro-bootstrap so jump-in can seed them.
 const idxMartial = idx.indexOf('martial-path-evolution.js');
 const idxMacro = idx.indexOf('macro-bootstrap.js');

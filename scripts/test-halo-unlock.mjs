@@ -32,7 +32,11 @@ function loadModules() {
     `${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
-  return { MetaProgress: ctx.MetaProgress, Achievements: ctx.Achievements, ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST };
+  return {
+    MetaProgress: ctx.MetaProgress,
+    Achievements: ctx.Achievements,
+    ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
+  };
 }
 
 let failed = 0;
@@ -59,7 +63,10 @@ for (let i = 1; i <= 4; i++) elevateFootman(`fm-${i}`);
 Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-5' });
 Achievements.onEvent('general_fielded', { wave: 40 });
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(MetaProgress.isHaloUnlocked(), 'victory with general alive and 5 command elevations unlocks Halo');
+ok(
+  MetaProgress.isHaloUnlocked(),
+  'victory with general alive and 5 command elevations unlocks Halo'
+);
 ok(Achievements.evaluateRule('run_spartan_command:5'), 'spartan command rule passes');
 
 MetaProgress.reset();

@@ -8,20 +8,15 @@ t = t.replace(
   /svc\('AudioEngine'\)\?\.SFX\?\.([a-zA-Z_][a-zA-Z0-9_]*)\?\.\(([^)]*)\)/g,
   (_, name, args) => (args.trim() ? `playSfx('${name}', ${args})` : `playSfx('${name}')`)
 );
-t = t.replace(
-  /svc\('AudioEngine'\)\.SFX\.([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)/g,
-  (_, name, args) => (args.trim() ? `playSfx('${name}', ${args})` : `playSfx('${name}')`)
+t = t.replace(/svc\('AudioEngine'\)\.SFX\.([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)/g, (_, name, args) =>
+  args.trim() ? `playSfx('${name}', ${args})` : `playSfx('${name}')`
 );
 t = t.replace(
   /if \(typeof AudioEngine !== 'undefined'\) AudioEngine\.SFX\.([a-zA-Z_]+)\?\.\(([^)]*)\);/g,
-  (_, name, args) =>
-    args.trim() ? `playSfx('${name}', ${args});` : `playSfx('${name}');`
+  (_, name, args) => (args.trim() ? `playSfx('${name}', ${args});` : `playSfx('${name}');`)
 );
 // Ternary victory/defeat
-t = t.replace(
-  /\? svc\('AudioEngine'\)\.SFX\.victory\(/g,
-  `? playSfx('victory', `
-);
+t = t.replace(/\? svc\('AudioEngine'\)\.SFX\.victory\(/g, `? playSfx('victory', `);
 // That might break if already converted - skip complex cases
 
 writeFileSync(path, t);

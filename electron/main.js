@@ -171,7 +171,11 @@ function createWindow(mode = 'windowed') {
     });
   });
   mainWindow.webContents.on('unresponsive', () => {
-    appendErrorLogFile('renderer.log', { at: Date.now(), level: 'warn', message: 'Renderer unresponsive' });
+    appendErrorLogFile('renderer.log', {
+      at: Date.now(),
+      level: 'warn',
+      message: 'Renderer unresponsive',
+    });
   });
   INDEX_PATH = resolveIndexPath();
   mainWindow.loadFile(INDEX_PATH);

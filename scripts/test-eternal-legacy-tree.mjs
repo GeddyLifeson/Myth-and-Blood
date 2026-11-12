@@ -90,7 +90,15 @@ ok(blocked.ok === false && blocked.reason === 'prereq', 'knight ascendant blocke
 const fx = EternalLegacyTree.getCombinedEffects(null, 120);
 ok(fx.ascendDmgByType.archer > 1, 'archer ascend damage from volley');
 
-const unit = { team: 'player', type: 'archer', damage: 100, maxHp: 100, hp: 100, morale: 10, maxMorale: 20 };
+const unit = {
+  team: 'player',
+  type: 'archer',
+  damage: 100,
+  maxHp: 100,
+  hp: 100,
+  morale: 10,
+  maxMorale: 20,
+};
 EternalLegacyTree.applyUnitBonuses(unit, 120);
 ok(unit.damage > 100, 'applyUnitBonuses boosts archer damage');
 ok(unit.eternalEchoTier >= 1, 'ascension tier set on unit');
@@ -103,7 +111,10 @@ ok(hud.includes('Crown'), 'hud line shows crown count');
 
 const snap = EternalLegacyTree.getMenuSnapshot();
 ok(snap.investedCount >= 3, 'menu snapshot invested count');
-ok(snap.nodes.some((n) => n.invested), 'menu has invested nodes');
+ok(
+  snap.nodes.some((n) => n.invested),
+  'menu has invested nodes'
+);
 
 ok(EternalLegacyTree.getLegacyEntries().length >= 1, 'encyclopedia entries');
 

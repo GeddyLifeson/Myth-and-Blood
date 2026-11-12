@@ -58,7 +58,11 @@ const DamagePreview = (() => {
 
     applyLoadoutPreview(u, ctx);
 
-    if (typeof CrownLegacies !== 'undefined' && !ctx.creativeMode && CrownLegacies.applyUnitBonuses) {
+    if (
+      typeof CrownLegacies !== 'undefined' &&
+      !ctx.creativeMode &&
+      CrownLegacies.applyUnitBonuses
+    ) {
       CrownLegacies.applyUnitBonuses(u);
     }
 
@@ -102,7 +106,12 @@ const DamagePreview = (() => {
     dmg += Math.floor((attacker.experience || 0) / 3) * 2;
     dmg += (attacker.vetTier || 0) * 5;
 
-    if (attacker.team === 'player' && !attacker.isGeneral && ctx.generalStationed && ctx.generalAura) {
+    if (
+      attacker.team === 'player' &&
+      !attacker.isGeneral &&
+      ctx.generalStationed &&
+      ctx.generalAura
+    ) {
       const aura = ctx.generalAura;
       const typeMult =
         attacker.combatType === 'ranged' || attacker.projectile ? aura.rangedDmg : aura.meleeDmg;
@@ -197,10 +206,7 @@ const DamagePreview = (() => {
     if (!ref) return null;
 
     const center = applyEnemyMitigation(strikeDamageAtCenter(ability.damage, 0), ref.unit);
-    const edge = applyEnemyMitigation(
-      strikeDamageAtCenter(ability.damage, 1),
-      ref.unit
-    );
+    const edge = applyEnemyMitigation(strikeDamageAtCenter(ability.damage, 1), ref.unit);
     const centerKill = center >= ref.unit.hp;
     const edgeKill = edge >= ref.unit.hp;
 
@@ -220,15 +226,15 @@ const DamagePreview = (() => {
 
   function formatDeployTip(unitType, gs) {
     if (!gs) return '';
-    const def = typeof getPlayerUnitDef === 'function' ? getPlayerUnitDef(unitType) : UnitDefs?.[unitType];
+    const def =
+      typeof getPlayerUnitDef === 'function' ? getPlayerUnitDef(unitType) : UnitDefs?.[unitType];
     if (!def || !(def.damage > 0)) return '';
 
     const ctx = ctxFromState(gs);
     const preview = previewUnitVsEnemy(unitType, ctx);
     if (!preview) return '';
 
-    let line =
-      `vs ${preview.enemyLabel} W${preview.wave}: ${preview.dmgMin}–${preview.dmgMax} dmg · ${preview.hits} to kill`;
+    let line = `vs ${preview.enemyLabel} W${preview.wave}: ${preview.dmgMin}–${preview.dmgMax} dmg · ${preview.hits} to kill`;
     if (preview.modifiers) line += ` (${preview.modifiers})`;
     line += ' · open field';
     return line;

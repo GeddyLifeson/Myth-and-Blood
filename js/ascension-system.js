@@ -377,9 +377,7 @@ const AscensionSystem = (() => {
     unit.ascensionShort = stage.short || stage.label;
     unit.ascensionWeapon = stage.weapon || null;
     unit.ascensionEra = era;
-    unit.ascensionTitle = stage.weapon
-      ? `${stage.label} (${stage.weapon})`
-      : stage.label;
+    unit.ascensionTitle = stage.weapon ? `${stage.label} (${stage.weapon})` : stage.label;
     unit.ascensionApplied = true;
   }
 
@@ -401,7 +399,10 @@ const AscensionSystem = (() => {
     const offer = getUnitAscensionOffer(unit, wave);
     if (!offer) return { ok: false, msg: 'Not eligible for ascension.' };
     if (!spendLegacyPoints(offer.cost)) {
-      return { ok: false, msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).` };
+      return {
+        ok: false,
+        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
+      };
     }
     applyStageToUnit(unit, offer.stage, offer.era);
     run.ascendedUnits += 1;
@@ -419,7 +420,10 @@ const AscensionSystem = (() => {
     const offer = getBuildingAscensionOffer(building, wave);
     if (!offer) return { ok: false, msg: 'Building not eligible for ascension.' };
     if (!spendLegacyPoints(offer.cost)) {
-      return { ok: false, msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).` };
+      return {
+        ok: false,
+        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
+      };
     }
     applyStageToBuilding(building, offer.stage, offer.era);
     run.ascendedBuildings += 1;
@@ -529,7 +533,10 @@ const AscensionSystem = (() => {
           `Ascension unlocked — ${grant} Legacy Points. Max veterans can ascend at era transitions (unit panel).`,
           440
         );
-        ctx.addHighlight?.('milestone', `${gate.label} — ascend Immortal troops with Legacy Points`);
+        ctx.addHighlight?.(
+          'milestone',
+          `${gate.label} — ascend Immortal troops with Legacy Points`
+        );
       }
       if (gate.id === 'galactic' && !galacticAnnounced) {
         galacticAnnounced = true;

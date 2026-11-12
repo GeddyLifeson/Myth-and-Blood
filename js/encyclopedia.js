@@ -4,20 +4,15 @@
 const Encyclopedia = (() => {
   let panelOpen = false;
   let returnToPause = false;
-    const COLISEUM_TEASE = {
+  const COLISEUM_TEASE = {
     stone_cold:
       'The Stonebreaker — court records say elites fall to a sudden stunner and the crowd goes silent.',
-    the_rock:
-      'The Mountain King lays the smack down; kill streaks get louder when he headlines.',
-    ric_flair:
-      'The Nature Lord — allies near him fight with extra swagger. Woooo!',
-    hulk_hogan:
-      'The Titan — below half health he hulks up and refuses to stay down.',
+    the_rock: 'The Mountain King lays the smack down; kill streaks get louder when he headlines.',
+    ric_flair: 'The Nature Lord — allies near him fight with extra swagger. Woooo!',
+    hulk_hogan: 'The Titan — below half health he hulks up and refuses to stay down.',
     macho_man: 'Sky Elbow Ace drops elbows from the high ground. Snap into it.',
-    sting:
-      'The Crow Sentinel strikes from the shadows. Wounded prey rarely escape the deathlock.',
-    john_cena:
-      'The Patriot never gives up — damage seems to bounce off when the fight turns ugly.',
+    sting: 'The Crow Sentinel strikes from the shadows. Wounded prey rarely escape the deathlock.',
+    john_cena: 'The Patriot never gives up — damage seems to bounce off when the fight turns ugly.',
     bautista: 'The Animal Lord — his bomb shakes everyone standing too close.',
     roman_reigns: 'The Tribal Chief — the spear ends arguments and several orcs at once.',
     shawn_michaels:
@@ -888,8 +883,8 @@ const Encyclopedia = (() => {
       'Chase wounded routed enemies.',
     ],
     avdol: [
-      "Crimson Flame — fire splash on every hit.",
-      "Mohammed Flame is Part 3 support-ranged — Crimson Flame fire splash chips groups.",
+      'Crimson Flame — fire splash on every hit.',
+      'Mohammed Flame is Part 3 support-ranged — Crimson Flame fire splash chips groups.',
       'Mid-line fire support.',
     ],
     josuke_higashikata: [
@@ -903,8 +898,8 @@ const Encyclopedia = (() => {
       'Point at high-priority single targets.',
     ],
     rohan_kishibe: [
-      "Script Ward — debuffs enemy accuracy from range.",
-      "Rohan Artist is Part 4 ranged debuffer — Script Ward ruins enemy accuracy.",
+      'Script Ward — debuffs enemy accuracy from range.',
+      'Rohan Artist is Part 4 ranged debuffer — Script Ward ruins enemy accuracy.',
       'Opposite enemy archer lanes.',
     ],
     kira_yoshikage: [
@@ -1224,7 +1219,8 @@ const Encyclopedia = (() => {
     const tip = lore?.[2] || defaultHeroTip(def);
     if (!unlocked) return tease;
     let body = `${flavor}\n\n${def.abilityDesc}\n\n${formatCrossoverStats(def)}\n\nTip: ${tip}`;
-    if (id === 'takeo') body += "\n\nIn memory of a legendary blade-master — thank you for the laughs.";
+    if (id === 'takeo')
+      body += '\n\nIn memory of a legendary blade-master — thank you for the laughs.';
     return body;
   }
 
@@ -1364,7 +1360,11 @@ const Encyclopedia = (() => {
       { cat: 'perks', name: 'Elemental Pop', body: 'Ranged & melee — splash damage on hits.' },
       { cat: 'perks', name: 'Impact Ward', body: 'Melee only — explosion immunity.' },
       { cat: 'perks', name: "Brawler's Brew", body: 'Melee only — +28% melee damage.' },
-      { cat: 'perks', name: "Scavenger's Tonic", body: 'Ranged & support — kills may grant +1 TP.' },
+      {
+        cat: 'perks',
+        name: "Scavenger's Tonic",
+        body: 'Ranged & support — kills may grant +1 TP.',
+      },
       {
         cat: 'perks',
         name: 'Last Stand Monument',
@@ -1461,8 +1461,7 @@ const Encyclopedia = (() => {
     const factionLore =
       typeof FactionDepth !== 'undefined' ? FactionDepth.getEncyclopediaEntries() : [];
     const chronicles = typeof Chronicles !== 'undefined' ? Chronicles.getEncyclopediaEntries() : [];
-    const story =
-      typeof StoryLore !== 'undefined' ? StoryLore.getEncyclopediaEntries() : [];
+    const story = typeof StoryLore !== 'undefined' ? StoryLore.getEncyclopediaEntries() : [];
     const legacy = typeof Legacy !== 'undefined' ? Legacy.getLegacyEntries() : [];
     const journey =
       typeof LayerDesign !== 'undefined' && LayerDesign.getEncyclopediaEntries

@@ -33,7 +33,19 @@ function mkEl(id, tag = 'div') {
     id,
     tagName: tag.toUpperCase(),
     style: {},
-    classList: { _s: new Set(), add(x) { this._s.add(x); }, remove(x) { this._s.delete(x); }, contains(x) { return this._s.has(x); }, toggle() {} },
+    classList: {
+      _s: new Set(),
+      add(x) {
+        this._s.add(x);
+      },
+      remove(x) {
+        this._s.delete(x);
+      },
+      contains(x) {
+        return this._s.has(x);
+      },
+      toggle() {},
+    },
     textContent: '',
     innerHTML: '',
     hidden: false,
@@ -63,10 +75,24 @@ const sb = {
   Math,
   Array,
   Object,
-  setTimeout: (fn) => { fn(); return 0; },
+  setTimeout: (fn) => {
+    fn();
+    return 0;
+  },
   clearTimeout: noop,
-  requestAnimationFrame: (fn) => { fn(); return 0; },
-  localStorage: { _d: {}, getItem(k) { return this._d[k] ?? null; }, setItem(k, v) { this._d[k] = v; } },
+  requestAnimationFrame: (fn) => {
+    fn();
+    return 0;
+  },
+  localStorage: {
+    _d: {},
+    getItem(k) {
+      return this._d[k] ?? null;
+    },
+    setItem(k, v) {
+      this._d[k] = v;
+    },
+  },
   performance: { now: () => 0 },
   innerWidth: 1280,
   innerHeight: 720,
@@ -86,7 +112,10 @@ sb.globalThis = sb;
 sb.matchMedia = () => ({ matches: false, addListener: noop, removeListener: noop });
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
-const { Game, GameModes, SpriteGen } = vm.runInContext(`${code}\n({ Game, GameModes, SpriteGen })`, vm.createContext(sb));
+const { Game, GameModes, SpriteGen } = vm.runInContext(
+  `${code}\n({ Game, GameModes, SpriteGen })`,
+  vm.createContext(sb)
+);
 SpriteGen.prewarmCache = () => {};
 
 Game.init(cvs);

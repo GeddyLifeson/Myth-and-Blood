@@ -52,8 +52,13 @@ function ok(cond, msg) {
   } else console.log('OK:', msg);
 }
 
-const { MetaProgress, Achievements, isInsideCastleInnerSanctum, playerHasCastleCompound, ACHIEVEMENT_LIST } =
-  loadModules();
+const {
+  MetaProgress,
+  Achievements,
+  isInsideCastleInnerSanctum,
+  playerHasCastleCompound,
+  ACHIEVEMENT_LIST,
+} = loadModules();
 
 const keep = {
   owner: 'player',

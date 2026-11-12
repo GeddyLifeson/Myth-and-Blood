@@ -67,7 +67,11 @@ body.ui-v2 {
   --hud-panel-bg: var(--glass);
   --hud-panel-bg-deep: var(--glass-deep);
 
-  font-family: 'Source Sans 3', system-ui, Segoe UI, sans-serif;
+  font-family:
+    'Source Sans 3',
+    system-ui,
+    Segoe UI,
+    sans-serif;
   background: var(--ink-950);
   color: var(--text-primary);
   font-size: calc(10px * var(--font-scale) * var(--ui-scale));

@@ -50,7 +50,10 @@ function ok(cond, msg) {
   } else console.log('OK:', msg);
 }
 
-ok(FD.stackSynergyBonuses([0.15, 0.1]) < 0.25, 'melee synergies diminish instead of stacking linearly');
+ok(
+  FD.stackSynergyBonuses([0.15, 0.1]) < 0.25,
+  'melee synergies diminish instead of stacking linearly'
+);
 ok(
   Math.abs(FD.stackSynergyBonuses([0.15, 0.1]) - (0.15 + 0.1 * 0.72)) < 0.001,
   'second synergy applies at decay rate'
@@ -66,12 +69,23 @@ const baki = {
   projectile: false,
 };
 const harpy = { team: 'enemy', hp: 80, maxHp: 80, type: 'harpy', flying: true };
-const ranged = { team: 'enemy', hp: 80, maxHp: 80, type: 'archer', combatType: 'ranged', projectile: true };
+const ranged = {
+  team: 'enemy',
+  hp: 80,
+  maxHp: 80,
+  type: 'archer',
+  combatType: 'ranged',
+  projectile: true,
+};
 
 const vsFly = FD.applyWeaknessDealt(baki, harpy, 100);
 ok(vsFly < 100, 'baki deals less damage vs flyers');
 
-const vsGround = FD.applyWeaknessDealt(baki, { team: 'enemy', hp: 80, maxHp: 80, type: 'orc' }, 100);
+const vsGround = FD.applyWeaknessDealt(
+  baki,
+  { team: 'enemy', hp: 80, maxHp: 80, type: 'orc' },
+  100
+);
 ok(vsGround === 100, 'baki weakness does not nerf vs ground melee');
 
 const taken = FD.modifyDamageTaken(baki, ranged, 50);
@@ -86,7 +100,13 @@ const martialSyn = [
   { bonus: { meleeDmg: 0.1 } },
   { bonus: { meleeDmg: 0.08 } },
 ];
-const meleeUnit = { team: 'player', hp: 100, isCrossover: true, type: 'baki_hanma', projectile: false };
+const meleeUnit = {
+  team: 'player',
+  hp: 100,
+  isCrossover: true,
+  type: 'baki_hanma',
+  projectile: false,
+};
 FD.applySynergyToUnit(meleeUnit, martialSyn);
 ok(meleeUnit.synergyMelee < 0.33, 'triple melee synergy uses diminishing returns');
 

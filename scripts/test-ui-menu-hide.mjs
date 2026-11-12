@@ -188,7 +188,15 @@ const sb = {
     rafQueue.push(fn);
     return rafQueue.length;
   },
-  localStorage: { _d: {}, getItem(k) { return this._d[k] ?? null; }, setItem(k, v) { this._d[k] = v; } },
+  localStorage: {
+    _d: {},
+    getItem(k) {
+      return this._d[k] ?? null;
+    },
+    setItem(k, v) {
+      this._d[k] = v;
+    },
+  },
   performance: { now: () => 0 },
   innerWidth: 1280,
   innerHeight: 720,

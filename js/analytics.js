@@ -91,9 +91,7 @@ const Analytics = (() => {
 
   function syncEnabled() {
     enabled =
-      typeof Settings !== 'undefined' && Settings.get
-        ? !!Settings.get('analyticsOptIn')
-        : false;
+      typeof Settings !== 'undefined' && Settings.get ? !!Settings.get('analyticsOptIn') : false;
     if (!enabled) session = null;
   }
 

@@ -24,7 +24,13 @@ function loadModules() {
   const foundSrc = readFileSync(join(JS, 'foundational-medieval-layer.js'), 'utf8');
   const ascSrc = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
   const synSrc = readFileSync(join(JS, 'thematic-era-synergies.js'), 'utf8');
-  const gsSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy.js'), 'utf8'); } catch { return '/* optional missing grand-strategy.js */'; } })();
+  const gsSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy.js */';
+    }
+  })();
   const sb = {
     Math,
     Object,
@@ -91,10 +97,15 @@ const { FoundationalMedievalLayer, AscensionSystem, ThematicEraSynergies, GrandS
 // Martial — Ancestral Weapons
 seedMartial(FoundationalMedievalLayer);
 if (GrandStrategy) {
-GrandStrategy?.resetRun?.();
-ThematicEraSynergies.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+  GrandStrategy?.resetRun?.();
+  ThematicEraSynergies.resetRun();
+  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
+  ThematicEraSynergies.onWaveStart(150, {
+    wave: 150,
+    units: [],
+    showMessage: () => {},
+    addHighlight: () => {},
+  });
 } else {
   console.log('SKIP GrandStrategy assertions (macro layer removed)');
 }
@@ -115,14 +126,27 @@ seedArcane(FoundationalMedievalLayer);
 GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
-ThematicEraSynergies.onWaveStart(400, { wave: 400, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
+ThematicEraSynergies.onWaveStart(400, {
+  wave: 400,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 const arcSnap = ThematicEraSynergies.getStateSnapshot({ wave: 400 });
 ok(arcSnap.active && arcSnap.pathId === 'arcane', 'arcane synergy activates');
 ok(arcSnap.techTreeLabel === 'Arcane-Infused Technology', 'arcane tech tree label');
 ok(arcSnap.arcaneInfusionTier >= 3, 'arcane infusion tier grows at galactic era');
 const arcMods = ThematicEraSynergies.getArcaneInfusionMods(400);
-ok(arcMods.researchSpeedMult > 1 && arcMods.fleetDmgMult > 1, 'arcane infusion buffs research and fleet');
+ok(
+  arcMods.researchSpeedMult > 1 && arcMods.fleetDmgMult > 1,
+  'arcane infusion buffs research and fleet'
+);
 ok(ThematicEraSynergies.getArcaneFleetRuneMult(400) > 1, 'rune hulls boost fleet at tier 3+');
 
 // Mythic — Hero Echoes
@@ -130,18 +154,32 @@ seedMythic(FoundationalMedievalLayer);
 GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 AscensionSystem.resetRun();
-AscensionSystem.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+AscensionSystem.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
 const units = [
   { team: 'player', type: 'goku', hp: 100, honorName: null },
   { team: 'player', type: 'tank_dempsey', hp: 100 },
 ];
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units, showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units,
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 const mythSnap = ThematicEraSynergies.getStateSnapshot({ wave: 150 });
 ok(mythSnap.active && mythSnap.pathId === 'mythic', 'mythic synergy activates');
 ok(mythSnap.echoes.candidates.length >= 2, 'echo candidates seeded from mythic heroes');
 const beforeLp = AscensionSystem.getStateSnapshot({ wave: 150 }).legacyPoints;
-const recruit = ThematicEraSynergies.recruitHeroEcho('goku', { wave: 150, showMessage: () => {}, addHighlight: () => {} });
+const recruit = ThematicEraSynergies.recruitHeroEcho('goku', {
+  wave: 150,
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 ok(recruit.ok, 'recruit goku echo succeeds');
 const afterLp = AscensionSystem.getStateSnapshot({ wave: 150 }).legacyPoints;
 ok(afterLp === beforeLp - 16, 'legacy points spent once for echo');
@@ -154,7 +192,12 @@ seedMartial(FoundationalMedievalLayer);
 GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(200, { wave: 200, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(200, {
+  wave: 200,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 const gsMods = GrandStrategy?.getTacticalModifiers?.(200);
 ok(gsMods.playerDmgMult >= 1, 'GS merges synergy tactical mods');
 

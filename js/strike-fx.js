@@ -528,7 +528,10 @@ const StrikeFX = (() => {
 
   function drawDebris(ctx, bounds) {
     for (const d of debris) {
-      if (bounds && (d.x < bounds.left || d.x > bounds.right || d.y < bounds.top || d.y > bounds.bottom))
+      if (
+        bounds &&
+        (d.x < bounds.left || d.x > bounds.right || d.y < bounds.top || d.y > bounds.bottom)
+      )
         continue;
       ctx.globalAlpha = d.life / d.maxLife;
       ctx.fillStyle = d.color;

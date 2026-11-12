@@ -39,7 +39,11 @@ function loadModules() {
     `${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
-  return { MetaProgress: ctx.MetaProgress, Achievements: ctx.Achievements, ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST };
+  return {
+    MetaProgress: ctx.MetaProgress,
+    Achievements: ctx.Achievements,
+    ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
+  };
 }
 
 let failed = 0;

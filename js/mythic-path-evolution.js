@@ -177,8 +177,7 @@ const MythicPathEvolution = (() => {
       IntergalacticLayer.getCosmicPathId?.() === 'pantheon_ascendant';
     const tier = scoreTier(state.legendScore, ARMADA_THRESHOLDS);
     state.godbloodArmada.tier = tier;
-    state.godbloodArmada.active =
-      galactic && isPantheonPathActive(wave) && (pantheon || tier >= 1);
+    state.godbloodArmada.active = galactic && isPantheonPathActive(wave) && (pantheon || tier >= 1);
   }
 
   function isChampionUnlockReason(reason) {
@@ -225,7 +224,8 @@ const MythicPathEvolution = (() => {
     tryUnlock(wave, 'crossover champion');
     if (!isPantheonPathActive(wave)) return;
     if (type === 'doomslayer_hero') recordAction('deploy_doomslayer', { wave });
-    else if (typeof isWweUnit === 'function' && isWweUnit(type)) recordAction('deploy_wwe', { wave });
+    else if (typeof isWweUnit === 'function' && isWweUnit(type))
+      recordAction('deploy_wwe', { wave });
     else recordAction('deploy_crossover', { wave });
   }
 
@@ -358,9 +358,14 @@ const MythicPathEvolution = (() => {
       unit.honorName = unit.honorName || 'First Champion';
     }
 
-    if (stage === 'kingdom' && tier >= 2 && (isMythicUnitType(unit.type) || unit.type === 'knight')) {
+    if (
+      stage === 'kingdom' &&
+      tier >= 2 &&
+      (isMythicUnitType(unit.type) || unit.type === 'knight')
+    ) {
       unit.heroicBloodline = true;
-      if (unit.morale != null) unit.morale = Math.min(unit.maxMorale || 40, (unit.morale || 0) + tier);
+      if (unit.morale != null)
+        unit.morale = Math.min(unit.maxMorale || 40, (unit.morale || 0) + tier);
     }
 
     if (stage === 'galactic' && tier >= 2 && isMythicUnitType(unit.type)) {
@@ -398,7 +403,8 @@ const MythicPathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic = typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic =
+        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
       if (cosmic === 'pantheon_ascendant') {
         ctx.showMessage?.(
           'Pantheon Ascendant — literal gods and eternal champions now lead fleets across the void.',

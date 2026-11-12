@@ -101,7 +101,14 @@ function bootGame() {
       removeChild: noop,
       querySelector: () => null,
       querySelectorAll: () => [],
-      getBoundingClientRect: () => ({ left: 0, top: 0, width: 1280, height: 720, right: 1280, bottom: 720 }),
+      getBoundingClientRect: () => ({
+        left: 0,
+        top: 0,
+        width: 1280,
+        height: 720,
+        right: 1280,
+        bottom: 720,
+      }),
       getContext: (t) =>
         t === '2d'
           ? {
@@ -353,7 +360,10 @@ try {
   const size1 = ctx.getWorldSize(1);
   const size20 = ctx.getWorldSize(20);
   ok(size20.w > size1.w && size20.h > size1.h, 'world size grows by wave 20');
-  ok(size20.w - size1.w > 0 && (size20.w - size1.w) % 2 === 0 || size20.w > size1.w, 'width growth for centered expand');
+  ok(
+    (size20.w - size1.w > 0 && (size20.w - size1.w) % 2 === 0) || size20.w > size1.w,
+    'width growth for centered expand'
+  );
 
   // Faction depth patch
   if (ctx.FactionDepth?.patchBuildDefs) {
@@ -362,7 +372,10 @@ try {
   if (ctx.BuildDefs) {
     const el = ctx.BuildDefs.element_barracks;
     ok(el && el.cost === 90, `element_barracks cost 90 (got ${el?.cost})`);
-    ok(el && el.requiresBuilders === 2, `element_barracks builders 2 (got ${el?.requiresBuilders})`);
+    ok(
+      el && el.requiresBuilders === 2,
+      `element_barracks builders 2 (got ${el?.requiresBuilders})`
+    );
   }
 
   // Crossover defs present

@@ -161,10 +161,7 @@ const w1 = Game.getUnitById(w1Enemy.id);
 const w1x0 = w1.x;
 const w1y0 = w1.y;
 for (let i = 0; i < 120; i++) Game.update();
-ok(
-  w1.path?.length > 0 || Math.hypot(w1.x - w1x0, w1.y - w1y0) > 12,
-  'wave 1 enemy paths or moves'
-);
+ok(w1.path?.length > 0 || Math.hypot(w1.x - w1x0, w1.y - w1y0) > 12, 'wave 1 enemy paths or moves');
 
 // End wave 1 — night invalidates walk grids (regression trigger).
 Game.creativeClearEnemies?.();

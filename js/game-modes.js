@@ -296,7 +296,8 @@ const GameModes = (() => {
       if (!room) OnlineMultiplayer.createCoopRoom({ difficulty: difficultyId || 'normal' });
     } else if (modeId === 'pvp_endless' && typeof OnlineMultiplayer !== 'undefined') {
       let match = OnlineMultiplayer.getActivePvpMatch();
-      if (!match) match = OnlineMultiplayer.createPvpMatch({ difficulty: difficultyId || 'normal' });
+      if (!match)
+        match = OnlineMultiplayer.createPvpMatch({ difficulty: difficultyId || 'normal' });
       seed = match.seed;
       menu.seed = seed;
       modeId = 'survival';
@@ -318,8 +319,7 @@ const GameModes = (() => {
         : null;
 
     const ironman =
-      !!menu.ironman &&
-      !['async_coop', 'pvp_endless', 'pve_horde'].includes(menu.modeId);
+      !!menu.ironman && !['async_coop', 'pvp_endless', 'pve_horde'].includes(menu.modeId);
 
     const pathPreset =
       menu.pathPreset && ['martial', 'arcane', 'tech', 'mythic'].includes(menu.pathPreset)
@@ -452,10 +452,7 @@ const GameModes = (() => {
   }
 
   function recordResult(wave, kills, victory, difficultyPercent) {
-    if (
-      !session ||
-      (session.modeId === 'campaign' && !session.challengeId && !session.onlineCoop)
-    )
+    if (!session || (session.modeId === 'campaign' && !session.challengeId && !session.onlineCoop))
       return;
     const score = computeScore(wave, kills, difficultyPercent);
     if (session.onlinePvp && typeof OnlineMultiplayer !== 'undefined') {
@@ -734,14 +731,14 @@ const GameModes = (() => {
             : menu.modeId === 'academy_era'
               ? 'academy_era'
               : menu.modeId === 'planet_conquest'
-              ? 'planet_conquest'
-              : menu.modeId === 'pve_horde'
-                ? 'pve_horde'
-                : menu.modeId === 'pvp_endless'
-                  ? 'pvp_endless'
-                  : menu.modeId === 'async_coop'
-                    ? 'async_coop'
-                    : null;
+                ? 'planet_conquest'
+                : menu.modeId === 'pve_horde'
+                  ? 'pve_horde'
+                  : menu.modeId === 'pvp_endless'
+                    ? 'pvp_endless'
+                    : menu.modeId === 'async_coop'
+                      ? 'async_coop'
+                      : null;
     if (!key) {
       el.innerHTML = '';
       return;

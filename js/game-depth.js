@@ -129,7 +129,11 @@ class GameDepthSystem {
 
   waveTpScale(wave) {
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     const mid = GameDepthSystem.POST_100_TP_WAVE_SCALE;
     const late = GameDepthSystem.POST_200_TP_WAVE_SCALE;
@@ -175,7 +179,11 @@ class GameDepthSystem {
   getNightBuildMult(wave, nightTimer, nightPrepTicks) {
     let mult = typeof NIGHT_BUILD_MULT !== 'undefined' ? NIGHT_BUILD_MULT : 1.35;
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     mult += academyBlend * 0.05 + rtsBlend * 0.08;
     const urgency = nightTimer > nightPrepTicks * 0.85 ? 0.92 : 1;
@@ -342,7 +350,10 @@ class GameDepthSystem {
     const countRatio = queueLen / baseline;
     const spawnPace = 1 / Math.max(0.42, intervalMult);
     const siegeBoost = hasSiege ? 0.14 : 0;
-    const waveBoost = Math.min(0.12, (typeof academyEase === 'function' ? academyEase(wave) : wave / 100) * 0.12);
+    const waveBoost = Math.min(
+      0.12,
+      (typeof academyEase === 'function' ? academyEase(wave) : wave / 100) * 0.12
+    );
     const raw = (countRatio - 0.82) * 0.5 + (spawnPace - 0.95) * 0.38 + siegeBoost + waveBoost;
     return Math.max(0.28, Math.min(1, raw));
   }

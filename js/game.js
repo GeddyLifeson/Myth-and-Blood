@@ -139,10 +139,6 @@ const Game = (() => {
     hasQuickSave,
   } = GameCore;
 
-  
-
-  
-
   // Mutable run state lives in the shared holder from js/game-state.js. Every
   // binding below was a closure-local `let`; moving them onto an object is what
   // lets subsystems be lifted out of this IIFE into their own files.
@@ -172,14 +168,14 @@ const Game = (() => {
   GS.isPanning = false;
   GS.dragMoved = false;
   GS.panAnchor = null;
-  
+
   GS.sortedUnitsCache = [];
   GS.sortedUnitsFrame = -1;
   GS.updateTick = 0;
   GS.presentationFrame = 0;
   GS.stateFrameCache = null;
   GS.stateFrameId = -1;
-  
+
   GS.creativeSettingsSigCache = '';
   GS.creativeSettingsSigTick = -1;
   GS.kingdomStageTick = -1;
@@ -258,7 +254,7 @@ const Game = (() => {
   GS.northernHoldEverSpawned = false;
   GS.campaignNarrativeFlags = { firstNamedBoss: false };
   GS.victoryReason = null;
-  
+
   GS.tpAwardedForWave = -1;
   GS.pathfindBudget = 24;
   GS.syncPathfindsThisTick = 0;
@@ -367,8 +363,6 @@ const Game = (() => {
     if (svc('Spatial')) svc('Spatial').init(GS.worldW, GS.worldH);
     return size;
   }
-
-  
 
   function createGameContext() {
     return {
@@ -498,8 +492,6 @@ const Game = (() => {
     };
   }
 
-  
-
   function sanitizeCameraState() {
     const mapH = getMapViewH();
     if (!Number.isFinite(GS.cameraZoom) || GS.cameraZoom <= 0) GS.cameraZoom = 1;
@@ -531,12 +523,7 @@ const Game = (() => {
 
   function isScreenInMapViewport(sx, sy) {
     const vp = getCameraViewport();
-    return (
-      sx >= vp.left &&
-      sx <= vp.left + vp.width &&
-      sy >= vp.top &&
-      sy <= vp.top + vp.height
-    );
+    return sx >= vp.left && sx <= vp.left + vp.width && sy >= vp.top && sy <= vp.top + vp.height;
   }
 
   /** Playable map band — excludes side/top HUD only (bottom hint/unit panel counts as map). */
@@ -557,7 +544,8 @@ const Game = (() => {
     sanitizeCameraState();
     const vp = getCameraViewport();
     GS.viewScale = GS.baseViewScale * GS.cameraZoom;
-    if (!Number.isFinite(GS.viewScale) || GS.viewScale <= 0) GS.viewScale = Math.max(0.01, GS.baseViewScale);
+    if (!Number.isFinite(GS.viewScale) || GS.viewScale <= 0)
+      GS.viewScale = Math.max(0.01, GS.baseViewScale);
     GS.viewX = vp.centerX - GS.cameraWorldX * GS.viewScale;
     GS.viewY = vp.centerY - GS.cameraWorldY * GS.viewScale;
   }
@@ -566,7 +554,10 @@ const Game = (() => {
     if (!GS.canvas) return true;
     const mapH = getMapViewH();
     const vp = getCameraViewport();
-    const scale = Number.isFinite(GS.viewScale) && GS.viewScale > 0 ? GS.viewScale : GS.baseViewScale * GS.cameraZoom;
+    const scale =
+      Number.isFinite(GS.viewScale) && GS.viewScale > 0
+        ? GS.viewScale
+        : GS.baseViewScale * GS.cameraZoom;
     if (!Number.isFinite(scale) || scale <= 0) return false;
     const mapRight = GS.viewX + GS.worldW * scale;
     const mapBottom = GS.viewY + mapH * scale;
@@ -596,8 +587,6 @@ const Game = (() => {
   function applyCamera() {
     clampCameraToBounds();
   }
-
-  
 
   function resize() {
     if (!GS.canvas) return;
@@ -757,7 +746,11 @@ const Game = (() => {
   }
 
   function getSelectedUnitIds() {
-    return GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    return GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
   }
 
   function getSelectedLiveUnits() {
@@ -895,7 +888,10 @@ const Game = (() => {
     if (!GS.isPanning || !GS.panAnchor) return;
     const dx = sx - GS.panAnchor.sx;
     const dy = sy - GS.panAnchor.sy;
-    if (!GS.dragMoved && (Math.abs(dx) > GS.activeDragThreshold || Math.abs(dy) > GS.activeDragThreshold)) {
+    if (
+      !GS.dragMoved &&
+      (Math.abs(dx) > GS.activeDragThreshold || Math.abs(dy) > GS.activeDragThreshold)
+    ) {
       GS.dragMoved = true;
       GS.canvas.style.cursor = 'grabbing';
     }
@@ -962,8 +958,6 @@ const Game = (() => {
     return wasClick;
   }
 
-  
-
   function screenToWorld(sx, sy) {
     const vp = getCameraViewport();
     return {
@@ -985,10 +979,6 @@ const Game = (() => {
     return { x: Math.max(b.minX, Math.min(b.maxX, x)), y: Math.max(b.minY, Math.min(b.maxY, y)) };
   }
 
-  
-
-  
-
   function overlapsAnyUnit(x, y, obstacleRadius, margin = DECO_GAP) {
     for (const u of GS.units) {
       if (u.hp <= 0) continue;
@@ -997,8 +987,6 @@ const Game = (() => {
     }
     return false;
   }
-
-  
 
   function overlapsBuildings(x, y, radius) {
     for (const b of GS.buildings) {
@@ -1314,10 +1302,7 @@ const Game = (() => {
         ] || String(GS.territoryTier || '');
       const label = roman ? `Land ${roman}` : `Wave ${GS.wave}`;
       addHighlight('territory', `${label} — map ${GS.worldW}×${GS.worldH} (N/E/S/W)`);
-      showMessage(
-        `Territory expanded on all sides! ${label} · ${GS.worldW}×${GS.worldH}`,
-        300
-      );
+      showMessage(`Territory expanded on all sides! ${label} · ${GS.worldW}×${GS.worldH}`, 300);
       svc('FloatingText')?.status?.(GS.worldW / 2, GS.worldH / 2, 'LAND GAINED', '#f0d060');
       svc('Particles')?.dust?.(GS.worldW / 2, GS.worldH / 2);
       playSfx('reinforce');
@@ -1400,14 +1385,18 @@ const Game = (() => {
       );
     }
     if (svc('NeutralWildlife')) {
-      svc('NeutralWildlife').seedDens(GS.decorations, GS.worldW, GS.worldH, GS.rallyY, GS.territoryTier);
+      svc('NeutralWildlife').seedDens(
+        GS.decorations,
+        GS.worldW,
+        GS.worldH,
+        GS.rallyY,
+        GS.territoryTier
+      );
     }
     invalidateObstacles();
     resolveUnitsInTerrain();
     GS.terrainInitialized = true;
   }
-
-  
 
   function obstacleBlocksForUnit(obs, unit) {
     const ref = obs.ref || obs;
@@ -1427,20 +1416,13 @@ const Game = (() => {
   const HOLD_AT_DIST = 5;
   const HOLD_SNAP_DIST = 7;
 
-  
-
-  
-
-  
-
-  
-
   /** Standing ground: hunt off, player stance locked, not mid player click-order. */
   function isHoldStance(unit) {
     if (!unit || unit.team !== 'player' || unit.hp <= 0) return false;
     if (unit.huntMode) return false;
     if (!unit.canHunt) return false;
-    if (unit.fleeing || unit.demoralized || unit.retreatingToMed || unit.atMedicalTent) return false;
+    if (unit.fleeing || unit.demoralized || unit.retreatingToMed || unit.atMedicalTent)
+      return false;
     if (unit.garrisoned || unit.wallGarrisoned || unit.stationedKeep) return false;
     if (hasPendingOutpostGarrison(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit))
       return false;
@@ -1491,10 +1473,7 @@ const Game = (() => {
     if (Number.isFinite(opts.x) && Number.isFinite(opts.y)) {
       hx = opts.x;
       hy = opts.y;
-    } else if (
-      Number.isFinite(unit.pendingHoldX) &&
-      Number.isFinite(unit.pendingHoldY)
-    ) {
+    } else if (Number.isFinite(unit.pendingHoldX) && Number.isFinite(unit.pendingHoldY)) {
       hx = unit.pendingHoldX;
       hy = unit.pendingHoldY;
     } else if (!opts.reassign && hasHoldPost(unit)) {
@@ -1558,8 +1537,7 @@ const Game = (() => {
       unit.manualOrder = true;
       unit.huntMode = false;
       const end = unit.path?.length ? unit.path[unit.path.length - 1] : null;
-      const destOk =
-        end && Math.hypot(end.x - unit.holdX, end.y - unit.holdY) <= 8;
+      const destOk = end && Math.hypot(end.x - unit.holdX, end.y - unit.holdY) <= 8;
       if (!destOk) {
         unit.path = [{ x: unit.holdX, y: unit.holdY }];
         unit.pathIndex = 0;
@@ -1621,8 +1599,6 @@ const Game = (() => {
       isMarchingToWallSlot(unit)
     );
   }
-
-  
 
   GS.obstaclesCache = null;
   GS.obstaclesDirty = true;
@@ -1713,7 +1689,8 @@ const Game = (() => {
   function rebuildSpatialIndex() {
     if (!svc('Spatial')) return;
     const spatialInterval = svc('GfxQuality') ? svc('GfxQuality').get().spatialInterval || 1 : 1;
-    if (spatialInterval > 1 && GS.spatialFrame >= 0 && GS.updateTick % spatialInterval !== 0) return;
+    if (spatialInterval > 1 && GS.spatialFrame >= 0 && GS.updateTick % spatialInterval !== 0)
+      return;
     if (GS.spatialFrame === GS.updateTick) return;
     GS.spatialFrame = GS.updateTick;
     if (GS.spatialStaticDirty) {
@@ -1725,11 +1702,11 @@ const Game = (() => {
     svc('Spatial').rebuildHazards(GS.hazards);
   }
 
-  
-
   function isUnitSelected(u) {
     if (u.id === GS.selectedUnitId) return true;
-    return GS.cachedSelectedSet ? GS.cachedSelectedSet.has(u.id) : GS.selectedUnitIds.includes(u.id);
+    return GS.cachedSelectedSet
+      ? GS.cachedSelectedSet.has(u.id)
+      : GS.selectedUnitIds.includes(u.id);
   }
 
   function gfxOverlayFor(u, mode) {
@@ -1765,8 +1742,6 @@ const Game = (() => {
     };
   }
 
-  
-
   function releaseAllUnits() {
     const pool = svc('EntityPool');
     if (pool) pool.releaseAllFrom(GS.units, pool.releaseUnit);
@@ -1778,10 +1753,6 @@ const Game = (() => {
     if (pool) pool.releaseAllFrom(GS.buildings, pool.releaseBuilding);
     else GS.buildings.length = 0;
   }
-
-  
-
-  
 
   function purgeDeadUnits() {
     for (const u of GS.units) {
@@ -1838,8 +1809,7 @@ const Game = (() => {
         });
       }
       if (d.blocksLOS) {
-        const losR =
-          typeof terrainLosRadius === 'function' ? terrainLosRadius(d) : moveR;
+        const losR = typeof terrainLosRadius === 'function' ? terrainLosRadius(d) : moveR;
         if (losR > 0) {
           losObs.push({
             type: d.type,
@@ -1874,8 +1844,7 @@ const Game = (() => {
         });
       }
       if (b.blocksLOS) {
-        const losR =
-          typeof terrainLosRadius === 'function' ? terrainLosRadius(b) : moveR;
+        const losR = typeof terrainLosRadius === 'function' ? terrainLosRadius(b) : moveR;
         if (losR > 0) {
           losObs.push({
             type: b.type,
@@ -1899,8 +1868,6 @@ const Game = (() => {
     return obs;
   }
 
-  
-  
   const ALLY_MOVE_MARGIN = 0;
   const SURROUND_SLOTS_MELEE = 8;
   const SURROUND_SLOTS_RANGED = 6;
@@ -1911,29 +1878,12 @@ const Game = (() => {
   const MORALE_WITNESS_BREAK_COUNT = 3;
   const GENERAL_RALLY_RANGE = 40;
   const GENERAL_W2W_BUFF_TICKS = 200;
-  
-  
+
   const ETERNAL_CRUSADE_MIN_FORTS = 8;
-  
+
   const DRAGON_THEMED_STRIKES = new Set(['fus_ro_dah', 'fire_breath', 'ice_form']);
-  
-  
+
   const PLANET_THREAT_MIN_WAVE = 200;
-  
-  
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 
   function checkDragonThemedBossKill(killer, bossUnit) {
     if (!bossUnit || !isMajorBossUnit(bossUnit) || GS.creativeMode) return null;
@@ -1984,18 +1934,6 @@ const Game = (() => {
       wave: GS.wave,
     };
   }
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 
   function canWitnessDeath(observer, dead) {
     if (
@@ -2063,8 +2001,6 @@ const Game = (() => {
     }
   }
 
-  
-
   function isPursuableFoe(unit, foe) {
     if (!foe || foe.team === unit.team || !isValidCombatFoe(foe)) return false;
     // Player units cannot chase/fire on fog-hidden host troops (matches render + minimap).
@@ -2082,10 +2018,6 @@ const Game = (() => {
     const t = GS.units.find((u) => u.id === unit.pathTargetId);
     return t && t.hp > 0 ? t : null;
   }
-
-  
-
-  
 
   function retargetIfHunting(unit) {
     if (unit.manualOrder || unit.garrisoned || unit.wallGarrisoned || unit.stationedKeep)
@@ -2537,8 +2469,7 @@ const Game = (() => {
     unitCounts.enemyEconomySpawnBonus = 0;
     unitCounts.hamletTpBonus = 0;
     unitCounts.merchantGuildTpBonus = 0;
-    const hamletTpFallback =
-      typeof HAMLET_TP_PER_ROUND !== 'undefined' ? HAMLET_TP_PER_ROUND : 5;
+    const hamletTpFallback = typeof HAMLET_TP_PER_ROUND !== 'undefined' ? HAMLET_TP_PER_ROUND : 5;
     const hamletRefs = [];
     let enemyEconBonus = 0;
     for (let i = 0; i < GS.buildings.length; i++) {
@@ -2628,7 +2559,11 @@ const Game = (() => {
   }
 
   function buildSelectedUnitsDigest() {
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     if (!ids.length) return '';
     const parts = [];
     for (let i = 0; i < ids.length; i++) {
@@ -2638,8 +2573,6 @@ const Game = (() => {
     }
     return parts.join(',');
   }
-
-  
 
   function beginPresentationFrame() {
     GS.presentationFrame++;
@@ -2705,7 +2638,11 @@ const Game = (() => {
       });
     }
     if (!GS.creativeMode && GS.namedBossWave) {
-      ach('named_boss_repelled', { wave: GS.wave, bossType: GS.namedBossWave.type, bossName: GS.namedBossWave.name });
+      ach('named_boss_repelled', {
+        wave: GS.wave,
+        bossType: GS.namedBossWave.type,
+        bossName: GS.namedBossWave.name,
+      });
     }
     // countGarrisoned(playerUnits) is a genuine O(army size) scan (unlike the
     // countPlayer*() calls around it, which are already O(1) cached-field reads)
@@ -2763,7 +2700,10 @@ const Game = (() => {
       const nightColony = svc('ColonyValue').compute();
       const nextPressure = svc('ColonyValue').deriveWavePressure(nightColony, GS.wave + 1);
       GS.colonySnapshot = nightColony;
-      showMessage(svc('ColonyValue').formatNightPreview(nightColony, GS.wave + 1, nextPressure), 260);
+      showMessage(
+        svc('ColonyValue').formatNightPreview(nightColony, GS.wave + 1, nextPressure),
+        260
+      );
       if (svc('StrategyCounterplay')) {
         const strategies = svc('StrategyCounterplay').getActive();
         svc('StrategyCounterplay').maybeAnnounce(strategies, {
@@ -2806,7 +2746,12 @@ const Game = (() => {
       for (let i = 0; i < playerUnits.length; i++) {
         const u = playerUnits[i];
         if (u.combatType === 'healer' || u.type === 'healer') hasHealer = true;
-        else if (u.combatType === 'ranged' || u.type === 'archer' || u.type === 'mage' || u.type === 'ballista')
+        else if (
+          u.combatType === 'ranged' ||
+          u.type === 'archer' ||
+          u.type === 'mage' ||
+          u.type === 'ballista'
+        )
           hasRanged = true;
         else if (u.combatType === 'melee' || u.combatType === 'cavalry') hasMelee = true;
       }
@@ -2831,7 +2776,8 @@ const Game = (() => {
       svc('IntergalacticLayer').onWaveEnd(GS.wave, getIntergalacticCtx());
     }
     if (typeof HybridMoments !== 'undefined') {
-      const hybridWin = GS.playerCasualtiesThisWave <= Math.max(2, Math.floor(GS.waveEnemyTotal * 0.35));
+      const hybridWin =
+        GS.playerCasualtiesThisWave <= Math.max(2, Math.floor(GS.waveEnemyTotal * 0.35));
       HybridMoments.onWaveEnd(
         GS.wave,
         {
@@ -2939,8 +2885,6 @@ const Game = (() => {
     invalidateStateCache();
   }
 
-  
-
   function findPlayerGeneral() {
     let best = null;
     for (const u of GS.units) {
@@ -2974,8 +2918,6 @@ const Game = (() => {
       radius: 150,
     };
   }
-
-  
 
   function getGeneralBuffStrength() {
     return getGeneralAura().strength;
@@ -3097,7 +3039,11 @@ const Game = (() => {
         }
       }
     }
-    if (unit.team === 'player' && svc('IntergalacticLayer') && svc('IntergalacticLayer').isActive(GS.wave)) {
+    if (
+      unit.team === 'player' &&
+      svc('IntergalacticLayer') &&
+      svc('IntergalacticLayer').isActive(GS.wave)
+    ) {
       const igDmg = svc('IntergalacticLayer').getPlanetaryDefenseMods().playerDmgMult || 1;
       dmg = Math.floor(dmg * igDmg);
       const cosmicDmg = svc('IntergalacticLayer').getCosmicUnitDmgMult?.(unit, GS.wave) || 1;
@@ -3120,16 +3066,13 @@ const Game = (() => {
     return Number.isFinite(out) && out > 0 ? out : 1;
   }
 
-  
-
-  
-
   function announceAdvancedModifierHints() {
     if (!svc('AdvancedDifficulty')) return;
     const mods = getAdvancedMods();
     const hints = [];
     if (mods.fogOfWar) hints.push('Fog of War — scouts and watchtowers reveal hidden host units');
-    if ((mods.settlementTpMult || 1) < 0.9) hints.push('Resource scarcity — hamlet and guild income reduced');
+    if ((mods.settlementTpMult || 1) < 0.9)
+      hints.push('Resource scarcity — hamlet and guild income reduced');
     if ((mods.tpMult || 1) < 0.92 && (mods.settlementTpMult || 1) >= 0.9) {
       hints.push('Tight treasury — TP income penalized');
     }
@@ -3167,8 +3110,6 @@ const Game = (() => {
     return false;
   }
 
-  
-
   function getAsymmetricContext(light = false) {
     let activeStages = 0;
     let hostKingdomTotal = 0;
@@ -3192,7 +3133,8 @@ const Game = (() => {
           svc('EnemyFactions').getStateSnapshot(GS.wave, GS.buildings, GS.spawnQueue)
         );
         hostKingdomTotal = hostSnap?.hostKingdomTotal || 0;
-        factionSummary = hostSnap?.activeSummary || svc('EnemyFactions').formatActiveFactions(GS.wave);
+        factionSummary =
+          hostSnap?.activeSummary || svc('EnemyFactions').formatActiveFactions(GS.wave);
       }
     }
     const evolutionFill = cachedSnap('asymEvolutionFill', () =>
@@ -3227,7 +3169,10 @@ const Game = (() => {
       hostKingdomTotal,
       enemySiteCount: unitCounts.enemyEconomy,
       planetControl: svc('PlanetWarfare') ? svc('PlanetWarfare').getControl() : 0,
-      waveSince200: Math.max(0, GS.wave - (typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200)),
+      waveSince200: Math.max(
+        0,
+        GS.wave - (typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200)
+      ),
       factionSummary,
       rallyActive: GS.rallyTimer > 0,
       doctrineUsedThisWave: GS.doctrineUsedThisWave,
@@ -3542,8 +3487,6 @@ const Game = (() => {
     return getDifficulty().missLimit ?? getDifficultyDef(GS.difficultyId).missLimit;
   }
 
-  
-
   function findLivePlayerOfType(type) {
     for (let i = 0; i < GS.units.length; i++) {
       const u = GS.units[i];
@@ -3552,12 +3495,10 @@ const Game = (() => {
     return null;
   }
 
-  
-
-  
-
   function hasWweAcademy() {
-    return GS.buildings.some((b) => b.owner === 'player' && b.isWweAcademy && b.complete && b.hp > 0);
+    return GS.buildings.some(
+      (b) => b.owner === 'player' && b.isWweAcademy && b.complete && b.hp > 0
+    );
   }
 
   function hasCrossoverBarracks(factionId) {
@@ -3570,14 +3511,6 @@ const Game = (() => {
         b.crossoverFaction === factionId
     );
   }
-
-  
-
-  
-
-  
-
-  
 
   function spawnUnit(type, x, y, team, opts = {}) {
     if (team === 'player') ensurePlayerUnitDef(type);
@@ -3659,9 +3592,10 @@ const Game = (() => {
       }
       return [];
     }
-    const opened = typeof getAcademiesUnlockedByMentorType === 'function'
-      ? getAcademiesUnlockedByMentorType(unit.type)
-      : [];
+    const opened =
+      typeof getAcademiesUnlockedByMentorType === 'function'
+        ? getAcademiesUnlockedByMentorType(unit.type)
+        : [];
     const mentorReady = opened.filter((t) => canBuildAcademyType(t, GS.wave, GS.units));
     if (opts.announce !== false && mentorReady.length) {
       const names = mentorReady
@@ -3700,7 +3634,9 @@ const Game = (() => {
     }
     if (!canSpendTpVeteranUpgrade(u)) {
       if ((u.vetTier || 0) >= MAX_VETERAN_TIER) {
-        showMessage(`${getUnitDisplayName(u)} is already Immortal — their academy mentor is active if research allows.`);
+        showMessage(
+          `${getUnitDisplayName(u)} is already Immortal — their academy mentor is active if research allows.`
+        );
         refreshAcademyMentorUnlocks(u, { announce: true });
         return false;
       }
@@ -3878,18 +3814,31 @@ const Game = (() => {
         u.maxHp = Math.floor(u.maxHp * fx.footmanHpMult);
         u.hp = Math.min(u.hp, u.maxHp);
       }
-      if (fx.mageDmgMult > 1 && ['mage', 'wizard', 'warlock', 'cleric', 'elemental'].includes(u.type) && u.damage) {
+      if (
+        fx.mageDmgMult > 1 &&
+        ['mage', 'wizard', 'warlock', 'cleric', 'elemental'].includes(u.type) &&
+        u.damage
+      ) {
         u.damage = Math.floor(u.damage * fx.mageDmgMult);
       }
-      if (fx.mageHpMult > 1 && ['mage', 'wizard', 'warlock', 'cleric', 'elemental', 'healer'].includes(u.type)) {
+      if (
+        fx.mageHpMult > 1 &&
+        ['mage', 'wizard', 'warlock', 'cleric', 'elemental', 'healer'].includes(u.type)
+      ) {
         u.maxHp = Math.floor(u.maxHp * fx.mageHpMult);
         u.hp = Math.min(u.hp, u.maxHp);
       }
-      if (fx.mythicHpMult > 1 && (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')) {
+      if (
+        fx.mythicHpMult > 1 &&
+        (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')
+      ) {
         u.maxHp = Math.floor(u.maxHp * fx.mythicHpMult);
         u.hp = Math.min(u.hp, u.maxHp);
       }
-      if (fx.mythicMorale > 0 && (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')) {
+      if (
+        fx.mythicMorale > 0 &&
+        (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')
+      ) {
         u.morale = Math.min(u.maxMorale, u.morale + fx.mythicMorale);
       }
       if (fx.hpMult > 1) {
@@ -3932,20 +3881,6 @@ const Game = (() => {
   function setDifficulty(id) {
     if (DIFFICULTIES[id]) GS.difficultyId = id;
   }
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
 
   function scaleEnemyEconomyBuildingHp(b, waveNum) {
     if (!b || b.owner !== 'enemy' || b.hp <= 0) return;
@@ -4007,8 +3942,6 @@ const Game = (() => {
     return n;
   }
 
-  
-
   /** Hamlets, guilds, and academies — campaign win targets (not mere trade posts / quarries). */
   function isNorthernHold(b) {
     if (!b || b.owner !== 'enemy' || b.hp <= 0) return false;
@@ -4042,12 +3975,12 @@ const Game = (() => {
     if (isNorthernHold(b)) GS.northernHoldEverSpawned = true;
   }
 
-  
-
   function getTpPerRound() {
     const waveScale = svc('GameDepth') ? svc('GameDepth').waveTpScale(GS.wave) : 1;
     const eased =
-      typeof academyEase === 'function' ? academyEase(GS.wave) : Math.min(1, GS.wave / ACADEMY_ERA_WAVE);
+      typeof academyEase === 'function'
+        ? academyEase(GS.wave)
+        : Math.min(1, GS.wave / ACADEMY_ERA_WAVE);
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(GS.wave) : 0;
     const bonus = Math.floor(eased * 30 * waveScale);
     const waveBonus = Math.min(5, Math.floor(eased * 5 * waveScale));
@@ -4379,8 +4312,6 @@ const Game = (() => {
   function getWorldCenter() {
     return { x: GS.worldW / 2, y: (GS.deployY + GS.rallyY) / 2 };
   }
-
-  
 
   function creativeSetTp(n) {
     GS.tactical = Math.max(0, Math.floor(n));
@@ -4854,10 +4785,6 @@ const Game = (() => {
     return true;
   }
 
-  
-
-  
-
   function creativeResetUnitToDef() {
     const u = getSelectedUnit();
     if (!u) {
@@ -5061,8 +4988,6 @@ const Game = (() => {
     start({ creative: true });
   }
 
-  
-
   function addHighlight(type, text) {
     GS.sessionHighlights.push({ type, text, wave: GS.wave, tick: GS.updateTick });
     if (GS.sessionHighlights.length > 48) GS.sessionHighlights.shift();
@@ -5217,20 +5142,10 @@ const Game = (() => {
     return 0;
   }
 
-  
-
-  
-
-  
-
   function inAttackRange(unit, target) {
     const buffer = isMeleeCombat(unit) ? 4 : 0;
     return unitDistance(unit, target) <= maxAttackRange(unit) + buffer;
   }
-
-  
-
-  
 
   function getEnemyEngagers(enemy, team, exclude = null) {
     if (!enemy || enemy.hp <= 0 || enemy.fleeing) return [];
@@ -5310,8 +5225,6 @@ const Game = (() => {
     return countFilledSurroundSlots(enemy, team) >= SURROUND_MIN_FILLED || meleeNear >= 5;
   }
 
-  
-
   function getSurroundSlot(unit, enemy) {
     const melee = isMeleeCombat(unit);
     const ring = melee ? getMeleeRing(unit) : Math.min(getEffectiveRange(unit) * 0.72, 85);
@@ -5376,12 +5289,6 @@ const Game = (() => {
     return best;
   }
 
-  
-  
-  
-
-  
-
   function findTacticalTarget(unit) {
     if (GS.tacticalCacheFrame !== GS.updateTick) {
       tacticalTargetCache.clear();
@@ -5419,9 +5326,7 @@ const Game = (() => {
 
       const engagers = getEnemyEngagersCached(foe, unit.team, unit);
       const surrounded =
-        (foe.team === 'neutral' || foe.isNeutral)
-          ? false
-          : isFullySurrounded(foe, unit.team);
+        foe.team === 'neutral' || foe.isNeutral ? false : isFullySurrounded(foe, unit.team);
       if (surrounded && !inAttackRange(unit, foe)) continue;
 
       let score = dist;
@@ -5490,8 +5395,6 @@ const Game = (() => {
     return isAcademyEra(GS.wave);
   }
 
-  
-
   function getResearchOpts() {
     const unlockAll = GS.creativeMode && GS.creativeSettings.unlockAll;
     return {
@@ -5556,8 +5459,6 @@ const Game = (() => {
     return ok;
   }
 
-  
-
   function spawnPosForSide(side) {
     const m = 24;
     let pos;
@@ -5595,7 +5496,13 @@ const Game = (() => {
       });
     }
     if (svc('BiomeSpawn')) {
-      pos = svc('BiomeSpawn').biasSpawnPosition(pos, side, GS.worldW, GS.worldH, getLivingPlanetCtx());
+      pos = svc('BiomeSpawn').biasSpawnPosition(
+        pos,
+        side,
+        GS.worldW,
+        GS.worldH,
+        getLivingPlanetCtx()
+      );
     }
     return pos;
   }
@@ -5628,10 +5535,6 @@ const Game = (() => {
     return sides[Math.floor(gameRandom() * sides.length)];
   }
 
-  
-
-  
-
   function countUnitProducingBuildings() {
     let n = 0;
     for (const b of GS.buildings) {
@@ -5639,10 +5542,6 @@ const Game = (() => {
     }
     return n;
   }
-
-  
-
-  
 
   function checkPlayerElimination() {
     if (GS.state !== 'playing') return;
@@ -5691,7 +5590,8 @@ const Game = (() => {
     const sides = getWaveAttackSides();
     const labels = { north: 'North', east: 'East', west: 'West', south: 'South' };
     if (GS.multiFrontPlan?.assignments?.length >= 2) {
-      const mode = GS.multiFrontPlan.mode === 'coordinated' ? 'Coordinated siege' : 'Competing hosts';
+      const mode =
+        GS.multiFrontPlan.mode === 'coordinated' ? 'Coordinated siege' : 'Competing hosts';
       showMessage(`${mode} — ${GS.multiFrontPlan.intel}`, 400);
       svc('FloatingText').status(GS.worldW / 2, 40, 'MULTI-FRONT SIEGE', '#ff7050');
       return;
@@ -5721,8 +5621,6 @@ const Game = (() => {
     playSfx('reinforce');
   }
 
-  
-
   function announceEnemyRtsEra() {
     if (GS.wave !== RTS_ERA_WAVE) return;
     showMessage(
@@ -5737,7 +5635,8 @@ const Game = (() => {
     if (GS.creativeMode || typeof isProgressionMilestone !== 'function') return;
     if (!isProgressionMilestone(GS.wave)) return;
     const milestone = getProgressionMilestone(GS.wave);
-    const evo = typeof getKingdomEvolutionStage === 'function' ? getKingdomEvolutionStage(GS.wave) : null;
+    const evo =
+      typeof getKingdomEvolutionStage === 'function' ? getKingdomEvolutionStage(GS.wave) : null;
     const framed = LoreData?.CAMPAIGN_NARRATIVE?.waves?.[GS.wave];
     const title = milestone?.name || evo?.name || `Wave ${GS.wave}`;
     const tagline = milestone?.tagline || evo?.tagline || '';
@@ -5827,7 +5726,8 @@ const Game = (() => {
     releaseAllUnits();
     releaseAllBuildings();
     GS.wave = tw;
-    GS.tactical = tw >= RTS_ERA_WAVE ? 145 : tw >= ACADEMY_ERA_WAVE + ACADEMY_HYBRID_WAVES ? 120 : 105;
+    GS.tactical =
+      tw >= RTS_ERA_WAVE ? 145 : tw >= ACADEMY_ERA_WAVE + ACADEMY_HYBRID_WAVES ? 120 : 105;
     applyWorldSize(GS.wave);
     generateBattlefield();
     invalidateObstacles();
@@ -5885,8 +5785,7 @@ const Game = (() => {
   }
 
   function bootstrapPlanetConquestStart() {
-    const tw =
-      (typeof PlanetConquest !== 'undefined' && PlanetConquest.WAVE_MIN) || 500;
+    const tw = (typeof PlanetConquest !== 'undefined' && PlanetConquest.WAVE_MIN) || 500;
     releaseAllUnits();
     releaseAllBuildings();
     GS.wave = tw;
@@ -6019,8 +5918,7 @@ const Game = (() => {
       380
     );
     if (fid) {
-      const def =
-        typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
+      const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
       showMessage(
         `Assault focus: ${def?.name || fid} sector. Push that band when day begins.`,
         280
@@ -6085,8 +5983,6 @@ const Game = (() => {
     ach('kill', { enemyType: unit.type, elite: true, namedBoss: true, wave: GS.wave });
   }
 
-  
-
   function checkCampaignEconomyVictory() {
     if (!allowsCampaignEconomyVictory() || !GS.enemyEconomyEverSpawned) return;
     const rtsWave = typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200;
@@ -6118,8 +6014,6 @@ const Game = (() => {
     );
     endGame(true);
   }
-
-  
 
   function getPlanetConquestCtx(hooks = {}) {
     return {
@@ -6185,7 +6079,13 @@ const Game = (() => {
       }
       if (svc('AsymmetricWarfare')) {
         const pw = svc('PlanetWarfare')
-          ? svc('PlanetWarfare').getStateSnapshot(p.wave, GS.worldW, GS.worldH, GS.buildings, GS.units)
+          ? svc('PlanetWarfare').getStateSnapshot(
+              p.wave,
+              GS.worldW,
+              GS.worldH,
+              GS.buildings,
+              GS.units
+            )
           : null;
         svc('AsymmetricWarfare').onWaveEnd(p.wave, {
           enemySitesCleared: p.enemySitesCleared,
@@ -6409,16 +6309,18 @@ const Game = (() => {
         siegeWave: isSiegeWave(),
         hordeWave: isHordeWave(),
         bossWave:
-          GS.currentWaveConfig?.boss || (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave)),
+          GS.currentWaveConfig?.boss ||
+          (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave)),
         sessionKills: GS.kills,
         units: playerUnits,
         highlights: GS.sessionHighlights,
-        storyBranch:
-          typeof StoryLore !== 'undefined' ? StoryLore.getDominantBranch?.() : null,
-        storySummary:
-          typeof StoryLore !== 'undefined' ? StoryLore.formatChoiceSummary?.(2) : '',
-        planetChoice: svc('DynamicMapEvents')?.getStateSnapshot?.(GS.wave, GS.tactical, isNightPhase())
-          ?.activeEvent?.choice,
+        storyBranch: typeof StoryLore !== 'undefined' ? StoryLore.getDominantBranch?.() : null,
+        storySummary: typeof StoryLore !== 'undefined' ? StoryLore.formatChoiceSummary?.(2) : '',
+        planetChoice: svc('DynamicMapEvents')?.getStateSnapshot?.(
+          GS.wave,
+          GS.tactical,
+          isNightPhase()
+        )?.activeEvent?.choice,
       },
       raidSnap: null,
     };
@@ -6511,16 +6413,13 @@ const Game = (() => {
     if (inProgress.length === 1) {
       showMessage(`Construction — ${inProgress[0]}`, 160);
     } else if (inProgress.length > 1) {
-      showMessage(`Construction — ${inProgress.length} sites (${inProgress.slice(0, 3).join(', ')}${inProgress.length > 3 ? '…' : ''})`, 200);
+      showMessage(
+        `Construction — ${inProgress.length} sites (${inProgress.slice(0, 3).join(', ')}${inProgress.length > 3 ? '…' : ''})`,
+        200
+      );
     }
     if (anyCompleted) invalidateObstacles();
   }
-
-  
-
-  
-
-  
 
   function spawnAcademyUnit(academy, unitType) {
     const sx = academy.slotX ?? academy.x;
@@ -6667,10 +6566,6 @@ const Game = (() => {
     return { kind: 'advance', target: null };
   }
 
-  
-
-  
-
   function isTerrainBlockedAt(x, y, unit, clearance) {
     const scanRadius = clearance + 56;
     if (useSpatialQueries()) {
@@ -6713,9 +6608,9 @@ const Game = (() => {
     if (unit?.manualOrder) return false;
     const r = UNIT_COLLISION + margin;
     const r2 = r * r;
-    const foeR2 = (r * 0.35) * (r * 0.35);
+    const foeR2 = r * 0.35 * (r * 0.35);
     const hordeTightR2 = foeR2;
-    const hordeLooseR2 = (r * 0.55) * (r * 0.55);
+    const hordeLooseR2 = r * 0.55 * (r * 0.55);
     // Cache once — unitHasActiveMarch scans all walls/keeps (expensive in castle fights).
     const unitMarching = unit ? unitHasActiveMarch(unit) : false;
     const allyR = unitMarching ? r * 0.4 : r;
@@ -6800,8 +6695,7 @@ const Game = (() => {
         return;
       }
       if (unit.team === 'enemy' && u.team === 'enemy') {
-        const hordeR2 =
-          enemyIsAdvancing(unit) || enemyIsAdvancing(u) ? hordeTightR2 : hordeLooseR2;
+        const hordeR2 = enemyIsAdvancing(unit) || enemyIsAdvancing(u) ? hordeTightR2 : hordeLooseR2;
         if (d2 < hordeR2) blocked = true;
       }
     });
@@ -6811,8 +6705,7 @@ const Game = (() => {
   function nudgeUnitFree(unit) {
     const solidOnly = !!unit?.manualOrder;
     const jammed =
-      isTerrainBlocked(unit.x, unit.y, unit) ||
-      (!solidOnly && isBlocked(unit.x, unit.y, unit, 0));
+      isTerrainBlocked(unit.x, unit.y, unit) || (!solidOnly && isBlocked(unit.x, unit.y, unit, 0));
     if (!jammed) return false;
     // Prefer sliding toward the ordered destination when stuck on props/buildings.
     let preferAngle = null;
@@ -6821,7 +6714,8 @@ const Game = (() => {
     }
     for (let ring = 8; ring <= 56; ring += 8) {
       for (let i = 0; i < 16; i++) {
-        const base = preferAngle != null ? preferAngle + (i / 16) * Math.PI * 2 : (i / 16) * Math.PI * 2;
+        const base =
+          preferAngle != null ? preferAngle + (i / 16) * Math.PI * 2 : (i / 16) * Math.PI * 2;
         const pos = clampPos(unit.x + Math.cos(base) * ring, unit.y + Math.sin(base) * ring);
         const free = solidOnly
           ? !isTerrainBlocked(pos.x, pos.y, unit)
@@ -7198,7 +7092,9 @@ const Game = (() => {
     resetWaveModifiers();
     wireGameContext();
     if (svc('GameEvents')) {
-      svc('GameEvents').emit(svc('GameEvents').GameEvent.GAME_START, { difficulty: GS.difficultyId });
+      svc('GameEvents').emit(svc('GameEvents').GameEvent.GAME_START, {
+        difficulty: GS.difficultyId,
+      });
     } else if (svc('FactionDepth')) {
       svc('FactionDepth').onGameStart();
     }
@@ -7384,7 +7280,12 @@ const Game = (() => {
         showMessage(`Active modifiers: ${runSession.mods.length}`, 260);
         announceAdvancedModifierHints();
       }
-      ach('game_start', { difficulty: GS.difficultyId, creative: false, mode: 'academy_era', wave: GS.wave });
+      ach('game_start', {
+        difficulty: GS.difficultyId,
+        creative: false,
+        mode: 'academy_era',
+        wave: GS.wave,
+      });
     } else if (planetConquestMode) {
       bootstrapPlanetConquestStart();
       const modeNote = runSession?.ironman ? ' · IRONMAN' : '';
@@ -7505,8 +7406,6 @@ const Game = (() => {
     'boss_malachar',
   ];
 
-  
-
   function computeSpawnFillParams(waveNum) {
     const cfg = getWaveConfig(waveNum);
     const diff = getDifficulty();
@@ -7538,7 +7437,8 @@ const Game = (() => {
     }
     count += getEnemyEconomySpawnBonus();
     count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
-    if (GS.waveModifiers.stealReduction) count = Math.max(1, count - GS.waveModifiers.stealReduction);
+    if (GS.waveModifiers.stealReduction)
+      count = Math.max(1, count - GS.waveModifiers.stealReduction);
 
     let pool = ColonyValue?.mergePool
       ? svc('ColonyValue').mergePool([...cfg.pool], colonyPressure || {})
@@ -7549,7 +7449,11 @@ const Game = (() => {
       : getDifficulty().enemyWeight || {};
     if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(waveNum, weights);
     if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(weights, waveNum, getLivingPlanetCtx());
+      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
+        weights,
+        waveNum,
+        getLivingPlanetCtx()
+      );
       weights = biomeMerge.weights;
       count = svc('BiomeSpawn').adjustSpawnCount(count, waveNum, getLivingPlanetCtx());
     }
@@ -7812,79 +7716,98 @@ const Game = (() => {
       }
       if (svc('EnemyFactions')) {
         const roster = svc('EnemyFactions').formatFactionRoster(GS.spawnQueue);
-        if (roster) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
+        if (roster)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
       }
       if (svc('GrandStrategy')) {
         const gsNote = svc('GrandStrategy').formatIntelNote(GS.wave);
-        if (gsNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${gsNote}` : gsNote;
+        if (gsNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${gsNote}` : gsNote;
       }
       if (svc('IntergalacticLayer')) {
         const igNote = svc('IntergalacticLayer').formatIntelNote(GS.wave);
-        if (igNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${igNote}` : igNote;
+        if (igNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${igNote}` : igNote;
       }
       if (typeof ProgressionRestarts !== 'undefined') {
         const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
-        if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
+        if (prNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
       }
       if (typeof HybridMoments !== 'undefined') {
         const hmNote = HybridMoments.formatIntelNote({ wave: GS.wave });
-        if (hmNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${hmNote}` : hmNote;
+        if (hmNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${hmNote}` : hmNote;
       }
       if (typeof PacingTools !== 'undefined') {
         const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-        if (ptNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
+        if (ptNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
       }
       if (typeof EternalLegacyTree !== 'undefined') {
         const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
-        if (elNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;
+        if (elNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;
       }
       if (typeof FoundationalMedievalLayer !== 'undefined') {
         const fmNote = FoundationalMedievalLayer.formatIntelNote({ wave: GS.wave });
-        if (fmNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${fmNote}` : fmNote;
+        if (fmNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${fmNote}` : fmNote;
       }
       if (typeof AscensionSystem !== 'undefined') {
         const ascNote = AscensionSystem.formatIntelNote({ wave: GS.wave });
-        if (ascNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
+        if (ascNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
       }
       if (typeof ThematicEraSynergies !== 'undefined') {
         const synNote = ThematicEraSynergies.formatIntelNote({ wave: GS.wave });
-        if (synNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
+        if (synNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
       }
       if (typeof HybridPowerFantasy !== 'undefined') {
         const pfNote = HybridPowerFantasy.formatIntelNote({ wave: GS.wave });
-        if (pfNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${pfNote}` : pfNote;
+        if (pfNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${pfNote}` : pfNote;
       }
       if (typeof NarrativeThread !== 'undefined') {
         const crownNote = NarrativeThread.formatIntelNote({ wave: GS.wave });
-        if (crownNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
+        if (crownNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
       }
       if (typeof TechTreeBranches !== 'undefined') {
         const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
-        if (techNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
+        if (techNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
       }
       if (typeof GrandStrategyMidBranches !== 'undefined') {
         const mbNote = GrandStrategyMidBranches.formatIntelNote({ wave: GS.wave });
-        if (mbNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mbNote}` : mbNote;
+        if (mbNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mbNote}` : mbNote;
       }
       if (typeof EternalPathFramework !== 'undefined') {
         const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
-        if (epfNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
+        if (epfNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
       }
       if (typeof MartialPathEvolution !== 'undefined') {
         const mpeNote = MartialPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mpeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
+        if (mpeNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
       }
       if (typeof ArcanePathEvolution !== 'undefined') {
         const apeNote = ArcanePathEvolution.formatIntelNote({ wave: GS.wave });
-        if (apeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
+        if (apeNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
       }
       if (typeof TechPathEvolution !== 'undefined') {
         const tpeNote = TechPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (tpeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
+        if (tpeNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
       }
       if (typeof MythicPathEvolution !== 'undefined') {
         const mypNote = MythicPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mypNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
+        if (mypNote)
+          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
       }
       appendCounterIntel();
       return;
@@ -7909,7 +7832,8 @@ const Game = (() => {
     count += getEnemyEconomySpawnBonus();
     count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
     const asymElites = getAsymmetricMods().eliteSlotBonus || 0;
-    if (GS.waveModifiers.stealReduction) count = Math.max(1, count - GS.waveModifiers.stealReduction);
+    if (GS.waveModifiers.stealReduction)
+      count = Math.max(1, count - GS.waveModifiers.stealReduction);
     const elites = SPAWN_ELITE_TYPES;
     let pool = ColonyValue?.mergePool
       ? svc('ColonyValue').mergePool([...GS.currentWaveConfig.pool], colonyPressure || {})
@@ -7920,7 +7844,11 @@ const Game = (() => {
       : getDifficulty().enemyWeight || {};
     if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(GS.wave, weights);
     if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(weights, GS.wave, getLivingPlanetCtx());
+      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
+        weights,
+        GS.wave,
+        getLivingPlanetCtx()
+      );
       weights = biomeMerge.weights;
       count = svc('BiomeSpawn').adjustSpawnCount(count, GS.wave, getLivingPlanetCtx());
     }
@@ -7966,7 +7894,9 @@ const Game = (() => {
         );
       }
       if (GS.namedBossWave) {
-        const assassinNote = GS.waveModifiers.noElites ? ' (elites assassinated — boss remains)' : '';
+        const assassinNote = GS.waveModifiers.noElites
+          ? ' (elites assassinated — boss remains)'
+          : '';
         const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
         addHighlight(
           'boss',
@@ -7976,8 +7906,18 @@ const Game = (() => {
           `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name} — ${GS.namedBossWave.tagline}${packNote}`,
           380
         );
-        svc('FloatingText').status(GS.worldW / 2, 44, GS.namedBossWave.name.toUpperCase(), '#ffd040');
-        svc('FloatingText').status(GS.worldW / 2, 58, GS.namedBossWave.title.toUpperCase(), '#ff6060');
+        svc('FloatingText').status(
+          GS.worldW / 2,
+          44,
+          GS.namedBossWave.name.toUpperCase(),
+          '#ffd040'
+        );
+        svc('FloatingText').status(
+          GS.worldW / 2,
+          58,
+          GS.namedBossWave.title.toUpperCase(),
+          '#ff6060'
+        );
         if (svc('MonsterBosses') && GS.namedBossWave.evolution?.label) {
           svc('MonsterBosses').announceEvolution(monsterBossPrep, GS.namedBossWave, {
             showMessage,
@@ -8001,7 +7941,8 @@ const Game = (() => {
         boss: !!isBoss || !!GS.namedBossWave,
         horde: !!GS.currentHordeWave,
         siege: !!GS.currentHordeWave?.hasSiege || isSiegeWave?.(),
-        subtitle: GS.namedBossWave?.name || (GS.currentHordeWave ? 'Brace for the swarm' : 'Hold the line'),
+        subtitle:
+          GS.namedBossWave?.name || (GS.currentHordeWave ? 'Brace for the swarm' : 'Hold the line'),
       });
     }
     if (colonyPressure && svc('ColonyValue')) {
@@ -8043,7 +7984,11 @@ const Game = (() => {
       GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
     }
     if (svc('GameDepth')) {
-      GS.spawnQueue = svc('GameDepth').injectEvilOperativesIntoQueue(GS.spawnQueue, GS.wave, gameRandom);
+      GS.spawnQueue = svc('GameDepth').injectEvilOperativesIntoQueue(
+        GS.spawnQueue,
+        GS.wave,
+        gameRandom
+      );
     }
     if (svc('EnemyFactions')) {
       GS.spawnQueue = svc('EnemyFactions').biasSpawnQueue(GS.spawnQueue, GS.wave, gameRandom);
@@ -8077,10 +8022,12 @@ const Game = (() => {
       }
     }
     if (GS.multiFrontPlan?.intel) {
-      GS.nextWaveIntel = (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.multiFrontPlan.intel;
+      GS.nextWaveIntel =
+        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.multiFrontPlan.intel;
     }
     if (GS.namedBossWave?.packSummary) {
-      GS.nextWaveIntel = (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
+      GS.nextWaveIntel =
+        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
     }
     if (svc('GrandStrategy')) {
       const gsNote = svc('GrandStrategy').formatIntelNote(GS.wave);
@@ -8112,11 +8059,13 @@ const Game = (() => {
     }
     if (typeof AscensionSystem !== 'undefined') {
       const ascNote = AscensionSystem.formatIntelNote({ wave: GS.wave });
-      if (ascNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
+      if (ascNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
     }
     if (typeof ThematicEraSynergies !== 'undefined') {
       const synNote = ThematicEraSynergies.formatIntelNote({ wave: GS.wave });
-      if (synNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
+      if (synNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
     }
     if (typeof HybridPowerFantasy !== 'undefined') {
       const pfNote = HybridPowerFantasy.formatIntelNote({ wave: GS.wave });
@@ -8124,11 +8073,13 @@ const Game = (() => {
     }
     if (typeof NarrativeThread !== 'undefined') {
       const crownNote = NarrativeThread.formatIntelNote({ wave: GS.wave });
-      if (crownNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
+      if (crownNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
     }
     if (typeof TechTreeBranches !== 'undefined') {
       const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
-      if (techNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
+      if (techNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
     }
     if (typeof GrandStrategyMidBranches !== 'undefined') {
       const mbNote = GrandStrategyMidBranches.formatIntelNote({ wave: GS.wave });
@@ -8136,23 +8087,28 @@ const Game = (() => {
     }
     if (typeof EternalPathFramework !== 'undefined') {
       const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
-      if (epfNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
+      if (epfNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
     }
     if (typeof MartialPathEvolution !== 'undefined') {
       const mpeNote = MartialPathEvolution.formatIntelNote({ wave: GS.wave });
-      if (mpeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
+      if (mpeNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
     }
     if (typeof ArcanePathEvolution !== 'undefined') {
       const apeNote = ArcanePathEvolution.formatIntelNote({ wave: GS.wave });
-      if (apeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
+      if (apeNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
     }
     if (typeof TechPathEvolution !== 'undefined') {
       const tpeNote = TechPathEvolution.formatIntelNote({ wave: GS.wave });
-      if (tpeNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
+      if (tpeNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
     }
     if (typeof MythicPathEvolution !== 'undefined') {
       const mypNote = MythicPathEvolution.formatIntelNote({ wave: GS.wave });
-      if (mypNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
+      if (mypNote)
+        GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
     }
     appendCounterIntel();
   }
@@ -8439,7 +8395,8 @@ const Game = (() => {
         ...getGrandStrategyCtx(),
         wave: GS.wave,
         isBoss: !!(
-          GS.currentWaveConfig?.boss || (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave))
+          GS.currentWaveConfig?.boss ||
+          (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave))
         ),
         isHorde: isHordeWave(),
         enemyCount: GS.spawnQueue.length,
@@ -8459,11 +8416,7 @@ const Game = (() => {
           const victims = GS.units
             .filter(
               (u) =>
-                u.team === 'player' &&
-                u.hp > 0 &&
-                !u.isGeneral &&
-                !u.isDoomslayer &&
-                !u.isNamedBoss
+                u.team === 'player' && u.hp > 0 && !u.isGeneral && !u.isDoomslayer && !u.isNamedBoss
             )
             .sort((a, b) => (a.experience || 0) - (b.experience || 0) || a.hp - b.hp);
           for (const u of victims) {
@@ -8501,7 +8454,10 @@ const Game = (() => {
         return;
       }
       if (auto?.major) {
-        showMessage(`Major battle — Wave ${GS.wave} requires your personal command (${auto.reason}).`, 320);
+        showMessage(
+          `Major battle — Wave ${GS.wave} requires your personal command (${auto.reason}).`,
+          320
+        );
         if (typeof HybridMoments !== 'undefined') {
           HybridMoments.onMobilizationMajor(GS.wave, auto, {
             wave: GS.wave,
@@ -8529,7 +8485,10 @@ const Game = (() => {
 
     if (isHordeWave())
       showMessage(`HORDE ASSAULT — Wave ${GS.wave}! ${GS.currentHordeWave?.flavor?.label || ''}`);
-    else if (GS.currentWaveConfig?.boss || (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave))) {
+    else if (
+      GS.currentWaveConfig?.boss ||
+      (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave))
+    ) {
       showMessage(`BOSS WAVE ${GS.wave}!`);
     } else showMessage(`Dawn breaks — Wave ${GS.wave} assault begins!`);
     if (GS.wave === 1001) {
@@ -8571,10 +8530,7 @@ const Game = (() => {
       /* audio optional */
     }
     if (victory) {
-      playSfx(
-        'victory',
-        typeof Cosmetics !== 'undefined' ? Cosmetics.getVictoryThemeId() : null
-      );
+      playSfx('victory', typeof Cosmetics !== 'undefined' ? Cosmetics.getVictoryThemeId() : null);
     } else {
       playSfx('defeat');
     }
@@ -8673,7 +8629,14 @@ const Game = (() => {
   /** Layer subsystem hooks — world-scoped announcements. */
   function announceHooks(extra = {}) {
     return GameRuntime.makeAnnounceHooks(
-      { showMessage, addHighlight, worldW: GS.worldW, worldH: GS.worldH, wave: GS.wave, floatingText: floatStatus },
+      {
+        showMessage,
+        addHighlight,
+        worldW: GS.worldW,
+        worldH: GS.worldH,
+        wave: GS.wave,
+        floatingText: floatStatus,
+      },
       extra
     );
   }
@@ -8745,8 +8708,6 @@ const Game = (() => {
     return true;
   }
 
-  
-
   function resetSimClock() {
     GS.speedAccumulator = 0;
     GS.lastSimWallMs = 0;
@@ -8817,9 +8778,7 @@ const Game = (() => {
     GS.speedAccumulator -= steps;
 
     let cap =
-      typeof PacingTools !== 'undefined'
-        ? PacingTools.getMaxSimulationSteps(GS.gameSpeed)
-        : 6;
+      typeof PacingTools !== 'undefined' ? PacingTools.getMaxSimulationSteps(GS.gameSpeed) : 6;
     // At 1× allow 0–2 steps/frame (fractional accumulation); keep a modest floor-free cap.
     if (speed <= 1) cap = Math.min(cap, 2);
     const load = GS.units.length;
@@ -8870,7 +8829,10 @@ const Game = (() => {
         return;
       }
       if (!canDeployUnitType(type)) {
-        showMessage('Creative mode — troop deploy disabled in lab settings (Academy Deploy off).', 280);
+        showMessage(
+          'Creative mode — troop deploy disabled in lab settings (Academy Deploy off).',
+          280
+        );
         syncInteractionState();
         return;
       }
@@ -9112,8 +9074,6 @@ const Game = (() => {
     return true;
   }
 
-  
-
   function applyDoctrineToArmy(def) {
     for (let i = 0; i < GS.units.length; i++) {
       const u = GS.units[i];
@@ -9271,7 +9231,11 @@ const Game = (() => {
       showMessage('One expedition per wave — troops already marching.');
       return false;
     }
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     if (!ids.length) {
       showMessage(
         `Select ${svc('PlayerCounterEvolution').MIN_EXPEDITION_FORCE}–${svc('PlayerCounterEvolution').MAX_EXPEDITION_FORCE} hunters for the expedition.`
@@ -9325,10 +9289,14 @@ const Game = (() => {
     const cost = svc('DynamicMapEvents').getChoiceCost(choiceId);
     const freeTp = GS.creativeMode && GS.creativeSettings.freeResources;
     if (!freeTp && GS.tactical < cost) {
-      showMessage(`Need ${cost} TP for this planet response (have ${Math.floor(GS.tactical)}).`, 220, {
-        priority: 'critical',
-        bypassQueue: true,
-      });
+      showMessage(
+        `Need ${cost} TP for this planet response (have ${Math.floor(GS.tactical)}).`,
+        220,
+        {
+          priority: 'critical',
+          bypassQueue: true,
+        }
+      );
       return false;
     }
     const result = svc('DynamicMapEvents').respond(choiceId, {
@@ -9389,7 +9357,11 @@ const Game = (() => {
       );
       return false;
     }
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     if (!ids.length) {
       showMessage(
         `Select ${svc('SettlementRaids').MIN_STRIKE_FORCE}+ hunters, then dispatch a raid mission.`
@@ -9425,13 +9397,14 @@ const Game = (() => {
     if (!hasCourier()) return 0;
     for (const u of GS.units) {
       if (u.type !== 'courier' || u.hp <= 0) continue;
-      if (typeof isSpecialistLateAbilityUnlocked === 'function' && isSpecialistLateAbilityUnlocked(u)) {
+      if (
+        typeof isSpecialistLateAbilityUnlocked === 'function' &&
+        isSpecialistLateAbilityUnlocked(u)
+      ) {
         return 2; // Twin Dispatch — two messages per wave
       }
       const late =
-        typeof getSpecialistLateAbilityInfo === 'function'
-          ? getSpecialistLateAbilityInfo(u)
-          : null;
+        typeof getSpecialistLateAbilityInfo === 'function' ? getSpecialistLateAbilityInfo(u) : null;
       if (late?.unlocked && late.id === 'twin_dispatch') return 2;
     }
     return 1;
@@ -9592,8 +9565,6 @@ const Game = (() => {
     return findPlayerBuildingAt(wx, wy);
   }
 
-  
-
   function detachBuildingFromBuilders(b) {
     for (const u of GS.units) {
       if (u.repairTarget?.id === b.id) u.repairTarget = null;
@@ -9753,7 +9724,10 @@ const Game = (() => {
         });
       }
       if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
-        const push = svc('PlanetWarfare').onEnemyStructureDestroyed({ wave: GS.wave, worldH: GS.worldH });
+        const push = svc('PlanetWarfare').onEnemyStructureDestroyed({
+          wave: GS.wave,
+          worldH: GS.worldH,
+        });
         if (push?.delta < -0.02) {
           showMessage(
             `Hostile territory pushed back — control ${Math.round(svc('PlanetWarfare').getControl() * 100)}%.`,
@@ -9895,8 +9869,7 @@ const Game = (() => {
     const throttle = svc('UpdateThrottle');
     let tier = 'full';
     if (throttle) {
-      const throttleCtx =
-        GS.updateThrottleCtx || buildUpdateThrottleCtx(GS.units.length, gfxQ);
+      const throttleCtx = GS.updateThrottleCtx || buildUpdateThrottleCtx(GS.units.length, gfxQ);
       tier = throttle.getUnitTier(unit, throttleCtx);
       if (!pathOpts.force && !throttle.shouldPathfind(unit, tier, GS.updateTick)) return false;
     }
@@ -10000,9 +9973,7 @@ const Game = (() => {
       const loadCap =
         unitCount > 100 ? 700 : unitCount > 70 ? 1000 : unitCount > 45 ? 1400 : undefined;
       const effectiveMax =
-        pathMaxNodes != null
-          ? Math.min(pathMaxNodes, loadCap || pathMaxNodes)
-          : loadCap;
+        pathMaxNodes != null ? Math.min(pathMaxNodes, loadCap || pathMaxNodes) : loadCap;
       unit.path = svc('Pathfinding').findPath(
         unit.x,
         unit.y,
@@ -10030,7 +10001,7 @@ const Game = (() => {
     unit.pathRecalc = 0;
     unit.pathStuck = 0;
     unit.stillFrames = 0;
-    return !!(unit.path?.length);
+    return !!unit.path?.length;
   }
 
   function pathToEnemyStructure(unit, bld, opts = {}) {
@@ -10052,8 +10023,6 @@ const Game = (() => {
       sync: !!opts.sync,
     });
   }
-
-  
 
   function finishManualOrder(unit) {
     if (!unit.manualOrder) return;
@@ -10331,8 +10300,6 @@ const Game = (() => {
     }
   }
 
-  
-
   function spawnHamletFortressWalls(hamlet) {
     if (!hamlet?.isHamlet || hamlet.owner !== 'player' || hamlet.hp <= 0) return 0;
     if (hamlet.fortressWallsSpawned) return 0;
@@ -10482,7 +10449,8 @@ const Game = (() => {
       !canBuildAcademyType(type, GS.wave, GS.units)
     ) {
       showMessage(
-        getAcademyBuildBlockReason(type, GS.wave, GS.units) || 'Cannot build this academy right now.'
+        getAcademyBuildBlockReason(type, GS.wave, GS.units) ||
+          'Cannot build this academy right now.'
       );
       return false;
     }
@@ -10625,7 +10593,8 @@ const Game = (() => {
     const isAcademyBuild = bdef?.isAcademy && !bdef?.isCrossoverBarracks && !bdef?.isWweAcademy;
     if (isAcademyBuild && !canBuildAcademyType(type, GS.wave, GS.units)) {
       showMessage(
-        getAcademyBuildBlockReason(type, GS.wave, GS.units) || 'Cannot build this academy right now.'
+        getAcademyBuildBlockReason(type, GS.wave, GS.units) ||
+          'Cannot build this academy right now.'
       );
       return false;
     }
@@ -10768,7 +10737,10 @@ const Game = (() => {
         showMessage(`Cannot deploy ${GS.selectedDeploy} — unit data missing.`, 260);
         return false;
       }
-      if (svc('Research') && !svc('Research').isDeployUnlocked(GS.selectedDeploy, getResearchOpts())) {
+      if (
+        svc('Research') &&
+        !svc('Research').isDeployUnlocked(GS.selectedDeploy, getResearchOpts())
+      ) {
         const need =
           GS.selectedDeploy === 'ballista'
             ? 'Research Siege Engineering (Military tree, after Iron Weapons) first!'
@@ -10927,7 +10899,8 @@ const Game = (() => {
             GS.selectedUnitIds = [clicked.id];
           }
         } else if (opts.toggleSelection) {
-          if (!GS.selectedUnitIds.length && GS.selectedUnitId) GS.selectedUnitIds = [GS.selectedUnitId];
+          if (!GS.selectedUnitIds.length && GS.selectedUnitId)
+            GS.selectedUnitIds = [GS.selectedUnitId];
           if (GS.selectedUnitIds.includes(clicked.id)) {
             GS.selectedUnitIds = GS.selectedUnitIds.filter((id) => id !== clicked.id);
             GS.selectedUnitId = GS.selectedUnitIds.length
@@ -10972,10 +10945,6 @@ const Game = (() => {
 
     return false;
   }
-
-  
-
-  
 
   /** Nearest living player mage for Arcane Dispel range checks. */
   function findNearestPlayerMage(wx, wy) {
@@ -11178,7 +11147,13 @@ const Game = (() => {
     const pw =
       svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)
         ? cachedSnap('planetWarfare', () =>
-            svc('PlanetWarfare').getStateSnapshot(GS.wave, GS.worldW, GS.worldH, GS.buildings, GS.units)
+            svc('PlanetWarfare').getStateSnapshot(
+              GS.wave,
+              GS.worldW,
+              GS.worldH,
+              GS.buildings,
+              GS.units
+            )
           )
         : null;
     GS.livingPlanetCtxCache = {
@@ -11219,8 +11194,6 @@ const Game = (() => {
     return cover;
   }
 
-  
-
   function getWallProtection(unit) {
     if (unit.team !== 'player' || unit.hp <= 0) return 0;
     let best = 0;
@@ -11239,10 +11212,6 @@ const Game = (() => {
     }
     return best;
   }
-
-  
-
-  
 
   function isSiegeWave() {
     return !!GS.currentHordeWave?.hasSiege;
@@ -11289,10 +11258,7 @@ const Game = (() => {
       } else if (svc('FactionDepth')) {
         svc('FactionDepth').onBarracksComplete(b);
       } else {
-        showMessage(
-          `${BuildDefs[b.type]?.name} ready — click to recruit evolved operatives!`,
-          300
-        );
+        showMessage(`${BuildDefs[b.type]?.name} ready — click to recruit evolved operatives!`, 300);
         svc('FloatingText').status(b.x, b.y - 20, 'CROSSOVER', '#60a0c0');
       }
     }
@@ -11340,7 +11306,13 @@ const Game = (() => {
       unit.targetX = unit.x;
       unit.targetY = unit.y;
     }
-    if (unit.canHunt && !unit.retreatingToMed && !unit.atMedicalTent && !unit.fleeing && !unit.demoralized) {
+    if (
+      unit.canHunt &&
+      !unit.retreatingToMed &&
+      !unit.atMedicalTent &&
+      !unit.fleeing &&
+      !unit.demoralized
+    ) {
       applyGlobalHuntState(unit);
     }
   }
@@ -11348,8 +11320,9 @@ const Game = (() => {
   function getPendingOutpost(unit) {
     if (!unit || unit.garrisoned) return null;
     return (
-      GS.buildings.find((b) => b.type === 'outpost' && b.complete && b.garrisonUnitId === unit.id) ||
-      null
+      GS.buildings.find(
+        (b) => b.type === 'outpost' && b.complete && b.garrisonUnitId === unit.id
+      ) || null
     );
   }
 
@@ -11392,8 +11365,6 @@ const Game = (() => {
   function outpostMarchDist(unit, op) {
     return Math.sqrt(outpostMarchDistSq(unit, op));
   }
-
-  
 
   function completeOutpostGarrison(gu, op, slot) {
     if (shouldReleaseOutpostGarrison(gu)) return;
@@ -11449,8 +11420,6 @@ const Game = (() => {
     showMessage('Enemy siege tower is bridging the wall!');
     playSfx('waveStart');
   }
-
-  
 
   function isMarchingToOutpost(unit) {
     const op = getPendingOutpost(unit);
@@ -11558,14 +11527,14 @@ const Game = (() => {
   }
 
   function releaseFromKeep(unit) {
-    const keep = GS.buildings.find((b) => b.id === unit.stationedKeep || b.generalUnitId === unit.id);
+    const keep = GS.buildings.find(
+      (b) => b.id === unit.stationedKeep || b.generalUnitId === unit.id
+    );
     if (keep?.generalUnitId === unit.id) keep.generalUnitId = null;
     unit.stationedKeep = null;
     unit.keepMarchRecalc = 0;
     if (unit.canHunt) applyGlobalHuntState(unit);
   }
-
-  
 
   function isMarchingToKeep(unit) {
     return GS.buildings.some((b) => b.generalUnitId === unit.id && !unit.stationedKeep);
@@ -11728,8 +11697,6 @@ const Game = (() => {
     return false;
   }
 
-  
-
   function isInsideCastleBounds(unit, groupId) {
     let minX = Infinity,
       maxX = -Infinity,
@@ -11755,10 +11722,12 @@ const Game = (() => {
 
   function checkCastleCompoundBreaches() {
     if (GS.creativeMode || GS.state !== 'playing' || GS.castleBreachRecorded) return;
-    if (typeof isInsideCastleInnerSanctum !== 'function' || !playerHasCastleCompound(GS.buildings)) return;
+    if (typeof isInsideCastleInnerSanctum !== 'function' || !playerHasCastleCompound(GS.buildings))
+      return;
     const groups = new Set();
     for (const b of GS.buildings) {
-      if (b.owner === 'player' && b.castleGroup && b.complete && b.hp > 0) groups.add(b.castleGroup);
+      if (b.owner === 'player' && b.castleGroup && b.complete && b.hp > 0)
+        groups.add(b.castleGroup);
     }
     for (const u of GS.units) {
       if (u.team !== 'enemy' || u.hp <= 0) continue;
@@ -11801,16 +11770,10 @@ const Game = (() => {
     return false;
   }
 
-  
-
   /** How far a footman will volunteer to man an empty castle wall slot (not map-wide). */
   function getWallManningSeekDist() {
     return Math.min(300, Math.max(200, 195 + GS.worldW * 0.055));
   }
-
-  
-
-  
 
   function footmanCanVolunteerForWall(u, slotX, slotY) {
     if (!isFootmanWallCandidate(u)) return false;
@@ -11818,8 +11781,6 @@ const Game = (() => {
     const foe = findNearestFoeInRange(u);
     return !foeThreatensWallManning(foe, u, slotX, slotY);
   }
-
-  
 
   function updateWallGarrison() {
     const groupId = getWallManningCastleGroup();
@@ -11935,8 +11896,6 @@ const Game = (() => {
     }
   }
 
-  
-
   /** Global search — no distance cap; picks closest completed player med tent. */
   function findNearestMedicalTent(unit) {
     let best = null,
@@ -11951,10 +11910,6 @@ const Game = (() => {
     }
     return best;
   }
-
-  
-
-  
 
   function isBeingTargeted(unit) {
     if (!unit || unit.hp <= 0) return false;
@@ -12151,7 +12106,9 @@ const Game = (() => {
       }
 
       if (!unit.atMedicalTent) continue;
-      const tent = GS.buildings.find((b) => b.id === unit.atMedicalTent && isMedicalTentBuilding(b));
+      const tent = GS.buildings.find(
+        (b) => b.id === unit.atMedicalTent && isMedicalTentBuilding(b)
+      );
       if (!tent) {
         unit.atMedicalTent = null;
         unit.retreatingToMed = null;
@@ -12184,8 +12141,6 @@ const Game = (() => {
       }
     }
   }
-
-  
 
   function isAttackableEnemyStructure(b) {
     if (!b || b.owner !== 'enemy') return false;
@@ -12245,8 +12200,6 @@ const Game = (() => {
     return best;
   }
 
-  
-
   function getBuildingApproachPoint(unit, b) {
     const hitR =
       typeof getBuildingHitRadius === 'function' ? getBuildingHitRadius(b) : b.radius || 28;
@@ -12262,12 +12215,6 @@ const Game = (() => {
     const scale = Math.min(1, reach / dist);
     return { x: b.x + dx * scale, y: b.y + dy * scale };
   }
-
-  
-
-  
-
-  
 
   function inBuildingAttackRange(unit, b) {
     const edge = structureEdgeDistance(unit, b);
@@ -12302,8 +12249,6 @@ const Game = (() => {
     }
     return Math.max(4, dmg + Math.floor(Math.random() * 4));
   }
-
-  
 
   function getBuildingPursuitTarget(unit) {
     if (unit.raidTargetId) {
@@ -12342,10 +12287,7 @@ const Game = (() => {
     if (!target) target = findNearestAttackableEnemyBuilding(unit, seekDist);
     if (!target) return;
     if (!inBuildingAttackRange(unit, target)) {
-      if (
-        !unit.manualOrder &&
-        (unit.huntMode || unit.structureTargetId || unit.raidTargetId)
-      ) {
+      if (!unit.manualOrder && (unit.huntMode || unit.structureTargetId || unit.raidTargetId)) {
         pathToEnemyStructure(unit, target);
       }
       return;
@@ -12443,11 +12385,7 @@ const Game = (() => {
     }
     if (!best) {
       const seek = findNearestSiegeablePlayerStructure(unit);
-      if (
-        seek &&
-        !unit.path?.length &&
-        unit.pathTargetId !== `bld:${seek.id}`
-      ) {
+      if (seek && !unit.path?.length && unit.pathTargetId !== `bld:${seek.id}`) {
         setUnitPath(unit, seek.x, seek.y, null, { buildingId: seek.id, force: true });
         unit.pathTargetId = `bld:${seek.id}`;
       }
@@ -12734,12 +12672,7 @@ const Game = (() => {
             wave: GS.wave,
           });
           if (streakInfo?.label && streakInfo.streak >= 3 && streakInfo.streak < 18) {
-            svc('FloatingText')?.status?.(
-              unit.x,
-              unit.y - 22,
-              streakInfo.label,
-              '#ff9060'
-            );
+            svc('FloatingText')?.status?.(unit.x, unit.y - 22, streakInfo.label, '#ff9060');
           }
         }
         if (svc('GameEvents')) {
@@ -12950,8 +12883,6 @@ const Game = (() => {
     if (svc('FactionDepth')) svc('FactionDepth').processAbilityHit(unit, target, dmg);
   }
 
-  
-
   function applyWweOnHit(unit, target, dmg) {
     if (!unit.isWwe) return;
     ach('crossover_ability', {
@@ -13057,9 +12988,7 @@ const Game = (() => {
         splash: unit.type === 'mage' || unit.type === 'dark_mage' || unit.type === 'necromancer',
         angle: Math.atan2(target.y - unit.y, target.x - unit.x),
       });
-      unit.projectile === 'arrow'
-        ? playSfx('arrowShoot')
-        : playSfx('magicCast');
+      unit.projectile === 'arrow' ? playSfx('arrowShoot') : playSfx('magicCast');
     } else if (isMeleeCombat(unit) && dist <= unit.meleeRange && Math.random() * 100 <= hit) {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
       takeDamage(target, calcDamage(unit, target, 10), {
@@ -13092,7 +13021,12 @@ const Game = (() => {
     }
     const onBuilderJob = unit.type === 'builder' && builderHasWork(unit);
     if (!unit.path?.length || unit.pathIndex >= unit.path.length) {
-      if (unit.manualOrder && unit.targetX != null && unit.targetY != null && !manualMoveReached(unit)) {
+      if (
+        unit.manualOrder &&
+        unit.targetX != null &&
+        unit.targetY != null &&
+        !manualMoveReached(unit)
+      ) {
         setUnitPath(unit, unit.targetX, unit.targetY, null, { force: true, sync: true });
         // Always keep a direct waypoint so failed pathfind never cancels the order mid-map.
         if (!unit.path?.length) {
@@ -13168,7 +13102,12 @@ const Game = (() => {
     }
 
     if (unit.pathIndex >= unit.path.length) {
-      if (unit.manualOrder && unit.targetX != null && unit.targetY != null && !manualMoveReached(unit)) {
+      if (
+        unit.manualOrder &&
+        unit.targetX != null &&
+        unit.targetY != null &&
+        !manualMoveReached(unit)
+      ) {
         unit.path = [{ x: unit.targetX, y: unit.targetY }];
         unit.pathIndex = 0;
         if (steerToward(unit, unit.targetX, unit.targetY)) {
@@ -13219,7 +13158,11 @@ const Game = (() => {
         if (isBuildingPathTarget(unit.pathTargetId)) {
           const bld = getBuildingPursuitTarget(unit);
           if (bld) pathToEnemyStructure(unit, bld);
-          else setUnitPath(unit, unit.targetX, unit.targetY, null, { force: true, sync: !!unit.manualOrder });
+          else
+            setUnitPath(unit, unit.targetX, unit.targetY, null, {
+              force: true,
+              sync: !!unit.manualOrder,
+            });
         } else {
           setUnitPath(unit, unit.targetX, unit.targetY, dest, {
             force: true,
@@ -13335,8 +13278,6 @@ const Game = (() => {
     }
   }
 
-  
-
   /**
    * Pick a live builder for a job. Prefer a specific unit (e.g. who finished a march),
    * then nearest free capacity. Previously always used units.find first builder, so
@@ -13364,8 +13305,6 @@ const Game = (() => {
     return best;
   }
 
-  
-
   function findRepairTarget(builder) {
     let best = null,
       bestScore = Infinity;
@@ -13385,8 +13324,6 @@ const Game = (() => {
     }
     return best;
   }
-
-  
 
   function builderMarchTo(unit, tx, ty) {
     const dist = Math.hypot(unit.x - tx, unit.y - ty);
@@ -13439,7 +13376,10 @@ const Game = (() => {
           unit.repairTarget = null;
           svc('Particles').dust(rt.x, rt.y);
         }
-        if (typeof isSpecialistLateAbilityUnlocked === 'function' && isSpecialistLateAbilityUnlocked(unit)) {
+        if (
+          typeof isSpecialistLateAbilityUnlocked === 'function' &&
+          isSpecialistLateAbilityUnlocked(unit)
+        ) {
           const repairDef =
             typeof SPECIALIST_LATE_ABILITIES !== 'undefined'
               ? SPECIALIST_LATE_ABILITIES.rapid_repair
@@ -13612,11 +13552,7 @@ const Game = (() => {
 
     const fightingNeutral = target.team === 'neutral' || target.isNeutral;
     // Neutrals near map edges: always close in (surround logic false-positives on borders).
-    if (
-      isFullySurrounded(target, unit.team) &&
-      unit.team === 'player' &&
-      !fightingNeutral
-    ) {
+    if (isFullySurrounded(target, unit.team) && unit.team === 'player' && !fightingNeutral) {
       releaseCombatPursuit(unit, { keepManual: unit.manualOrder });
       unit.actionTimer = 10;
       retargetIfHunting(unit);
@@ -13650,7 +13586,8 @@ const Game = (() => {
     }
 
     if (!foeInRange && unit.attackAnimTimer <= 0) {
-      const siegeScanR = (unit.meleeRange || MELEE_STANDOFF) + getBuildingHitRadius({ radius: 30 }) + 48;
+      const siegeScanR =
+        (unit.meleeRange || MELEE_STANDOFF) + getBuildingHitRadius({ radius: 30 }) + 48;
       if (useSpatialQueries()) {
         const nearBld = spatialScratchQuery(
           unit.x,
@@ -13760,7 +13697,10 @@ const Game = (() => {
       const gfxQ = getGfxQuality();
       const throttle = svc('UpdateThrottle');
       const tier = throttle
-        ? throttle.getUnitTier(unit, GS.updateThrottleCtx || buildUpdateThrottleCtx(GS.units.length, gfxQ))
+        ? throttle.getUnitTier(
+            unit,
+            GS.updateThrottleCtx || buildUpdateThrottleCtx(GS.units.length, gfxQ)
+          )
         : 'full';
       const recalcInterval = throttle ? throttle.pathRecalcInterval(tier, gfxQ) : 40;
       let pathed = false;
@@ -13930,8 +13870,6 @@ const Game = (() => {
     }
   }
 
-  
-
   function getDiagSnapshot() {
     let pathPending = 0;
     let manualOrders = 0;
@@ -13986,9 +13924,7 @@ const Game = (() => {
       hordeActive: !!GS.currentHordeWave,
     });
     if (svc('Particles') || svc('FloatingText')) {
-      const sceneLod = svc('SpriteLod')
-        ? svc('SpriteLod').getSceneLod(unitCount, gfxQ)
-        : 0;
+      const sceneLod = svc('SpriteLod') ? svc('SpriteLod').getSceneLod(unitCount, gfxQ) : 0;
       const fxMult = gfxQ?.particleMult ?? 1;
       svc('Particles')?.setBudget?.(unitCount, fxMult, sceneLod);
       svc('FloatingText')?.setBudget?.(unitCount, fxMult, sceneLod);
@@ -14129,9 +14065,7 @@ const Game = (() => {
           svc('UpdateThrottle')?.unitPhase?.(u, 2) ??
           ((u.id?.charCodeAt(0) || 0) + (u.id?.charCodeAt(1) || 0)) % 2;
         const hazardTick =
-          GS.hazards.length < 4 ||
-          u.team === 'player' ||
-          GS.updateTick % 2 === hazardPhase;
+          GS.hazards.length < 4 || u.team === 'player' || GS.updateTick % 2 === hazardPhase;
         if (!hazardTick) continue;
         GameDepth?.applyHazardToUnit(u, GS.hazards, svc('Spatial'));
       }
@@ -14199,9 +14133,7 @@ const Game = (() => {
       updatePerkCollectionLocal();
     }
 
-    const throttleCtx = svc('UpdateThrottle')
-      ? buildUpdateThrottleCtx(unitCount, gfxQ)
-      : null;
+    const throttleCtx = svc('UpdateThrottle') ? buildUpdateThrottleCtx(unitCount, gfxQ) : null;
 
     markUpdatePhase('terrain-nudge');
     for (const unit of GS.units) {
@@ -14240,10 +14172,7 @@ const Game = (() => {
         } else if (unit.team === 'enemy') {
           if (unit.path?.length && unit.attackAnimTimer <= 0 && !unit.pinned) {
             followPath(unit);
-          } else if (
-            !unit.path?.length ||
-            (unit.pathPending && (unit.pathWaitTicks || 0) >= 10)
-          ) {
+          } else if (!unit.path?.length || (unit.pathPending && (unit.pathWaitTicks || 0) >= 10)) {
             updateEnemyAI(unit);
           }
         } else if (unit.path?.length && unit.attackAnimTimer <= 0 && !unit.pinned) {
@@ -14305,10 +14234,7 @@ const Game = (() => {
         updateBuilder(unit);
         const onRallyMission = unit.isGeneral && unit.rallyTargetId;
         // Garrisoned / keep / wall: fire only (no path thrash) — but honor manual move orders.
-        if (
-          (unit.garrisoned || unit.stationedKeep || unit.wallGarrisoned) &&
-          !unit.manualOrder
-        ) {
+        if ((unit.garrisoned || unit.stationedKeep || unit.wallGarrisoned) && !unit.manualOrder) {
           if (!unit.retreatingToMed && !unit.atMedicalTent && !onRallyMission) {
             updateUnitCombat(unit);
           }
@@ -14605,7 +14531,9 @@ const Game = (() => {
     syncCameraTransform();
     if (!isMapOverlappingViewport()) clampCameraToBounds();
     const drawScale =
-      Number.isFinite(GS.viewScale) && GS.viewScale > 0 ? GS.viewScale : GS.baseViewScale * GS.cameraZoom;
+      Number.isFinite(GS.viewScale) && GS.viewScale > 0
+        ? GS.viewScale
+        : GS.baseViewScale * GS.cameraZoom;
     GS.ctx.setTransform(1, 0, 0, 1, 0, 0);
     GS.ctx.globalAlpha = 1;
     GS.ctx.setLineDash([]);
@@ -14628,529 +14556,578 @@ const Game = (() => {
       GS.ctx.scale(drawScale, drawScale);
       worldLayerDrawn = true;
 
-    GS.ctx.drawImage(
-      svc('SpriteGen').getBattlefieldCanvas(GS.worldW, getMapViewH(), BASE_FIELD_W, BASE_FIELD_H),
-      0,
-      0
-    );
-    if (svc('LivingPlanet') && svc('VisualPolish') && gfxQ?.drawBorders !== false) {
-      svc('VisualPolish').drawBiomeRegions(
+      GS.ctx.drawImage(
+        svc('SpriteGen').getBattlefieldCanvas(GS.worldW, getMapViewH(), BASE_FIELD_W, BASE_FIELD_H),
+        0,
+        0
+      );
+      if (svc('LivingPlanet') && svc('VisualPolish') && gfxQ?.drawBorders !== false) {
+        svc('VisualPolish').drawBiomeRegions(
+          GS.ctx,
+          GS.worldW,
+          getMapViewH(),
+          svc('LivingPlanet').getRegionBands(getLivingPlanetCtx())
+        );
+      }
+      if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
+        svc('VisualPolish').drawTerritoryBorders(
+          GS.ctx,
+          GS.worldW,
+          getMapViewH(),
+          GS.territoryTier
+        );
+        if (getAdvancedMods().fogOfWar && gfxQ?.drawFog !== false) {
+          const fogTop = Math.max(40, GS.rallyY - 40);
+          const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
+          grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
+          grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
+          grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
+          GS.ctx.fillStyle = grad;
+          GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
+        }
+        if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
+          const pw = cachedSnap('planetWarfare', () =>
+            svc('PlanetWarfare').getStateSnapshot(
+              GS.wave,
+              GS.worldW,
+              GS.worldH,
+              GS.buildings,
+              GS.units
+            )
+          );
+          svc('VisualPolish').drawHostileTerritory(
+            GS.ctx,
+            GS.worldW,
+            getMapViewH(),
+            pw.hostileLineY,
+            pw.hostileControl,
+            pw.tier
+          );
+        }
+        if (svc('PlanetConquest') && svc('PlanetConquest').isActive(GS.wave, getRunModeId())) {
+          const pc = cachedSnap('planetConquest', () =>
+            svc('PlanetConquest').getStateSnapshot(
+              GS.wave,
+              GS.worldW,
+              GS.worldH,
+              GS.buildings,
+              GS.units,
+              getRunModeId()
+            )
+          );
+          svc('VisualPolish').drawConquestSectors(
+            GS.ctx,
+            GS.worldW,
+            getMapViewH(),
+            pc.sectors || [],
+            pc.planetBossActive
+          );
+        }
+      }
+      svc('SpriteGen').drawAttackSideMarkers(
         GS.ctx,
         GS.worldW,
         getMapViewH(),
-        svc('LivingPlanet').getRegionBands(getLivingPlanetCtx())
-      );
-    }
-    if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
-      svc('VisualPolish').drawTerritoryBorders(GS.ctx, GS.worldW, getMapViewH(), GS.territoryTier);
-      if (getAdvancedMods().fogOfWar && gfxQ?.drawFog !== false) {
-        const fogTop = Math.max(40, GS.rallyY - 40);
-        const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
-        grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
-        grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
-        grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
-        GS.ctx.fillStyle = grad;
-        GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
-      }
-      if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
-        const pw = cachedSnap('planetWarfare', () =>
-          svc('PlanetWarfare').getStateSnapshot(GS.wave, GS.worldW, GS.worldH, GS.buildings, GS.units)
-        );
-        svc('VisualPolish').drawHostileTerritory(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          pw.hostileLineY,
-          pw.hostileControl,
-          pw.tier
-        );
-      }
-      if (svc('PlanetConquest') && svc('PlanetConquest').isActive(GS.wave, getRunModeId())) {
-        const pc = cachedSnap('planetConquest', () =>
-          svc('PlanetConquest').getStateSnapshot(
-            GS.wave,
-            GS.worldW,
-            GS.worldH,
-            GS.buildings,
-            GS.units,
-            getRunModeId()
-          )
-        );
-        svc('VisualPolish').drawConquestSectors(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          pc.sectors || [],
-          pc.planetBossActive
-        );
-      }
-    }
-    svc('SpriteGen').drawAttackSideMarkers(GS.ctx, GS.worldW, getMapViewH(), getWaveAttackSides(), GS.wave, {
-      unlockedSides: getUnlockedAttackSides(GS.wave),
-      tick: GS.updateTick,
-      phase: GS.timeOfDay,
-    });
-
-    if (gfxQ?.drawHazards !== false) {
-      for (const h of GS.hazards) {
-        if (!isInView(h.x, h.y, h.radius || 30)) continue;
-        svc('SpriteGen').drawHazard?.(GS.ctx, h);
-      }
-    }
-    if (svc('DynamicMapEvents') && svc('VisualPolish')) {
-      const mapEvt = cachedSnap('mapEventsState', () =>
-        svc('DynamicMapEvents').getStateSnapshot(GS.wave, GS.tactical, isNightPhase())
-      );
-      const site = mapEvt?.event?.site;
-      if (site && isInView(site.x, site.y, site.radius || 60)) {
-        svc('VisualPolish').drawMapEventSite(GS.ctx, site, GS.updateTick, GS.timeOfDay);
-      }
-    }
-
-    const stationedGen = unitCounts.stationedGeneral;
-    if (stationedGen && isInView(stationedGen.x, stationedGen.y, 200)) {
-      const aura = getGeneralAura();
-      GS.ctx.strokeStyle = `rgba(255, 215, 0, ${0.12 + aura.strength * 0.18})`;
-      GS.ctx.lineWidth = 2 / Math.max(0.5, GS.viewScale);
-      GS.ctx.beginPath();
-      GS.ctx.arc(stationedGen.x, stationedGen.y, aura.radius, 0, Math.PI * 2);
-      GS.ctx.stroke();
-    }
-
-    if (gfxQ?.drawDecor !== false) {
-      for (const d of GS.decorations) {
-        if (!isInView(d.x, d.y, d.size || 16)) continue;
-        if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
-        else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
-        else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);
-        else if (d.type === 'neutral_den') svc('SpriteGen').drawNeutralDen?.(GS.ctx, d.x, d.y, d.size);
-        else if (d.type === 'supply_crate' || d.type === 'oil_barrel')
-          svc('SpriteGen').drawDestructible?.(GS.ctx, d);
-      }
-    }
-
-    for (const b of GS.buildings) {
-      if (b.hp <= 0 || !isInView(b.x, b.y, b.radius || 28)) continue;
-      svc('SpriteGen').drawBuilding(GS.ctx, b);
-      if (gfxQ?.buildingHpBars !== false) {
-        const barW = b.isHamlet || b.isMerchantGuild ? 40 : 32;
-        ensureBuildingHealth(b);
-        const hpRatio = b.maxHp > 0 ? b.hp / b.maxHp : 0;
-        svc('SpriteGen').drawHealthBar(
-          GS.ctx,
-          b.x,
-          b.y + b.radius * 0.5,
-          barW,
-          hpRatio,
-          b.owner === 'enemy'
-        );
-      }
-    }
-
-    if (
-      GS.selectedBuild === 'wall' &&
-      GS.pointerScreen.sx >= 0 &&
-      svc('SpriteGen').drawWallPlacementGhost
-    ) {
-      const pw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
-      if (pw.x >= 0 && pw.x <= GS.worldW && pw.y >= 0 && pw.y <= GS.worldH + 40) {
-        const pos = clampPos(pw.x, pw.y);
-        const wallDef = BuildDefs.wall;
-        const valid = wallDef && !isBuildSiteBlocked(pos.x, pos.y, wallDef);
-        svc('SpriteGen').drawWallPlacementGhost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
-          valid,
-          radius: wallDef?.radius,
-        });
-      }
-    }
-
-    const sel = unitCounts.selectedLive;
-    if (sel) {
-      if (sel.path?.length && isInView(sel.x, sel.y, 60)) {
-        GS.ctx.strokeStyle = 'rgba(100,200,255,0.4)';
-        GS.ctx.lineWidth = 1.5 / Math.max(0.5, GS.viewScale);
-        GS.ctx.beginPath();
-        GS.ctx.moveTo(sel.x, sel.y);
-        for (let i = sel.pathIndex; i < sel.path.length; i++)
-          GS.ctx.lineTo(sel.path[i].x, sel.path[i].y);
-        GS.ctx.stroke();
-      }
-    }
-
-    const selCount = getSelectedUnitIds().length;
-    if (
-      selCount > 1 &&
-      GS.pointerScreen.sx >= 0 &&
-      typeof Formations !== 'undefined' &&
-      canBoxSelectNow()
-    ) {
-      const preview = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
-      const offsets = Formations.computeOffsets(selCount, GS.selectionFormation);
-      GS.ctx.save();
-      GS.ctx.fillStyle = 'rgba(100,200,255,0.35)';
-      GS.ctx.strokeStyle = 'rgba(100,200,255,0.55)';
-      GS.ctx.lineWidth = 1 / Math.max(0.5, GS.viewScale);
-      for (const off of offsets) {
-        const px = preview.x + off.x;
-        const py = preview.y + off.y;
-        if (!isInView(px, py, 20)) continue;
-        GS.ctx.beginPath();
-        GS.ctx.arc(px, py, 4 / Math.max(0.5, GS.viewScale), 0, Math.PI * 2);
-        GS.ctx.fill();
-        GS.ctx.stroke();
-      }
-      GS.ctx.restore();
-    }
-
-    for (const m of GS.moveMarkers) {
-      if (isInView(m.x, m.y, 12)) svc('SpriteGen').drawMoveMarker(GS.ctx, m.x, m.y);
-    }
-
-    if (gfxQ?.drawLanternAuras !== false)
-      for (const u of GS.units) {
-        if (!u.isWwe || u.wweAbility !== 'lantern' || u.hp <= 0 || !isInView(u.x, u.y, 140))
-          continue;
-        const pulse = 0.1 + Math.sin(GS.updateTick * 0.07) * 0.05;
-        const alpha = pulse * (isNightPhase() ? 0.35 : 0.55 + (1 - light) * 0.45);
-        GS.ctx.fillStyle = `rgba(48,96,48,${alpha})`;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 132, 0, Math.PI * 2);
-        GS.ctx.fill();
-        GS.ctx.strokeStyle = `rgba(120,200,80,${alpha * 1.2})`;
-        GS.ctx.lineWidth = 1.5;
-        GS.ctx.setLineDash([6, 8]);
-        GS.ctx.stroke();
-        GS.ctx.setLineDash([]);
-      }
-
-    const sorted = getSortedAliveUnits();
-    const rallyPulse = GS.updateTick * 0.08;
-    const heavyScene = sorted.length > 55 || (gfxQ && gfxQ.drawMorale === false);
-    const spriteLodSvc = svc('SpriteLod');
-    const perfSvc = svc('Perf');
-    const sceneSpriteLod = spriteLodSvc ? spriteLodSvc.getSceneLod(sorted.length, gfxQ) : 0;
-    const drawSelectedIds = GS.updateThrottleCtx?.selectedIds || GS.cachedSelectedSet;
-    const spriteLodCtx = spriteLodSvc
-      ? {
-          isInView,
-          selectedIds: drawSelectedIds,
-          farPad: gfxQ?.distantAiPad ?? 120,
+        getWaveAttackSides(),
+        GS.wave,
+        {
+          unlockedSides: getUnlockedAttackSides(GS.wave),
+          tick: GS.updateTick,
+          phase: GS.timeOfDay,
         }
-      : null;
-    for (const u of sorted) {
-      if (perfSvc) perfSvc.count('drawUnits');
-      const unitLod = spriteLodSvc
-        ? spriteLodSvc.getUnitLod(u, sceneSpriteLod, spriteLodCtx)
-        : 0;
-      const drawOverlays = !spriteLodSvc || spriteLodSvc.shouldDrawUnitOverlays(unitLod);
-      const drawRings = !spriteLodSvc || spriteLodSvc.shouldDrawUnitRings(unitLod);
-      if (u.rallyTimer > 0 && gfxQ?.rallyRings !== false && drawRings) {
-        GS.ctx.strokeStyle = `rgba(240,192,64,${0.25 + Math.sin(rallyPulse) * 0.15})`;
-        GS.ctx.lineWidth = 2;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 16, 0, Math.PI * 2);
-        GS.ctx.stroke();
-      }
-      if (
-        drawRings &&
-        gfxOverlayFor(u, gfxQ?.eliteRings) &&
-        (isEliteEnemy(u) || u.isEvilOperative || u.type === 'war_chief' || u.isNamedBoss)
-      ) {
-        const monster = typeof isMonsterEnemy === 'function' && isMonsterEnemy(u);
-        const named = u.isNamedBoss || (typeof isNamedBoss === 'function' && isNamedBoss(u));
-        const ringR = 15 + (u.spriteScale || 1) * 4 + (named ? 10 : monster ? 6 : 0);
-        GS.ctx.strokeStyle = named
-          ? 'rgba(255,215,0,0.75)'
-          : monster
-            ? 'rgba(255,60,80,0.65)'
-            : 'rgba(200,80,255,0.55)';
-        GS.ctx.lineWidth = named ? 3 : monster ? 3 : 2;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, ringR, 0, Math.PI * 2);
-        GS.ctx.stroke();
-      }
-      if (
-        drawRings &&
-        u.team === 'player' &&
-        u.vetTier > 0 &&
-        gfxQ?.drawVet !== false &&
-        (!heavyScene || isUnitSelected(u))
-      ) {
-        GS.ctx.strokeStyle = `rgba(255,215,0,${0.35 + u.vetTier * 0.08})`;
-        GS.ctx.lineWidth = 2;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 17 + u.vetTier * 2, 0, Math.PI * 2);
-        GS.ctx.stroke();
-      }
-      if (u.type === 'siege_tower') {
-        GS.ctx.fillStyle = 'rgba(160,80,40,0.35)';
-        GS.ctx.fillRect(u.x - 14, u.y - 20, 28, 32);
-        GS.ctx.strokeStyle = '#c06030';
-        GS.ctx.lineWidth = 2;
-        GS.ctx.strokeRect(u.x - 14, u.y - 20, 28, 32);
-        GS.ctx.fillStyle = '#e0a060';
-        GS.ctx.font = '7px Cinzel';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('SIEGE', u.x, u.y - 24);
-      }
-      if (
-        drawOverlays &&
-        gfxQ?.chargeGlow !== false &&
-        u.combatType === 'cavalry' &&
-        u.chargeTimer > 30
-      ) {
-        GS.ctx.fillStyle = `rgba(255,180,60,${(u.chargeTimer / 90) * 0.35})`;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 13, 0, Math.PI * 2);
-        GS.ctx.fill();
-      }
-      if (drawOverlays && gfxQ?.honorGlow !== false && (u.honorGlowTimer || 0) > 0) {
-        u.honorGlowTimer--;
-        const glow = u.honorGlowTimer / 240;
-        GS.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 + glow * 0.25})`;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 16 + glow * 4, 0, Math.PI * 2);
-        GS.ctx.fill();
-      }
-      if (isEnemyHiddenByFog(u)) continue;
-      const drawRot = svc('GfxQuality')
-        ? svc('GfxQuality').quantizeRotation(u.rotation)
-        : u.rotation;
-      const sprScale = svc('GfxQuality')
-        ? svc('GfxQuality').quantizeScale(u.spriteScale || 1)
-        : Math.round((u.spriteScale || 1) * 4) / 4;
-      const drawSz = 36 * sprScale;
-      // spriteType is derived from type at spawn and should always be a string; fall back
-      // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
-      // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
-      const img = svc('SpriteGen').getUnitCanvas(
-        u.spriteType || u.type,
-        drawRot,
-        u.team,
-        u.frame,
-        sprScale,
-        u.animState,
-        unitLod
       );
-      // Micro hit recoil offset
-      let drawX = u.x;
-      let drawY = u.y;
-      if ((u.hitFlash || 0) > 0) {
-        const flashT = u.hitFlash / (u.hitFlashMax || 6);
-        const recoil = flashT * 1.6;
-        drawX += (Math.random() - 0.5) * recoil;
-        drawY += (Math.random() - 0.5) * recoil * 0.6;
+
+      if (gfxQ?.drawHazards !== false) {
+        for (const h of GS.hazards) {
+          if (!isInView(h.x, h.y, h.radius || 30)) continue;
+          svc('SpriteGen').drawHazard?.(GS.ctx, h);
+        }
       }
-      if (typeof GameFeedback !== 'undefined') {
-        GameFeedback.drawLowHpPulse(GS.ctx, u, GS.updateTick);
+      if (svc('DynamicMapEvents') && svc('VisualPolish')) {
+        const mapEvt = cachedSnap('mapEventsState', () =>
+          svc('DynamicMapEvents').getStateSnapshot(GS.wave, GS.tactical, isNightPhase())
+        );
+        const site = mapEvt?.event?.site;
+        if (site && isInView(site.x, site.y, site.radius || 60)) {
+          svc('VisualPolish').drawMapEventSite(GS.ctx, site, GS.updateTick, GS.timeOfDay);
+        }
       }
-      GS.ctx.drawImage(img, drawX - drawSz / 2, drawY - drawSz / 2, drawSz, drawSz);
-      // Hit flash — white/red overlay so damage is instantly readable
-      if ((u.hitFlash || 0) > 0) {
-        const flashT = u.hitFlash / (u.hitFlashMax || 6);
-        GS.ctx.save();
-        GS.ctx.globalAlpha = Math.min(0.75, flashT * 0.7);
-        GS.ctx.fillStyle = flashT > 0.55 ? '#ffffff' : u.team === 'enemy' ? '#ff5050' : '#ffc080';
+
+      const stationedGen = unitCounts.stationedGeneral;
+      if (stationedGen && isInView(stationedGen.x, stationedGen.y, 200)) {
+        const aura = getGeneralAura();
+        GS.ctx.strokeStyle = `rgba(255, 215, 0, ${0.12 + aura.strength * 0.18})`;
+        GS.ctx.lineWidth = 2 / Math.max(0.5, GS.viewScale);
         GS.ctx.beginPath();
-        GS.ctx.arc(drawX, drawY, drawSz * 0.32, 0, Math.PI * 2);
-        GS.ctx.fill();
-        // Brief outline punch
-        if (flashT > 0.4) {
-          GS.ctx.strokeStyle = '#ffe8a0';
-          GS.ctx.lineWidth = 2;
-          GS.ctx.globalAlpha = flashT * 0.55;
+        GS.ctx.arc(stationedGen.x, stationedGen.y, aura.radius, 0, Math.PI * 2);
+        GS.ctx.stroke();
+      }
+
+      if (gfxQ?.drawDecor !== false) {
+        for (const d of GS.decorations) {
+          if (!isInView(d.x, d.y, d.size || 16)) continue;
+          if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
+          else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
+          else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);
+          else if (d.type === 'neutral_den')
+            svc('SpriteGen').drawNeutralDen?.(GS.ctx, d.x, d.y, d.size);
+          else if (d.type === 'supply_crate' || d.type === 'oil_barrel')
+            svc('SpriteGen').drawDestructible?.(GS.ctx, d);
+        }
+      }
+
+      for (const b of GS.buildings) {
+        if (b.hp <= 0 || !isInView(b.x, b.y, b.radius || 28)) continue;
+        svc('SpriteGen').drawBuilding(GS.ctx, b);
+        if (gfxQ?.buildingHpBars !== false) {
+          const barW = b.isHamlet || b.isMerchantGuild ? 40 : 32;
+          ensureBuildingHealth(b);
+          const hpRatio = b.maxHp > 0 ? b.hp / b.maxHp : 0;
+          svc('SpriteGen').drawHealthBar(
+            GS.ctx,
+            b.x,
+            b.y + b.radius * 0.5,
+            barW,
+            hpRatio,
+            b.owner === 'enemy'
+          );
+        }
+      }
+
+      if (
+        GS.selectedBuild === 'wall' &&
+        GS.pointerScreen.sx >= 0 &&
+        svc('SpriteGen').drawWallPlacementGhost
+      ) {
+        const pw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
+        if (pw.x >= 0 && pw.x <= GS.worldW && pw.y >= 0 && pw.y <= GS.worldH + 40) {
+          const pos = clampPos(pw.x, pw.y);
+          const wallDef = BuildDefs.wall;
+          const valid = wallDef && !isBuildSiteBlocked(pos.x, pos.y, wallDef);
+          svc('SpriteGen').drawWallPlacementGhost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
+            valid,
+            radius: wallDef?.radius,
+          });
+        }
+      }
+
+      const sel = unitCounts.selectedLive;
+      if (sel) {
+        if (sel.path?.length && isInView(sel.x, sel.y, 60)) {
+          GS.ctx.strokeStyle = 'rgba(100,200,255,0.4)';
+          GS.ctx.lineWidth = 1.5 / Math.max(0.5, GS.viewScale);
           GS.ctx.beginPath();
-          GS.ctx.arc(drawX, drawY, drawSz * 0.38, 0, Math.PI * 2);
+          GS.ctx.moveTo(sel.x, sel.y);
+          for (let i = sel.pathIndex; i < sel.path.length; i++)
+            GS.ctx.lineTo(sel.path[i].x, sel.path[i].y);
+          GS.ctx.stroke();
+        }
+      }
+
+      const selCount = getSelectedUnitIds().length;
+      if (
+        selCount > 1 &&
+        GS.pointerScreen.sx >= 0 &&
+        typeof Formations !== 'undefined' &&
+        canBoxSelectNow()
+      ) {
+        const preview = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
+        const offsets = Formations.computeOffsets(selCount, GS.selectionFormation);
+        GS.ctx.save();
+        GS.ctx.fillStyle = 'rgba(100,200,255,0.35)';
+        GS.ctx.strokeStyle = 'rgba(100,200,255,0.55)';
+        GS.ctx.lineWidth = 1 / Math.max(0.5, GS.viewScale);
+        for (const off of offsets) {
+          const px = preview.x + off.x;
+          const py = preview.y + off.y;
+          if (!isInView(px, py, 20)) continue;
+          GS.ctx.beginPath();
+          GS.ctx.arc(px, py, 4 / Math.max(0.5, GS.viewScale), 0, Math.PI * 2);
+          GS.ctx.fill();
           GS.ctx.stroke();
         }
         GS.ctx.restore();
-        u.hitFlash--;
       }
-      if (
-        u.id === GS.selectedUnitId ||
-        (drawSelectedIds ? drawSelectedIds.has(u.id) : GS.selectedUnitIds.includes(u.id))
-      ) {
-        svc('SpriteGen').drawSelectionRing(GS.ctx, u.x, u.y, u.id === GS.selectedUnitId ? 14 : 12);
+
+      for (const m of GS.moveMarkers) {
+        if (isInView(m.x, m.y, 12)) svc('SpriteGen').drawMoveMarker(GS.ctx, m.x, m.y);
       }
-      if (u.huntMode && u.team === 'player' && !svc('VisualPolish')) {
-        GS.ctx.fillStyle = '#ff4040';
-        GS.ctx.font = '8px sans-serif';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('H', u.x + 12, u.y - 14);
-      }
-      const hpMode = gfxQ?.unitHpBars ?? 'all';
-      const showHp = hpMode === 'all' || gfxOverlayFor(u, hpMode);
-      if (showHp) {
-        const barW = 24 * Math.max(1, (u.spriteScale || 1) * 0.85);
-        const barY = u.y - 22 - ((u.spriteScale || 1) - 1) * 10;
-        svc('SpriteGen').drawHealthBar(GS.ctx, u.x, barY, barW, u.hp / u.maxHp, u.team === 'enemy');
-      }
-      if (drawOverlays && gfxQ?.drawMorale !== false && isMoraleCombatUnit(u) && u.maxMorale > 0) {
-        svc('SpriteGen').drawMoraleBar(GS.ctx, u.x, u.y - 27, 20, u.morale / u.maxMorale);
-      }
-      if (u.demoralized && u.hp > 0) {
-        GS.ctx.fillStyle = '#a080c0';
-        GS.ctx.font = '7px Cinzel';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('GAVE UP', u.x, u.y - 32);
-      }
-      if (u.fleeing && u.hp > 0) {
-        GS.ctx.fillStyle = '#c06040';
-        GS.ctx.font = '7px Cinzel';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('ROUT', u.x, u.y - 32);
-      }
-      if (
-        u.team === 'enemy' &&
-        u.isNamedBoss &&
-        u.hp > 0 &&
-        gfxOverlayFor(u, gfxQ?.drawHonor ?? true)
-      ) {
-        GS.ctx.fillStyle = 'rgba(255,220,120,0.95)';
-        GS.ctx.font = 'bold 7px Cinzel';
-        GS.ctx.textAlign = 'center';
-        const labelY = u.y - 38 - ((u.spriteScale || 1) - 1) * 12;
-        GS.ctx.fillText(u.bossName || EnemyDefs[u.type]?.bossName || 'BOSS', u.x, labelY);
-        const title = u.bossTitle || EnemyDefs[u.type]?.bossTitle;
-        if (title) {
-          GS.ctx.font = '6px Cinzel';
-          GS.ctx.fillStyle = 'rgba(255,160,160,0.9)';
-          GS.ctx.fillText(title, u.x, labelY + 9);
+
+      if (gfxQ?.drawLanternAuras !== false)
+        for (const u of GS.units) {
+          if (!u.isWwe || u.wweAbility !== 'lantern' || u.hp <= 0 || !isInView(u.x, u.y, 140))
+            continue;
+          const pulse = 0.1 + Math.sin(GS.updateTick * 0.07) * 0.05;
+          const alpha = pulse * (isNightPhase() ? 0.35 : 0.55 + (1 - light) * 0.45);
+          GS.ctx.fillStyle = `rgba(48,96,48,${alpha})`;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 132, 0, Math.PI * 2);
+          GS.ctx.fill();
+          GS.ctx.strokeStyle = `rgba(120,200,80,${alpha * 1.2})`;
+          GS.ctx.lineWidth = 1.5;
+          GS.ctx.setLineDash([6, 8]);
+          GS.ctx.stroke();
+          GS.ctx.setLineDash([]);
         }
-      }
-      if (u.team === 'player') {
-        if (gfxQ?.drawVet !== false) svc('SpriteGen').drawVetStars(GS.ctx, u.x, u.y, u);
-        if (u.honorName && gfxOverlayFor(u, gfxQ?.drawHonor ?? true)) {
-          if (typeof repairHonorName === 'function') repairHonorName(u);
-          if (u.honorName && (!heavyScene || isUnitSelected(u))) {
-            GS.ctx.fillStyle = 'rgba(240,232,176,0.92)';
+
+      const sorted = getSortedAliveUnits();
+      const rallyPulse = GS.updateTick * 0.08;
+      const heavyScene = sorted.length > 55 || (gfxQ && gfxQ.drawMorale === false);
+      const spriteLodSvc = svc('SpriteLod');
+      const perfSvc = svc('Perf');
+      const sceneSpriteLod = spriteLodSvc ? spriteLodSvc.getSceneLod(sorted.length, gfxQ) : 0;
+      const drawSelectedIds = GS.updateThrottleCtx?.selectedIds || GS.cachedSelectedSet;
+      const spriteLodCtx = spriteLodSvc
+        ? {
+            isInView,
+            selectedIds: drawSelectedIds,
+            farPad: gfxQ?.distantAiPad ?? 120,
+          }
+        : null;
+      for (const u of sorted) {
+        if (perfSvc) perfSvc.count('drawUnits');
+        const unitLod = spriteLodSvc ? spriteLodSvc.getUnitLod(u, sceneSpriteLod, spriteLodCtx) : 0;
+        const drawOverlays = !spriteLodSvc || spriteLodSvc.shouldDrawUnitOverlays(unitLod);
+        const drawRings = !spriteLodSvc || spriteLodSvc.shouldDrawUnitRings(unitLod);
+        if (u.rallyTimer > 0 && gfxQ?.rallyRings !== false && drawRings) {
+          GS.ctx.strokeStyle = `rgba(240,192,64,${0.25 + Math.sin(rallyPulse) * 0.15})`;
+          GS.ctx.lineWidth = 2;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 16, 0, Math.PI * 2);
+          GS.ctx.stroke();
+        }
+        if (
+          drawRings &&
+          gfxOverlayFor(u, gfxQ?.eliteRings) &&
+          (isEliteEnemy(u) || u.isEvilOperative || u.type === 'war_chief' || u.isNamedBoss)
+        ) {
+          const monster = typeof isMonsterEnemy === 'function' && isMonsterEnemy(u);
+          const named = u.isNamedBoss || (typeof isNamedBoss === 'function' && isNamedBoss(u));
+          const ringR = 15 + (u.spriteScale || 1) * 4 + (named ? 10 : monster ? 6 : 0);
+          GS.ctx.strokeStyle = named
+            ? 'rgba(255,215,0,0.75)'
+            : monster
+              ? 'rgba(255,60,80,0.65)'
+              : 'rgba(200,80,255,0.55)';
+          GS.ctx.lineWidth = named ? 3 : monster ? 3 : 2;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, ringR, 0, Math.PI * 2);
+          GS.ctx.stroke();
+        }
+        if (
+          drawRings &&
+          u.team === 'player' &&
+          u.vetTier > 0 &&
+          gfxQ?.drawVet !== false &&
+          (!heavyScene || isUnitSelected(u))
+        ) {
+          GS.ctx.strokeStyle = `rgba(255,215,0,${0.35 + u.vetTier * 0.08})`;
+          GS.ctx.lineWidth = 2;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 17 + u.vetTier * 2, 0, Math.PI * 2);
+          GS.ctx.stroke();
+        }
+        if (u.type === 'siege_tower') {
+          GS.ctx.fillStyle = 'rgba(160,80,40,0.35)';
+          GS.ctx.fillRect(u.x - 14, u.y - 20, 28, 32);
+          GS.ctx.strokeStyle = '#c06030';
+          GS.ctx.lineWidth = 2;
+          GS.ctx.strokeRect(u.x - 14, u.y - 20, 28, 32);
+          GS.ctx.fillStyle = '#e0a060';
+          GS.ctx.font = '7px Cinzel';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('SIEGE', u.x, u.y - 24);
+        }
+        if (
+          drawOverlays &&
+          gfxQ?.chargeGlow !== false &&
+          u.combatType === 'cavalry' &&
+          u.chargeTimer > 30
+        ) {
+          GS.ctx.fillStyle = `rgba(255,180,60,${(u.chargeTimer / 90) * 0.35})`;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 13, 0, Math.PI * 2);
+          GS.ctx.fill();
+        }
+        if (drawOverlays && gfxQ?.honorGlow !== false && (u.honorGlowTimer || 0) > 0) {
+          u.honorGlowTimer--;
+          const glow = u.honorGlowTimer / 240;
+          GS.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 + glow * 0.25})`;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 16 + glow * 4, 0, Math.PI * 2);
+          GS.ctx.fill();
+        }
+        if (isEnemyHiddenByFog(u)) continue;
+        const drawRot = svc('GfxQuality')
+          ? svc('GfxQuality').quantizeRotation(u.rotation)
+          : u.rotation;
+        const sprScale = svc('GfxQuality')
+          ? svc('GfxQuality').quantizeScale(u.spriteScale || 1)
+          : Math.round((u.spriteScale || 1) * 4) / 4;
+        const drawSz = 36 * sprScale;
+        // spriteType is derived from type at spawn and should always be a string; fall back
+        // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
+        // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
+        const img = svc('SpriteGen').getUnitCanvas(
+          u.spriteType || u.type,
+          drawRot,
+          u.team,
+          u.frame,
+          sprScale,
+          u.animState,
+          unitLod
+        );
+        // Micro hit recoil offset
+        let drawX = u.x;
+        let drawY = u.y;
+        if ((u.hitFlash || 0) > 0) {
+          const flashT = u.hitFlash / (u.hitFlashMax || 6);
+          const recoil = flashT * 1.6;
+          drawX += (Math.random() - 0.5) * recoil;
+          drawY += (Math.random() - 0.5) * recoil * 0.6;
+        }
+        if (typeof GameFeedback !== 'undefined') {
+          GameFeedback.drawLowHpPulse(GS.ctx, u, GS.updateTick);
+        }
+        GS.ctx.drawImage(img, drawX - drawSz / 2, drawY - drawSz / 2, drawSz, drawSz);
+        // Hit flash — white/red overlay so damage is instantly readable
+        if ((u.hitFlash || 0) > 0) {
+          const flashT = u.hitFlash / (u.hitFlashMax || 6);
+          GS.ctx.save();
+          GS.ctx.globalAlpha = Math.min(0.75, flashT * 0.7);
+          GS.ctx.fillStyle = flashT > 0.55 ? '#ffffff' : u.team === 'enemy' ? '#ff5050' : '#ffc080';
+          GS.ctx.beginPath();
+          GS.ctx.arc(drawX, drawY, drawSz * 0.32, 0, Math.PI * 2);
+          GS.ctx.fill();
+          // Brief outline punch
+          if (flashT > 0.4) {
+            GS.ctx.strokeStyle = '#ffe8a0';
+            GS.ctx.lineWidth = 2;
+            GS.ctx.globalAlpha = flashT * 0.55;
+            GS.ctx.beginPath();
+            GS.ctx.arc(drawX, drawY, drawSz * 0.38, 0, Math.PI * 2);
+            GS.ctx.stroke();
+          }
+          GS.ctx.restore();
+          u.hitFlash--;
+        }
+        if (
+          u.id === GS.selectedUnitId ||
+          (drawSelectedIds ? drawSelectedIds.has(u.id) : GS.selectedUnitIds.includes(u.id))
+        ) {
+          svc('SpriteGen').drawSelectionRing(
+            GS.ctx,
+            u.x,
+            u.y,
+            u.id === GS.selectedUnitId ? 14 : 12
+          );
+        }
+        if (u.huntMode && u.team === 'player' && !svc('VisualPolish')) {
+          GS.ctx.fillStyle = '#ff4040';
+          GS.ctx.font = '8px sans-serif';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('H', u.x + 12, u.y - 14);
+        }
+        const hpMode = gfxQ?.unitHpBars ?? 'all';
+        const showHp = hpMode === 'all' || gfxOverlayFor(u, hpMode);
+        if (showHp) {
+          const barW = 24 * Math.max(1, (u.spriteScale || 1) * 0.85);
+          const barY = u.y - 22 - ((u.spriteScale || 1) - 1) * 10;
+          svc('SpriteGen').drawHealthBar(
+            GS.ctx,
+            u.x,
+            barY,
+            barW,
+            u.hp / u.maxHp,
+            u.team === 'enemy'
+          );
+        }
+        if (
+          drawOverlays &&
+          gfxQ?.drawMorale !== false &&
+          isMoraleCombatUnit(u) &&
+          u.maxMorale > 0
+        ) {
+          svc('SpriteGen').drawMoraleBar(GS.ctx, u.x, u.y - 27, 20, u.morale / u.maxMorale);
+        }
+        if (u.demoralized && u.hp > 0) {
+          GS.ctx.fillStyle = '#a080c0';
+          GS.ctx.font = '7px Cinzel';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('GAVE UP', u.x, u.y - 32);
+        }
+        if (u.fleeing && u.hp > 0) {
+          GS.ctx.fillStyle = '#c06040';
+          GS.ctx.font = '7px Cinzel';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('ROUT', u.x, u.y - 32);
+        }
+        if (
+          u.team === 'enemy' &&
+          u.isNamedBoss &&
+          u.hp > 0 &&
+          gfxOverlayFor(u, gfxQ?.drawHonor ?? true)
+        ) {
+          GS.ctx.fillStyle = 'rgba(255,220,120,0.95)';
+          GS.ctx.font = 'bold 7px Cinzel';
+          GS.ctx.textAlign = 'center';
+          const labelY = u.y - 38 - ((u.spriteScale || 1) - 1) * 12;
+          GS.ctx.fillText(u.bossName || EnemyDefs[u.type]?.bossName || 'BOSS', u.x, labelY);
+          const title = u.bossTitle || EnemyDefs[u.type]?.bossTitle;
+          if (title) {
             GS.ctx.font = '6px Cinzel';
+            GS.ctx.fillStyle = 'rgba(255,160,160,0.9)';
+            GS.ctx.fillText(title, u.x, labelY + 9);
+          }
+        }
+        if (u.team === 'player') {
+          if (gfxQ?.drawVet !== false) svc('SpriteGen').drawVetStars(GS.ctx, u.x, u.y, u);
+          if (u.honorName && gfxOverlayFor(u, gfxQ?.drawHonor ?? true)) {
+            if (typeof repairHonorName === 'function') repairHonorName(u);
+            if (u.honorName && (!heavyScene || isUnitSelected(u))) {
+              GS.ctx.fillStyle = 'rgba(240,232,176,0.92)';
+              GS.ctx.font = '6px Cinzel';
+              GS.ctx.textAlign = 'center';
+              const nameY = u.isGeneral && u.stationedKeep ? u.y - 44 : u.y - 38;
+              GS.ctx.fillText(u.honorName, u.x, nameY);
+            }
+          }
+        }
+        if (u.retreatingToMed && u.hp > 0) {
+          GS.ctx.fillStyle = '#60c0ff';
+          GS.ctx.font = '7px Cinzel';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('↩ MED', u.x, u.y - 30);
+        }
+        if (svc('VisualPolish')) {
+          if (gfxOverlayFor(u, gfxQ?.drawAccent ?? true))
+            svc('VisualPolish').drawFactionAccent(GS.ctx, u);
+          if (gfxQ?.drawAccessibility !== false)
+            svc('VisualPolish').drawAccessibilityCue(GS.ctx, u);
+        } else if (u.isWwe && u.wweColor) {
+          GS.ctx.strokeStyle = u.wweColor;
+          GS.ctx.lineWidth = 2;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 16, 0, Math.PI * 2);
+          GS.ctx.stroke();
+        }
+        if (u.isDoomslayer && u.hp > 0) {
+          GS.ctx.strokeStyle = 'rgba(255,64,32,0.85)';
+          GS.ctx.lineWidth = 3;
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 18, 0, Math.PI * 2);
+          GS.ctx.stroke();
+          GS.ctx.fillStyle = '#ff4020';
+          GS.ctx.font = '6px Cinzel';
+          GS.ctx.textAlign = 'center';
+          GS.ctx.fillText('DOOM', u.x, u.y - 22);
+        }
+        if (gfxQ?.generalOverlay !== false && u.isGeneral && u.hp > 0) {
+          GS.ctx.strokeStyle = 'rgba(255,215,0,0.7)';
+          GS.ctx.lineWidth = 2;
+          GS.ctx.setLineDash([3, 3]);
+          GS.ctx.beginPath();
+          GS.ctx.arc(u.x, u.y, 20, 0, Math.PI * 2);
+          GS.ctx.stroke();
+          GS.ctx.setLineDash([]);
+          if (u.stationedKeep) {
+            const str = getGeneralBuffStrength();
+            GS.ctx.fillStyle = '#ffd700';
+            GS.ctx.font = '7px Cinzel';
             GS.ctx.textAlign = 'center';
-            const nameY = u.isGeneral && u.stationedKeep ? u.y - 44 : u.y - 38;
-            GS.ctx.fillText(u.honorName, u.x, nameY);
+            const stars = u.generalStars ? ` ★${u.generalStars}` : '';
+            GS.ctx.fillText(`CMD ${Math.round(str * 100)}%${stars}`, u.x, u.y - 30);
+          } else if (u.rallyTargetId) {
+            GS.ctx.fillStyle = '#ffd700';
+            GS.ctx.font = '7px Cinzel';
+            GS.ctx.textAlign = 'center';
+            GS.ctx.fillText('WALL TO WALL', u.x, u.y - 34);
+          }
+          if ((u.w2wBuffTimer || 0) > 0) {
+            GS.ctx.strokeStyle = `rgba(255,215,0,${0.35 + Math.sin(GS.updateTick * 0.12) * 0.2})`;
+            GS.ctx.lineWidth = 3;
+            GS.ctx.beginPath();
+            GS.ctx.arc(u.x, u.y, 24, 0, Math.PI * 2);
+            GS.ctx.stroke();
           }
         }
       }
-      if (u.retreatingToMed && u.hp > 0) {
-        GS.ctx.fillStyle = '#60c0ff';
-        GS.ctx.font = '7px Cinzel';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('↩ MED', u.x, u.y - 30);
-      }
-      if (svc('VisualPolish')) {
-        if (gfxOverlayFor(u, gfxQ?.drawAccent ?? true))
-          svc('VisualPolish').drawFactionAccent(GS.ctx, u);
-        if (gfxQ?.drawAccessibility !== false) svc('VisualPolish').drawAccessibilityCue(GS.ctx, u);
-      } else if (u.isWwe && u.wweColor) {
-        GS.ctx.strokeStyle = u.wweColor;
-        GS.ctx.lineWidth = 2;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 16, 0, Math.PI * 2);
-        GS.ctx.stroke();
-      }
-      if (u.isDoomslayer && u.hp > 0) {
-        GS.ctx.strokeStyle = 'rgba(255,64,32,0.85)';
-        GS.ctx.lineWidth = 3;
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 18, 0, Math.PI * 2);
-        GS.ctx.stroke();
-        GS.ctx.fillStyle = '#ff4020';
-        GS.ctx.font = '6px Cinzel';
-        GS.ctx.textAlign = 'center';
-        GS.ctx.fillText('DOOM', u.x, u.y - 22);
-      }
-      if (gfxQ?.generalOverlay !== false && u.isGeneral && u.hp > 0) {
-        GS.ctx.strokeStyle = 'rgba(255,215,0,0.7)';
-        GS.ctx.lineWidth = 2;
-        GS.ctx.setLineDash([3, 3]);
-        GS.ctx.beginPath();
-        GS.ctx.arc(u.x, u.y, 20, 0, Math.PI * 2);
-        GS.ctx.stroke();
-        GS.ctx.setLineDash([]);
-        if (u.stationedKeep) {
-          const str = getGeneralBuffStrength();
-          GS.ctx.fillStyle = '#ffd700';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          const stars = u.generalStars ? ` ★${u.generalStars}` : '';
-          GS.ctx.fillText(`CMD ${Math.round(str * 100)}%${stars}`, u.x, u.y - 30);
-        } else if (u.rallyTargetId) {
-          GS.ctx.fillStyle = '#ffd700';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('WALL TO WALL', u.x, u.y - 34);
-        }
-        if ((u.w2wBuffTimer || 0) > 0) {
-          GS.ctx.strokeStyle = `rgba(255,215,0,${0.35 + Math.sin(GS.updateTick * 0.12) * 0.2})`;
-          GS.ctx.lineWidth = 3;
-          GS.ctx.beginPath();
-          GS.ctx.arc(u.x, u.y, 24, 0, Math.PI * 2);
-          GS.ctx.stroke();
-        }
-      }
-    }
 
-    const vBounds = getVisibleBounds(140);
-    if (svc('ContentExpansion') && svc('ContentExpansion').getFortifyZones) {
-      StrikeFX?.drawFortifyZones?.(GS.ctx, svc('ContentExpansion').getFortifyZones(), GS.updateTick);
-    }
-    StrikeFX?.draw?.(GS.ctx, vBounds);
-    if (GS.selectedAbility && GS.pointerScreen.sx >= 0) {
-      const ab = Abilities[GS.selectedAbility];
-      const pw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
-      StrikeFX?.drawTargeting?.(GS.ctx, GS.selectedAbility, pw.x, pw.y, ab?.radius || 50, GS.updateTick);
-    }
-    CombatFX.draw(GS.ctx, vBounds);
-    for (const p of GS.projectiles) {
-      if (isInView(p.x, p.y, 20, 0)) svc('SpriteGen').drawProjectile(GS.ctx, p);
-    }
-    if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
-      svc('VisualPolish').drawDeathCorpses(GS.ctx);
-    svc('Particles').draw(GS.ctx, vBounds);
-    svc('FloatingText').draw(GS.ctx, vBounds);
-
-    if (svc('VisualPolish')) {
-      const atm = gfxQ?.atmosphere ?? 'full';
-      if (atm === 'full') {
-        svc('VisualPolish').drawAtmosphere(
+      const vBounds = getVisibleBounds(140);
+      if (svc('ContentExpansion') && svc('ContentExpansion').getFortifyZones) {
+        StrikeFX?.drawFortifyZones?.(
           GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          light,
-          GS.timeOfDay,
-          GS.wave,
-          GS.updateTick,
-          { weatherParticles: gfxQ?.weatherParticles !== false, bossActive: unitCounts.bossActive }
-        );
-      } else if (atm === 'simple') {
-        svc('VisualPolish').drawAtmosphere(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          light,
-          GS.timeOfDay,
-          GS.wave,
-          GS.updateTick,
-          { simple: true }
-        );
-      }
-      if (GS.currentHordeWave && isDayPhase() && gfxQ?.drawOverlay !== false) {
-        svc('VisualPolish').drawHordeIntensity(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          GS.currentHordeWave,
+          svc('ContentExpansion').getFortifyZones(),
           GS.updateTick
         );
       }
-    } else if (isNightPhase()) {
-      GS.ctx.fillStyle = 'rgba(6,10,32,0.62)';
-      GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
-    } else if (light < 0.92) {
-      const dusk = 1 - light;
-      GS.ctx.fillStyle = `rgba(24,14,48,${dusk * 0.42})`;
-      GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
-    }
+      StrikeFX?.draw?.(GS.ctx, vBounds);
+      if (GS.selectedAbility && GS.pointerScreen.sx >= 0) {
+        const ab = Abilities[GS.selectedAbility];
+        const pw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
+        StrikeFX?.drawTargeting?.(
+          GS.ctx,
+          GS.selectedAbility,
+          pw.x,
+          pw.y,
+          ab?.radius || 50,
+          GS.updateTick
+        );
+      }
+      CombatFX.draw(GS.ctx, vBounds);
+      for (const p of GS.projectiles) {
+        if (isInView(p.x, p.y, 20, 0)) svc('SpriteGen').drawProjectile(GS.ctx, p);
+      }
+      if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
+        svc('VisualPolish').drawDeathCorpses(GS.ctx);
+      svc('Particles').draw(GS.ctx, vBounds);
+      svc('FloatingText').draw(GS.ctx, vBounds);
+
+      if (svc('VisualPolish')) {
+        const atm = gfxQ?.atmosphere ?? 'full';
+        if (atm === 'full') {
+          svc('VisualPolish').drawAtmosphere(
+            GS.ctx,
+            GS.worldW,
+            getMapViewH(),
+            light,
+            GS.timeOfDay,
+            GS.wave,
+            GS.updateTick,
+            {
+              weatherParticles: gfxQ?.weatherParticles !== false,
+              bossActive: unitCounts.bossActive,
+            }
+          );
+        } else if (atm === 'simple') {
+          svc('VisualPolish').drawAtmosphere(
+            GS.ctx,
+            GS.worldW,
+            getMapViewH(),
+            light,
+            GS.timeOfDay,
+            GS.wave,
+            GS.updateTick,
+            { simple: true }
+          );
+        }
+        if (GS.currentHordeWave && isDayPhase() && gfxQ?.drawOverlay !== false) {
+          svc('VisualPolish').drawHordeIntensity(
+            GS.ctx,
+            GS.worldW,
+            getMapViewH(),
+            GS.currentHordeWave,
+            GS.updateTick
+          );
+        }
+      } else if (isNightPhase()) {
+        GS.ctx.fillStyle = 'rgba(6,10,32,0.62)';
+        GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
+      } else if (light < 0.92) {
+        const dusk = 1 - light;
+        GS.ctx.fillStyle = `rgba(24,14,48,${dusk * 0.42})`;
+        GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
+      }
 
       GS.ctx.globalAlpha = 1;
       GS.ctx.setLineDash([]);
@@ -15283,7 +15260,11 @@ const Game = (() => {
       GS.ctx.fillText(overlay.title || 'PAUSED', GS.canvas.width / 2, GS.canvas.height / 2 - 8);
       GS.ctx.font = '10px Cinzel';
       GS.ctx.fillStyle = 'rgba(200,180,140,0.75)';
-      GS.ctx.fillText(overlay.subtitle || 'Space resume · Esc menu', GS.canvas.width / 2, GS.canvas.height / 2 + 14);
+      GS.ctx.fillText(
+        overlay.subtitle || 'Space resume · Esc menu',
+        GS.canvas.width / 2,
+        GS.canvas.height / 2 + 14
+      );
     }
     if (svc('Perf')) svc('Perf').end('draw');
   }
@@ -15485,7 +15466,11 @@ const Game = (() => {
   }
 
   function getSelectedUnitsInfo() {
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     const synSnap = getThematicSynSnap();
     const echoCandidates = synSnap?.echoes?.candidates || [];
     const echoRecruited = synSnap?.echoes?.recruited || [];
@@ -15556,8 +15541,7 @@ const Game = (() => {
           echoOffer:
             synSnap?.active && synSnap.pathId === 'mythic'
               ? echoCandidates.find(
-                  (e) =>
-                    e.id === u.type && !echoRecruited.some((r) => r.id === e.id)
+                  (e) => e.id === u.type && !echoRecruited.some((r) => r.id === e.id)
                 ) || null
               : null,
           ancestralWeapon: !!u.ancestralWeapon,
@@ -15576,7 +15560,13 @@ const Game = (() => {
     const halfH = vp.height / (2 * GS.viewScale);
     const pw =
       svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)
-        ? svc('PlanetWarfare').getStateSnapshot(GS.wave, GS.worldW, GS.worldH, GS.buildings, GS.units)
+        ? svc('PlanetWarfare').getStateSnapshot(
+            GS.wave,
+            GS.worldW,
+            GS.worldH,
+            GS.buildings,
+            GS.units
+          )
         : null;
     const minimapUnits = [];
     for (const u of GS.units) {
@@ -15597,7 +15587,10 @@ const Game = (() => {
       : null;
     const mf =
       svc('MultiFrontSiege') && svc('EnemyFactions')
-        ? svc('MultiFrontSiege').getStateSnapshot(GS.wave, svc('EnemyFactions').getActiveFactions(GS.wave))
+        ? svc('MultiFrontSiege').getStateSnapshot(
+            GS.wave,
+            svc('EnemyFactions').getActiveFactions(GS.wave)
+          )
         : null;
     return {
       worldW: GS.worldW,
@@ -15635,7 +15628,11 @@ const Game = (() => {
   }
 
   function focusSelection() {
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     if (!ids.length) {
       showMessage('Select unit(s) first to focus the camera.', 140);
       return false;
@@ -15662,7 +15659,11 @@ const Game = (() => {
   }
 
   function setSelectedHunt(on) {
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     ids.forEach((id) => {
       const u = getUnitById(id);
       if (u?.hp > 0 && u.canHunt) u.huntMode = !!on;
@@ -15671,7 +15672,11 @@ const Game = (() => {
   }
 
   function toggleSelectedHunt() {
-    const ids = GS.selectedUnitIds.length ? GS.selectedUnitIds : GS.selectedUnitId ? [GS.selectedUnitId] : [];
+    const ids = GS.selectedUnitIds.length
+      ? GS.selectedUnitIds
+      : GS.selectedUnitId
+        ? [GS.selectedUnitId]
+        : [];
     const anyOff = ids.some((id) => {
       const u = getUnitById(id);
       return u?.canHunt && !u.huntMode;
@@ -15814,8 +15819,12 @@ const Game = (() => {
       spawnQueue: [...GS.spawnQueue],
       waveEnemyTotal: GS.waveEnemyTotal,
       spawnTimer: GS.spawnTimer,
-      currentHordeWave: GS.currentHordeWave ? { ...GS.currentHordeWave, queue: [...GS.currentHordeWave.queue] } : null,
-      currentWaveConfig: GS.currentWaveConfig ? { ...GS.currentWaveConfig, pool: [...(GS.currentWaveConfig.pool || [])] } : null,
+      currentHordeWave: GS.currentHordeWave
+        ? { ...GS.currentHordeWave, queue: [...GS.currentHordeWave.queue] }
+        : null,
+      currentWaveConfig: GS.currentWaveConfig
+        ? { ...GS.currentWaveConfig, pool: [...(GS.currentWaveConfig.pool || [])] }
+        : null,
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
       pendingReinforce: [...GS.pendingReinforce],
@@ -15893,9 +15902,7 @@ const Game = (() => {
       progressionRestarts:
         typeof ProgressionRestarts !== 'undefined' ? ProgressionRestarts.getSnapshot() : null,
       // Mode rules + advanced difficulty — required so load/quickload keeps fog/horde/challenge.
-      advancedMods: svc('AdvancedDifficulty')
-        ? svc('AdvancedDifficulty').getActiveIds()
-        : [],
+      advancedMods: svc('AdvancedDifficulty') ? svc('AdvancedDifficulty').getActiveIds() : [],
       modeSession: svc('GameModes') ? svc('GameModes').getSession() : null,
     };
   }
@@ -16138,10 +16145,6 @@ const Game = (() => {
     }
   }
 
-  
-
-  
-
   function quickLoad() {
     if (svc('GameModes') && !svc('GameModes').canQuickSave()) {
       showMessage('Quick load disabled — Ironman or challenge run.');
@@ -16181,11 +16184,9 @@ const Game = (() => {
     }
     if (typeof UI !== 'undefined' && UI.showMainMenu) UI.showMainMenu();
     else document.getElementById('menu-screen')?.classList.add('active');
-    audio
-      ?.resume?.()
-      ?.then?.((ok) => {
-        if (ok) audio.startMenuMusic?.();
-      });
+    audio?.resume?.()?.then?.((ok) => {
+      if (ok) audio.startMenuMusic?.();
+    });
     if (svc('UX')) {
       svc('UX').clearTutorialHighlights?.();
       svc('UX').onPauseChanged(false);
@@ -16217,7 +16218,11 @@ const Game = (() => {
   }
 
   function getLiveEvolutionMeter() {
-    if (!svc('ColonyValue') || !svc('ColonyValue').computeEvolutionMeter || GS.state !== 'playing') {
+    if (
+      !svc('ColonyValue') ||
+      !svc('ColonyValue').computeEvolutionMeter ||
+      GS.state !== 'playing'
+    ) {
       return null;
     }
     if (GS.evolutionMeterTick === GS.updateTick) return GS.evolutionMeterCache;
@@ -16242,7 +16247,9 @@ const Game = (() => {
       svc('GrandStrategy') ? svc('GrandStrategy').getStateSnapshot({ wave: GS.wave }) : null
     );
     const intergalacticSnap = pathSnap('intergalacticState', 400, () =>
-      svc('IntergalacticLayer') ? svc('IntergalacticLayer').getStateSnapshot({ wave: GS.wave }) : null
+      svc('IntergalacticLayer')
+        ? svc('IntergalacticLayer').getStateSnapshot({ wave: GS.wave })
+        : null
     );
     const thematicSynergySnap = getThematicSynSnap();
     const snapshot = {
@@ -16308,7 +16315,9 @@ const Game = (() => {
       expeditionUsedThisWave: GS.expeditionUsedThisWave,
       kingdomDoctrines: typeof KINGDOM_DOCTRINES !== 'undefined' ? KINGDOM_DOCTRINES : {},
       unlockedKingdomDoctrines: cachedSnap('unlockedKingdomDoctrines', () =>
-        typeof getUnlockedKingdomDoctrines === 'function' ? getUnlockedKingdomDoctrines(GS.wave) : []
+        typeof getUnlockedKingdomDoctrines === 'function'
+          ? getUnlockedKingdomDoctrines(GS.wave)
+          : []
       ),
       kingdomEvolutionMeter: getLiveEvolutionMeter(),
       army,
@@ -16370,17 +16379,20 @@ const Game = (() => {
       factionReputation: pathSnap('factionReputation', 6, () =>
         svc('FactionReputation') ? svc('FactionReputation').getStateSnapshot(GS.wave) : null
       ),
-      planetConquest: pathSnap('planetConquest', typeof PlanetConquest !== 'undefined' ? PlanetConquest.WAVE_MIN : 500, () =>
-        svc('PlanetConquest')
-          ? svc('PlanetConquest').getStateSnapshot(
-              GS.wave,
-              GS.worldW,
-              GS.worldH,
-              GS.buildings,
-              GS.units,
-              getRunModeId()
-            )
-          : null
+      planetConquest: pathSnap(
+        'planetConquest',
+        typeof PlanetConquest !== 'undefined' ? PlanetConquest.WAVE_MIN : 500,
+        () =>
+          svc('PlanetConquest')
+            ? svc('PlanetConquest').getStateSnapshot(
+                GS.wave,
+                GS.worldW,
+                GS.worldH,
+                GS.buildings,
+                GS.units,
+                getRunModeId()
+              )
+            : null
       ),
       crownLegacies: cachedSnap('crownLegacies', () =>
         svc('CrownLegacies') && !GS.creativeMode ? svc('CrownLegacies').getStateSnapshot() : null
@@ -16456,7 +16468,13 @@ const Game = (() => {
         typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200,
         () =>
           svc('PlanetWarfare')
-            ? svc('PlanetWarfare').getStateSnapshot(GS.wave, GS.worldW, GS.worldH, GS.buildings, GS.units)
+            ? svc('PlanetWarfare').getStateSnapshot(
+                GS.wave,
+                GS.worldW,
+                GS.worldH,
+                GS.buildings,
+                GS.units
+              )
             : null
       ),
       asymmetricWarfare: getAsymmetricSnapshot(),
@@ -16515,7 +16533,9 @@ const Game = (() => {
             : null
       ),
       operativeSkills: cachedSnap('operativeSkills', () =>
-        svc('OperativeSkillTrees') ? svc('OperativeSkillTrees').getSnapshot(GS.wave, GS.units) : null
+        svc('OperativeSkillTrees')
+          ? svc('OperativeSkillTrees').getSnapshot(GS.wave, GS.units)
+          : null
       ),
       // Night after wave 11 prepares wave-12 events — do not gate on wave>=12 or creativeMode
       // (pathSnap would hide pending choices so buttons stay unusable).
@@ -16547,7 +16567,8 @@ const Game = (() => {
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isDoomslayerHeroUnlocked() ||
         (svc('Research') && svc('Research').isDoomResearchUnlocked(getResearchOpts())),
-      crossoverUnlocked: (GS.creativeMode && GS.creativeSettings.unlockAll) || isAnyCrossoverAccess(),
+      crossoverUnlocked:
+        (GS.creativeMode && GS.creativeSettings.unlockAll) || isAnyCrossoverAccess(),
       perksUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         (svc('Perks') && svc('Perks').perkMachinesUnlocked()),
@@ -16643,7 +16664,11 @@ const Game = (() => {
       ),
       pacingTools: cachedSnap('pacingTools', () =>
         typeof PacingTools !== 'undefined'
-          ? PacingTools.getStateSnapshot({ wave: GS.wave, gameSpeed: GS.gameSpeed, paused: GS.paused })
+          ? PacingTools.getStateSnapshot({
+              wave: GS.wave,
+              gameSpeed: GS.gameSpeed,
+              paused: GS.paused,
+            })
           : null
       ),
       grandStrategyHooks:
@@ -16762,7 +16787,9 @@ const Game = (() => {
     resetSimClock,
     getSimulationSteps,
     GAME_SPEED_OPTIONS:
-      typeof PacingTools !== 'undefined' ? PacingTools.SPEED_OPTIONS : [1, 1.5, 2, 3, 4, 5, 6, 8, 10],
+      typeof PacingTools !== 'undefined'
+        ? PacingTools.SPEED_OPTIONS
+        : [1, 1.5, 2, 3, 4, 5, 6, 8, 10],
     getSelectedUnitsInfo,
     getMinimapData,
     panCameraToFraction,

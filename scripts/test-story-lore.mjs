@@ -29,7 +29,9 @@ globalThis.getDifficultyDef = (id) => ({ label: id });
 globalThis.getPlayerUnitDef = () => ({ name: 'Footman' });
 globalThis.getUnitDisplayName = (u) => u.type || 'unit';
 globalThis.LoreData = {
-  CAMPAIGN_NARRATIVE: { waves: { 31: { title: 'Default', hook: 'default hook', sub: 'default sub' } } },
+  CAMPAIGN_NARRATIVE: {
+    waves: { 31: { title: 'Default', hook: 'default hook', sub: 'default sub' } },
+  },
 };
 
 loadScript('chronicles.js');
@@ -74,7 +76,10 @@ StoryLore.onRunEnd({ victory: true, wave: 20, victoryReason: 'economy' });
 assert(Chronicles.getAll().length > beforeChronicles, 'chronicles gained entries on run end');
 
 const enc = StoryLore.getEncyclopediaEntries();
-assert(enc.some((e) => e.cat === 'story'), 'encyclopedia story entries');
+assert(
+  enc.some((e) => e.cat === 'story'),
+  'encyclopedia story entries'
+);
 
 const choiceEntries = Chronicles.getAll().filter((e) => e.type === 'choice');
 assert(choiceEntries.length >= 2, 'choice chronicle entries');

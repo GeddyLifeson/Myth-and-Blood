@@ -493,7 +493,11 @@ const EternalLegacyTree = (() => {
     const invested = data.investedIds;
     const reqs = def.prereq || [];
     if (reqs.every((p) => invested.includes(p))) return true;
-    if (def.foundationPrereq?.length && def.foundationPath && hasFoundationPath(def.foundationPath)) {
+    if (
+      def.foundationPrereq?.length &&
+      def.foundationPath &&
+      hasFoundationPath(def.foundationPath)
+    ) {
       return def.foundationPrereq.every((p) => invested.includes(p));
     }
     return false;
@@ -577,8 +581,7 @@ const EternalLegacyTree = (() => {
       if (!def?.effects) continue;
       const e = def.effects;
       const branchMult =
-        typeof StoryLore !== 'undefined' &&
-        StoryLore.getDominantBranch?.() === def.branch
+        typeof StoryLore !== 'undefined' && StoryLore.getDominantBranch?.() === def.branch
           ? 1.1
           : 1;
 
@@ -629,7 +632,10 @@ const EternalLegacyTree = (() => {
     if (unit.isCrossover || unit.isWwe) return true;
     if (unit.crossoverFaction || unit.factionId) return true;
     // Global helpers take a type string (crossover.js / wwe.js).
-    if (typeof globalThis.isCrossoverUnit === 'function' && globalThis.isCrossoverUnit !== isCrossoverUnit) {
+    if (
+      typeof globalThis.isCrossoverUnit === 'function' &&
+      globalThis.isCrossoverUnit !== isCrossoverUnit
+    ) {
       try {
         if (globalThis.isCrossoverUnit(unit.type)) return true;
       } catch (_) {
@@ -637,7 +643,8 @@ const EternalLegacyTree = (() => {
       }
     }
     if (typeof isWweUnit === 'function' && isWweUnit(unit.type)) return true;
-    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCrossoverType?.(unit.type)) return true;
+    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCrossoverType?.(unit.type))
+      return true;
     return unit.type.startsWith('xf_') || unit.type.includes('crossover');
   }
 

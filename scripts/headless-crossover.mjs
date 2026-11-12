@@ -833,7 +833,10 @@ function testEnemyFactions(exp) {
 }
 
 function testAsymmetricWarfare(exp) {
-  if (!exp.AsymmetricWarfare) { console.log('  skip AsymmetricWarfare (removed)'); return; }
+  if (!exp.AsymmetricWarfare) {
+    console.log('  skip AsymmetricWarfare (removed)');
+    return;
+  }
   const { AsymmetricWarfare } = exp;
   assert(AsymmetricWarfare, 'AsymmetricWarfare module should exist');
   AsymmetricWarfare.resetRun();
@@ -888,7 +891,10 @@ function testAsymmetricWarfare(exp) {
 }
 
 function testMonsterBosses(exp) {
-  if (!exp.MonsterBosses) { console.log('  skip MonsterBosses'); return; }
+  if (!exp.MonsterBosses) {
+    console.log('  skip MonsterBosses');
+    return;
+  }
   const { MonsterBosses, GameDepth } = exp;
   assert(MonsterBosses, 'MonsterBosses module should exist');
   assert(MonsterBosses.BOSS_PACKS.boss_gorath, 'Gorath pack should exist');
@@ -920,7 +926,10 @@ function testMonsterBosses(exp) {
 }
 
 function testMultiFrontSiege(exp) {
-  if (!exp.MultiFrontSiege) { console.log('  skip MultiFrontSiege (removed)'); return; }
+  if (!exp.MultiFrontSiege) {
+    console.log('  skip MultiFrontSiege (removed)');
+    return;
+  }
   const { MultiFrontSiege, EnemyFactions, getUnlockedAttackSides, PlanetConquest } = exp;
   assert(MultiFrontSiege, 'MultiFrontSiege module should exist');
   assert(MultiFrontSiege.MULTI_FRONT_MIN_WAVE === 12, 'multi-front should start wave 12');
@@ -994,7 +1003,10 @@ function testMultiFrontSiege(exp) {
 }
 
 function testNeutralWildlife(exp) {
-  if (!exp.NeutralWildlife) { console.log('  skip NeutralWildlife'); return; }
+  if (!exp.NeutralWildlife) {
+    console.log('  skip NeutralWildlife');
+    return;
+  }
   const { NeutralWildlife } = exp;
   assert(NeutralWildlife, 'NeutralWildlife module should exist');
   NeutralWildlife.resetRun();
@@ -1047,7 +1059,10 @@ function testNeutralWildlife(exp) {
 }
 
 function testFactionHazards(exp) {
-  if (!exp.FactionHazards) { console.log('  skip FactionHazards'); return; }
+  if (!exp.FactionHazards) {
+    console.log('  skip FactionHazards');
+    return;
+  }
   const { FactionHazards, EnemyFactions, getTerritoryTier, PlanetConquest } = exp;
   assert(FactionHazards, 'FactionHazards module should exist');
   PlanetConquest?.resetRun?.({ forcedMode: false });
@@ -1173,7 +1188,10 @@ function testCrownLegacies(exp) {
 }
 
 function testFactionReputation(exp) {
-  if (!exp.FactionReputation) { console.log('  skip FactionReputation'); return; }
+  if (!exp.FactionReputation) {
+    console.log('  skip FactionReputation');
+    return;
+  }
   const { FactionReputation, EnemyFactions } = exp;
   assert(FactionReputation, 'FactionReputation module should exist');
   FactionReputation.resetRun();
@@ -1230,7 +1248,10 @@ function testFactionReputation(exp) {
 }
 
 function testDynamicMapEvents(exp) {
-  if (!exp.DynamicMapEvents) { console.log('  skip DynamicMapEvents'); return; }
+  if (!exp.DynamicMapEvents) {
+    console.log('  skip DynamicMapEvents');
+    return;
+  }
   const { DynamicMapEvents } = exp;
   assert(DynamicMapEvents, 'DynamicMapEvents module should exist');
   DynamicMapEvents.resetRun();
@@ -1299,7 +1320,10 @@ function testDynamicMapEvents(exp) {
 }
 
 function testLivingPlanet(exp) {
-  if (!exp.LivingPlanet) { console.log('  skip LivingPlanet'); return; }
+  if (!exp.LivingPlanet) {
+    console.log('  skip LivingPlanet');
+    return;
+  }
   const { LivingPlanet, getTerritoryTier, getWorldSize, BASE_FIELD_W, BASE_FIELD_H } = exp;
   assert(LivingPlanet, 'LivingPlanet module should exist');
   assert(LivingPlanet.FOREST_UNLOCK_TIER === 2, 'forest should unlock at land tier 2');
@@ -1353,7 +1377,10 @@ function testLivingPlanet(exp) {
 }
 
 function testPlayerCounterEvolution(exp) {
-  if (!exp.PlayerCounterEvolution) { console.log('  skip PlayerCounterEvolution'); return; }
+  if (!exp.PlayerCounterEvolution) {
+    console.log('  skip PlayerCounterEvolution');
+    return;
+  }
   const { PlayerCounterEvolution, EnemyFactions } = exp;
   assert(PlayerCounterEvolution, 'PlayerCounterEvolution module should exist');
   assert(PlayerCounterEvolution.COUNTER_WAVE_MIN === 15, 'counter wave min should be 15');
@@ -1402,7 +1429,10 @@ function testPlayerCounterEvolution(exp) {
 }
 
 function testSettlementRaids(exp) {
-  if (!exp.SettlementRaids) { console.log('  skip SettlementRaids (removed)'); return; }
+  if (!exp.SettlementRaids) {
+    console.log('  skip SettlementRaids (removed)');
+    return;
+  }
   const { SettlementRaids, isKingdomRaidsUnlocked } = exp;
   assert(SettlementRaids, 'SettlementRaids module should exist');
   assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 150, 'raid wave min should be 150');
@@ -1465,10 +1495,7 @@ function testUnitPanelScaling(exp) {
   healer.goldStarsEarned = 3;
   healer.lateAbilityUnlocked = true;
   const massMend = getSpecialistLateAbilityInfo(healer);
-  assert(
-    massMend?.unlocked && massMend.name === 'Mass Mend',
-    '3 gold stars unlocks Mass Mend'
-  );
+  assert(massMend?.unlocked && massMend.name === 'Mass Mend', '3 gold stars unlocks Mass Mend');
   const snapGold = GameDepth.getUnitScalingSnapshot(healer, 25);
   assert(
     snapGold.lateAbilityUnlocked && snapGold.lateAbilityName === 'Mass Mend',
@@ -1503,7 +1530,10 @@ function testUnitPanelScaling(exp) {
 }
 
 function testFactionIntel(exp) {
-  if (!exp.FactionIntel) { console.log('  skip FactionIntel'); return; }
+  if (!exp.FactionIntel) {
+    console.log('  skip FactionIntel');
+    return;
+  }
   const { FactionIntel, EnemyFactions } = exp;
   assert(FactionIntel, 'FactionIntel module should exist');
   const gs = {
@@ -1528,7 +1558,10 @@ function testFactionIntel(exp) {
 }
 
 function testPlanetConquest(exp) {
-  if (!exp.PlanetConquest) { console.log('  skip PlanetConquest (removed)'); return; }
+  if (!exp.PlanetConquest) {
+    console.log('  skip PlanetConquest (removed)');
+    return;
+  }
   const { PlanetConquest, EnemyFactions, createUnit } = exp;
   assert(PlanetConquest, 'PlanetConquest module should exist');
   PlanetConquest.resetRun({ forcedMode: true });

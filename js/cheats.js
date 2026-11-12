@@ -113,7 +113,8 @@ const Cheats = (() => {
     },
     115: {
       id: 'cod115',
-      message: '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
+      message:
+        '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
       apply() {
         MetaProgress.unlock115();
         Achievements?.tryUnlock('cheat_used');
@@ -165,7 +166,7 @@ const Cheats = (() => {
         Achievements?.tryUnlock('baki_unlock');
       },
     },
-    'ジョジョの奇妙な冒険': {
+    ジョジョの奇妙な冒険: {
       id: 'jojo',
       message: 'Spirit Court sigil — bound spirit heroes (Parts 1–7) unlocked! Part 7 = cavalry.',
       apply() {
@@ -203,7 +204,7 @@ const Cheats = (() => {
     },
     'for the emperor': {
       id: 'imperium',
-      message: "FOR THE CRIMSON THRONE — crimson legion unlocked! Build the Crimson Chapel.",
+      message: 'FOR THE CRIMSON THRONE — crimson legion unlocked! Build the Crimson Chapel.',
       apply() {
         MetaProgress.unlockImperium();
         Achievements?.tryUnlock('cheat_used');
@@ -228,7 +229,7 @@ const Cheats = (() => {
     'eternal crusade': {
       id: 'warhammer',
       message:
-        "ETERNAL MARCH — Crimson Legions and Rift Cult unlocked! Faith & Rift. Build the Crimson Chapel and Warp Shrine.",
+        'ETERNAL MARCH — Crimson Legions and Rift Cult unlocked! Faith & Rift. Build the Crimson Chapel and Warp Shrine.',
       apply() {
         MetaProgress.unlockWarhammer();
         Achievements?.tryUnlock('cheat_used');
@@ -238,7 +239,7 @@ const Cheats = (() => {
     'dragonborn legacy': {
       id: 'tes',
       message:
-        "WYRM CALLER LEGACY — Voicebound Pact roster unlocked! Voice shouts await. Build the Wyrmcaller Moot Hall.",
+        'WYRM CALLER LEGACY — Voicebound Pact roster unlocked! Voice shouts await. Build the Wyrmcaller Moot Hall.',
       apply() {
         MetaProgress.unlockTes();
         Achievements?.tryUnlock('cheat_used');
@@ -300,13 +301,19 @@ const Cheats = (() => {
       { code: 'Austin 3:16', effect: 'Unlock Grand Coliseum' },
       { code: 'whatcha gonna do', effect: 'Unlock Grand Coliseum (alias)' },
       { code: 'hell walks / Doomslayer', effect: 'Unlock Doomslayer hero' },
-      { code: '115', effect: 'Unlock Void Residue crew (Splinter Vale, Dr. Volkov, Brass Kozlov, Blade Sato)' },
+      {
+        code: '115',
+        effect: 'Unlock Void Residue crew (Splinter Vale, Dr. Volkov, Brass Kozlov, Blade Sato)',
+      },
       { code: 'Primus', effect: 'Unlock First Circle crew' },
       { code: 'Halo', effect: 'Unlock Orbital heroes + Vanguard Academy' },
       { code: 'Gears', effect: 'Unlock Trench squad + Lancer Academy' },
       { code: 'One to Rule Them All', effect: 'Unlock Ninefold Fellowship + March Camp' },
       { code: 'Hanma', effect: 'Unlock pit fighters + Iron Pit Guild' },
-      { code: 'Spirit Court sigil', effect: 'Unlock Bound Spirit Court (Parts 1–7) (Pt.7 = cavalry)' },
+      {
+        code: 'Spirit Court sigil',
+        effect: 'Unlock Bound Spirit Court (Parts 1–7) (Pt.7 = cavalry)',
+      },
       { code: 'FOTNS', effect: 'Unlock North Star Ascetic fighters' },
       { code: 'Dragon Soul', effect: 'Unlock Skyburst Order + Skyburst Foundry' },
       { code: 'ALL FRACTURES UNSEALED', effect: 'Unlock ALL cheat content at once' },

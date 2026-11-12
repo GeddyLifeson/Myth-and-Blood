@@ -25,7 +25,13 @@ function loadModules() {
   const ascSrc = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
   const synSrc = readFileSync(join(JS, 'thematic-era-synergies.js'), 'utf8');
   const pfSrc = readFileSync(join(JS, 'hybrid-power-fantasy.js'), 'utf8');
-  const gsSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy.js'), 'utf8'); } catch { return '/* optional missing grand-strategy.js */'; } })();
+  const gsSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy.js */';
+    }
+  })();
   const sb = {
     Math,
     Object,
@@ -98,29 +104,53 @@ const { FoundationalMedievalLayer, ThematicEraSynergies, HybridPowerFantasy, Gra
 seedPureArcane(FoundationalMedievalLayer);
 ok(HybridPowerFantasy.evaluatePathPurity() === 'pure_arcane', 'pure arcane purity detected');
 if (GrandStrategy) {
-GrandStrategy?.resetRun?.();
-ThematicEraSynergies.resetRun();
-HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
-HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
+  GrandStrategy?.resetRun?.();
+  ThematicEraSynergies.resetRun();
+  HybridPowerFantasy.resetRun();
+  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
+  ThematicEraSynergies.onWaveStart(150, {
+    wave: 150,
+    units: [],
+    showMessage: () => {},
+    addHighlight: () => {},
+  });
+  HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
 } else {
   console.log('SKIP GrandStrategy assertions (macro layer removed)');
 }
 const pendingArcane = HybridPowerFantasy.getStateSnapshot({ wave: 400 });
-ok(pendingArcane.pending && pendingArcane.fantasyId === null, 'wizard-kings pending before wave 500');
+ok(
+  pendingArcane.pending && pendingArcane.fantasyId === null,
+  'wizard-kings pending before wave 500'
+);
 const messages = [];
-HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: (m) => messages.push(m), addHighlight: () => {} });
+HybridPowerFantasy.onWaveStart(500, {
+  wave: 500,
+  showMessage: (m) => messages.push(m),
+  addHighlight: () => {},
+});
 const arcSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(arcSnap.active && arcSnap.fantasyId === 'wizard_kings', 'wizard-kings unlock at wave 500');
 ok(arcSnap.fleetLabel === 'Reality-Warping Armada', 'wizard-kings fleet label');
-const mage = { team: 'player', type: 'mage', damage: 30, range: 80, maxHp: 90, hp: 90, maxMorale: 30, morale: 30 };
+const mage = {
+  team: 'player',
+  type: 'mage',
+  damage: 30,
+  range: 80,
+  maxHp: 90,
+  hp: 90,
+  maxMorale: 30,
+  morale: 30,
+};
 HybridPowerFantasy.applyUnitFantasy(mage, 500);
 ok(mage.wizardKing, 'mage becomes wizard-king');
 ok(mage.damage > 30, 'wizard-king damage boost');
 const arcFleet = HybridPowerFantasy.getFleetMods(500);
 ok(arcFleet.realityWarp && arcFleet.fleetDmgMult > 1, 'reality-warping fleet mods');
-ok(messages.some((m) => m.includes('Wizard-Kings')), 'wizard-kings announced');
+ok(
+  messages.some((m) => m.includes('Wizard-Kings')),
+  'wizard-kings announced'
+);
 
 // Pure martial → Honor Legion
 seedPureMartial(FoundationalMedievalLayer);
@@ -129,9 +159,18 @@ GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
-HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: (m) => messages.push(m), addHighlight: () => {} });
+HybridPowerFantasy.onWaveStart(500, {
+  wave: 500,
+  showMessage: (m) => messages.push(m),
+  addHighlight: () => {},
+});
 const martSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(martSnap.active && martSnap.fantasyId === 'honor_legion', 'honor legion unlock at wave 500');
 ok(martSnap.honorQuote?.includes('sword and shield'), 'honor demands the blade quote');
@@ -149,7 +188,10 @@ HybridPowerFantasy.applyUnitFantasy(knight, 500);
 ok(knight.honorLegion && knight.honorPlate, 'knight gains honor plate');
 ok(knight.honorMeleeOnly && knight.range <= 58, 'honor legion keeps sword and shield range');
 ok(knight.maxHp > 200, 'honor legion HP boost');
-ok(messages.some((m) => m.includes('sword and shield')), 'honor quote announced');
+ok(
+  messages.some((m) => m.includes('sword and shield')),
+  'honor quote announced'
+);
 
 // Mixed path blocked
 seedMixed(FoundationalMedievalLayer);
@@ -157,7 +199,12 @@ HybridPowerFantasy.resetRun();
 ThematicEraSynergies.resetRun();
 GrandStrategy?.resetRun?.();
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: () => {}, addHighlight: () => {} });
 const mixedSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(!mixedSnap.active, 'mixed path does not unlock apex fantasy');
@@ -168,7 +215,12 @@ GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
 GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
 HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: () => {}, addHighlight: () => {} });
 const finalSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });

@@ -20,7 +20,7 @@ const factionLabels = [
   ["label: 'JoJo (Parts 1–7)'", "label: 'Bound Spirit Court'"],
   ["label: 'Fist of the North Star'", "label: 'North Star Ascetics'"],
   ["label: 'Dragon Ball'", "label: 'Skyburst Order'"],
-  ["label: \"Emperor's Finest\"", "label: 'Crimson Legions'"],
+  ['label: "Emperor\'s Finest"', "label: 'Crimson Legions'"],
   ["label: 'Warp Legion'", "label: 'Rift Cult'"],
   ["label: 'The Elder Scrolls'", "label: 'Voicebound Pact'"],
 ];
@@ -57,7 +57,7 @@ const names = {
   Gandalf: 'Grey Pilgrim',
   Frodo: 'Halfling Scout',
   Boromir: 'Shield Captain',
-  'Éowyn': 'Shield Maiden',
+  Éowyn: 'Shield Maiden',
   'Baki Hanma': 'Ironson Baki',
   'Yujiro Hanma': 'The Ogre Patriarch',
   'Doppo Orochi': 'Doppo Serpent',
@@ -144,28 +144,61 @@ const abilityDesc = [
   ['Frag Out — bonus damage vs clustered foes.', 'Grenade Burst — bonus damage vs clustered foes.'],
   ['Mad genius — chain lightning on elite hits.', 'Mad genius — chain lightning on elite hits.'],
   ['Vodka Rage — damage reduction when wounded.', 'Iron Rage — damage reduction when wounded.'],
-  ['Bushido — crit chance rises with stars earned.', 'Bushido — crit chance rises with stars earned.'],
+  [
+    'Bushido — crit chance rises with stars earned.',
+    'Bushido — crit chance rises with stars earned.',
+  ],
   ['Apothicon Slam — cleave on kill.', 'Void Slam — cleave on kill.'],
-  ['Iron Curtain — brief invulnerability pulse below 35% HP.', 'Iron Curtain — brief invulnerability pulse below 35% HP.'],
+  [
+    'Iron Curtain — brief invulnerability pulse below 35% HP.',
+    'Iron Curtain — brief invulnerability pulse below 35% HP.',
+  ],
   ['Spartan Rage — burst damage when wounded.', 'Vanguard Rage — burst damage when wounded.'],
   ['Lancer Burst — sustained fire vs structures.', 'Burst Lancer — sustained fire vs structures.'],
   ['You Shall Not Pass — terrifies nearby foes.', 'Grey Ward — terrifies nearby foes.'],
   ['Ring Bearer — stealth and evasion bonus.', 'Scout Ring — stealth and evasion bonus.'],
   ['Ogre — terror aura and siege bonus.', 'Ogre — terror aura and siege bonus.'],
-  ['Hokuto Shinken — ATATATA finisher on low HP foes.', 'North Star Fist — rapid finisher on low HP foes.'],
-  ['Kamehameha — burst finisher when surrounded.', 'Skyburst Wave — burst finisher when surrounded.'],
-  ['Galick Gun — bonus vs elites, pride damage boost.', 'Prince Beam — bonus vs elites, pride damage boost.'],
+  [
+    'Hokuto Shinken — ATATATA finisher on low HP foes.',
+    'North Star Fist — rapid finisher on low HP foes.',
+  ],
+  [
+    'Kamehameha — burst finisher when surrounded.',
+    'Skyburst Wave — burst finisher when surrounded.',
+  ],
+  [
+    'Galick Gun — bonus vs elites, pride damage boost.',
+    'Prince Beam — bonus vs elites, pride damage boost.',
+  ],
   ['Special Beam Cannon — pierces high-HP targets.', 'Piercing Beam — pierces high-HP targets.'],
   ['Death Beam — precision ranged execution.', 'Frost Lance — precision ranged execution.'],
   ['Hakai — god-tier delete on wounded foes.', 'Cataclysm — god-tier delete on wounded foes.'],
-  ['Bolter Discipline — bonus damage with allied Astartes nearby.', 'Volley Discipline — bonus damage with allied legionnaires nearby.'],
-  ["Fus Ro Dah — Thu'um force shout devastates clustered foes.", 'Voice Shout — force wave devastates clustered foes.'],
-  ["Thu'um Echo — empowers allies and weakens nearby foes on wave start.", 'Voice Echo — empowers allies and weakens nearby foes on wave start.'],
+  [
+    'Bolter Discipline — bonus damage with allied Astartes nearby.',
+    'Volley Discipline — bonus damage with allied legionnaires nearby.',
+  ],
+  [
+    "Fus Ro Dah — Thu'um force shout devastates clustered foes.",
+    'Voice Shout — force wave devastates clustered foes.',
+  ],
+  [
+    "Thu'um Echo — empowers allies and weakens nearby foes on wave start.",
+    'Voice Echo — empowers allies and weakens nearby foes on wave start.',
+  ],
   ['Gold Experience — heals allies on kill.', 'Golden Pulse — heals allies on kill.'],
-  ['Sticky Fingers — zip-line reposition and rally.', 'Zip Fingers — zip-line reposition and rally.'],
-  ['Sex Pistols — ricochet shots hit multiple foes.', 'Ricochet Pistols — ricochet shots hit multiple foes.'],
+  [
+    'Sticky Fingers — zip-line reposition and rally.',
+    'Zip Fingers — zip-line reposition and rally.',
+  ],
+  [
+    'Sex Pistols — ricochet shots hit multiple foes.',
+    'Ricochet Pistols — ricochet shots hit multiple foes.',
+  ],
   ['King Crimson — deletes wounded targets.', 'Crimson Erase — deletes wounded targets.'],
-  ['Tusk ACT4 — infinite rotation charge finisher.', 'Rotation ACT4 — infinite rotation charge finisher.'],
+  [
+    'Tusk ACT4 — infinite rotation charge finisher.',
+    'Rotation ACT4 — infinite rotation charge finisher.',
+  ],
   ['Steel Ball — golden spin cleave on charge.', 'Steel Ball — golden spin cleave on charge.'],
   ['Scary Monsters — predatory charge damage.', 'Predator Form — predatory charge damage.'],
 ];
@@ -184,12 +217,24 @@ src = src.replace('// UNSC / Halo', '// Orbital Vanguard');
 src = src.replace('// Gears of War', '// Iron Trench Coalition');
 src = src.replace('// LOTR', '// Ninefold March');
 src = src.replace('// Baki', '// Iron Pit Guild');
-src = src.replace('// JoJo Parts 1–7 (Part 7 = cavalry)', '// Bound Spirit Court (Part 7 = cavalry)');
+src = src.replace(
+  '// JoJo Parts 1–7 (Part 7 = cavalry)',
+  '// Bound Spirit Court (Part 7 = cavalry)'
+);
 src = src.replace('// Fist of the North Star', '// North Star Ascetics');
 src = src.replace('// Dragon Ball', '// Skyburst Order');
-src = src.replace("// Emperor's Finest (grim sci-fi infantry — inspired by boltgun legions)", '// Crimson Legions');
-src = src.replace('// Warp Legion (chaos cult warband — inspired by grimdark heretics)', '// Rift Cult');
-src = src.replace("// The Elder Scrolls — Dragonborn & Thu'um", '// Voicebound Pact — Wyrmcaller & Voice');
+src = src.replace(
+  "// Emperor's Finest (grim sci-fi infantry — inspired by boltgun legions)",
+  '// Crimson Legions'
+);
+src = src.replace(
+  '// Warp Legion (chaos cult warband — inspired by grimdark heretics)',
+  '// Rift Cult'
+);
+src = src.replace(
+  "// The Elder Scrolls — Dragonborn & Thu'um",
+  '// Voicebound Pact — Wyrmcaller & Voice'
+);
 
 writeFileSync(path, src);
 console.log('Updated', path);

@@ -49,7 +49,8 @@ function ok(cond, msg) {
 
 const earlyUx = boot(0);
 ok(
-  earlyUx.resolveTutorialStep({ wave: 1, creativeMode: false })?.step?.title === 'Welcome, Commander',
+  earlyUx.resolveTutorialStep({ wave: 1, creativeMode: false })?.step?.title ===
+    'Welcome, Commander',
   'wave 1 shows welcome step'
 );
 

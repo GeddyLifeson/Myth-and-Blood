@@ -230,7 +230,12 @@ const PathfindingCore = (() => {
     const sy = Number(startY);
     const ex = Number(endX);
     const ey = Number(endY);
-    if (!Number.isFinite(sx) || !Number.isFinite(sy) || !Number.isFinite(ex) || !Number.isFinite(ey)) {
+    if (
+      !Number.isFinite(sx) ||
+      !Number.isFinite(sy) ||
+      !Number.isFinite(ex) ||
+      !Number.isFinite(ey)
+    ) {
       return [];
     }
 
@@ -245,8 +250,7 @@ const PathfindingCore = (() => {
       : { cx: rawEnd.cx, cy: rawEnd.cy, ...toWorld(rawEnd.cx, rawEnd.cy), valid: false };
     // Only use exact endX/endY when that cell is walkable; otherwise aim at snapped goal center
     // (sending into a blocked tile made units repath-thrash against walls/trees).
-    const exactEnd =
-      !!endCell && endCell.cx === rawEnd.cx && endCell.cy === rawEnd.cy;
+    const exactEnd = !!endCell && endCell.cx === rawEnd.cx && endCell.cy === rawEnd.cy;
     const destX = exactEnd ? ex : goal.x;
     const destY = exactEnd ? ey : goal.y;
 
@@ -310,7 +314,8 @@ const PathfindingCore = (() => {
         if (!inBounds(nx, ny)) continue;
         // No corner-cutting through blocked cardinal neighbors.
         if (dx && dy) {
-          if (isBlocked(grid, cur.cx + dx, cur.cy) || isBlocked(grid, cur.cx, cur.cy + dy)) continue;
+          if (isBlocked(grid, cur.cx + dx, cur.cy) || isBlocked(grid, cur.cx, cur.cy + dy))
+            continue;
         }
         if (isBlocked(grid, nx, ny)) continue;
 

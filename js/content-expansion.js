@@ -1549,7 +1549,7 @@ const ContentExpansion = (() => {
       StrikeFX?.impact?.('lightning', wx, wy, ab.radius, 1.2 * coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(8 * coolFx));
       ctx.damageInRadius(wx, wy, ab.radius, ab.damage, 'player', { dragonStrike: true });
-      ctx.showMessage("Voice Shout — the Voice shatters the line!");
+      ctx.showMessage('Voice Shout — the Voice shatters the line!');
       return true;
     }
     if (ability === 'fire_breath') {

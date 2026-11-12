@@ -158,8 +158,7 @@ const VisualPolish = (() => {
       unit.isNamedBoss ||
       unit.isPlanetBoss ||
       (typeof isEliteEnemy === 'function' && isEliteEnemy(unit));
-    const allowGore =
-      typeof GameFeedback === 'undefined' || GameFeedback.allowGore?.() !== false;
+    const allowGore = typeof GameFeedback === 'undefined' || GameFeedback.allowGore?.() !== false;
     if (drawCorpses && allowGore) {
       const dir = unit.team === 'player' ? -1 : 1;
       deathCorpses.push({
@@ -242,8 +241,7 @@ const VisualPolish = (() => {
       ctx.translate(c.x + (c.knockX || 0) * knock, c.y + (c.knockY || 0) * knock);
 
       ctx.globalAlpha = a * 0.42;
-      ctx.fillStyle =
-        c.team === 'enemy' ? 'rgba(110,22,22,0.55)' : 'rgba(70,28,48,0.5)';
+      ctx.fillStyle = c.team === 'enemy' ? 'rgba(110,22,22,0.55)' : 'rgba(70,28,48,0.5)';
       ctx.beginPath();
       ctx.ellipse(0, 7, poolR, poolR * 0.32, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -665,9 +663,7 @@ const VisualPolish = (() => {
     for (const side of unlocked) {
       const active = activeSet.has(side);
       ctx.save();
-      ctx.strokeStyle = active
-        ? `rgba(255,110,70,${0.75 + pulse * 0.2})`
-        : 'rgba(120,96,80,0.35)';
+      ctx.strokeStyle = active ? `rgba(255,110,70,${0.75 + pulse * 0.2})` : 'rgba(120,96,80,0.35)';
       ctx.lineWidth = active ? 1.5 : 1;
       ctx.setLineDash(active ? [4, 3] : [2, 4]);
       ctx.beginPath();
@@ -1062,7 +1058,8 @@ const VisualPolish = (() => {
       typeof Particles !== 'undefined'
     ) {
       const everyN = weather.type === 'storm' ? 2 : 3;
-      if (tick % everyN === 0) Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
+      if (tick % everyN === 0)
+        Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
     }
     if (weather.type === 'mist') {
       ctx.fillStyle = 'rgba(180,200,220,0.08)';

@@ -37,8 +37,7 @@ const defsEnd = cross.indexOf('\nfunction getCrossoverDef', defsStart);
 if (defsStart < 0 || defsEnd < 0) throw new Error('CrossoverDefs block not found');
 
 let defsBlock = cross.slice(defsStart, defsEnd);
-const unitRe =
-  /(  ([a-z0-9_]+): \{)([\s\S]*?)(\n  \},?\n)/g;
+const unitRe = /(  ([a-z0-9_]+): \{)([\s\S]*?)(\n  \},?\n)/g;
 
 let count = 0;
 const samples = [];
@@ -89,23 +88,14 @@ console.log(`Updated ${bChanged} crossover barracks in buildings.json`);
 // --- FactionDepth constants ---
 const fdPath = join(root, 'js/faction-depth.js');
 let fd = readFileSync(fdPath, 'utf8');
-fd = fd.replace(
-  /static STANDARD_BARRACKS_COST = \d+;/,
-  'static STANDARD_BARRACKS_COST = 90;'
-);
+fd = fd.replace(/static STANDARD_BARRACKS_COST = \d+;/, 'static STANDARD_BARRACKS_COST = 90;');
 fd = fd.replace(
   /static STANDARD_BARRACKS_BUILDERS = \d+;/,
   'static STANDARD_BARRACKS_BUILDERS = 2;'
 );
 // Ensure no early-wave deploy tax
-fd = fd.replace(
-  /static EARLY_WAVE_COST_BONUS = [^;]+;/,
-  'static EARLY_WAVE_COST_BONUS = 1;'
-);
-fd = fd.replace(
-  /static EARLY_WAVE_CAP = [^;]+;/,
-  'static EARLY_WAVE_CAP = 0;'
-);
+fd = fd.replace(/static EARLY_WAVE_COST_BONUS = [^;]+;/, 'static EARLY_WAVE_COST_BONUS = 1;');
+fd = fd.replace(/static EARLY_WAVE_CAP = [^;]+;/, 'static EARLY_WAVE_CAP = 0;');
 writeFileSync(fdPath, fd);
 console.log('Updated FactionDepth barracks standards');
 

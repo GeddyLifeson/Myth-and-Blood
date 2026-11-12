@@ -10,10 +10,34 @@ function loadModules() {
   const eternalSrc = readFileSync(join(JS, 'eternal-legacy-tree.js'), 'utf8');
   const foundSrc = readFileSync(join(JS, 'foundational-medieval-layer.js'), 'utf8');
   const techSrc = readFileSync(join(JS, 'tech-tree-branches.js'), 'utf8');
-  const mbSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy-mid-branches.js'), 'utf8'); } catch { return '/* optional missing grand-strategy-mid-branches.js */'; } })();
-  const gsSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy.js'), 'utf8'); } catch { return '/* optional missing grand-strategy.js */'; } })();
-  const lbSrc = (() => { try { return readFileSync(join(JS, 'intergalactic-late-branches.js'), 'utf8'); } catch { return '/* optional missing intergalactic-late-branches.js */'; } })();
-  const igSrc = (() => { try { return readFileSync(join(JS, 'intergalactic-layer.js'), 'utf8'); } catch { return '/* optional missing intergalactic-layer.js */'; } })();
+  const mbSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy-mid-branches.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy-mid-branches.js */';
+    }
+  })();
+  const gsSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy.js */';
+    }
+  })();
+  const lbSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'intergalactic-late-branches.js'), 'utf8');
+    } catch {
+      return '/* optional missing intergalactic-late-branches.js */';
+    }
+  })();
+  const igSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'intergalactic-layer.js'), 'utf8');
+    } catch {
+      return '/* optional missing intergalactic-layer.js */';
+    }
+  })();
   const epfSrc = readFileSync(join(JS, 'eternal-path-framework.js'), 'utf8');
   const mypSrc = readFileSync(join(JS, 'mythic-path-evolution.js'), 'utf8');
   const sb = {
@@ -84,15 +108,18 @@ MythicPathEvolution.captureFirstChampion(
   { team: 'player', type: 'goku', id: 'ch-1', maxHp: 120, hp: 120, damage: 50 },
   12
 );
-ok(MythicPathEvolution.getStateSnapshot({ wave: 60 }).firstChampion?.captured, 'first champion captured');
+ok(
+  MythicPathEvolution.getStateSnapshot({ wave: 60 }).firstChampion?.captured,
+  'first champion captured'
+);
 
 const hero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 120, hp: 120, damage: 50 };
 MythicPathEvolution.applyChampionUnitBonuses(hero, 60);
 ok(hero.firstChampion && hero.championLineage, 'first champion bonuses');
 
 if (GrandStrategy) {
-GrandStrategy?.resetRun?.();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
+  GrandStrategy?.resetRun?.();
+  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
 } else {
   console.log('SKIP GrandStrategy assertions (macro layer removed)');
 }
@@ -105,12 +132,15 @@ ok(!GrandStrategy || kingdomMods.playerDmgMult > 1, 'bloodline mods buff damage'
 ok(!GrandStrategy || kingdomMods.eliteSlots > 0, 'bloodline grants elite slots');
 
 if (IntergalacticLayer) {
-IntergalacticLayer?.resetRun?.();
-IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
+  IntergalacticLayer?.resetRun?.();
+  IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
 } else {
   console.log('SKIP IntergalacticLayer assertions (macro layer removed)');
 }
-ok(!IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'pantheon_ascendant', 'mythic resolves pantheon');
+ok(
+  !IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'pantheon_ascendant',
+  'mythic resolves pantheon'
+);
 
 MythicPathEvolution.spawnTestPantheon('pantheon');
 const armada = MythicPathEvolution.getGodbloodArmadaMods({ wave: 410, invasionActive: true });
@@ -119,7 +149,13 @@ ok(armada.countMult < 1, 'armada relieves enemy pressure');
 
 const galHero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 200, hp: 200, damage: 60 };
 IntergalacticLayer?.applyCosmicUnitBonuses?.(galHero, 450);
-ok(!IntergalacticLayer || (galHero.eternalChampion || galHero.pantheonAscendant || galHero.cosmicLegacyApplied), 'galactic god champion');
+ok(
+  !IntergalacticLayer ||
+    galHero.eternalChampion ||
+    galHero.pantheonAscendant ||
+    galHero.cosmicLegacyApplied,
+  'galactic god champion'
+);
 
 MythicPathEvolution.spawnTestPantheon('pantheon');
 const html = MythicPathEvolution.renderPanelHtml({ wave: 450 });

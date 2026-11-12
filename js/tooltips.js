@@ -52,8 +52,7 @@ const Tooltips = (() => {
     knight: 'Heavy armored melee with damage resistance. Banner courier can summon one.',
     sapper: 'Bonus siege damage (×2.5) vs walls and siege engines.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
-    bard:
-      '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
+    bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
     ballista:
       '6 TP long-range siege crew. Bonus vs flyers and structures. Unlock: Research Lab → Iron Weapons → Siege Engineering (wave 12+), then click Ballista and place on the map (Shift-click to place more). Academy needs an Immortal ballista mentor.',
     pikeman:
@@ -815,8 +814,7 @@ const Tooltips = (() => {
   function refreshDynamic(gsState) {
     if (anchor && el?.classList.contains('visible')) {
       const gs =
-        gsState ??
-        (typeof Game !== 'undefined' && Game.isPlaying?.() ? Game.getState() : null);
+        gsState ?? (typeof Game !== 'undefined' && Game.isPlaying?.() ? Game.getState() : null);
       const id = anchor.id;
       let tip = null;
       if (anchor.classList.contains('deploy-btn')) tip = getDeployTip(anchor.dataset.unit, gs);

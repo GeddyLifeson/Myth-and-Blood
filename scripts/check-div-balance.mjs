@@ -40,7 +40,9 @@ function section(id) {
     // open tag
     const end = h.indexOf('>', nextOpen);
     const tag = h.slice(nextOpen, end + 1);
-    const selfClose = /\/>$/.test(tag) || /^<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\b/i.test(tag);
+    const selfClose =
+      /\/>$/.test(tag) ||
+      /^<(area|base|br|col|embed|hr|img|input|link|meta|param|source|track|wbr)\b/i.test(tag);
     if (!selfClose) {
       depth++;
       began = true;

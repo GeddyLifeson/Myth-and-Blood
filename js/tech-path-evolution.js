@@ -12,26 +12,31 @@ const TechPathEvolution = (() => {
       id: 'medieval',
       label: 'Engineers & Quarries',
       short: 'Engineers',
-      epithet: 'Early engineers, sappers, ballistae, and quarries — the Crown learns to shape stone and steel.',
+      epithet:
+        'Early engineers, sappers, ballistae, and quarries — the Crown learns to shape stone and steel.',
       fantasy: 'The first hammer struck at the quarry will echo in every Dyson sphere.',
     },
     kingdom: {
       id: 'kingdom',
       label: 'Industrial Revolution',
       short: 'Industry',
-      epithet: 'Automated defenses, gunpowder and steam equivalents — provinces become factory floors.',
+      epithet:
+        'Automated defenses, gunpowder and steam equivalents — provinces become factory floors.',
       fantasy: 'Steam hisses behind every wall; ballista crews fire with industrial precision.',
     },
     galactic: {
       id: 'galactic',
       label: 'Synthetic Ascension',
       short: 'Synthetic',
-      epithet: 'Full synthetic ascension — drone swarms, AI overlords, and Dyson spheres harvest the void.',
-      fantasy: 'Builders evolve into machine gods who still honor the first hammer of the medieval quarry.',
+      epithet:
+        'Full synthetic ascension — drone swarms, AI overlords, and Dyson spheres harvest the void.',
+      fantasy:
+        'Builders evolve into machine gods who still honor the first hammer of the medieval quarry.',
       doctrine: {
         id: 'dyson_mandate',
         label: 'Dyson Mandate',
-        epithet: 'AI overlords and drone swarms — suns become forges; the first hammer still rings.',
+        epithet:
+          'AI overlords and drone swarms — suns become forges; the first hammer still rings.',
       },
     },
   };
@@ -143,13 +148,9 @@ const TechPathEvolution = (() => {
     if (typeof FoundationalMedievalLayer === 'undefined') return score >= 28;
     const snap = FoundationalMedievalLayer.getRunSnapshot?.();
     const martial =
-      (snap?.deploys?.footman || 0) +
-      (snap?.deploys?.archer || 0) +
-      (snap?.deploys?.knight || 0);
+      (snap?.deploys?.footman || 0) + (snap?.deploys?.archer || 0) + (snap?.deploys?.knight || 0);
     const arcane =
-      (snap?.deploys?.mage || 0) +
-      (snap?.deploys?.wizard || 0) +
-      (snap?.deploys?.warlock || 0);
+      (snap?.deploys?.mage || 0) + (snap?.deploys?.wizard || 0) + (snap?.deploys?.warlock || 0);
     const engineer =
       (snap?.deploys?.builder || 0) +
       (snap?.deploys?.sapper || 0) +

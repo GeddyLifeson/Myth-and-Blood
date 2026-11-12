@@ -99,10 +99,19 @@ const PASS2 = [
   ['Katana Fury', 'Blade Fury'],
   ['crossover tags', 'evolved tags'],
   ['Crossover / WWE', 'Evolved / Coliseum'],
-  ['Role mult: General ×2.4, crossover ×2.1, WWE ×1.9', 'Role mult: General ×2.4, evolved ×2.1, coliseum ×1.9'],
+  [
+    'Role mult: General ×2.4, crossover ×2.1, WWE ×1.9',
+    'Role mult: General ×2.4, evolved ×2.1, coliseum ×1.9',
+  ],
   ['WWE requires Town Charter', 'Coliseum requires Town Charter'],
-  ['Unlock Void Residue crew (Tank, Dr. Volkov, Nikolai, Takeo)', 'Unlock Void Residue crew (Splinter Vale, Dr. Volkov, Brass Kozlov, Blade Sato)'],
-  ['115 — Tank, Dr. Volkov, Nikolai & Takeo', '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato'],
+  [
+    'Unlock Void Residue crew (Tank, Dr. Volkov, Nikolai, Takeo)',
+    'Unlock Void Residue crew (Splinter Vale, Dr. Volkov, Brass Kozlov, Blade Sato)',
+  ],
+  [
+    '115 — Tank, Dr. Volkov, Nikolai & Takeo',
+    '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato',
+  ],
   ['PRIMUS — Origins crew', 'PRIMUS — First Circle crew'],
   ['HANMA — Baki fighters', 'HANMA — Iron Pit fighters'],
   ['Unlock First Circle Origins crew', 'Unlock First Circle crew'],
@@ -166,7 +175,10 @@ const REPLACEMENTS = [
   ['UNSC ballistas and Capsule Corp', 'Orbital ballistas and Skyburst'],
   ['UNSC heroes & Spartan Academy', 'Orbital heroes & Vanguard Academy'],
   ['UNSC heroes + Spartan Academy', 'Orbital heroes + Vanguard Academy'],
-  ['UNSC powered armor — unlock Spartan Academy.', 'Orbital powered armor — unlock Vanguard Academy.'],
+  [
+    'UNSC powered armor — unlock Spartan Academy.',
+    'Orbital powered armor — unlock Vanguard Academy.',
+  ],
   ['Spartan Academy', 'Vanguard Academy'],
   ['Spartan command', 'Vanguard command'],
   ['COG / Gears of War', 'Iron Trench Coalition'],
@@ -224,14 +236,14 @@ const REPLACEMENTS = [
   ['Dragonborn legacy', 'Wyrmcaller legacy'],
   ['Dragonborn Voice', 'Wyrmcaller Voice'],
   ['Dragonborn is', 'Wyrmcaller is'],
-  ['Dragonborn & Thu\'um', 'Wyrmcaller & Voice'],
+  ["Dragonborn & Thu'um", 'Wyrmcaller & Voice'],
   ['dragon shout strike or Dovahkiin-style', 'voice shout strike or wyrmcaller-style'],
   ['Dovahkiin-style', 'wyrmcaller-style'],
   ['Dovahkiin heroes', 'wyrmcaller heroes'],
-  ['Thu\'um shouts', 'voice shouts'],
-  ['Thu\'um shout', 'voice shout'],
-  ['Thu\'um and dragon-fire', 'Voice and dragon-fire'],
-  ['Thu\'um shatters', 'Voice shatters'],
+  ["Thu'um shouts", 'voice shouts'],
+  ["Thu'um shout", 'voice shout'],
+  ["Thu'um and dragon-fire", 'Voice and dragon-fire'],
+  ["Thu'um shatters", 'Voice shatters'],
   ['Fus Ro Dah', 'Voice Shout'],
   ['Halo operatives', 'orbital operatives'],
   ['Halo/DB crossover', 'orbital/skyburst crossover'],
@@ -362,12 +374,18 @@ const REPLACEMENTS = [
   ['THE ONE PIECE IS REAL', 'ALL FRACTURES UNSEALED'],
   ['Faith & Fury', 'Faith & Rift'],
   ['Chainsaw Doctrine', 'Burst Lancer Doctrine'],
-  ['Hellgate Containment (wave 100, requires JoJo + Dragon Ball research)', 'Hellgate Containment (wave 100, requires Bound Spirit + Skyburst research)'],
+  [
+    'Hellgate Containment (wave 100, requires JoJo + Dragon Ball research)',
+    'Hellgate Containment (wave 100, requires Bound Spirit + Skyburst research)',
+  ],
   ['requires Stand Arrow + Ki Manipulation', 'requires Spirit Arrow + Ki Manipulation'],
   ['Goku Echo', 'Skyburst Echo'],
   ['necromancers vs JoJo', 'necromancers vs bound spirits'],
   ['JoJo, harpies', 'bound spirits, harpies'],
-  ['Planet Warfare operatives (Baird, Gimli, Goku, Beerus, Marcus, etc.)', 'Planet Warfare operatives (Gearwright, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus Ironhart, etc.)'],
+  [
+    'Planet Warfare operatives (Baird, Gimli, Goku, Beerus, Marcus, etc.)',
+    'Planet Warfare operatives (Gearwright, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus Ironhart, etc.)',
+  ],
   ['WWE & Doomslayer — Secret Evolved Allies', 'Coliseum & Doomslayer — Secret Evolved Allies'],
   ['Evolved Allies (Crossovers)', 'Evolved Allies'],
   ['crossover/WWE synergy', 'evolved/coliseum synergy'],
@@ -377,8 +395,11 @@ const REPLACEMENTS = [
   ['Dempsey, Goku, and mythic', 'Splinter Vale, Kael Skyburst, and mythic'],
   ['WWE finishers', 'coliseum finishers'],
   ['fill gaps in your gun line', 'fill gaps in your gun line'],
-  ['ctx.fillText(\'WWE\'', "ctx.fillText('GC'"],
-  ['svc(\'FloatingText\').status(b.x, b.y - 20, \'WWE\'', "svc('FloatingText').status(b.x, b.y - 20, 'GC'"],
+  ["ctx.fillText('WWE'", "ctx.fillText('GC'"],
+  [
+    "svc('FloatingText').status(b.x, b.y - 20, 'WWE'",
+    "svc('FloatingText').status(b.x, b.y - 20, 'GC'",
+  ],
   ['SELECT WWE ACADEMY BUILD', 'SELECT GRAND COLISEUM BUILD'],
   ['WWE / Superstars', 'Grand Coliseum / Champions'],
   ['Unlock WWE Academy', 'Unlock Grand Coliseum'],
@@ -401,14 +422,17 @@ const REPLACEMENTS = [
   ['WWE Academy complete', 'Grand Coliseum complete'],
   ['Complete a WWE Academy', 'Complete a Grand Coliseum'],
   ['Unlock the WWE Academy', 'Unlock the Grand Coliseum'],
-  ['meta_wwe: \'Unlock the WWE Academy\'', "meta_wwe: 'Unlock the Grand Coliseum'"],
+  ["meta_wwe: 'Unlock the WWE Academy'", "meta_wwe: 'Unlock the Grand Coliseum'"],
   ['Secret squared-circle campus', 'Secret grand-arena campus'],
   ['showmanship superstars', 'showmanship champions'],
   ['WWE on field', 'coliseum champions on field'],
-  ['operative: \'Goku\'', "operative: 'Kael Skyburst'"],
+  ["operative: 'Goku'", "operative: 'Kael Skyburst'"],
   ['Anti-air crossover helps (Halo, DB)', 'Anti-air evolved allies help (orbital, skyburst)'],
   ['every crossover roster', 'every evolved roster'],
-  ['ALL cheat content unlocked! WWE, Doomslayer, every crossover roster!', 'ALL cheat content unlocked! Coliseum, Doomslayer, every evolved roster!'],
+  [
+    'ALL cheat content unlocked! WWE, Doomslayer, every crossover roster!',
+    'ALL cheat content unlocked! Coliseum, Doomslayer, every evolved roster!',
+  ],
   ['crossover dossier', 'evolved dossier'],
   ['crossover build', 'evolved build'],
   ['crossover scale', 'evolved ally scale'],
@@ -417,37 +441,130 @@ const REPLACEMENTS = [
 ];
 
 const CROSSOVER_ABILITY = [
-  ["abilityDesc: 'Katana Fury — rapid strikes on wounded targets.'", "abilityDesc: 'Blade Fury — rapid strikes on wounded targets.'"],
-  ["abilityDesc: 'Summoning Key — drains elite HP to heal allies.'", "abilityDesc: 'Void Key — drains elite HP to heal allies.'"],
-  ["abilityDesc: 'Spartan Rage — shields allies near him on wave start.'", "abilityDesc: 'Vanguard Rage — shields allies near him on wave start.'"],
-  ["abilityDesc: 'Noble Leader — buffs nearby Spartans.'", "abilityDesc: 'Wolf Leader — buffs nearby vanguard operatives.'"],
-  ["abilityDesc: 'Energy Sword — devastating melee finishers.'", "abilityDesc: 'Plasma Blade — devastating melee finishers.'"],
-  ["abilityDesc: 'Spartan Training — steady ranged DPS.'", "abilityDesc: 'Vanguard Training — steady ranged DPS.'"],
-  ["abilityDesc: 'Lancer Burst — chainsaw finisher on low HP foes.'", "abilityDesc: 'Burst Lancer — chainsaw finisher on low HP foes.'"],
-  ["abilityDesc: 'Brothers in Arms — heals Marcus when nearby.'", "abilityDesc: 'Brothers in Arms — heals Ironhart when nearby.'"],
-  ["abilityDesc: 'Cole Train — charges through enemy lines.'", "abilityDesc: 'Iron Charge — charges through enemy lines.'"],
-  ["abilityDesc: 'Carmine Curse — fragile, but cheap lancer support.'", "abilityDesc: 'Ironhelm Curse — fragile, but cheap lancer support.'"],
-  ["abilityDesc: 'Carmine Brother — buffs other Carmines nearby.'", "abilityDesc: 'Ironhelm Brother — buffs other Ironhelms nearby.'"],
-  ["abilityDesc: 'Lancer Drill — standard COG ranged line-holder.'", "abilityDesc: 'Burst Drill — standard trench ranged line-holder.'"],
-  ["abilityDesc: 'Andúril — bonus damage vs elites and dark knights.'", "abilityDesc: 'Crownblade — bonus damage vs elites and dark knights.'"],
-  ["abilityDesc: 'You Shall Not Pass — terrifies nearby enemies.'", "abilityDesc: 'Grey Ward — terrifies nearby enemies.'"],
-  ["abilityDesc: 'Ring Bearer — evasion and morale aura for allies.'", "abilityDesc: 'Scout Ring — evasion and morale aura for allies.'"],
-  ["abilityDesc: 'Horn of Gondor — rally pulse when surrounded.'", "abilityDesc: 'Shield Horn — rally pulse when surrounded.'"],
-  ["abilityDesc: 'Hamon Overdrive — bonus vs undead elites.'", "abilityDesc: 'Solar Pulse — bonus vs undead elites.'"],
-  ["abilityDesc: 'Vaporization Freeze — slows enemy morale.'", "abilityDesc: 'Crimson Chill — slows enemy morale.'"],
-  ["abilityDesc: 'Sunlight Yellow — heals allies on elite kill.'", "abilityDesc: 'Solar Heal — heals allies on elite kill.'"],
-  ["abilityDesc: 'Hermit Purple — trick shots and scouting debuffs.'", "abilityDesc: 'Violet Snare — trick shots and scouting debuffs.'"],
-  ["abilityDesc: 'Bubble Cutter — crit from range.'", "abilityDesc: 'Pressure Cutter — crit from range.'"],
-  ["abilityDesc: 'German Science — bonus vs siege units.'", "abilityDesc: 'Iron Science — bonus vs siege units.'"],
-  ["abilityDesc: 'Star Platinum — ORA rush on pinned foes.'", "abilityDesc: 'Spirit Rush — rapid finisher on pinned foes.'"],
-  ["abilityDesc: 'Hierophant Green — emerald splash AoE.'", "abilityDesc: 'Emerald Spray — emerald splash AoE.'"],
-  ["abilityDesc: 'Silver Chariot — flurry attacks on low HP foes.'", "abilityDesc: 'Silver Flurry — flurry attacks on low HP foes.'"],
-  ["abilityDesc: \"Magician's Red — fire splash on hit.\"", "abilityDesc: 'Crimson Flame — fire splash on hit.'"],
-  ["abilityDesc: 'Crazy Diamond — heals allies he passes.'", "abilityDesc: 'Restorative March — heals allies he passes.'"],
-  ["abilityDesc: \"Heaven's Door — debuffs enemy accuracy.\"", "abilityDesc: 'Script Ward — debuffs enemy accuracy.'"],
-  ["abilityDesc: 'Killer Queen — Bites the Dust on wounded foes.'", "abilityDesc: 'Quiet Erase — final toll on wounded foes.'"],
-  ["abilityDesc: \"Fus Ro Dah — Thu'um force shout devastates clustered foes.\"", "abilityDesc: 'Voice Shout — force wave devastates clustered foes.'"],
-  ["abilityDesc: \"Thu'um Echo — empowers allies and weakens nearby foes on wave start.\"", "abilityDesc: 'Voice Echo — empowers allies and weakens nearby foes on wave start.'"],
+  [
+    "abilityDesc: 'Katana Fury — rapid strikes on wounded targets.'",
+    "abilityDesc: 'Blade Fury — rapid strikes on wounded targets.'",
+  ],
+  [
+    "abilityDesc: 'Summoning Key — drains elite HP to heal allies.'",
+    "abilityDesc: 'Void Key — drains elite HP to heal allies.'",
+  ],
+  [
+    "abilityDesc: 'Spartan Rage — shields allies near him on wave start.'",
+    "abilityDesc: 'Vanguard Rage — shields allies near him on wave start.'",
+  ],
+  [
+    "abilityDesc: 'Noble Leader — buffs nearby Spartans.'",
+    "abilityDesc: 'Wolf Leader — buffs nearby vanguard operatives.'",
+  ],
+  [
+    "abilityDesc: 'Energy Sword — devastating melee finishers.'",
+    "abilityDesc: 'Plasma Blade — devastating melee finishers.'",
+  ],
+  [
+    "abilityDesc: 'Spartan Training — steady ranged DPS.'",
+    "abilityDesc: 'Vanguard Training — steady ranged DPS.'",
+  ],
+  [
+    "abilityDesc: 'Lancer Burst — chainsaw finisher on low HP foes.'",
+    "abilityDesc: 'Burst Lancer — chainsaw finisher on low HP foes.'",
+  ],
+  [
+    "abilityDesc: 'Brothers in Arms — heals Marcus when nearby.'",
+    "abilityDesc: 'Brothers in Arms — heals Ironhart when nearby.'",
+  ],
+  [
+    "abilityDesc: 'Cole Train — charges through enemy lines.'",
+    "abilityDesc: 'Iron Charge — charges through enemy lines.'",
+  ],
+  [
+    "abilityDesc: 'Carmine Curse — fragile, but cheap lancer support.'",
+    "abilityDesc: 'Ironhelm Curse — fragile, but cheap lancer support.'",
+  ],
+  [
+    "abilityDesc: 'Carmine Brother — buffs other Carmines nearby.'",
+    "abilityDesc: 'Ironhelm Brother — buffs other Ironhelms nearby.'",
+  ],
+  [
+    "abilityDesc: 'Lancer Drill — standard COG ranged line-holder.'",
+    "abilityDesc: 'Burst Drill — standard trench ranged line-holder.'",
+  ],
+  [
+    "abilityDesc: 'Andúril — bonus damage vs elites and dark knights.'",
+    "abilityDesc: 'Crownblade — bonus damage vs elites and dark knights.'",
+  ],
+  [
+    "abilityDesc: 'You Shall Not Pass — terrifies nearby enemies.'",
+    "abilityDesc: 'Grey Ward — terrifies nearby enemies.'",
+  ],
+  [
+    "abilityDesc: 'Ring Bearer — evasion and morale aura for allies.'",
+    "abilityDesc: 'Scout Ring — evasion and morale aura for allies.'",
+  ],
+  [
+    "abilityDesc: 'Horn of Gondor — rally pulse when surrounded.'",
+    "abilityDesc: 'Shield Horn — rally pulse when surrounded.'",
+  ],
+  [
+    "abilityDesc: 'Hamon Overdrive — bonus vs undead elites.'",
+    "abilityDesc: 'Solar Pulse — bonus vs undead elites.'",
+  ],
+  [
+    "abilityDesc: 'Vaporization Freeze — slows enemy morale.'",
+    "abilityDesc: 'Crimson Chill — slows enemy morale.'",
+  ],
+  [
+    "abilityDesc: 'Sunlight Yellow — heals allies on elite kill.'",
+    "abilityDesc: 'Solar Heal — heals allies on elite kill.'",
+  ],
+  [
+    "abilityDesc: 'Hermit Purple — trick shots and scouting debuffs.'",
+    "abilityDesc: 'Violet Snare — trick shots and scouting debuffs.'",
+  ],
+  [
+    "abilityDesc: 'Bubble Cutter — crit from range.'",
+    "abilityDesc: 'Pressure Cutter — crit from range.'",
+  ],
+  [
+    "abilityDesc: 'German Science — bonus vs siege units.'",
+    "abilityDesc: 'Iron Science — bonus vs siege units.'",
+  ],
+  [
+    "abilityDesc: 'Star Platinum — ORA rush on pinned foes.'",
+    "abilityDesc: 'Spirit Rush — rapid finisher on pinned foes.'",
+  ],
+  [
+    "abilityDesc: 'Hierophant Green — emerald splash AoE.'",
+    "abilityDesc: 'Emerald Spray — emerald splash AoE.'",
+  ],
+  [
+    "abilityDesc: 'Silver Chariot — flurry attacks on low HP foes.'",
+    "abilityDesc: 'Silver Flurry — flurry attacks on low HP foes.'",
+  ],
+  [
+    'abilityDesc: "Magician\'s Red — fire splash on hit."',
+    "abilityDesc: 'Crimson Flame — fire splash on hit.'",
+  ],
+  [
+    "abilityDesc: 'Crazy Diamond — heals allies he passes.'",
+    "abilityDesc: 'Restorative March — heals allies he passes.'",
+  ],
+  [
+    'abilityDesc: "Heaven\'s Door — debuffs enemy accuracy."',
+    "abilityDesc: 'Script Ward — debuffs enemy accuracy.'",
+  ],
+  [
+    "abilityDesc: 'Killer Queen — Bites the Dust on wounded foes.'",
+    "abilityDesc: 'Quiet Erase — final toll on wounded foes.'",
+  ],
+  [
+    'abilityDesc: "Fus Ro Dah — Thu\'um force shout devastates clustered foes."',
+    "abilityDesc: 'Voice Shout — force wave devastates clustered foes.'",
+  ],
+  [
+    'abilityDesc: "Thu\'um Echo — empowers allies and weakens nearby foes on wave start."',
+    "abilityDesc: 'Voice Echo — empowers allies and weakens nearby foes on wave start.'",
+  ],
 ];
 
 const CROSSOVER_COMMENTS = [
@@ -457,7 +574,10 @@ const CROSSOVER_COMMENTS = [
   ['// Dragon Ball', '// Skyburst Order'],
   ["// The Elder Scrolls — Dragonborn & Thu'um", '// Voicebound Pact — Wyrmcaller & Voice'],
   ['Select a crossover operative below.', 'Select an evolved operative below.'],
-  ['Unlock a crossover roster first — then build its barracks and recruit operatives here.', 'Unlock an evolved roster first — then build its barracks and recruit operatives here.'],
+  [
+    'Unlock a crossover roster first — then build its barracks and recruit operatives here.',
+    'Unlock an evolved roster first — then build its barracks and recruit operatives here.',
+  ],
 ];
 
 function scrubFile(relPath) {

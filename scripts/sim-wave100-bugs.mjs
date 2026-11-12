@@ -248,7 +248,8 @@ function speedrunAct(Game, t, mode) {
 
   // Planet event responses if available
   if (s.timeOfDay === 'night' && s.mapEvents?.event?.choices?.length) {
-    const ch = s.mapEvents.event.choices.find((c) => (c.cost || 0) === 0) || s.mapEvents.event.choices[0];
+    const ch =
+      s.mapEvents.event.choices.find((c) => (c.cost || 0) === 0) || s.mapEvents.event.choices[0];
     try {
       Game.respondMapEvent?.(ch.id);
     } catch (_) {
@@ -446,7 +447,17 @@ console.log(
 );
 
 // Runs 1..N-1: varied modes
-const modes = ['speedrun', 'army', 'castle', 'speedrun', 'army', 'castle', 'speedrun', 'army', 'castle'];
+const modes = [
+  'speedrun',
+  'army',
+  'castle',
+  'speedrun',
+  'army',
+  'castle',
+  'speedrun',
+  'army',
+  'castle',
+];
 for (let i = 1; i < RUNS; i++) {
   const mode = modes[(i - 1) % modes.length];
   process.stdout.write(`Run ${i}: ${mode} (${DIFFS[i % DIFFS.length]})… `);
@@ -514,7 +525,9 @@ if (!results.some((r) => r.reached100)) {
   }
 }
 
-const issues = results.flatMap((r) => r.issues.map((i) => ({ ...i, runId: r.runId, mode: r.mode })));
+const issues = results.flatMap((r) =>
+  r.issues.map((i) => ({ ...i, runId: r.runId, mode: r.mode }))
+);
 const counts = {};
 for (const i of issues) counts[i.code] = (counts[i.code] || 0) + 1;
 
@@ -523,7 +536,9 @@ const report = {
   runs: results.length,
   bestWave: Math.max(...results.map((r) => r.maxWave)),
   avgWave: +(results.reduce((s, r) => s + r.maxWave, 0) / results.length).toFixed(1),
-  reached100: results.filter((r) => r.reached100).map((r) => ({ runId: r.runId, mode: r.mode, wave: r.maxWave })),
+  reached100: results
+    .filter((r) => r.reached100)
+    .map((r) => ({ runId: r.runId, mode: r.mode, wave: r.maxWave })),
   issueCounts: counts,
   issues: issues.slice(0, 80),
   results: results.map((r) => ({
@@ -547,16 +562,10 @@ console.log(`Best wave: ${report.bestWave} | Avg: ${report.avgWave}`);
 console.log(`Reached 100: ${report.reached100.length}/${results.length}`);
 console.log('Issue counts:', counts);
 if (issues.filter((i) => i.code === 'UPDATE_THROW').length) {
-  console.log(
-    'Throws sample:',
-    issues.filter((i) => i.code === 'UPDATE_THROW').slice(0, 5)
-  );
+  console.log('Throws sample:', issues.filter((i) => i.code === 'UPDATE_THROW').slice(0, 5));
 }
 if (issues.filter((i) => i.code === 'SOFT_LOCK').length) {
-  console.log(
-    'Soft-locks:',
-    issues.filter((i) => i.code === 'SOFT_LOCK').slice(0, 5)
-  );
+  console.log('Soft-locks:', issues.filter((i) => i.code === 'SOFT_LOCK').slice(0, 5));
 }
 console.log('\nPer-run:');
 for (const r of report.results) {

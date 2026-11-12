@@ -73,7 +73,15 @@ const ModLoader = (() => {
 
   const BUILDING_REQUIRED = ['name', 'cost', 'hp', 'radius', 'buildTime'];
 
-  const UNIT_TYPES = new Set(['melee', 'ranged', 'healer', 'cavalry', 'builder', 'courier', 'general']);
+  const UNIT_TYPES = new Set([
+    'melee',
+    'ranged',
+    'healer',
+    'cavalry',
+    'builder',
+    'courier',
+    'general',
+  ]);
 
   let catalog = [];
   let enabled = [];
@@ -181,9 +189,7 @@ const ModLoader = (() => {
   }
 
   function clearHudForMod(modId) {
-    document
-      .querySelectorAll(`[data-mod-id="${modId}"]`)
-      .forEach((el) => el.remove());
+    document.querySelectorAll(`[data-mod-id="${modId}"]`).forEach((el) => el.remove());
     const deploySec = document.getElementById('mod-deploy-section');
     const buildSec = document.getElementById('mod-build-section');
     if (deploySec && !deploySec.querySelector('.deploy-btn')) {
@@ -272,11 +278,7 @@ const ModLoader = (() => {
 
   function registerUnlocks(manifest) {
     if (typeof Research === 'undefined' || !Research.registerModUnlocks) return;
-    Research.registerModUnlocks(
-      manifest.id,
-      manifest.deploy || [],
-      manifest.build || []
-    );
+    Research.registerModUnlocks(manifest.id, manifest.deploy || [], manifest.build || []);
   }
 
   function loadScript(url) {
@@ -404,7 +406,10 @@ const ModLoader = (() => {
       const data = await fetchJson(`${MODS_BASE}manifest.json`);
       catalog = Array.isArray(data.mods) ? data.mods : Array.isArray(data) ? data : [];
     } catch (err) {
-      console.info('[ModLoader] No mods/manifest.json — mod folder empty or unavailable.', err.message);
+      console.info(
+        '[ModLoader] No mods/manifest.json — mod folder empty or unavailable.',
+        err.message
+      );
       catalog = [];
     }
   }
@@ -501,12 +506,18 @@ const ModLoader = (() => {
         const on = enabled.includes(entry.id);
         const load = loaded.get(entry.id);
         const err = load?.errors?.length || lastErrors.filter((e) => e.startsWith(entry.id)).length;
-        const badge = err ? ' <span class="mod-settings-err">error</span>' : on ? ' <span class="mod-settings-on">loaded</span>' : '';
+        const badge = err
+          ? ' <span class="mod-settings-err">error</span>'
+          : on
+            ? ' <span class="mod-settings-on">loaded</span>'
+            : '';
         return (
           `<label class="settings-row check mod-settings-row">` +
           `<input type="checkbox" class="mod-enable-cb" data-mod-id="${entry.id}" ${on ? 'checked' : ''} />` +
           `<span><strong>${entry.name || entry.id}</strong>${badge}` +
-          (entry.description ? `<br><span class="mod-settings-desc">${entry.description}</span>` : '') +
+          (entry.description
+            ? `<br><span class="mod-settings-desc">${entry.description}</span>`
+            : '') +
           `</span></label>`
         );
       })

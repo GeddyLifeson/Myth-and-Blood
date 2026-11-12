@@ -63,7 +63,10 @@ TechTreeBranches.onWaveStart(50, { wave: 50, showMessage: () => {}, addHighlight
 ok(TechTreeBranches.getRootId() === 'arcane', 'arcane root from academies and mages');
 TechTreeBranches.completeInvest('arcane_root', {});
 const fx = TechTreeBranches.getCombinedEffects(60);
-ok(fx.scienceGainMult > 1 && fx.researchSpeedMult > 1, 'arcane root grants science and research mods');
+ok(
+  fx.scienceGainMult > 1 && fx.researchSpeedMult > 1,
+  'arcane root grants science and research mods'
+);
 
 // Mythic root
 FoundationalMedievalLayer.resetRun();

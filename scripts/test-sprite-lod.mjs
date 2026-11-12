@@ -58,14 +58,8 @@ ok(SpriteLod.shouldDrawUnitOverlays(1), 'medium tier keeps overlays');
 ok(!SpriteLod.shouldDrawUnitOverlays(2), 'low tier skips overlays');
 ok(SpriteLod.particleMultForLod(3) < SpriteLod.particleMultForLod(0), 'particles scale down');
 
-ok(
-  SpriteLod.cacheAnimForLod(3, 'attack') === 'attack',
-  'attack anim preserved at minimal LOD'
-);
-ok(
-  SpriteLod.cacheFrameForLod(3, 2, 'attack') === 2,
-  'attack frame preserved at minimal LOD'
-);
+ok(SpriteLod.cacheAnimForLod(3, 'attack') === 'attack', 'attack anim preserved at minimal LOD');
+ok(SpriteLod.cacheFrameForLod(3, 2, 'attack') === 2, 'attack frame preserved at minimal LOD');
 ok(
   SpriteLod.getUnitLod(
     { id: 'e1', x: -250, y: 250, team: 'enemy', hp: 10, attackAnimTimer: 8, animState: 'attack' },

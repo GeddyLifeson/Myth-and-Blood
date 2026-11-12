@@ -150,14 +150,7 @@ const SpriteGen = (() => {
 
   /** Radial "lit sphere" gradient: bright highlight offset toward the light, dark rim. */
   function bodyGradient(ctx, cx, cy, r, hex) {
-    const g = ctx.createRadialGradient(
-      cx - r * 0.35,
-      cy - r * 0.4,
-      r * 0.12,
-      cx,
-      cy,
-      r * 1.05
-    );
+    const g = ctx.createRadialGradient(cx - r * 0.35, cy - r * 0.4, r * 0.12, cx, cy, r * 1.05);
     g.addColorStop(0, shadeHex(hex, 0.5));
     g.addColorStop(0.55, hex);
     g.addColorStop(1, shadeHex(hex, -0.4));
@@ -1086,15 +1079,7 @@ const SpriteGen = (() => {
         const ch = 14 + (hash % 10);
         ctx.fillStyle = hash > 86 ? 'rgba(120,168,90,0.10)' : 'rgba(30,54,20,0.14)';
         ctx.beginPath();
-        ctx.ellipse(
-          x + (hash % 9) - 4,
-          y + (hash % 7) - 3,
-          cw / 2,
-          ch / 2,
-          0,
-          0,
-          Math.PI * 2
-        );
+        ctx.ellipse(x + (hash % 9) - 4, y + (hash % 7) - 3, cw / 2, ch / 2, 0, 0, Math.PI * 2);
         ctx.fill();
       }
     }

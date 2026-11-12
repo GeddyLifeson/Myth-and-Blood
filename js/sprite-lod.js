@@ -25,7 +25,11 @@ const SpriteLod = (() => {
   function getUnitLod(unit, sceneLod, ctx = {}) {
     if (ctx.selectedIds?.has?.(unit.id)) return LOD.FULL;
     if (isImportantUnit(unit, ctx.selectedIds)) return Math.min(sceneLod, LOD.MEDIUM);
-    if ((unit.attackAnimTimer || 0) > 0 || unit.animState === 'attack' || unit.animState === 'hurt') {
+    if (
+      (unit.attackAnimTimer || 0) > 0 ||
+      unit.animState === 'attack' ||
+      unit.animState === 'hurt'
+    ) {
       return Math.min(sceneLod, LOD.MEDIUM);
     }
     let lod = sceneLod;

@@ -25,8 +25,10 @@ const MartialPathEvolution = (() => {
       id: 'galactic',
       label: 'Eternal Legion',
       short: 'Eternal Legion',
-      epithet: 'Gene-forged super-soldiers in ancestral power armor — shield walls against star fleets.',
-      fantasy: 'Your founding footman becomes gene-father to legionnaires who still fight in formation.',
+      epithet:
+        'Gene-forged super-soldiers in ancestral power armor — shield walls against star fleets.',
+      fantasy:
+        'Your founding footman becomes gene-father to legionnaires who still fight in formation.',
       doctrine: {
         id: 'unbreaking_line',
         label: 'The Unbreaking Line',
@@ -278,7 +280,10 @@ const MartialPathEvolution = (() => {
     const geneFather = state?.geneFather?.captured;
     const isFounder = geneFather && unit.id && unit.id === state.geneFather.unitId;
 
-    if (geneFather && (unit.type === 'footman' || unit.type === 'knight' || unit.type === 'pikeman')) {
+    if (
+      geneFather &&
+      (unit.type === 'footman' || unit.type === 'knight' || unit.type === 'pikeman')
+    ) {
       const ancestry = 1 + 0.015 * tier + (stage === 'galactic' ? 0.02 * tier : 0);
       if (unit.maxHp) {
         unit.maxHp = Math.floor(unit.maxHp * ancestry);
@@ -327,7 +332,8 @@ const MartialPathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic = typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic =
+        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
       if (cosmic === 'eternal_legion') {
         ctx.showMessage?.(
           'The Eternal Legion rises — gene-forged knights in power armor still fight shield-wall formation against star fleets.',

@@ -174,7 +174,14 @@ for (const spot of cursorSpots) {
     ok(cam.zoom > zBefore && Number.isFinite(cam.worldX), `zoom-in @ ${spot.label} stays finite`);
   }
   const cam2 = makeCamera({ cameraZoom: 2.5, cameraWorldX: 390, cameraWorldY: 320 });
-  assertAnchorStable(cam2, spot.sx, spot.sy, 1 / 1.14, `zoom-out @ ${spot.label}`, spot.strict ? 2.5 : 12);
+  assertAnchorStable(
+    cam2,
+    spot.sx,
+    spot.sy,
+    1 / 1.14,
+    `zoom-out @ ${spot.label}`,
+    spot.strict ? 2.5 : 12
+  );
 }
 
 {
@@ -212,10 +219,7 @@ for (const spot of cursorSpots) {
   ok(b90.right > core.right && b140.right > b90.right, 'larger pad expands right bound');
   cam.zoomTo(640, 360, 2.8);
   const core2 = cam.getVisibleBoundsCore();
-  ok(
-    core2.right - core2.left < core.right - core.left,
-    'zoom-in shrinks visible world width'
-  );
+  ok(core2.right - core2.left < core.right - core.left, 'zoom-in shrinks visible world width');
   const bAfter = cam.getVisibleBounds(90);
   ok(bAfter.left < core2.left, 'pad still applied after zoom');
 }
@@ -307,7 +311,12 @@ function loadCrossoverSlice() {
   const restored = exp.EnemyFactions.getActiveFactions(40);
   ok(restored.length >= 2, 'planet conquest reset restores factions for multi-front');
   exp.MultiFrontSiege.resetRun();
-  const plan = exp.MultiFrontSiege.buildFrontPlan(40, restored, exp.getUnlockedAttackSides(40), () => 0.1);
+  const plan = exp.MultiFrontSiege.buildFrontPlan(
+    40,
+    restored,
+    exp.getUnlockedAttackSides(40),
+    () => 0.1
+  );
   ok(plan && plan.waveSides?.length >= 1, 'multi-front plan builds after conquest reset');
 }
 

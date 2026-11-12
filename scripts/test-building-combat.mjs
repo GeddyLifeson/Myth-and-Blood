@@ -59,7 +59,11 @@ function boot() {
       hidden: false,
       querySelector: () => null,
       querySelectorAll: () => [],
-      createElement: () => ({ getContext: () => ctx2d(), style: {}, classList: { add: noop, remove: noop } }),
+      createElement: () => ({
+        getContext: () => ctx2d(),
+        style: {},
+        classList: { add: noop, remove: noop },
+      }),
     },
     canvas: cvs,
     Image: function Image() {
@@ -116,7 +120,9 @@ foot.hp = 0;
 for (let i = 0; i < 8; i++) Game.update();
 
 ok(Game.creativeSpawnPlayerBuildingAt('outpost', cx.x - 40, cx.y - 100), 'place player outpost');
-const outSnap = Game.getBuildingsSnapshot().find((b) => b.type === 'outpost' && b.owner === 'player');
+const outSnap = Game.getBuildingsSnapshot().find(
+  (b) => b.type === 'outpost' && b.owner === 'player'
+);
 ok(outSnap?.complete, 'player outpost complete');
 
 if (outSnap) {

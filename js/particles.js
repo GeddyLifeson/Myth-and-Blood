@@ -8,8 +8,7 @@ const Particles = (() => {
 
   function setBudget(unitsOnField, qualityMult = 1, spriteLod = 0) {
     const base = unitsOnField > 80 ? 160 : unitsOnField > 50 ? 220 : 280;
-    const lodMult =
-      typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
+    const lodMult = typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
     lodSpawnScale = lodMult;
     MAX_PARTICLES = Math.max(40, Math.floor(base * Math.max(0.2, qualityMult) * lodMult));
     trim(true);

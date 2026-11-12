@@ -59,14 +59,29 @@ const q2 = WaveCompositionCore.buildWeightedSpawnQueue({
   seed: 42,
 });
 ok(q1.length === 12 && q2.length === 12, 'wave-composition fills requested count');
-ok(q1.every((t) => ['goblin', 'orc', 'troll'].includes(t)), 'wave-composition picks from pool');
+ok(
+  q1.every((t) => ['goblin', 'orc', 'troll'].includes(t)),
+  'wave-composition picks from pool'
+);
 ok(q1.join(',') === q2.join(','), 'seeded wave-composition is deterministic');
 
 Pathfinding.init(640, 480);
-ok(Pathfinding.getWalkProfile({ team: 'enemy', combatType: 'melee' }) === 'ES', 'enemy melee uses ES worker grid');
-ok(Pathfinding.getWalkProfile({ team: 'enemy', type: 'siege_tower', combatType: 'melee' }) === 'EL', 'enemy siege uses EL worker grid');
-ok(Pathfinding.getWalkProfile({ team: 'player', combatType: 'melee' }) === 'PS', 'player melee uses PS worker grid');
-ok(Pathfinding.getWalkProfile({ team: 'player', combatType: 'cavalry' }) === 'PL', 'player cavalry uses PL worker grid');
+ok(
+  Pathfinding.getWalkProfile({ team: 'enemy', combatType: 'melee' }) === 'ES',
+  'enemy melee uses ES worker grid'
+);
+ok(
+  Pathfinding.getWalkProfile({ team: 'enemy', type: 'siege_tower', combatType: 'melee' }) === 'EL',
+  'enemy siege uses EL worker grid'
+);
+ok(
+  Pathfinding.getWalkProfile({ team: 'player', combatType: 'melee' }) === 'PS',
+  'player melee uses PS worker grid'
+);
+ok(
+  Pathfinding.getWalkProfile({ team: 'player', combatType: 'cavalry' }) === 'PL',
+  'player cavalry uses PL worker grid'
+);
 
 ok(!PathWorkerBridge.isSupported(), 'bridge reports no Worker in headless VM');
 ok(!PathWorkerBridge.isReady(), 'bridge not ready without worker');
@@ -77,7 +92,14 @@ Pathfinding.init(640, 480);
 const blockFn = () => false;
 const grids = Pathfinding.rebuildWalkGrids(blockFn);
 ok(grids?.ES?.length > 0, 'rebuildWalkGrids produces enemy melee grid');
-const pathAfterRebuild = Pathfinding.findPath(40, 40, 500, 360, { team: 'enemy', combatType: 'melee' }, blockFn);
+const pathAfterRebuild = Pathfinding.findPath(
+  40,
+  40,
+  500,
+  360,
+  { team: 'enemy', combatType: 'melee' },
+  blockFn
+);
 ok(pathAfterRebuild.length > 0, 'sync findPath works after walk grid rebuild');
 
 if (failed) {

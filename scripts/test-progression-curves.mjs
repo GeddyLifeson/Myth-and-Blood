@@ -40,7 +40,10 @@ function ok(cond, msg) {
 }
 
 ok(U.smoothstep(0) === 0 && U.smoothstep(1) === 1, 'smoothstep endpoints');
-ok(U.academyThresholdBlend(85) === 0 && U.academyThresholdBlend(115) === 1, 'academy threshold blend range');
+ok(
+  U.academyThresholdBlend(85) === 0 && U.academyThresholdBlend(115) === 1,
+  'academy threshold blend range'
+);
 ok(U.rtsMapBlend(174) === 0 && U.rtsMapBlend(205) === 1, 'RTS map blend range');
 
 const w99 = U.getWorldSize(99);
@@ -74,7 +77,14 @@ ok(!U.isProgressionMilestone(42), 'wave 42 is not a milestone');
 ok(U.PROGRESSION_MILESTONES.length >= 10, 'milestone list has intermediate beats');
 
 const depthCode = readFileSync(join(JS, 'game-depth.js'), 'utf8');
-const depthSb = { Math, Object, Array, Set, academyThresholdBlend: U.academyThresholdBlend, rtsMapBlend: U.rtsMapBlend };
+const depthSb = {
+  Math,
+  Object,
+  Array,
+  Set,
+  academyThresholdBlend: U.academyThresholdBlend,
+  rtsMapBlend: U.rtsMapBlend,
+};
 depthSb.window = depthSb;
 depthSb.globalThis = depthSb;
 const { GameDepth } = vm.runInContext(`${depthCode}\n({ GameDepth })`, vm.createContext(depthSb));

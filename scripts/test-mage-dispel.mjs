@@ -164,8 +164,14 @@ function boot(seed) {
   const r = FactionHazards.dispelInRadius(hazards, 110, 105, 85);
   ok(r.purged >= 2, `purged nearby burn+void (got ${r.purged})`);
   ok(hazards.length === 1 && hazards[0].type === 'goblin_plague', 'distant plague remains');
-  ok(hazards.every((h) => h.type !== 'orc_fire_pit'), 'fire pit cleared');
-  ok(hazards.every((h) => h.type !== 'void_corruption'), 'void cleared');
+  ok(
+    hazards.every((h) => h.type !== 'orc_fire_pit'),
+    'fire pit cleared'
+  );
+  ok(
+    hazards.every((h) => h.type !== 'void_corruption'),
+    'void cleared'
+  );
 }
 
 const { sb, cvs } = boot(19);

@@ -116,7 +116,9 @@ const opY = cx2.y - 100;
 ok(Game.creativeSpawnPlayerBuildingAt('outpost', cx2.x, opY), 'spawn outpost for mage flee test');
 ok(Game.creativeSpawnPlayerBuildingAt('medical_tent', cx2.x - 120, cx2.y), 'spawn med tent');
 ok(Game.creativeSpawnPlayerAt('mage', cx2.x + 24, opY), 'spawn mage');
-const mage = Game.getUnitById(Game.getUnitsSnapshot().find((u) => u.type === 'mage' && u.team === 'player')?.id);
+const mage = Game.getUnitById(
+  Game.getUnitsSnapshot().find((u) => u.type === 'mage' && u.team === 'player')?.id
+);
 ok(mage, 'mage resolves by id');
 for (let i = 0; i < 180; i++) Game.update();
 ok(mage.garrisoned, 'mage garrisons outpost');

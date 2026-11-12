@@ -226,7 +226,10 @@ const fair = FactionHazards.spawnInitial(800, 600, 10, 480, 500, {
   maxHazards: 4,
 });
 ok(fair.length <= 4, `fair hazard cap (${fair.length})`);
-ok(fair.every((h) => h.y < 440), 'hazards north of rally');
+ok(
+  fair.every((h) => h.y < 440),
+  'hazards north of rally'
+);
 GrandStrategy.resetRun();
 IntergalacticLayer.resetRun();
 const boot = MacroBootstrap.bootstrapMacroStateForWave(500, { silent: true });
@@ -241,19 +244,36 @@ const dip = GrandStrategy.queueOrder('diplomacy', rid, { wave: 500, showMessage(
 ok(dip.ok, 'GS diplomacy order');
 const log = GrandStrategy.queueOrder('logistics', rid, { wave: 500, showMessage() {} });
 ok(log.ok, 'GS logistics order');
-ok(regions.some((r) => r.armyTokens > 0), 'army tokens on regions');
+ok(
+  regions.some((r) => r.armyTokens > 0),
+  'army tokens on regions'
+);
 ok(typeof GrandStrategy.getOrdersSnapshot === 'function', 'orders snapshot for arrows');
 
 const planetId = IntergalacticLayer.getSelectedPlanetId?.() || 'aurion_prime';
 IntergalacticLayer.selectPlanet?.(planetId);
 const fleetId = IntergalacticLayer.getSelectedFleetId?.() || 'fleet_1';
-ok(IntergalacticLayer.queueFleetOrder('patrol', planetId, fleetId, { wave: 500, showMessage() {} }).ok, 'patrol');
-ok(IntergalacticLayer.queueFleetOrder('blockade', planetId, fleetId, { wave: 500, showMessage() {} }).ok, 'blockade');
+ok(
+  IntergalacticLayer.queueFleetOrder('patrol', planetId, fleetId, { wave: 500, showMessage() {} })
+    .ok,
+  'patrol'
+);
+ok(
+  IntergalacticLayer.queueFleetOrder('blockade', planetId, fleetId, { wave: 500, showMessage() {} })
+    .ok,
+  'blockade'
+);
 const shipId = IntergalacticLayer.getSelectedScienceShipId?.() || 'sci_1';
-const survey = IntergalacticLayer.queueSurveyOrder('survey', planetId, shipId, { wave: 500, showMessage() {} });
+const survey = IntergalacticLayer.queueSurveyOrder('survey', planetId, shipId, {
+  wave: 500,
+  showMessage() {},
+});
 ok(survey.ok || survey.msg, 'survey attempted');
 const planets = IntergalacticLayer.getPlanetsSnapshot();
-ok(planets.some((p) => Array.isArray(p.fleets)), 'planet fleets in snapshot');
+ok(
+  planets.some((p) => Array.isArray(p.fleets)),
+  'planet fleets in snapshot'
+);
 
 console.log('\n=== §6 Planet conquest ===');
 PlanetConquest.resetRun({ forcedMode: true });
@@ -269,11 +289,11 @@ PlanetConquest.reduceEnemyControl?.(fid, 50) ||
 // Manually drop control via consolidate path: need enemyControl <= 45
 // Use onEnemyStructureDestroyed multiple times if available
 for (let i = 0; i < 5; i++) {
-  PlanetConquest.onEnemyStructureDestroyed?.(
-    { enemyFaction: fid },
-    500,
-    { modeId: 'planet_conquest', buildings: [], units: [] }
-  );
+  PlanetConquest.onEnemyStructureDestroyed?.({ enemyFaction: fid }, 500, {
+    modeId: 'planet_conquest',
+    buildings: [],
+    units: [],
+  });
 }
 const con = PlanetConquest.consolidateSector(fid, { wave: 500, worldW: 800, showMessage() {} });
 ok(con.ok || con.msg?.includes('55%'), `consolidate API works (${con.msg || 'ok'})`);

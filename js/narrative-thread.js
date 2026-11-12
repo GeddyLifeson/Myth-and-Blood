@@ -269,7 +269,10 @@ const NarrativeThread = (() => {
     beatsShown.add(wave);
     ctx.showMessage?.(`Chronicle — ${beat.hook}`, 440);
     if (beat.sub) ctx.showMessage?.(beat.sub, 400);
-    ctx.addHighlight?.('milestone', `${beat.title} — ${state?.crownEpithet || 'the Ancient Crown'}`);
+    ctx.addHighlight?.(
+      'milestone',
+      `${beat.title} — ${state?.crownEpithet || 'the Ancient Crown'}`
+    );
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'narrative',

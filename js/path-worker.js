@@ -25,14 +25,7 @@ self.onmessage = (e) => {
     case 'findPath': {
       const grid = walkGrids[msg.profile];
       const path = grid
-        ? PathfindingCore.findPathOnGrid(
-            grid,
-            msg.sx,
-            msg.sy,
-            msg.ex,
-            msg.ey,
-            msg.maxNodes
-          )
+        ? PathfindingCore.findPathOnGrid(grid, msg.sx, msg.sy, msg.ex, msg.ey, msg.maxNodes)
         : [];
       self.postMessage({
         type: 'path',

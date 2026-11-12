@@ -154,7 +154,10 @@ const healerSnap = Game.getUnitsSnapshot().find((u) => u.type === 'healer' && u.
 ok(healerSnap?.id, 'healer appears in snapshot');
 const healer = Game.getUnitById(healerSnap.id);
 ok(healer && healer.id === healerSnap.id && healer.type === 'healer', 'resolve healer');
-ok(healer.type === 'healer' || healer.combatType === 'healer', `healer type is healer (${healer.type}/${healer.combatType})`);
+ok(
+  healer.type === 'healer' || healer.combatType === 'healer',
+  `healer type is healer (${healer.type}/${healer.combatType})`
+);
 sb.ensureHealerStats?.(healer);
 ok(healer.healAmount > 0, `healer has healAmount (${healer.healAmount})`);
 ok(sb.isSpecialistUnit(healer), `healer counts as specialist (team=${healer.team})`);

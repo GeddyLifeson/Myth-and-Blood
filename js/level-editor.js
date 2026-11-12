@@ -168,7 +168,11 @@ const LevelEditor = (() => {
     const tool = gs?.creativeTool;
     const pos = snapPos(x, y);
 
-    if (tool === 'level_paint_tree' || tool === 'level_paint_rock' || tool === 'level_paint_barricade') {
+    if (
+      tool === 'level_paint_tree' ||
+      tool === 'level_paint_rock' ||
+      tool === 'level_paint_barricade'
+    ) {
       pushUndo();
       const type = tool.replace('level_paint_', '');
       Game.creativePlaceDecoration?.(type, pos.x, pos.y);

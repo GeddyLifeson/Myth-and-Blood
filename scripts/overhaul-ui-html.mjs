@@ -48,7 +48,9 @@ function splitByHeader(inner, headers) {
 }
 
 // Manual splits using unique markers
-const troopsEnd = leftInner.indexOf('<div class="panel-divider"></div>\n          <div class="panel-header">BUILD</div>');
+const troopsEnd = leftInner.indexOf(
+  '<div class="panel-divider"></div>\n          <div class="panel-header">BUILD</div>'
+);
 const buildStart = leftInner.indexOf('<div class="panel-header">BUILD</div>');
 const strikesStart = leftInner.indexOf('<div class="panel-header">STRIKES</div>');
 // cmd section starts at demolish / after doctrines - find first DEMOLISH button
@@ -180,9 +182,10 @@ if (kingdomStart < 0 || actionsStart < 0) {
   console.warn('Top bar wrap skipped — markers missing', { kingdomStart, actionsStart });
 } else {
   const primary = topInner.slice(0, kingdomStart).trim();
-  const kingdomBlock = topInner.slice(kingdomStart, metaStart > 0 ? metaStart : actionsStart).trim();
-  const metaBlock =
-    metaStart > 0 ? topInner.slice(metaStart, actionsStart).trim() : '';
+  const kingdomBlock = topInner
+    .slice(kingdomStart, metaStart > 0 ? metaStart : actionsStart)
+    .trim();
+  const metaBlock = metaStart > 0 ? topInner.slice(metaStart, actionsStart).trim() : '';
   const actions = topInner.slice(actionsStart).trim();
 
   const newTop = `<div id="top-bar" class="top-bar-v2">

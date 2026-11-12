@@ -35,7 +35,12 @@ const CrossoverFactions = {
     building: 'rivendell_camp',
     unlockKey: 'isLotrUnlocked',
   },
-  baki: { id: 'baki', label: 'Iron Pit Guild', building: 'hanma_dojo', unlockKey: 'isBakiUnlocked' },
+  baki: {
+    id: 'baki',
+    label: 'Iron Pit Guild',
+    building: 'hanma_dojo',
+    unlockKey: 'isBakiUnlocked',
+  },
   jojo: {
     id: 'jojo',
     label: 'Bound Spirit Court',
@@ -1004,7 +1009,7 @@ const CrossoverDefs = {
     morale: 30,
     experience: 13,
     ability: 'magicians_red',
-    abilityDesc: "Crimson Flame — fire splash on hit.",
+    abilityDesc: 'Crimson Flame — fire splash on hit.',
     color: '#c04020',
     combatTag: 'support',
     jojoPart: 3,

@@ -33,7 +33,11 @@ const EternalPathFramework = (() => {
           epithet: 'Professional armies, knightly orders, and fortified provinces',
         },
         galactic: {
-          void_rangers: { label: 'Void Rangers', short: 'Void Rangers', epithet: 'Transhuman snipers among the stars' },
+          void_rangers: {
+            label: 'Void Rangers',
+            short: 'Void Rangers',
+            epithet: 'Transhuman snipers among the stars',
+          },
           eternal_legion: {
             label: 'Eternal Legion',
             short: 'Eternal Legion',
@@ -42,7 +46,16 @@ const EternalPathFramework = (() => {
         },
       },
       modsPerTier: { hpMult: 0.012, playerDmgMult: 0.014 },
-      unitTypes: new Set(['footman', 'archer', 'pikeman', 'knight', 'paladin', 'general', 'ballista', 'scout']),
+      unitTypes: new Set([
+        'footman',
+        'archer',
+        'pikeman',
+        'knight',
+        'paladin',
+        'general',
+        'ballista',
+        'scout',
+      ]),
     },
     arcane: {
       id: 'arcane',
@@ -254,9 +267,16 @@ const EternalPathFramework = (() => {
       const label = ETERNAL_PATHS[pathId]?.eras?.kingdom?.label;
       recordEraResolution('kingdom', pathId, kingdomId, label, wave);
     }
-    const techRoot = typeof TechTreeBranches !== 'undefined' ? TechTreeBranches.getRootId?.() : null;
+    const techRoot =
+      typeof TechTreeBranches !== 'undefined' ? TechTreeBranches.getRootId?.() : null;
     if (techRoot === 'tech' && !state.eras.kingdom.pathId) {
-      recordEraResolution('kingdom', 'tech', 'engineering', ETERNAL_PATHS.tech.eras.kingdom.label, wave);
+      recordEraResolution(
+        'kingdom',
+        'tech',
+        'engineering',
+        ETERNAL_PATHS.tech.eras.kingdom.label,
+        wave
+      );
     }
   }
 
@@ -330,17 +350,27 @@ const EternalPathFramework = (() => {
       if (snap?.fantasyId === 'wizard_kings') inv.arcane += 10;
       if (snap?.fantasyId === 'honor_legion') inv.martial += 10;
     }
-    if (typeof MartialPathEvolution !== 'undefined' && MartialPathEvolution.isLegionPathActive?.(wave)) {
+    if (
+      typeof MartialPathEvolution !== 'undefined' &&
+      MartialPathEvolution.isLegionPathActive?.(wave)
+    ) {
       inv.martial += MartialPathEvolution.getPathTier(wave) * 4;
       if (MartialPathEvolution.getUnbreakingTier?.(wave) >= 1) inv.martial += 6;
     }
-    if (typeof ArcanePathEvolution !== 'undefined' && ArcanePathEvolution.isWeaverPathActive?.(wave)) {
+    if (
+      typeof ArcanePathEvolution !== 'undefined' &&
+      ArcanePathEvolution.isWeaverPathActive?.(wave)
+    ) {
       inv.arcane += ArcanePathEvolution.getPathTier(wave) * 4;
       if (ArcanePathEvolution.getSingularityTier?.(wave) >= 1) inv.arcane += 6;
     }
     if (typeof TechPathEvolution !== 'undefined' && TechPathEvolution.isFoundryPathActive?.(wave)) {
       inv.tech += TechPathEvolution.getPathTier(wave) * 5;
-      if ((TechPathEvolution.getDysonTier?.(wave) || TechPathEvolution.getAssemblyTier?.(wave) || 0) >= 1) {
+      if (
+        (TechPathEvolution.getDysonTier?.(wave) ||
+          TechPathEvolution.getAssemblyTier?.(wave) ||
+          0) >= 1
+      ) {
         inv.tech += 8;
       }
     }
@@ -385,9 +415,12 @@ const EternalPathFramework = (() => {
     const invTier = investmentTier(state.investment[pathId] || 0);
     const era = getCurrentEra(wave);
     let eraTier = 0;
-    if (era === 'medieval' && state.eras.medieval.pathId === pathId) eraTier = state.eras.medieval.tier || 1;
-    if (era === 'kingdom' && state.eras.kingdom.pathId === pathId) eraTier = Math.max(eraTier, state.eras.kingdom.tier || 1);
-    if (era === 'galactic' && state.eras.galactic.pathId === pathId) eraTier = Math.max(eraTier, state.eras.galactic.tier || 1);
+    if (era === 'medieval' && state.eras.medieval.pathId === pathId)
+      eraTier = state.eras.medieval.tier || 1;
+    if (era === 'kingdom' && state.eras.kingdom.pathId === pathId)
+      eraTier = Math.max(eraTier, state.eras.kingdom.tier || 1);
+    if (era === 'galactic' && state.eras.galactic.pathId === pathId)
+      eraTier = Math.max(eraTier, state.eras.galactic.tier || 1);
     return Math.min(4, Math.max(invTier, eraTier));
   }
 
@@ -556,8 +589,10 @@ const EternalPathFramework = (() => {
     const short = def.short;
     if (era === 'medieval') return `${short} T${tier}`;
     const chain = getPathProgression(id)?.chain;
-    if (era === 'kingdom' && chain?.kingdom !== '—') return `${short} · ${chain.kingdom.split(' ')[0]}`;
-    if (era === 'galactic' && chain?.galactic !== '—') return `${short} · ${chain.galactic.split(' ')[0]}`;
+    if (era === 'kingdom' && chain?.kingdom !== '—')
+      return `${short} · ${chain.kingdom.split(' ')[0]}`;
+    if (era === 'galactic' && chain?.galactic !== '—')
+      return `${short} · ${chain.galactic.split(' ')[0]}`;
     return `${short} T${tier}`;
   }
 
@@ -614,12 +649,27 @@ const EternalPathFramework = (() => {
     state.dominantPathId = preset;
     state.alignment = 3;
     state.eras = {
-      medieval: { pathId: preset, variantId: null, label: ETERNAL_PATHS[preset].eras.medieval.label, tier: 3, wave: 100 },
-      kingdom: { pathId: preset, variantId: preset, label: ETERNAL_PATHS[preset].eras.kingdom?.label, tier: 3, wave: 150 },
+      medieval: {
+        pathId: preset,
+        variantId: null,
+        label: ETERNAL_PATHS[preset].eras.medieval.label,
+        tier: 3,
+        wave: 100,
+      },
+      kingdom: {
+        pathId: preset,
+        variantId: preset,
+        label: ETERNAL_PATHS[preset].eras.kingdom?.label,
+        tier: 3,
+        wave: 150,
+      },
       galactic: {
         pathId: preset,
         variantId: ETERNAL_PATHS[preset].cosmicPaths?.[0] || 'stellar_foundry',
-        label: preset === 'martial' ? 'Void Rangers' : ETERNAL_PATHS[preset].eras.galactic?.[ETERNAL_PATHS[preset].cosmicPaths?.[0]]?.label,
+        label:
+          preset === 'martial'
+            ? 'Void Rangers'
+            : ETERNAL_PATHS[preset].eras.galactic?.[ETERNAL_PATHS[preset].cosmicPaths?.[0]]?.label,
         tier: 3,
         wave: 400,
       },
@@ -632,7 +682,11 @@ const EternalPathFramework = (() => {
   function bootstrapForWave(wave, ctx = {}) {
     const w = wave | 0;
     if (!state) resetRun();
-    const preset = PATH_IDS.includes(ctx.pathPreset) ? ctx.pathPreset : PATH_IDS.includes(ctx.pathId) ? ctx.pathId : 'martial';
+    const preset = PATH_IDS.includes(ctx.pathPreset)
+      ? ctx.pathPreset
+      : PATH_IDS.includes(ctx.pathId)
+        ? ctx.pathId
+        : 'martial';
     // Scale investment so mid-game jump-ins get partial tiers, endgame full.
     const scale = w >= 400 ? 1 : w >= 150 ? 0.65 : w >= 100 ? 0.4 : 0.2;
     spawnTestInvestment(preset);

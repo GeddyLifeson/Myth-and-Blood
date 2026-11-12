@@ -103,21 +103,31 @@ ErrorReporting.captureFreeze('test stall', { kind: 'stall', stallMs: 9000 });
 const freezeEntry = ErrorReporting.getRecent(1)[0];
 assert(freezeEntry?.level === 'fatal', 'freeze is fatal');
 assert(freezeEntry?.meta?.kind === 'stall', 'freeze kind');
-assert(freezeEntry?.meta?.phase === 'unit-ai' || freezeEntry?.meta?.lastPhase === 'unit-ai', 'freeze includes phase');
+assert(
+  freezeEntry?.meta?.phase === 'unit-ai' || freezeEntry?.meta?.lastPhase === 'unit-ai',
+  'freeze includes phase'
+);
 
 const beforeBeat = ErrorReporting.buildReport().entries.length;
 ErrorReporting.heartbeatBegin();
 ErrorReporting.noteSimStep(0, 2);
 ErrorReporting.heartbeatMid('post-sim-0');
 ErrorReporting.heartbeatEnd('test-loop');
-assert(ErrorReporting.buildReport().entries.length === beforeBeat, 'fast heartbeat does not log freeze');
+assert(
+  ErrorReporting.buildReport().entries.length === beforeBeat,
+  'fast heartbeat does not log freeze'
+);
 
 // Slow frame should warn
 const beforeSlow = ErrorReporting.buildReport().entries.length;
 ErrorReporting.heartbeatBegin();
 // Fake long frame by rewinding start via private-ish path: call end after delay not available.
 // Instead use captureSlowFrame path through heartbeatEnd by mocking Date is hard — call captureFreeze slow path via log.
-ErrorReporting.log('warn', 'Slow frame: 900ms @ unit-ai', { kind: 'slow-frame', frameMs: 900, phase: 'unit-ai' });
+ErrorReporting.log('warn', 'Slow frame: 900ms @ unit-ai', {
+  kind: 'slow-frame',
+  frameMs: 900,
+  phase: 'unit-ai',
+});
 assert(ErrorReporting.getRecent(1)[0]?.meta?.kind === 'slow-frame', 'slow frame loggable');
 
 const report = ErrorReporting.buildReport();
@@ -126,7 +136,10 @@ assert(report.sessionId, 'session id');
 assert(report.snapshot?.wave === 15, 'report snapshot');
 assert(report.v >= 2, 'report schema v2');
 
-const userReport = ErrorReporting.submitBugReport('wave 15 froze', { source: 'test', exportFile: false });
+const userReport = ErrorReporting.submitBugReport('wave 15 froze', {
+  source: 'test',
+  exportFile: false,
+});
 assert(userReport.userReport?.notes === 'wave 15 froze', 'user report notes');
 assert(ErrorReporting.getRecent(1)[0]?.meta?.kind === 'user-report', 'user report kind');
 

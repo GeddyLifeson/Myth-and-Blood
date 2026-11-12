@@ -450,8 +450,7 @@ const NeutralWildlife = (() => {
       // Edge-adjacent fights often fail strict LOS through border decorations — still engage.
       const hasLos = lineOfSight?.(unit.x, unit.y, foe.x, foe.y);
       const closeEnough =
-        Math.hypot(foe.x - unit.x, foe.y - unit.y) <=
-        (unit.aggroRadius || 140) * 1.15;
+        Math.hypot(foe.x - unit.x, foe.y - unit.y) <= (unit.aggroRadius || 140) * 1.15;
       if (hasLos === false && !closeEnough) {
         unit.combatTargetId = null;
       } else {

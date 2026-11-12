@@ -21,7 +21,7 @@ const CROSSOVER_ACH_FACTIONS = [
   { key: 'baki', label: 'Iron Pit Guild', cat: 'crossover_baki', build: 'hanma_dojo' },
   {
     key: 'jojo',
-    label: "Bound Spirit Court",
+    label: 'Bound Spirit Court',
     cat: 'crossover_jojo',
     build: 'stand_arrow_shrine',
   },
@@ -39,7 +39,7 @@ const CROSSOVER_ACH_FACTIONS = [
   },
   {
     key: 'imperium',
-    label: "Crimson Legions",
+    label: 'Crimson Legions',
     cat: 'crossover_imperium',
     build: 'astartes_chapel',
   },
@@ -986,7 +986,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'tes_dragonborn_victory',
         'Wyrmcaller Legacy',
-        'Heroic destiny across every school of power — win after wave 100 with an Immortal from each Eternal Path and slay a major boss by Thu\'um or dragon-fire.',
+        "Heroic destiny across every school of power — win after wave 100 with an Immortal from each Eternal Path and slay a major boss by Thu'um or dragon-fire.",
         'run_dragonborn_legacy:100',
         'gold',
       ],
@@ -1190,7 +1190,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'warhammer_unlock',
       name: 'Crimson Legions & Rift Cult',
-      desc: "The Eternal Crusade — Crimson Legions and Rift Cult unlocked. Faith & Rift await the dutiful.",
+      desc: 'The Eternal Crusade — Crimson Legions and Rift Cult unlocked. Faith & Rift await the dutiful.',
       cat: 'secrets',
       rule: 'unlock:warhammer',
       tier: 'gold',
@@ -1198,7 +1198,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'tes_unlock',
       name: 'Voicebound Pact',
-      desc: "Wyrmcaller Legacy — voice shouts, wyrmcaller heroes, and Voicebound prophecy unlocked.",
+      desc: 'Wyrmcaller Legacy — voice shouts, wyrmcaller heroes, and Voicebound prophecy unlocked.',
       cat: 'secrets',
       rule: 'unlock:tes',
       tier: 'gold',

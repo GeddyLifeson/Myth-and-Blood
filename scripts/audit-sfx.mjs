@@ -33,7 +33,9 @@ for (const f of readdirSync(JS).filter((x) => x.endsWith('.js'))) {
     addCall(m[1], f);
   }
   // Game playSfx('name') / AudioEngine.play('name')
-  for (const m of t.matchAll(/(?:playSfx|AudioEngine\.play)\(\s*['"]([a-zA-Z_][a-zA-Z0-9_]*)['"]/g)) {
+  for (const m of t.matchAll(
+    /(?:playSfx|AudioEngine\.play)\(\s*['"]([a-zA-Z_][a-zA-Z0-9_]*)['"]/g
+  )) {
     addCall(m[1], f);
   }
   for (const m of t.matchAll(/eng\.play\(\s*['"]([a-zA-Z_][a-zA-Z0-9_]*)['"]/g)) {

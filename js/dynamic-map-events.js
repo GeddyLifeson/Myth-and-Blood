@@ -133,7 +133,12 @@ const DynamicMapEvents = (() => {
       prep: 'The planet core pulses — channel relic energy or brace for aberrations.',
       choices: [
         { id: 'channel', label: 'Channel Pulse', cost: 6, hint: '+16 TP · +4 SP · guardians rise' },
-        { id: 'brace', label: 'Brace North', cost: 4, hint: '−10% damage taken · −10% enemy spawns' },
+        {
+          id: 'brace',
+          label: 'Brace North',
+          cost: 4,
+          hint: '−10% damage taken · −10% enemy spawns',
+        },
         { id: 'ignore', label: 'Unshielded', cost: 0, hint: 'Wild stalkers · morale shock' },
       ],
     },

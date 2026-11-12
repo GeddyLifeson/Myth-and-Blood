@@ -194,7 +194,8 @@ const ArcanePathEvolution = (() => {
 
   function recordBuild(buildType, wave = 0) {
     if (!state || !buildType || !isWeaverPathActive(wave)) return;
-    if (buildType === 'research_lab') recordAction('build_research_lab', { wave, label: 'Research Lab' });
+    if (buildType === 'research_lab')
+      recordAction('build_research_lab', { wave, label: 'Research Lab' });
     else if (ARCANE_BUILD_TYPES.has(buildType) || buildType.includes('academy')) {
       recordAction('build_academy', { wave, label: 'Enchanted academy' });
     }
@@ -349,7 +350,8 @@ const ArcanePathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic = typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic =
+        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
       if (cosmic === 'aether_lords') {
         ctx.showMessage?.(
           'Weavers of Fate ascend — early mages become cosmic sorcerers rewriting physics among the stars.',

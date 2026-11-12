@@ -303,9 +303,7 @@ const ProgressionRestarts = (() => {
     };
 
     ctx.addHighlight?.('era', `Escalation restart — ${def.name}`);
-    const eternalNote = legacy.eternalInvested
-      ? `, ${legacy.eternalInvested} eternal echo(s)`
-      : '';
+    const eternalNote = legacy.eternalInvested ? `, ${legacy.eternalInvested} eternal echo(s)` : '';
     ctx.showMessage?.(
       `Progression Restart — ${def.name}. Tactical map reset; legacies, research (${researchDone} complete)${eternalNote}, and ${baseTp + (legacy.startTp || 0)} TP imported.`,
       440
@@ -327,9 +325,7 @@ const ProgressionRestarts = (() => {
       firedCount: fired.size,
       totalGates: ESCALATION_RESTARTS.length,
       lastRestart,
-      nextGate: next
-        ? { wave: next.wave, name: next.name, shortName: next.shortName }
-        : null,
+      nextGate: next ? { wave: next.wave, name: next.name, shortName: next.shortName } : null,
       hudLine: formatHudLine(ctx),
     };
   }

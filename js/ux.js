@@ -214,8 +214,7 @@ const UX = (() => {
       minWave: 80,
       maxWave: 140,
       when: (gs) =>
-        (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 ||
-        !!gs.counterEvolution?.summary,
+        (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 || !!gs.counterEvolution?.summary,
       title: 'Counter-Offensives',
       body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair with spy disruption and settlement raids to collapse a realm before evolution outpaces you.',
       highlight: 'right-panel',
@@ -235,7 +234,10 @@ const UX = (() => {
 
   function pruneTutorialProgress(gs) {
     let changed = false;
-    while (tutorialStep < TUTORIAL_STEPS.length && tutorialStepExpired(TUTORIAL_STEPS[tutorialStep], gs.wave)) {
+    while (
+      tutorialStep < TUTORIAL_STEPS.length &&
+      tutorialStepExpired(TUTORIAL_STEPS[tutorialStep], gs.wave)
+    ) {
       tutorialStep++;
       changed = true;
     }
@@ -473,8 +475,7 @@ const UX = (() => {
     const earned = a.goldStarsEarned || 0;
     const need =
       a.rankNeeded === 1 ? '1 gold star to unlock' : `${a.rankNeeded} gold stars to unlock`;
-    const prog =
-      needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
+    const prog = needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
     const promoteHint = u.canVetUpgrade
       ? ' — eligible for TP promotion now'
       : ' — work each wave (gold-star credit) or earn gold stars in battle';
@@ -758,7 +759,8 @@ const UX = (() => {
         ? `Night (${gs.nightSecondsLeft ?? 60}s) — ${tip} · D begins day`
         : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
-      hint = 'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
+      hint =
+        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
     else
       hint =
         'Drag empty map to select · Shift+drag · G formation · Right-click deselect · C clear · Tab log';
@@ -1141,8 +1143,7 @@ const UX = (() => {
     const { step, index } = resolved;
     tutorialDisplayIndex = index;
     el.classList.add('visible');
-    const guided =
-      typeof Onboarding !== 'undefined' && Onboarding.isGuidedRunActive?.();
+    const guided = typeof Onboarding !== 'undefined' && Onboarding.isGuidedRunActive?.();
     el.classList.toggle('guided-run', !!guided);
     el.querySelector('.tutorial-title').textContent = guided
       ? `Guided campaign · ${step.title}`
@@ -1203,7 +1204,8 @@ const UX = (() => {
     },
     planet_conquest: {
       title: 'TRUE VICTORY!',
-      subtitle: 'The Worldheart Tyrant is shattered — every hostile realm is broken. The planet is yours.',
+      subtitle:
+        'The Worldheart Tyrant is shattered — every hostile realm is broken. The planet is yours.',
       crest: '☀',
     },
     default: {

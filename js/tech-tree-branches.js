@@ -699,9 +699,7 @@ const TechTreeBranches = (() => {
     const root = getRootDef();
     const allRoots = Object.values(ROOT_BRANCHES);
     const activeBranch = getNodesForBranch();
-    const otherRoots = state?.rootLocked
-      ? allRoots.filter((r) => r.id !== state.rootId)
-      : allRoots;
+    const otherRoots = state?.rootLocked ? allRoots.filter((r) => r.id !== state.rootId) : allRoots;
 
     const branchNodes = activeBranch.map((node) => {
       const done = state?.invested?.has(node.id);
@@ -713,7 +711,10 @@ const TechTreeBranches = (() => {
         active,
         locked,
         progress: active ? state.activeProgress : 0,
-        pct: active && node.cost ? Math.min(100, Math.round((state.activeProgress / node.cost) * 100)) : 0,
+        pct:
+          active && node.cost
+            ? Math.min(100, Math.round((state.activeProgress / node.cost) * 100))
+            : 0,
         category: 'branch',
         tierLabel: `T${node.tier}`,
         prereqLine: node.prereq?.length
@@ -751,7 +752,9 @@ const TechTreeBranches = (() => {
     const ui = getNodesForUI(wave);
     const rootLine = ui.rootLocked
       ? `<p class="tech-branch-root locked" style="border-color:${ui.root?.color}">ROOT: <strong>${ui.root?.label}</strong> — ${ui.root?.epithet}</p>`
-      : `<p class="tech-branch-root pending">Root locks wave <strong>${ROOT_LOCK_WAVE}</strong> — leading: ${Object.entries(ui.scores)
+      : `<p class="tech-branch-root pending">Root locks wave <strong>${ROOT_LOCK_WAVE}</strong> — leading: ${Object.entries(
+          ui.scores
+        )
           .sort((a, b) => b[1] - a[1])
           .map(([k, v]) => `${ROOT_BRANCHES[k]?.short || k} ${v}`)
           .join(' · ')}</p>`;

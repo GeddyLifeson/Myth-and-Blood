@@ -169,7 +169,10 @@ const x0 = enemy.x;
 const y0 = enemy.y;
 for (let i = 0; i < 120; i++) Game.update();
 
-ok(enemy.path?.length > 0 || Math.hypot(enemy.x - x0, enemy.y - y0) > 8, 'enemy gets a path or moves toward player');
+ok(
+  enemy.path?.length > 0 || Math.hypot(enemy.x - x0, enemy.y - y0) > 8,
+  'enemy gets a path or moves toward player'
+);
 ok(Math.hypot(enemy.x - x0, enemy.y - y0) > 12, 'enemy advances after spawn ticks');
 
 // Simulate outpost/build invalidation between waves (walk grids rebuilt on main thread).

@@ -125,7 +125,11 @@ const MultiFrontSiege = (() => {
     }
     const sides = unlockedSides?.length ? unlockedSides : ['north'];
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const coordChance = 0.52 + Math.min(0.28, factions.length * 0.05) + academyBlend * 0.12;
     const mode = rng() < coordChance ? 'coordinated' : 'competing';
     const takenFronts = new Set();

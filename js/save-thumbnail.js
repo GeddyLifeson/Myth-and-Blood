@@ -169,8 +169,12 @@ const SaveThumbnail = (() => {
       }
     }
     if (placeholder) {
-      placeholder.textContent = empty ? 'No quick save yet' : meta.thumbnail ? '' : 'Saved (no preview)';
-      placeholder.hidden = !!(meta?.thumbnail);
+      placeholder.textContent = empty
+        ? 'No quick save yet'
+        : meta.thumbnail
+          ? ''
+          : 'Saved (no preview)';
+      placeholder.hidden = !!meta?.thumbnail;
     }
     if (metaEl) {
       if (empty) {

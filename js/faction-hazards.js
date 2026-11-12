@@ -124,7 +124,11 @@ const FactionHazards = (() => {
 
   function scaleForWave(wave, stage) {
     const academy =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rts = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     const w = Math.min(2.25, 1 + (wave || 0) / 120 + academy * 0.22 + rts * 0.35);
     const s = 1 + ((stage || 1) - 1) * 0.18;
@@ -139,7 +143,8 @@ const FactionHazards = (() => {
     const northFloor = 50;
     let x = 70 + rng() * (worldW - 140);
     let y = Math.max(northFloor, Math.min(worldH - 100, northCeiling - rng() * 40));
-    if (factionId === 'void_abyssal') y = Math.min(y, northOnly ? northCeiling : rallyY - 140 + rng() * 80);
+    if (factionId === 'void_abyssal')
+      y = Math.min(y, northOnly ? northCeiling : rallyY - 140 + rng() * 80);
     if (factionId === 'goblin_hordes')
       y = Math.min(y, northOnly ? northCeiling : rallyY - 60 + rng() * (rallyY * 0.45));
     if (factionId === 'orc_warbands')
@@ -155,7 +160,9 @@ const FactionHazards = (() => {
     const scale = scaleForWave(wave, stage) * (opts.scaleMult ?? 1);
     const spot = pickSpawnPoint(worldW, worldH, rallyY, wave, def.factionId, rng, opts);
     const radius =
-      (def.radiusBase + def.radiusPerStage * (stage - 1)) * Math.min(1.35, scale) * (opts.radiusMult ?? 1);
+      (def.radiusBase + def.radiusPerStage * (stage - 1)) *
+      Math.min(1.35, scale) *
+      (opts.radiusMult ?? 1);
     return {
       type: def.id,
       drawType: def.drawType,
@@ -166,7 +173,8 @@ const FactionHazards = (() => {
       y: spot.y,
       radius,
       maxRadius: def.maxRadius || 64,
-      damage: (def.damage + (def.damagePerStage || 0) * (stage - 1)) * scale * (opts.damageMult ?? 1),
+      damage:
+        (def.damage + (def.damagePerStage || 0) * (stage - 1)) * scale * (opts.damageMult ?? 1),
       slow: def.slow,
       tickInterval: def.tickInterval,
       moraleHit: def.moraleHit || 0,
@@ -187,7 +195,11 @@ const FactionHazards = (() => {
     if (territoryTier >= 4) n += 1;
     if (territoryTier >= 7) n += 1;
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     n += Math.round(academyBlend + rtsBlend);
     n = Math.max(0, Math.round(n * densityMult));

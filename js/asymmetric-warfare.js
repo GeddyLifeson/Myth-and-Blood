@@ -110,7 +110,11 @@ const AsymmetricWarfare = (() => {
     score += globalHunt ? 5 : 0;
     score += Math.min(8, unitProducers * 2);
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     score += academyBlend * 6 + rtsBlend * 8;
     return Math.round(score);

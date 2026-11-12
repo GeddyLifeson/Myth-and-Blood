@@ -45,7 +45,10 @@ ok(compression?.brotliPct > 50, `brotli savings ${compression?.brotliPct}%`);
 
 const bundleBr = join(DIST, 'js', 'game.bundle.min.js.br');
 ok(existsSync(bundleBr), 'game bundle .br exists');
-ok(statSync(bundleBr).size < statSync(join(DIST, 'js', 'game.bundle.min.js')).size, 'bundle br smaller');
+ok(
+  statSync(bundleBr).size < statSync(join(DIST, 'js', 'game.bundle.min.js')).size,
+  'bundle br smaller'
+);
 
 if (failed) {
   console.error(`test-compression: ${failed} failure(s)`);

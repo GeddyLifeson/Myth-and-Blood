@@ -704,11 +704,7 @@
               typeof ErrorReporting !== 'undefined' && ErrorReporting.isDegraded('minimap');
             if (++hudTick % 5 === 0) {
               guard('UI.updateHUD', () => UI.updateHUD(), { phase: 'hud', warnMs: 400 });
-            } else if (
-              !skipMinimap &&
-              hudTick % minimapEvery === 0 &&
-              typeof UX !== 'undefined'
-            ) {
+            } else if (!skipMinimap && hudTick % minimapEvery === 0 && typeof UX !== 'undefined') {
               guard('minimap', () => UX.drawMinimap(), { subsystem: 'minimap', phase: 'minimap' });
             }
           }

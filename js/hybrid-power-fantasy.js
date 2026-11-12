@@ -99,7 +99,11 @@ const HybridPowerFantasy = (() => {
     ) {
       return 'pure_arcane';
     }
-    if (leading === 'longbow_legacy' && ratio >= PURE_RATIO_MIN && mythicHeroes <= PURE_MYTHIC_MAX) {
+    if (
+      leading === 'longbow_legacy' &&
+      ratio >= PURE_RATIO_MIN &&
+      mythicHeroes <= PURE_MYTHIC_MAX
+    ) {
       const arcaneShare = (scores.arcane_dominion || 0) / total;
       if (arcaneShare <= PURE_ARCANE_SHARE_MAX) return 'pure_martial';
     }
@@ -220,7 +224,13 @@ const HybridPowerFantasy = (() => {
   function applyUnitFantasy(unit, wave = 0) {
     if (unit?.powerFantasyApplied) return unit;
     const def = getFantasyDef();
-    if (!isActive(wave) || !def || !unit || unit.team !== 'player' || !def.unitTypes.has(unit.type)) {
+    if (
+      !isActive(wave) ||
+      !def ||
+      !unit ||
+      unit.team !== 'player' ||
+      !def.unitTypes.has(unit.type)
+    ) {
       return unit;
     }
     const t = getFantasyTier(wave);

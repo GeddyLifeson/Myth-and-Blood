@@ -156,7 +156,8 @@ const StoryLore = (() => {
       defeat: 'The iron crown slips — the host broke your momentum before the final decree.',
     },
     silver_diplomat: {
-      victory: 'The chronicles praise a patient crown — walls held until the north had nothing left.',
+      victory:
+        'The chronicles praise a patient crown — walls held until the north had nothing left.',
       defeat: 'Caution could not outlast the tide — the silver ledger ends in retreat.',
     },
     arcane_scholar: {
@@ -184,7 +185,12 @@ const StoryLore = (() => {
       /* ignore */
     }
     if (!lifetime.branchTotals || typeof lifetime.branchTotals.iron_crown !== 'number') {
-      lifetime.branchTotals = { iron_crown: 0, silver_diplomat: 0, arcane_scholar: 0, pragmatist: 0 };
+      lifetime.branchTotals = {
+        iron_crown: 0,
+        silver_diplomat: 0,
+        arcane_scholar: 0,
+        pragmatist: 0,
+      };
     }
     if (!lifetime.choiceLog) lifetime.choiceLog = [];
     if (!lifetime.arcsCompleted) lifetime.arcsCompleted = [];
@@ -337,7 +343,8 @@ const StoryLore = (() => {
     const branch = session ? getDominantBranch() : 'pragmatist';
     const branchBeat = BRANCH_BEATS[branch]?.[wave];
     if (branchBeat) return branchBeat;
-    const framed = typeof LoreData !== 'undefined' ? LoreData.CAMPAIGN_NARRATIVE?.waves?.[wave] : null;
+    const framed =
+      typeof LoreData !== 'undefined' ? LoreData.CAMPAIGN_NARRATIVE?.waves?.[wave] : null;
     if (framed) return framed;
     return null;
   }

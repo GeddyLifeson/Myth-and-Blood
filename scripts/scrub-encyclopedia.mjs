@@ -10,12 +10,21 @@ let src = readFileSync(path, 'utf8');
 const before = src;
 
 const REPLACEMENTS = [
-  ["{ id: 'crossover_meta', label: 'Crossover System' }", "{ id: 'crossover_meta', label: 'Evolved Allies System' }"],
-  ["{ id: 'crossover_fotns', label: 'North Star Fist' }", "{ id: 'crossover_fotns', label: 'North Star Ascetics' }"],
+  [
+    "{ id: 'crossover_meta', label: 'Crossover System' }",
+    "{ id: 'crossover_meta', label: 'Evolved Allies System' }",
+  ],
+  [
+    "{ id: 'crossover_fotns', label: 'North Star Fist' }",
+    "{ id: 'crossover_fotns', label: 'North Star Ascetics' }",
+  ],
   ["name: 'Crossover Scaling'", "name: 'Evolved Ally Scaling'"],
   ['crossover service (Crossover Echo morale)', 'evolved ally service (Evolved Echo morale)'],
   ['academies, crossovers, +3%', 'academies, evolved allies, +3%'],
-  ['Coliseum, Doomslayer, or crossover) is active', 'Coliseum, Doomslayer, or evolved allies) is active'],
+  [
+    'Coliseum, Doomslayer, or crossover) is active',
+    'Coliseum, Doomslayer, or evolved allies) is active',
+  ],
   ['omae wa mou shindeiru', 'Your fate was sealed before the strike'],
   ['teamwork, stands, dramatic', 'teamwork, bound spirits, dramatic'],
   ['The Eternal Crusade', 'The Eternal March'],
@@ -24,8 +33,14 @@ const REPLACEMENTS = [
   ['Frag Out bonus', 'Grenade Burst bonus'],
   ['pair with Noble team buffs', 'pair with Wolf Pack buffs'],
   ['Noble team leader — Spartans near him', 'Wolf Pack leader — vanguard operatives near him'],
-  ['Field him with Jorge, Kat, and Emile for Noble synergy', 'Field him with Heavy Gunner, Cat Operative, and Ember Operative for Wolf Pack synergy'],
-  ['Keep Carter mid-line so multiple Spartans catch Noble Leader', 'Keep Wolf Leader mid-line so multiple vanguard operatives catch Wolf Leader'],
+  [
+    'Field him with Jorge, Kat, and Emile for Noble synergy',
+    'Field him with Heavy Gunner, Cat Operative, and Ember Operative for Wolf Pack synergy',
+  ],
+  [
+    'Keep Carter mid-line so multiple Spartans catch Noble Leader',
+    'Keep Wolf Leader mid-line so multiple vanguard operatives catch Wolf Leader',
+  ],
   ['without Noble drama', 'without wolf-pack drama'],
   ['Screen him with Jorge or Chief', 'Screen him with Heavy Gunner or Sentinel-7'],
   ['Marcus fights better when Dom is close', 'Ironhart fights better when Dom is close'],
@@ -47,12 +62,15 @@ const REPLACEMENTS = [
   ['— Hamon teacher', '— solar teacher'],
   ['— Hamon bubbles find', '— pressure bubbles find'],
   ['German science — bonus', 'Iron science — bonus'],
-  ['spirit rush — Spirit Rush pins elites and shreds them', 'Spirit Rush — rapid finisher pins elites and shreds them'],
+  [
+    'spirit rush — Spirit Rush pins elites and shreds them',
+    'Spirit Rush — rapid finisher pins elites and shreds them',
+  ],
   ['Spirit Rush spirit rush on pinned foes', 'Spirit Rush rapid finisher on pinned foes'],
   ["Focus fire elites into Jotaro's lane", "Focus fire elites into Jotaro Ashen's lane"],
   ['Emerald Splash hits', 'Emerald Spray hits'],
-  ["Heaven's Door ruins", "Script Ward ruins"],
-  ["Heaven's Door — debuffs", "Script Ward — debuffs"],
+  ["Heaven's Door ruins", 'Script Ward ruins'],
+  ["Heaven's Door — debuffs", 'Script Ward — debuffs'],
   ['Sex Pistols ricochet', 'Ricochet Pistols ricochet'],
   ["Guido Mista's Sex Pistols", "Guido Mista's Ricochet Pistols"],
   ['King Crimson removes wounded', 'Crimson Erase removes wounded'],
@@ -63,10 +81,19 @@ const REPLACEMENTS = [
   ['Tusk ACT4 charge finisher', 'Rotation ACT4 charge finisher'],
   ['Tag-team with Johnny for SBR', 'Tag-team with Johnny Rotation for golden ball hunts'],
   ['Scary Monsters predatory', 'Predator Form predatory'],
-  ['You are already dead — North Star Fist finisher legend', 'Fate was sealed — North Star Fist finisher legend'],
-  ['Ken Northstar is the Hokuto successor — ATATATA finisher', 'Ken Northstar is the North Star successor — rapid finisher'],
+  [
+    'You are already dead — North Star Fist finisher legend',
+    'Fate was sealed — North Star Fist finisher legend',
+  ],
+  [
+    'Ken Northstar is the Hokuto successor — ATATATA finisher',
+    'Ken Northstar is the North Star successor — rapid finisher',
+  ],
   ['mandatory Hokuto support', 'mandatory North Star support'],
-  ['Skyburst Wave when surrounded — Saiyan burst finisher', 'Skyburst Wave when surrounded — skyburst finisher'],
+  [
+    'Skyburst Wave when surrounded — Saiyan burst finisher',
+    'Skyburst Wave when surrounded — skyburst finisher',
+  ],
   ['Special Beam Cannon pierces', 'Piercing Beam pierces'],
   ['Special Beam pierces', 'Piercing Beam pierces'],
   ['Gohan explodes when wounded', 'Scholar Burst explodes when wounded'],
@@ -75,15 +102,27 @@ const REPLACEMENTS = [
   ['Cell heals on kill with Perfect Form', 'Perfect Hybrid heals on kill with Perfect Form'],
   ['Boltgun discipline — Astartes fight harder', 'Volley discipline — legionnaires fight harder'],
   ['clustering Astartes on the line', 'clustering legionnaires on the line'],
-  ['Chapter Captain is the Imperium ranged core', 'Chapter Captain is the crimson legions ranged core'],
+  [
+    'Chapter Captain is the Imperium ranged core',
+    'Chapter Captain is the crimson legions ranged core',
+  ],
   ['Terminator is the Imperium anchor', 'Heavy Terminator is the crimson legions anchor'],
   ['Lasgun Volley splashes', 'Rifle Volley splashes'],
-  ['Greybeard Sage is support-ranged — Thu\'um Echo', 'Mountain Hermit is support-ranged — Voice Echo'],
+  [
+    "Greybeard Sage is support-ranged — Thu'um Echo",
+    'Mountain Hermit is support-ranged — Voice Echo',
+  ],
   ['Ancient monks who teach the Voice', 'Ancient monks who teach the Voice'],
-  ['Wyrmcaller is the TES flagship — melee bruiser with Voice Shout shout cleave', 'Wyrmcaller is the Voicebound flagship — melee bruiser with Voice Shout cleave'],
-  ['whispers of the Thu\'um precede', 'whispers of the Voice precede'],
+  [
+    'Wyrmcaller is the TES flagship — melee bruiser with Voice Shout shout cleave',
+    'Wyrmcaller is the Voicebound flagship — melee bruiser with Voice Shout cleave',
+  ],
+  ["whispers of the Thu'um precede", 'whispers of the Voice precede'],
   ['Pair with Greybeard Sage', 'Pair with Mountain Hermit'],
-  ['Deploy at dawn beside Wyrmcaller for shout synergy', 'Deploy at dawn beside Wyrmcaller for voice synergy'],
+  [
+    'Deploy at dawn beside Wyrmcaller for shout synergy',
+    'Deploy at dawn beside Wyrmcaller for voice synergy',
+  ],
   ['Nord Huscarl is a durable', 'Frost Huscarl is a durable'],
   ['sworn to Mara who mend', 'sworn to restoration saints who mend'],
   ['Rip & Tear cleave', 'Rend & Ruin cleave'],
@@ -96,7 +135,10 @@ const REPLACEMENTS = [
   ['Void Residue Takeo', 'Void Residue Sato'],
   ['Lancer Burst chainsaw', 'Burst Lancer chainsaw'],
   ['behind Marcus', 'behind Ironhelm'],
-  ['Clayton Ironhelm suppresses groups with Heavy Lancer fire', 'Clayton Ironhelm suppresses groups with heavy burst fire'],
+  [
+    'Clayton Ironhelm suppresses groups with Heavy Lancer fire',
+    'Clayton Ironhelm suppresses groups with heavy burst fire',
+  ],
   ['Anthony Ironhelm is budget lancer support', 'Anthony Ironhelm is budget burst support'],
   ['I am no man — elite slayer', 'Elite slayer — no quarter given'],
   ['Dragoon is cavalry hunter', 'Sky Lance is cavalry hunter'],
@@ -116,7 +158,7 @@ const catNew = `    { id: 'crossover_dragonball', label: 'Skyburst Order' },
     { id: 'crossover_warp', label: 'Rift Cult' },
     { id: 'crossover_tes', label: 'Voicebound Pact' },
     { id: 'perks', label: 'Tonic Stations' },`;
-if (src.includes(catInsert) && !src.includes("crossover_imperium")) {
+if (src.includes(catInsert) && !src.includes('crossover_imperium')) {
   src = src.replace(catInsert, catNew);
 }
 

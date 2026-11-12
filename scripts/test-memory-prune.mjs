@@ -73,7 +73,10 @@ for (let i = 0; i < 40; i++) {
 }
 const saved = JSON.parse(storage.get('myth-and-blood-chronicles-v1') || '[]');
 ok(saved.length <= 24, 'chronicles cap total entries');
-ok(saved.every((e) => (e.summary?.length || 0) <= 720), 'chronicles trim long summaries');
+ok(
+  saved.every((e) => (e.summary?.length || 0) <= 720),
+  'chronicles trim long summaries'
+);
 ok(saved.filter((e) => e.type === 'run').length <= 8, 'chronicles cap run entries');
 
 storage.set(
