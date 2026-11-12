@@ -1826,8 +1826,6 @@ const Game = (() => {
 
   const DRAGON_THEMED_STRIKES = new Set(['fus_ro_dah', 'fire_breath', 'ice_form']);
 
-  const PLANET_THREAT_MIN_WAVE = 200;
-
   function checkDragonThemedBossKill(killer, bossUnit) {
     if (!bossUnit || !isMajorBossUnit(bossUnit) || GS.creativeMode) return null;
     const dragonStrike =
@@ -15432,6 +15430,7 @@ const Game = (() => {
       tactical: GS.tactical,
       maxTactical: null,
       wave: GS.wave,
+      campaignWon: !!GS.campaignVictoryDeclared,
       totalWaves: null,
       infiniteWaves: true,
       enemyEconomyRemaining: unitCounts.enemyEconomy,

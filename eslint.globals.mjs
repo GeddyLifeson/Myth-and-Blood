@@ -41,8 +41,6 @@ export const browserScriptGlobals = Object.fromEntries(
   "CASTLE_COMPOUND_OFFSET",
   "CASTLE_INNER_OFFSET",
   "CROSSOVER_ACH_FACTIONS",
-  "CROSSOVER_BARRACKS_BUILDERS",
-  "CROSSOVER_BARRACKS_COST",
   "CROSSOVER_FACTION_TAB_ORDER",
   "Cheats",
   "Chronicles",

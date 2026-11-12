@@ -1,9 +1,9 @@
 {
   "runs": 13,
-  "elapsedSec": 330.9,
+  "elapsedSec": 317.3,
   "bestWave": 1000,
   "avgWave": 808.5,
-  "avgUpdateMs": 2.91,
+  "avgUpdateMs": 2.73,
   "reached1000": [
     {
       "runId": 200,
@@ -27,6 +27,7 @@
     {
       "runId": 200,
       "name": "marathon_hunt_flip",
+      "campaignWon": true,
       "maxWave": 1000,
       "issues": [],
       "reached1000": true,
@@ -36,101 +37,112 @@
     {
       "runId": 201,
       "name": "marathon_wwe_cheat",
+      "campaignWon": true,
       "maxWave": 1000,
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.22
+      "avgUpdateMs": 0.25
     },
     {
       "runId": 202,
       "name": "marathon_doom_cheat",
+      "campaignWon": true,
       "maxWave": 1000,
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.22
+      "avgUpdateMs": 0.21
     },
     {
       "runId": 0,
       "name": "begin_day_spam",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.16
+      "avgUpdateMs": 2.98
     },
     {
       "runId": 1,
       "name": "begin_day_early",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.23
+      "avgUpdateMs": 2.92
     },
     {
       "runId": 2,
       "name": "pause_at_dusk",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.06
+      "avgUpdateMs": 2.85
     },
     {
       "runId": 3,
       "name": "levy_spam",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.27
+      "avgUpdateMs": 2.66
     },
     {
       "runId": 4,
       "name": "decree_spam",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.13
+      "avgUpdateMs": 4.05
     },
     {
       "runId": 5,
       "name": "spy_steal",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.23
+      "avgUpdateMs": 3.92
     },
     {
       "runId": 6,
       "name": "spy_scout",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.67
+      "avgUpdateMs": 3.6
     },
     {
       "runId": 7,
       "name": "rally_spam",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.42
+      "avgUpdateMs": 4.21
     },
     {
       "runId": 8,
       "name": "tp_burst",
+      "campaignWon": true,
       "maxWave": 751,
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.86
+      "avgUpdateMs": 3.77
     }
   ]
 }

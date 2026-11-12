@@ -375,9 +375,13 @@ function sim(runId, maxTicks, fastNight) {
   const avgUpdateMs = updateMs / Math.max(1, maxTicks);
   if (avgUpdateMs > 8)
     issues.push({ runId, code: 'SLOW_UPDATE', ms: +avgUpdateMs.toFixed(2), name });
+  // Clearing wave 100 wins the campaign; a run that went past it must have recorded the win.
+  if (fin.wave > 100 && !fin.creativeMode && !fin.campaignWon)
+    issues.push({ runId, code: 'NO_CAMPAIGN_VICTORY', wave: fin.wave, name });
   return {
     runId,
     name,
+    campaignWon: !!fin.campaignWon,
     maxWave: Math.max(maxWave, fin.wave),
     issues,
     reached1000: fin.wave >= 1000,

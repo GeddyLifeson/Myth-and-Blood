@@ -422,7 +422,7 @@ From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, eli
 
 ### Legion Archive
 
-Unlock allied factions through the Research Lab, meta progress, or cheat codes. Build a faction's barracks, then recruit its operatives from **LEGION ARCHIVE** (under MORE in the left panel). Each operative has unique abilities and faction synergies.
+Unlock allied factions through the Research Lab, meta progress, or cheat codes. Build a faction's barracks, then recruit its operatives from **LEGION ARCHIVE** (under MORE in the left panel). Each operative has unique abilities and faction synergies. The same screen has each faction's **skill tree**: spend the points earned from recruits, waves and mastery on permanent bonuses for that faction's operatives.
 
 ### Secret: Grand Coliseum
 

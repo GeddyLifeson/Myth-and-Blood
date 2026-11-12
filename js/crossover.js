@@ -1,9 +1,3 @@
-/**
- * Evolved allies — operatives summoned from fractured realms across the multiverse.
- */
-const CROSSOVER_BARRACKS_COST = 90;
-const CROSSOVER_BARRACKS_BUILDERS = 2;
-
 const CrossoverFactions = {
   ultimis: {
     id: 'ultimis',
