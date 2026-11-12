@@ -266,7 +266,10 @@ const UI = (() => {
     document.addEventListener('pointerdown', () => syncMenuMusic(), { once: false, passive: true });
     document.addEventListener('keydown', () => syncMenuMusic(), { once: false });
 
-    document.getElementById('menu-quit-btn')?.addEventListener('click', () => {
+    const menuQuitBtn = document.getElementById('menu-quit-btn');
+    // Only the desktop shell can quit; in a browser tab the button stays hidden.
+    if (menuQuitBtn && window.electronAPI?.quitApp) menuQuitBtn.hidden = false;
+    menuQuitBtn?.addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
       if (window.electronAPI?.quitApp) window.electronAPI.quitApp();
       else window.close();

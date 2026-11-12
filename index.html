@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="data:," />
-    <title>Myth and Blood — Defense · Empire · Dynasty · Stars · Planet</title>
+    <title>Myth and Blood — Fantasy Tactical Defense</title>
     <meta
       name="description"
       content="Command a growing army in an endless fantasy tactical-defense war. Spend Tactical Points on troops and structures, hold the line against relentless waves, and rise from lane defense to academy, settlement economy, and RTS-scale empire."
@@ -1375,15 +1375,7 @@
         </button>
         <div class="menu-content menu-scroll">
           <h1 class="game-title">MYTH <span class="accent">&</span> BLOOD</h1>
-          <p class="subtitle">Hold the line · Forge a dynasty · Rule the stars</p>
-          <button
-            id="menu-settings-btn"
-            class="menu-btn small-btn menu-settings-prominent"
-            type="button"
-          >
-            ⚙ SETTINGS
-          </button>
-          <canvas id="title-art" width="400" height="240"></canvas>
+          <p class="subtitle">Hold the line · Forge a dynasty</p>
           <div id="difficulty-picker">
             <div class="diff-header">DIFFICULTY</div>
             <div class="diff-buttons">
@@ -1397,8 +1389,18 @@
             <button id="advanced-diff-btn" class="menu-btn small-btn">ADVANCED DIFFICULTY</button>
           </div>
           <div id="game-modes-picker" class="game-modes-picker"></div>
-          <div id="online-multiplayer-panel" class="online-multiplayer-panel"></div>
+          <button id="start-btn" class="menu-btn primary">BEGIN DEFENSE</button>
+          <div class="menu-secondary-row">
+            <button id="creative-start-btn" class="menu-btn small-btn creative-menu-btn">
+              CREATIVE MODE
+            </button>
+            <button id="howto-btn" class="menu-btn small-btn">HOW TO PLAY</button>
+            <button id="howto-interactive-btn" class="menu-btn small-btn">TUTORIAL</button>
+          </div>
           <div id="onboarding-panel" class="onboarding-panel" hidden></div>
+          <canvas id="title-art" width="400" height="240"></canvas>
+          <details class="menu-section">
+            <summary>Legacies &amp; carry-over perks</summary>
           <div id="crown-legacies-section" class="crown-legacies-section">
             <div class="diff-header">CROWN LEGACIES</div>
             <p id="crown-legacies-summary" class="crown-legacies-summary">
@@ -1417,7 +1419,7 @@
             <div class="diff-header">CROWN OF AGES</div>
             <p class="eternal-legacy-subtitle">Echoes of the Past</p>
             <p id="eternal-legacy-summary" class="eternal-legacy-summary">
-              Invest Echo Shards to ascend paths from medieval to galactic eras
+              Invest Echo Shards to strengthen your paths across runs
             </p>
             <div id="eternal-legacy-branches" class="eternal-legacy-branches"></div>
             <div id="eternal-legacy-tree" class="eternal-legacy-tree"></div>
@@ -1425,6 +1427,10 @@
               Early units ascend — archers, heroes, and evolved troops stay powerful through every era
             </p>
           </div>
+          </details>
+          <details class="menu-section">
+            <summary>Share codes: co-op, duels &amp; seeds</summary>
+            <div id="online-multiplayer-panel" class="online-multiplayer-panel"></div>
           <div class="mode-import-row">
             <input
               id="mode-import-input"
@@ -1435,24 +1441,19 @@
             />
             <button id="mode-import-seed" class="menu-btn small-btn">IMPORT SEED</button>
           </div>
-          <p class="launch-hint">
-            Double-click <strong>Play Myth and Blood.bat</strong> to run as a desktop app — no
-            server needed.
-          </p>
-          <p class="launch-hint audio-hint">
-            Sound is procedural (no files). Click <strong>Begin Defense</strong> or anywhere to
-            unlock audio — toggle with 🔊 or <kbd>V</kbd>.
-          </p>
-          <button id="start-btn" class="menu-btn primary">BEGIN DEFENSE</button>
-          <button id="creative-start-btn" class="menu-btn creative-menu-btn">CREATIVE MODE</button>
-          <button id="howto-btn" class="menu-btn">HOW TO PLAY</button>
-          <button id="howto-interactive-btn" class="menu-btn small-btn">
-            INTERACTIVE TUTORIAL
+          </details>
+          <div class="menu-secondary-row">
+            <button id="menu-achievements-btn" class="menu-btn small-btn">ACHIEVEMENTS</button>
+            <button id="menu-encyclopedia-btn" class="menu-btn small-btn">ENCYCLOPEDIA</button>
+            <button id="menu-settings-btn" class="menu-btn small-btn" type="button">SETTINGS</button>
+            <button id="menu-cheats-btn" class="menu-btn small-btn secret-menu-btn">CHEATS</button>
+          </div>
+          <button id="menu-quit-btn" class="menu-btn small-btn menu-quit-btn" hidden>
+            QUIT TO DESKTOP
           </button>
-          <button id="menu-achievements-btn" class="menu-btn">ACHIEVEMENTS</button>
-          <button id="menu-encyclopedia-btn" class="menu-btn">ENCYCLOPEDIA</button>
-          <button id="menu-cheats-btn" class="menu-btn secret-menu-btn">CHEATS</button>
-          <button id="menu-quit-btn" class="menu-btn menu-quit-btn">QUIT TO DESKTOP</button>
+          <p class="launch-hint audio-hint">
+            Sound is generated in the browser. Toggle with 🔊 or <kbd>V</kbd>.
+          </p>
           <div id="howto-panel" class="hidden">
             <p>
               <strong>The Journey</strong> — Stage 1 wave defense → Stage 2 empire growth (w100) →

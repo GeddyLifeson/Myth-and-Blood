@@ -6719,3 +6719,41 @@ body.game-playing #night-prep-card:not([hidden]) {
 .reduced-motion .streak-hud.streak-god .streak-value {
   animation: none !important;
 }
+
+/* Main menu: secondary rows and collapsible sections */
+.menu-secondary-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: calc(8px * var(--ui-scale));
+  margin: calc(8px * var(--ui-scale)) 0;
+}
+.menu-secondary-row .menu-btn {
+  width: auto;
+  margin: 0;
+  flex: 1 1 calc(120px * var(--font-scale));
+}
+.menu-section {
+  margin: calc(10px * var(--ui-scale)) 0;
+  border: 1px solid #4a3c2a;
+  border-radius: 6px;
+  background: rgba(20, 16, 10, 0.55);
+  text-align: left;
+}
+.menu-section > summary {
+  cursor: pointer;
+  padding: calc(10px * var(--ui-scale)) calc(14px * var(--ui-scale));
+  font-family: 'Cinzel', serif;
+  font-size: calc(13px * var(--font-scale));
+  letter-spacing: 1px;
+  color: #d8c090;
+}
+.menu-section > summary:hover {
+  color: #ffe0a0;
+}
+.menu-section[open] > summary {
+  border-bottom: 1px solid #4a3c2a;
+}
+.menu-quit-btn[hidden] {
+  display: none;
+}
