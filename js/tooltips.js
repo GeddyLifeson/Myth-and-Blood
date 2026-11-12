@@ -337,7 +337,7 @@ const Tooltips = (() => {
       },
       'speed-toggle': {
         title: 'Game Speed',
-        body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click to cycle 1× → 1.5× → 2× → 3× → 4×.`,
+        body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click (or press ]) to cycle from 1× up to 10×.`,
         footer: 'Hotkey: ] · Paused always runs 1×',
       },
       'wwe-academy-open': {

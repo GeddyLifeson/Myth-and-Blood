@@ -1756,7 +1756,8 @@ const UI = (() => {
     const synEl = document.getElementById('syn-text');
     const syns = gs.factionSynergies || [];
     const skillNote = gs.operativeSkills?.summary;
-    const hasCrossoverField = (gs.wweOnField || 0) + (gs.crossoverOnField || 0) > 0;
+    const fieldCount = (v) => (Array.isArray(v) ? v.length : v || 0);
+    const hasCrossoverField = fieldCount(gs.wweOnField) + fieldCount(gs.crossoverOnField) > 0;
     if (synHud && synEl) {
       const show =
         hasCrossoverField &&

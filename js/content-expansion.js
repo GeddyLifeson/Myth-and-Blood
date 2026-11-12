@@ -1037,6 +1037,9 @@ const ContentExpansion = (() => {
       });
     }
 
+    // registerDefs runs on every game start; wrapping again each time kept growing the
+    // spawn pool, so every restart added more flyers and monsters.
+    if (getWaveConfig.expansionWrapped) return;
     const _getWaveConfig = getWaveConfig;
     getWaveConfig = function (waveNum) {
       const cfg = _getWaveConfig(waveNum);
@@ -1053,6 +1056,7 @@ const ContentExpansion = (() => {
       if (waveNum >= 70) cfg.pool.push('abomination', 'iron_colossus', 'elder_wyrm');
       return cfg;
     };
+    getWaveConfig.expansionWrapped = true;
   }
 
   function bind(gameCtx) {

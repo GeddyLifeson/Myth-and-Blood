@@ -1605,10 +1605,15 @@ const SpriteGen = (() => {
       ctx.fillStyle = '#f0e8c0';
       ctx.font = '7px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText('CROSSOVER', b.x, b.y - r * 0.2);
+      ctx.fillText('LEGION', b.x, b.y - r * 0.2);
       ctx.fillStyle = hqPal;
       ctx.font = '6px Cinzel';
-      ctx.fillText((b.crossoverFaction || 'HQ').toUpperCase(), b.x, b.y + 4);
+      // Show the faction's in-game name, never its internal id.
+      const factionLabel =
+        (typeof CrossoverFactions !== 'undefined' &&
+          CrossoverFactions[b.crossoverFaction]?.label) ||
+        'HQ';
+      ctx.fillText(factionLabel.toUpperCase(), b.x, b.y + 4);
     } else if (b.type === 'wwe_academy') {
       ctx.fillStyle = '#202028';
       ctx.fillRect(b.x - 48, b.y - 8, 96, 36);

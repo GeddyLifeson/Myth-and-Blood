@@ -541,7 +541,8 @@ const OnlineMultiplayer = (() => {
 
   function onRunEnded(wave, kills, victory, score) {
     const session = typeof GameModes !== 'undefined' ? GameModes.getSession() : null;
-    if (session?.modeId === 'pvp_endless') {
+    // The run session reports PvP as survival with onlinePvp set, so check both.
+    if (session?.onlinePvp || session?.modeId === 'pvp_endless') {
       return submitPvpResult({ wave, kills, score, victory });
     }
     return null;
@@ -558,7 +559,7 @@ const OnlineMultiplayer = (() => {
         statusLine: getCoopStatusLine(),
       };
     }
-    if (session.modeId === 'pvp_endless') {
+    if (session.onlinePvp || session.modeId === 'pvp_endless') {
       return {
         type: 'pvp',
         match: getActivePvpMatch(),

@@ -93,8 +93,8 @@ const UX = (() => {
     {
       maxWave: 18,
       title: 'Box Select & Formations',
-      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. Pick a <strong>FORMATION</strong> in the right panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
-      highlight: 'right-panel',
+      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
+      highlight: 'left-panel',
     },
     {
       maxWave: 20,

@@ -915,13 +915,15 @@ const Game = (() => {
 
   function handlePointerUp() {
     if (GS.boxSelect) {
-      if (GS.dragMoved) finalizeBoxSelect();
+      const dragged = GS.dragMoved;
+      if (dragged) finalizeBoxSelect();
       GS.boxSelect = null;
       GS.isPanning = false;
       GS.panAnchor = null;
       GS.dragMoved = false;
       if (GS.canvas) GS.canvas.style.cursor = 'grab';
-      return !GS.dragMoved;
+      // A completed box-select is not a click; only an unmoved press is.
+      return !dragged;
     }
     const wasClick = GS.isPanning && !GS.dragMoved;
     GS.isPanning = false;
@@ -3462,6 +3464,10 @@ const Game = (() => {
 
   function applyPlayerStatMods(u) {
     if (!u || u.team !== 'player' || u.isDoomslayer) return u;
+    // These multiply stats in place, and spawnUnit plus several callers both run this,
+    // so without a guard difficulty, kingdom and legacy bonuses stacked twice.
+    if (u.statModsApplied) return u;
+    u.statModsApplied = true;
     const diff = getDifficulty();
     if (diff.allyHpMult && diff.allyHpMult !== 1) {
       u.maxHp = Math.floor(u.maxHp * diff.allyHpMult);
@@ -6454,6 +6460,9 @@ const Game = (() => {
       hpMult: GS.pendingWaveMods.hpMult,
       noElites: GS.pendingWaveMods.noElites,
       stealReduction: GS.pendingWaveMods.stealReduction,
+      // Scout / Infiltrate / Bribe set this for the coming wave; dropping it here
+      // meant the promised roster report never appeared at dawn.
+      revealed: GS.pendingWaveMods.revealed,
     });
     GS.pendingWaveMods = { ...GameRuntime.DEFAULT_PENDING_WAVE_MODS };
   }
@@ -9776,9 +9785,16 @@ const Game = (() => {
       showMessage('Deploy a Builder first (or free a builder under max projects)!');
       return false;
     }
+    const unlockAll = GS.creativeMode && GS.creativeSettings.unlockAll;
+    const research = svc('Research');
     if (bdef?.isWweAcademy) {
-      if (!svc('MetaProgress').isWweUnlocked()) {
-        showMessage('Join the Iron Creed first!');
+      // Same rule finalizeBuild uses: a Research Lab unlock counts, not just the cheat.
+      const coliseumOk =
+        unlockAll ||
+        svc('MetaProgress').isWweUnlocked() ||
+        (research && research.isFactionUnlocked('wwe', getResearchOpts()));
+      if (!coliseumOk) {
+        showMessage('Research Arena Warfare Doctrine or join the Iron Creed first!');
         return false;
       }
       const recHamlets = bdef.recommendedHamlets ?? 2;
@@ -9796,8 +9812,12 @@ const Game = (() => {
       }
     }
     if (bdef?.isCrossoverBarracks && !isVanillaAcademyType(type)) {
-      if (!svc('MetaProgress').isCrossoverFactionUnlocked(bdef.crossoverFaction)) {
-        showMessage(`Enter the ${bdef.crossoverFaction} cheat code first!`);
+      const factionOk =
+        unlockAll ||
+        svc('MetaProgress').isCrossoverFactionUnlocked(bdef.crossoverFaction) ||
+        (research && research.isFactionUnlocked(bdef.crossoverFaction, getResearchOpts()));
+      if (!factionOk) {
+        showMessage(`Research ${bdef.name} at the Research Lab first.`, 300);
         return false;
       }
       if (svc('FactionDepth')) {
@@ -9809,8 +9829,13 @@ const Game = (() => {
         if (chk.warn) showMessage(chk.warn, 280);
       }
     }
-    if (bdef?.isPerkMachine && !svc('Perks').perkMachinesUnlocked()) {
-      showMessage('Unlock a roster cheat to build Tonic Stations machines!');
+    if (
+      bdef?.isPerkMachine &&
+      !unlockAll &&
+      !svc('Perks').perkMachinesUnlocked() &&
+      !(research && research.isBuildUnlocked(type, getResearchOpts()))
+    ) {
+      showMessage('Research Tonic Stations Science at the Research Lab first!');
       return false;
     }
     const isAcademyBuild = bdef?.isAcademy && !bdef?.isCrossoverBarracks && !bdef?.isWweAcademy;
@@ -14831,6 +14856,7 @@ const Game = (() => {
       goldStarsEarned: u.goldStarsEarned || 0,
       lateAbilityUnlocked: !!u.lateAbilityUnlocked,
       vetTier: u.vetTier,
+      statModsApplied: u.statModsApplied,
       honorName: u.honorName,
       experience: u.experience,
       morale: u.morale,

@@ -39,8 +39,15 @@ const SaveManager = (() => {
 
   function migrateLegacyQuickSave(store) {
     try {
+      // Run once: the quick-save key is still live, so re-reading it would refill an
+      // emptied slot every time the pause menu renders.
+      if (store.legacyMigrated) return;
+      store.legacyMigrated = true;
       const raw = localStorage.getItem(LEGACY_QUICK_KEY);
-      if (!raw || store.slots.some((s) => s)) return;
+      if (!raw || store.slots.some((s) => s)) {
+        writeStore(store);
+        return;
+      }
       const snap = JSON.parse(raw);
       store.slots[0] = wrapSnapshot(snap, 'Quick Save (migrated)');
       writeStore(store);

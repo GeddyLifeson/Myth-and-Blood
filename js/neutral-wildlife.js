@@ -382,7 +382,7 @@ const NeutralWildlife = (() => {
       }
       const neutrals = (units || []).filter((u) => u.team === 'neutral' && u.hp > 0).length;
       if (
-        ctx.rng?.() < spawnChance &&
+        (ctx.rng || Math.random)() < spawnChance &&
         neutrals < 2 &&
         (units || []).filter((u) => u.team === 'enemy' && u.hp > 0).length >= 3
       ) {
@@ -401,7 +401,7 @@ const NeutralWildlife = (() => {
           );
           type = pick.type;
         }
-        const spot = pickSpawnPoint(ctx.worldW, ctx.worldH, ctx.rallyY, ctx.rng, {
+        const spot = pickSpawnPoint(ctx.worldW, ctx.worldH, ctx.rallyY, ctx.rng || Math.random, {
           territoryTier: ctx.territoryTier,
           wave,
         });

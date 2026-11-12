@@ -123,9 +123,12 @@ const Onboarding = (() => {
       save();
       return;
     }
-    const start = getStart(state.selectedStartId);
-    if (start) applyStartToMenu(start);
     state.guidedRunActive = !!(state.guidedRunEnabled && !state.panelDismissed);
+    // Picking a recommended start already applied its seed and difficulty. Re-applying it
+    // here on every Begin Defense overrode whatever difficulty the player chose afterwards,
+    // so only fill in the seed when a guided run has none yet.
+    const start = getStart(state.selectedStartId);
+    if (start && state.guidedRunActive && !menu.seed) GameModes.setMenuSeed(start.seed, start.id);
     save();
   }
 
