@@ -29,18 +29,17 @@ function ok(cond, msg) {
   } else console.log('OK:', msg);
 }
 
-ok(ProgressionRestarts.ESCALATION_RESTARTS.length === 5, 'five escalation gates');
+ok(ProgressionRestarts.ESCALATION_RESTARTS.length === 2, 'two escalation gates (100, 200)');
 ok(ProgressionRestarts.isEscalationWave(100), 'wave 100 is escalation');
-ok(ProgressionRestarts.isEscalationWave(150), 'wave 150 is escalation');
+ok(!ProgressionRestarts.isEscalationWave(150), 'wave 150 no longer resets the field');
 ok(ProgressionRestarts.isEscalationWave(200), 'wave 200 is escalation');
-ok(ProgressionRestarts.isEscalationWave(400), 'wave 400 is escalation');
-ok(ProgressionRestarts.isEscalationWave(500), 'wave 500 is escalation');
+ok(!ProgressionRestarts.isEscalationWave(400), 'wave 400 no longer resets the field');
+ok(!ProgressionRestarts.isEscalationWave(500), 'wave 500 no longer resets the field');
 ok(!ProgressionRestarts.isEscalationWave(99), 'wave 99 is not escalation');
 ok(!ProgressionRestarts.isEscalationWave(175), 'wave 175 is not escalation');
 
 ok(ProgressionRestarts.shouldSkip({ creative: true }), 'skip creative');
 ok(ProgressionRestarts.shouldSkip({ modeId: 'academy_era' }), 'skip academy era');
-ok(ProgressionRestarts.shouldSkip({ modeId: 'planet_conquest' }), 'skip planet conquest');
 ok(!ProgressionRestarts.shouldSkip({ modeId: 'campaign' }), 'campaign not skipped');
 
 ProgressionRestarts.resetRun();
@@ -137,10 +136,6 @@ ok(
   'sync marks 100 fired'
 );
 ok(
-  !ProgressionRestarts.performRestart(150, makeCtx({ wave: 150 }))?.performed,
-  'sync marks 150 fired'
-);
-ok(
   !ProgressionRestarts.performRestart(200, makeCtx({ wave: 200 }))?.performed,
   'sync marks 200 fired'
 );
@@ -157,7 +152,7 @@ ok(
 );
 
 ProgressionRestarts.resetRun();
-const intelWarn = ProgressionRestarts.formatIntelNote({ wave: 145 });
+const intelWarn = ProgressionRestarts.formatIntelNote({ wave: 195 });
 ok(intelWarn.includes('Escalation'), 'intel warns before next gate');
 ProgressionRestarts.performRestart(100, makeCtx({ wave: 100 }));
 const intelLegacy = ProgressionRestarts.formatIntelNote({ wave: 160 });

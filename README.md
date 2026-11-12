@@ -52,7 +52,7 @@ Use normal deploy/build controls alongside the lab. Disarm spawn tools to intera
 
 ## Objective
 
-- **Win condition:** There is no final wave. Your goal is to survive as long as possible.
+- **Win condition:** Clear **wave 100** to win the campaign. That awards the victory achievements, faction trials and legacy unlocks. The siege itself never ends, so the run continues afterwards for score.
 - **Lose condition:** Enemies break through your line too many times. Each breakthrough counts as a **miss**. Exceed your miss limit and the realm falls.
 
 Clear every wave to earn TP, expand territory, unlock new systems, and push into the Academy and RTS eras.
@@ -319,6 +319,10 @@ One tonic reduces spy and courier costs by 1 TP.
 | **100**   | **Academy Era** — no TP troop deploy; academies and settlements          |
 | **200**   | **Enemy RTS** — map widens; enemies build mirror settlements             |
 | **1001+** | **Hellscape** — even endgame heroes struggle                             |
+
+### Era resets
+
+At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
 
 ### Flank variety
 

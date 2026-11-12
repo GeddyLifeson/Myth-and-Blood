@@ -961,8 +961,10 @@ const Achievements = (() => {
         if (data.bossType) session.flags.add(`dragon_boss_${data.bossType}`);
         break;
 
+      // 'campaign_victory' fires when wave 100 is cleared: the run is won, and play continues.
+      case 'campaign_victory':
       case 'game_end':
-        if (data.victory) {
+        if (data.victory || type === 'campaign_victory') {
           session.flags.add('run_victory');
           if (data.hasCastleCompound) session.flags.add('has_castle_compound');
           if (

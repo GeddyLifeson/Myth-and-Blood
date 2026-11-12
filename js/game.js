@@ -217,6 +217,7 @@ const Game = (() => {
   GS.playerCasualtiesThisWave = 0;
   GS.structuresRazedThisWave = 0;
   GS.runStructuresRazed = 0;
+  GS.campaignVictoryDeclared = false;
   GS.castleBreachWarned = false;
   GS.castleBreachRecorded = false;
   GS.spawnQueue = [];
@@ -2542,6 +2543,34 @@ const Game = (() => {
     return true;
   }
 
+  /**
+   * Campaign victory: clearing wave 100 wins the run. The siege is endless, so play
+   * continues; this awards the victory achievements, faction trials and legacy win once.
+   */
+  const CAMPAIGN_VICTORY_WAVE = 100;
+  function declareCampaignVictoryIfEarned() {
+    if (GS.creativeMode || GS.campaignVictoryDeclared) return;
+    if (GS.wave !== CAMPAIGN_VICTORY_WAVE) return;
+    // Jump-in modes start at or past wave 100 and never fought their way here.
+    if (getRunModeId() === 'academy_era') return;
+    GS.campaignVictoryDeclared = true;
+    ach('campaign_victory', {
+      wave: GS.wave,
+      difficulty: GS.difficultyId,
+      hasCastleCompound: playerHasCastleCompound(GS.buildings),
+      enemyStructuresRazed: GS.runStructuresRazed,
+    });
+    ach('true_victory', { bossSlain: true, wave: GS.wave });
+    svc('Legacy')?.recordCampaignVictory?.();
+    playSfx('victory', typeof Cosmetics !== 'undefined' ? Cosmetics.getVictoryThemeId() : null);
+    addHighlight('era', 'Campaign won — wave 100 cleared');
+    showMessage(
+      'VICTORY — wave 100 is cleared and the realm stands. The siege is endless: fight on for score.',
+      520,
+      { priority: 'high', bypassQueue: true }
+    );
+  }
+
   function enterNightPhase() {
     if (isNightPhase()) return;
     GS.timeOfDay = 'night';
@@ -2591,6 +2620,7 @@ const Game = (() => {
     // and was being run twice with the identical, unchanged playerUnits array —
     // compute it once and reuse it for both achievement checks below.
     const garrisonCount = countGarrisoned(playerUnits);
+    declareCampaignVictoryIfEarned();
     ach('wave_complete', {
       wave: GS.wave,
       misses: GS.runPlayerDeaths,
@@ -6498,6 +6528,7 @@ const Game = (() => {
     GS.castleBreachWarned = false;
     GS.castleBreachRecorded = false;
     GS.runStructuresRazed = 0;
+    GS.campaignVictoryDeclared = false;
     GS.spawnQueue = [];
     GS.spawnDelayBonus = 0;
     GS.pendingReinforce = [];
@@ -11908,17 +11939,14 @@ const Game = (() => {
         } else {
           ach('kill', { enemyType: unit.type, elite: isEliteEnemy(unit) });
         }
-        if (unit.isPlanetBoss) {
+        if (unit.isNamedBoss && GS.wave >= CAMPAIGN_VICTORY_WAVE) {
           const playerAlive = GS.units.filter(
             (u) => u.team === 'player' && u.hp > 0 && !u.garrisoned
           );
           const kiSnap = sampleKiEnergyArmy(playerAlive);
-          if (GS.wave >= PLANET_THREAT_MIN_WAVE && kiSnap?.high) {
+          if (kiSnap?.high) {
             ach('planet_boss_ki_stand', { wave: GS.wave, bossType: unit.type, ...kiSnap });
-            showMessage(
-              'Power overwhelming — ki warriors shield the planet as the Worldheart shatters!',
-              380
-            );
+            showMessage('Power overwhelming — ki warriors break the warlord!', 380);
           }
         }
         if (isMajorBossUnit(unit)) {
@@ -15015,6 +15043,7 @@ const Game = (() => {
         enemyFaction: b.enemyFaction || null,
       })),
       sessionHighlights: [...GS.sessionHighlights],
+      campaignVictoryDeclared: !!GS.campaignVictoryDeclared,
       research: svc('Research') ? svc('Research').getSnapshot() : null,
       progressionRestarts:
         typeof ProgressionRestarts !== 'undefined' ? ProgressionRestarts.getSnapshot() : null,
@@ -15068,6 +15097,9 @@ const Game = (() => {
       if (snap.pendingWaveMods) GS.pendingWaveMods = { ...snap.pendingWaveMods };
       GS.fallenPool = Array.isArray(snap.fallenPool) ? snap.fallenPool.map((f) => ({ ...f })) : [];
       GS.sessionHighlights = snap.sessionHighlights || [];
+      // Older saves past wave 100 predate the flag; treat them as already won.
+      GS.campaignVictoryDeclared =
+        snap.campaignVictoryDeclared ?? (snap.wave || 0) > CAMPAIGN_VICTORY_WAVE;
       applyWorldSize(GS.wave);
       releaseAllUnits();
       GS.projectiles = [];

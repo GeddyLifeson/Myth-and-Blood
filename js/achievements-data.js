@@ -172,7 +172,7 @@ function buildVanillaAchievements() {
     achEntry({
       id: 'true_victory_worldheart',
       name: 'Worldheart Shattered',
-      desc: 'Achieve true victory — defeat the Worldheart Tyrant during Planet Conquest (wave 500+).',
+      desc: 'Achieve true victory — clear wave 100 and break Malachar the Eternal.',
       cat: 'campaign',
       rule: 'true_victory:1',
       tier: 'gold',
@@ -970,7 +970,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'dragonball_ki_surge',
         'Power Level Rising',
-        'Shatter the Worldheart Tyrant with at least 55% of your combat force channeling ki or energy.',
+        'Fell a named boss at wave 100 or later with at least 55% of your combat force channeling ki or energy.',
         'planet_boss_high_ki',
         'silver',
       ],
