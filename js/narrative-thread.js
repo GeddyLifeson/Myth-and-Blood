@@ -20,7 +20,7 @@ const NarrativeThread = (() => {
     },
     150: {
       title: 'Succession of Ages',
-      hook: 'Grand Strategy opens — not a new empire, but the medieval kingdom stepping into its imperial inheritance.',
+      hook: 'The realm widens — not a new empire, but the medieval kingdom stepping into its imperial inheritance.',
       sub: 'Founding champions canonized in the chronicle now echo through edict, army, and fleet.',
     },
     400: {
@@ -30,7 +30,7 @@ const NarrativeThread = (() => {
     },
     500: {
       title: 'Eternal Chronicle',
-      hook: 'Apex war — the ancient realm faces the Worldheart Tyrant as a civilization that never fell, only ascended.',
+      hook: 'Apex war — the ancient realm faces the endless host as a civilization that never fell, only ascended.',
       sub: 'Every legend sworn to the Crown sharpens the whole host.',
     },
   };

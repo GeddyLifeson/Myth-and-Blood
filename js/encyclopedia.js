@@ -456,16 +456,6 @@ const Encyclopedia = (() => {
     },
     {
       cat: 'campaign',
-      name: 'Planet Warfare (Wave 200+)',
-      body: 'After wave 200 the HOST expands hostile territory south each wave (CONTROL HUD). Unchecked creep brings: closer enemy spawns on all flanks, faster assault cadence, fogged minimap north of the red front line, and hidden enemies until scouts or watchtowers spot them. Push back by destroying enemy economy structures (−6% control each), killing foes north of the front, and clearing all northern holds at wave end. Watchtowers and scouts extend vision into hostile zones.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Planet Conquest (Wave 500+)',
-      body: 'Endgame sector warfare — active from wave 500 in Campaign or via the Planet Conquest game mode (starts at wave 500). The map splits into horizontal sectors per hostile realm (CONQUEST HUD + colored north overlay). Raze their northern holds and hunt their armies to raise your sector %; undefeated sectors creep back each wave. When enemy control drops below 12% with no live units or buildings, that realm is ELIMINATED. After two realms fall, the Worldheart Tyrant (scaled boss_malachar) awakens in the north. Its ward reduces damage until you field three or more different player unit types; at 75/50/25% HP it summons remnants from fallen factions. True victory at wave 500+ requires shattering the Worldheart Tyrant — economy purge alone no longer ends the campaign. Eliminated factions stop spawning and vanish from the HOST roster.',
-    },
-    {
-      cat: 'campaign',
       name: 'Asymmetric Warfare',
       body: 'Evolve-style opposing roles: YOU are the Kingdom Commander — macro (night builds, hamlets, academies, research, TP) plus micro (HUNT, rally, doctrines, spy/courier). The HOST is an Evolving Threat — auto-spawns, faction kingdoms, levels up (Threat Lv 1–25+), and pressures the whole map. COMMAND HUD shows macro authority vs micro orders; HOST HUD shows threat level; the Kingdom bar compares blue (you) vs red (host). High Commander Authority grants longer nights, faster builders, and bonus TP. High Host Threat adds spawns, faster assaults, multi-flank bias, and elite injections. Raze northern holds to push threat level down.',
     },
@@ -1068,7 +1058,7 @@ const Encyclopedia = (() => {
     dreadnought: [
       'Autocannon shreds siege towers and deployed engines.',
       'Dreadnought is heavy siege ranged — Autocannon bonus vs structures. Walking artillery platform.',
-      'Send against siege towers and enemy hamlets in Planet Warfare.',
+      'Send against siege towers and enemy hamlets in the northern war.',
     ],
 
     soldier_of_light: [
@@ -1268,7 +1258,7 @@ const Encyclopedia = (() => {
           : '';
       const dragonballTrial =
         factionId === 'dragonball'
-          ? ' Reach wave 200+, defeat the planetary threat boss, and field a high-ki army when the Worldheart falls — power level escalation, protecting the planet — or discover another way in.'
+          ? ' Reach wave 200+, defeat the planetary threat boss, and field a high-ki army when the warlord falls — power level escalation, protecting the planet — or discover another way in.'
           : '';
       const warhammerTrial =
         factionId === 'imperium' || factionId === 'warp'
@@ -1313,7 +1303,7 @@ const Encyclopedia = (() => {
       {
         cat: 'crossover_meta',
         name: 'Legion Archive',
-        body: 'Warriors from other worlds sign on through Legion Archive — your evolved allies. See Evolved Allies — Design Philosophy in this tab for early spikes, late-game armies, and Planet Warfare operatives. Each faction needs its barracks completed before recruits deploy.',
+        body: 'Warriors from other worlds sign on through Legion Archive — your evolved allies. See Evolved Allies — Design Philosophy in this tab for early spikes, late-game armies, and Northern war operatives. Each faction needs its barracks completed before recruits deploy.',
       },
       {
         cat: 'crossover_meta',

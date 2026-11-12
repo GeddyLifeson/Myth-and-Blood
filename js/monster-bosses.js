@@ -243,7 +243,7 @@ const MonsterBosses = (() => {
       mechanics: 'Ultimate boss · regen · huntsGeneral · siegeMult ×2.5 · enrage · 520 base HP.',
       counter: 'Full army, all strikes, evolved ally burst — spend saved TP before wave 100.',
       evolutionNote:
-        'Endless Siege Host is the heaviest pack — dreadborn champions, elder wyrms, hamlets, war academies, and shadow academies. Worldheart Tyrant at wave 500+ scales from Malachar.',
+        'Endless Siege Host is the heaviest pack — dreadborn champions, elder wyrms, hamlets, war academies, and shadow academies. Endless Host at wave 500+ scales from Malachar.',
     },
   ];
 

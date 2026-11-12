@@ -315,10 +315,9 @@ const PROGRESSION_MILESTONES = [
   {
     wave: 500,
     id: 'planet_conquest',
-    name: 'Planet Conquest',
-    shortName: 'Conquest',
-    tagline:
-      'True victory unlocks — conquer sectors, eliminate realms, and shatter the Worldheart Tyrant.',
+    name: 'The Long Siege',
+    shortName: 'Long Siege',
+    tagline: 'Five hundred waves held — the host throws everything it has left at your walls.',
     color: '#c060ff',
     kingdomStage: 4,
   },

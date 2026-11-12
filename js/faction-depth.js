@@ -12,7 +12,7 @@
  * - getProfile / getSeasonalEvents / getMasteryTier — faction meta
  * - computeSynergies / applyToUnit / modifyDamage — field bonuses
  * - processAbilityHit / onWaveStart — ability proc pipeline
- * - modifyBuildingDamage / isPlanetSiegeSpecialist — Planet Warfare hooks
+ * - modifyBuildingDamage / isPlanetSiegeSpecialist — the northern war hooks
  * - getEncyclopediaEntries / auditFairRepresentation — content & balance
  */
 class FactionDepthSystem {
@@ -665,7 +665,7 @@ class FactionDepthSystem {
     this.patchBuildDefs();
   }
 
-  /** Evolved operatives with enhanced northern-hold demolition at wave 200+ (Planet Warfare). */
+  /** Evolved operatives with enhanced northern-hold demolition at wave 200+ (the northern war). */
 
   bind(gameCtx) {
     this.ctx = gameCtx;
@@ -2008,7 +2008,7 @@ class FactionDepthSystem {
         body: [
           'Evolved operatives are your evolved allies — rare power spikes early, full faction armies mid-game, and planet-scale demolition experts late.',
           '',
-          'The host evolves its factions (Grunts → Kingdom). Your evolved allies mirror that curve: a single bound-spirit operative can flip a siege at wave 15; by wave 80 a mixed roster with synergies feels like fielding evolved monsters of your own; after wave 200, Planet Warfare operatives raze northern holds and push the hostile front line back.',
+          'The host evolves its factions (Grunts → Kingdom). Your evolved allies mirror that curve: a single bound-spirit operative can flip a siege at wave 15; by wave 80 a mixed roster with synergies feels like fielding evolved monsters of your own; after wave 200, Northern war operatives raze northern holds and push the hostile front line back.',
           '',
           'Vanilla troops still anchor the line — evolved allies reward investment, not replacement. Secret rosters (Coliseum, Hellbane) and Tonic Stations machines unlock alongside evolved barracks.',
         ].join('\n'),
@@ -2043,15 +2043,15 @@ class FactionDepthSystem {
       },
       {
         cat: 'crossover_meta',
-        name: 'Planet Warfare Operatives (Wave 200+)',
+        name: 'Northern War Operatives (Wave 200+)',
         body: [
-          `After wave ${this.PLANET_WARFARE_WAVE}, Planet Warfare expands hostile territory south. Evolved operatives with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
+          `After wave ${this.PLANET_WARFARE_WAVE}, the host presses south. Evolved operatives with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
           '',
           this.formatPlanetOpsTable(),
           '',
-          'Hunt mode + Planet Warfare: operatives prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Stone Axe Lord, Kael Skyburst, Heavy Gunner, Storm Caller) clear clustered mirror economy. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
+          'Hunt mode in the northern war: operatives prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Stone Axe Lord, Kael Skyburst, Heavy Gunner, Storm Caller) clear clustered mirror economy. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
           '',
-          'Planet Conquest (wave 500+) extends the same logic to sector warfare — evolved armies must shatter the Worldheart Tyrant while holding three+ unit types for ward break.',
+          'Past wave 500 the same logic holds — evolved armies must shatter the endless host while holding three+ unit types for ward break.',
         ].join('\n'),
       },
       {
@@ -2100,7 +2100,7 @@ class FactionDepthSystem {
         .filter((op) => op.faction === id)
         .map((op) => op.operative);
       const planetNote = planetOps.length
-        ? `\n\nPlanet Warfare (wave ${this.PLANET_WARFARE_WAVE}+): ${planetOps.join(', ')} gain settlement-siege bonuses.`
+        ? `\n\nNorthern war (wave ${this.PLANET_WARFARE_WAVE}+): ${planetOps.join(', ')} gain settlement-siege bonuses.`
         : '';
       entries.push({
         cat: `crossover_${id}`,

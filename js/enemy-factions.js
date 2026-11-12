@@ -994,7 +994,7 @@ const EnemyFactions = (() => {
           '',
           `Active factions: ${factionList}`,
           '',
-          'Faction reputation, counter-offensive doctrines, expeditions, and Planet Conquest elimination all interact with evolution timing — high hostility pulls tiers forward; truces and debuffs hold them back.',
+          'Faction reputation, counter-offensive doctrines, expeditions, and realm elimination all interact with evolution timing — high hostility pulls tiers forward; truces and debuffs hold them back.',
         ].join('\n'),
       },
       {
@@ -1014,7 +1014,7 @@ const EnemyFactions = (() => {
         body: [
           'Open the Threat Map via 🗺 in the top bar, FACTION INTEL in the right panel, or by clicking the HOST HUD.',
           '',
-          'Per-realm intel cards show: evolution stage (Grunts → Kingdom), tier tagline, northern building count, hostility stance (Cordial → Blood Feud), counter-offensive debuffs, multi-front flank assignment, and Planet Conquest sector %.',
+          'Per-realm intel cards show: evolution stage (Grunts → Kingdom), tier tagline, northern building count, hostility stance (Cordial → Blood Feud), counter-offensive debuffs, multi-front flank assignment, and The Long Siege sector %.',
           '',
           'Dormant factions display their unlock wave. Eliminated realms show CONQUERED and stop spawning. Stage 4 kingdoms badge COUNTER-RAIDS when they can strike your settlements.',
           '',

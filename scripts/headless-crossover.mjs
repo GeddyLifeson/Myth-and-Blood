@@ -1775,7 +1775,7 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
   );
   const early = entries.find((e) => e.name === 'Early Game — Rare Power Spikes');
   assert(early?.body?.includes('mini-bosses'), 'early game entry should describe rare spikes');
-  const planet = entries.find((e) => e.name === 'Planet Warfare Operatives (Wave 200+)');
+  const planet = entries.find((e) => e.name === 'Northern War Operatives (Wave 200+)');
   assert(planet?.body?.includes('Gearwright'), 'planet ops should list Tech Head / Gearwright');
   assert(planet?.body?.includes('Kael Skyburst'), 'planet ops should list Skyburst Wave');
   const secret = entries.find((e) => e.name === 'Secret Content & Meta Unlocks');

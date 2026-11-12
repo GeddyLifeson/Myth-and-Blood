@@ -124,7 +124,7 @@ const DynamicMapEvents = (() => {
     },
     worldheart_pulse: {
       id: 'worldheart_pulse',
-      name: 'Worldheart Pulse',
+      name: 'Deepearth Pulse',
       float: 'WORLDHEART',
       color: '#b04080',
       waveMin: 450,

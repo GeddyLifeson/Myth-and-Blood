@@ -6656,7 +6656,6 @@ const Game = (() => {
     if (typeof HybridPowerFantasy !== 'undefined') HybridPowerFantasy.resetRun();
     if (typeof NarrativeThread !== 'undefined') NarrativeThread.resetRun();
     if (typeof TechTreeBranches !== 'undefined') TechTreeBranches.resetRun();
-    if (typeof IntergalacticLateBranches !== 'undefined') IntergalacticLateBranches.resetRun();
     if (typeof EternalPathFramework !== 'undefined') EternalPathFramework.resetRun();
     if (typeof MartialPathEvolution !== 'undefined') MartialPathEvolution.resetRun();
     if (typeof ArcanePathEvolution !== 'undefined') ArcanePathEvolution.resetRun();

@@ -76,8 +76,8 @@ const StoryLore = (() => {
         sub: 'Counter-holds and couriers carry ultimatums, not petitions.',
       },
       500: {
-        title: 'Worldheart Assault',
-        hook: 'Wave five hundred. Sectors fall to spearpoint — the Worldheart Tyrant awakens to a crown that never kneels.',
+        title: 'Assault on the Host',
+        hook: 'Wave five hundred. The line advances at spearpoint — the endless host awakens to a crown that never kneels.',
         sub: 'True victory demands shattering the tyrant; the chronicles already call this a war of annihilation.',
       },
     },
@@ -98,8 +98,8 @@ const StoryLore = (() => {
         sub: 'Enemy mirror settlements rise, but your sealed lines and fortified holds buy time.',
       },
       500: {
-        title: 'Worldheart Vigil',
-        hook: 'Wave five hundred. Sectors are taken methodically — the Worldheart Tyrant finds no crack in your patience.',
+        title: 'Vigil Against the Host',
+        hook: 'Wave five hundred. Ground is taken methodically — the endless host finds no crack in your patience.',
         sub: 'True victory will be recorded as discipline, not frenzy.',
       },
     },
@@ -120,7 +120,7 @@ const StoryLore = (() => {
         sub: 'The north burns with borrowed power; the ledger warns of debts yet unpaid.',
       },
       500: {
-        title: 'Worldheart Channel',
+        title: 'Channel Against the Host',
         hook: 'Wave five hundred. You channel the planet’s pulse while realms crumble — the Tyrant faces a crown that speaks its language.',
         sub: 'Field diverse unit types to pierce the ward; arcane reckoning awaits.',
       },
@@ -142,8 +142,8 @@ const StoryLore = (() => {
         sub: 'Economy purge or counter-holds: the chronicle says you chose what the wave demanded.',
       },
       500: {
-        title: 'Planet Conquest',
-        hook: 'Wave five hundred. Sectors fracture — you eliminate realms pragmatically until the Worldheart Tyrant stands alone.',
+        title: 'The Long Siege',
+        hook: 'Wave five hundred. The north fractures — you eliminate realms pragmatically until the endless host stands alone.',
         sub: 'True victory requires shattering the tyrant; your path remains uncommitted until the end.',
       },
     },

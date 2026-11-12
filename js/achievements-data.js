@@ -171,7 +171,7 @@ function buildVanillaAchievements() {
   list.push(
     achEntry({
       id: 'true_victory_worldheart',
-      name: 'Worldheart Shattered',
+      name: 'The Realm Stands',
       desc: 'Achieve true victory — clear wave 100 and break Malachar the Eternal.',
       cat: 'campaign',
       rule: 'true_victory:1',

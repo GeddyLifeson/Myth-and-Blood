@@ -12,7 +12,7 @@ const AscensionSystem = (() => {
       wave: 150,
       label: 'Kingdom Era',
       pointGrant: 18,
-      desc: 'Grand Strategy unlocks — ascend veterans into realm paragons.',
+      desc: 'The realm widens — ascend veterans into realm paragons.',
     },
     galactic: {
       id: 'galactic',

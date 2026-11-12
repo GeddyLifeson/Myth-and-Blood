@@ -1171,8 +1171,7 @@ const UX = (() => {
     },
     planet_conquest: {
       title: 'TRUE VICTORY!',
-      subtitle:
-        'The Worldheart Tyrant is shattered — every hostile realm is broken. The planet is yours.',
+      subtitle: 'Wave one hundred is cleared — the realm stands and the campaign is won.',
       crest: '☀',
     },
     default: {

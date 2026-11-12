@@ -77,7 +77,7 @@ const UI = (() => {
       console.warn('hideMenusForPlay: overlay close failed', err);
     }
     if (showLaunch) setLaunchOverlayVisible(true);
-    // Force style/layout commit before long synchronous Game.start (Planet Conquest boot).
+    // Force style/layout commit before long synchronous Game.start (The Long Siege boot).
     void document.body.offsetHeight;
     document.getElementById('menu-screen')?.getBoundingClientRect();
   }
@@ -1399,7 +1399,7 @@ const UI = (() => {
         if (epfSnap?.dominantColor) epfHud.style.borderColor = epfSnap.dominantColor;
         epfHud.title = epfSnap?.dominantLabel
           ? `${epfSnap.dominantLabel} — investment strengthens every era`
-          : 'Four Eternal Paths evolve Medieval → Kingdom → Intergalactic';
+          : 'Four Eternal Paths evolve Medieval → Kingdom → Galactic';
       }
     }
 
