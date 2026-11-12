@@ -1026,3 +1026,80 @@ body.ui-v2 #top-bar .top-bar-meta .stat-group[style*='display: none'] {
     padding-right: calc(8px * var(--ui-scale));
   }
 }
+
+/* ── HUD pass: wider two-column rails, readable text, pinned commands ─────── */
+body.ui-v2 {
+  --panel-width: calc(136px * var(--ui-scale));
+  --panel-right-width: calc(120px * var(--ui-scale));
+}
+
+body.ui-v2 .side-tab {
+  font-size: calc(9px * var(--ui-scale) * var(--font-scale));
+  padding: 4px 2px;
+}
+
+body.ui-v2 .side-tab-pane,
+body.ui-v2 .side-tab-pane[hidden] {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+/* Headers, hints and nested sections span the rail; only buttons pair up. */
+body.ui-v2 .side-tab-pane > :not(button) {
+  grid-column: 1 / -1;
+}
+body.ui-v2 .side-tab-pane > div:not(.panel-header):not(.panel-divider):not(.formation-btn-row) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+body.ui-v2 .side-tab-pane > div > :not(button) {
+  grid-column: 1 / -1;
+}
+
+body.ui-v2 .deploy-btn,
+body.ui-v2 .ability-btn,
+body.ui-v2 .build-btn,
+body.ui-v2 .spy-btn,
+body.ui-v2 .courier-btn,
+body.ui-v2 .meta-btn,
+body.ui-v2 .doctrine-btn,
+body.ui-v2 .counter-doctrine-btn,
+body.ui-v2 .loadout-btn,
+body.ui-v2 .formation-btn {
+  font-size: calc(9.5px * var(--ui-scale) * var(--font-scale));
+  padding: 3px 2px;
+}
+body.ui-v2 .cost {
+  font-size: calc(8.5px * var(--ui-scale) * var(--font-scale));
+}
+body.ui-v2 .panel-header {
+  font-size: calc(9px * var(--ui-scale) * var(--font-scale));
+}
+
+/* Speed and Hunt live in the top bar so they never scroll out of reach. */
+body.ui-v2 #top-bar .top-bar-actions .cmd-top-btn {
+  flex-direction: row;
+  width: auto;
+  min-width: calc(74px * var(--ui-scale));
+  height: calc(30px * var(--ui-scale));
+  padding: 0 10px;
+  font-size: calc(11px * var(--ui-scale) * var(--font-scale));
+  letter-spacing: 0.04em;
+  pointer-events: auto;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* First ten waves: the long-run meta chips stay out of the way. */
+body.ui-v2.hud-early #top-bar .top-bar-meta {
+  display: none;
+}
+
+/* Message banner sits above the hint bar, clear of the top bar and tutorial card. */
+body.ui-v2 #message-box {
+  top: auto;
+  bottom: calc(var(--hint-bar-h, 22px) + 16px);
+  max-width: min(60vw, 820px);
+  text-align: center;
+}

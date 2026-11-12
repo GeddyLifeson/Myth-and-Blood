@@ -131,6 +131,8 @@ const UI = (() => {
     }
   }
 
+  let lastHudEarly = null;
+
   /**
    * Side-panel section nav (UI v2).
    * All sections stay visible and scrollable — tabs jump to a section (nothing is hidden).
@@ -2319,6 +2321,13 @@ const UI = (() => {
     if (typeof Achievements !== 'undefined') Achievements.updateTopBar();
 
     updateButtonStates(gs);
+
+    // Early waves: hide the long-run meta chips so the top bar shows only what matters now.
+    const hudEarly = !gs.creativeMode && (gs.wave || 0) < 10;
+    if (hudEarly !== lastHudEarly) {
+      lastHudEarly = hudEarly;
+      document.body.classList.toggle('hud-early', hudEarly);
+    }
 
     const msgBox = hudEls['message-box'];
     if (msgBox) {
