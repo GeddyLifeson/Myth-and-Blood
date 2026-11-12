@@ -4,5 +4,6 @@ js/game-data-bundle.js
 data/
 scripts/sim-report.json
 myth-and-blood.zip
-.git/eslint.globals.mjs
+.git/
+eslint.globals.mjs
 dist/
