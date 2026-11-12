@@ -23,6 +23,7 @@ No server is required. Sound is procedural (generated in the browser) — click 
 | **Campaign**         | Standard endless run with chosen difficulty and optional advanced modifiers |
 | **Survival Endless** | Score-focused; leaderboard ranks wave × difficulty% + kills                 |
 | **Roguelike**        | Random advanced modifiers each run                                          |
+| **Warband**          | Small squad: soldiers cost double, and each is far tougher and hits harder  |
 | **Timed Blitz**      | Shorter night prep — race the clock                                         |
 | **Seed Run**         | Deterministic spawns from a shared seed                                     |
 | **Academy Era**      | Jump to wave 100 / 105 / 200 — skip the early grind                         |
@@ -53,7 +54,7 @@ Use normal deploy/build controls alongside the lab. Disarm spawn tools to intera
 ## Objective
 
 - **Win condition:** Clear **wave 100** to win the campaign. That awards the victory achievements, faction trials and legacy unlocks. The siege itself never ends, so the run continues afterwards for score.
-- **Lose condition:** Enemies break through your line too many times. Each breakthrough counts as a **miss**. Exceed your miss limit and the realm falls.
+- **Lose condition:** Enemies break through your line too many times, or you have no troops and no training halls left. Each enemy that gets through counts as a **breach**. Pass the breach limit and the realm falls.
 
 Clear every wave to earn TP, expand territory, unlock new systems, and push into the Academy and RTS eras.
 
@@ -61,12 +62,13 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 
 ## Core Loop
 
-1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. Press **D** to begin the day when ready.
+1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
 2. **Day combat** — waves spawn from unlocked flanks. Troops auto-engage in Hunt mode, or click to move them manually.
 3. **Fight** — cast strikes, manage morale, retreat wounded troops to med tents.
 4. **Clear the wave** — all enemies defeated.
 5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
-6. **Repeat** with tougher, more numerous foes.
+6. **Every 5 waves, claim spoils** — choose one of three rewards that last the rest of the run.
+7. **Repeat** with tougher, more numerous foes.
 
 ---
 
@@ -260,6 +262,9 @@ All settlements have **large footprints**, **HP bars**, and are **siege targets*
 - With a General in the Keep, **footmen auto-fill wall slots** inside the castle compound.
 - **Demoralized troops** (routing before wave 100, giving up after wave 100) are detected globally — the General paths to them for a pep talk.
 - On promotion from Footman, honor names are kept; combat stars reset and only improve aura.
+- **Orders** (buttons at the top of the screen while a General is on the field):
+  - **War Cry** (`[`) — soldiers near the General strike 20% harder for 8 seconds and regain morale. 45-second cooldown.
+  - **Hold the Line** (`]`) — soldiers near the General take 40% less damage for 7 seconds. 60-second cooldown.
 
 ---
 
@@ -322,7 +327,7 @@ One tonic reduces spy and courier costs by 1 TP.
 
 ### Era resets
 
-At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
+At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army, your veterans and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
 
 ### Flank variety
 
@@ -359,9 +364,44 @@ Wave 110 brings Gorath back — tougher. Spy **Assassinate Captain** removes eli
 
 Blood Moon (flying predators), Supply Caravan (+TP), Siege Push (extra towers), and more.
 
-### Miss limit
+### Line-breakers and the breach limit
 
-Varies by difficulty. An enemy reaching your breakthrough line counts as a miss.
+From wave 3, some enemies carry a **red pennant**. These are line-breakers: they ignore your troops and run for your line, faster than the rest of the host but with less health. One that reaches the bottom of the field (or your rally point, if it came from a flank) is a **breach**.
+
+- The breach counter sits at the top of the screen. The limit is 14 / 10 / 8 / 6 by difficulty.
+- Each breach shakes the morale of every soldier. Pass the limit and the realm falls.
+- Enemies also go for the line when they have **nobody left to fight**, and when a **standoff** drags on for about a minute with no blood drawn.
+- Depth beats a single row: archers behind the line catch what runs past the front.
+
+### Spoils of war
+
+After every fifth wave you are offered three rewards and keep one for the rest of the run: more damage, less damage taken, extra TP per wave, a higher breach limit, night healing, and others. Each can be taken up to three times. The siege does not pause for the choice; spoils left unclaimed at dawn are picked for you.
+
+### Supply crates
+
+From wave 2, crates land on the field during the day. Walk any soldier onto one to open it: TP, bandages for nearby troops, or rations that lift morale. Some are bait and spring a goblin ambush.
+
+### Counters and rear attacks
+
+| Troop                  | Strong against                            | Weak against |
+| ---------------------- | ----------------------------------------- | ------------ |
+| Pikeman                | Riders (wargs, dark knights)              |              |
+| Cavalry, Knight, Scout | Archers and casters                       |              |
+| Archer                 | Goblins and rats                          | Armour       |
+| Mage, Ballista, Sapper | Armour (trolls, dark knights, war chiefs) |              |
+| Footman                | Berserkers                                |              |
+
+Enemy riders hit archers, mages, healers and bards harder, and pikemen take less from them. Any attack that lands **from behind** does 25% more damage and shakes the target's morale; this applies to both sides.
+
+### Veterans
+
+The unit panel shows each soldier's kills and waves survived. When a veteran falls, the log names them and their record. At the wave 100 and 200 era resets, your General and up to ten of your most experienced soldiers march into the new era with you.
+
+---
+
+## Ribbons
+
+Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
 
 ---
 

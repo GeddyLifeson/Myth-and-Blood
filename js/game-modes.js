@@ -24,6 +24,12 @@ const GameModes = (() => {
       desc: 'Random advanced modifiers rolled each run — no manual tweaking mid-campaign.',
     },
     {
+      id: 'warband',
+      label: 'Warband',
+      subtitle: 'Small squad',
+      desc: 'Soldiers cost double, and each one is far tougher and hits harder. A small squad where every death hurts.',
+    },
+    {
       id: 'timed',
       label: 'Timed Blitz',
       desc: 'Shorter night prep (50% time). Race the clock to higher waves.',

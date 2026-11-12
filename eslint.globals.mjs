@@ -164,6 +164,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "SaveThumbnail",
   "Settings",
   "SettlementRaids",
+  "SiegeLoop",
   "Spatial",
   "SpriteGen",
   "SpriteLod",

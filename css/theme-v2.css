@@ -1304,3 +1304,237 @@ body.ui-v2 #message-box {
   letter-spacing: 0.14em;
   text-transform: uppercase;
 }
+
+/* Siege loop: breach counter, scouting, General's orders, spoils, ribbons */
+#siege-strip {
+  position: fixed;
+  left: calc(var(--panel-width, 136px) + 14px);
+  top: calc(84px * var(--font-scale, 1));
+  z-index: 40;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  max-width: 230px;
+  pointer-events: none;
+  font-family: 'Cinzel', serif;
+  font-size: calc(12px * var(--font-scale, 1));
+}
+#siege-strip[hidden] {
+  display: none;
+}
+#siege-strip > * {
+  pointer-events: auto;
+}
+.siege-chip {
+  background: rgba(6, 4, 6, 0.92);
+  border: 1px solid #3a2a2a;
+  color: #ece4d0;
+  padding: 3px 9px;
+  box-shadow: 2px 2px 0 #000;
+  white-space: nowrap;
+}
+.siege-chip.siege-preview {
+  white-space: normal;
+  border-color: #6a5a3a;
+}
+.siege-chip.danger {
+  border-color: #ff3a2a;
+  color: #ff6a5a;
+  animation: siege-pulse 0.9s infinite alternate;
+}
+.siege-order {
+  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  border: 1px solid #c8202a;
+  color: #fff;
+  font: inherit;
+  padding: 3px 10px;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 #000;
+}
+.siege-order:disabled {
+  background: #1c1416;
+  border-color: #3a2a2a;
+  color: #8a7f74;
+  cursor: default;
+}
+@keyframes siege-pulse {
+  from {
+    box-shadow: 2px 2px 0 #000;
+  }
+  to {
+    box-shadow:
+      2px 2px 0 #000,
+      0 0 12px rgba(255, 50, 40, 0.8);
+  }
+}
+#spoils-panel {
+  position: fixed;
+  left: 50%;
+  bottom: calc(96px * var(--font-scale, 1));
+  transform: translateX(-50%);
+  z-index: 45;
+  background: rgba(6, 4, 6, 0.96);
+  border: 2px solid #c8202a;
+  box-shadow: 4px 4px 0 #000;
+  padding: 10px 12px;
+  max-width: min(760px, 92vw);
+  color: #ece4d0;
+  font-family: 'Cinzel', serif;
+}
+#spoils-panel[hidden] {
+  display: none;
+}
+.spoils-title {
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: calc(22px * var(--font-scale, 1));
+  color: #ff4a3a;
+  text-align: center;
+  margin-bottom: 8px;
+}
+.spoils-row {
+  display: flex;
+  gap: 8px;
+}
+.spoils-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  background: #120c0e;
+  border: 1px solid #5a4a3a;
+  color: #ece4d0;
+  font: inherit;
+  font-size: calc(12px * var(--font-scale, 1));
+  padding: 8px;
+  cursor: pointer;
+}
+.spoils-card strong {
+  color: #fff;
+  font-size: calc(14px * var(--font-scale, 1));
+}
+.spoils-card:hover,
+.spoils-card:focus-visible {
+  border-color: #ff4a3a;
+  background: #2a0c10;
+}
+.spoils-note {
+  margin-top: 6px;
+  font-size: calc(10px * var(--font-scale, 1));
+  color: #9a8f80;
+  text-align: center;
+}
+#breach-flash {
+  position: fixed;
+  inset: 0;
+  z-index: 39;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow: inset 0 0 140px 40px rgba(220, 20, 16, 0.85);
+}
+#breach-flash.on {
+  animation: breach-flash 0.9s ease-out;
+}
+@keyframes breach-flash {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+#boss-card {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: 30%;
+  z-index: 44;
+  pointer-events: none;
+  text-align: center;
+  padding: 14px 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(4, 2, 4, 0.92) 25%,
+    rgba(4, 2, 4, 0.92) 75%,
+    transparent
+  );
+  opacity: 0;
+}
+#boss-card[hidden] {
+  display: none;
+}
+#boss-card.on {
+  animation: boss-card 3.2s ease-out;
+}
+.boss-card-name {
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: calc(46px * var(--font-scale, 1));
+  color: #ece4d0;
+  text-shadow:
+    3px 3px 0 #000,
+    0 0 22px rgba(220, 30, 24, 0.7);
+}
+.boss-card-title {
+  font-family: 'Cinzel', serif;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #ff4a3a;
+}
+@keyframes boss-card {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.6);
+  }
+  12% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.ribbon-count {
+  color: #ff4a3a;
+  margin-left: 6px;
+}
+.ribbon-intro {
+  font-size: calc(11px * var(--font-scale, 1));
+  color: #9a8f80;
+  margin: 6px 0;
+}
+.ribbon-list {
+  display: grid;
+  gap: 3px;
+}
+.ribbon-row {
+  display: grid;
+  grid-template-columns: 9em 1fr 1fr;
+  gap: 8px;
+  padding: 3px 6px;
+  font-size: calc(11px * var(--font-scale, 1));
+  color: #7a7068;
+  border-left: 3px solid #2a2022;
+  text-align: left;
+}
+.ribbon-row.earned {
+  color: #ece4d0;
+  border-left-color: #c8202a;
+}
+.ribbon-row.earned .ribbon-perk {
+  color: #80e0a0;
+}
+.unit-info-row.counter-row {
+  color: #c8b890;
+}
+@media (prefers-reduced-motion: reduce) {
+  #breach-flash.on,
+  #boss-card.on,
+  .siege-chip.danger {
+    animation-duration: 0.01s;
+  }
+}
