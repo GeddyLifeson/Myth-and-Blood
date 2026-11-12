@@ -1,9 +1,9 @@
 {
   "runs": 13,
-  "elapsedSec": 317.3,
+  "elapsedSec": 308.1,
   "bestWave": 1000,
   "avgWave": 808.5,
-  "avgUpdateMs": 2.73,
+  "avgUpdateMs": 2.67,
   "reached1000": [
     {
       "runId": 200,
@@ -32,7 +32,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.25
+      "avgUpdateMs": 0.23
     },
     {
       "runId": 201,
@@ -42,7 +42,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.25
+      "avgUpdateMs": 0.22
     },
     {
       "runId": 202,
@@ -62,7 +62,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.98
+      "avgUpdateMs": 3.13
     },
     {
       "runId": 1,
@@ -72,7 +72,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.92
+      "avgUpdateMs": 2.9
     },
     {
       "runId": 2,
@@ -82,7 +82,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.85
+      "avgUpdateMs": 2.62
     },
     {
       "runId": 3,
@@ -92,7 +92,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.66
+      "avgUpdateMs": 2.74
     },
     {
       "runId": 4,
@@ -102,7 +102,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.05
+      "avgUpdateMs": 4.14
     },
     {
       "runId": 5,
@@ -112,7 +112,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.92
+      "avgUpdateMs": 3.57
     },
     {
       "runId": 6,
@@ -122,7 +122,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.6
+      "avgUpdateMs": 3.41
     },
     {
       "runId": 7,
@@ -132,7 +132,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.21
+      "avgUpdateMs": 4.33
     },
     {
       "runId": 8,
@@ -142,7 +142,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.77
+      "avgUpdateMs": 3.61
     }
   ]
 }

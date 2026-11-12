@@ -29,5 +29,11 @@ jobs:
         run: node scripts/check-manifest-sync.mjs && node scripts/check-eslint-globals.mjs
       - name: Tests
         run: node scripts/run-all-tests.mjs --skip-sim
+      # A bot plays without cheats; fails if the game throws or a wave never ends.
+      - name: Honest playtest (short)
+        run: node scripts/sim-honest-play.mjs
+        env:
+          HONEST_TICKS: '15000'
+          HONEST_SEEDS: '2'
       - name: Build
         run: npm run build:all

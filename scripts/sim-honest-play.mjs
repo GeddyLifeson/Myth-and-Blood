@@ -14,6 +14,7 @@ import { boot } from './lib/harness.mjs';
 
 const MAX_TICKS = Number(process.env.HONEST_TICKS || 60000);
 const SEEDS = Number(process.env.HONEST_SEEDS || 3);
+const STALL_TICKS = Number(process.env.HONEST_STALL_TICKS || 8000);
 const DIFFS = ['baby', 'normal', 'chad', 'doomslayer'];
 // Deploy order the bot cycles through; it buys the next one it can afford.
 const ROSTER = [
@@ -45,9 +46,21 @@ function playOne(diff, seed) {
   let threw = null;
   let maxArmy = 0;
   let t = 0;
+  let lastWave = -1;
+  let lastWaveTick = 0;
+  let stalledAt = null;
   for (; t < MAX_TICKS; t++) {
+    // getState() is cached per presented frame, so ask the game directly whether it ended.
+    if (!Game.isPlaying()) break;
     const s = Game.getState();
-    if (s.state !== 'playing') break;
+    // A wave that never ends is a soft-lock (for example an enemy jittering in place).
+    if (s.wave !== lastWave) {
+      lastWave = s.wave;
+      lastWaveTick = t;
+    } else if (t - lastWaveTick > STALL_TICKS) {
+      stalledAt = s.wave;
+      break;
+    }
     try {
       if (s.timeOfDay === 'night') {
         const type = ROSTER[next % ROSTER.length];
@@ -70,12 +83,23 @@ function playOne(diff, seed) {
     }
     if (t % 200 === 0) maxArmy = Math.max(maxArmy, Game.getState().army ?? 0);
   }
+  Game.updatePresentation?.();
   const fin = Game.getState();
+  const ended = !Game.isPlaying();
   return {
     difficulty: diff,
     seed,
     wave: fin.wave,
-    outcome: threw ? 'THROW' : fin.state === 'playing' ? 'still alive' : fin.state,
+    outcome: threw
+      ? 'THROW'
+      : stalledAt != null
+        ? `STALLED on wave ${stalledAt}`
+        : !ended
+          ? 'still alive'
+          : fin.state === 'playing'
+            ? 'defeat'
+            : fin.state,
+    stalled: stalledAt != null,
     ticks: t,
     deployed,
     maxArmy,
@@ -109,4 +133,4 @@ writeFileSync(
   join(ROOT, 'scripts', 'sim-honest-report.json'),
   JSON.stringify({ maxTicks: MAX_TICKS, byDiff, results }, null, 2)
 );
-process.exit(results.some((r) => r.threw) ? 1 : 0);
+process.exit(results.some((r) => r.threw || r.stalled) ? 1 : 0);
