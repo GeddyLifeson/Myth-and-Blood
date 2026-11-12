@@ -7,3 +7,4 @@ myth-and-blood.zip
 .git/
 eslint.globals.mjs
 dist/
+scripts/sim-honest-report.json

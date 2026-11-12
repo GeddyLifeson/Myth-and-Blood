@@ -1,0 +1,75 @@
+{
+  "maxTicks": 20000,
+  "byDiff": {
+    "baby": {
+      "avgWave": 22,
+      "best": 22,
+      "worst": 22
+    },
+    "normal": {
+      "avgWave": 22,
+      "best": 22,
+      "worst": 22
+    },
+    "chad": {
+      "avgWave": 19,
+      "best": 19,
+      "worst": 19
+    },
+    "doomslayer": {
+      "avgWave": 18,
+      "best": 18,
+      "worst": 18
+    }
+  },
+  "results": [
+    {
+      "difficulty": "baby",
+      "seed": 4000,
+      "wave": 22,
+      "outcome": "still alive",
+      "ticks": 20000,
+      "deployed": 77,
+      "maxArmy": 81,
+      "kills": 209,
+      "campaignWon": false,
+      "threw": null
+    },
+    {
+      "difficulty": "normal",
+      "seed": 4000,
+      "wave": 22,
+      "outcome": "still alive",
+      "ticks": 20000,
+      "deployed": 62,
+      "maxArmy": 63,
+      "kills": 245,
+      "campaignWon": false,
+      "threw": null
+    },
+    {
+      "difficulty": "chad",
+      "seed": 4000,
+      "wave": 19,
+      "outcome": "still alive",
+      "ticks": 20000,
+      "deployed": 44,
+      "maxArmy": 46,
+      "kills": 218,
+      "campaignWon": false,
+      "threw": null
+    },
+    {
+      "difficulty": "doomslayer",
+      "seed": 4000,
+      "wave": 18,
+      "outcome": "still alive",
+      "ticks": 20000,
+      "deployed": 36,
+      "maxArmy": 36,
+      "kills": 229,
+      "campaignWon": false,
+      "threw": null
+    }
+  ]
+}

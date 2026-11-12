@@ -20,6 +20,7 @@
     "dist": "npm run build && electron-builder",
     "dist:win": "npm run build && electron-builder --win",
     "sim": "node scripts/headless-sim.mjs",
+    "sim:honest": "node scripts/sim-honest-play.mjs",
     "test:crossover": "node scripts/verify-crossover.js",
     "test:crossover:runtime": "node scripts/headless-crossover.mjs",
     "test:headless": "node scripts/headless-crossover.mjs && node scripts/headless-sim.mjs",

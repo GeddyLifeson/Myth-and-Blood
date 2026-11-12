@@ -8,6 +8,7 @@ import { JS } from './headless-manifest.mjs';
 import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
+  const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
   const wwe = readFileSync(join(JS, 'wwe.js'), 'utf8');
   const mp = readFileSync(join(JS, 'meta-progress.js'), 'utf8');
   const achData = readFileSync(join(JS, 'achievements-data.js'), 'utf8');
@@ -32,7 +33,7 @@ function loadModules() {
   sb.globalThis = sb;
   const ctx = vm.createContext(sb);
   vm.runInContext(
-    `${wwe}\n;globalThis.WweDefs = WweDefs;\nglobalThis.isShowmanshipAbility = isShowmanshipAbility;\n${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
+    `${bundle}\n;${wwe}\n;globalThis.WweDefs = WweDefs;\nglobalThis.isShowmanshipAbility = isShowmanshipAbility;\n${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
   return {
