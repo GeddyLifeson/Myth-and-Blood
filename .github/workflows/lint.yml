@@ -1,4 +1,4 @@
-name: Lint & format
+name: Lint, format & tests
 
 on:
   push:
@@ -18,10 +18,16 @@ jobs:
           node-version: '22'
           cache: npm
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --ignore-scripts
       - name: TypeScript
         run: npm run build:ts
       - name: ESLint
         run: npm run lint
       - name: Prettier
         run: npm run format:check
+      - name: Manifest and globals in sync
+        run: node scripts/check-manifest-sync.mjs && node scripts/check-eslint-globals.mjs
+      - name: Tests
+        run: node scripts/run-all-tests.mjs --skip-sim
+      - name: Build
+        run: npm run build:all

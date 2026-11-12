@@ -31,7 +31,7 @@ No server is required. Sound is procedural (generated in the browser) — click 
 
 ## Creative Mode
 
-A **BTD6-style practice sandbox** for playtesting builds, waves, and unit upgrades — no achievements and no game over.
+A **practice sandbox** for playtesting builds, waves, and unit upgrades — no achievements and no game over.
 
 | How to start | Main menu → **CREATIVE MODE** (uses your selected difficulty) |
 | ------------ | ------------------------------------------------------------- |
@@ -157,17 +157,20 @@ Select a strike, then click the map. A targeting ring and icon follow your curso
 
 ### General
 
-| Key          | Action                                  |
-| ------------ | --------------------------------------- |
-| D            | Begin day phase (during night prep)     |
-| H            | Toggle Hunt mode                        |
-| Space        | Pause                                   |
-| Esc          | Cancel selection / close panels         |
-| V            | Mute/unmute sound                       |
-| A            | Achievements                            |
-| I            | Encyclopedia                            |
-| ` (backtick) | Cheat menu                              |
-| P            | Creative Lab panel (Creative Mode only) |
+| Key          | Action                                                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| D            | Begin day phase (during night prep)                                                                                                          |
+| H            | Toggle Hunt mode (also the HUNT button in the top bar)                                                                                       |
+| ]            | Cycle game speed, 1× to 10× (also the SPEED button in the top bar)                                                                           |
+| Space        | Pause                                                                                                                                        |
+| Esc          | Cancel selection / close panels                                                                                                              |
+| C / G / F    | With units selected: clear selection / reform formation / focus camera. With nothing selected they are the Castle, Hamlet and Meteor hotkeys |
+| Alt+1–5      | Formation presets for the selected group                                                                                                     |
+| V            | Mute/unmute sound                                                                                                                            |
+| A            | Achievements                                                                                                                                 |
+| I            | Encyclopedia                                                                                                                                 |
+| ` (backtick) | Cheat menu                                                                                                                                   |
+| P            | Creative Lab panel (Creative Mode only)                                                                                                      |
 
 Click the map to deploy, build, cast strikes, or move selected units. Hover UI buttons for tooltips.
 
@@ -291,7 +294,7 @@ Steal TP, disrupt spawns, assassinate elites, scout next wave, poison caches, sa
 
 Reinforcements, Royal Decree (+morale), Tax Levy (+TP), Call Banner (knight), Supply Train (heal all), Offer Truce, Medical Evac — plus **Royal Herald**, **Emergency Muster**, and **Open War Chest**.
 
-**Sleight of Hand** perk reduces spy and courier costs by 1 TP.
+One tonic reduces spy and courier costs by 1 TP.
 
 ---
 
@@ -411,21 +414,21 @@ From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, eli
 
 ---
 
-## Crossover HQ, WWE & Perks
+## Legion Archive, Grand Coliseum & Tonics
 
-### Crossover HQ
+### Legion Archive
 
-Unlock crossover factions via cheat codes or meta progress. Build faction barracks (Element 115, Primis Shrine, Spartan Academy, etc.), then recruit operatives from **CROSSOVER HQ** in the HUD. Each operative has unique abilities and faction synergies.
+Unlock allied factions through the Research Lab, meta progress, or cheat codes. Build a faction's barracks, then recruit its operatives from **LEGION ARCHIVE** (under MORE in the left panel). Each operative has unique abilities and faction synergies.
 
-### Secret: WWE Academy
+### Secret: Grand Coliseum
 
-- Unlocked at the **316 achievement milestone** (316 Club), or by discovering a cheat code (see appendix).
+- Unlocked at the **316 achievement milestone**, by researching Arena Warfare Doctrine, or by a cheat code (see appendix).
 - Build cost: **1000 TP**, **10 Builders**, **40 Hamlets**, **10 Merchant Guilds**.
-- Recruit 29 WWE Superstars, each with unique stats and abilities. Click a completed WWE Academy on the map to open the roster.
+- Recruit 29 champions, each with unique stats and abilities. Click a completed Coliseum on the map to open the roster.
 
-### Perk-a-Cola (secret roster active)
+### Tonic Stations
 
-Build perk machines at night. Heroes collect up to **4 perks** — Jugger-Nog, Speed Cola, Double Tap, Mule Kick, Sleight of Hand, Tombstone (General only), and more.
+Build tonic machines at night once they are researched or a roster is unlocked. Heroes collect up to **4 tonics** — Ironbrew, Field Revival, Swiftstep Tonic, Endurance Draft, Deadeye Elixir, and more.
 
 ### Secret: The Doomslayer Hero
 
@@ -439,18 +442,18 @@ Build perk machines at night. Heroes collect up to **4 perks** — Jugger-Nog, S
 
 ### Encyclopedia (`I`)
 
-In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **WWE Superstars**, **crossover operatives**, and **The Doomslayer** (teaser entries until unlocked).
+In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **Coliseum champions**, **Legion operatives**, and **The Doomslayer** (teaser entries until unlocked).
 
 ### Achievements (`A`)
 
-**1,000 total** across tiered Bronze / Silver / Gold challenges, lifetime and session tracking, and crossover sub-tabs per faction.
+**1,450 total** across tiered Bronze / Silver / Gold challenges, lifetime and session tracking, and crossover sub-tabs per faction.
 
 | Milestone       | Achievement                               | Reward                   |
 | --------------- | ----------------------------------------- | ------------------------ |
-| **316 unlocks** | _316 Club_ + _And That's The Bottom Line_ | WWE Academy revealed     |
+| **316 unlocks** | _316 Club_ + _And That's The Bottom Line_ | Grand Coliseum revealed  |
 | **999 unlocks** | _Millennium Legend_                       | Ultimate meta completion |
 
-Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficulty, Tactics, Economy, Crossovers (per faction), Secrets/Meta. Progress shows as **X/1000** in the top bar, achievement panel, and post-wave summary.
+Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficulty, Tactics, Economy, Crossovers (per faction), Secrets/Meta. Progress shows as **X/1450** in the top bar, achievement panel, and post-wave summary.
 
 ### Cheat Menu (`` ` ``)
 
@@ -477,24 +480,17 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 
 ```
 myth-and-blood/
-├── index.html          # Main game page
-├── Play Myth and Blood.bat
-├── js/
-│   ├── game.js         # Core simulation
-│   ├── units.js        # Unit & building definitions
-│   ├── content-expansion.js  # Advanced units, strikes, wave events
-│   ├── strike-fx.js    # Strike sprites & battlefield animations
-│   ├── sprites.js      # Procedural unit/building graphics
-│   ├── ui.js           # HUD and menus
-│   ├── tooltips.js     # Hover tips for all controls
-│   ├── crossover.js    # Crossover operative rosters
-│   ├── game-modes.js   # Campaign modes & challenges
-│   ├── achievements.js # 1,000 achievements
-│   ├── encyclopedia.js # In-game manual/lore
-│   └── ...
-├── css/style.css
+├── index.html          # Main game page; loads js/ in order
+├── js/                 # The game (game.js is the core simulation)
+├── css/                # style.css plus the theme-v2.css HUD layer
+├── data/               # Unit, building, enemy and strike definitions (JSON)
+├── mods/               # Mod loader manifest and an example mod
+├── scripts/            # Build, tests and the headless simulation
+├── src/                # TypeScript sources for the service/event/data cores
 └── electron/           # Desktop wrapper
 ```
+
+Developer commands: `npm run test:all`, `npm run check`, `npm run build`.
 
 ---
 
@@ -514,23 +510,23 @@ Open **CHEATS** on the main menu (or press `` ` `` in-game). Unlocks persist bet
 
 ### Meta unlocks (persistent)
 
-| Code                      | Effect                                                        |
-| ------------------------- | ------------------------------------------------------------- |
-| `Austin 3:16`             | Unlock WWE Academy                                            |
-| `whatcha gonna do`        | Unlock WWE Academy (alias)                                    |
-| `hell walks`              | Unlock Doomslayer hero                                        |
-| `Doomslayer`              | Unlock Doomslayer hero (alias)                                |
-| `115`                     | Unlock Element 115 crew + Element 115 Barracks                |
-| `Primus`                  | Unlock Primis Origins crew + Primis Shrine                    |
-| `Halo`                    | Unlock UNSC heroes + Spartan Academy                          |
-| `Gears`                   | Unlock COG squad + COG Academy                                |
-| `One to Rule Them All`    | Unlock LOTR Fellowship + Rivendell Camp                       |
-| `Hanma`                   | Unlock Baki fighters + Hanma Dojo                             |
-| `ジョジョの奇妙な冒険`    | Unlock JoJo Parts 1–7 + Stand Arrow Shrine (Part 7 = cavalry) |
-| `jojos bizarre adventure` | Unlock JoJo roster (alias)                                    |
-| `FOTNS`                   | Unlock Fist of the North Star fighters + North Star Dojo      |
-| `Dragon Soul`             | Unlock Dragon Ball Z-Fighters + Capsule Corp                  |
-| `THE ONE PIECE IS REAL`   | Unlock **all** cheat content at once                          |
+| Code                      | Effect                                           |
+| ------------------------- | ------------------------------------------------ |
+| `Austin 3:16`             | Unlock the Grand Coliseum                        |
+| `whatcha gonna do`        | Unlock the Grand Coliseum (alias)                |
+| `hell walks`              | Unlock Doomslayer hero                           |
+| `Doomslayer`              | Unlock Doomslayer hero (alias)                   |
+| `115`                     | Unlock the Void Residue Crew and its barracks    |
+| `Primus`                  | Unlock the First Circle and its shrine           |
+| `Halo`                    | Unlock the Orbital Vanguard and its academy      |
+| `Gears`                   | Unlock the Iron Trench Coalition and its academy |
+| `One to Rule Them All`    | Unlock the Ninefold March and its camp           |
+| `Hanma`                   | Unlock the Iron Pit Guild and its dojo           |
+| `ジョジョの奇妙な冒険`    | Unlock the Bound Spirit Court and its shrine     |
+| `jojos bizarre adventure` | Unlock the Bound Spirit Court (alias)            |
+| `FOTNS`                   | Unlock the North Star Ascetics and their dojo    |
+| `Dragon Soul`             | Unlock the Skyburst Order and its base           |
+| `THE ONE PIECE IS REAL`   | Unlock **all** cheat content at once             |
 
 ### In-game only (start a battle first)
 
