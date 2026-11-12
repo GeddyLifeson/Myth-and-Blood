@@ -490,9 +490,11 @@ class GameDepthSystem {
   getHordeGruntWaveScale(wave) {
     const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(wave) : 0;
+    // Rank-and-file enemies make up most early waves and used to stay near wave-1 strength.
+    const early = Math.min(40, Math.max(0, wave - 2));
     return {
-      hp: 1 + eased * 0.58 + post * 0.32,
-      dmg: 1 + eased * 0.38 + post * 0.2,
+      hp: 1 + eased * 0.58 + post * 0.32 + early * 0.04,
+      dmg: 1 + eased * 0.38 + post * 0.2 + early * 0.035,
     };
   }
 

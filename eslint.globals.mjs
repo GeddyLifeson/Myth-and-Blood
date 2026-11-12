@@ -155,6 +155,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "RTS_MAP_EXPAND_H",
   "RTS_MAP_EXPAND_W",
   "Research",
+  "Roster",
   "SETTLEMENT_TP_SOFT_CAP",
   "SPECIALIST_LATE_ABILITIES",
   "SPECIALIST_LATE_ABILITY_GOLD_STARS",

@@ -131,6 +131,7 @@ function playOne(diff, seed) {
     deployed,
     maxArmy,
     kills: fin.kills ?? null,
+    lost: fin.playerDeaths ?? 0,
     breaches: fin.siegeLoop?.breaches ?? 0,
     breachLimit: fin.siegeLoop?.breachLimit ?? null,
     spoils: fin.siegeLoop?.edicts?.length ?? 0,
@@ -145,7 +146,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, 4000 + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }

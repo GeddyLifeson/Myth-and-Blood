@@ -16,6 +16,8 @@ const SiegeLoop = (() => {
   const ORDER_RADIUS = 190;
   const REAR_ATTACK_MULT = 1.25;
   const MAX_EDICT_STACKS = 3;
+  const ARMY_FREE = 20;
+  const ARMY_UPKEEP = 0.04;
 
   // ---------------------------------------------------------------- edicts
   const EDICTS = {
@@ -321,6 +323,7 @@ const SiegeLoop = (() => {
     run = freshRun();
     run.active = true;
     run.counted = !ctx.creative;
+    run.creativeRun = !!ctx.creative;
     run.warband = ctx.menuModeId === 'warband';
     fx = computeFx();
     hideSpoils();
@@ -333,8 +336,11 @@ const SiegeLoop = (() => {
   }
 
   /** Warband: half as many soldiers, each worth far more. */
-  function deployCostMult() {
-    return run.warband ? 2 : 1;
+  function deployCostMult(army = 0) {
+    // A big host is hard to feed: past 20 soldiers every recruit costs 4% more per head.
+    const upkeep =
+      run.active && !run.creativeRun ? 1 + Math.max(0, army - ARMY_FREE) * ARMY_UPKEEP : 1;
+    return (run.warband ? 2 : 1) * upkeep;
   }
 
   function applySpawnMods(unit) {
@@ -365,13 +371,15 @@ const SiegeLoop = (() => {
     if (!run.active || ctx.creative || ctx.wave < RUNNER_FROM_WAVE) return;
     if (!isRunnerCandidate(unit)) return;
     const quick = (unit.speed || 0) >= 0.65;
-    const chance = Math.min(0.36, (quick ? 0.2 : 0.1) + ctx.wave * 0.004);
+    // A bigger host draws more runners: the enemy probes for gaps instead of fighting it head-on.
+    const crowd = Math.min(0.25, Math.max(0, (ctx.army || 0) - ARMY_FREE) * 0.005);
+    const chance = Math.min(0.55, (quick ? 0.2 : 0.1) + ctx.wave * 0.004 + crowd);
     if (ctx.rng() >= chance) return;
     unit.lineBreaker = true;
     unit.stormLine = true;
     // Runners travel light: quicker than the rest of the host, and easier to cut down.
     unit.speed *= 1.3 * Math.max(0.5, 1 - fx.runnerSlow);
-    unit.maxHp = Math.max(1, Math.floor(unit.maxHp * 0.8));
+    unit.maxHp = Math.max(1, Math.floor(unit.maxHp * 0.9));
     unit.hp = unit.maxHp;
   }
 
@@ -410,6 +418,37 @@ const SiegeLoop = (() => {
       ctx.showMessage('The enemy tires of waiting and storms the line!', 260);
       ctx.playSfx('bossWarn');
     }
+  }
+
+  /**
+   * Enemies that spawn on a side flank can wedge against the map edge and never move,
+   * which leaves the wave unfinishable. One that has not moved for ten seconds while
+   * hugging an edge is walked a few steps into the field and re-pathed.
+   */
+  function unstickFromEdge(u, ctx) {
+    const margin = 44;
+    const nearEdge =
+      u.x < margin || u.x > ctx.worldW - margin || u.y < margin || u.y > ctx.worldH - margin;
+    if (!nearEdge || u.fleeing) {
+      u.edgeStill = 0;
+      return;
+    }
+    if (Math.abs(u.x - (u.edgeX || 0)) > 3 || Math.abs(u.y - (u.edgeY || 0)) > 3) {
+      u.edgeX = u.x;
+      u.edgeY = u.y;
+      u.edgeStill = 0;
+      return;
+    }
+    u.edgeStill = (u.edgeStill || 0) + 6;
+    if (u.edgeStill < 600) return;
+    u.edgeStill = 0;
+    u.x = Math.max(margin + 16, Math.min(ctx.worldW - margin - 16, u.x));
+    u.y = Math.max(margin + 16, Math.min(ctx.worldH - margin - 16, u.y));
+    u.path = [];
+    u.pathIndex = 0;
+    u.pathTargetId = null;
+    u.pathPending = false;
+    u.pinned = false;
   }
 
   /** Where a line-breaker is headed. */
@@ -665,6 +704,7 @@ const SiegeLoop = (() => {
         if (u.team === 'enemy') {
           enemies++;
           if (u.lineBreaker && hasBreached(u, ctx)) recordBreach(u, ctx);
+          else unstickFromEdge(u, ctx);
         } else if (u.team === 'player' && liveCrates.length) {
           for (const c of liveCrates) {
             if (c.spent) continue;
@@ -924,6 +964,7 @@ const SiegeLoop = (() => {
     run.active = true;
     run.counted = snap ? snap.counted !== false : !ctx.creative;
     run.warband = snap ? !!snap.warband : ctx.modeId === 'warband';
+    run.creativeRun = !!ctx.creative;
     if (snap) {
       run.breaches = snap.breaches || 0;
       run.edicts = (snap.edicts || []).filter((id) => EDICTS[id]);
@@ -967,7 +1008,8 @@ const SiegeLoop = (() => {
       '<span id="siege-preview" class="siege-chip siege-preview"></span>' +
       '<button id="siege-warcry" class="siege-order" title="War Cry ([): soldiers near the General strike 20% harder for 8 seconds">War Cry</button>' +
       '<button id="siege-holdline" class="siege-order" title="Hold the Line (]): soldiers near the General take 40% less damage for 7 seconds">Hold the Line</button>' +
-      '<span id="siege-edicts" class="siege-chip siege-edicts"></span>';
+      '<span id="siege-edicts" class="siege-chip siege-edicts"></span>' +
+      '<span id="siege-upkeep" class="siege-chip" title="A big host is hard to feed. Past 20 soldiers, every recruit costs 4% more per head."></span>';
     document.body.appendChild(strip);
     const spoils = document.createElement('div');
     spoils.id = 'spoils-panel';
@@ -1036,6 +1078,12 @@ const SiegeLoop = (() => {
       const wait = Math.ceil((readyAt - ctx.tick) / 60);
       btn.disabled = wait > 0 || ctx.isNight;
       btn.textContent = wait > 0 ? `${label} ${wait}s` : label;
+    }
+    const up = el('siege-upkeep');
+    if (up) {
+      const pct = Math.round((deployCostMult(ctx.army || 0) / (run.warband ? 2 : 1) - 1) * 100);
+      up.hidden = pct <= 0;
+      up.textContent = `Recruit cost +${pct}%`;
     }
     const e = el('siege-edicts');
     if (e) {

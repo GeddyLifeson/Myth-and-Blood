@@ -1449,11 +1449,16 @@ function getWaveConfig(waveNum) {
 
   const templateCount = base.count + Math.floor(Math.min(waveNum - 1, Waves.length - 1) * 0.45);
   const academyCount = 8 + eased * 70;
-  const count = Math.floor(Math.max(templateCount, academyCount) + post * 38);
+  // Hosts used to sit at 20 from wave 10 to wave 20 while income kept growing, so the
+  // middle of a run had no pressure. They now grow by one a wave until the late ramp takes over.
+  const midCount = waveNum >= 3 ? Math.min(60, Math.floor(8 + waveNum * 1.25)) : 0;
+  const count = Math.floor(Math.max(templateCount, academyCount, midCount) + post * 38);
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
-  const hpScale = 1 + eased * 3.15 + post * 1.85;
-  const dmgScale = 1 + eased * 1.95 + post * 1.15;
+  // Early pressure: enemies used to stay at wave-1 strength for the first twenty waves.
+  const early = Math.min(40, Math.max(0, waveNum - 2));
+  const hpScale = 1 + eased * 3.15 + post * 1.85 + early * 0.03;
+  const dmgScale = 1 + eased * 1.95 + post * 1.15 + early * 0.025;
   const boss = waveNum % 10 === 0;
 
   return { count, pool, interval, boss, hpScale, dmgScale };

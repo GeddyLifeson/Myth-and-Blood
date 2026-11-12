@@ -729,7 +729,7 @@ const GameCore = (() => {
   }
 
   function getDeployCostMult() {
-    return typeof SiegeLoop !== 'undefined' ? SiegeLoop.deployCostMult() : 1;
+    return typeof SiegeLoop !== 'undefined' ? SiegeLoop.deployCostMult(unitCounts.player) : 1;
   }
 
   function enemyRotationForSide(side) {
