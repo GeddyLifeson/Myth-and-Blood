@@ -115,7 +115,7 @@ const LoreData = (() => {
           multifront: 'Survive to multi-front war (wave 25+)',
         }[val] || `Unlock era: ${val}`,
       meta_wwe: 'Unlock the Grand Coliseum',
-      meta_doom: 'Unlock the Doomslayer',
+      meta_doom: 'Unlock the Hellbane',
       meta_crossover: 'Unlock any evolved faction',
       faction: `Recruit ${val} evolved operatives`,
     };
@@ -288,7 +288,7 @@ const LoreData = (() => {
     necromancer: {
       flavor: 'Death priests who refill the horde from corpses.',
       threat: 'Elite caster',
-      weak: 'Hamon, burst',
+      weak: 'Sunbreath, burst',
       counter: 'bound spirit operatives, focus fire',
     },
     berserker: {
@@ -461,7 +461,8 @@ const LoreData = (() => {
       rule: 'meta_crossover',
     },
     sky_drake: {
-      classified: 'Orbital Vanguard and Skyburst Foundry operatives register elevated anti-air efficacy vs drakes.',
+      classified:
+        'Orbital Vanguard and Skyburst Foundry operatives register elevated anti-air efficacy vs drakes.',
       rule: 'faction:halo',
     },
     war_chief: {
@@ -559,15 +560,9 @@ const LoreData = (() => {
       rule: 'achievements:316',
     },
     {
-      wave: 500,
-      name: 'Planet Conquest',
-      hook: 'Wave five hundred. Sectors split the north by realm — conquer each hostile domain or face the Worldheart Tyrant when two realms fall.',
-      rule: 'wave:500',
-    },
-    {
       wave: 1000,
       name: 'Hellscape Breach',
-      hook: "Reality thins. Even legends falter. The Doomslayer's blade returns to mortal scale — the true endgame begins.",
+      hook: "Reality thins. Even legends falter. The Hellbane's blade returns to mortal scale — the true endgame begins.",
       rule: 'era:hellscape',
     },
   ];
@@ -631,16 +626,11 @@ const LoreData = (() => {
         hook: 'Wave two hundred. Planetary Dominion — mirror war at scale, hostile territory creep, and counter-hold couriers.',
         sub: 'Launch settlement raids through the spy network or raise counter-holds by courier. Raze every foe structure — the campaign ends when their economy is ash.',
       },
-      500: {
-        title: 'Planet Conquest',
-        hook: 'Wave five hundred. The north fractures into hostile sectors — true victory now demands the Worldheart Tyrant, not economy purge alone.',
-        sub: 'CONQUEST HUD tracks sector control. Eliminate two+ realms to awaken the Worldheart — field three+ unit types to pierce its ward, then shatter it for true victory.',
-      },
     },
     trueVictory: {
-      title: 'Worldheart Shattered',
-      hook: 'The Worldheart Tyrant falls. True victory — every hostile realm is broken and the planet bows to your crown.',
-      sub: 'The chronicles record a planetary conquest. No northern sector remains to challenge the Crown.',
+      title: 'The Realm Stands',
+      hook: 'Wave one hundred is cleared and Malachar the Eternal is broken. The campaign is won.',
+      sub: 'The siege itself never ends. Fight on and see how long the line holds.',
     },
     firstBoss: {
       title: 'Warlord Slain',
@@ -837,7 +827,7 @@ const LoreData = (() => {
       for (const [id, def] of Object.entries(SpyActions)) {
         entries.push(
           entry('orders', def.name, `${def.desc}. Cost ${def.cost} TP. One spy action per wave.`, {
-            classified: 'Sleight of Hand perk reduces spy/courier costs by 1 TP.',
+            classified: 'Quickhands Tonic perk reduces spy/courier costs by 1 TP.',
             classifiedRule: 'achievements:50',
           })
         );
@@ -896,7 +886,8 @@ const LoreData = (() => {
         'Bronze Stars',
         'Combat troops earn bronze from kills. 3 bronze → 1 silver → 1 gold → TP promotion eligibility (Veteran Doctrine research required).',
         {
-          classified: 'Vulture Aid: kills may grant +1 TP — bronze farmers become economy engines.',
+          classified:
+            'Scavenger’s Tonic: kills may grant +1 TP — bronze farmers become economy engines.',
           classifiedRule: 'achievements:25',
         }
       ),
@@ -1086,21 +1077,11 @@ const LoreData = (() => {
       ),
       entry(
         'eras',
-        'Planet Warfare (Wave 200+)',
-        'Hostile territory creeps south each wave unless you push back. CONTROL HUD tracks map dominance — high control means closer spawns, faster assaults, and fog north of the red front line. Raze enemy structures and clear the north to reclaim vision.',
-        {
-          classified:
-            'Watchtowers and scouts pierce the fog. Hunt northern holds before the front reaches your hamlets.',
-          classifiedRule: 'era:enemy_rts',
-        }
-      ),
-      entry(
-        'eras',
         'Evolved Allies',
-        'Evolved operatives are your evolved allies — rare power spikes early (1–2 operatives flip sieges), full faction armies with synergies mid-game, and Planet Warfare demolition experts after wave 200. See Crossover System tab for full curve, secret rosters, and operative list.',
+        'Evolved operatives are your evolved allies — rare power spikes early (1–2 operatives flip sieges), full faction armies with synergies mid-game, and the northern war demolition experts after wave 200. See Crossover System tab for full curve, secret rosters, and operative list.',
         {
           classified:
-            'Planet Warfare operatives (Baird, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
+            'Northern war operatives (Gearwright, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
           classifiedRule: 'meta_crossover',
         }
       ),
@@ -1140,7 +1121,7 @@ const LoreData = (() => {
         'Day: assaults. Night: prep, +35% builder speed, perk collection.',
         {
           classified:
-            'Bray Wyatt lantern punishes enemy accuracy at dusk — schedule elite waves around light level.',
+            'Lantern Prophet lantern punishes enemy accuracy at dusk — schedule elite waves around light level.',
           classifiedRule: 'meta_wwe',
         }
       ),
@@ -1150,7 +1131,7 @@ const LoreData = (() => {
         'Reality thins — legendary damage falls to mortal scale.',
         {
           classified:
-            'Doomslayer one-shots end here. Only sustained evolved synergies and settlement economy survive.',
+            'Hellbane one-shots end here. Only sustained evolved synergies and settlement economy survive.',
           classifiedRule: 'era:hellscape',
         }
       ),
@@ -1243,7 +1224,7 @@ const LoreData = (() => {
       entry(
         'campaign',
         'Game Modes',
-        'Campaign — standard defense; destroy all enemy northern settlements to win (or conquer sectors at wave 500+). Survival Endless — score chase. Roguelike — random modifiers. Timed Blitz — shorter nights. Seed Run — deterministic spawns. Academy Era — jump to wave 100–200. Planet Conquest — starts at wave 500 with sector warfare endgame.',
+        'Campaign — standard defense; destroy all enemy northern settlements to win . Survival Endless — score chase. Roguelike — random modifiers. Timed Blitz — shorter nights. Seed Run — deterministic spawns. Academy Era — jump to wave 100–200. The Long Siege — starts at wave 500 with sector warfare endgame.',
         {
           classified: 'Co-op and Versus are listed as future modes on the main menu.',
           classifiedRule: 'runs:1',
@@ -1277,26 +1258,6 @@ const LoreData = (() => {
           classified:
             'INTEL HUD shows the plan; Threat Map cards show per-faction front assignment.',
           classifiedRule: 'era:multifront',
-        }
-      ),
-      entry(
-        'campaign',
-        'Planet Conquest (Wave 500+)',
-        'Endgame sector warfare — active from wave 500 in Campaign or Planet Conquest mode. Map splits into horizontal sectors per realm (CONQUEST HUD + north overlay). Raise sector % by razing holds and hunting armies; sectors creep back if ignored. Below 12% control with no live units/buildings = ELIMINATED. After two eliminations, Worldheart Tyrant awakens — ward needs 3+ different unit types; summons fallen-faction remnants at 75/50/25% HP.',
-        {
-          classified:
-            'True victory: shatter the Worldheart Tyrant after two+ realms fall. Economy purge alone no longer ends the campaign at wave 500+.',
-          classifiedRule: 'wave:500',
-        }
-      ),
-      entry(
-        'campaign',
-        'Worldheart Tyrant',
-        'Scaled boss_malachar amalgam — awakens when two realms are eliminated during Planet Conquest. Damage ward until three or more different player unit types are on the field. Phase summons pull elites from fallen factions.',
-        {
-          classified:
-            'Mix footmen, ranged, and specialists before the fight — mono-army comps stall the ward.',
-          classifiedRule: 'wave:500',
         }
       ),
       entry(
@@ -1382,7 +1343,7 @@ const LoreData = (() => {
       entry(
         'campaign',
         'Campaign Chronicle Beats',
-        'Chronicle messages at wave 10 (named warlords), 31 (Kingdom Rising), 100 (Empire Ascendant), 200 (Planetary Dominion), 500 (Planet Conquest). First named boss kill earns a special entry.',
+        'Chronicle messages at wave 10 (named warlords), 31 (Kingdom Rising), 100 (Empire Ascendant), 200 (Planetary Dominion), 500 (The Long Siege). First named boss kill earns a special entry.',
         {
           classified:
             'Chronicles tab stores wave reports, choice logs, and branch narratives. Story Arc tab tracks Iron Crown, Silver Diplomat, Arcane Scholar, and Pragmatist paths from planet event and doctrine choices.',

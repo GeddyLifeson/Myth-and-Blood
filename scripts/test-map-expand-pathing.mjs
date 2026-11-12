@@ -6,14 +6,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(seed = 11) {
   const noop = () => {};
@@ -143,8 +136,16 @@ const exp = vm.runInContext(
   `${code}\n({ Game, SpriteGen, Pathfinding, CrossoverDefs, CrossoverFactions, BuildDefs, FactionDepth, getWorldSize })`,
   vm.createContext(sb)
 );
-const { Game, SpriteGen, Pathfinding, CrossoverDefs, CrossoverFactions, BuildDefs, FactionDepth, getWorldSize } =
-  exp;
+const {
+  Game,
+  SpriteGen,
+  Pathfinding,
+  CrossoverDefs,
+  CrossoverFactions,
+  BuildDefs,
+  FactionDepth,
+  getWorldSize,
+} = exp;
 SpriteGen.prewarmCache = () => {};
 
 ok(typeof getWorldSize === 'function', 'getWorldSize export');
@@ -189,9 +190,7 @@ Game.setCreativeSetting?.('instantBuild', true);
 Game.creativeForceDay?.();
 Game.creativeSetWave?.(20);
 // Force apply world size by restarting creative at higher wave
-const startWave = Game.startCreative
-  ? null
-  : null;
+const startWave = Game.startCreative ? null : null;
 
 // Use internal growth: creativeSetWave might not expand; re-init size by spawning at wave 20 start
 // Preferred: Game.creativeSetWave then call update enough times
@@ -229,7 +228,13 @@ for (const f of factions) {
   const bid = CrossoverFactions[f].building;
   const d = BuildDefs[bid];
   if (d?.isCrossoverBarracks && d.cost === 90 && d.requiresBuilders === 2) barracksOk++;
-  else console.error('barracks fail', f, bid, d && { cost: d.cost, b: d.requiresBuilders, flag: d.isCrossoverBarracks });
+  else
+    console.error(
+      'barracks fail',
+      f,
+      bid,
+      d && { cost: d.cost, b: d.requiresBuilders, flag: d.isCrossoverBarracks }
+    );
 }
 ok(barracksOk === factions.length, `all barracks priced (${barracksOk}/${factions.length})`);
 
@@ -279,5 +284,7 @@ ok(Game.getState().selectedAbility === 'fireball' || true, 'select ability');
 Game.selectBuild?.('wall');
 ok(Game.getState().selectedBuild === 'wall', 'select wall build');
 
-console.log(failed ? `\n${failed} test(s) failed` : '\nAll map-expand-pathing + faction tests passed');
-process.exit(failed ? 1 : 0);
+console.log(
+  failures() ? `\n${failures()} test(s) failed` : '\nAll map-expand-pathing + faction tests passed'
+);
+process.exit(failures() ? 1 : 0);

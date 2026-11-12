@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const strikeCode = readFileSync(join(JS, 'strike-fx.js'), 'utf8');
 const sb = {
@@ -24,14 +25,6 @@ sb.window = sb;
 sb.globalThis = sb;
 
 const { StrikeFX } = vm.runInContext(`${strikeCode}\n({ StrikeFX })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(typeof StrikeFX?.impact === 'function', 'StrikeFX.impact exported');
 ok(typeof StrikeFX?.drawScreenFx === 'function', 'StrikeFX.drawScreenFx exported');
@@ -53,4 +46,4 @@ const mockCtx = {
 StrikeFX.drawScreenFx(mockCtx, 800, 600);
 ok(true, 'drawScreenFx runs');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

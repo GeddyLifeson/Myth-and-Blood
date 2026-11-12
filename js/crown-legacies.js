@@ -414,7 +414,6 @@ const CrownLegacies = (() => {
   load();
 
   return {
-    PASSIVE_LEGACIES,
     MAX_ACTIVE_PASSIVES,
     BASE_HEIR_SLOTS,
     load,
@@ -423,8 +422,6 @@ const CrownLegacies = (() => {
     refreshUnlocks,
     getCombinedEffects,
     getActiveHeirs,
-    getHonorCandidates,
-    getMaxHeirSlots,
     toggleLegacy,
     toggleHeir,
     applyUnitBonuses,

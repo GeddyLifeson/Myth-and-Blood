@@ -67,7 +67,8 @@ const GameRuntime = (() => {
 
   function makeFloatStatus(resolveFloatingText) {
     return (x, y, text, color) => {
-      const ft = typeof resolveFloatingText === 'function' ? resolveFloatingText() : resolveFloatingText;
+      const ft =
+        typeof resolveFloatingText === 'function' ? resolveFloatingText() : resolveFloatingText;
       ft?.status?.(x, y, text, color);
     };
   }
@@ -77,8 +78,7 @@ const GameRuntime = (() => {
     const { showMessage, addHighlight, worldW, worldH, wave, floatingText, resolveFloatingText } =
       bindings;
     const ft =
-      floatingText ||
-      (resolveFloatingText ? makeFloatStatus(resolveFloatingText) : () => {});
+      floatingText || (resolveFloatingText ? makeFloatStatus(resolveFloatingText) : () => {});
     return {
       showMessage,
       addHighlight,
@@ -94,8 +94,7 @@ const GameRuntime = (() => {
   function makeLayerHooks(bindings, extra = {}) {
     const { showMessage, addHighlight, floatingText, resolveFloatingText, wave } = bindings;
     const ft =
-      floatingText ||
-      (resolveFloatingText ? makeFloatStatus(resolveFloatingText) : () => {});
+      floatingText || (resolveFloatingText ? makeFloatStatus(resolveFloatingText) : () => {});
     const out = { showMessage, addHighlight, floatingText: ft, ...extra };
     if (wave != null) out.wave = wave;
     return out;

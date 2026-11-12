@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadAscension(extra = {}) {
   const src = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
@@ -30,18 +31,15 @@ function loadAscension(extra = {}) {
   return vm.runInContext(`${src}\n({ AscensionSystem })`, ctx);
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { AscensionSystem } = loadAscension();
 
 AscensionSystem.resetRun();
-AscensionSystem.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+AscensionSystem.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 const snap150 = AscensionSystem.getStateSnapshot({ wave: 150 });
 ok(snap150.legacyPoints >= 18, 'kingdom era grants legacy points');
 ok(snap150.era === 'kingdom', 'kingdom era active at 150');
@@ -61,26 +59,45 @@ const footman = {
 const offer = AscensionSystem.getUnitAscensionOffer(footman, 150);
 ok(offer?.stage?.id === 'paragon_realm', 'vet 4 footman offered paragon ascension');
 
-const ascend1 = AscensionSystem.tryAscendUnit(footman, 150, { showMessage: () => {}, addHighlight: () => {} });
+const ascend1 = AscensionSystem.tryAscendUnit(footman, 150, {
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 ok(ascend1.ok, 'paragon ascension succeeds');
 ok(footman.ascensionStageId === 'paragon_realm', 'footman stage set');
 ok(footman.damage > 20, 'paragon boosts damage');
 ok(AscensionSystem.getDisplayTitle(footman)?.includes('Paragon'), 'display title shows paragon');
 
-const blocked = AscensionSystem.tryAscendUnit(footman, 150, { showMessage: () => {}, addHighlight: () => {} });
+const blocked = AscensionSystem.tryAscendUnit(footman, 150, {
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 ok(!blocked.ok, 'cannot ascend same stage twice');
 
 AscensionSystem.resetRun();
 AscensionSystem.grantLegacyPoints(40, 'test');
-AscensionSystem.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+AscensionSystem.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 AscensionSystem.tryAscendUnit(footman, 150, { showMessage: () => {}, addHighlight: () => {} });
-AscensionSystem.onWaveStart(400, { wave: 400, units: [], showMessage: () => {}, addHighlight: () => {} });
+AscensionSystem.onWaveStart(400, {
+  wave: 400,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 const snap400 = AscensionSystem.getStateSnapshot({ wave: 400 });
 ok(snap400.legacyPoints >= 28, 'galactic era grants more legacy points');
 
 const galOffer = AscensionSystem.getUnitAscensionOffer(footman, 400);
 ok(galOffer?.stage?.id === 'stellar_warden', 'paragon offered stellar warden at 400');
-const ascend2 = AscensionSystem.tryAscendUnit(footman, 400, { showMessage: () => {}, addHighlight: () => {} });
+const ascend2 = AscensionSystem.tryAscendUnit(footman, 400, {
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 ok(ascend2.ok, 'stellar warden ascension succeeds');
 ok(footman.ascensionWeapon === 'Plasma Halberd', 'stellar warden has plasma halberd');
 ok(footman.range > 40, 'stellar warden gains range');
@@ -97,7 +114,13 @@ ok(wall.maxHp > 200, 'bulwark increases wall HP');
 const intel = AscensionSystem.formatIntelNote({ wave: 155 });
 ok(intel.includes('legacy') || intel.includes('ascended'), 'intel note mentions ascension');
 
-ok(AscensionSystem.UNIT_CHAINS.footman.kingdom.label === 'Paragon of the Realm', 'footman kingdom label');
-ok(AscensionSystem.UNIT_CHAINS.footman.galactic.label === 'Stellar Warden', 'footman galactic label');
+ok(
+  AscensionSystem.UNIT_CHAINS.footman.kingdom.label === 'Paragon of the Realm',
+  'footman kingdom label'
+);
+ok(
+  AscensionSystem.UNIT_CHAINS.footman.galactic.label === 'Stellar Warden',
+  'footman galactic label'
+);
 
-process.exit(failed > 0 ? 1 : 0);
+process.exit(failures() > 0 ? 1 : 0);

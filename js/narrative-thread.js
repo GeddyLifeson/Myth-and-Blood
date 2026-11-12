@@ -20,7 +20,7 @@ const NarrativeThread = (() => {
     },
     150: {
       title: 'Succession of Ages',
-      hook: 'Grand Strategy opens — not a new empire, but the medieval kingdom stepping into its imperial inheritance.',
+      hook: 'The realm widens — not a new empire, but the medieval kingdom stepping into its imperial inheritance.',
       sub: 'Founding champions canonized in the chronicle now echo through edict, army, and fleet.',
     },
     400: {
@@ -30,7 +30,7 @@ const NarrativeThread = (() => {
     },
     500: {
       title: 'Eternal Chronicle',
-      hook: 'Apex war — the ancient realm faces the Worldheart Tyrant as a civilization that never fell, only ascended.',
+      hook: 'Apex war — the ancient realm faces the endless host as a civilization that never fell, only ascended.',
       sub: 'Every legend sworn to the Crown sharpens the whole host.',
     },
   };
@@ -121,10 +121,6 @@ const NarrativeThread = (() => {
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const snap = FoundationalMedievalLayer.getRunSnapshot?.();
       if (snap?.leadingLabel) return `the Ancient Crown of ${snap.leadingLabel}`;
-    }
-    if (typeof GrandStrategy !== 'undefined') {
-      const path = GrandStrategy.getKingdomEvolutionSnapshot?.();
-      if (path?.pathLabel) return `the Ancient Crown — ${path.pathLabel}`;
     }
     return 'the Ancient Crown';
   }
@@ -269,7 +265,10 @@ const NarrativeThread = (() => {
     beatsShown.add(wave);
     ctx.showMessage?.(`Chronicle — ${beat.hook}`, 440);
     if (beat.sub) ctx.showMessage?.(beat.sub, 400);
-    ctx.addHighlight?.('milestone', `${beat.title} — ${state?.crownEpithet || 'the Ancient Crown'}`);
+    ctx.addHighlight?.(
+      'milestone',
+      `${beat.title} — ${state?.crownEpithet || 'the Ancient Crown'}`
+    );
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'narrative',
@@ -343,8 +342,6 @@ const NarrativeThread = (() => {
   resetRun();
 
   return {
-    CROWN_ERA_BEATS,
-    LEGEND_KINDS,
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     APEX_WAVE,
@@ -353,8 +350,6 @@ const NarrativeThread = (() => {
     onWaveStart,
     onHeroHonored,
     scanLegends,
-    canonizeLegend,
-    classifyLegend,
     getLegendPowerMods,
     getTacticalMods,
     applyLegendBonuses,

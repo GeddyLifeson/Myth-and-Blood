@@ -46,7 +46,7 @@ const CreativeTools = (() => {
     },
     {
       id: 'crossover_duel',
-      name: 'Crossover Duel',
+      name: 'Legion Duel',
       desc: 'Wave 25 — test crossover vs elites.',
       wave: 25,
       tp: 15000,
@@ -130,7 +130,6 @@ const CreativeTools = (() => {
   let replayFrames = [];
   let replayPlaying = false;
   let replayIndex = 0;
-  let replayTimer = 0;
 
   let stress = { active: false, type: 'goblin', every: 30, max: 150, acc: 0 };
   let recordAcc = 0;
@@ -258,10 +257,6 @@ const CreativeTools = (() => {
     replayIndex = Math.max(0, replayIndex - 1);
     Game?.restoreCreativeSnapshot?.(replayFrames[replayIndex]);
     return true;
-  }
-
-  function stopReplay() {
-    replayPlaying = false;
   }
 
   function tickRecord() {
@@ -392,8 +387,6 @@ const CreativeTools = (() => {
 
   return {
     VERSION,
-    TEMPLATES,
-    UNIT_PRESETS,
     parseWaveComposer,
     formatWaveComposer,
     onSessionStart,
@@ -411,7 +404,6 @@ const CreativeTools = (() => {
     importReplay,
     playReplay,
     rewindReplay,
-    stopReplay,
     recordFrame,
     tickRecord,
     tickStress,

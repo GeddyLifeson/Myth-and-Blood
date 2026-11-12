@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
+import { ok, failures } from './lib/harness.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const code = readFileSync(join(root, 'js', 'game-feedback.js'), 'utf8');
@@ -47,14 +48,6 @@ sb.globalThis = sb;
 const ctx = vm.createContext(sb);
 vm.runInContext(`${code}\nthis.GameFeedback = GameFeedback;`, ctx);
 const GF = ctx.GameFeedback;
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(typeof GF.onEnemyKilled === 'function', 'onEnemyKilled');
 ok(typeof GF.onWaveClear === 'function', 'onWaveClear');
@@ -137,5 +130,5 @@ GF.drawDangerVignette(mockCtx, 800, 600);
 GF.drawLowHpPulse(mockCtx, { x: 10, y: 10, hp: 5, maxHp: 100 }, 10);
 ok(true, 'draw helpers run');
 
-console.log(failed ? `\n${failed} failed` : '\nAll game-feedback tests passed.');
-process.exit(failed ? 1 : 0);
+console.log(failures() ? `\n${failures()} failures()` : '\nAll game-feedback tests passed.');
+process.exit(failures() ? 1 : 0);

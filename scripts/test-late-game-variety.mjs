@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 const dynamic = readFileSync(join(JS, 'dynamic-map-events.js'), 'utf8');
 const hazards = readFileSync(join(JS, 'faction-hazards.js'), 'utf8');
@@ -61,12 +54,18 @@ if (waveBlock) {
   ok(waveBlock[0].includes('veteran_muster'), 'registry includes veteran muster');
 }
 
-vm.runInContext(`const ContentExpansion = { pickWaveEvent(wave) {
+vm.runInContext(
+  `const ContentExpansion = { pickWaveEvent(wave) {
   if (wave % 13 === 0) return 'blood_moon';
   return null;
-}};`, ctx);
+}};`,
+  ctx
+);
 const { GameDepth } = vm.runInContext(`${depth}\n({ GameDepth })`, ctx);
-ok(GameDepth.pickWaveEvent(13) === 'blood_moon', 'game-depth delegates wave events to ContentExpansion');
+ok(
+  GameDepth.pickWaveEvent(13) === 'blood_moon',
+  'game-depth delegates wave events to ContentExpansion'
+);
 
 const DME = vm.runInContext(`${dynamic}\nDynamicMapEvents`, ctx);
 ok(!!DME.pickEvent(200), 'dynamic map event at wave 200');
@@ -79,13 +78,9 @@ ok(!!FH.HAZARD_TYPES.mirror_rift_zone, 'mirror rift hazard defined');
 ok(FH.HAZARD_TYPES.void_corruption.waveMin === 32, 'void corruption has waveMin');
 
 const PCE = vm.runInContext(`${counter}\nPlayerCounterEvolution`, ctx);
-const loot = PCE.computeExpeditionLoot(
-  { targetStage: 3, unitIds: ['a', 'b', 'c'] },
-  2,
-  150
-);
+const loot = PCE.computeExpeditionLoot({ targetStage: 3, unitIds: ['a', 'b', 'c'] }, 2, 150);
 ok(loot.tp >= 10, 'expedition returns meaningful TP loot');
 ok(loot.science >= 1, 'expedition returns science loot');
 ok(PCE.getExpeditionLootScale(200) > PCE.getExpeditionLootScale(50), 'loot scales into RTS era');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

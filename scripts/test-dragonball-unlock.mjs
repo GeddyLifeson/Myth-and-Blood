@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const mp = readFileSync(join(JS, 'meta-progress.js'), 'utf8');
@@ -33,15 +34,11 @@ function loadModules() {
     `${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
-  return { MetaProgress: ctx.MetaProgress, Achievements: ctx.Achievements, ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
+  return {
+    MetaProgress: ctx.MetaProgress,
+    Achievements: ctx.Achievements,
+    ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
+  };
 }
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
@@ -101,8 +98,8 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 kiStand();
 ok(Achievements.evaluateRule('planet_boss_high_ki'), 'planet boss high ki milestone');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll dragonball-unlock tests passed');

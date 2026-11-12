@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadProgressionRestarts() {
   const prSrc = readFileSync(join(JS, 'progression-restarts.js'), 'utf8');
@@ -21,26 +22,18 @@ function loadProgressionRestarts() {
 }
 
 const { ProgressionRestarts } = loadProgressionRestarts();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
-ok(ProgressionRestarts.ESCALATION_RESTARTS.length === 5, 'five escalation gates');
+ok(ProgressionRestarts.ESCALATION_RESTARTS.length === 2, 'two escalation gates (100, 200)');
 ok(ProgressionRestarts.isEscalationWave(100), 'wave 100 is escalation');
-ok(ProgressionRestarts.isEscalationWave(150), 'wave 150 is escalation');
+ok(!ProgressionRestarts.isEscalationWave(150), 'wave 150 no longer resets the field');
 ok(ProgressionRestarts.isEscalationWave(200), 'wave 200 is escalation');
-ok(ProgressionRestarts.isEscalationWave(400), 'wave 400 is escalation');
-ok(ProgressionRestarts.isEscalationWave(500), 'wave 500 is escalation');
+ok(!ProgressionRestarts.isEscalationWave(400), 'wave 400 no longer resets the field');
+ok(!ProgressionRestarts.isEscalationWave(500), 'wave 500 no longer resets the field');
 ok(!ProgressionRestarts.isEscalationWave(99), 'wave 99 is not escalation');
 ok(!ProgressionRestarts.isEscalationWave(175), 'wave 175 is not escalation');
 
 ok(ProgressionRestarts.shouldSkip({ creative: true }), 'skip creative');
 ok(ProgressionRestarts.shouldSkip({ modeId: 'academy_era' }), 'skip academy era');
-ok(ProgressionRestarts.shouldSkip({ modeId: 'planet_conquest' }), 'skip planet conquest');
 ok(!ProgressionRestarts.shouldSkip({ modeId: 'campaign' }), 'campaign not skipped');
 
 ProgressionRestarts.resetRun();
@@ -118,7 +111,10 @@ ok(ctx100.units.length > 0, 'spawns player army after restart');
 ok(ctx100.buildings.length > 0, 'seeds buildings after restart');
 ok(ctx100.tactical >= 110 + Math.floor(200 * 0.35), 'imports TP carryover');
 ok(ctx100.logs.science >= 6, 'grants science bonus');
-ok(ctx100.logs.highlights.some((h) => h.includes('Empire')), 'highlights empire restart');
+ok(
+  ctx100.logs.highlights.some((h) => h.includes('Empire')),
+  'highlights empire restart'
+);
 
 const r1dup = ProgressionRestarts.performRestart(100, ctx100);
 ok(!r1dup?.performed, 'does not double-fire same gate');
@@ -129,9 +125,14 @@ ok(!ProgressionRestarts.performRestart(100, skipCtx)?.performed, 'skips creative
 
 ProgressionRestarts.resetRun();
 ProgressionRestarts.syncFiredThroughWave(210);
-ok(!ProgressionRestarts.performRestart(100, makeCtx({ wave: 100 }))?.performed, 'sync marks 100 fired');
-ok(!ProgressionRestarts.performRestart(150, makeCtx({ wave: 150 }))?.performed, 'sync marks 150 fired');
-ok(!ProgressionRestarts.performRestart(200, makeCtx({ wave: 200 }))?.performed, 'sync marks 200 fired');
+ok(
+  !ProgressionRestarts.performRestart(100, makeCtx({ wave: 100 }))?.performed,
+  'sync marks 100 fired'
+);
+ok(
+  !ProgressionRestarts.performRestart(200, makeCtx({ wave: 200 }))?.performed,
+  'sync marks 200 fired'
+);
 
 ProgressionRestarts.resetRun();
 ProgressionRestarts.performRestart(200, makeCtx({ wave: 200, tactical: 500 }));
@@ -139,10 +140,13 @@ const snap = ProgressionRestarts.getSnapshot();
 ok(snap.fired.includes(200), 'snapshot records fired gate');
 ok(snap.lastRestart?.imported?.tp > 0, 'snapshot records import totals');
 ProgressionRestarts.restoreSnapshot(snap);
-ok(!ProgressionRestarts.performRestart(200, makeCtx({ wave: 200 }))?.performed, 'restore prevents refire');
+ok(
+  !ProgressionRestarts.performRestart(200, makeCtx({ wave: 200 }))?.performed,
+  'restore prevents refire'
+);
 
 ProgressionRestarts.resetRun();
-const intelWarn = ProgressionRestarts.formatIntelNote({ wave: 145 });
+const intelWarn = ProgressionRestarts.formatIntelNote({ wave: 195 });
 ok(intelWarn.includes('Escalation'), 'intel warns before next gate');
 ProgressionRestarts.performRestart(100, makeCtx({ wave: 100 }));
 const intelLegacy = ProgressionRestarts.formatIntelNote({ wave: 160 });
@@ -157,4 +161,4 @@ const state = ProgressionRestarts.getStateSnapshot({ wave: 200 });
 ok(state.firedCount === 1, 'state snapshot fired count');
 ok(state.lastRestart?.shortName === 'Dominion', 'state snapshot last restart');
 
-process.exit(failed > 0 ? 1 : 0);
+process.exit(failures() > 0 ? 1 : 0);

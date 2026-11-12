@@ -46,7 +46,7 @@ const PerkDefs = {
     },
   },
   elemental_pop: {
-    name: 'Elemental Pop',
+    name: 'Storm Fizz',
     tags: ['ranged', 'melee'],
     desc: 'Attacks splash nearby foes',
     apply(u) {
@@ -62,7 +62,7 @@ const PerkDefs = {
     },
   },
   melee_macchiato: {
-    name: 'Melee Macchiato',
+    name: 'Brawler’s Brew',
     tags: ['melee'],
     desc: '+28% melee damage',
     apply(u) {
@@ -70,7 +70,7 @@ const PerkDefs = {
     },
   },
   vulture_aid: {
-    name: "Scavenger's Tonic",
+    name: 'Scavenger’s Tonic',
     tags: ['ranged', 'support'],
     desc: 'Kills may grant +1 TP',
     apply(u) {

@@ -523,6 +523,10 @@
         if (typeof UX !== 'undefined') UX.toggleMessageLog?.();
         return;
       }
+      if ((key === '[' || key === ']') && Game.isPlaying()) {
+        SiegeLoop.order(key === '[' ? 'warCry' : 'holdLine');
+        return;
+      }
       if (e.key === 'F10') {
         e.preventDefault();
         if (typeof ErrorReporting !== 'undefined' && ErrorReporting.openBugReport) {
@@ -590,18 +594,32 @@
       if (key === 'h') {
         Game.toggleGlobalHunt();
       }
-      if (key === 'f' && Game.isPlaying()) {
+      // C, G and F double as build/strike hotkeys (Castle, Hamlet, Meteor). The selection
+      // commands only take the key when there is a selection for them to act on.
+      const selState = Game.isPlaying() ? Game.getState() : null;
+      const selCount = selState
+        ? selState.selectedUnitIds?.length || 0 || (selState.selectedUnitId ? 1 : 0)
+        : 0;
+      if (key === 'f' && Game.isPlaying() && selCount > 0) {
         e.preventDefault();
         Game.focusSelection?.();
         UI.updateHUD(true);
         return;
       }
-      if (key === 'c' && Game.isPlaying() && !e.ctrlKey && !e.metaKey) {
+      if (key === 'c' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && selCount > 0) {
         Game.clearSelection();
         UI.updateHUD(true);
         return;
       }
-      if (key === 'g' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && !e.altKey && !e.shiftKey) {
+      if (
+        key === 'g' &&
+        Game.isPlaying() &&
+        !e.ctrlKey &&
+        !e.metaKey &&
+        !e.altKey &&
+        !e.shiftKey &&
+        selCount >= 2
+      ) {
         e.preventDefault();
         Game.reformSelectionFormation?.();
         UI.updateHUD(true);
@@ -704,11 +722,7 @@
               typeof ErrorReporting !== 'undefined' && ErrorReporting.isDegraded('minimap');
             if (++hudTick % 5 === 0) {
               guard('UI.updateHUD', () => UI.updateHUD(), { phase: 'hud', warnMs: 400 });
-            } else if (
-              !skipMinimap &&
-              hudTick % minimapEvery === 0 &&
-              typeof UX !== 'undefined'
-            ) {
+            } else if (!skipMinimap && hudTick % minimapEvery === 0 && typeof UX !== 'undefined') {
               guard('minimap', () => UX.drawMinimap(), { subsystem: 'minimap', phase: 'minimap' });
             }
           }

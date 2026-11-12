@@ -262,13 +262,13 @@ const STRATS = [
   [
     'wwe_cheat',
     (Gm, t, C) => {
-      if (t === 1) C.submit('Austin 3:16');
+      if (t === 1) C.submit('iron creed');
     },
   ],
   [
     'doom_cheat',
     (Gm, t, C) => {
-      if (t === 1) C.submit('Doomslayer');
+      if (t === 1) C.submit('Hellbane');
     },
   ],
   [
@@ -280,19 +280,19 @@ const STRATS = [
   [
     'iddqd',
     (Gm, t, C) => {
-      if (t % 200 === 0) C.submit('iddqd');
+      if (t % 200 === 0) C.submit('kings ransom');
     },
   ],
   [
     'rosebud',
     (Gm, t, C) => {
-      if (t % 350 === 0) C.submit('rosebud');
+      if (t % 350 === 0) C.submit('war chest');
     },
   ],
   [
     'highlander',
     (Gm, t, C) => {
-      if (t % 250 === 0) C.submit('there can be only one');
+      if (t % 250 === 0) C.submit('clear the field');
     },
   ],
   [
@@ -375,9 +375,13 @@ function sim(runId, maxTicks, fastNight) {
   const avgUpdateMs = updateMs / Math.max(1, maxTicks);
   if (avgUpdateMs > 8)
     issues.push({ runId, code: 'SLOW_UPDATE', ms: +avgUpdateMs.toFixed(2), name });
+  // Clearing wave 100 wins the campaign; a run that went past it must have recorded the win.
+  if (fin.wave > 100 && !fin.creativeMode && !fin.campaignWon)
+    issues.push({ runId, code: 'NO_CAMPAIGN_VICTORY', wave: fin.wave, name });
   return {
     runId,
     name,
+    campaignWon: !!fin.campaignWon,
     maxWave: Math.max(maxWave, fin.wave),
     issues,
     reached1000: fin.wave >= 1000,

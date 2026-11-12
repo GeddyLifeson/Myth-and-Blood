@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <link rel="icon" href="data:," />
-    <title>Myth and Blood — Defense · Empire · Dynasty · Stars · Planet</title>
+    <title>Myth and Blood — Fantasy Tactical Defense</title>
     <meta
       name="description"
       content="Command a growing army in an endless fantasy tactical-defense war. Spend Tactical Points on troops and structures, hold the line against relentless waves, and rise from lane defense to academy, settlement economy, and RTS-scale empire."
@@ -56,566 +56,662 @@
       <canvas id="game-canvas"></canvas>
       <div id="ui-overlay">
         <div id="left-panel" class="side-panel">
-          <nav class="side-panel-tabs" role="tablist" aria-label="Left command panel — jump to section">
-            <button type="button" class="side-tab active" data-side-tab="troops" role="tab" aria-selected="true" title="Troops & specialists">Troops</button>
-            <button type="button" class="side-tab" data-side-tab="build" role="tab" aria-selected="false" title="Buildings, settlements, academies">Build</button>
-            <button type="button" class="side-tab" data-side-tab="strike" role="tab" aria-selected="false" title="Spells & doctrines">Spells</button>
-            <button type="button" class="side-tab" data-side-tab="cmd" role="tab" aria-selected="false" title="Orders, Legion Archive, Coliseum">More</button>
+          <nav
+            class="side-panel-tabs"
+            role="tablist"
+            aria-label="Left command panel — jump to section"
+          >
+            <button
+              type="button"
+              class="side-tab active"
+              data-side-tab="troops"
+              role="tab"
+              aria-selected="true"
+              title="Troops & specialists"
+            >
+              Troops
+            </button>
+            <button
+              type="button"
+              class="side-tab"
+              data-side-tab="build"
+              role="tab"
+              aria-selected="false"
+              title="Buildings, settlements, academies"
+            >
+              Build
+            </button>
+            <button
+              type="button"
+              class="side-tab"
+              data-side-tab="strike"
+              role="tab"
+              aria-selected="false"
+              title="Spells & doctrines"
+            >
+              Spells
+            </button>
+            <button
+              type="button"
+              class="side-tab"
+              data-side-tab="cmd"
+              role="tab"
+              aria-selected="false"
+              title="Orders, Legion Archive, Coliseum"
+            >
+              More
+            </button>
           </nav>
           <div class="side-panel-scroll">
-            <div class="side-tab-pane active" data-side-pane="troops" role="tabpanel"><div class="panel-header">TROOPS</div>
-          <button class="deploy-btn" data-unit="footman">
-            <canvas class="btn-icon" data-sprite="footman" width="28" height="28"></canvas
-            ><span>Footman</span><span class="cost">3</span>
-          </button>
-          <button class="deploy-btn" data-unit="archer">
-            <canvas class="btn-icon" data-sprite="archer" width="28" height="28"></canvas
-            ><span>Archer</span><span class="cost">4</span>
-          </button>
-          <button class="deploy-btn" data-unit="mage">
-            <canvas class="btn-icon" data-sprite="mage" width="28" height="28"></canvas
-            ><span>Mage</span><span class="cost">6</span>
-          </button>
-          <button class="deploy-btn" data-unit="cavalry">
-            <canvas class="btn-icon" data-sprite="cavalry" width="28" height="28"></canvas
-            ><span>Cavalry</span><span class="cost">7</span>
-          </button>
-          <button class="deploy-btn" data-unit="healer">
-            <canvas class="btn-icon" data-sprite="healer" width="28" height="28"></canvas
-            ><span>Healer</span><span class="cost">5</span>
-          </button>
-          <button class="deploy-btn" data-unit="knight">
-            <canvas class="btn-icon" data-sprite="knight" width="28" height="28"></canvas
-            ><span>Knight</span><span class="cost">8</span>
-          </button>
-          <button class="deploy-btn" data-unit="sapper">
-            <canvas class="btn-icon" data-sprite="sapper" width="28" height="28"></canvas
-            ><span>Sapper</span><span class="cost">5</span>
-          </button>
-          <button class="deploy-btn" data-unit="scout">
-            <canvas class="btn-icon" data-sprite="scout" width="28" height="28"></canvas
-            ><span>Scout</span><span class="cost">4</span>
-          </button>
-          <button class="deploy-btn" data-unit="bard">
-            <canvas class="btn-icon" data-sprite="bard" width="28" height="28"></canvas
-            ><span>Bard</span><span class="cost">5</span>
-          </button>
-          <button class="deploy-btn" data-unit="ballista">
-            <canvas class="btn-icon" data-sprite="ballista" width="28" height="28"></canvas
-            ><span>Ballista</span><span class="cost">6</span>
-          </button>
-          <button class="deploy-btn" data-unit="pikeman">
-            <canvas class="btn-icon" data-sprite="pikeman" width="28" height="28"></canvas
-            ><span>Pikeman</span><span class="cost">4</span>
-          </button>
-          <button class="deploy-btn" data-unit="general">
-            <canvas class="btn-icon" data-sprite="general" width="28" height="28"></canvas
-            ><span>General</span><span class="cost">12</span>
-          </button>
-          <button
-            class="deploy-btn secret-btn"
-            id="doomslayer-deploy"
-            data-unit="doomslayer_hero"
-            style="display: none"
-          >
-            <span>Doomslayer</span><span class="cost">10000</span>
-          </button>
-          <div class="panel-divider"></div>
-          <div class="panel-header">SPECIALISTS</div>
-          <button class="deploy-btn" data-unit="builder">
-            <canvas class="btn-icon" data-sprite="builder" width="28" height="28"></canvas
-            ><span>Builder</span><span class="cost">5</span>
-          </button>
-          <button class="deploy-btn" data-unit="courier">
-            <canvas class="btn-icon" data-sprite="courier" width="28" height="28"></canvas
-            ><span>Courier</span><span class="cost">4</span>
-          </button>
-          <div id="mod-deploy-section" class="mod-hud-section" hidden></div>
-          <div class="panel-divider"></div>
+            <div class="side-tab-pane active" data-side-pane="troops" role="tabpanel">
+              <div class="panel-header">TROOPS</div>
+              <button class="deploy-btn" data-unit="footman">
+                <canvas class="btn-icon" data-sprite="footman" width="28" height="28"></canvas
+                ><span>Footman</span><span class="cost">3</span>
+              </button>
+              <button class="deploy-btn" data-unit="archer">
+                <canvas class="btn-icon" data-sprite="archer" width="28" height="28"></canvas
+                ><span>Archer</span><span class="cost">4</span>
+              </button>
+              <button class="deploy-btn" data-unit="mage">
+                <canvas class="btn-icon" data-sprite="mage" width="28" height="28"></canvas
+                ><span>Mage</span><span class="cost">6</span>
+              </button>
+              <button class="deploy-btn" data-unit="cavalry">
+                <canvas class="btn-icon" data-sprite="cavalry" width="28" height="28"></canvas
+                ><span>Cavalry</span><span class="cost">7</span>
+              </button>
+              <button class="deploy-btn" data-unit="healer">
+                <canvas class="btn-icon" data-sprite="healer" width="28" height="28"></canvas
+                ><span>Healer</span><span class="cost">5</span>
+              </button>
+              <button class="deploy-btn" data-unit="knight">
+                <canvas class="btn-icon" data-sprite="knight" width="28" height="28"></canvas
+                ><span>Knight</span><span class="cost">8</span>
+              </button>
+              <button class="deploy-btn" data-unit="sapper">
+                <canvas class="btn-icon" data-sprite="sapper" width="28" height="28"></canvas
+                ><span>Sapper</span><span class="cost">5</span>
+              </button>
+              <button class="deploy-btn" data-unit="scout">
+                <canvas class="btn-icon" data-sprite="scout" width="28" height="28"></canvas
+                ><span>Scout</span><span class="cost">4</span>
+              </button>
+              <button class="deploy-btn" data-unit="bard">
+                <canvas class="btn-icon" data-sprite="bard" width="28" height="28"></canvas
+                ><span>Bard</span><span class="cost">5</span>
+              </button>
+              <button class="deploy-btn" data-unit="ballista">
+                <canvas class="btn-icon" data-sprite="ballista" width="28" height="28"></canvas
+                ><span>Ballista</span><span class="cost">6</span>
+              </button>
+              <button class="deploy-btn" data-unit="pikeman">
+                <canvas class="btn-icon" data-sprite="pikeman" width="28" height="28"></canvas
+                ><span>Pikeman</span><span class="cost">4</span>
+              </button>
+              <button class="deploy-btn" data-unit="general">
+                <canvas class="btn-icon" data-sprite="general" width="28" height="28"></canvas
+                ><span>General</span><span class="cost">12</span>
+              </button>
+              <button
+                class="deploy-btn secret-btn"
+                id="doomslayer-deploy"
+                data-unit="doomslayer_hero"
+                style="display: none"
+              >
+                <span>Hellbane</span><span class="cost">10000</span>
+              </button>
+              <div class="panel-divider"></div>
+              <div class="panel-header">SPECIALISTS</div>
+              <button class="deploy-btn" data-unit="builder">
+                <canvas class="btn-icon" data-sprite="builder" width="28" height="28"></canvas
+                ><span>Builder</span><span class="cost">5</span>
+              </button>
+              <button class="deploy-btn" data-unit="courier">
+                <canvas class="btn-icon" data-sprite="courier" width="28" height="28"></canvas
+                ><span>Courier</span><span class="cost">4</span>
+              </button>
+              <div id="mod-deploy-section" class="mod-hud-section" hidden></div>
+              <div class="panel-divider"></div>
             </div>
-            <div class="side-tab-pane" data-side-pane="build" role="tabpanel"><div class="panel-header">BUILD</div>
-          <div id="mod-build-section" class="mod-hud-section" hidden></div>
-          <button class="build-btn" data-build="outpost">
-            <span>Outpost</span><span class="cost">4</span>
-          </button>
-          <button class="build-btn" data-build="wall">
-            <span>Wall</span><span class="cost">6</span>
-          </button>
-          <button class="build-btn" data-build="castle">
-            <span>Castle</span><span class="cost">50</span>
-          </button>
-          <button class="build-btn" data-build="medical_tent">
-            <span>Med Tent</span><span class="cost">5</span>
-          </button>
-          <button class="build-btn" data-build="mess_hall">
-            <span>Mess Hall</span><span class="cost">5</span>
-          </button>
-          <button class="build-btn" data-build="research_lab">
-            <span>Research Lab</span><span class="cost">45</span>
-          </button>
-          <button id="research-open" class="meta-btn research-btn">RESEARCH</button>
-          <button class="build-btn" data-build="watchtower">
-            <span>Watchtower</span><span class="cost">5</span>
-          </button>
-          <button class="build-btn" data-build="spike_trap">
-            <span>Spike Trap</span><span class="cost">3</span>
-          </button>
-          <button class="build-btn" data-build="quarry">
-            <span>Quarry</span><span class="cost">14</span>
-          </button>
-          <button class="build-btn" data-build="trade_outpost">
-            <span>Trade Post</span><span class="cost">16</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="fortress_upgrade">
-            <span>Fortify</span><span class="cost">50</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="hamlet">
-            <span>Hamlet</span><span class="cost">100</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="village">
-            <span>Village</span><span class="cost">180</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="town">
-            <span>Town</span><span class="cost">280</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="city">
-            <span>City</span><span class="cost">420</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="metropolis">
-            <span>Metropolis</span><span class="cost">600</span>
-          </button>
-          <button class="build-btn settlement-btn" data-build="merchant_guild">
-            <span>Guild</span><span class="cost">150</span>
-          </button>
-          <p class="panel-hint">
-            Settlements: research-gated tiers · 5–10 Builders · huge & siegeable — wall them in.
-          </p>
-          <div class="panel-divider"></div>
-          <div class="panel-header">ACADEMIES</div>
-          <button class="build-btn academy-btn" data-build="academy_footman">
-            <span>Foot Acad</span><span class="cost">40</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_archer">
-            <span>Arch Acad</span><span class="cost">45</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_mage">
-            <span>Mage Acad</span><span class="cost">55</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_cavalry">
-            <span>Cav Acad</span><span class="cost">60</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_knight">
-            <span>Knt Acad</span><span class="cost">65</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_sapper">
-            <span>Sap Acad</span><span class="cost">45</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_healer">
-            <span>Heal Acad</span><span class="cost">48</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_builder">
-            <span>Bldr Acad</span><span class="cost">48</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_courier">
-            <span>Cour Acad</span><span class="cost">40</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_general">
-            <span>Gen Acad</span><span class="cost">100</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_scout">
-            <span>Scout Acad</span><span class="cost">40</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_bard">
-            <span>Bard Acad</span><span class="cost">45</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_ballista">
-            <span>Ballista Acad</span><span class="cost">55</span>
-          </button>
-          <button class="build-btn academy-btn" data-build="academy_pikeman">
-            <span>Pike Acad</span><span class="cost">40</span>
-          </button>
-          <p class="panel-hint">
-            Find an Immortal veteran first — each academy needs that unit type at max rank on the
-            field before you can build it. Then trains 1 free unit per round.
-          </p>
+            <div class="side-tab-pane" data-side-pane="build" role="tabpanel">
+              <div class="panel-header">BUILD</div>
+              <div id="mod-build-section" class="mod-hud-section" hidden></div>
+              <button class="build-btn" data-build="outpost">
+                <span>Outpost</span><span class="cost">4</span>
+              </button>
+              <button class="build-btn" data-build="wall">
+                <span>Wall</span><span class="cost">6</span>
+              </button>
+              <button class="build-btn" data-build="castle">
+                <span>Castle</span><span class="cost">50</span>
+              </button>
+              <button class="build-btn" data-build="medical_tent">
+                <span>Med Tent</span><span class="cost">5</span>
+              </button>
+              <button class="build-btn" data-build="mess_hall">
+                <span>Mess Hall</span><span class="cost">5</span>
+              </button>
+              <button class="build-btn" data-build="research_lab">
+                <span>Research Lab</span><span class="cost">45</span>
+              </button>
+              <button id="research-open" class="meta-btn research-btn">RESEARCH</button>
+              <button class="build-btn" data-build="watchtower">
+                <span>Watchtower</span><span class="cost">5</span>
+              </button>
+              <button class="build-btn" data-build="spike_trap">
+                <span>Spike Trap</span><span class="cost">3</span>
+              </button>
+              <button class="build-btn" data-build="quarry">
+                <span>Quarry</span><span class="cost">14</span>
+              </button>
+              <button class="build-btn" data-build="trade_outpost">
+                <span>Trade Post</span><span class="cost">16</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="fortress_upgrade">
+                <span>Fortify</span><span class="cost">50</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="hamlet">
+                <span>Hamlet</span><span class="cost">100</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="village">
+                <span>Village</span><span class="cost">180</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="town">
+                <span>Town</span><span class="cost">280</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="city">
+                <span>City</span><span class="cost">420</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="metropolis">
+                <span>Metropolis</span><span class="cost">600</span>
+              </button>
+              <button class="build-btn settlement-btn" data-build="merchant_guild">
+                <span>Guild</span><span class="cost">150</span>
+              </button>
+              <p class="panel-hint">
+                Settlements: research-gated tiers · 5–10 Builders · huge & siegeable — wall them in.
+              </p>
+              <div class="panel-divider"></div>
+              <div class="panel-header">ACADEMIES</div>
+              <button class="build-btn academy-btn" data-build="academy_footman">
+                <span>Foot Acad</span><span class="cost">40</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_archer">
+                <span>Arch Acad</span><span class="cost">45</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_mage">
+                <span>Mage Acad</span><span class="cost">55</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_cavalry">
+                <span>Cav Acad</span><span class="cost">60</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_knight">
+                <span>Knt Acad</span><span class="cost">65</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_sapper">
+                <span>Sap Acad</span><span class="cost">45</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_healer">
+                <span>Heal Acad</span><span class="cost">48</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_builder">
+                <span>Bldr Acad</span><span class="cost">48</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_courier">
+                <span>Cour Acad</span><span class="cost">40</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_general">
+                <span>Gen Acad</span><span class="cost">100</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_scout">
+                <span>Scout Acad</span><span class="cost">40</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_bard">
+                <span>Bard Acad</span><span class="cost">45</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_ballista">
+                <span>Ballista Acad</span><span class="cost">55</span>
+              </button>
+              <button class="build-btn academy-btn" data-build="academy_pikeman">
+                <span>Pike Acad</span><span class="cost">40</span>
+              </button>
+              <p class="panel-hint">
+                Find an Immortal veteran first — each academy needs that unit type at max rank on
+                the field before you can build it. Then trains 1 free unit per round.
+              </p>
             </div>
-            <div class="side-tab-pane" data-side-pane="strike" role="tabpanel"><div class="panel-header">SPELLS / STRIKES</div>
-          <button class="ability-btn" data-ability="fireball">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="fireball"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Fireball</span><span class="cost">9</span>
-          </button>
-          <button class="ability-btn" data-ability="lightning">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="lightning"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Lightning</span><span class="cost">6</span>
-          </button>
-          <button class="ability-btn" data-ability="heal">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="heal"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Heal Rain</span><span class="cost">6</span>
-          </button>
-          <button class="ability-btn" data-ability="reinforce">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="reinforce"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Reinforce</span><span class="cost">12</span>
-          </button>
-          <button class="ability-btn" data-ability="rally">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="rally"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Rally</span><span class="cost">6</span>
-          </button>
-          <button class="ability-btn" data-ability="meteor">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="meteor"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Meteor</span><span class="cost">14</span>
-          </button>
-          <button class="ability-btn" data-ability="frost_nova">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="frost_nova"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Frost Nova</span><span class="cost">8</span>
-          </button>
-          <button class="ability-btn" data-ability="scout_flare">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="scout_flare"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Flare</span><span class="cost">4</span>
-          </button>
-          <button class="ability-btn" data-ability="fortify">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="fortify"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Fortify</span><span class="cost">7</span>
-          </button>
-          <button class="ability-btn" data-ability="dispel" title="Requires a living Mage">
-            <canvas
-              class="btn-icon ability-icon"
-              data-ability-icon="dispel"
-              width="28"
-              height="28"
-            ></canvas
-            ><span>Dispel</span><span class="cost">5</span>
-          </button>
-          <div id="doctrine-section" class="doctrine-section">
-            <div class="panel-divider"></div>
-            <div class="panel-header">KINGDOM DOCTRINES</div>
-            <button
-              class="doctrine-btn kingdom-stage-btn"
-              data-doctrine="outpost_stand"
-              data-kingdom-stage="1"
-            >
-              <span>Outpost Stand</span><span class="cost">4</span>
-            </button>
-            <button
-              class="doctrine-btn kingdom-stage-btn"
-              data-doctrine="royal_muster"
-              data-kingdom-stage="2"
-            >
-              <span>Royal Muster</span><span class="cost">5</span>
-            </button>
-            <button
-              class="doctrine-btn kingdom-stage-btn"
-              data-doctrine="imperial_march"
-              data-kingdom-stage="3"
-            >
-              <span>Imperial March</span><span class="cost">8</span>
-            </button>
-            <button
-              class="doctrine-btn kingdom-stage-btn"
-              data-doctrine="hellforge_decree"
-              data-kingdom-stage="4"
-            >
-              <span>Hellforge Decree</span><span class="cost">10</span>
-            </button>
-            <p class="panel-hint">One kingdom doctrine per wave — unlocks with evolution stage.</p>
-          </div>
-          <div id="counter-doctrine-section" class="counter-doctrine-section" style="display: none">
-            <div class="panel-divider"></div>
-            <div class="panel-header">COUNTER-OFFENSIVE</div>
-            <button
-              class="counter-doctrine-btn kingdom-stage-btn"
-              data-counter-doctrine="probing_raid"
-              data-kingdom-stage="1"
-            >
-              <span>Probing Raid</span><span class="cost">3</span>
-            </button>
-            <button
-              class="counter-doctrine-btn kingdom-stage-btn"
-              data-counter-doctrine="border_sortie"
-              data-kingdom-stage="2"
-            >
-              <span>Border Sortie</span><span class="cost">5</span>
-            </button>
-            <button
-              class="counter-doctrine-btn kingdom-stage-btn"
-              data-counter-doctrine="northern_campaign"
-              data-kingdom-stage="3"
-            >
-              <span>Northern Campaign</span><span class="cost">7</span>
-            </button>
-            <button
-              class="counter-doctrine-btn kingdom-stage-btn"
-              data-counter-doctrine="dominion_offensive"
-              data-kingdom-stage="4"
-            >
-              <span>Dominion Offensive</span><span class="cost">9</span>
-            </button>
-            <p class="panel-hint">
-              One offensive doctrine per wave — weakens the weakest host faction.
-            </p>
-          </div>
-          <div class="panel-divider"></div>
+            <div class="side-tab-pane" data-side-pane="strike" role="tabpanel">
+              <div class="panel-header">SPELLS / STRIKES</div>
+              <button class="ability-btn" data-ability="fireball">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="fireball"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Fireball</span><span class="cost">9</span>
+              </button>
+              <button class="ability-btn" data-ability="lightning">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="lightning"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Lightning</span><span class="cost">6</span>
+              </button>
+              <button class="ability-btn" data-ability="heal">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="heal"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Heal Rain</span><span class="cost">6</span>
+              </button>
+              <button class="ability-btn" data-ability="reinforce">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="reinforce"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Reinforce</span><span class="cost">12</span>
+              </button>
+              <button class="ability-btn" data-ability="rally">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="rally"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Rally</span><span class="cost">6</span>
+              </button>
+              <button class="ability-btn" data-ability="meteor">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="meteor"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Meteor</span><span class="cost">14</span>
+              </button>
+              <button class="ability-btn" data-ability="frost_nova">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="frost_nova"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Frost Nova</span><span class="cost">8</span>
+              </button>
+              <button class="ability-btn" data-ability="scout_flare">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="scout_flare"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Flare</span><span class="cost">4</span>
+              </button>
+              <button class="ability-btn" data-ability="fortify">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="fortify"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Fortify</span><span class="cost">7</span>
+              </button>
+              <button class="ability-btn" data-ability="dispel" title="Requires a living Mage">
+                <canvas
+                  class="btn-icon ability-icon"
+                  data-ability-icon="dispel"
+                  width="28"
+                  height="28"
+                ></canvas
+                ><span>Dispel</span><span class="cost">5</span>
+              </button>
+              <div id="doctrine-section" class="doctrine-section">
+                <div class="panel-divider"></div>
+                <div class="panel-header">KINGDOM DOCTRINES</div>
+                <button
+                  class="doctrine-btn kingdom-stage-btn"
+                  data-doctrine="outpost_stand"
+                  data-kingdom-stage="1"
+                >
+                  <span>Outpost Stand</span><span class="cost">4</span>
+                </button>
+                <button
+                  class="doctrine-btn kingdom-stage-btn"
+                  data-doctrine="royal_muster"
+                  data-kingdom-stage="2"
+                >
+                  <span>Royal Muster</span><span class="cost">5</span>
+                </button>
+                <button
+                  class="doctrine-btn kingdom-stage-btn"
+                  data-doctrine="imperial_march"
+                  data-kingdom-stage="3"
+                >
+                  <span>Imperial March</span><span class="cost">8</span>
+                </button>
+                <button
+                  class="doctrine-btn kingdom-stage-btn"
+                  data-doctrine="hellforge_decree"
+                  data-kingdom-stage="4"
+                >
+                  <span>Hellforge Decree</span><span class="cost">10</span>
+                </button>
+                <p class="panel-hint">
+                  One kingdom doctrine per wave — unlocks with evolution stage.
+                </p>
+              </div>
+              <div
+                id="counter-doctrine-section"
+                class="counter-doctrine-section"
+                style="display: none"
+              >
+                <div class="panel-divider"></div>
+                <div class="panel-header">COUNTER-OFFENSIVE</div>
+                <button
+                  class="counter-doctrine-btn kingdom-stage-btn"
+                  data-counter-doctrine="probing_raid"
+                  data-kingdom-stage="1"
+                >
+                  <span>Probing Raid</span><span class="cost">3</span>
+                </button>
+                <button
+                  class="counter-doctrine-btn kingdom-stage-btn"
+                  data-counter-doctrine="border_sortie"
+                  data-kingdom-stage="2"
+                >
+                  <span>Border Sortie</span><span class="cost">5</span>
+                </button>
+                <button
+                  class="counter-doctrine-btn kingdom-stage-btn"
+                  data-counter-doctrine="northern_campaign"
+                  data-kingdom-stage="3"
+                >
+                  <span>Northern Campaign</span><span class="cost">7</span>
+                </button>
+                <button
+                  class="counter-doctrine-btn kingdom-stage-btn"
+                  data-counter-doctrine="dominion_offensive"
+                  data-kingdom-stage="4"
+                >
+                  <span>Dominion Offensive</span><span class="cost">9</span>
+                </button>
+                <p class="panel-hint">
+                  One offensive doctrine per wave — weakens the weakest host faction.
+                </p>
+              </div>
+              <div class="panel-divider"></div>
             </div>
-            <div class="side-tab-pane" data-side-pane="cmd" role="tabpanel"><div class="panel-header">ORDERS & FACTIONS</div>
-          <button id="demolish-btn" class="meta-btn structure-btn">DEMOLISH</button>
-          <button id="move-building-btn" class="meta-btn structure-btn">MOVE</button>
-          <button id="rotate-wall-btn" class="meta-btn structure-btn">ROTATE</button>
-          <button id="hunt-toggle" class="meta-btn">HUNT: ON</button>
-          <button id="clear-selection-btn" class="meta-btn" title="Clear unit selection">
-            CLEAR SEL
-          </button>
-          <div id="formation-section" class="formation-section" style="display: none">
-            <div class="panel-header">FORMATION</div>
-            <div class="formation-btn-row">
-              <button class="formation-btn" data-formation="line" title="Alt+1">LINE</button>
-              <button class="formation-btn" data-formation="column" title="Alt+2">COL</button>
-              <button class="formation-btn" data-formation="wedge" title="Alt+3">WEDGE</button>
-              <button class="formation-btn" data-formation="box" title="Alt+4">BOX</button>
-              <button class="formation-btn" data-formation="spread" title="Alt+5">SPREAD</button>
-            </div>
-            <button id="formation-reform-btn" class="meta-btn formation-reform-btn" title="G — reform selected group">
-              REFORM (G)
-            </button>
-            <p class="panel-hint">Drag empty map to box-select · Shift+drag adds · click map to move in formation</p>
-          </div>
-          <button id="builder-repair-toggle" class="meta-btn">REPAIR: ON</button>
-          <button id="speed-toggle" class="meta-btn" title="Cycle game speed">SPEED: 1×</button>
-          <button id="wwe-academy-open" class="meta-btn secret-panel-btn" style="display: none">
-            GRAND COLISEUM
-          </button>
-          <button id="crossover-hub-open" class="meta-btn secret-panel-btn" style="display: none">
-            LEGION ARCHIVE
-          </button>
-          <div id="perk-build-section" class="perk-build-section" style="display: none">
-            <div class="panel-divider"></div>
-            <div class="panel-header">TONIC STATIONS</div>
-            <button class="build-btn perk-btn" data-build="perk_jugger_nog">
-              <span>Ironbrew</span><span class="cost">12</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_quick_revive">
-              <span>Field Revival</span><span class="cost">10</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_speed_cola">
-              <span>Swiftstep Tonic</span><span class="cost">9</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_stamin_up">
-              <span>Endurance Draft</span><span class="cost">9</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_deadshot_daiquiri">
-              <span>Deadshot</span><span class="cost">11</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_elemental_pop">
-              <span>Elem Pop</span><span class="cost">12</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_phd_flopper">
-              <span>PhD Flopper</span><span class="cost">11</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_melee_macchiato">
-              <span>Melee Mac</span><span class="cost">10</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_vulture_aid">
-              <span>Vulture Aid</span><span class="cost">10</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_tombstone">
-              <span>Tombstone</span><span class="cost">14</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_double_tap">
-              <span>Twinshot Brew</span><span class="cost">11</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_mule_kick">
-              <span>Mule Kick</span><span class="cost">10</span>
-            </button>
-            <button class="build-btn perk-btn" data-build="perk_sleight">
-              <span>Sleight</span><span class="cost">10</span>
-            </button>
-            <p class="panel-hint">
-              Heroes collect perks at night (max 4). Tombstone = General only.
-            </p>
-          </div>
+            <div class="side-tab-pane" data-side-pane="cmd" role="tabpanel">
+              <div class="panel-header">ORDERS & FACTIONS</div>
+              <button id="demolish-btn" class="meta-btn structure-btn">DEMOLISH</button>
+              <button id="move-building-btn" class="meta-btn structure-btn">MOVE</button>
+              <button id="rotate-wall-btn" class="meta-btn structure-btn">ROTATE</button>
+              <button id="clear-selection-btn" class="meta-btn" title="Clear unit selection">
+                CLEAR SEL
+              </button>
+              <div id="formation-section" class="formation-section" style="display: none">
+                <div class="panel-header">FORMATION</div>
+                <div class="formation-btn-row">
+                  <button class="formation-btn" data-formation="line" title="Alt+1">LINE</button>
+                  <button class="formation-btn" data-formation="column" title="Alt+2">COL</button>
+                  <button class="formation-btn" data-formation="wedge" title="Alt+3">WEDGE</button>
+                  <button class="formation-btn" data-formation="box" title="Alt+4">BOX</button>
+                  <button class="formation-btn" data-formation="spread" title="Alt+5">
+                    SPREAD
+                  </button>
+                </div>
+                <button
+                  id="formation-reform-btn"
+                  class="meta-btn formation-reform-btn"
+                  title="G — reform selected group"
+                >
+                  REFORM (G)
+                </button>
+                <p class="panel-hint">
+                  Drag empty map to box-select · Shift+drag adds · click map to move in formation
+                </p>
+              </div>
+              <button id="builder-repair-toggle" class="meta-btn">REPAIR: ON</button>
+              <button id="wwe-academy-open" class="meta-btn secret-panel-btn" style="display: none">
+                GRAND COLISEUM
+              </button>
+              <button
+                id="crossover-hub-open"
+                class="meta-btn secret-panel-btn"
+                style="display: none"
+              >
+                LEGION ARCHIVE
+              </button>
+              <div id="perk-build-section" class="perk-build-section" style="display: none">
+                <div class="panel-divider"></div>
+                <div class="panel-header">TONIC STATIONS</div>
+                <button class="build-btn perk-btn" data-build="perk_jugger_nog">
+                  <span>Ironbrew</span><span class="cost">12</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_quick_revive">
+                  <span>Field Revival</span><span class="cost">10</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_speed_cola">
+                  <span>Swiftstep Tonic</span><span class="cost">9</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_stamin_up">
+                  <span>Endurance Draft</span><span class="cost">9</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_deadshot_daiquiri">
+                  <span>Deadeye Elixir</span><span class="cost">11</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_elemental_pop">
+                  <span>Storm Fizz</span><span class="cost">12</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_phd_flopper">
+                  <span>Impact Ward</span><span class="cost">11</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_melee_macchiato">
+                  <span>Brawler's Brew</span><span class="cost">10</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_vulture_aid">
+                  <span>Scavenger's Tonic</span><span class="cost">10</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_tombstone">
+                  <span>Last Stand</span><span class="cost">14</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_double_tap">
+                  <span>Twinshot Brew</span><span class="cost">11</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_mule_kick">
+                  <span>Packmule Tonic</span><span class="cost">10</span>
+                </button>
+                <button class="build-btn perk-btn" data-build="perk_sleight">
+                  <span>Quickhands</span><span class="cost">10</span>
+                </button>
+                <p class="panel-hint">
+                  Heroes collect perks at night (max 4). Tombstone = General only.
+                </p>
+              </div>
             </div>
           </div>
         </div>
 
         <div id="right-panel" class="side-panel">
-          <nav class="side-panel-tabs" role="tablist" aria-label="Right ops panel — jump to section">
-            <button type="button" class="side-tab active" data-side-tab="spy" role="tab" aria-selected="true" title="Spy network">Spy</button>
-            <button type="button" class="side-tab" data-side-tab="courier" role="tab" aria-selected="false" title="Courier messages">Mail</button>
-            <button type="button" class="side-tab" data-side-tab="ops" role="tab" aria-selected="false" title="Threat map & ops">Ops</button>
+          <nav
+            class="side-panel-tabs"
+            role="tablist"
+            aria-label="Right ops panel — jump to section"
+          >
+            <button
+              type="button"
+              class="side-tab active"
+              data-side-tab="spy"
+              role="tab"
+              aria-selected="true"
+              title="Spy network"
+            >
+              Spy
+            </button>
+            <button
+              type="button"
+              class="side-tab"
+              data-side-tab="courier"
+              role="tab"
+              aria-selected="false"
+              title="Courier messages"
+            >
+              Mail
+            </button>
+            <button
+              type="button"
+              class="side-tab"
+              data-side-tab="ops"
+              role="tab"
+              aria-selected="false"
+              title="Threat map & ops"
+            >
+              Ops
+            </button>
           </nav>
           <div class="side-panel-scroll">
-            <div class="side-tab-pane active" data-side-pane="spy" role="tabpanel"><div class="panel-header">SPY NETWORK</div>
-          <button class="spy-btn" data-spy="steal">
-            <span>Steal Chest</span><span class="cost">4</span>
-          </button>
-          <button class="spy-btn" data-spy="disrupt">
-            <span>Disrupt Lines</span><span class="cost">5</span>
-          </button>
-          <button class="spy-btn" data-spy="assassin">
-            <span>Assassinate</span><span class="cost">6</span>
-          </button>
-          <button class="spy-btn" data-spy="scout">
-            <span>Scout Report</span><span class="cost">2</span>
-          </button>
-          <button class="spy-btn" data-spy="poison">
-            <span>Poison Caches</span><span class="cost">4</span>
-          </button>
-          <button class="spy-btn" data-spy="sabotage">
-            <span>Sabotage</span><span class="cost">5</span>
-          </button>
-          <button class="spy-btn" data-spy="infiltrate">
-            <span>Infiltrate</span><span class="cost">3</span>
-          </button>
-          <button class="spy-btn" data-spy="bribery">
-            <span>Bribe</span><span class="cost">6</span>
-          </button>
-          <button class="spy-btn" data-spy="muster">
-            <span>Muster</span><span class="cost">5</span>
-          </button>
-          <button class="spy-btn" data-spy="war_chest">
-            <span>War Chest</span><span class="cost">4</span>
-          </button>
-          <button class="spy-btn" data-spy="forge_maps">
-            <span>Forge Maps</span><span class="cost">3</span>
-          </button>
-          <button class="spy-btn" data-spy="tunnel">
-            <span>Tunnel</span><span class="cost">5</span>
-          </button>
-          <button
-            class="spy-btn kingdom-stage-btn"
-            data-spy="settlement_raid"
-            data-kingdom-stage="3"
-            data-wave-min="150"
-          >
-            <span>Settlement Raid</span><span class="cost">7</span>
-          </button>
-          <p class="panel-hint">One spy action per wave. Scout/Infiltrate = exact roster.</p>
-          <div id="raid-section" class="raid-section" style="display: none">
-            <div class="panel-divider"></div>
-            <div class="panel-header">SETTLEMENT RAIDS</div>
-            <p id="raid-summary-text" class="raid-summary-text">Unlocks wave 150</p>
-            <div id="raid-mission-list" class="raid-mission-list"></div>
-            <p class="panel-hint">Select 2+ hunters, then dispatch. Big TP + science on raze.</p>
-          </div>
-          <div
-            id="counter-expedition-section"
-            class="counter-expedition-section"
-            style="display: none"
-          >
-            <div class="panel-divider"></div>
-            <div class="panel-header">EXPEDITIONS</div>
-            <p id="counter-summary-text" class="counter-summary-text">Unlocks wave 25</p>
-            <div id="expedition-list" class="expedition-list"></div>
-            <p class="panel-hint">
-              Night only — select 1–4 hunters, dispatch off-map. Returns next wave.
-            </p>
-          </div>
-          <div id="planet-event-section" class="planet-event-section" style="display: none">
-            <div class="panel-divider"></div>
-            <div class="panel-header">PLANET EVENT</div>
-            <p id="planet-event-summary" class="planet-event-summary">Unlocks wave 12</p>
-            <div id="planet-event-choices" class="planet-event-choices"></div>
-            <p class="panel-hint">
-              Night only — the planet fights back. Your choice helps or hurts dawn.
-            </p>
-          </div>
+            <div class="side-tab-pane active" data-side-pane="spy" role="tabpanel">
+              <div class="panel-header">SPY NETWORK</div>
+              <button class="spy-btn" data-spy="steal">
+                <span>Steal Chest</span><span class="cost">4</span>
+              </button>
+              <button class="spy-btn" data-spy="disrupt">
+                <span>Disrupt Lines</span><span class="cost">5</span>
+              </button>
+              <button class="spy-btn" data-spy="assassin">
+                <span>Assassinate</span><span class="cost">6</span>
+              </button>
+              <button class="spy-btn" data-spy="scout">
+                <span>Scout Report</span><span class="cost">2</span>
+              </button>
+              <button class="spy-btn" data-spy="poison">
+                <span>Poison Caches</span><span class="cost">4</span>
+              </button>
+              <button class="spy-btn" data-spy="sabotage">
+                <span>Sabotage</span><span class="cost">5</span>
+              </button>
+              <button class="spy-btn" data-spy="infiltrate">
+                <span>Infiltrate</span><span class="cost">3</span>
+              </button>
+              <button class="spy-btn" data-spy="bribery">
+                <span>Bribe</span><span class="cost">6</span>
+              </button>
+              <button class="spy-btn" data-spy="muster">
+                <span>Muster</span><span class="cost">5</span>
+              </button>
+              <button class="spy-btn" data-spy="war_chest">
+                <span>War Chest</span><span class="cost">4</span>
+              </button>
+              <button class="spy-btn" data-spy="forge_maps">
+                <span>Forge Maps</span><span class="cost">3</span>
+              </button>
+              <button class="spy-btn" data-spy="tunnel">
+                <span>Tunnel</span><span class="cost">5</span>
+              </button>
+              <button
+                class="spy-btn kingdom-stage-btn"
+                data-spy="settlement_raid"
+                data-kingdom-stage="3"
+                data-wave-min="150"
+              >
+                <span>Settlement Raid</span><span class="cost">7</span>
+              </button>
+              <p class="panel-hint">One spy action per wave. Scout/Infiltrate = exact roster.</p>
+              <div id="raid-section" class="raid-section" style="display: none">
+                <div class="panel-divider"></div>
+                <div class="panel-header">SETTLEMENT RAIDS</div>
+                <p id="raid-summary-text" class="raid-summary-text">Unlocks wave 150</p>
+                <div id="raid-mission-list" class="raid-mission-list"></div>
+                <p class="panel-hint">
+                  Select 2+ hunters, then dispatch. Big TP + science on raze.
+                </p>
+              </div>
+              <div
+                id="counter-expedition-section"
+                class="counter-expedition-section"
+                style="display: none"
+              >
+                <div class="panel-divider"></div>
+                <div class="panel-header">EXPEDITIONS</div>
+                <p id="counter-summary-text" class="counter-summary-text">Unlocks wave 25</p>
+                <div id="expedition-list" class="expedition-list"></div>
+                <p class="panel-hint">
+                  Night only — select 1–4 hunters, dispatch off-map. Returns next wave.
+                </p>
+              </div>
+              <div id="planet-event-section" class="planet-event-section" style="display: none">
+                <div class="panel-divider"></div>
+                <div class="panel-header">PLANET EVENT</div>
+                <p id="planet-event-summary" class="planet-event-summary">Unlocks wave 12</p>
+                <div id="planet-event-choices" class="planet-event-choices"></div>
+                <p class="panel-hint">
+                  Night only — the planet fights back. Your choice helps or hurts dawn.
+                </p>
+              </div>
             </div>
-            <div class="side-tab-pane" data-side-pane="courier" role="tabpanel"><div class="panel-header">COURIER MSGS</div>
-          <button class="courier-btn" data-courier="reinforce">
-            <span>Reinforce</span><span class="cost">3</span>
-          </button>
-          <button class="courier-btn" data-courier="decree">
-            <span>Decree</span><span class="cost">2</span>
-          </button>
-          <button class="courier-btn" data-courier="levy">
-            <span>Tax Levy</span><span class="cost">0</span>
-          </button>
-          <button class="courier-btn" data-courier="banner">
-            <span>Call Banner</span><span class="cost">5</span>
-          </button>
-          <button class="courier-btn" data-courier="supplies">
-            <span>Supplies</span><span class="cost">3</span>
-          </button>
-          <button class="courier-btn" data-courier="truce">
-            <span>Truce</span><span class="cost">4</span>
-          </button>
-          <button class="courier-btn" data-courier="hunt_pact">
-            <span>Hunt Pact</span><span class="cost">3</span>
-          </button>
-          <button class="courier-btn" data-courier="evacuate">
-            <span>Med Evac</span><span class="cost">4</span>
-          </button>
-          <button class="courier-btn" data-courier="herald">
-            <span>Herald</span><span class="cost">3</span>
-          </button>
-          <button class="courier-btn" data-courier="muster">
-            <span>Emergency</span><span class="cost">4</span>
-          </button>
-          <button class="courier-btn" data-courier="war_chest">
-            <span>War Chest</span><span class="cost">2</span>
-          </button>
-          <button
-            class="courier-btn kingdom-stage-btn"
-            data-courier="counter_hold"
-            data-kingdom-stage="4"
-          >
-            <span>Counter-Hold</span><span class="cost">5</span>
-          </button>
-          <div id="loadout-section" class="loadout-section" style="display: none">
-            <div class="panel-divider"></div>
-            <div class="panel-header">LOADOUT</div>
-            <button class="loadout-btn meta-btn" data-loadout="balanced">Balanced</button>
-            <button class="loadout-btn meta-btn" data-loadout="shield">Shield Wall</button>
-            <button class="loadout-btn meta-btn" data-loadout="arrows">Arrow Storm</button>
-            <button class="loadout-btn meta-btn" data-loadout="siege">Siege Crew</button>
-            <button class="loadout-btn meta-btn" data-loadout="court">Royal Court</button>
-          </div>
-          <p class="panel-hint">
-            One message per wave (two with Twin Dispatch at 3 gold stars). Courier must be on field.
-          </p>
+            <div class="side-tab-pane" data-side-pane="courier" role="tabpanel">
+              <div class="panel-header">COURIER MSGS</div>
+              <button class="courier-btn" data-courier="reinforce">
+                <span>Reinforce</span><span class="cost">3</span>
+              </button>
+              <button class="courier-btn" data-courier="decree">
+                <span>Decree</span><span class="cost">2</span>
+              </button>
+              <button class="courier-btn" data-courier="levy">
+                <span>Tax Levy</span><span class="cost">0</span>
+              </button>
+              <button class="courier-btn" data-courier="banner">
+                <span>Call Banner</span><span class="cost">5</span>
+              </button>
+              <button class="courier-btn" data-courier="supplies">
+                <span>Supplies</span><span class="cost">3</span>
+              </button>
+              <button class="courier-btn" data-courier="truce">
+                <span>Truce</span><span class="cost">4</span>
+              </button>
+              <button class="courier-btn" data-courier="hunt_pact">
+                <span>Hunt Pact</span><span class="cost">3</span>
+              </button>
+              <button class="courier-btn" data-courier="evacuate">
+                <span>Med Evac</span><span class="cost">4</span>
+              </button>
+              <button class="courier-btn" data-courier="herald">
+                <span>Herald</span><span class="cost">3</span>
+              </button>
+              <button class="courier-btn" data-courier="muster">
+                <span>Emergency</span><span class="cost">4</span>
+              </button>
+              <button class="courier-btn" data-courier="war_chest">
+                <span>War Chest</span><span class="cost">2</span>
+              </button>
+              <button
+                class="courier-btn kingdom-stage-btn"
+                data-courier="counter_hold"
+                data-kingdom-stage="4"
+              >
+                <span>Counter-Hold</span><span class="cost">5</span>
+              </button>
+              <div id="loadout-section" class="loadout-section" style="display: none">
+                <div class="panel-divider"></div>
+                <div class="panel-header">LOADOUT</div>
+                <button class="loadout-btn meta-btn" data-loadout="balanced">Balanced</button>
+                <button class="loadout-btn meta-btn" data-loadout="shield">Shield Wall</button>
+                <button class="loadout-btn meta-btn" data-loadout="arrows">Arrow Storm</button>
+                <button class="loadout-btn meta-btn" data-loadout="siege">Siege Crew</button>
+                <button class="loadout-btn meta-btn" data-loadout="court">Royal Court</button>
+              </div>
+              <p class="panel-hint">
+                One message per wave (two with Twin Dispatch at 3 gold stars). Courier must be on
+                field.
+              </p>
             </div>
             <div class="side-tab-pane" data-side-pane="ops" role="tabpanel">
               <div id="faction-intel-section" class="faction-intel-section" style="display: none">
@@ -640,283 +736,309 @@
         <div id="top-bar" class="top-bar-v2">
           <div class="top-bar-row top-bar-primary">
             <span
-            id="window-drag-handle"
-            class="window-drag-handle"
-            title="Drag to move window"
-            aria-hidden="true"
-            >⋮⋮</span
-          >
-          <div class="stat-group">
-            <span class="stat-label">TACTICAL PTS</span>
-            <div class="stat-bar"><div id="tp-fill" class="stat-fill tp"></div></div>
-            <span id="tp-text" class="stat-value">6</span>
-          </div>
-          <div class="stat-group">
-            <span class="stat-label">ARMY</span>
-            <span id="army-text" class="stat-value">0</span>
-          </div>
-          <div class="stat-group">
-            <span class="stat-label">TP/ROUND</span>
-            <span id="tp-round-text" class="stat-value">+8</span>
-          </div>
-          <div class="stat-group wave-group">
-            <span class="stat-label">WAVE</span>
-            <span id="wave-text" class="stat-value">0</span>
-            <div class="stat-bar wave-bar"><div id="wave-fill" class="stat-fill wave"></div></div>
-          </div>
-          <div class="stat-group strength-hud" id="strength-hud">
-            <span class="stat-label">STRENGTH</span>
-            <div
-              class="strength-meter-wrap"
-              id="strength-meter-wrap"
-              title="Kingdom strength vs next wave baseline"
+              id="window-drag-handle"
+              class="window-drag-handle"
+              title="Drag to move window"
+              aria-hidden="true"
+              >⋮⋮</span
             >
-              <span id="strength-stage-text" class="strength-stage-pill">—</span>
-              <div class="stat-bar strength-bar">
-                <div id="strength-fill" class="stat-fill strength-fill"></div>
-                <div
-                  id="strength-baseline-mark"
-                  class="strength-baseline-mark"
-                  title="On-pace baseline (1.00×)"
-                ></div>
-              </div>
-              <span id="strength-ratio-text" class="strength-ratio-text">—</span>
+            <div class="stat-group">
+              <span class="stat-label">TACTICAL PTS</span>
+              <div class="stat-bar"><div id="tp-fill" class="stat-fill tp"></div></div>
+              <span id="tp-text" class="stat-value">6</span>
             </div>
-          </div>
-          <div class="stat-group cycle-hud">
-            <span class="stat-label">CYCLE</span>
-            <span id="cycle-text" class="stat-value cycle-day">DAY</span>
-            <button
-              id="begin-day-btn"
-              class="cycle-btn"
-              style="display: none"
-              title="Start the assault now (D)"
-            >
-              BEGIN DAY
-            </button>
-          </div>
-            <div class="stat-group kingdom-hud" id="kingdom-hud">
-            <span class="stat-label">KINGDOM</span>
-            <div class="kingdom-evolution-row">
-              <canvas
-                id="kingdom-banner-canvas"
-                class="kingdom-banner-canvas"
-                width="44"
-                height="38"
-                title="Kingdom evolution banner"
-              ></canvas>
-              <div class="kingdom-evolution-meta">
-                <span id="kingdom-stage-text" class="kingdom-stage-label" title="">Outpost</span>
-                <div
-                  class="kingdom-evolution-bar"
-                  title="Evolution meter — colony, buildings, veterans, research"
-                >
-                  <div id="kingdom-evolution-fill" class="kingdom-evolution-fill"></div>
+            <div class="stat-group">
+              <span class="stat-label">ARMY</span>
+              <span id="army-text" class="stat-value">0</span>
+            </div>
+            <div class="stat-group">
+              <span class="stat-label">TP/ROUND</span>
+              <span id="tp-round-text" class="stat-value">+8</span>
+            </div>
+            <div class="stat-group wave-group">
+              <span class="stat-label">WAVE</span>
+              <span id="wave-text" class="stat-value">0</span>
+              <div class="stat-bar wave-bar"><div id="wave-fill" class="stat-fill wave"></div></div>
+            </div>
+            <div class="stat-group strength-hud" id="strength-hud">
+              <span class="stat-label">STRENGTH</span>
+              <div
+                class="strength-meter-wrap"
+                id="strength-meter-wrap"
+                title="Kingdom strength vs next wave baseline"
+              >
+                <span id="strength-stage-text" class="strength-stage-pill">—</span>
+                <div class="stat-bar strength-bar">
+                  <div id="strength-fill" class="stat-fill strength-fill"></div>
+                  <div
+                    id="strength-baseline-mark"
+                    class="strength-baseline-mark"
+                    title="On-pace baseline (1.00×)"
+                  ></div>
                 </div>
-                <span id="kingdom-evolution-pct" class="kingdom-evolution-pct">—</span>
+                <span id="strength-ratio-text" class="strength-ratio-text">—</span>
               </div>
             </div>
-            <div
-              class="warfare-asymmetry"
-              id="warfare-asymmetry"
-              title="You build & command · Host evolves & threatens the map"
-            >
-              <div class="asym-track">
-                <div id="asym-player-fill" class="asym-player-fill"></div>
-                <div id="asym-host-fill" class="asym-host-fill"></div>
-              </div>
-              <span id="asym-balance-text" class="asym-balance-text">—</span>
+            <div class="stat-group cycle-hud">
+              <span class="stat-label">CYCLE</span>
+              <span id="cycle-text" class="stat-value cycle-day">DAY</span>
+              <button
+                id="begin-day-btn"
+                class="cycle-btn"
+                style="display: none"
+                title="Start the assault now (D)"
+              >
+                BEGIN DAY
+              </button>
             </div>
-          </div>
+            <div class="stat-group kingdom-hud" id="kingdom-hud">
+              <span class="stat-label">KINGDOM</span>
+              <div class="kingdom-evolution-row">
+                <canvas
+                  id="kingdom-banner-canvas"
+                  class="kingdom-banner-canvas"
+                  width="44"
+                  height="38"
+                  title="Kingdom evolution banner"
+                ></canvas>
+                <div class="kingdom-evolution-meta">
+                  <span id="kingdom-stage-text" class="kingdom-stage-label" title="">Outpost</span>
+                  <div
+                    class="kingdom-evolution-bar"
+                    title="Evolution meter — colony, buildings, veterans, research"
+                  >
+                    <div id="kingdom-evolution-fill" class="kingdom-evolution-fill"></div>
+                  </div>
+                  <span id="kingdom-evolution-pct" class="kingdom-evolution-pct">—</span>
+                </div>
+              </div>
+              <div
+                class="warfare-asymmetry"
+                id="warfare-asymmetry"
+                title="You build & command · Host evolves & threatens the map"
+              >
+                <div class="asym-track">
+                  <div id="asym-player-fill" class="asym-player-fill"></div>
+                  <div id="asym-host-fill" class="asym-host-fill"></div>
+                </div>
+                <span id="asym-balance-text" class="asym-balance-text">—</span>
+              </div>
+            </div>
           </div>
           <div class="top-bar-row top-bar-meta">
             <div
-            class="stat-group progression-restart-hud"
-            id="progression-restart-hud"
-            style="display: none"
-            title="Major escalation restarts import legacies, tech, and bonuses"
-          >
-            <span class="stat-label">IMPORT</span>
-            <span id="progression-restart-text" class="stat-value progression-restart-value">—</span>
-          </div>
-          <div
-            class="stat-group epf-hud"
-            id="epf-hud"
-            style="display: none"
-            title="Eternal Paths — Martial, Arcane, Tech, Mythic across all layers"
-          >
-            <span class="stat-label">PATH</span>
-            <span id="epf-text" class="stat-value epf-value">—</span>
-          </div>
-          <div
-            class="stat-group foundational-medieval-hud"
-            id="foundational-medieval-hud"
-            style="display: none"
-            title="Foundational era cultural DNA (waves 1–150)"
-          >
-            <span class="stat-label">DNA</span>
-            <span id="foundational-medieval-text" class="stat-value foundational-medieval-value">—</span>
-          </div>
-          <div
-            class="stat-group eternal-legacy-hud"
-            id="eternal-legacy-hud"
-            style="display: none"
-            title="Crown of Ages — eternal legacy echoes invested"
-          >
-            <span class="stat-label">ECHO</span>
-            <span id="eternal-legacy-text" class="stat-value eternal-legacy-value">—</span>
-          </div>
-          <div
-            class="stat-group ascension-hud"
-            id="ascension-hud"
-            style="display: none"
-            title="Legacy Points — ascend veterans at era transitions"
-          >
-            <span class="stat-label">LEGACY</span>
-            <span id="ascension-text" class="stat-value ascension-value">—</span>
-          </div>
-          <div
-            class="stat-group thematic-synergy-hud"
-            id="thematic-synergy-hud"
-            style="display: none"
-            title="Cross-era thematic synergy from your medieval foundation path"
-          >
-            <span class="stat-label">SYNERGY</span>
-            <span id="thematic-synergy-text" class="stat-value thematic-synergy-value">—</span>
-          </div>
-          <div
-            class="stat-group power-fantasy-hud"
-            id="power-fantasy-hud"
-            style="display: none"
-            title="Hybrid power fantasy — apex capstone for pure medieval DNA"
-          >
-            <span class="stat-label">APEX</span>
-            <span id="power-fantasy-text" class="stat-value power-fantasy-value">—</span>
-          </div>
-          <div
-            class="stat-group crown-thread-hud"
-            id="crown-thread-hud"
-            style="display: none"
-            title="The Ancient Crown — same realm evolving across cosmic time"
-          >
-            <span class="stat-label">CROWN</span>
-            <span id="crown-thread-text" class="stat-value crown-thread-value">—</span>
-          </div>
-          <div
-            class="stat-group tech-branch-hud"
-            id="tech-branch-hud"
-            style="display: none"
-            title="Giant branching tech tree — root locked at wave 50"
-          >
-            <span class="stat-label">TECH</span>
-            <span id="tech-branch-text" class="stat-value tech-branch-value">—</span>
-          </div>
-          <div
-            class="stat-group pacing-tools-hud"
-            id="pacing-tools-hud"
-            style="display: none"
-            title="Simulation speed, pause state, and queued notifications"
-          >
-            <span class="stat-label">PACING</span>
-            <span id="pacing-tools-text" class="stat-value pacing-tools-value">—</span>
-          </div>
-          <div class="stat-group cmd-hud">
-            <span class="stat-label">COMMAND</span>
-            <span id="cmd-text" class="stat-value cmd-value">—</span>
-          </div>
-          <div class="stat-group threat-hud">
-            <span class="stat-label">THREAT</span>
-            <span id="threat-text" class="stat-value threat-value">N</span>
-          </div>
-          <div class="stat-group host-hud">
-            <span class="stat-label">HOST</span>
-            <span
-              id="host-faction-text"
-              class="stat-value host-value"
-              title="Enemy faction evolution tiers"
-              >—</span
+              class="stat-group progression-restart-hud"
+              id="progression-restart-hud"
+              style="display: none"
+              title="Major escalation restarts import legacies, tech, and bonuses"
             >
-          </div>
-          <div class="stat-group control-hud" id="control-hud" style="display: none">
-            <span class="stat-label">CONTROL</span>
-            <span
-              id="control-text"
-              class="stat-value control-value"
-              title="Hostile map control after wave 200"
-              >—</span
+              <span class="stat-label">IMPORT</span>
+              <span id="progression-restart-text" class="stat-value progression-restart-value"
+                >—</span
+              >
+            </div>
+            <div
+              class="stat-group epf-hud"
+              id="epf-hud"
+              style="display: none"
+              title="Eternal Paths — Martial, Arcane, Tech, Mythic across all layers"
             >
-          </div>
-          <div class="stat-group realm-hud" id="realm-hud" style="display: none">
-            <span class="stat-label">REALM</span>
-            <span id="realm-biome-text" class="stat-value realm-value" title="Living planet biomes"
-              >—</span
+              <span class="stat-label">PATH</span>
+              <span id="epf-text" class="stat-value epf-value">—</span>
+            </div>
+            <div
+              class="stat-group foundational-medieval-hud"
+              id="foundational-medieval-hud"
+              style="display: none"
+              title="Foundational era cultural DNA (waves 1–150)"
             >
-          </div>
-          <div class="stat-group planet-event-hud" id="planet-event-hud" style="display: none">
-            <span class="stat-label">PLANET</span>
-            <span
-              id="planet-event-text"
-              class="stat-value planet-event-value"
-              title="Dynamic map event"
-              >—</span
+              <span class="stat-label">DNA</span>
+              <span id="foundational-medieval-text" class="stat-value foundational-medieval-value"
+                >—</span
+              >
+            </div>
+            <div
+              class="stat-group eternal-legacy-hud"
+              id="eternal-legacy-hud"
+              style="display: none"
+              title="Crown of Ages — eternal legacy echoes invested"
             >
-          </div>
-          <div class="stat-group intel-hud">
-            <span class="stat-label">INTEL</span>
-            <span id="wave-intel-text" class="stat-value intel-value" title="">—</span>
-          </div>
-          <div class="stat-group streak-hud" id="streak-hud" style="display: none" title="Current kill streak">
-            <span class="stat-label">STREAK</span>
-            <span id="streak-text" class="stat-value streak-value">0</span>
-          </div>
-          <div class="stat-group syn-hud" id="syn-hud" style="display: none">
-            <span class="stat-label">SYN</span>
-            <span id="syn-text" class="stat-value syn-value" title="">—</span>
-          </div>
-          <div class="stat-group diff-hud">
-            <span class="stat-label">DIFF</span>
-            <span id="diff-text" class="stat-value diff-value">Normal</span>
-          </div>
+              <span class="stat-label">ECHO</span>
+              <span id="eternal-legacy-text" class="stat-value eternal-legacy-value">—</span>
+            </div>
+            <div
+              class="stat-group ascension-hud"
+              id="ascension-hud"
+              style="display: none"
+              title="Legacy Points — ascend veterans at era transitions"
+            >
+              <span class="stat-label">LEGACY</span>
+              <span id="ascension-text" class="stat-value ascension-value">—</span>
+            </div>
+            <div
+              class="stat-group thematic-synergy-hud"
+              id="thematic-synergy-hud"
+              style="display: none"
+              title="Cross-era thematic synergy from your medieval foundation path"
+            >
+              <span class="stat-label">SYNERGY</span>
+              <span id="thematic-synergy-text" class="stat-value thematic-synergy-value">—</span>
+            </div>
+            <div
+              class="stat-group power-fantasy-hud"
+              id="power-fantasy-hud"
+              style="display: none"
+              title="Hybrid power fantasy — apex capstone for pure medieval DNA"
+            >
+              <span class="stat-label">APEX</span>
+              <span id="power-fantasy-text" class="stat-value power-fantasy-value">—</span>
+            </div>
+            <div
+              class="stat-group crown-thread-hud"
+              id="crown-thread-hud"
+              style="display: none"
+              title="The Ancient Crown — same realm evolving across cosmic time"
+            >
+              <span class="stat-label">CROWN</span>
+              <span id="crown-thread-text" class="stat-value crown-thread-value">—</span>
+            </div>
+            <div
+              class="stat-group tech-branch-hud"
+              id="tech-branch-hud"
+              style="display: none"
+              title="Giant branching tech tree — root locked at wave 50"
+            >
+              <span class="stat-label">TECH</span>
+              <span id="tech-branch-text" class="stat-value tech-branch-value">—</span>
+            </div>
+            <div
+              class="stat-group pacing-tools-hud"
+              id="pacing-tools-hud"
+              style="display: none"
+              title="Simulation speed, pause state, and queued notifications"
+            >
+              <span class="stat-label">PACING</span>
+              <span id="pacing-tools-text" class="stat-value pacing-tools-value">—</span>
+            </div>
+            <div class="stat-group cmd-hud">
+              <span class="stat-label">COMMAND</span>
+              <span id="cmd-text" class="stat-value cmd-value">—</span>
+            </div>
+            <div class="stat-group threat-hud">
+              <span class="stat-label">THREAT</span>
+              <span id="threat-text" class="stat-value threat-value">N</span>
+            </div>
+            <div class="stat-group host-hud">
+              <span class="stat-label">HOST</span>
+              <span
+                id="host-faction-text"
+                class="stat-value host-value"
+                title="Enemy faction evolution tiers"
+                >—</span
+              >
+            </div>
+            <div class="stat-group control-hud" id="control-hud" style="display: none">
+              <span class="stat-label">CONTROL</span>
+              <span
+                id="control-text"
+                class="stat-value control-value"
+                title="Hostile map control after wave 200"
+                >—</span
+              >
+            </div>
+            <div class="stat-group realm-hud" id="realm-hud" style="display: none">
+              <span class="stat-label">REALM</span>
+              <span
+                id="realm-biome-text"
+                class="stat-value realm-value"
+                title="Living planet biomes"
+                >—</span
+              >
+            </div>
+            <div class="stat-group planet-event-hud" id="planet-event-hud" style="display: none">
+              <span class="stat-label">PLANET</span>
+              <span
+                id="planet-event-text"
+                class="stat-value planet-event-value"
+                title="Dynamic map event"
+                >—</span
+              >
+            </div>
+            <div class="stat-group intel-hud">
+              <span class="stat-label">INTEL</span>
+              <span id="wave-intel-text" class="stat-value intel-value" title="">—</span>
+            </div>
+            <div
+              class="stat-group streak-hud"
+              id="streak-hud"
+              style="display: none"
+              title="Current kill streak"
+            >
+              <span class="stat-label">STREAK</span>
+              <span id="streak-text" class="stat-value streak-value">0</span>
+            </div>
+            <div class="stat-group syn-hud" id="syn-hud" style="display: none">
+              <span class="stat-label">SYN</span>
+              <span id="syn-text" class="stat-value syn-value" title="">—</span>
+            </div>
+            <div class="stat-group diff-hud">
+              <span class="stat-label">DIFF</span>
+              <span id="diff-text" class="stat-value diff-value">Normal</span>
+            </div>
           </div>
           <div class="top-bar-row top-bar-actions">
             <button
-            id="top-pause-btn"
-            class="pause-top-btn"
-            title="Pause menu (Esc)"
-            aria-label="Pause menu"
-          >
-            ⏸
-          </button>
-          <button id="top-settings-btn" class="settings-top-btn" title="Settings">⚙</button>
-          <button id="sound-toggle" class="sound-top-btn" title="Toggle sound (V)">🔊</button>
-          <button
-            id="faction-intel-btn"
-            class="ency-top-btn faction-intel-top-btn"
-            title="Threat Map — faction evolution intel"
-          >
-            🗺
-          </button>
-          <button id="encyclopedia-btn" class="ency-top-btn" title="Encyclopedia (I)">📖</button>
-          <button id="achievements-btn" class="ach-top-btn" title="Achievements (A)">
-            🏆 <span id="ach-top-count">0/1450</span>
-            <span class="ach-top-progress"><span id="ach-top-progress-fill"></span></span>
-          </button>
-          <button
-            id="creative-panel-toggle"
-            class="creative-top-btn"
-            title="Creative Lab (P)"
-            style="display: none"
-          >
-            🧪
-          </button>
-          <button
-            id="perf-toggle"
-            class="perf-top-btn"
-            title="Performance monitor (F3)"
-            aria-label="Performance monitor"
-          >
-            📊
-          </button>
+              id="speed-toggle"
+              class="meta-btn cmd-top-btn"
+              title="Game speed — click to cycle 1× to 10× (hotkey ])"
+            >
+              SPEED: 1×
+            </button>
+            <button
+              id="hunt-toggle"
+              class="meta-btn cmd-top-btn"
+              title="Hunt mode — troops seek enemies on their own (hotkey H)"
+            >
+              HUNT: ON
+            </button>
+            <button
+              id="top-pause-btn"
+              class="pause-top-btn"
+              title="Pause menu (Esc)"
+              aria-label="Pause menu"
+            >
+              ⏸
+            </button>
+            <button id="top-settings-btn" class="settings-top-btn" title="Settings">⚙</button>
+            <button id="sound-toggle" class="sound-top-btn" title="Toggle sound (V)">🔊</button>
+            <button
+              id="faction-intel-btn"
+              class="ency-top-btn faction-intel-top-btn"
+              title="Threat Map — faction evolution intel"
+            >
+              🗺
+            </button>
+            <button id="encyclopedia-btn" class="ency-top-btn" title="Encyclopedia (I)">📖</button>
+            <button id="achievements-btn" class="ach-top-btn" title="Achievements (A)">
+              🏆 <span id="ach-top-count">0/1450</span>
+              <span class="ach-top-progress"><span id="ach-top-progress-fill"></span></span>
+            </button>
+            <button
+              id="creative-panel-toggle"
+              class="creative-top-btn"
+              title="Creative Lab (P)"
+              style="display: none"
+            >
+              🧪
+            </button>
+            <button
+              id="perf-toggle"
+              class="perf-top-btn"
+              title="Performance monitor (F3)"
+              aria-label="Performance monitor"
+            >
+              📊
+            </button>
           </div>
         </div>
         <div id="perf-overlay" class="perf-overlay" aria-live="polite">
@@ -930,9 +1052,7 @@
               ✕
             </button>
           </div>
-          <p class="creative-panel-sub">
-            Sandbox playtest — like BTD6 practice mode. No achievements, no game over.
-          </p>
+          <p class="creative-panel-sub">Sandbox playtest. No achievements, no game over.</p>
           <p id="creative-mastery-hint" class="creative-panel-sub creative-mastery-hint"></p>
           <div class="creative-section">
             <div class="creative-section-head">SANDBOX RULES</div>
@@ -1045,22 +1165,46 @@
             />
             <p id="level-editor-summary" class="creative-hint"></p>
             <div class="level-editor-tools">
-              <button type="button" class="creative-btn level-tool-btn active" data-level-tool="level_select">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn active"
+                data-level-tool="level_select"
+              >
                 Select
               </button>
-              <button type="button" class="creative-btn level-tool-btn" data-level-tool="level_paint_tree">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn"
+                data-level-tool="level_paint_tree"
+              >
                 Tree
               </button>
-              <button type="button" class="creative-btn level-tool-btn" data-level-tool="level_paint_rock">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn"
+                data-level-tool="level_paint_rock"
+              >
                 Rock
               </button>
-              <button type="button" class="creative-btn level-tool-btn" data-level-tool="level_paint_barricade">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn"
+                data-level-tool="level_paint_barricade"
+              >
                 Barricade
               </button>
-              <button type="button" class="creative-btn level-tool-btn" data-level-tool="level_erase">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn"
+                data-level-tool="level_erase"
+              >
                 Erase
               </button>
-              <button type="button" class="creative-btn level-tool-btn" data-level-tool="level_move">
+              <button
+                type="button"
+                class="creative-btn level-tool-btn"
+                data-level-tool="level_move"
+              >
                 Move
               </button>
             </div>
@@ -1078,7 +1222,9 @@
             <div class="creative-row">
               <select id="level-editor-library" class="creative-select wide-select"></select>
               <button type="button" id="level-editor-load" class="creative-btn">Load</button>
-              <button type="button" id="level-editor-save" class="creative-btn primary">Save</button>
+              <button type="button" id="level-editor-save" class="creative-btn primary">
+                Save
+              </button>
             </div>
             <div class="creative-btn-row">
               <button type="button" id="level-editor-new" class="creative-btn">New Blank</button>
@@ -1090,8 +1236,12 @@
               </button>
             </div>
             <div class="creative-btn-row">
-              <button type="button" id="level-editor-export" class="creative-btn">Export JSON</button>
-              <button type="button" id="level-editor-import" class="creative-btn">Import JSON</button>
+              <button type="button" id="level-editor-export" class="creative-btn">
+                Export JSON
+              </button>
+              <button type="button" id="level-editor-import" class="creative-btn">
+                Import JSON
+              </button>
             </div>
             <textarea
               id="level-editor-import-area"
@@ -1375,89 +1525,101 @@
         </button>
         <div class="menu-content menu-scroll">
           <h1 class="game-title">MYTH <span class="accent">&</span> BLOOD</h1>
-          <p class="subtitle">Hold the line · Forge a dynasty · Rule the stars</p>
-          <button
-            id="menu-settings-btn"
-            class="menu-btn small-btn menu-settings-prominent"
-            type="button"
-          >
-            ⚙ SETTINGS
-          </button>
-          <canvas id="title-art" width="400" height="240"></canvas>
+          <p class="subtitle">Hold the line · Forge a dynasty</p>
           <div id="difficulty-picker">
             <div class="diff-header">DIFFICULTY</div>
             <div class="diff-buttons">
               <button class="diff-btn" data-diff="baby">Baby</button>
               <button class="diff-btn selected" data-diff="normal">Normal</button>
               <button class="diff-btn" data-diff="chad">Chad</button>
-              <button class="diff-btn" data-diff="doomslayer">Doomslayer</button>
+              <button class="diff-btn" data-diff="doomslayer">Hellbane</button>
             </div>
             <p id="diff-tagline" class="diff-tagline">Balanced survival — outlast the hordes.</p>
             <p id="advanced-diff-pct" class="diff-pct-display">Effective: 100%</p>
             <button id="advanced-diff-btn" class="menu-btn small-btn">ADVANCED DIFFICULTY</button>
           </div>
           <div id="game-modes-picker" class="game-modes-picker"></div>
-          <div id="online-multiplayer-panel" class="online-multiplayer-panel"></div>
-          <div id="onboarding-panel" class="onboarding-panel" hidden></div>
-          <div id="crown-legacies-section" class="crown-legacies-section">
-            <div class="diff-header">CROWN LEGACIES</div>
-            <p id="crown-legacies-summary" class="crown-legacies-summary">
-              Complete runs to unlock perks
-            </p>
-            <div id="crown-legacies-list" class="crown-legacies-list"></div>
-            <div id="crown-heirs-block" class="crown-heirs-block" style="display: none">
-              <div class="crown-heirs-label">HONOR HEIRS</div>
-              <div id="crown-heirs-list" class="crown-heirs-list"></div>
-            </div>
-            <p class="panel-hint crown-legacies-hint">
-              Equip up to 3 passive legacies · 2 honor heirs carry into new runs
-            </p>
-          </div>
-          <div id="eternal-legacy-section" class="eternal-legacy-section">
-            <div class="diff-header">CROWN OF AGES</div>
-            <p class="eternal-legacy-subtitle">Echoes of the Past</p>
-            <p id="eternal-legacy-summary" class="eternal-legacy-summary">
-              Invest Echo Shards to ascend paths from medieval to galactic eras
-            </p>
-            <div id="eternal-legacy-branches" class="eternal-legacy-branches"></div>
-            <div id="eternal-legacy-tree" class="eternal-legacy-tree"></div>
-            <p class="panel-hint eternal-legacy-hint">
-              Early units ascend — archers, heroes, and evolved troops stay powerful through every era
-            </p>
-          </div>
-          <div class="mode-import-row">
-            <input
-              id="mode-import-input"
-              class="panel-search"
-              type="text"
-              placeholder="Paste MYTH: seed share code…"
-              autocomplete="off"
-            />
-            <button id="mode-import-seed" class="menu-btn small-btn">IMPORT SEED</button>
-          </div>
-          <p class="launch-hint">
-            Double-click <strong>Play Myth and Blood.bat</strong> to run as a desktop app — no
-            server needed.
-          </p>
-          <p class="launch-hint audio-hint">
-            Sound is procedural (no files). Click <strong>Begin Defense</strong> or anywhere to
-            unlock audio — toggle with 🔊 or <kbd>V</kbd>.
-          </p>
           <button id="start-btn" class="menu-btn primary">BEGIN DEFENSE</button>
-          <button id="creative-start-btn" class="menu-btn creative-menu-btn">CREATIVE MODE</button>
-          <button id="howto-btn" class="menu-btn">HOW TO PLAY</button>
-          <button id="howto-interactive-btn" class="menu-btn small-btn">
-            INTERACTIVE TUTORIAL
+          <div class="menu-secondary-row">
+            <button id="creative-start-btn" class="menu-btn small-btn creative-menu-btn">
+              CREATIVE MODE
+            </button>
+            <button id="howto-btn" class="menu-btn small-btn">HOW TO PLAY</button>
+            <button id="howto-interactive-btn" class="menu-btn small-btn">TUTORIAL</button>
+          </div>
+          <div id="onboarding-panel" class="onboarding-panel" hidden></div>
+          <canvas id="title-art" width="400" height="240"></canvas>
+          <details class="menu-section">
+            <summary>Legacies &amp; carry-over perks</summary>
+            <div id="crown-legacies-section" class="crown-legacies-section">
+              <div class="diff-header">CROWN LEGACIES</div>
+              <p id="crown-legacies-summary" class="crown-legacies-summary">
+                Complete runs to unlock perks
+              </p>
+              <div id="crown-legacies-list" class="crown-legacies-list"></div>
+              <div id="crown-heirs-block" class="crown-heirs-block" style="display: none">
+                <div class="crown-heirs-label">HONOR HEIRS</div>
+                <div id="crown-heirs-list" class="crown-heirs-list"></div>
+              </div>
+              <p class="panel-hint crown-legacies-hint">
+                Equip up to 3 passive legacies · 2 honor heirs carry into new runs
+              </p>
+            </div>
+            <div id="eternal-legacy-section" class="eternal-legacy-section">
+              <div class="diff-header">CROWN OF AGES</div>
+              <p class="eternal-legacy-subtitle">Echoes of the Past</p>
+              <p id="eternal-legacy-summary" class="eternal-legacy-summary">
+                Invest Echo Shards to strengthen your paths across runs
+              </p>
+              <div id="eternal-legacy-branches" class="eternal-legacy-branches"></div>
+              <div id="eternal-legacy-tree" class="eternal-legacy-tree"></div>
+              <p class="panel-hint eternal-legacy-hint">
+                Early units ascend — archers, heroes, and evolved troops stay powerful through every
+                era
+              </p>
+            </div>
+          </details>
+          <details class="menu-section">
+            <summary>Ribbons <span id="ribbon-count" class="ribbon-count"></span></summary>
+            <p class="ribbon-intro">
+              Earned across all your runs. Each one gives a small bonus on every run after.
+            </p>
+            <div id="ribbon-list" class="ribbon-list"></div>
+          </details>
+          <details class="menu-section">
+            <summary>Share codes: co-op, duels &amp; seeds</summary>
+            <div id="online-multiplayer-panel" class="online-multiplayer-panel"></div>
+            <div class="mode-import-row">
+              <input
+                id="mode-import-input"
+                class="panel-search"
+                type="text"
+                placeholder="Paste MYTH: seed share code…"
+                autocomplete="off"
+              />
+              <button id="mode-import-seed" class="menu-btn small-btn">IMPORT SEED</button>
+            </div>
+          </details>
+          <div class="menu-secondary-row">
+            <button id="menu-achievements-btn" class="menu-btn small-btn">ACHIEVEMENTS</button>
+            <button id="menu-encyclopedia-btn" class="menu-btn small-btn">ENCYCLOPEDIA</button>
+            <button id="menu-settings-btn" class="menu-btn small-btn" type="button">
+              SETTINGS
+            </button>
+            <button id="menu-cheats-btn" class="menu-btn small-btn secret-menu-btn">CHEATS</button>
+          </div>
+          <button id="menu-quit-btn" class="menu-btn small-btn menu-quit-btn" hidden>
+            QUIT TO DESKTOP
           </button>
-          <button id="menu-achievements-btn" class="menu-btn">ACHIEVEMENTS</button>
-          <button id="menu-encyclopedia-btn" class="menu-btn">ENCYCLOPEDIA</button>
-          <button id="menu-cheats-btn" class="menu-btn secret-menu-btn">CHEATS</button>
-          <button id="menu-quit-btn" class="menu-btn menu-quit-btn">QUIT TO DESKTOP</button>
+          <p class="launch-hint audio-hint">
+            Sound is generated in the browser. Toggle with 🔊 or <kbd>V</kbd>.
+          </p>
           <div id="howto-panel" class="hidden">
             <p>
-              <strong>The Journey</strong> — Stage 1 wave defense → Stage 2 empire growth (w100) →
-              Stage 3 kingdom map / Shift+G (w150) → Stage 4 galaxy / Shift+U (w400) → Stage 5 planet
-              conquest (w500). Click <strong>LAYERS</strong> chips to open unlocked maps.
+              <strong>The Journey</strong> — hold the north in the early waves, enter the Academy
+              Era at wave 100 (train troops instead of buying them, found settlements), then face
+              enemy settlements and wider maps from wave 200. <strong>SPEED</strong> and
+              <strong>HUNT</strong> are in the top bar.
             </p>
             <p>
               <strong>TP</strong> is awarded once per round when you clear a wave (+8, scaling).
@@ -1492,7 +1654,7 @@
               <strong>Research Lab</strong> (45 TP, 2 Builders): field-analyzes fallen enemies for
               Science Points — grunts, elites, monsters, and bosses each pay more; gain is capped
               per wave (extra labs raise the cap). Unlock advanced troops, buildings, academies,
-              settlements, evolved barracks, and eventually the Doomslayer.
+              settlements, evolved barracks, and eventually the Hellbane.
             </p>
             <p><strong>Mess Hall</strong> (5 TP): steady morale boost to troops nearby.</p>
             <p>
@@ -1504,8 +1666,7 @@
               poison.
             </p>
             <p>
-              <strong>Difficulty</strong>: Baby, Normal, Chad, or Doomslayer — pick before you
-              begin.
+              <strong>Difficulty</strong>: Baby, Normal, Chad, or Hellbane — pick before you begin.
             </p>
             <p>
               <strong>Waves</strong> never end — each wave brings more, tougher enemies. Siege
@@ -1576,20 +1737,19 @@
             </p>
             <p>
               <strong>Grand Coliseum / Champions</strong>: win a campaign while fielding showmanship
-              champions for most waves — attitude, charisma, and entertainment; or join the 316
-              Club at 316 achievement unlocks.
+              champions for most waves — attitude, charisma, and entertainment; or join the 316 Club
+              at 316 achievement unlocks.
             </p>
             <p>
-              <strong>Doomslayer hero</strong> (10,000 TP): survive wave 200 on Doomslayer
-              difficulty.
+              <strong>Hellbane hero</strong> (10,000 TP): survive wave 200 on Hellbane difficulty.
             </p>
             <p>
-              <strong>Void Residue Crew</strong>: survive wave 150 on Doomslayer without
-              losing a building to the endless horde.
+              <strong>Void Residue Crew</strong>: survive wave 150 on Hellbane without losing a
+              building to the endless horde.
             </p>
             <p>
-              <strong>First Circle</strong>: win a campaign with a castle compound — no enemy
-              may ever breach the inner keep.
+              <strong>First Circle</strong>: win a campaign with a castle compound — no enemy may
+              ever breach the inner keep.
             </p>
             <p>
               <strong>Orbital Vanguard</strong>: win a campaign with your General alive — promote
@@ -1600,8 +1760,8 @@
               structures — siege hamlets, outposts, and northern holds.
             </p>
             <p>
-              <strong>Ninefold March</strong>: win a campaign with high morale across your
-              entire army for most waves — hope against the darkness.
+              <strong>Ninefold March</strong>: win a campaign with high morale across your entire
+              army for most waves — hope against the darkness.
             </p>
             <p>
               <strong>Iron Pit Guild</strong>: win on Chad difficulty or higher with a primarily
@@ -1613,13 +1773,12 @@
               alliances.
             </p>
             <p>
-              <strong>North Star Ascetics</strong>: win after a lone hero — and only
-              that hero — lands the killing blow on a named warlord. Your fate was sealed before the strike.
+              <strong>North Star Ascetics</strong>: win after a lone hero — and only that hero —
+              lands the killing blow on a named warlord. Your fate was sealed before the strike.
             </p>
             <p>
-              <strong>Skyburst Order</strong>: reach wave 200+, defeat the planetary
-              threat boss, and field a high-ki army when the Worldheart falls — protect the
-              planet.
+              <strong>Skyburst Order</strong>: reach wave 200+, defeat the planetary threat boss,
+              and field a high-ki army when the Worldheart falls — protect the planet.
             </p>
             <p>
               <strong>Crimson Legions & Rift Cult</strong>: win on Chad difficulty or higher while
@@ -1628,10 +1787,10 @@
               Eternal Crusade unlocks both Crimson Legions and the Rift Cult.
             </p>
             <p>
-              <strong>Voicebound Pact</strong>: win after wave 100+ with one Immortal veteran
-              from each Eternal Path — Martial, Arcane, Tech, and Mythic — and defeat a major boss
-              using a voice shout strike or wyrmcaller-style hero ability. Unlocks voice shouts
-              and the Dragon Moot roster.
+              <strong>Voicebound Pact</strong>: win after wave 100+ with one Immortal veteran from
+              each Eternal Path — Martial, Arcane, Tech, and Mythic — and defeat a major boss using
+              a voice shout strike or wyrmcaller-style hero ability. Unlocks voice shouts and the
+              Dragon Moot roster.
             </p>
           </div>
         </div>
@@ -1908,8 +2067,8 @@
             <div class="settings-group">
               <div class="settings-group-head">KINGDOM BANNER</div>
               <p class="settings-hint">
-                Customize the evolution banner shown in the HUD. Pattern can follow kingdom growth or
-                stay fixed.
+                Customize the evolution banner shown in the HUD. Pattern can follow kingdom growth
+                or stay fixed.
               </p>
               <div class="cosmetics-banner-row">
                 <canvas
@@ -1985,8 +2144,8 @@
               <div class="settings-group-head">ANONYMOUS ANALYTICS</div>
               <p class="analytics-intro">
                 Help balance the game by sharing anonymous strategy trends and where runs end. No
-                account, names, or save files — only loadouts, formations, wave counts, and outcomes.
-                Off by default.
+                account, names, or save files — only loadouts, formations, wave counts, and
+                outcomes. Off by default.
               </p>
               <label class="settings-row check"
                 ><input type="checkbox" id="set-analytics-optin" /> Share anonymous run analytics
@@ -2008,9 +2167,8 @@
             <div class="settings-group">
               <div class="settings-group-head">ERROR REPORTING</div>
               <p class="analytics-intro">
-                Crash logs are always kept locally (last 200 events) so you can export a report.
-                Opt in to also send anonymous error summaries when online — no saves or personal
-                data.
+                Crash logs are always kept locally (last 200 events) so you can export a report. Opt
+                in to also send anonymous error summaries when online — no saves or personal data.
               </p>
               <label class="settings-row check"
                 ><input type="checkbox" id="set-error-reporting-optin" /> Share anonymous crash
@@ -2072,11 +2230,12 @@
                 ><input type="checkbox" id="set-wave-summary" checked /> Wave clear summary</label
               >
               <label class="settings-row check"
-                ><input type="checkbox" id="set-danger-vignette" checked /> Danger vignette when line
-                is pressed</label
+                ><input type="checkbox" id="set-danger-vignette" checked /> Danger vignette when
+                line is pressed</label
               >
               <label class="settings-row check"
-                ><input type="checkbox" id="set-low-hp-pulse" checked /> Low-HP unit pulse rings</label
+                ><input type="checkbox" id="set-low-hp-pulse" checked /> Low-HP unit pulse
+                rings</label
               >
             </div>
             <div class="settings-group">
@@ -2133,7 +2292,7 @@
         <div class="menu-content advanced-diff-panel">
           <h2 class="adv-title">ADVANCED DIFFICULTY</h2>
           <p class="adv-subtitle">
-            Stack modifiers on your base difficulty. Baby 50% · Normal 100% · Chad 150% · Doomslayer
+            Stack modifiers on your base difficulty. Baby 50% · Normal 100% · Chad 150% · Hellbane
             200%. Includes Fog of War, Resource Scarcity, and era presets.
           </p>
           <p id="advanced-diff-pct-panel" class="diff-pct-display">Effective: 100%</p>
@@ -2177,6 +2336,7 @@
           </div>
           <p id="crossover-selected-detail" class="wwe-detail">Select an operative below.</p>
           <div id="crossover-roster-grid" class="wwe-roster-grid"></div>
+          <div class="operative-skills-panel"></div>
           <button id="crossover-close" class="menu-btn">CLOSE</button>
         </div>
       </div>
@@ -2191,8 +2351,9 @@
             <button id="wwe-build-btn" class="menu-btn">SELECT GRAND COLISEUM BUILD</button>
             <button id="wwe-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
           </div>
-          <p id="wwe-selected-detail" class="wwe-detail">Select a superstar below.</p>
+          <p id="wwe-selected-detail" class="wwe-detail">Select a champion below.</p>
           <div id="wwe-roster-grid" class="wwe-roster-grid"></div>
+          <div class="operative-skills-panel"></div>
           <button id="wwe-close" class="menu-btn">CLOSE</button>
         </div>
       </div>
@@ -2358,6 +2519,7 @@
     <script src="js/game-modes.js"></script>
     <script src="js/onboarding.js"></script>
     <script src="js/legacy.js"></script>
+    <script src="js/siege-loop.js"></script>
     <script src="js/crown-legacies.js"></script>
     <script src="js/foundational-medieval-layer.js"></script>
     <script src="js/eternal-legacy-tree.js"></script>

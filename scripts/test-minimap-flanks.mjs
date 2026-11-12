@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const sb = { Math, Object, Array, document: { getElementById: () => null } };
 sb.window = sb;
@@ -13,15 +14,10 @@ sb.globalThis = sb;
 const code = readFileSync(join(JS, 'visual-polish.js'), 'utf8');
 const VP = vm.runInContext(`${code}; VisualPolish;`, vm.createContext(sb));
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
-ok(!VP.getMinimapFlankLabel({ unlockedAttackSides: ['north'], attackSides: ['north'] }), 'north-only has no label');
+ok(
+  !VP.getMinimapFlankLabel({ unlockedAttackSides: ['north'], attackSides: ['north'] }),
+  'north-only has no label'
+);
 
 const multi = VP.getMinimapFlankLabel({
   unlockedAttackSides: ['north', 'east', 'west'],
@@ -36,4 +32,4 @@ const quiet = VP.getMinimapFlankLabel({
 });
 ok(quiet && quiet.includes('▼') && quiet.includes('·'), 'quiet flanks marked with dot');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

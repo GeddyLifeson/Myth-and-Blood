@@ -125,7 +125,11 @@ const MultiFrontSiege = (() => {
     }
     const sides = unlockedSides?.length ? unlockedSides : ['north'];
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const coordChance = 0.52 + Math.min(0.28, factions.length * 0.05) + academyBlend * 0.12;
     const mode = rng() < coordChance ? 'coordinated' : 'competing';
     const takenFronts = new Set();
@@ -272,13 +276,6 @@ const MultiFrontSiege = (() => {
     };
   }
 
-  function mergeWaveSides(plan, rolledSides) {
-    if (!plan?.waveSides?.length) return rolledSides;
-    if (plan.waveSides.length >= 2) return plan.waveSides;
-    const merged = [...new Set([...(rolledSides || []), ...plan.waveSides])];
-    return merged.length ? merged : rolledSides;
-  }
-
   function checkWaveAnnouncement(wave, activeCount, hooks = {}) {
     if (
       announcedMultiFront ||
@@ -323,20 +320,15 @@ const MultiFrontSiege = (() => {
 
   return {
     MULTI_FRONT_MIN_WAVE,
-    MULTI_FRONT_MIN_FACTIONS,
     FRONT_LABELS,
-    SIEGE_DOCTRINES,
-    FACTION_DOCTRINES,
     resetRun,
     buildFrontPlan,
     getCurrentPlan,
     pickSpawnSide,
     pickCounterRaidTarget,
     resolveCounterRaidSpawn,
-    mergeWaveSides,
     checkWaveAnnouncement,
     getStateSnapshot,
-    formatIntel,
   };
 })();
 

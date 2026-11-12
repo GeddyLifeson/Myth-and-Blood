@@ -24,6 +24,12 @@ const GameModes = (() => {
       desc: 'Random advanced modifiers rolled each run — no manual tweaking mid-campaign.',
     },
     {
+      id: 'warband',
+      label: 'Warband',
+      subtitle: 'Small squad',
+      desc: 'Soldiers cost double, and each one is far tougher and hits harder. A small squad where every death hurts.',
+    },
+    {
       id: 'timed',
       label: 'Timed Blitz',
       desc: 'Shorter night prep (50% time). Race the clock to higher waves.',
@@ -37,14 +43,7 @@ const GameModes = (() => {
       id: 'academy_era',
       label: 'Academy Era',
       subtitle: 'Jump to wave 100+',
-      desc: 'Start at wave 100–200 on the same fixed map — academies, hamlets, and heavier northern assaults.',
-    },
-    {
-      id: 'planet_conquest',
-      label: 'Planet Conquest',
-      subtitle: 'Shelved',
-      desc: 'Planet conquest layer removed. Use Campaign or Survival for wave defense.',
-      future: true,
+      desc: 'Start at wave 100–200 on the grown late-game map — academies, hamlets, and heavier northern assaults.',
     },
     {
       id: 'async_coop',
@@ -296,7 +295,8 @@ const GameModes = (() => {
       if (!room) OnlineMultiplayer.createCoopRoom({ difficulty: difficultyId || 'normal' });
     } else if (modeId === 'pvp_endless' && typeof OnlineMultiplayer !== 'undefined') {
       let match = OnlineMultiplayer.getActivePvpMatch();
-      if (!match) match = OnlineMultiplayer.createPvpMatch({ difficulty: difficultyId || 'normal' });
+      if (!match)
+        match = OnlineMultiplayer.createPvpMatch({ difficulty: difficultyId || 'normal' });
       seed = match.seed;
       menu.seed = seed;
       modeId = 'survival';
@@ -318,8 +318,7 @@ const GameModes = (() => {
         : null;
 
     const ironman =
-      !!menu.ironman &&
-      !['async_coop', 'pvp_endless', 'pve_horde'].includes(menu.modeId);
+      !!menu.ironman && !['async_coop', 'pvp_endless', 'pve_horde'].includes(menu.modeId);
 
     const pathPreset =
       menu.pathPreset && ['martial', 'arcane', 'tech', 'mythic'].includes(menu.pathPreset)
@@ -427,15 +426,6 @@ const GameModes = (() => {
     return !isIronman();
   }
 
-  /** Economy / raze-settlements victory disabled — pure wave survival. */
-  function allowsEconomyVictory() {
-    return false;
-  }
-
-  function isPlanetConquestMode() {
-    return session?.modeId === 'planet_conquest';
-  }
-
   function getNightPrepMult() {
     return session?.timedNightMult ?? 1;
   }
@@ -452,10 +442,7 @@ const GameModes = (() => {
   }
 
   function recordResult(wave, kills, victory, difficultyPercent) {
-    if (
-      !session ||
-      (session.modeId === 'campaign' && !session.challengeId && !session.onlineCoop)
-    )
+    if (!session || (session.modeId === 'campaign' && !session.challengeId && !session.onlineCoop))
       return;
     const score = computeScore(wave, kills, difficultyPercent);
     if (session.onlinePvp && typeof OnlineMultiplayer !== 'undefined') {
@@ -531,7 +518,7 @@ const GameModes = (() => {
     else tips.push('Waves 200+: enemy RTS — hunt engineers, siege enemy settlements first.');
 
     if (difficultyId === 'doomslayer')
-      tips.push('Doomslayer base: expect faster spawns — protect academies and barracks.');
+      tips.push('Hellbane base: expect faster spawns — protect academies and barracks.');
     if (session?.ironman)
       tips.push('Ironman: no quick save — scout and rally before committing TP.');
 
@@ -734,14 +721,14 @@ const GameModes = (() => {
             : menu.modeId === 'academy_era'
               ? 'academy_era'
               : menu.modeId === 'planet_conquest'
-              ? 'planet_conquest'
-              : menu.modeId === 'pve_horde'
-                ? 'pve_horde'
-                : menu.modeId === 'pvp_endless'
-                  ? 'pvp_endless'
-                  : menu.modeId === 'async_coop'
-                    ? 'async_coop'
-                    : null;
+                ? 'planet_conquest'
+                : menu.modeId === 'pve_horde'
+                  ? 'pve_horde'
+                  : menu.modeId === 'pvp_endless'
+                    ? 'pvp_endless'
+                    : menu.modeId === 'async_coop'
+                      ? 'async_coop'
+                      : null;
     if (!key) {
       el.innerHTML = '';
       return;
@@ -797,14 +784,8 @@ const GameModes = (() => {
     if (!menu.seed) menu.recommendedStartId = null;
   }
 
-  function clearMenuSeed() {
-    menu.seed = '';
-    menu.recommendedStartId = null;
-  }
-
   return {
     MODES,
-    ACADEMY_START_OPTIONS,
     load,
     save,
     init,
@@ -814,29 +795,17 @@ const GameModes = (() => {
     endSession,
     restoreSession,
     getSession,
-    isIronman,
     canQuickSave,
     canRestartWave,
-    allowsEconomyVictory,
-    isPlanetConquestMode,
     getNightPrepMult,
     tickElapsed,
-    computeScore,
     recordResult,
-    getDailyChallenge,
-    getWeeklyChallenge,
-    getLeaderboard,
-    getPersonalBest,
     getScalingAdvice,
-    getScalingBreakdown,
-    exportSeedShare,
-    importSeedShare,
     random,
     createRng,
     setMenuMode,
     getMenu,
     setMenuSeed,
-    clearMenuSeed,
   };
 })();
 

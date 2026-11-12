@@ -1,5 +1,5 @@
 /**
- * Persistent unlocks — Grand Coliseum, Doomslayer hero, cheat flags.
+ * Persistent unlocks — Grand Coliseum, Hellbane hero, cheat flags.
  */
 const MetaProgress = (() => {
   const STORAGE_KEY = 'myth-and-blood-meta-v1';
@@ -318,11 +318,11 @@ const MetaProgress = (() => {
       crossoverJojoUnlocked: false,
       crossoverFotnsUnlocked: false,
       crossoverDragonballUnlocked: false,
-    crossoverImperiumUnlocked: false,
-    crossoverCrystalUnlocked: false,
-    crossoverWarpUnlocked: false,
-    crossoverWarhammerUnlocked: false,
-    crossoverTesUnlocked: false,
+      crossoverImperiumUnlocked: false,
+      crossoverCrystalUnlocked: false,
+      crossoverWarpUnlocked: false,
+      crossoverWarhammerUnlocked: false,
+      crossoverTesUnlocked: false,
       cheatsUsed: [],
       wweRecruited: [],
       crossoverRecruited: [],
@@ -395,7 +395,6 @@ const MetaProgress = (() => {
     getCrossoverRecruited,
     getCheatsUsed,
     reset,
-    getData: () => ({ ...data }),
     getFactionMasteryTitles,
     getEarnedCreativeUnlocks,
     hasCreativeSkin,

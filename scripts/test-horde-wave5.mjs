@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(seed) {
   const noop = () => {};
@@ -154,7 +147,11 @@ const cx = Game.getWorldCenter();
 
 // Seed player army + buildings like waves 1–4 buildup.
 for (let i = 0; i < 12; i++) {
-  Game.creativeSpawnPlayerAt('footman', cx.x - 80 + (i % 4) * 40, cx.y + 60 + Math.floor(i / 4) * 28);
+  Game.creativeSpawnPlayerAt(
+    'footman',
+    cx.x - 80 + (i % 4) * 40,
+    cx.y + 60 + Math.floor(i / 4) * 28
+  );
 }
 for (let i = 0; i < 4; i++) {
   Game.creativeSpawnPlayerAt('archer', cx.x - 60 + i * 35, cx.y + 20);
@@ -220,8 +217,8 @@ console.log(
   `stats: maxUnits=${maxUnits} activeEnemies=${activeEnemies.length} elapsed=${elapsed}ms slowestTick=${slowestTick}ms`
 );
 
-if (failed) {
-  console.error(`\n${failed} horde-wave5 test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} horde-wave5 test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll horde-wave5 tests passed.');

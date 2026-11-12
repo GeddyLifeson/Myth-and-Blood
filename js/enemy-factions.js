@@ -477,14 +477,6 @@ const EnemyFactions = (() => {
     enemy_war_academy: 'mirror_empires',
   };
 
-  const SETTLEMENT_BUILDINGS = new Set([
-    'enemy_hamlet',
-    'enemy_merchant_guild',
-    'enemy_shadow_academy',
-    'enemy_war_academy',
-  ]);
-  const OUTPOST_BUILDINGS = new Set(['enemy_trade_outpost', 'enemy_quarry']);
-
   let announcedTiers = new Set();
 
   function resetRun() {
@@ -525,9 +517,7 @@ const EnemyFactions = (() => {
   function getActiveFactions(wave) {
     return Object.values(FACTIONS)
       .filter((f) => wave >= f.waveMin)
-      .filter(
-        (f) => !(typeof PlanetConquest !== 'undefined' && PlanetConquest.isFactionEliminated(f.id))
-      )
+      .filter((f) => !false)
       .map((f) => ({
         ...f,
         currentTier: getFactionTier(f.id, wave),
@@ -706,82 +696,6 @@ const EnemyFactions = (() => {
     return getActiveFactions(wave)
       .map((f) => `${f.shortName} S${f.currentTier.stage}`)
       .join(' · ');
-  }
-
-  function pickFactionBuilding(factionId, wave, opts = {}) {
-    const tier = getFactionTier(factionId, wave);
-    if (!tier?.buildings?.length) return null;
-    const economicFocus =
-      opts.economicFocus ||
-      (typeof FactionReputation !== 'undefined' &&
-        FactionReputation.getFactionModifiers(factionId, wave).economicFocus);
-    if (economicFocus) {
-      const trade = tier.buildings.filter(
-        (t) => t === 'enemy_trade_outpost' || t === 'enemy_quarry'
-      );
-      if (trade.length && Math.random() < 0.82) {
-        return trade[Math.floor(Math.random() * trade.length)];
-      }
-    }
-    if (tier.stage >= 4) {
-      const settlements = tier.buildings.filter((t) => SETTLEMENT_BUILDINGS.has(t));
-      if (settlements.length && Math.random() < 0.58) {
-        return settlements[Math.floor(Math.random() * settlements.length)];
-      }
-    }
-    if (tier.stage === 3) {
-      const outposts = tier.buildings.filter((t) => OUTPOST_BUILDINGS.has(t));
-      if (outposts.length && Math.random() < 0.72) {
-        return outposts[Math.floor(Math.random() * outposts.length)];
-      }
-      const hamlets = tier.buildings.filter((t) => t === 'enemy_hamlet');
-      if (hamlets.length && wave >= tier.waveMin + 12) {
-        return hamlets[0];
-      }
-    }
-    return tier.buildings[Math.floor(Math.random() * tier.buildings.length)];
-  }
-
-  function updateFactionKingdoms(wave, buildings, tryPlaceFn, opts = {}) {
-    if (!tryPlaceFn || wave < 10) return 0;
-    const capBonus = opts.capBonus || 0;
-    const intervalMult = opts.intervalMult || 1;
-    const forceStage3 = !!opts.forceStage3;
-    let placed = 0;
-    for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      const mods =
-        typeof PlayerCounterEvolution !== 'undefined'
-          ? PlayerCounterEvolution.getFactionModifiers(f.id, wave)
-          : { stagePenalty: 0, skipBuilding: false };
-      const rep =
-        typeof FactionReputation !== 'undefined'
-          ? FactionReputation.getFactionModifiers(f.id, wave)
-          : { buildingCapDelta: 0, buildingIntervalMult: 1, economicFocus: false };
-      if (mods.skipBuilding) continue;
-      const stage = forceStage3 ? Math.max(3, tier.stage) : tier.stage;
-      const effStage =
-        typeof PlayerCounterEvolution !== 'undefined'
-          ? PlayerCounterEvolution.getEffectiveStage(f.id, wave, stage)
-          : stage;
-      const buildStage = rep.economicFocus ? Math.max(2, effStage) : effStage;
-      if (buildStage < 3 || !tier.buildings?.length || !tier.buildingCap) continue;
-      const count = countFactionBuildings(buildings, f.id);
-      const cap = Math.max(
-        0,
-        tier.buildingCap + capBonus + (rep.buildingCapDelta || 0) - (mods.stagePenalty || 0)
-      );
-      if (count >= cap) continue;
-      const interval = Math.max(
-        3,
-        Math.floor((tier.buildInterval || 10) * intervalMult * (rep.buildingIntervalMult || 1))
-      );
-      if (wave % interval !== 0) continue;
-      const type = pickFactionBuilding(f.id, wave, { economicFocus: rep.economicFocus });
-      if (!type) continue;
-      if (tryPlaceFn(type, f.id)) placed++;
-    }
-    return placed;
   }
 
   function getSettlementRaidChance(wave, factionId, baseChance = 0.35) {
@@ -1080,7 +994,7 @@ const EnemyFactions = (() => {
           '',
           `Active factions: ${factionList}`,
           '',
-          'Faction reputation, counter-offensive doctrines, expeditions, and Planet Conquest elimination all interact with evolution timing — high hostility pulls tiers forward; truces and debuffs hold them back.',
+          'Faction reputation, counter-offensive doctrines, expeditions, and realm elimination all interact with evolution timing — high hostility pulls tiers forward; truces and debuffs hold them back.',
         ].join('\n'),
       },
       {
@@ -1100,7 +1014,7 @@ const EnemyFactions = (() => {
         body: [
           'Open the Threat Map via 🗺 in the top bar, FACTION INTEL in the right panel, or by clicking the HOST HUD.',
           '',
-          'Per-realm intel cards show: evolution stage (Grunts → Kingdom), tier tagline, northern building count, hostility stance (Cordial → Blood Feud), counter-offensive debuffs, multi-front flank assignment, and Planet Conquest sector %.',
+          'Per-realm intel cards show: evolution stage (Grunts → Kingdom), tier tagline, northern building count, hostility stance (Cordial → Blood Feud), counter-offensive debuffs, multi-front flank assignment, and The Long Siege sector %.',
           '',
           'Dormant factions display their unlock wave. Eliminated realms show CONQUERED and stop spawning. Stage 4 kingdoms badge COUNTER-RAIDS when they can strike your settlements.',
           '',
@@ -1169,10 +1083,7 @@ const EnemyFactions = (() => {
   return {
     FACTIONS,
     EVOLUTION_STAGES,
-    UNIT_FACTION,
-    BUILDING_FACTION,
     resetRun,
-    getEvolutionStageDef,
     getFactionDef,
     getFactionTier,
     getActiveFactions,
@@ -1184,10 +1095,8 @@ const EnemyFactions = (() => {
     biasHordeQueue,
     injectSubBosses,
     countFactionBuildings,
-    computeHostKingdomMeter,
     formatFactionRoster,
     formatActiveFactions,
-    updateFactionKingdoms,
     getSettlementRaidChance,
     processCounterRaids,
     checkTierAnnouncements,

@@ -42,7 +42,10 @@ const ThematicEraSynergies = (() => {
     ley_drives: { label: 'Ley Drives', desc: 'Ley-fed engines bend transit times.' },
     volley_ancestry: { label: 'Volley Ancestry', desc: 'Longbow spirits stack on every shot.' },
     honor_edge: { label: 'Honor Edge', desc: 'Sworn steel grows sharper each wave.' },
-    first_stand_blade: { label: 'First Stand Blade', desc: 'The founding battle empowers all ranks.' },
+    first_stand_blade: {
+      label: 'First Stand Blade',
+      desc: 'The founding battle empowers all ranks.',
+    },
     living_advisors: { label: 'Living Advisors', desc: 'Echo council whispers strategy.' },
     fleet_legends: { label: 'Fleet Legends', desc: 'Champion echoes command battle groups.' },
     dimensional_council: { label: 'Dimensional Council', desc: 'Crossover gods advise the crown.' },
@@ -51,7 +54,7 @@ const ThematicEraSynergies = (() => {
   const ECHO_DEFS = {
     goku: {
       id: 'goku',
-      label: 'Echo of the Saiyan Champion',
+      label: 'Echo of the Skyburst Champion',
       short: 'Kael Skyburst Echo',
       role: 'fleet_commander',
       cost: 16,
@@ -62,7 +65,7 @@ const ThematicEraSynergies = (() => {
     tank_dempsey: {
       id: 'tank_dempsey',
       label: 'Echo of the Siege Legend',
-      short: 'Dempsey Echo',
+      short: 'Vale Echo',
       role: 'advisor',
       cost: 14,
       playerDmgMult: 1.05,
@@ -131,10 +134,6 @@ const ThematicEraSynergies = (() => {
   }
 
   function resolveThematicPath() {
-    if (typeof GrandStrategy !== 'undefined') {
-      const id = GrandStrategy.getKingdomPathId?.();
-      if (id) return id;
-    }
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const run = FoundationalMedievalLayer.getRunSnapshot?.();
       if (run?.leading) return mapFoundationToPath(run.leading) || 'martial';
@@ -194,7 +193,11 @@ const ThematicEraSynergies = (() => {
         found.add(u.type);
       }
       if (u.honorName && !found.has('honored_veteran')) {
-        state.echoCandidates.push({ id: 'honored_veteran', ...ECHO_DEFS.honored_veteran, source: 'honor' });
+        state.echoCandidates.push({
+          id: 'honored_veteran',
+          ...ECHO_DEFS.honored_veteran,
+          source: 'honor',
+        });
         found.add('honored_veteran');
       }
     }
@@ -246,7 +249,15 @@ const ThematicEraSynergies = (() => {
       };
     }
     const t = state.arcaneInfusionTier || 0;
-    if (t <= 0) return { researchSpeedMult: 1, scienceGainMult: 1, playerDmgMult: 1, fleetDmgMult: 1, energyBonus: 0, note: '' };
+    if (t <= 0)
+      return {
+        researchSpeedMult: 1,
+        scienceGainMult: 1,
+        playerDmgMult: 1,
+        fleetDmgMult: 1,
+        energyBonus: 0,
+        note: '',
+      };
     return {
       researchSpeedMult: 1 + 0.04 * t,
       scienceGainMult: 1 + 0.03 * t,
@@ -261,7 +272,14 @@ const ThematicEraSynergies = (() => {
 
   function getHeroEchoMods() {
     if (!state?.active || state.pathId !== 'mythic' || !state.recruitedEchoes?.length) {
-      return { playerDmgMult: 1, hpMult: 1, morale: 0, fleetReadiness: 0, fleetStrength: 0, note: '' };
+      return {
+        playerDmgMult: 1,
+        hpMult: 1,
+        morale: 0,
+        fleetReadiness: 0,
+        fleetStrength: 0,
+        note: '',
+      };
     }
     let playerDmgMult = 1;
     let hpMult = 1;
@@ -386,10 +404,7 @@ const ThematicEraSynergies = (() => {
     if (wave === KINGDOM_WAVE && !kingdomAnnounced && state.active) {
       kingdomAnnounced = true;
       const def = getSynergyDef();
-      ctx.showMessage?.(
-        `Thematic synergy — ${def?.label}. ${def?.desc}`,
-        420
-      );
+      ctx.showMessage?.(`Thematic synergy — ${def?.label}. ${def?.desc}`, 420);
       ctx.addHighlight?.('milestone', `${def?.label} — cross-era path active`);
       if (state.pathId === 'mythic' && state.echoCandidates.length) {
         ctx.showMessage?.(
@@ -448,7 +463,9 @@ const ThematicEraSynergies = (() => {
     const def = getSynergyDef();
     const wave = ctx.wave | 0;
     if (state.pathId === 'martial' && wave >= KINGDOM_WAVE) {
-      const pct = Math.round((getAncestralWeaponMult({ type: 'archer', vetTier: 3 }, wave) - 1) * 100);
+      const pct = Math.round(
+        (getAncestralWeaponMult({ type: 'archer', vetTier: 3 }, wave) - 1) * 100
+      );
       return `${def?.short || 'Ancestral'} +${pct}%`;
     }
     if (state.pathId === 'arcane' && state.arcaneInfusionTier > 0) {
@@ -481,19 +498,15 @@ const ThematicEraSynergies = (() => {
   resetRun();
 
   return {
-    SYNERGY_DEFS,
     ECHO_DEFS,
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     resetRun,
     resolveThematicPath,
     getPathId,
-    getSynergyDef,
     getAncestralWeaponMult,
     getArcaneInfusionMods,
     getHeroEchoMods,
-    getSynergyTacticalMods,
-    getCombinedTacticalMods,
     getArcaneFleetRuneMult,
     getTechTreeLabel,
     applyThematicUnitBonuses,

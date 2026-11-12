@@ -268,28 +268,6 @@ const LivingPlanet = (() => {
     return bands;
   }
 
-  function onTerritoryExpanded(tier, wave, hooks = {}) {
-    const unlocks = [];
-    if (tier >= FOREST_UNLOCK_TIER && !announced.forest) {
-      announced.forest = true;
-      unlocks.push(BIOMES.forest);
-    }
-    if (tier >= MOUNTAIN_UNLOCK_TIER && !announced.mountains) {
-      announced.mountains = true;
-      unlocks.push(BIOMES.mountains);
-    }
-    if (tier >= CORRUPTED_UNLOCK_TIER && !announced.corrupted) {
-      announced.corrupted = true;
-      unlocks.push(BIOMES.corrupted);
-    }
-    for (const biome of unlocks) {
-      hooks.addHighlight?.('era', biome.name);
-      hooks.showMessage?.(`${biome.name} unlocked — ${biome.desc}`, 380);
-      hooks.floatingText?.(hooks.worldW / 2, 84, biome.shortName.toUpperCase(), biome.color);
-    }
-    return unlocks;
-  }
-
   function checkWaveAnnouncement(wave, hooks = {}) {
     if (announced.hellscape || wave !== HELLSCAPE_WAVE) return null;
     announced.hellscape = true;
@@ -384,7 +362,7 @@ const LivingPlanet = (() => {
 
   function getStateSnapshot(territoryTier, wave, rawCtx = {}) {
     const ctx = buildContext({ ...rawCtx, territoryTier, wave });
-    const hostileActive = typeof PlanetWarfare !== 'undefined' && PlanetWarfare.isActive(wave);
+    const hostileActive = false;
     const unlocked = getUnlockedBiomes(territoryTier, wave, hostileActive);
     const labels = unlocked.map((id) => BIOMES[id].shortName);
     const bands = getRegionBands(ctx);
@@ -408,18 +386,13 @@ const LivingPlanet = (() => {
 
   return {
     FOREST_UNLOCK_TIER,
-    MOUNTAIN_UNLOCK_TIER,
-    CORRUPTED_UNLOCK_TIER,
     HELLSCAPE_WAVE,
     BIOMES,
     resetRun,
-    isBiomeUnlocked,
-    getUnlockedBiomes,
     getBiomeAt,
     getBiomeDef,
     getModifiersAt,
     getRegionBands,
-    onTerritoryExpanded,
     checkWaveAnnouncement,
     populateBiomeDecor,
     getStateSnapshot,

@@ -22,6 +22,8 @@ export default [
   {
     ignores: [
       'node_modules/**',
+      'dist/**',
+      'release/**',
       'js/game-data-bundle.js',
       'data/**',
       'scripts/sim-report.json',
@@ -44,6 +46,16 @@ export default [
       // Shared helpers from units.js and other scripts are intentionally global.
       'no-undef': 'off',
     },
+  },
+  {
+    // Mods run in the browser after the game scripts, with ModAPI in scope.
+    files: ['mods/**/*.js'],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'script',
+      globals: { ...globals.browser, ModAPI: 'readonly' },
+    },
+    rules: sharedRules,
   },
   {
     files: ['scripts/**/*.js'],

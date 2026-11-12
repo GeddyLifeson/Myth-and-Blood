@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(step = 0) {
   const sb = {
@@ -39,17 +40,10 @@ function boot(step = 0) {
   return UX;
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const earlyUx = boot(0);
 ok(
-  earlyUx.resolveTutorialStep({ wave: 1, creativeMode: false })?.step?.title === 'Welcome, Commander',
+  earlyUx.resolveTutorialStep({ wave: 1, creativeMode: false })?.step?.title ===
+    'Welcome, Commander',
   'wave 1 shows welcome step'
 );
 
@@ -62,7 +56,7 @@ ok(
 const lateUx = boot(13);
 ok(
   lateUx.resolveTutorialStep({ wave: 30, creativeMode: false, crossoverUnlocked: true })?.step
-    ?.title === 'Crossover Operatives',
+    ?.title === 'Legion Operatives',
   'crossover step when hub unlocked'
 );
 
@@ -73,13 +67,6 @@ ok(
   'WWE step when academy unlocked'
 );
 
-const pwUx = boot(23);
-ok(
-  pwUx.resolveTutorialStep({ wave: 210, creativeMode: false, planetWarfare: { active: true } })
-    ?.step?.title === 'Hostile Map Control',
-  'planet warfare step at wave 200+'
-);
-
 ok(earlyUx.TUTORIAL_STEPS.length >= 24, 'tutorial catalog expanded');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

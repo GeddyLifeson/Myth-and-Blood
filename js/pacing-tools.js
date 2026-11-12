@@ -55,10 +55,6 @@ const PacingTools = (() => {
     return Math.min(MAX_SIM_STEPS, Math.ceil(s));
   }
 
-  function getSpeedOptions() {
-    return [...SPEED_OPTIONS];
-  }
-
   function cycleSpeed(current) {
     const cur = normalizeSpeed(current);
     const idx = SPEED_OPTIONS.indexOf(cur);
@@ -260,16 +256,13 @@ const PacingTools = (() => {
 
   return {
     SPEED_OPTIONS,
-    MAX_SIM_STEPS,
     DEFAULTS,
     resetRun,
     normalizeSpeed,
     getMaxSimulationSteps,
-    getSpeedOptions,
     cycleSpeed,
     processMessage,
     tick,
-    flushQueue,
     onPauseChanged,
     onMacroPanelOpen,
     onMacroPanelClose,

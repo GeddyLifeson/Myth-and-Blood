@@ -175,7 +175,11 @@ const PlayerCounterEvolution = (() => {
 
   function getExpeditionLootScale(wave) {
     const academy =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rts = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     return 1 + academy * 0.35 + rts * 0.55;
   }
@@ -415,10 +419,8 @@ const PlayerCounterEvolution = (() => {
     isUnlocked,
     canExpedition,
     isCounterDoctrineUnlocked,
-    getUnlockedCounterDoctrines,
     getFactionModifiers,
     getEffectiveStage,
-    buildExpeditionTargets,
     executeCounterDoctrine,
     dispatchExpedition,
     resolveExpeditions,
@@ -426,7 +428,6 @@ const PlayerCounterEvolution = (() => {
     getExpeditionLootScale,
     checkWaveAnnouncement,
     getStateSnapshot,
-    isExpeditionUnit,
   };
 })();
 

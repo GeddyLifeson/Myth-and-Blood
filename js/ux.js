@@ -93,8 +93,8 @@ const UX = (() => {
     {
       maxWave: 18,
       title: 'Box Select & Formations',
-      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. Pick a <strong>FORMATION</strong> in the right panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
-      highlight: 'right-panel',
+      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
+      highlight: 'left-panel',
     },
     {
       maxWave: 20,
@@ -126,8 +126,8 @@ const UX = (() => {
     },
     {
       when: (gs) => gs.crossoverUnlocked,
-      title: 'Crossover Operatives',
-      body: 'Open <strong>CROSSOVER HUB</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
+      title: 'Legion Operatives',
+      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
       highlight: 'crossover-hub-open',
     },
     {
@@ -198,24 +198,10 @@ const UX = (() => {
       highlight: 'wave-intel-text',
     },
     {
-      minWave: 200,
-      when: (gs) => gs.planetWarfare?.active,
-      title: 'Hostile Map Control',
-      body: 'From wave 200 the map creeps red — hostile control tightens vision, spawn pace, and northern fog. Push back with counter-offensives and hold multiple unit types to pierce wards.',
-      highlight: 'control-hud',
-    },
-    {
-      when: (gs) => gs.planetConquest?.active,
-      title: 'Planet Conquest',
-      body: 'From wave 500, <strong>true victory</strong> requires shattering the <strong>Worldheart Tyrant</strong>. Eliminate two or more realms to awaken it, field three+ unit types to pierce its ward, then finish the boss — check the <strong>CONQUEST</strong> chip.',
-      highlight: 'conquest-hud',
-    },
-    {
       minWave: 80,
       maxWave: 140,
       when: (gs) =>
-        (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 ||
-        !!gs.counterEvolution?.summary,
+        (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 || !!gs.counterEvolution?.summary,
       title: 'Counter-Offensives',
       body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair with spy disruption and settlement raids to collapse a realm before evolution outpaces you.',
       highlight: 'right-panel',
@@ -235,7 +221,10 @@ const UX = (() => {
 
   function pruneTutorialProgress(gs) {
     let changed = false;
-    while (tutorialStep < TUTORIAL_STEPS.length && tutorialStepExpired(TUTORIAL_STEPS[tutorialStep], gs.wave)) {
+    while (
+      tutorialStep < TUTORIAL_STEPS.length &&
+      tutorialStepExpired(TUTORIAL_STEPS[tutorialStep], gs.wave)
+    ) {
       tutorialStep++;
       changed = true;
     }
@@ -473,8 +462,7 @@ const UX = (() => {
     const earned = a.goldStarsEarned || 0;
     const need =
       a.rankNeeded === 1 ? '1 gold star to unlock' : `${a.rankNeeded} gold stars to unlock`;
-    const prog =
-      needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
+    const prog = needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
     const promoteHint = u.canVetUpgrade
       ? ' — eligible for TP promotion now'
       : ' — work each wave (gold-star credit) or earn gold stars in battle';
@@ -514,7 +502,7 @@ const UX = (() => {
     // Include vet stars / promote eligibility so rank-ups refresh the panel while selected.
     const structureKey = multi
       ? `m:${info.length}:${gs.selectionFormationLabel || 'Box'}`
-      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}`;
+      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
 
     if (!multi) {
       const u = info[0];
@@ -608,6 +596,8 @@ const UX = (() => {
         </div>
         ${formatScaling(u)}
         ${formatLateAbility(u)}
+        <div class="unit-info-row service-row"><span>Service</span> ${u.kills || 0} kill${u.kills === 1 ? '' : 's'} · ${u.wavesSurvived || 0} wave${u.wavesSurvived === 1 ? '' : 's'} survived</div>
+        ${u.counterNote ? `<div class="unit-info-row counter-row">${escapeHtml(u.counterNote)}</div>` : ''}
         <div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
         ${
@@ -758,7 +748,8 @@ const UX = (() => {
         ? `Night (${gs.nightSecondsLeft ?? 60}s) — ${tip} · D begins day`
         : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
-      hint = 'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
+      hint =
+        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
     else
       hint =
         'Drag empty map to select · Shift+drag · G formation · Right-click deselect · C clear · Tab log';
@@ -973,23 +964,6 @@ const UX = (() => {
       }
     }
 
-    const pw = data.planetWarfare;
-    if (pw?.active && pw.hostileLineY) {
-      const ly = pw.hostileLineY * sy;
-      const grad = minimapCtx.createLinearGradient(0, 0, 0, ly + 4);
-      grad.addColorStop(0, `rgba(140, 30, 40, ${0.35 + (pw.hostileControl || 0) * 0.3})`);
-      grad.addColorStop(1, 'rgba(60, 20, 28, 0)');
-      minimapCtx.fillStyle = grad;
-      minimapCtx.fillRect(0, 0, w, ly + 2);
-      minimapCtx.strokeStyle = 'rgba(255, 80, 70, 0.65)';
-      minimapCtx.setLineDash([3, 3]);
-      minimapCtx.beginPath();
-      minimapCtx.moveTo(0, ly);
-      minimapCtx.lineTo(w, ly);
-      minimapCtx.stroke();
-      minimapCtx.setLineDash([]);
-    }
-
     let flankLabel = null;
     if (typeof VisualPolish !== 'undefined') {
       flankLabel = VisualPolish.drawMinimapOverlay(minimapCtx, w, h, data, 'bands');
@@ -1027,10 +1001,7 @@ const UX = (() => {
       minimapCtx.fillText(flankLabel, w - 4, labelY);
       labelY += 10;
     }
-    if (pw?.active) {
-      minimapCtx.fillStyle = pw.tierColor || 'rgba(255,120,100,0.85)';
-      minimapCtx.fillText(`Host ${pw.hostileControlPct}%`, w - 4, labelY);
-    } else if (lp?.summary) {
+    if (lp?.summary) {
       minimapCtx.fillStyle = 'rgba(120,160,110,0.8)';
       minimapCtx.fillText(lp.summary.slice(0, 18), w - 4, labelY);
     } else if (data.territoryTier > 0) {
@@ -1141,8 +1112,7 @@ const UX = (() => {
     const { step, index } = resolved;
     tutorialDisplayIndex = index;
     el.classList.add('visible');
-    const guided =
-      typeof Onboarding !== 'undefined' && Onboarding.isGuidedRunActive?.();
+    const guided = typeof Onboarding !== 'undefined' && Onboarding.isGuidedRunActive?.();
     el.classList.toggle('guided-run', !!guided);
     el.querySelector('.tutorial-title').textContent = guided
       ? `Guided campaign · ${step.title}`
@@ -1203,7 +1173,7 @@ const UX = (() => {
     },
     planet_conquest: {
       title: 'TRUE VICTORY!',
-      subtitle: 'The Worldheart Tyrant is shattered — every hostile realm is broken. The planet is yours.',
+      subtitle: 'Wave one hundred is cleared — the realm stands and the campaign is won.',
       crest: '☀',
     },
     default: {
@@ -1356,19 +1326,15 @@ const UX = (() => {
     onPauseChanged,
     onMessage,
     updatePauseMenu,
-    getSettings: () => Settings?.get() || {},
-    setSetting: (key, value) => Settings?.set(key, value),
     openPauseMenu,
     closePauseMenu,
     suppressPauseForOverlay,
     renderVictoryScreen,
-    renderPostGameHighlights,
     drawMinimap,
     resetTutorial,
     dismissTutorial,
     clearTutorialHighlights,
     resolveTutorialStep,
-    tutorialStepMatches,
     TUTORIAL_STEPS,
     toggleMessageLog,
     getHitboxBonus: () => Settings?.getHitboxBonus?.() || 0,

@@ -160,9 +160,7 @@ const BiomeSpawn = (() => {
 
   function pickWildlifeType(wave, rawCtx = {}, rng = Math.random) {
     const x = rawCtx.worldW ? 40 + rng() * (rawCtx.worldW - 80) : 200;
-    const y = rawCtx.rallyY
-      ? 50 + rng() * Math.max(80, rawCtx.rallyY - 100)
-      : 50 + rng() * 200;
+    const y = rawCtx.rallyY ? 50 + rng() * Math.max(80, rawCtx.rallyY - 100) : 50 + rng() * 200;
     const profile = getSpawnProfileAt(x, y, rawCtx);
     const bias = profile.wildlifeBias || ['wild_boar'];
     let type = bias[Math.floor(rng() * bias.length)];
@@ -192,9 +190,7 @@ const BiomeSpawn = (() => {
   return {
     BIOME_PROFILES,
     getBiomeAt,
-    getSpawnProfileAt,
     getDominantProfile,
-    applyWeightBiases,
     mergeSpawnWeights,
     adjustSpawnCount,
     biasSpawnPosition,

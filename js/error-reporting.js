@@ -266,7 +266,9 @@ const ErrorReporting = (() => {
   function disableSubsystem(subsystem, reason) {
     degraded[subsystem] = reason || 'repeated failures';
     log('warn', `Subsystem disabled: ${subsystem}`, { subsystem, reason: degraded[subsystem] });
-    showDegradeToast(`${labelForSubsystem(subsystem)} paused — game continues with reduced effects.`);
+    showDegradeToast(
+      `${labelForSubsystem(subsystem)} paused — game continues with reduced effects.`
+    );
     applySubsystemPatches();
   }
 
@@ -432,12 +434,12 @@ const ErrorReporting = (() => {
       entry.error?.stack || '',
       entry.meta?.subsystem ? `Subsystem: ${entry.meta.subsystem}` : '',
       entry.meta?.kind ? `Kind: ${entry.meta.kind}` : '',
-      entry.meta?.phase || snap.lastPhase ? `Last phase: ${entry.meta?.phase || snap.lastPhase}` : '',
+      entry.meta?.phase || snap.lastPhase
+        ? `Last phase: ${entry.meta?.phase || snap.lastPhase}`
+        : '',
       entry.meta?.stallMs ? `Stall: ${Math.round(entry.meta.stallMs)}ms` : '',
       entry.meta?.frameMs ? `Frame: ${Math.round(entry.meta.frameMs)}ms` : '',
-      entry.meta?.wave != null || snap.wave != null
-        ? `Wave: ${entry.meta?.wave ?? snap.wave}`
-        : '',
+      entry.meta?.wave != null || snap.wave != null ? `Wave: ${entry.meta?.wave ?? snap.wave}` : '',
       snap.army != null ? `Army/enemies: ${snap.army}/${snap.enemyCount ?? '?'}` : '',
       snap.pathPending != null ? `Path pending: ${snap.pathPending}` : '',
       snap.heapMB != null ? `Heap: ${snap.heapMB}MB` : '',
@@ -575,12 +577,6 @@ const ErrorReporting = (() => {
     }
   }
 
-  function stopWatchdog() {
-    if (!watchdogWorker) return;
-    watchdogWorker.terminate();
-    watchdogWorker = null;
-  }
-
   function pingWatchdog() {
     lastHeartbeatAt = now();
     lastPingAt = lastHeartbeatAt;
@@ -658,7 +654,8 @@ const ErrorReporting = (() => {
     return {
       v: VERSION,
       app: 'myth-and-blood',
-      appVersion: typeof window !== 'undefined' && window.MB_APP_VERSION ? window.MB_APP_VERSION : '1.0.0',
+      appVersion:
+        typeof window !== 'undefined' && window.MB_APP_VERSION ? window.MB_APP_VERSION : '1.0.0',
       sessionId: store.sessionId,
       exportedAt: new Date().toISOString(),
       userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
@@ -824,7 +821,8 @@ const ErrorReporting = (() => {
     const recent = getRecent(6);
     const deg = Object.keys(degraded);
     if (!recent.length && !deg.length) {
-      root.innerHTML = '<p class="analytics-muted">No errors recorded this session. Logs are kept locally for crash diagnosis.</p>';
+      root.innerHTML =
+        '<p class="analytics-muted">No errors recorded this session. Logs are kept locally for crash diagnosis.</p>';
       return;
     }
     const rows = recent
@@ -938,11 +936,7 @@ const ErrorReporting = (() => {
     captureFreeze,
     runGuarded,
     isDegraded,
-    getDegraded,
     disableSubsystem,
-    resetDegradation,
-    exportLog,
-    copyReport,
     clearLog,
     flush,
     getRecent,
@@ -958,12 +952,9 @@ const ErrorReporting = (() => {
     getLastPhase,
     shouldSkipExtraSimSteps,
     startWatchdog,
-    stopWatchdog,
     openBugReport,
-    closeBugReport,
     submitBugReport,
     STALL_MS,
-    SLOW_FRAME_MS,
     FREEZE_FRAME_MS,
   };
 })();

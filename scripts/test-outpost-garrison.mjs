@@ -5,13 +5,23 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
+// The game rolls dice with Math.random (flee direction, accuracy). A fixed seed keeps
+// these assertions from failing one run in eight.
+function seededMath() {
+  let a = 0x9e3779b9;
+  const rnd = () => {
+    a |= 0;
+    a = (a + 0x6d2b79f5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  const m = {};
+  for (const k of Object.getOwnPropertyNames(Math)) m[k] = Math[k];
+  m.random = rnd;
+  return m;
 }
 
 function boot() {
@@ -26,7 +36,7 @@ function boot() {
   const sb = {
     console,
     JSON,
-    Math,
+    Math: seededMath(),
     Array,
     Object,
     setTimeout: (fn) => {
@@ -116,7 +126,9 @@ const opY = cx2.y - 100;
 ok(Game.creativeSpawnPlayerBuildingAt('outpost', cx2.x, opY), 'spawn outpost for mage flee test');
 ok(Game.creativeSpawnPlayerBuildingAt('medical_tent', cx2.x - 120, cx2.y), 'spawn med tent');
 ok(Game.creativeSpawnPlayerAt('mage', cx2.x + 24, opY), 'spawn mage');
-const mage = Game.getUnitById(Game.getUnitsSnapshot().find((u) => u.type === 'mage' && u.team === 'player')?.id);
+const mage = Game.getUnitById(
+  Game.getUnitsSnapshot().find((u) => u.type === 'mage' && u.team === 'player')?.id
+);
 ok(mage, 'mage resolves by id');
 for (let i = 0; i < 180; i++) Game.update();
 ok(mage.garrisoned, 'mage garrisons outpost');
@@ -170,8 +182,8 @@ ok(
   'retreating mage does not rubber-band'
 );
 
-if (failed) {
-  console.error(`\n${failed} outpost-garrison test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} outpost-garrison test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll outpost-garrison tests passed.');

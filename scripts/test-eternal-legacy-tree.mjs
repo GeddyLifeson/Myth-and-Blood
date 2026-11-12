@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const STORAGE = join(JS, '..', 'test-eternal-legacy-storage.json');
 
@@ -59,13 +60,6 @@ function loadEternalLegacy(extra = {}) {
 }
 
 let { EternalLegacyTree } = loadEternalLegacy();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(EternalLegacyTree.BRANCHES.iron_crown?.label === 'Iron Crown', 'iron crown branch');
 ok(Object.keys(EternalLegacyTree.TREE_NODES).length >= 20, 'tree has 20+ nodes');
@@ -90,7 +84,15 @@ ok(blocked.ok === false && blocked.reason === 'prereq', 'knight ascendant blocke
 const fx = EternalLegacyTree.getCombinedEffects(null, 120);
 ok(fx.ascendDmgByType.archer > 1, 'archer ascend damage from volley');
 
-const unit = { team: 'player', type: 'archer', damage: 100, maxHp: 100, hp: 100, morale: 10, maxMorale: 20 };
+const unit = {
+  team: 'player',
+  type: 'archer',
+  damage: 100,
+  maxHp: 100,
+  hp: 100,
+  morale: 10,
+  maxMorale: 20,
+};
 EternalLegacyTree.applyUnitBonuses(unit, 120);
 ok(unit.damage > 100, 'applyUnitBonuses boosts archer damage');
 ok(unit.eternalEchoTier >= 1, 'ascension tier set on unit');
@@ -103,9 +105,14 @@ ok(hud.includes('Crown'), 'hud line shows crown count');
 
 const snap = EternalLegacyTree.getMenuSnapshot();
 ok(snap.investedCount >= 3, 'menu snapshot invested count');
-ok(snap.nodes.some((n) => n.invested), 'menu has invested nodes');
+ok(
+  snap.nodes.some((n) => n.invested),
+  'menu has invested nodes'
+);
 
 ok(EternalLegacyTree.getLegacyEntries().length >= 1, 'encyclopedia entries');
 
-console.log(failed ? `\n${failed} test(s) failed` : '\nAll eternal-legacy-tree tests passed');
-process.exit(failed ? 1 : 0);
+console.log(
+  failures() ? `\n${failures()} test(s) failed` : '\nAll eternal-legacy-tree tests passed'
+);
+process.exit(failures() ? 1 : 0);

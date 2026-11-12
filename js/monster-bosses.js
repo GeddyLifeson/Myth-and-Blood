@@ -243,7 +243,7 @@ const MonsterBosses = (() => {
       mechanics: 'Ultimate boss · regen · huntsGeneral · siegeMult ×2.5 · enrage · 520 base HP.',
       counter: 'Full army, all strikes, evolved ally burst — spend saved TP before wave 100.',
       evolutionNote:
-        'Endless Siege Host is the heaviest pack — dreadborn champions, elder wyrms, hamlets, war academies, and shadow academies. Worldheart Tyrant at wave 500+ scales from Malachar.',
+        'Endless Siege Host is the heaviest pack — dreadborn champions, elder wyrms, hamlets, war academies, and shadow academies. Endless Host at wave 500+ scales from Malachar.',
     },
   ];
 
@@ -277,10 +277,6 @@ const MonsterBosses = (() => {
 
   function getAppearanceCount(bossType) {
     return appearances[bossType] || 0;
-  }
-
-  function getKillCount(bossType) {
-    return kills[bossType] || 0;
   }
 
   function getPackDef(bossType) {
@@ -336,10 +332,6 @@ const MonsterBosses = (() => {
       packSummary,
       displayName: evolution.label || 'Prime',
     };
-  }
-
-  function getCurrentWavePack() {
-    return currentWavePack;
   }
 
   function isPackMinion(unitType) {
@@ -450,13 +442,6 @@ const MonsterBosses = (() => {
     }).join('\n');
   }
 
-  function getBossDebutWave(bossType) {
-    return (
-      ROSTER_BY_TYPE[bossType]?.debutWave ||
-      (BOSS_ROSTER.findIndex((b) => b.type === bossType) + 1) * 10
-    );
-  }
-
   function getEncyclopediaEntries() {
     const entries = [
       {
@@ -550,27 +535,22 @@ const MonsterBosses = (() => {
   }
 
   return {
-    EVOLUTION_TIERS,
     BOSS_PACKS,
     resetRun,
     getPackDef,
     getAppearanceCount,
-    getKillCount,
     getEvolutionTier,
     computeTotalScale,
     prepareBossWave,
-    getCurrentWavePack,
     isPackMinion,
     injectPackIntoQueue,
     spawnPackStructures,
     announceEvolution,
     onBossSlain,
     applyPackTags,
-    formatPackSummary,
     getStateSnapshot,
     getEncyclopediaEntries,
     BOSS_ROSTER,
-    getBossDebutWave,
   };
 })();
 

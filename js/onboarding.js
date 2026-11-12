@@ -123,9 +123,12 @@ const Onboarding = (() => {
       save();
       return;
     }
-    const start = getStart(state.selectedStartId);
-    if (start) applyStartToMenu(start);
     state.guidedRunActive = !!(state.guidedRunEnabled && !state.panelDismissed);
+    // Picking a recommended start already applied its seed and difficulty. Re-applying it
+    // here on every Begin Defense overrode whatever difficulty the player chose afterwards,
+    // so only fill in the seed when a guided run has none yet.
+    const start = getStart(state.selectedStartId);
+    if (start && state.guidedRunActive && !menu.seed) GameModes.setMenuSeed(start.seed, start.id);
     save();
   }
 
@@ -203,11 +206,7 @@ const Onboarding = (() => {
     const selected = getStart(state.selectedStartId);
     const newPlayer = isNewPlayer();
 
-    const journeyLead =
-      typeof LayerDesign !== 'undefined' && LayerDesign.PRINCIPLES
-        ? `<p class="onboarding-journey">${LayerDesign.PRINCIPLES.summary}</p>
-           <p class="onboarding-journey-steps">1 Defend the north · 2 Academy Era (w100) — train & escalate · 3 Survive denser waves</p>`
-        : `<p class="onboarding-journey">One crown across five eras: defense → empire → dynasty → stars → planet.</p>`;
+    const journeyLead = `<p class="onboarding-journey-steps">1 Defend the north · 2 Academy Era (w100) — train & escalate · 3 Survive denser waves</p>`;
 
     host.innerHTML = `
       <div class="onboarding-head">
@@ -288,7 +287,5 @@ const Onboarding = (() => {
     selectStart,
     dismissPanel,
     onGuidedTutorialDismissed,
-    setGuidedRunEnabled,
-    getSelectedStart: () => getStart(state.selectedStartId),
   };
 })();

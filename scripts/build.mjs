@@ -74,7 +74,15 @@ function formatBytes(n) {
 
 function buildIndexHtml(bundleName, cssName) {
   const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
-  let out = html.replace(/<link rel="stylesheet" href="css\/style\.css" \/>/, `<link rel="stylesheet" href="${cssName}" />`);
+  let out = html.replace(
+    /<link rel="stylesheet" href="css\/style\.css" \/>/,
+    `<link rel="stylesheet" href="${cssName}" />`
+  );
+  // theme-v2.css is bundled into the same stylesheet, so its own link must go.
+  out = out.replace(/\s*<link rel="stylesheet" href="css\/theme-v2\.css" \/>/, '');
+  if (/href="css\/(?!style\.)[^"]+\.css"/.test(out)) {
+    throw new Error('index.html links a stylesheet the build does not bundle');
+  }
   out = out.replace(/\s*<script src="js\/touch-input\.js"><\/script>\s*/, '\n');
   const scriptRe = /\s*<script src="js\/[^"]+"><\/script>/g;
   const matches = out.match(scriptRe) || [];
@@ -113,7 +121,10 @@ async function main() {
   const workerFile = 'js/path-worker.js';
   writeFileSync(join(DIST, workerFile), workerOut);
 
-  const cssRaw = readFileSync(join(ROOT, 'css', 'style.css'), 'utf8');
+  // Order matters: theme-v2 overrides style.css, exactly as index.html links them.
+  const cssRaw = ['style.css', 'theme-v2.css']
+    .map((f) => readFileSync(join(ROOT, 'css', f), 'utf8'))
+    .join('\n');
   const cssOut = await minifyCss(cssRaw);
   const cssFile = DEV ? 'css/style.css' : 'css/style.min.css';
   writeFileSync(join(DIST, cssFile), cssOut);

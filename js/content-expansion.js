@@ -309,7 +309,7 @@ const ContentExpansion = (() => {
         secret: true,
       },
       perk_mule_kick: {
-        name: 'Mule Kick',
+        name: 'Packmule Tonic',
         cost: 10,
         hp: 130,
         cover: 0.2,
@@ -322,7 +322,7 @@ const ContentExpansion = (() => {
         secret: true,
       },
       perk_sleight: {
-        name: 'Sleight of Hand',
+        name: 'Quickhands Tonic',
         cost: 10,
         hp: 130,
         cover: 0.2,
@@ -899,7 +899,7 @@ const ContentExpansion = (() => {
           },
         },
         mule_kick: {
-          name: 'Mule Kick',
+          name: 'Packmule Tonic',
           tags: ['ranged', 'support'],
           desc: 'Carry a secondary weapon slot (+18% ranged dmg)',
           apply(u) {
@@ -907,7 +907,7 @@ const ContentExpansion = (() => {
           },
         },
         sleight: {
-          name: 'Sleight of Hand',
+          name: 'Quickhands Tonic',
           tags: ['support', 'ranged'],
           desc: 'Spy/courier actions cost -1 TP (min 0)',
           apply(u) {
@@ -1037,6 +1037,9 @@ const ContentExpansion = (() => {
       });
     }
 
+    // registerDefs runs on every game start; wrapping again each time kept growing the
+    // spawn pool, so every restart added more flyers and monsters.
+    if (getWaveConfig.expansionWrapped) return;
     const _getWaveConfig = getWaveConfig;
     getWaveConfig = function (waveNum) {
       const cfg = _getWaveConfig(waveNum);
@@ -1053,16 +1056,11 @@ const ContentExpansion = (() => {
       if (waveNum >= 70) cfg.pool.push('abomination', 'iron_colossus', 'elder_wyrm');
       return cfg;
     };
+    getWaveConfig.expansionWrapped = true;
   }
 
   function bind(gameCtx) {
     ctx = gameCtx;
-  }
-
-  function resolveSvc(id) {
-    if (ctx?.svc) return ctx.svc(id);
-    if (ctx?.services?.get) return ctx.services.get(id);
-    return typeof globalThis !== 'undefined' ? (globalThis[id] ?? null) : null;
   }
 
   const ECONOMY_GEN_TP_CAP = 6;
@@ -1549,7 +1547,7 @@ const ContentExpansion = (() => {
       StrikeFX?.impact?.('lightning', wx, wy, ab.radius, 1.2 * coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(8 * coolFx));
       ctx.damageInRadius(wx, wy, ab.radius, ab.damage, 'player', { dragonStrike: true });
-      ctx.showMessage("Voice Shout — the Voice shatters the line!");
+      ctx.showMessage('Voice Shout — the Voice shatters the line!');
       return true;
     }
     if (ability === 'fire_breath') {
@@ -2014,10 +2012,10 @@ const ContentExpansion = (() => {
         name: 'Twinshot Brew',
         body: 'Ranged — bonus follow-up shot at 55% damage (applied on hit in combat).',
       },
-      { cat: 'perks', name: 'Mule Kick', body: 'Ranged & support — +18% ranged damage.' },
+      { cat: 'perks', name: 'Packmule Tonic', body: 'Ranged & support — +18% ranged damage.' },
       {
         cat: 'perks',
-        name: 'Sleight of Hand',
+        name: 'Quickhands Tonic',
         body: 'Support & ranged — spy/courier actions cost -1 TP.',
       },
     ];
@@ -2058,7 +2056,6 @@ const ContentExpansion = (() => {
     getWaveEvent,
     getEncyclopediaEntries,
     pickWaveEvent,
-    WAVE_EVENTS,
   };
 })();
 

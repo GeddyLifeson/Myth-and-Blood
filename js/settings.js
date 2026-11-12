@@ -420,7 +420,11 @@ const Settings = (() => {
       if (typeof UI !== 'undefined') UI.updateSpeedControl?.(n);
     }
     if (typeof PacingTools !== 'undefined') {
-      PacingTools.renderSpeedButtons('.settings-speed-control', settings.gameSpeed ?? 1, onSpeedPick);
+      PacingTools.renderSpeedButtons(
+        '.settings-speed-control',
+        settings.gameSpeed ?? 1,
+        onSpeedPick
+      );
     } else {
       document.querySelectorAll('.settings-speed-control .speed-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
@@ -553,13 +557,9 @@ const Settings = (() => {
     open,
     close,
     isOpen,
-    getEffectiveUIScale,
     getPanelInsets,
-    updateUIScale,
-    onWindowResize,
     getCameraZoomSpeed: () => settings.cameraZoomSpeed,
     getHitboxBonus: () => (settings.largerHitboxes ? 8 : 0),
-    shouldAnnounce: () => !!settings.screenReader,
     announce(text) {
       if (!settings.screenReader) return;
       const live = document.getElementById('sr-live-region');

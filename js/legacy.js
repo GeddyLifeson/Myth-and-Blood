@@ -156,10 +156,23 @@ const Legacy = (() => {
       honorNames: currentRun?.honorNames || [],
     };
     data.lastRun = runSummary;
-    if (victory) data.victories++;
+    // A run that already won at wave 100 and later falls counts once, as the win.
+    if (currentRun?.victoryRecorded) runSummary.victory = true;
+    else if (victory) data.victories++;
     else data.defeats++;
     save();
     currentRun = null;
+  }
+
+  /** Wave 100 cleared: record the win now; the run keeps going. */
+  function recordCampaignVictory() {
+    if (!currentRun || currentRun.creative || currentRun.victoryRecorded) return false;
+    currentRun.victoryRecorded = true;
+    data.victories++;
+    save();
+    if (typeof CrownLegacies !== 'undefined') CrownLegacies.refreshUnlocks(get());
+    if (typeof EternalLegacyTree !== 'undefined') EternalLegacyTree.refreshUnlocks(get());
+    return true;
   }
 
   function getLegacyEntries() {
@@ -212,7 +225,13 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Crossover Service',
         body: leg.factionsUsed.length
-          ? `Factions fielded: ${leg.factionsUsed.join(', ')}.`
+          ? `Factions fielded: ${leg.factionsUsed
+              .map(
+                (f) =>
+                  (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[f]?.label) ||
+                  (f === 'wwe' ? 'Grand Coliseum' : f)
+              )
+              .join(', ')}.`
           : 'Recruit evolved operatives to log evolved service.',
       },
       {
@@ -238,6 +257,7 @@ const Legacy = (() => {
     recordHonor,
     onWaveComplete,
     onGameEnd,
+    recordCampaignVictory,
     getLegacyEntries,
   };
 })();

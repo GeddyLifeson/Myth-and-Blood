@@ -8,8 +8,7 @@ const FloatingText = (() => {
 
   function setBudget(unitsOnField, qualityMult = 1, spriteLod = 0) {
     const base = unitsOnField > 80 ? 40 : unitsOnField > 50 ? 64 : 96;
-    const lodMult =
-      typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
+    const lodMult = typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
     MAX_TEXTS = Math.max(20, Math.floor(base * Math.max(0.2, qualityMult) * lodMult));
     trim();
   }

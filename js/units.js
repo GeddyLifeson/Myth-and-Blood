@@ -17,34 +17,12 @@ const NIGHT_PREP_TICKS = NIGHT_TICKS_PER_SECOND * NIGHT_PREP_SECONDS;
 const NIGHT_BUILD_MULT = 1.35;
 const ACADEMY_HYBRID_WAVES = 5;
 const SETTLEMENT_TP_SOFT_CAP = 18;
-const SETTLEMENT_WARN_WAVE = 0;
-const HAMLET_BUILDERS_REQUIRED = 5;
-const HAMLET_WAVE_BUILD_TIME = 5;
 const HAMLET_AURA_RADIUS = 130;
 const HAMLET_TP_PER_ROUND = 5;
-const VILLAGE_BUILDERS_REQUIRED = 6;
-const VILLAGE_WAVE_BUILD_TIME = 6;
-const VILLAGE_AURA_RADIUS = 145;
-const VILLAGE_TP_PER_ROUND = 8;
-const TOWN_BUILDERS_REQUIRED = 7;
-const TOWN_WAVE_BUILD_TIME = 7;
-const TOWN_AURA_RADIUS = 160;
-const TOWN_TP_PER_ROUND = 10;
-const CITY_BUILDERS_REQUIRED = 8;
-const CITY_WAVE_BUILD_TIME = 8;
-const CITY_AURA_RADIUS = 175;
-const CITY_TP_PER_ROUND = 12;
-const METROPOLIS_BUILDERS_REQUIRED = 10;
-const METROPOLIS_WAVE_BUILD_TIME = 10;
-const METROPOLIS_AURA_RADIUS = 195;
-const METROPOLIS_TP_PER_ROUND = 15;
 const RTS_MAP_EXPAND_W = 180;
 const RTS_MAP_EXPAND_H = 220;
 const ATTACK_SIDE_INTERVAL = 25;
 const ATTACK_SIDES = ['north', 'east', 'west', 'south'];
-const HEALER_ACADEMY_WAVE_INTERVAL = 5;
-const GENERAL_ACADEMY_WAVE_INTERVAL = 10;
-const GENERAL_PROMOTE_GOLD_STARS = 3;
 /** Highest veteran rank index (Immortal / Saint of the Realm). */
 const MAX_VETERAN_TIER = 6;
 /** Extra specialist abilities unlock after this many lifetime gold stars. */
@@ -131,10 +109,7 @@ const SPECIALIST_LATE_ABILITIES = {
 function recordGoldStarEarned(unit) {
   if (!unit || unit.team !== 'player') return;
   unit.goldStarsEarned = (unit.goldStarsEarned || 0) + 1;
-  if (
-    isSpecialistUnit(unit) &&
-    unit.goldStarsEarned >= SPECIALIST_LATE_ABILITY_GOLD_STARS
-  ) {
+  if (isSpecialistUnit(unit) && unit.goldStarsEarned >= SPECIALIST_LATE_ABILITY_GOLD_STARS) {
     unit.lateAbilityUnlocked = true;
   }
 }
@@ -314,7 +289,8 @@ const PROGRESSION_MILESTONES = [
     id: 'raid_authority',
     name: 'Raid Authority',
     shortName: 'Raids',
-    tagline: 'Northern strike missions authorized — hunt enemy holds before their economy compounds.',
+    tagline:
+      'Northern strike missions authorized — hunt enemy holds before their economy compounds.',
     color: '#f08040',
     kingdomStage: 3,
   },
@@ -339,10 +315,9 @@ const PROGRESSION_MILESTONES = [
   {
     wave: 500,
     id: 'planet_conquest',
-    name: 'Planet Conquest',
-    shortName: 'Conquest',
-    tagline:
-      'True victory unlocks — conquer sectors, eliminate realms, and shatter the Worldheart Tyrant.',
+    name: 'The Long Siege',
+    shortName: 'Long Siege',
+    tagline: 'Five hundred waves held — the host throws everything it has left at your walls.',
     color: '#c060ff',
     kingdomStage: 4,
   },
@@ -414,8 +389,7 @@ function getKingdomEvolutionStage(waveNum) {
       1,
       (w - KINGDOM_STAGE_WAVES.RISING) / (KINGDOM_STAGE_WAVES.EMPIRE - KINGDOM_STAGE_WAVES.RISING)
     );
-  else if (stage === 3)
-    progress = typeof postAcademyEase === 'function' ? postAcademyEase(w) : 0;
+  else if (stage === 3) progress = typeof postAcademyEase === 'function' ? postAcademyEase(w) : 0;
   else progress = Math.min(1, typeof rtsMapBlend === 'function' ? rtsMapBlend(w) : 0);
   return { ...def, progress };
 }
@@ -545,7 +519,6 @@ function getWorldSize(waveNum) {
     baseH: BASE_FIELD_H,
     rtsEra: waveNum >= ACADEMY_ERA_WAVE,
     enemyRtsEra: false,
-    fixedBattlefield: false,
   };
 }
 
@@ -560,11 +533,6 @@ function isRtsEra(waveNum) {
 /** Enemy RTS / mirror settlements disabled — pure wave pressure instead. */
 function isEnemyRtsEra(_waveNum) {
   return false;
-}
-
-function isSettlementBuild(type) {
-  const def = BuildDefs[type];
-  return !!(def?.isSettlement || def?.isHamlet || def?.isMerchantGuild);
 }
 
 function getBuildingProgressRatio(b) {
@@ -627,7 +595,6 @@ function getDeployY(worldH) {
 function getDefaultRallyY(worldH) {
   return worldH - 100;
 }
-const MISS_LIMIT = 10;
 const TP_PER_ROUND = 7;
 const STARTING_TP = 7;
 
@@ -685,7 +652,7 @@ const DIFFICULTIES = {
   },
   doomslayer: {
     id: 'doomslayer',
-    label: 'Doomslayer',
+    label: 'Hellbane',
     tagline: 'Hell marches. No mercy.',
     enemyHpMult: 1.7,
     enemyDmgMult: 1.48,
@@ -898,14 +865,6 @@ function isEliteEnemy(unit) {
   );
 }
 
-function isEvilOperativeEnemy(unit) {
-  return (
-    !!unit &&
-    unit.team === 'enemy' &&
-    (unit.isEvilOperative || isEnemyEvilOperativeType(unit.type) || isNamedBoss(unit))
-  );
-}
-
 function isMonsterEnemy(unit) {
   return !!unit && unit.team === 'enemy' && MONSTER_ENEMIES.includes(unit.type);
 }
@@ -1083,27 +1042,40 @@ function applyVeteranStarBump(unit, starTier) {
     case 'general':
       bumpUnitMorale(unit, starTier === 'gold' ? 4 : starTier === 'silver' ? 2 : 1);
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.secondary);
-      unit.accuracy = Math.min(72, unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0));
+      unit.accuracy = Math.min(
+        72,
+        unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0)
+      );
       break;
     case 'cavalry':
       unit.speed = Math.max(unit.speed + 0.02, Math.round(unit.speed * s.primary * 100) / 100);
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.primary);
-      unit.accuracy = Math.min(68, unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0));
+      unit.accuracy = Math.min(
+        68,
+        unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0)
+      );
       if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * s.secondary);
       break;
     case 'siege':
       unit.siegeMult = (unit.siegeMult || 1) * s.primary;
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.secondary);
-      if (unit.meleeRange) unit.meleeRange = Math.max(unit.meleeRange + 1, Math.floor(unit.meleeRange * s.secondary));
+      if (unit.meleeRange)
+        unit.meleeRange = Math.max(unit.meleeRange + 1, Math.floor(unit.meleeRange * s.secondary));
       break;
     case 'ranged':
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.primary);
-      unit.accuracy = Math.min(68, unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0));
+      unit.accuracy = Math.min(
+        68,
+        unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0)
+      );
       bumpUnitRange(unit, s.secondary);
       break;
     default:
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.primary);
-      unit.accuracy = Math.min(68, unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0));
+      unit.accuracy = Math.min(
+        68,
+        unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0)
+      );
       if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * s.secondary);
       bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
       break;
@@ -1487,15 +1459,6 @@ function getWaveConfig(waveNum) {
   return { count, pool, interval, boss, hpScale, dmgScale };
 }
 
-function previewWaveComposition(waveNum, sampleSize = 8) {
-  const cfg = getWaveConfig(waveNum);
-  const samples = Array.from(
-    { length: sampleSize },
-    () => cfg.pool[Math.floor(Math.random() * cfg.pool.length)]
-  );
-  return [...new Set(samples.map((t) => EnemyDefs[t]?.name || t))].join(', ');
-}
-
 const ENEMY_SPRITE_MAP = {
   orc_archer: 'orc_archer',
   goblin: 'goblin',
@@ -1661,9 +1624,7 @@ function createUnit(type, x, y, team, opts = {}) {
   u.speed = def.speed;
   u.combatType = def.type;
   // Ranged siege crews (ballista) must always have a projectile or they never fire.
-  u.projectile =
-    def.projectile ||
-    (def.type === 'ranged' || def.type === 'siege' ? 'arrow' : null);
+  u.projectile = def.projectile || (def.type === 'ranged' || def.type === 'siege' ? 'arrow' : null);
   u.healAmount = def.healAmount ?? (def.type === 'healer' ? 20 : 0);
   u.morale = def.morale || 10;
   u.maxMorale = def.morale || 10;
@@ -1909,12 +1870,7 @@ function getCastleKeepForGroup(buildings, groupId) {
   if (!buildings?.length || !groupId) return null;
   return (
     buildings.find(
-      (b) =>
-        b.owner === 'player' &&
-        b.castleGroup === groupId &&
-        b.isKeep &&
-        b.complete &&
-        b.hp > 0
+      (b) => b.owner === 'player' && b.castleGroup === groupId && b.isKeep && b.complete && b.hp > 0
     ) || null
   );
 }

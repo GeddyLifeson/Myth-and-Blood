@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModule(file, exportsKey, extra = {}) {
   const code = readFileSync(join(JS, file), 'utf8');
@@ -17,14 +18,6 @@ function loadModule(file, exportsKey, extra = {}) {
 const SpriteLod = loadModule('sprite-lod.js', 'SpriteLod');
 const FloatingText = loadModule('floatingText.js', 'FloatingText', { SpriteLod });
 const Particles = loadModule('particles.js', 'Particles', { SpriteLod });
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 FloatingText.setBudget(90, 0.4, 2);
 for (let i = 0; i < 200; i++) FloatingText.damage(i, i, i);
@@ -73,7 +66,10 @@ for (let i = 0; i < 40; i++) {
 }
 const saved = JSON.parse(storage.get('myth-and-blood-chronicles-v1') || '[]');
 ok(saved.length <= 24, 'chronicles cap total entries');
-ok(saved.every((e) => (e.summary?.length || 0) <= 720), 'chronicles trim long summaries');
+ok(
+  saved.every((e) => (e.summary?.length || 0) <= 720),
+  'chronicles trim long summaries'
+);
 ok(saved.filter((e) => e.type === 'run').length <= 8, 'chronicles cap run entries');
 
 storage.set(
@@ -94,8 +90,8 @@ Chronicles.load();
 const afterStale = Chronicles.getAll();
 ok(!afterStale.some((e) => e.title === 'Stale'), 'chronicles drop entries older than max age');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll memory-prune smoke tests passed');

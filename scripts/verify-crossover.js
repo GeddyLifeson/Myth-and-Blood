@@ -177,20 +177,20 @@ global.Achievements = { tryUnlock: () => {} };
 global.AudioEngine = { SFX: { reinforce: () => {} } };
 loadScript('cheats.js');
 const cheatUnlocks = [
-  ['115', 'ultimis'],
-  ['primus', 'primis'],
-  ['halo', 'halo'],
-  ['gears', 'gears'],
-  ['one to rule them all', 'lotr'],
-  ['hanma', 'baki'],
-  ['jojos bizarre adventure', 'jojo'],
-  ['fotns', 'fotns'],
-  ['dragon soul', 'dragonball'],
-  ['for the emperor', 'imperium'],
+  ['void residue', 'ultimis'],
+  ['first circle', 'primis'],
+  ['orbital vanguard', 'halo'],
+  ['iron trench', 'gears'],
+  ['ninefold march', 'lotr'],
+  ['iron pit', 'baki'],
+  ['spirit court', 'jojo'],
+  ['north star', 'fotns'],
+  ['skyburst', 'dragonball'],
+  ['crimson legions', 'imperium'],
   ['crystal light', 'crystal'],
-  ['let the galaxy burn', 'warp'],
+  ['rift cult', 'warp'],
   ['eternal crusade', 'warhammer'],
-  ['dragonborn legacy', 'tes'],
+  ['voicebound', 'tes'],
 ];
 for (const [code, fid] of cheatUnlocks) {
   MetaProgress.reset();

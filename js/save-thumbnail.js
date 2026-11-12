@@ -52,23 +52,6 @@ const SaveThumbnail = (() => {
       }
     }
 
-    const pw = data.planetWarfare;
-    if (pw?.active && pw.hostileLineY) {
-      const ly = pw.hostileLineY * sy;
-      const grad = ctx.createLinearGradient(0, 0, 0, ly + 4);
-      grad.addColorStop(0, `rgba(140, 30, 40, ${0.35 + (pw.hostileControl || 0) * 0.3})`);
-      grad.addColorStop(1, 'rgba(60, 20, 28, 0)');
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, w, ly + 2);
-      ctx.strokeStyle = 'rgba(255, 80, 70, 0.65)';
-      ctx.setLineDash([3, 3]);
-      ctx.beginPath();
-      ctx.moveTo(0, ly);
-      ctx.lineTo(w, ly);
-      ctx.stroke();
-      ctx.setLineDash([]);
-    }
-
     if (typeof VisualPolish !== 'undefined') {
       VisualPolish.drawMinimapOverlay(ctx, w, h, data, 'bands');
     }
@@ -169,8 +152,12 @@ const SaveThumbnail = (() => {
       }
     }
     if (placeholder) {
-      placeholder.textContent = empty ? 'No quick save yet' : meta.thumbnail ? '' : 'Saved (no preview)';
-      placeholder.hidden = !!(meta?.thumbnail);
+      placeholder.textContent = empty
+        ? 'No quick save yet'
+        : meta.thumbnail
+          ? ''
+          : 'Saved (no preview)';
+      placeholder.hidden = !!meta?.thumbnail;
     }
     if (metaEl) {
       if (empty) {
@@ -186,9 +173,7 @@ const SaveThumbnail = (() => {
     MAX_W,
     MINIMAP_H,
     capture,
-    captureFromCanvas,
     captureFromMinimapData,
-    drawMinimapFrame,
     formatSavedAt,
     buildMetaLines,
     renderQuickSavePanel,

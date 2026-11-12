@@ -312,10 +312,10 @@ function testCrossoverHubUI(MP, Hub, doc) {
       tabs.innerHTML.includes('ultimis'),
     'faction tabs should render unlocked factions'
   );
-  // IP-scrubbed roster names (was Tank Dempsey → Splinter Vale).
+  // IP-scrubbed roster names (was Tank Splinter Vale → Splinter Vale).
   assert(
     grid.innerHTML.includes('Splinter Vale') ||
-      grid.innerHTML.includes('Tank Dempsey') ||
+      grid.innerHTML.includes('Tank Splinter Vale') ||
       grid.innerHTML.includes('tank_dempsey') ||
       grid.innerHTML.includes('Need barracks'),
     'roster grid should list ultimis operatives'
@@ -333,7 +333,8 @@ function testCrossoverHubUI(MP, Hub, doc) {
   };
   Hub.renderRoster(gsWithBase);
   assert(
-    !grid.innerHTML.includes('Need barracks on field') || grid.innerHTML.includes('Tank Dempsey'),
+    !grid.innerHTML.includes('Need barracks on field') ||
+      grid.innerHTML.includes('Tank Splinter Vale'),
     'ultimis roster should not show need-base when barracks on field'
   );
 
@@ -509,7 +510,7 @@ function testGameRecruitFlow(exp) {
   assert(!dup, 'recruitCrossoverOperative should block duplicate named crossover on field');
   assert(Game.getState().tactical === tpBeforeDup, 'duplicate recruit should not spend TP');
 
-  Cheats.submit('115');
+  Cheats.submit('void residue');
   assert(MetaProgress.is115Unlocked(), 'cheat 115 should unlock ultimis meta');
 }
 
@@ -833,7 +834,10 @@ function testEnemyFactions(exp) {
 }
 
 function testAsymmetricWarfare(exp) {
-  if (!exp.AsymmetricWarfare) { console.log('  skip AsymmetricWarfare (removed)'); return; }
+  if (!exp.AsymmetricWarfare) {
+    console.log('  skip AsymmetricWarfare (removed)');
+    return;
+  }
   const { AsymmetricWarfare } = exp;
   assert(AsymmetricWarfare, 'AsymmetricWarfare module should exist');
   AsymmetricWarfare.resetRun();
@@ -888,7 +892,10 @@ function testAsymmetricWarfare(exp) {
 }
 
 function testMonsterBosses(exp) {
-  if (!exp.MonsterBosses) { console.log('  skip MonsterBosses'); return; }
+  if (!exp.MonsterBosses) {
+    console.log('  skip MonsterBosses');
+    return;
+  }
   const { MonsterBosses, GameDepth } = exp;
   assert(MonsterBosses, 'MonsterBosses module should exist');
   assert(MonsterBosses.BOSS_PACKS.boss_gorath, 'Gorath pack should exist');
@@ -920,7 +927,10 @@ function testMonsterBosses(exp) {
 }
 
 function testMultiFrontSiege(exp) {
-  if (!exp.MultiFrontSiege) { console.log('  skip MultiFrontSiege (removed)'); return; }
+  if (!exp.MultiFrontSiege) {
+    console.log('  skip MultiFrontSiege (removed)');
+    return;
+  }
   const { MultiFrontSiege, EnemyFactions, getUnlockedAttackSides, PlanetConquest } = exp;
   assert(MultiFrontSiege, 'MultiFrontSiege module should exist');
   assert(MultiFrontSiege.MULTI_FRONT_MIN_WAVE === 12, 'multi-front should start wave 12');
@@ -994,7 +1004,10 @@ function testMultiFrontSiege(exp) {
 }
 
 function testNeutralWildlife(exp) {
-  if (!exp.NeutralWildlife) { console.log('  skip NeutralWildlife'); return; }
+  if (!exp.NeutralWildlife) {
+    console.log('  skip NeutralWildlife');
+    return;
+  }
   const { NeutralWildlife } = exp;
   assert(NeutralWildlife, 'NeutralWildlife module should exist');
   NeutralWildlife.resetRun();
@@ -1047,7 +1060,10 @@ function testNeutralWildlife(exp) {
 }
 
 function testFactionHazards(exp) {
-  if (!exp.FactionHazards) { console.log('  skip FactionHazards'); return; }
+  if (!exp.FactionHazards) {
+    console.log('  skip FactionHazards');
+    return;
+  }
   const { FactionHazards, EnemyFactions, getTerritoryTier, PlanetConquest } = exp;
   assert(FactionHazards, 'FactionHazards module should exist');
   PlanetConquest?.resetRun?.({ forcedMode: false });
@@ -1173,7 +1189,10 @@ function testCrownLegacies(exp) {
 }
 
 function testFactionReputation(exp) {
-  if (!exp.FactionReputation) { console.log('  skip FactionReputation'); return; }
+  if (!exp.FactionReputation) {
+    console.log('  skip FactionReputation');
+    return;
+  }
   const { FactionReputation, EnemyFactions } = exp;
   assert(FactionReputation, 'FactionReputation module should exist');
   FactionReputation.resetRun();
@@ -1230,7 +1249,10 @@ function testFactionReputation(exp) {
 }
 
 function testDynamicMapEvents(exp) {
-  if (!exp.DynamicMapEvents) { console.log('  skip DynamicMapEvents'); return; }
+  if (!exp.DynamicMapEvents) {
+    console.log('  skip DynamicMapEvents');
+    return;
+  }
   const { DynamicMapEvents } = exp;
   assert(DynamicMapEvents, 'DynamicMapEvents module should exist');
   DynamicMapEvents.resetRun();
@@ -1299,7 +1321,10 @@ function testDynamicMapEvents(exp) {
 }
 
 function testLivingPlanet(exp) {
-  if (!exp.LivingPlanet) { console.log('  skip LivingPlanet'); return; }
+  if (!exp.LivingPlanet) {
+    console.log('  skip LivingPlanet');
+    return;
+  }
   const { LivingPlanet, getTerritoryTier, getWorldSize, BASE_FIELD_W, BASE_FIELD_H } = exp;
   assert(LivingPlanet, 'LivingPlanet module should exist');
   assert(LivingPlanet.FOREST_UNLOCK_TIER === 2, 'forest should unlock at land tier 2');
@@ -1353,7 +1378,10 @@ function testLivingPlanet(exp) {
 }
 
 function testPlayerCounterEvolution(exp) {
-  if (!exp.PlayerCounterEvolution) { console.log('  skip PlayerCounterEvolution'); return; }
+  if (!exp.PlayerCounterEvolution) {
+    console.log('  skip PlayerCounterEvolution');
+    return;
+  }
   const { PlayerCounterEvolution, EnemyFactions } = exp;
   assert(PlayerCounterEvolution, 'PlayerCounterEvolution module should exist');
   assert(PlayerCounterEvolution.COUNTER_WAVE_MIN === 15, 'counter wave min should be 15');
@@ -1402,7 +1430,10 @@ function testPlayerCounterEvolution(exp) {
 }
 
 function testSettlementRaids(exp) {
-  if (!exp.SettlementRaids) { console.log('  skip SettlementRaids (removed)'); return; }
+  if (!exp.SettlementRaids) {
+    console.log('  skip SettlementRaids (removed)');
+    return;
+  }
   const { SettlementRaids, isKingdomRaidsUnlocked } = exp;
   assert(SettlementRaids, 'SettlementRaids module should exist');
   assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 150, 'raid wave min should be 150');
@@ -1465,10 +1496,7 @@ function testUnitPanelScaling(exp) {
   healer.goldStarsEarned = 3;
   healer.lateAbilityUnlocked = true;
   const massMend = getSpecialistLateAbilityInfo(healer);
-  assert(
-    massMend?.unlocked && massMend.name === 'Mass Mend',
-    '3 gold stars unlocks Mass Mend'
-  );
+  assert(massMend?.unlocked && massMend.name === 'Mass Mend', '3 gold stars unlocks Mass Mend');
   const snapGold = GameDepth.getUnitScalingSnapshot(healer, 25);
   assert(
     snapGold.lateAbilityUnlocked && snapGold.lateAbilityName === 'Mass Mend',
@@ -1503,7 +1531,10 @@ function testUnitPanelScaling(exp) {
 }
 
 function testFactionIntel(exp) {
-  if (!exp.FactionIntel) { console.log('  skip FactionIntel'); return; }
+  if (!exp.FactionIntel) {
+    console.log('  skip FactionIntel');
+    return;
+  }
   const { FactionIntel, EnemyFactions } = exp;
   assert(FactionIntel, 'FactionIntel module should exist');
   const gs = {
@@ -1528,7 +1559,10 @@ function testFactionIntel(exp) {
 }
 
 function testPlanetConquest(exp) {
-  if (!exp.PlanetConquest) { console.log('  skip PlanetConquest (removed)'); return; }
+  if (!exp.PlanetConquest) {
+    console.log('  skip PlanetConquest (removed)');
+    return;
+  }
   const { PlanetConquest, EnemyFactions, createUnit } = exp;
   assert(PlanetConquest, 'PlanetConquest module should exist');
   PlanetConquest.resetRun({ forcedMode: true });
@@ -1741,11 +1775,14 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
   );
   const early = entries.find((e) => e.name === 'Early Game — Rare Power Spikes');
   assert(early?.body?.includes('mini-bosses'), 'early game entry should describe rare spikes');
-  const planet = entries.find((e) => e.name === 'Planet Warfare Operatives (Wave 200+)');
-  assert(planet?.body?.includes('Baird'), 'planet ops should list Tech Head / Baird');
+  const planet = entries.find((e) => e.name === 'Northern War Operatives (Wave 200+)');
+  assert(planet?.body?.includes('Gearwright'), 'planet ops should list Tech Head / Gearwright');
   assert(planet?.body?.includes('Kael Skyburst'), 'planet ops should list Skyburst Wave');
   const secret = entries.find((e) => e.name === 'Secret Content & Meta Unlocks');
-  assert(secret?.body?.includes('WWE'), 'secret content should mention WWE');
+  assert(
+    secret?.body?.includes('Grand Coliseum'),
+    'secret content should mention the Grand Coliseum'
+  );
   assert(
     FactionDepth.PLANET_WARFARE_OPERATIVES?.tech_head?.siegeMult >= 2,
     'tech_head should have siege mult'

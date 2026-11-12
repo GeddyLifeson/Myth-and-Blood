@@ -157,9 +157,6 @@ const CreativeMode = (() => {
     if (hint && show) {
       hint.textContent =
         'CREATIVE LAB — P panel · Level Editor · spawn tools · wave composer · scenarios';
-    } else if (hint && !show) {
-      hint.textContent =
-        'Day = assault · Night = prep (+35% build) · Drag map · Scroll zoom · Wave 100: Academy · Wave 200: Enemy settlements';
     }
   }
 
@@ -491,5 +488,5 @@ const CreativeMode = (() => {
     syncToggles(gs);
   }
 
-  return { init, togglePanel, onHudUpdate, showInGame };
+  return { init, togglePanel, onHudUpdate };
 })();

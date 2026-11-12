@@ -5,142 +5,13 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { boot, ok, failures } from './lib/harness.mjs';
 
 /** Mirrors handleClick ground-click priority after demolish/move-building/rotate. */
 function resolveGroundClickIntent({ hasUnitSelection, selectedBuild }) {
   if (hasUnitSelection) return 'move';
   if (selectedBuild) return 'build';
   return 'noop';
-}
-
-function boot(seed) {
-  const noop = () => {};
-  const store = new Map();
-  const ids = new Map();
-  const mk = (id) => {
-    const e = {
-      id,
-      className: '',
-      classList: { add: noop, remove: noop, toggle: () => false, contains: () => false },
-      style: {},
-      textContent: '',
-      innerHTML: '',
-      value: '',
-      dataset: {},
-      addEventListener: noop,
-      removeEventListener: noop,
-      click: noop,
-      appendChild: (c) => c,
-      querySelector: () => null,
-      querySelectorAll: () => [],
-      getContext: (t) =>
-        t === '2d'
-          ? {
-              fillStyle: '',
-              strokeStyle: '',
-              lineWidth: 1,
-              font: '',
-              textAlign: 'left',
-              globalAlpha: 1,
-              setLineDash: noop,
-              save: noop,
-              restore: noop,
-              translate: noop,
-              scale: noop,
-              rotate: noop,
-              setTransform: noop,
-              beginPath: noop,
-              moveTo: noop,
-              lineTo: noop,
-              arc: noop,
-              fill: noop,
-              stroke: noop,
-              fillRect: noop,
-              strokeRect: noop,
-              fillText: noop,
-              drawImage: noop,
-              createLinearGradient: () => ({ addColorStop: noop }),
-              measureText: () => ({ width: 10 }),
-            }
-          : null,
-      width: 1280,
-      height: 720,
-    };
-    ids.set(id, e);
-    return e;
-  };
-  ['achievement-toast', 'menu-screen'].forEach(mk);
-  let rng = seed;
-  const M = Object.create(Math);
-  M.random = () => {
-    rng = (rng * 16807) % 2147483647;
-    return (rng - 1) / 2147483646;
-  };
-  const cvs = mk('canvas');
-  const sb = {
-    console,
-    JSON,
-    Array,
-    Object,
-    String,
-    Number,
-    Boolean,
-    Map,
-    Set,
-    parseInt,
-    parseFloat,
-    isNaN,
-    isFinite,
-    undefined,
-    NaN,
-    Infinity,
-    Math: M,
-    setTimeout: (fn) => {
-      fn();
-      return 0;
-    },
-    clearTimeout: noop,
-    setInterval: () => 0,
-    clearInterval: noop,
-    requestAnimationFrame: (fn) => {
-      fn();
-      return 0;
-    },
-    cancelAnimationFrame: noop,
-    localStorage: {
-      getItem: (k) => store.get(k) ?? null,
-      setItem: (k, v) => store.set(k, String(v)),
-      removeItem: (k) => store.delete(k),
-      clear: () => store.clear(),
-    },
-    performance: { now: () => 0, memory: null },
-    AudioContext: null,
-    innerWidth: 1280,
-    innerHeight: 720,
-    addEventListener: noop,
-    removeEventListener: noop,
-    document: {
-      getElementById: (id) => ids.get(id) || mk(id),
-      querySelector: () => null,
-      querySelectorAll: () => [],
-      addEventListener: noop,
-      createElement: () => mk('el'),
-      hidden: false,
-    },
-    canvas: cvs,
-  };
-  sb.window = sb;
-  sb.self = sb;
-  sb.globalThis = sb;
-  return { sb, cvs };
 }
 
 {
@@ -156,10 +27,7 @@ function boot(seed) {
 
 const { sb, cvs } = boot(7);
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
-const { Game, SpriteGen } = vm.runInContext(
-  `${code}\n({ Game, SpriteGen })`,
-  vm.createContext(sb)
-);
+const { Game, SpriteGen } = vm.runInContext(`${code}\n({ Game, SpriteGen })`, vm.createContext(sb));
 SpriteGen.prewarmCache = () => {};
 Game.init(cvs);
 
@@ -307,8 +175,8 @@ ok(
   'manual order still active or unit reached destination through crowd'
 );
 
-if (failed) {
-  console.error(`\n${failed} move-order test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} move-order test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll move-order tests passed.');

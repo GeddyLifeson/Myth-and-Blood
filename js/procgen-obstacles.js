@@ -1,6 +1,6 @@
 /**
  * WFC-shaped obstacle clusters, ported from the standalone procgen-lab
- * project (C:\Users\imarl\procgen-lab). Unlike Miami Vice RTS's integration,
+ * project (a separate local project). Unlike Miami Vice RTS's integration,
  * this game has no discrete terrain grid to write into -- buildings and
  * decorations are free-floating circles (x, y, radius) in a continuous
  * world (see js/spatial.js). So the adapter here is a blob->circle

@@ -12,7 +12,7 @@
  * - getProfile / getSeasonalEvents / getMasteryTier — faction meta
  * - computeSynergies / applyToUnit / modifyDamage — field bonuses
  * - processAbilityHit / onWaveStart — ability proc pipeline
- * - modifyBuildingDamage / isPlanetSiegeSpecialist — Planet Warfare hooks
+ * - modifyBuildingDamage / isPlanetSiegeSpecialist — the northern war hooks
  * - getEncyclopediaEntries / auditFairRepresentation — content & balance
  */
 class FactionDepthSystem {
@@ -107,7 +107,7 @@ class FactionDepthSystem {
       label: 'Iron Trench Coalition',
       building: 'cog_academy',
       palette: ['#506080', '#c04040'],
-      identity: 'Lancer discipline — chainsaw finishers, brotherhood bonds, siege busting.',
+      identity: 'Trenchsaw discipline — chainsaw finishers, brotherhood bonds, siege busting.',
       weakness: 'Light infantry are fragile; needs veteran anchor for brotherhood synergy.',
       weaknessMods: { vsFlying: 0.9, vsBerserker: 0.9, damageTakenRanged: 1.08 },
       playstyle: 'Veteran + partner core; engineer for towers; bruiser flanks.',
@@ -150,7 +150,8 @@ class FactionDepthSystem {
       building: 'stand_arrow_shrine',
       palette: ['#8040a0', '#e0c040'],
       identity: 'Spirit-bound operatives across eras — ripple arts, rush finishers, cavalry duels.',
-      weakness: 'Cavalry operatives need space; ripple arts weak vs necromancer hordes without walls.',
+      weakness:
+        'Cavalry operatives need space; ripple arts weak vs necromancer hordes without walls.',
       weaknessMods: { vsUndead: 0.85, vsNecromancer: 0.88, damageTakenRanged: 1.1 },
       playstyle: 'Mix eras for tags; pin specialist locks elites; cavalry pair hunts on wide maps.',
       lore: 'A spirit-binding shrine on your battlefield? Fate is bizarre, and the waves are stranger.',
@@ -250,11 +251,11 @@ class FactionDepthSystem {
   static PLANET_WARFARE_OPERATIVES = {
     tech_head: {
       label: 'Tech Head',
-      operative: 'Baird',
+      operative: 'Gearwright',
       faction: 'gears',
       siegeMult: 2.25,
       settlementMult: 1.45,
-      desc: 'COG tech sabotage — bonus damage vs enemy settlements and siege engines.',
+      desc: 'Coalition tech sabotage — bonus damage vs enemy settlements and siege engines.',
     },
     axe_cleave: {
       label: 'Axe Cleave',
@@ -275,8 +276,8 @@ class FactionDepthSystem {
       desc: 'Superior engineering — devastates trade posts, quarries, and siege towers.',
     },
     lancer_burst: {
-      label: 'Lancer Burst',
-      operative: 'Marcus Ironhart',
+      label: 'Trenchsaw Burst',
+      operative: 'Marek Ironhart',
       faction: 'gears',
       siegeMult: 2.05,
       finisherHp: 0.35,
@@ -284,8 +285,8 @@ class FactionDepthSystem {
       desc: 'Chainsaw raze — executes wounded enemy structures in the north.',
     },
     hokuto_kaioh: {
-      label: 'Ken-Oh Terror',
-      operative: 'Raoh',
+      label: 'Conqueror’s Terror',
+      operative: 'Rao',
       faction: 'fotns',
       siegeMult: 1.88,
       hamletMult: 1.42,
@@ -307,7 +308,7 @@ class FactionDepthSystem {
       siegeMult: 1.65,
       deleteHp: 0.25,
       deleteMult: 2.6,
-      desc: 'God of Destruction — obliterates structures below 25% HP.',
+      desc: 'Lord of Ruin — obliterates structures below 25% HP.',
     },
     weather_stand: {
       label: 'Storm Caller',
@@ -329,8 +330,8 @@ class FactionDepthSystem {
       desc: 'Explosive ordnance — every third strike splashes clustered outposts.',
     },
     special_beam: {
-      label: 'Special Beam Cannon',
-      operative: 'Namek Sage',
+      label: 'Spiral Lance Beam',
+      operative: 'Verdant Sage',
       faction: 'dragonball',
       siegeMult: 1.88,
       heavyHp: 300,
@@ -362,7 +363,7 @@ class FactionDepthSystem {
       desc: 'Walking tank — bonus damage vs enemy settlements and siege engines.',
     },
     firaga: {
-      label: 'Firaga',
+      label: 'Greater Flame',
       operative: 'Black Mage',
       faction: 'crystal',
       siegeMult: 1.82,
@@ -385,7 +386,7 @@ class FactionDepthSystem {
     necromancer: {
       weakFactions: ['jojo', 'primis', 'ultimis'],
       mult: 1.22,
-      note: 'Undead resist hamon and aether — field walls!',
+      note: 'Undead resist sunbreath and aether — field walls!',
     },
     shaman: {
       weakFactions: ['fotns', 'baki'],
@@ -405,7 +406,7 @@ class FactionDepthSystem {
     war_chief: {
       weakFactions: ['ultimis'],
       mult: 1.1,
-      note: 'Boss elites punish reckless 115 rushes.',
+      note: 'Boss elites punish reckless void rushes.',
     },
     assassin: {
       weakFactions: ['halo', 'dragonball', 'lotr', 'tes'],
@@ -471,21 +472,21 @@ class FactionDepthSystem {
       id: 'lotr_fellowship',
       faction: 'lotr',
       name: 'Nine Walkers',
-      desc: 'Field 5+ LOTR operatives at once.',
+      desc: 'Field 5+ Ninefold operatives at once.',
       minField: 5,
     },
     {
       id: 'jojo_sbr',
       faction: 'jojo',
-      name: 'Golden Ball Run',
-      desc: 'Field 2+ Part 7 cavalry operatives.',
+      name: 'Gilded Derby',
+      desc: 'Field 2+ derby cavalry operatives.',
       flag: 'jojo_cavalry',
     },
     {
       id: 'db_zenkai',
       faction: 'dragonball',
-      name: 'Zenkai Boost',
-      desc: 'Score 200 lifetime DB kills.',
+      name: 'Rebound Surge',
+      desc: 'Score 200 lifetime Skyburst kills.',
       kills: 200,
     },
     {
@@ -506,7 +507,7 @@ class FactionDepthSystem {
       id: 'cog_last_stand',
       faction: 'gears',
       name: 'Last Bastion',
-      desc: 'Clear wave 35 with 3+ COG on field.',
+      desc: 'Clear wave 35 with 3+ Coalition on field.',
       wave: 35,
       minField: 3,
     },
@@ -520,14 +521,14 @@ class FactionDepthSystem {
     {
       id: 'hokuto_successor',
       faction: 'fotns',
-      name: 'Hokuto Successor',
-      desc: 'Trigger 40 Hokuto abilities (lifetime).',
+      name: 'Seven Star Successor',
+      desc: 'Trigger 40 Seven Star abilities (lifetime).',
       abilities: 40,
     },
     {
       id: 'astartes_line',
       faction: 'imperium',
-      name: 'Astartes Battle Line',
+      name: 'Legion Battle Line',
       desc: 'Clear wave 45 with 3+ Imperium operatives on field.',
       wave: 45,
       minField: 3,
@@ -550,7 +551,7 @@ class FactionDepthSystem {
       id: 'tes_dragonborn',
       faction: 'tes',
       name: 'Wyrmcaller Voice',
-      desc: 'Clear wave 38 with 2+ TES operatives on field.',
+      desc: 'Clear wave 38 with 2+ Voicebound operatives on field.',
       wave: 38,
       minField: 2,
     },
@@ -664,7 +665,7 @@ class FactionDepthSystem {
     this.patchBuildDefs();
   }
 
-  /** Evolved operatives with enhanced northern-hold demolition at wave 200+ (Planet Warfare). */
+  /** Evolved operatives with enhanced northern-hold demolition at wave 200+ (the northern war). */
 
   bind(gameCtx) {
     this.ctx = gameCtx;
@@ -784,7 +785,8 @@ class FactionDepthSystem {
       d = Math.round(d * mods.vsRanged);
     if (mods.vsArcane && this.isArcaneFoe(target)) d = Math.round(d * mods.vsArcane);
     if (mods.vsUndead && this.isUndeadFoe(target)) d = Math.round(d * mods.vsUndead);
-    if (mods.vsNecromancer && target?.type === 'necromancer') d = Math.round(d * mods.vsNecromancer);
+    if (mods.vsNecromancer && target?.type === 'necromancer')
+      d = Math.round(d * mods.vsNecromancer);
     if (mods.vsAssassin && target?.type === 'assassin') d = Math.round(d * mods.vsAssassin);
     if (mods.vsBerserker && target?.type === 'berserker') d = Math.round(d * mods.vsBerserker);
     if (mods.vsMeleeRush && target?.team === 'enemy' && this.ctx?.units) {
@@ -1052,10 +1054,14 @@ class FactionDepthSystem {
       const ab = u.wweAbility;
       const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
       const coolInt = (n, min = 1) =>
-        typeof coolAbilityInt === 'function' ? coolAbilityInt(n, min) : Math.max(min, Math.round(n * cool));
+        typeof coolAbilityInt === 'function'
+          ? coolAbilityInt(n, min)
+          : Math.max(min, Math.round(n * cool));
       if (ab === 'spartan_rage' || ab === 'oorah') {
         units
-          .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(u, a) < coolInt(100))
+          .filter(
+            (a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(u, a) < coolInt(100)
+          )
           .forEach((a) => {
             a.morale = Math.min(a.maxMorale, a.morale + coolInt(3, 0));
             a.rallyTimer = Math.max(a.rallyTimer || 0, coolInt(60));
@@ -1265,15 +1271,16 @@ class FactionDepthSystem {
     // 20% cooler character abilities — stronger procs, bigger AoEs.
     const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
     const coolInt = (n, min = 1) =>
-      typeof coolAbilityInt === 'function' ? coolAbilityInt(n, min) : Math.max(min, Math.round(n * cool));
+      typeof coolAbilityInt === 'function'
+        ? coolAbilityInt(n, min)
+        : Math.max(min, Math.round(n * cool));
     const synMult = 1 + (unit.synergyAbility || 0);
 
     const origTake = this.ctx.takeDamage?.bind(this.ctx);
     const origRad = this.ctx.damageInRadius?.bind(this.ctx);
     if (origTake) {
       // Single cool pass — damageInRadius calls takeDamage, so only scale here.
-      this.ctx.takeDamage = (t, amount, opts) =>
-        origTake(t, coolInt(Number(amount) || 0), opts);
+      this.ctx.takeDamage = (t, amount, opts) => origTake(t, coolInt(Number(amount) || 0), opts);
     }
     if (origRad) {
       // Cool the AoE footprint; damage amount is cooled inside takeDamage.
@@ -1295,7 +1302,11 @@ class FactionDepthSystem {
           }
         }
         if (splash >= (orbital ? 1 : 2)) {
-          this.procAbilityVfx(unit, orbital ? 'ORBITAL FRAG' : 'FRAG!', orbital ? '#ff8040' : '#c06030');
+          this.procAbilityVfx(
+            unit,
+            orbital ? 'ORBITAL FRAG' : 'FRAG!',
+            orbital ? '#ff8040' : '#c06030'
+          );
         }
       },
       apothicon_slam() {
@@ -1345,7 +1356,7 @@ class FactionDepthSystem {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 80) e.morale = Math.max(0, e.morale - 3);
         }
-        this.procAbilityVfx(unit, 'YOU SHALL NOT PASS', '#c0c0e0');
+        this.procAbilityVfx(unit, 'NONE SHALL PASS', '#c0c0e0');
       },
       ring_bearer() {
         if (Math.random() < 0.2) return;
@@ -1513,7 +1524,7 @@ class FactionDepthSystem {
         ).length;
         if (foes >= 3) {
           this.ctx.damageInRadius(unit.x, unit.y, 60, Math.round(dmg * 0.8), 'player');
-          this.procAbilityVfx(unit, 'KAMEHAMEHA', '#e06040');
+          this.procAbilityVfx(unit, 'SKYBURST WAVE', '#e06040');
         }
       },
       special_beam() {
@@ -1628,7 +1639,7 @@ class FactionDepthSystem {
       rko() {
         if (target.team === 'enemy' && target.hp > 0 && target.hp / target.maxHp < 0.45) {
           this.ctx.takeDamage(target, Math.max(target.hp * 0.85, dmg * 2.2), { crit: true });
-          FloatingText?.status(target.x, target.y, 'RKO!', '#5080c0');
+          FloatingText?.status(target.x, target.y, 'AMBUSH!', '#5080c0');
           AudioEngine?.SFX?.factionFinisher?.();
         }
       },
@@ -1765,7 +1776,7 @@ class FactionDepthSystem {
             splash++;
           }
         }
-        if (splash >= 2) this.procAbilityVfx(unit, "FUS RO DAH", '#4068a0');
+        if (splash >= 2) this.procAbilityVfx(unit, 'WORD OF FORCE', '#4068a0');
       },
       thuum_echo() {
         this.ctx.units
@@ -1778,7 +1789,7 @@ class FactionDepthSystem {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 80) e.morale = Math.max(0, e.morale - 2);
         }
-        this.procAbilityVfx(unit, "THU'UM", '#708090');
+        this.procAbilityVfx(unit, 'THE VOICE', '#708090');
       },
       shield_wall() {
         if (unit.hp / unit.maxHp < 0.55 && (unit.shieldWallCd || 0) <= 0) {
@@ -1814,8 +1825,7 @@ class FactionDepthSystem {
       const killHeal = syns.find((s) => s.bonus.killHeal);
       if (killHeal && target.hp <= 0 && unit.isCrossover) {
         const ally = this.ctx.units.find((a) => a.team === 'player' && a.hp > 0 && a.hp < a.maxHp);
-        if (ally)
-          ally.hp = Math.min(ally.maxHp, ally.hp + coolInt(killHeal.bonus.killHeal, 0));
+        if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + coolInt(killHeal.bonus.killHeal, 0));
       }
     } finally {
       if (origTake) this.ctx.takeDamage = origTake;
@@ -1998,9 +2008,9 @@ class FactionDepthSystem {
         body: [
           'Evolved operatives are your evolved allies — rare power spikes early, full faction armies mid-game, and planet-scale demolition experts late.',
           '',
-          'The host evolves its factions (Grunts → Kingdom). Your evolved allies mirror that curve: a single bound-spirit operative can flip a siege at wave 15; by wave 80 a mixed roster with synergies feels like fielding evolved monsters of your own; after wave 200, Planet Warfare operatives raze northern holds and push the hostile front line back.',
+          'The host evolves its factions (Grunts → Kingdom). Your evolved allies mirror that curve: a single bound-spirit operative can flip a siege at wave 15; by wave 80 a mixed roster with synergies feels like fielding evolved monsters of your own; after wave 200, Northern war operatives raze northern holds and push the hostile front line back.',
           '',
-          'Vanilla troops still anchor the line — evolved allies reward investment, not replacement. Secret rosters (Coliseum, Doomslayer) and Tonic Stations machines unlock alongside evolved barracks.',
+          'Vanilla troops still anchor the line — evolved allies reward investment, not replacement. Secret rosters (Coliseum, Hellbane) and Tonic Stations machines unlock alongside evolved barracks.',
         ].join('\n'),
       },
       {
@@ -2028,20 +2038,20 @@ class FactionDepthSystem {
           `• Four Worlds (4+ factions): +5% all evolved ally damage — the "evolved monster horde" peak.`,
           '• Mastery tiers (kills, ability procs, challenges) add morale ceiling and Legion Archive titles.',
           '• Kingdom loadouts (wave 100+) and colony value steer enemy composition — tailor synergies to counter the host (March of War vs wall-heavy turtles, Skyburst Spirit for sustain).',
-          '• Doomslayer (Doomslayer difficulty, wave 200) and coliseum finishers anchor boss waves while synergies carry the line.',
+          '• Hellbane (Hellbane difficulty, wave 200) and coliseum finishers anchor boss waves while synergies carry the line.',
         ].join('\n'),
       },
       {
         cat: 'crossover_meta',
-        name: 'Planet Warfare Operatives (Wave 200+)',
+        name: 'Northern War Operatives (Wave 200+)',
         body: [
-          `After wave ${this.PLANET_WARFARE_WAVE}, Planet Warfare expands hostile territory south. Evolved operatives with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
+          `After wave ${this.PLANET_WARFARE_WAVE}, the host presses south. Evolved operatives with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
           '',
           this.formatPlanetOpsTable(),
           '',
-          'Hunt mode + Planet Warfare: operatives prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Stone Axe Lord, Kael Skyburst, Heavy Gunner, Storm Caller) clear clustered mirror economy. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
+          'Hunt mode in the northern war: operatives prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Stone Axe Lord, Kael Skyburst, Heavy Gunner, Storm Caller) clear clustered mirror economy. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
           '',
-          'Planet Conquest (wave 500+) extends the same logic to sector warfare — evolved armies must shatter the Worldheart Tyrant while holding three+ unit types for ward break.',
+          'Past wave 500 the same logic holds — evolved armies must shatter the endless host while holding three+ unit types for ward break.',
         ].join('\n'),
       },
       {
@@ -2049,8 +2059,8 @@ class FactionDepthSystem {
         name: 'Secret Content & Meta Unlocks',
         body: [
           'Secret rosters sit outside the standard evolved-allies tree:',
-          '• Grand Coliseum Champions (WWE / Iron Creed academy) — showmanship morale bombs and finishers (Guest Star synergy with any second faction).',
-          '• Doomslayer — Hell anchor unlocked on Doomslayer difficulty after wave 200; single-entity apocalypse (hellscape wave 1001+ normalizes his damage).',
+          '• Grand Coliseum Champions (Iron Creed academy) — showmanship morale bombs and finishers (Guest Star synergy with any second faction).',
+          '• Hellbane — Hell anchor unlocked on Hellbane difficulty after wave 200; single-entity apocalypse (hellscape wave 1001+ normalizes his damage).',
           '',
           'Meta progression:',
           '• Tonic Stations machines unlock after any secret roster (Coliseum, Doom, or evolved allies) is active — Ironbrew, Tombstone, Twinshot Brew, and hidden machines.',
@@ -2064,7 +2074,7 @@ class FactionDepthSystem {
       {
         cat: 'crossover_meta',
         name: 'Faction Mastery',
-        body: 'Earn mastery points from evolved ally kills, ability procs, and wave clears. Tiers unlock titles shown in Legion Archive. Mastery never replaces vanilla troops — it rewards dedication. Mastery challenges (Grand Bout, Wolf Pack, Golden Ball Run, etc.) grant +25 mastery when completed.',
+        body: 'Earn mastery points from evolved ally kills, ability procs, and wave clears. Tiers unlock titles shown in Legion Archive. Mastery never replaces vanilla troops — it rewards dedication. Mastery challenges (Grand Bout, Wolf Pack, Gilded Derby, etc.) grant +25 mastery when completed.',
       },
       {
         cat: 'crossover_meta',
@@ -2090,7 +2100,7 @@ class FactionDepthSystem {
         .filter((op) => op.faction === id)
         .map((op) => op.operative);
       const planetNote = planetOps.length
-        ? `\n\nPlanet Warfare (wave ${this.PLANET_WARFARE_WAVE}+): ${planetOps.join(', ')} gain settlement-siege bonuses.`
+        ? `\n\nNorthern war (wave ${this.PLANET_WARFARE_WAVE}+): ${planetOps.join(', ')} gain settlement-siege bonuses.`
         : '';
       entries.push({
         cat: `crossover_${id}`,
@@ -2100,15 +2110,15 @@ class FactionDepthSystem {
     }
     entries.push({
       cat: 'crossover_meta',
-      name: 'Coliseum & Doomslayer — Secret Evolved Allies',
+      name: 'Coliseum & Hellbane — Secret Evolved Allies',
       body: [
         `${this.PROFILES.wwe?.lore || 'Grand Coliseum Champions bring the grand arena to your siege.'}`,
         '',
         `Coliseum — ${this.PROFILES.wwe?.identity || 'Showmanship morale bombs and finishers.'} ${this.PROFILES.wwe?.playstyle || ''}`,
         '',
-        `${this.PROFILES.doom?.lore || 'The Doomslayer walks from Hell.'}`,
+        `${this.PROFILES.doom?.lore || 'The Hellbane walks from Hell.'}`,
         '',
-        `Doomslayer — ${this.PROFILES.doom?.identity || 'Single-entity apocalypse.'} ${this.PROFILES.doom?.playstyle || ''}`,
+        `Hellbane — ${this.PROFILES.doom?.identity || 'Single-entity apocalypse.'} ${this.PROFILES.doom?.playstyle || ''}`,
       ].join('\n'),
     });
     return entries;

@@ -251,12 +251,6 @@ const Spatial = (() => {
     }
   }
 
-  function rebuild(units, buildings, decorations, hazards) {
-    rebuildStatic(buildings, decorations);
-    rebuildDynamic(units);
-    rebuildHazards(hazards);
-  }
-
   function forCellsInMap(map, x, y, radius, fn) {
     const min = toCell(x - radius, y - radius);
     const max = toCell(x + radius, y + radius);
@@ -390,7 +384,6 @@ const Spatial = (() => {
   return {
     init,
     clear,
-    rebuild,
     rebuildStatic,
     rebuildDynamic,
     rebuildHazards,

@@ -402,15 +402,6 @@ class ColonyValueSystem {
     }
   }
 
-  formatKingdomSummary(colony) {
-    if (!colony) return 'Kingdom strength unknown';
-    const b = colony.breakdown;
-    return (
-      `Kingdom ${colony.total} (${colony.tier.label} · ${colony.threatRatio.toFixed(2)}×) — ` +
-      `Army ${b.military} · Works ${b.structures} · Treasury ${b.economy}`
-    );
-  }
-
   formatWaveNote(colony, pressure) {
     if (!colony || !pressure) return '';
     const pct = Math.round((pressure.countMult - 1) * 100);
@@ -618,7 +609,7 @@ class ColonyValueSystem {
         name: 'The Three Ledgers',
         body: [
           'Army — every live player unit weighted by:',
-          '• Deploy cost (Doomslayer capped)',
+          '• Deploy cost (Hellbane capped)',
           '• HP factor: 0.55 + 0.45 × (current HP ÷ max HP)',
           '• Star mult: +42% gold, +24% silver, +10% bronze per star',
           '• Role mult: General ×2.4, evolved ×2.1, coliseum ×1.9, knight ×1.35',

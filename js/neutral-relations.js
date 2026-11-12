@@ -85,10 +85,6 @@ const NeutralRelations = (() => {
     return reputation;
   }
 
-  function reduceReputation(amount, wave = 0) {
-    return addReputation(-amount, wave);
-  }
-
   function shouldSkipPlayerAggro(unit, target, wave) {
     if (!target || target.team !== 'player') return false;
     if (unit?.alliedToPlayer) return true;
@@ -150,10 +146,7 @@ const NeutralRelations = (() => {
       }
     } else if (killer?.team === 'enemy') {
       const nearPlayer = (ctx.units || []).some(
-        (u) =>
-          u.team === 'player' &&
-          u.hp > 0 &&
-          Math.hypot(u.x - unit.x, u.y - unit.y) < 220
+        (u) => u.team === 'player' && u.hp > 0 && Math.hypot(u.x - unit.x, u.y - unit.y) < 220
       );
       if (nearPlayer) {
         delta = 3;
@@ -284,8 +277,9 @@ const NeutralRelations = (() => {
 
   function getStateSnapshot(wave, units) {
     const stance = getStance();
-    const allied = (units || []).filter((u) => u.team === 'neutral' && u.hp > 0 && u.alliedToPlayer)
-      .length;
+    const allied = (units || []).filter(
+      (u) => u.team === 'neutral' && u.hp > 0 && u.alliedToPlayer
+    ).length;
     return {
       active: isActive(wave),
       waveMin: WAVE_MIN,
@@ -312,15 +306,11 @@ const NeutralRelations = (() => {
     getStance,
     isPactActive,
     addReputation,
-    reduceReputation,
-    shouldSkipPlayerAggro,
     findAggroTarget,
     onWildlifeSlain,
     onWaveEnd,
     onHuntPact,
     onWaveStart,
-    rollDiplomacyEvent,
-    spawnAlliedPack,
     getWildlifeSpawnMult,
     getStateSnapshot,
     formatSummary,

@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = readFileSync(join(JS, 'entity-pool.js'), 'utf8');
 const sb = { Math, Object, Array, Map, Set };
@@ -12,14 +13,6 @@ sb.window = sb;
 sb.globalThis = sb;
 
 const { EntityPool } = vm.runInContext(`${code}\n({ EntityPool })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 function spawnMockUnit(x, y, team) {
   const u = EntityPool.acquireUnit();
@@ -65,8 +58,8 @@ EntityPool.reset();
 ok(EntityPool.getStats().unitPool === 0, 'reset clears unit pool');
 ok(EntityPool.getStats().buildingPool === 0, 'reset clears building pool');
 
-if (failed) {
-  console.error(`\n${failed} entity-pool test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} entity-pool test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll entity-pool tests passed.');

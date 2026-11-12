@@ -145,10 +145,6 @@ const SettlementRaids = (() => {
     return missions;
   }
 
-  function getMissions() {
-    return missions.filter((m) => !m.completed);
-  }
-
   function getMission(missionId) {
     return missions.find((m) => m.id === missionId && !m.completed) || null;
   }
@@ -294,21 +290,12 @@ const SettlementRaids = (() => {
 
   return {
     SETTLEMENT_RAID_WAVE_MIN,
-    SETTLEMENT_RAID_WAVE_PEAK,
     MIN_STRIKE_FORCE,
-    MAX_STRIKE_FORCE,
     resetRun,
     isActive,
     isUnlocked,
-    getRaidIntensity,
     getFactionBuildBoost,
-    classifySettlement,
-    computeReward,
     refreshMissions,
-    getMissions,
-    getMission,
-    isStrikeUnit,
-    canDispatch,
     dispatchStrike,
     onSettlementDestroyed,
     checkWaveAnnouncement,

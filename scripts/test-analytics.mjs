@@ -83,11 +83,25 @@ Analytics.onRunEnd({ wave: 12, victory: false });
 const ins = Analytics.getInsights();
 assert(ins.runs === 1, 'one run recorded');
 assert(ins.outcomes.defeat === 1, 'defeat counted');
-assert(ins.loadouts.some((l) => l.id === 'shield'), 'dominant loadout tracked');
-assert(ins.formations.some((f) => f.id === 'wedge'), 'formation tracked');
-assert(ins.dropOff.some((d) => d.id === 'w10-24' && d.count === 1), 'drop-off bucket');
+assert(
+  ins.loadouts.some((l) => l.id === 'shield'),
+  'dominant loadout tracked'
+);
+assert(
+  ins.formations.some((f) => f.id === 'wedge'),
+  'formation tracked'
+);
+assert(
+  ins.dropOff.some((d) => d.id === 'w10-24' && d.count === 1),
+  'drop-off bucket'
+);
 
-Analytics.onRunStart({ modeId: 'survival', difficulty: 'chad', difficultyPct: 150, loadout: 'arrows' });
+Analytics.onRunStart({
+  modeId: 'survival',
+  difficulty: 'chad',
+  difficultyPct: 150,
+  loadout: 'arrows',
+});
 Analytics.onRunAbandon(3);
 const ins2 = Analytics.getInsights();
 assert(ins2.runs === 2, 'second run');

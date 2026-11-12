@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const sb = {
   Math,
@@ -38,14 +39,6 @@ const NR = load('neutral-relations.js', 'NeutralRelations');
 const BS = load('biome-spawn.js', 'BiomeSpawn');
 const OST = load('operative-skill-trees.js', 'OperativeSkillTrees');
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 NR.resetRun();
 ok(NR.getReputation() === 0, 'neutral relations starts neutral');
 NR.addReputation(30);
@@ -66,8 +59,14 @@ const allied = {
   alliedToPlayer: true,
   fleeing: false,
 };
-ok(NR.findAggroTarget(neutral, [player, enemy], 12)?.team === 'enemy', 'pact wildlife targets enemy not player');
-ok(NR.findAggroTarget(allied, [player, enemy], 12)?.team === 'enemy', 'allied wildlife targets enemy');
+ok(
+  NR.findAggroTarget(neutral, [player, enemy], 12)?.team === 'enemy',
+  'pact wildlife targets enemy not player'
+);
+ok(
+  NR.findAggroTarget(allied, [player, enemy], 12)?.team === 'enemy',
+  'allied wildlife targets enemy'
+);
 
 const ctx = { worldW: 400, worldH: 600, baseW: 400, baseH: 600, territoryTier: 3, wave: 20 };
 const forestBiome = LP.getBiomeAt(200, 80, ctx);
@@ -99,10 +98,14 @@ const unit = {
 vmCtx.getCrossoverDef = () => ({ faction: 'ultimis' });
 OST.applyToUnit(unit, [unit]);
 ok((unit.skillAcc || 0) >= 6, 'skill tree applies accuracy bonus');
-const dmg = OST.modifyDamage({ ...unit, skillMelee: 0.1, projectile: null, combatType: 'melee' }, {}, 100);
+const dmg = OST.modifyDamage(
+  { ...unit, skillMelee: 0.1, projectile: null, combatType: 'melee' },
+  {},
+  100
+);
 ok(dmg === 110, 'skill melee modifier');
 
 ok(Object.keys(OST.FACTION_TREES).length >= 8, 'eight faction trees defined');
 ok(BS.BIOME_PROFILES.forest.wildlifeMult > 1, 'forest boosts wildlife');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

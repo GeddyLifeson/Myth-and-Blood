@@ -378,7 +378,8 @@ const FoundationalMedievalLayer = (() => {
     const wave = ctx.wave | 0;
     if (!isActiveWave(wave) || !run) return '';
     if (wave === 50) return 'Foundational era — your cultural DNA is forming';
-    if (wave === 100) return 'Halfway through the medieval foundation — path crystallizes at wave 150';
+    if (wave === 100)
+      return 'Halfway through the medieval foundation — path crystallizes at wave 150';
     if (wave === 140) return 'Ten waves to crystallize Longbow, Arcane, or Mythic path';
     if (wave >= WAVE_MAX && run.leading) {
       const path = PATHS[run.leading];
@@ -420,7 +421,6 @@ const FoundationalMedievalLayer = (() => {
   load();
 
   return {
-    WAVE_MAX,
     PATHS,
     resetRun,
     onRunStart,
@@ -438,13 +438,11 @@ const FoundationalMedievalLayer = (() => {
     hasCrystallizedPath,
     getCrystallizedPaths,
     getRunSnapshot,
-    getPersistentSnapshot,
     getStateSnapshot,
     formatHudLine,
     formatIntelNote,
     getRunModifiers,
     getLegacyEntries,
-    isActiveWave,
   };
 })();
 

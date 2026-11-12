@@ -10,8 +10,22 @@ const StrategyCounterplay = (() => {
       detect(s, wave) {
         return s.wallCount >= 6 || (s.wallCount >= 4 && s.castleValue > 0);
       },
-      pool: ['siege_tower', 'siege_tower', 'goblin_sapper', 'goblin_sapper', 'goblin_engineer', 'goblin_burrower', 'troll'],
-      weights: { siege_tower: 2.8, goblin_sapper: 2.4, goblin_engineer: 1.9, goblin_burrower: 1.6, troll: 1.5 },
+      pool: [
+        'siege_tower',
+        'siege_tower',
+        'goblin_sapper',
+        'goblin_sapper',
+        'goblin_engineer',
+        'goblin_burrower',
+        'troll',
+      ],
+      weights: {
+        siege_tower: 2.8,
+        goblin_sapper: 2.4,
+        goblin_engineer: 1.9,
+        goblin_burrower: 1.6,
+        troll: 1.5,
+      },
       playerTools: 'Sappers and ballistas shred siege towers — pikemen catch warg flanks.',
       intervalMult: 0.96,
     },
@@ -53,7 +67,9 @@ const StrategyCounterplay = (() => {
       label: 'Ranged Deathball',
       detect(s) {
         const ranged = (s.rangedCount || 0) + (s.ballistaCount || 0);
-        return ranged >= 4 || (s.militaryUnits >= 6 && ranged / Math.max(1, s.militaryUnits) >= 0.45);
+        return (
+          ranged >= 4 || (s.militaryUnits >= 6 && ranged / Math.max(1, s.militaryUnits) >= 0.45)
+        );
       },
       pool: ['harpy', 'sky_drake', 'goblin_burrower', 'warg_rider', 'assassin'],
       weights: { harpy: 2.2, sky_drake: 2, goblin_burrower: 1.6, warg_rider: 1.5, assassin: 1.3 },
@@ -86,7 +102,8 @@ const StrategyCounterplay = (() => {
       id: 'tp_hoard',
       label: 'TP Reserve',
       detect(s, wave) {
-        const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
+        const eased =
+          typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
         const baseline = 24 + eased * 140;
         return (s.liquidTp || 0) >= baseline * 1.35;
       },
@@ -174,7 +191,11 @@ const StrategyCounterplay = (() => {
     if (!target || target.hp <= 0) return false;
     if (target.type === 'siege_tower' || target.type === 'goblin_sapper') return true;
     if (target.siegeDeployed) return true;
-    if (target.type === 'iron_colossus' || target.type === 'boss_karg' || target.type === 'boss_volk')
+    if (
+      target.type === 'iron_colossus' ||
+      target.type === 'boss_karg' ||
+      target.type === 'boss_volk'
+    )
       return true;
     if (target.combatType === 'siege' && (target.siegeMult || 1) >= 2.2) return true;
     return false;
@@ -185,7 +206,11 @@ const StrategyCounterplay = (() => {
   }
 
   function isCavalryTarget(target) {
-    return !!(target?.combatType === 'cavalry' || target?.type === 'warg_rider' || target?.type === 'knight');
+    return !!(
+      target?.combatType === 'cavalry' ||
+      target?.type === 'warg_rider' ||
+      target?.type === 'knight'
+    );
   }
 
   function modifyDamage(unit, target, dmg) {
@@ -262,7 +287,12 @@ const StrategyCounterplay = (() => {
     if (msg) hooks.showMessage?.(msg, 340);
     const primary = strategies[0];
     if (primary?.label && hooks.floatingText) {
-      hooks.floatingText(hooks.worldW / 2, 72, `COUNTER: ${primary.label.toUpperCase()}`, '#80b0ff');
+      hooks.floatingText(
+        hooks.worldW / 2,
+        72,
+        `COUNTER: ${primary.label.toUpperCase()}`,
+        '#80b0ff'
+      );
     }
   }
 
@@ -280,7 +310,6 @@ const StrategyCounterplay = (() => {
     formatCounterIntel,
     maybeAnnounce,
     getActive,
-    isSiegeTarget,
     STRATEGIES,
   };
 })();

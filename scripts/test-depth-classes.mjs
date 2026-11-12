@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 const sb = {
@@ -40,14 +41,6 @@ const { ColonyValue, FactionDepth, GameDepth, GameEvents, GameServices, createUn
     `${code}\n({ ColonyValue, FactionDepth, GameDepth, GameEvents, GameServices, createUnit })`,
     vm.createContext(sb)
   );
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(
   ColonyValue?.constructor?.name === 'ColonyValueSystem',
@@ -103,8 +96,8 @@ GameEvents.once(GameEvents.GameEvent.WAVE_START, (p) => {
 GameEvents.emit(GameEvents.GameEvent.WAVE_START, { phase: 'prep', wave: 1 });
 ok(busFired, 'GameEvents.emit/on');
 
-if (failed) {
-  console.error(`\n${failed} failure(s)`);
+if (failures()) {
+  console.error(`\n${failures()} failure(s)`);
   process.exit(1);
 }
 console.log('\nAll depth-class smoke tests passed.');

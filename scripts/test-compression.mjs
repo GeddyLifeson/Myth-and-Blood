@@ -6,21 +6,22 @@ import { existsSync, readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { gunzipSync, brotliDecompressSync } from 'zlib';
+import { spawnSync } from 'child_process';
+import { ok, failures } from './lib/harness.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 if (!existsSync(DIST)) {
-  console.error('Run npm run build first');
-  process.exit(1);
+  // Build on demand so the suite passes from a clean checkout.
+  const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'build.mjs')], {
+    cwd: ROOT,
+    stdio: 'ignore',
+  });
+  if (r.status !== 0 || !existsSync(DIST)) {
+    console.error('Build failed; run npm run build to see why');
+    process.exit(1);
+  }
 }
 
 const unitsPath = join(DIST, 'data', 'units.json');
@@ -45,10 +46,13 @@ ok(compression?.brotliPct > 50, `brotli savings ${compression?.brotliPct}%`);
 
 const bundleBr = join(DIST, 'js', 'game.bundle.min.js.br');
 ok(existsSync(bundleBr), 'game bundle .br exists');
-ok(statSync(bundleBr).size < statSync(join(DIST, 'js', 'game.bundle.min.js')).size, 'bundle br smaller');
+ok(
+  statSync(bundleBr).size < statSync(join(DIST, 'js', 'game.bundle.min.js')).size,
+  'bundle br smaller'
+);
 
-if (failed) {
-  console.error(`test-compression: ${failed} failure(s)`);
+if (failures()) {
+  console.error(`test-compression: ${failures()} failure(s)`);
   process.exit(1);
 }
 console.log('test-compression: OK');

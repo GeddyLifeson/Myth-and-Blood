@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function mockStorage() {
   const store = {};
@@ -25,7 +26,13 @@ function loadModules() {
   const ascSrc = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
   const synSrc = readFileSync(join(JS, 'thematic-era-synergies.js'), 'utf8');
   const pfSrc = readFileSync(join(JS, 'hybrid-power-fantasy.js'), 'utf8');
-  const gsSrc = (() => { try { return readFileSync(join(JS, 'grand-strategy.js'), 'utf8'); } catch { return '/* optional missing grand-strategy.js */'; } })();
+  const gsSrc = (() => {
+    try {
+      return readFileSync(join(JS, 'grand-strategy.js'), 'utf8');
+    } catch {
+      return '/* optional missing grand-strategy.js */';
+    }
+  })();
   const sb = {
     Math,
     Object,
@@ -83,55 +90,72 @@ function seedMixed(FML) {
   FML.recordDeploy('goku', 60);
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { FoundationalMedievalLayer, ThematicEraSynergies, HybridPowerFantasy, GrandStrategy } =
   loadModules();
 
 // Pure arcane → Wizard-Kings
 seedPureArcane(FoundationalMedievalLayer);
 ok(HybridPowerFantasy.evaluatePathPurity() === 'pure_arcane', 'pure arcane purity detected');
-if (GrandStrategy) {
-GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
 const pendingArcane = HybridPowerFantasy.getStateSnapshot({ wave: 400 });
-ok(pendingArcane.pending && pendingArcane.fantasyId === null, 'wizard-kings pending before wave 500');
+ok(
+  pendingArcane.pending && pendingArcane.fantasyId === null,
+  'wizard-kings pending before wave 500'
+);
 const messages = [];
-HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: (m) => messages.push(m), addHighlight: () => {} });
+HybridPowerFantasy.onWaveStart(500, {
+  wave: 500,
+  showMessage: (m) => messages.push(m),
+  addHighlight: () => {},
+});
 const arcSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(arcSnap.active && arcSnap.fantasyId === 'wizard_kings', 'wizard-kings unlock at wave 500');
 ok(arcSnap.fleetLabel === 'Reality-Warping Armada', 'wizard-kings fleet label');
-const mage = { team: 'player', type: 'mage', damage: 30, range: 80, maxHp: 90, hp: 90, maxMorale: 30, morale: 30 };
+const mage = {
+  team: 'player',
+  type: 'mage',
+  damage: 30,
+  range: 80,
+  maxHp: 90,
+  hp: 90,
+  maxMorale: 30,
+  morale: 30,
+};
 HybridPowerFantasy.applyUnitFantasy(mage, 500);
 ok(mage.wizardKing, 'mage becomes wizard-king');
 ok(mage.damage > 30, 'wizard-king damage boost');
 const arcFleet = HybridPowerFantasy.getFleetMods(500);
 ok(arcFleet.realityWarp && arcFleet.fleetDmgMult > 1, 'reality-warping fleet mods');
-ok(messages.some((m) => m.includes('Wizard-Kings')), 'wizard-kings announced');
+ok(
+  messages.some((m) => m.includes('Wizard-Kings')),
+  'wizard-kings announced'
+);
 
 // Pure martial → Honor Legion
 seedPureMartial(FoundationalMedievalLayer);
 ok(HybridPowerFantasy.evaluatePathPurity() === 'pure_martial', 'pure martial purity detected');
-GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
-HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: (m) => messages.push(m), addHighlight: () => {} });
+HybridPowerFantasy.onWaveStart(500, {
+  wave: 500,
+  showMessage: (m) => messages.push(m),
+  addHighlight: () => {},
+});
 const martSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(martSnap.active && martSnap.fantasyId === 'honor_legion', 'honor legion unlock at wave 500');
 ok(martSnap.honorQuote?.includes('sword and shield'), 'honor demands the blade quote');
@@ -149,26 +173,35 @@ HybridPowerFantasy.applyUnitFantasy(knight, 500);
 ok(knight.honorLegion && knight.honorPlate, 'knight gains honor plate');
 ok(knight.honorMeleeOnly && knight.range <= 58, 'honor legion keeps sword and shield range');
 ok(knight.maxHp > 200, 'honor legion HP boost');
-ok(messages.some((m) => m.includes('sword and shield')), 'honor quote announced');
+ok(
+  messages.some((m) => m.includes('sword and shield')),
+  'honor quote announced'
+);
 
 // Mixed path blocked
 seedMixed(FoundationalMedievalLayer);
 HybridPowerFantasy.resetRun();
 ThematicEraSynergies.resetRun();
-GrandStrategy?.resetRun?.();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: () => {}, addHighlight: () => {} });
 const mixedSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
 ok(!mixedSnap.active, 'mixed path does not unlock apex fantasy');
 
 // GS tactical merge
 seedPureMartial(FoundationalMedievalLayer);
-GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-ThematicEraSynergies.onWaveStart(150, { wave: 150, units: [], showMessage: () => {}, addHighlight: () => {} });
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
 HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
 HybridPowerFantasy.onWaveStart(500, { wave: 500, showMessage: () => {}, addHighlight: () => {} });
 const finalSnap = HybridPowerFantasy.getStateSnapshot({ wave: 500 });
@@ -179,8 +212,8 @@ ok(!GrandStrategy || gsMods.playerDmgMult > 1, 'GS merges power fantasy tactical
 const intel = HybridPowerFantasy.formatIntelNote({ wave: 500 });
 ok(intel.toLowerCase().includes('power fantasy'), 'intel note mentions power fantasy');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll hybrid power fantasy tests passed');

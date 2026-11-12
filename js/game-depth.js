@@ -129,7 +129,11 @@ class GameDepthSystem {
 
   waveTpScale(wave) {
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     const mid = GameDepthSystem.POST_100_TP_WAVE_SCALE;
     const late = GameDepthSystem.POST_200_TP_WAVE_SCALE;
@@ -139,10 +143,6 @@ class GameDepthSystem {
 
   isHybridAcademyDeploy() {
     return true;
-  }
-
-  hybridDeployCostMult() {
-    return 1;
   }
 
   getGeneralAuraBreakdown(gen) {
@@ -175,7 +175,11 @@ class GameDepthSystem {
   getNightBuildMult(wave, nightTimer, nightPrepTicks) {
     let mult = typeof NIGHT_BUILD_MULT !== 'undefined' ? NIGHT_BUILD_MULT : 1.35;
     const academyBlend =
-      typeof academyThresholdBlend === 'function' ? academyThresholdBlend(wave) : wave >= 100 ? 1 : 0;
+      typeof academyThresholdBlend === 'function'
+        ? academyThresholdBlend(wave)
+        : wave >= 100
+          ? 1
+          : 0;
     const rtsBlend = typeof rtsMapBlend === 'function' ? rtsMapBlend(wave) : wave >= 200 ? 1 : 0;
     mult += academyBlend * 0.05 + rtsBlend * 0.08;
     const urgency = nightTimer > nightPrepTicks * 0.85 ? 0.92 : 1;
@@ -220,14 +224,6 @@ class GameDepthSystem {
       recentBreaks: recent,
       cascade: recent.length >= GameDepthSystem.MORALE_CASCADE_THRESHOLD,
     };
-  }
-
-  weightedSpawnSide(sides, spawnIdx) {
-    if (sides.length <= 1) return sides[0];
-    const newest = sides[sides.length - 1];
-    const roll = Math.random();
-    if (roll < 0.55) return newest;
-    return sides[spawnIdx % sides.length];
   }
 
   isBossWave(wave) {
@@ -342,7 +338,10 @@ class GameDepthSystem {
     const countRatio = queueLen / baseline;
     const spawnPace = 1 / Math.max(0.42, intervalMult);
     const siegeBoost = hasSiege ? 0.14 : 0;
-    const waveBoost = Math.min(0.12, (typeof academyEase === 'function' ? academyEase(wave) : wave / 100) * 0.12);
+    const waveBoost = Math.min(
+      0.12,
+      (typeof academyEase === 'function' ? academyEase(wave) : wave / 100) * 0.12
+    );
     const raw = (countRatio - 0.82) * 0.5 + (spawnPace - 0.95) * 0.38 + siegeBoost + waveBoost;
     return Math.max(0.28, Math.min(1, raw));
   }
@@ -454,19 +453,6 @@ class GameDepthSystem {
     const keep = buildings.find((b) => b.castleGroup === groupId && b.isKeep);
     if (!keep) return false;
     return Math.hypot(unit.x - keep.x, unit.y - keep.y) < CASTLE_COMPOUND_OFFSET + 20;
-  }
-
-  specialistLateAbility(unit) {
-    if (typeof getSpecialistLateAbilityInfo === 'function') {
-      const info = getSpecialistLateAbilityInfo(unit);
-      return info?.unlocked ? info.id : null;
-    }
-    if (!unit || typeof isSpecialistLateAbilityUnlocked !== 'function') return null;
-    if (!isSpecialistLateAbilityUnlocked(unit)) return null;
-    if (unit.type === 'healer') return 'mass_mend';
-    if (unit.type === 'builder') return 'rapid_repair';
-    if (unit.type === 'courier') return 'twin_dispatch';
-    return null;
   }
 
   isIpOperative(unit) {
@@ -621,7 +607,7 @@ class GameDepthSystem {
     return unit;
   }
 
-  /** Evolved / Coliseum / Doomslayer scale with wave progression; vanilla troops do not. */
+  /** Evolved / Coliseum / Hellbane scale with wave progression; vanilla troops do not. */
   getIpWaveScale(wave) {
     const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(wave) : 0;

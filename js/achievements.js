@@ -173,13 +173,6 @@ const Achievements = (() => {
     }
   }
 
-  function unlockedCountExcludingMeta() {
-    return [...unlocked].filter((id) => {
-      const a = LIST.find((x) => x.id === id);
-      return a && !a.meta;
-    }).length;
-  }
-
   function effectiveUnlockCount() {
     return unlocked.size;
   }
@@ -551,7 +544,8 @@ const Achievements = (() => {
       case 'run_fellowship_morale': {
         const minSamples = parseInt(rest[0] || '8', 10);
         const needRatio = parseFloat(rest[1] || '0.55');
-        if (!session.flags.has('run_victory') || session.moraleSamplesTotal < minSamples) return false;
+        if (!session.flags.has('run_victory') || session.moraleSamplesTotal < minSamples)
+          return false;
         return session.moraleSamplesHigh / session.moraleSamplesTotal >= needRatio;
       }
       case 'morale_high_waves':
@@ -581,9 +575,7 @@ const Achievements = (() => {
       case 'solo_hero_named_boss':
         return session.flags.has('solo_hero_named_boss');
       case 'run_hokuto_solo':
-        return (
-          session.flags.has('run_victory') && session.flags.has('solo_hero_named_boss')
-        );
+        return session.flags.has('run_victory') && session.flags.has('solo_hero_named_boss');
       case 'planet_boss_high_ki':
         return session.flags.has('planet_boss_high_ki');
       case 'run_dragonball_ki': {
@@ -816,7 +808,11 @@ const Achievements = (() => {
           MetaProgress.unlockDoomslayerHero();
           tryUnlock('doom_hero_unlock');
         }
-        if (w >= 150 && data.difficulty === 'doomslayer' && !session.flags.has('zombie_building_lost')) {
+        if (
+          w >= 150 &&
+          data.difficulty === 'doomslayer' &&
+          !session.flags.has('zombie_building_lost')
+        ) {
           MetaProgress.unlock115();
           tryUnlock('ultimis_horde_150');
           tryUnlock('ultimis_unlock');
@@ -853,7 +849,9 @@ const Achievements = (() => {
           session.flags.add('honor_max');
         }
         if (data.event === 'honored') session.flags.add('honor');
-        if ((data.vetTier || 0) >= (typeof MAX_VETERAN_TIER !== 'undefined' ? MAX_VETERAN_TIER : 6)) {
+        if (
+          (data.vetTier || 0) >= (typeof MAX_VETERAN_TIER !== 'undefined' ? MAX_VETERAN_TIER : 6)
+        ) {
           const pathId =
             typeof EternalPathFramework !== 'undefined'
               ? EternalPathFramework.getPathForUnit?.(data.unitType, data)
@@ -963,8 +961,10 @@ const Achievements = (() => {
         if (data.bossType) session.flags.add(`dragon_boss_${data.bossType}`);
         break;
 
+      // 'campaign_victory' fires when wave 100 is cleared: the run is won, and play continues.
+      case 'campaign_victory':
       case 'game_end':
-        if (data.victory) {
+        if (data.victory || type === 'campaign_victory') {
           session.flags.add('run_victory');
           if (data.hasCastleCompound) session.flags.add('has_castle_compound');
           if (
@@ -1427,14 +1427,8 @@ const Achievements = (() => {
     renderPanel,
     togglePanel,
     resetSession,
-    checkAll,
     evaluateRule,
     updateTopBar,
-    hasClub316,
-    CLUB_316_ID,
-    META_316_ID,
-    MILLENNIUM_ID,
-    TARGET,
   };
 })();
 

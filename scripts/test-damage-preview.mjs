@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 const sb = {
@@ -36,14 +37,6 @@ sb.window = sb;
 sb.globalThis = sb;
 
 const { DamagePreview } = vm.runInContext(`${code}\n({ DamagePreview })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const gs = {
   wave: 20,
@@ -80,4 +73,4 @@ ok(early.enemyLabel === 'Goblin', 'early wave uses Goblin reference');
 const strike = DamagePreview.previewAbility('lightning', ctx);
 ok(strike.center > strike.edge, 'lightning center > edge falloff');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

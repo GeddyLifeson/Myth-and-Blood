@@ -12,7 +12,7 @@ const AscensionSystem = (() => {
       wave: 150,
       label: 'Kingdom Era',
       pointGrant: 18,
-      desc: 'Grand Strategy unlocks — ascend veterans into realm paragons.',
+      desc: 'The realm widens — ascend veterans into realm paragons.',
     },
     galactic: {
       id: 'galactic',
@@ -85,8 +85,8 @@ const AscensionSystem = (() => {
       },
       galactic: {
         id: 'star_lancer',
-        label: 'Star Lancer',
-        short: 'Lancer',
+        label: 'Star Trenchsaw',
+        short: 'Trenchsaw',
         weapon: 'Solar Lance',
         cost: 26,
         requiresStage: 'realm_champion',
@@ -377,9 +377,7 @@ const AscensionSystem = (() => {
     unit.ascensionShort = stage.short || stage.label;
     unit.ascensionWeapon = stage.weapon || null;
     unit.ascensionEra = era;
-    unit.ascensionTitle = stage.weapon
-      ? `${stage.label} (${stage.weapon})`
-      : stage.label;
+    unit.ascensionTitle = stage.weapon ? `${stage.label} (${stage.weapon})` : stage.label;
     unit.ascensionApplied = true;
   }
 
@@ -401,7 +399,10 @@ const AscensionSystem = (() => {
     const offer = getUnitAscensionOffer(unit, wave);
     if (!offer) return { ok: false, msg: 'Not eligible for ascension.' };
     if (!spendLegacyPoints(offer.cost)) {
-      return { ok: false, msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).` };
+      return {
+        ok: false,
+        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
+      };
     }
     applyStageToUnit(unit, offer.stage, offer.era);
     run.ascendedUnits += 1;
@@ -419,7 +420,10 @@ const AscensionSystem = (() => {
     const offer = getBuildingAscensionOffer(building, wave);
     if (!offer) return { ok: false, msg: 'Building not eligible for ascension.' };
     if (!spendLegacyPoints(offer.cost)) {
-      return { ok: false, msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).` };
+      return {
+        ok: false,
+        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
+      };
     }
     applyStageToBuilding(building, offer.stage, offer.era);
     run.ascendedBuildings += 1;
@@ -472,46 +476,6 @@ const AscensionSystem = (() => {
     return unit.ascensionTitle;
   }
 
-  function getAscensionDmgMult(unit) {
-    if (!unit?.ascensionStageId) return 1;
-    const key = getChainKey(unit);
-    const chain = key ? UNIT_CHAINS[key] : null;
-    if (!chain) return 1;
-    let mult = 1;
-    for (const era of ['kingdom', 'galactic']) {
-      const s = getStageDef(chain, era);
-      if (!s) continue;
-      if (
-        unit.ascensionStageId === s.id ||
-        (era === 'galactic' && unit.ascensionStageId === chain.galactic?.id)
-      ) {
-        if (s.dmgMult) mult *= s.dmgMult;
-      }
-      if (unit.ascensionStageId === chain.kingdom?.id && era === 'kingdom' && s.dmgMult) {
-        mult = s.dmgMult;
-      }
-    }
-    const key2 = getChainKey(unit);
-    const c = key2 ? UNIT_CHAINS[key2] : null;
-    if (!c) return 1;
-    if (unit.ascensionStageId === c.kingdom?.id && c.kingdom?.dmgMult) return c.kingdom.dmgMult;
-    if (unit.ascensionStageId === c.galactic?.id) {
-      return (c.kingdom?.dmgMult || 1) * (c.galactic?.dmgMult || 1);
-    }
-    return mult;
-  }
-
-  function getAscensionHpMult(unit) {
-    const key = getChainKey(unit);
-    const c = key ? UNIT_CHAINS[key] : null;
-    if (!c || !unit?.ascensionStageId) return 1;
-    if (unit.ascensionStageId === c.kingdom?.id && c.kingdom?.hpMult) return c.kingdom.hpMult;
-    if (unit.ascensionStageId === c.galactic?.id) {
-      return (c.kingdom?.hpMult || 1) * (c.galactic?.hpMult || 1);
-    }
-    return 1;
-  }
-
   function onWaveStart(wave, ctx = {}) {
     if (!run) resetRun();
     if (ctx.creative) return null;
@@ -529,7 +493,10 @@ const AscensionSystem = (() => {
           `Ascension unlocked — ${grant} Legacy Points. Max veterans can ascend at era transitions (unit panel).`,
           440
         );
-        ctx.addHighlight?.('milestone', `${gate.label} — ascend Immortal troops with Legacy Points`);
+        ctx.addHighlight?.(
+          'milestone',
+          `${gate.label} — ascend Immortal troops with Legacy Points`
+        );
       }
       if (gate.id === 'galactic' && !galacticAnnounced) {
         galacticAnnounced = true;
@@ -587,9 +554,7 @@ const AscensionSystem = (() => {
   resetRun();
 
   return {
-    ERA_GATES,
     UNIT_CHAINS,
-    BUILDING_CHAINS,
     resetRun,
     onRunStart,
     onWaveStart,
@@ -600,8 +565,6 @@ const AscensionSystem = (() => {
     reapplyAscensionBonuses,
     applySpawnBonusesFromBuildings,
     getDisplayTitle,
-    getAscensionDmgMult,
-    getAscensionHpMult,
     grantLegacyPoints,
     spendLegacyPoints,
     getStateSnapshot,

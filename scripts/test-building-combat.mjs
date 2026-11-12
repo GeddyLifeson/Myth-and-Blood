@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot() {
   const noop = () => {};
@@ -59,7 +52,11 @@ function boot() {
       hidden: false,
       querySelector: () => null,
       querySelectorAll: () => [],
-      createElement: () => ({ getContext: () => ctx2d(), style: {}, classList: { add: noop, remove: noop } }),
+      createElement: () => ({
+        getContext: () => ctx2d(),
+        style: {},
+        classList: { add: noop, remove: noop },
+      }),
     },
     canvas: cvs,
     Image: function Image() {
@@ -116,7 +113,9 @@ foot.hp = 0;
 for (let i = 0; i < 8; i++) Game.update();
 
 ok(Game.creativeSpawnPlayerBuildingAt('outpost', cx.x - 40, cx.y - 100), 'place player outpost');
-const outSnap = Game.getBuildingsSnapshot().find((b) => b.type === 'outpost' && b.owner === 'player');
+const outSnap = Game.getBuildingsSnapshot().find(
+  (b) => b.type === 'outpost' && b.owner === 'player'
+);
 ok(outSnap?.complete, 'player outpost complete');
 
 if (outSnap) {
@@ -141,8 +140,8 @@ if (outSnap) {
   ok(false, 'enemy damages player outpost in range');
 }
 
-if (failed) {
-  console.error(`\n${failed} building-combat test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} building-combat test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll building-combat tests passed.');

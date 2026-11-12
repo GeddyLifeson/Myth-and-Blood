@@ -23,6 +23,7 @@ No server is required. Sound is procedural (generated in the browser) — click 
 | **Campaign**         | Standard endless run with chosen difficulty and optional advanced modifiers |
 | **Survival Endless** | Score-focused; leaderboard ranks wave × difficulty% + kills                 |
 | **Roguelike**        | Random advanced modifiers each run                                          |
+| **Warband**          | Small squad: soldiers cost double, and each is far tougher and hits harder  |
 | **Timed Blitz**      | Shorter night prep — race the clock                                         |
 | **Seed Run**         | Deterministic spawns from a shared seed                                     |
 | **Academy Era**      | Jump to wave 100 / 105 / 200 — skip the early grind                         |
@@ -31,7 +32,7 @@ No server is required. Sound is procedural (generated in the browser) — click 
 
 ## Creative Mode
 
-A **BTD6-style practice sandbox** for playtesting builds, waves, and unit upgrades — no achievements and no game over.
+A **practice sandbox** for playtesting builds, waves, and unit upgrades — no achievements and no game over.
 
 | How to start | Main menu → **CREATIVE MODE** (uses your selected difficulty) |
 | ------------ | ------------------------------------------------------------- |
@@ -52,8 +53,8 @@ Use normal deploy/build controls alongside the lab. Disarm spawn tools to intera
 
 ## Objective
 
-- **Win condition:** There is no final wave. Your goal is to survive as long as possible.
-- **Lose condition:** Enemies break through your line too many times. Each breakthrough counts as a **miss**. Exceed your miss limit and the realm falls.
+- **Win condition:** Clear **wave 100** to win the campaign. That awards the victory achievements, faction trials and legacy unlocks. The siege itself never ends, so the run continues afterwards for score.
+- **Lose condition:** Enemies break through your line too many times, or you have no troops and no training halls left. Each enemy that gets through counts as a **breach**. Pass the breach limit and the realm falls.
 
 Clear every wave to earn TP, expand territory, unlock new systems, and push into the Academy and RTS eras.
 
@@ -61,12 +62,13 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 
 ## Core Loop
 
-1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. Press **D** to begin the day when ready.
+1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
 2. **Day combat** — waves spawn from unlocked flanks. Troops auto-engage in Hunt mode, or click to move them manually.
 3. **Fight** — cast strikes, manage morale, retreat wounded troops to med tents.
 4. **Clear the wave** — all enemies defeated.
 5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
-6. **Repeat** with tougher, more numerous foes.
+6. **Every 5 waves, claim spoils** — choose one of three rewards that last the rest of the run.
+7. **Repeat** with tougher, more numerous foes.
 
 ---
 
@@ -157,17 +159,20 @@ Select a strike, then click the map. A targeting ring and icon follow your curso
 
 ### General
 
-| Key          | Action                                  |
-| ------------ | --------------------------------------- |
-| D            | Begin day phase (during night prep)     |
-| H            | Toggle Hunt mode                        |
-| Space        | Pause                                   |
-| Esc          | Cancel selection / close panels         |
-| V            | Mute/unmute sound                       |
-| A            | Achievements                            |
-| I            | Encyclopedia                            |
-| ` (backtick) | Cheat menu                              |
-| P            | Creative Lab panel (Creative Mode only) |
+| Key          | Action                                                                                                                                       |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| D            | Begin day phase (during night prep)                                                                                                          |
+| H            | Toggle Hunt mode (also the HUNT button in the top bar)                                                                                       |
+| ]            | Cycle game speed, 1× to 10× (also the SPEED button in the top bar)                                                                           |
+| Space        | Pause                                                                                                                                        |
+| Esc          | Cancel selection / close panels                                                                                                              |
+| C / G / F    | With units selected: clear selection / reform formation / focus camera. With nothing selected they are the Castle, Hamlet and Meteor hotkeys |
+| Alt+1–5      | Formation presets for the selected group                                                                                                     |
+| V            | Mute/unmute sound                                                                                                                            |
+| A            | Achievements                                                                                                                                 |
+| I            | Encyclopedia                                                                                                                                 |
+| ` (backtick) | Cheat menu                                                                                                                                   |
+| P            | Creative Lab panel (Creative Mode only)                                                                                                      |
 
 Click the map to deploy, build, cast strikes, or move selected units. Hover UI buttons for tooltips.
 
@@ -257,6 +262,9 @@ All settlements have **large footprints**, **HP bars**, and are **siege targets*
 - With a General in the Keep, **footmen auto-fill wall slots** inside the castle compound.
 - **Demoralized troops** (routing before wave 100, giving up after wave 100) are detected globally — the General paths to them for a pep talk.
 - On promotion from Footman, honor names are kept; combat stars reset and only improve aura.
+- **Orders** (buttons at the top of the screen while a General is on the field):
+  - **War Cry** (`[`) — soldiers near the General strike 20% harder for 8 seconds and regain morale. 45-second cooldown.
+  - **Hold the Line** (`]`) — soldiers near the General take 40% less damage for 7 seconds. 60-second cooldown.
 
 ---
 
@@ -291,7 +299,7 @@ Steal TP, disrupt spawns, assassinate elites, scout next wave, poison caches, sa
 
 Reinforcements, Royal Decree (+morale), Tax Levy (+TP), Call Banner (knight), Supply Train (heal all), Offer Truce, Medical Evac — plus **Royal Herald**, **Emergency Muster**, and **Open War Chest**.
 
-**Sleight of Hand** perk reduces spy and courier costs by 1 TP.
+One tonic reduces spy and courier costs by 1 TP.
 
 ---
 
@@ -316,6 +324,10 @@ Reinforcements, Royal Decree (+morale), Tax Levy (+TP), Call Banner (knight), Su
 | **100**   | **Academy Era** — no TP troop deploy; academies and settlements          |
 | **200**   | **Enemy RTS** — map widens; enemies build mirror settlements             |
 | **1001+** | **Hellscape** — even endgame heroes struggle                             |
+
+### Era resets
+
+At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army, your veterans and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
 
 ### Flank variety
 
@@ -352,9 +364,44 @@ Wave 110 brings Gorath back — tougher. Spy **Assassinate Captain** removes eli
 
 Blood Moon (flying predators), Supply Caravan (+TP), Siege Push (extra towers), and more.
 
-### Miss limit
+### Line-breakers and the breach limit
 
-Varies by difficulty. An enemy reaching your breakthrough line counts as a miss.
+From wave 3, some enemies carry a **red pennant**. These are line-breakers: they ignore your troops and run for your line, faster than the rest of the host but with less health. One that reaches the bottom of the field (or your rally point, if it came from a flank) is a **breach**.
+
+- The breach counter sits at the top of the screen. The limit is 14 / 10 / 8 / 6 by difficulty.
+- Each breach shakes the morale of every soldier. Pass the limit and the realm falls.
+- Enemies also go for the line when they have **nobody left to fight**, and when a **standoff** drags on for about a minute with no blood drawn.
+- Depth beats a single row: archers behind the line catch what runs past the front.
+
+### Spoils of war
+
+After every fifth wave you are offered three rewards and keep one for the rest of the run: more damage, less damage taken, extra TP per wave, a higher breach limit, night healing, and others. Each can be taken up to three times. The siege does not pause for the choice; spoils left unclaimed at dawn are picked for you.
+
+### Supply crates
+
+From wave 2, crates land on the field during the day. Walk any soldier onto one to open it: TP, bandages for nearby troops, or rations that lift morale. Some are bait and spring a goblin ambush.
+
+### Counters and rear attacks
+
+| Troop                  | Strong against                            | Weak against |
+| ---------------------- | ----------------------------------------- | ------------ |
+| Pikeman                | Riders (wargs, dark knights)              |              |
+| Cavalry, Knight, Scout | Archers and casters                       |              |
+| Archer                 | Goblins and rats                          | Armour       |
+| Mage, Ballista, Sapper | Armour (trolls, dark knights, war chiefs) |              |
+| Footman                | Berserkers                                |              |
+
+Enemy riders hit archers, mages, healers and bards harder, and pikemen take less from them. Any attack that lands **from behind** does 25% more damage and shakes the target's morale; this applies to both sides.
+
+### Veterans
+
+The unit panel shows each soldier's kills and waves survived. When a veteran falls, the log names them and their record. At the wave 100 and 200 era resets, your General and up to ten of your most experienced soldiers march into the new era with you.
+
+---
+
+## Ribbons
+
+Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
 
 ---
 
@@ -398,12 +445,12 @@ Standard foes include goblins, orcs, archers, mages, warg riders, harpies, burro
 
 ## Difficulty
 
-| Mode       | Effective % | Summary                           |
-| ---------- | ----------- | --------------------------------- |
-| Baby       | 50%         | Forgiving — extra TP, weaker foes |
-| Normal     | 100%        | Balanced                          |
-| Chad       | 150%        | Harder, faster hordes             |
-| Doomslayer | 200%        | Hell marches                      |
+| Mode     | Effective % | Summary                           |
+| -------- | ----------- | --------------------------------- |
+| Baby     | 50%         | Forgiving — extra TP, weaker foes |
+| Normal   | 100%        | Balanced                          |
+| Chad     | 150%        | Harder, faster hordes             |
+| Hellbane | 200%        | Hell marches                      |
 
 ### Advanced Difficulty
 
@@ -411,25 +458,25 @@ From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, eli
 
 ---
 
-## Crossover HQ, WWE & Perks
+## Legion Archive, Grand Coliseum & Tonics
 
-### Crossover HQ
+### Legion Archive
 
-Unlock crossover factions via cheat codes or meta progress. Build faction barracks (Element 115, Primis Shrine, Spartan Academy, etc.), then recruit operatives from **CROSSOVER HQ** in the HUD. Each operative has unique abilities and faction synergies.
+Unlock allied factions through the Research Lab, meta progress, or cheat codes. Build a faction's barracks, then recruit its operatives from **LEGION ARCHIVE** (under MORE in the left panel). Each operative has unique abilities and faction synergies. The same screen has each faction's **skill tree**: spend the points earned from recruits, waves and mastery on permanent bonuses for that faction's operatives.
 
-### Secret: WWE Academy
+### Secret: Grand Coliseum
 
-- Unlocked at the **316 achievement milestone** (316 Club), or by discovering a cheat code (see appendix).
+- Unlocked at the **316 achievement milestone**, by researching Arena Warfare Doctrine, or by a cheat code (see appendix).
 - Build cost: **1000 TP**, **10 Builders**, **40 Hamlets**, **10 Merchant Guilds**.
-- Recruit 29 WWE Superstars, each with unique stats and abilities. Click a completed WWE Academy on the map to open the roster.
+- Recruit 29 champions, each with unique stats and abilities. Click a completed Coliseum on the map to open the roster.
 
-### Perk-a-Cola (secret roster active)
+### Tonic Stations
 
-Build perk machines at night. Heroes collect up to **4 perks** — Jugger-Nog, Speed Cola, Double Tap, Mule Kick, Sleight of Hand, Tombstone (General only), and more.
+Build tonic machines at night once they are researched or a roster is unlocked. Heroes collect up to **4 tonics** — Ironbrew, Field Revival, Swiftstep Tonic, Endurance Draft, Deadeye Elixir, and more.
 
-### Secret: The Doomslayer Hero
+### Secret: The Hellbane Hero
 
-- Unlocked by surviving to **wave 200 on Doomslayer difficulty**, or via cheat (see appendix).
+- Unlocked by surviving to **wave 200 on Hellbane difficulty**, or via cheat (see appendix).
 - Deploy cost: **10,000 TP**.
 - Near-unkillable; heals over time; auto-abilities based on battlefield pressure; one-hit sword (except in Hellscape at wave 1001+).
 
@@ -439,18 +486,18 @@ Build perk machines at night. Heroes collect up to **4 perks** — Jugger-Nog, S
 
 ### Encyclopedia (`I`)
 
-In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **WWE Superstars**, **crossover operatives**, and **The Doomslayer** (teaser entries until unlocked).
+In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **Coliseum champions**, **Legion operatives**, and **The Hellbane** (teaser entries until unlocked).
 
 ### Achievements (`A`)
 
-**1,000 total** across tiered Bronze / Silver / Gold challenges, lifetime and session tracking, and crossover sub-tabs per faction.
+**1,450 total** across tiered Bronze / Silver / Gold challenges, lifetime and session tracking, and crossover sub-tabs per faction.
 
 | Milestone       | Achievement                               | Reward                   |
 | --------------- | ----------------------------------------- | ------------------------ |
-| **316 unlocks** | _316 Club_ + _And That's The Bottom Line_ | WWE Academy revealed     |
+| **316 unlocks** | _316 Club_ + _And That's The Bottom Line_ | Grand Coliseum revealed  |
 | **999 unlocks** | _Millennium Legend_                       | Ultimate meta completion |
 
-Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficulty, Tactics, Economy, Crossovers (per faction), Secrets/Meta. Progress shows as **X/1000** in the top bar, achievement panel, and post-wave summary.
+Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficulty, Tactics, Economy, Crossovers (per faction), Secrets/Meta. Progress shows as **X/1450** in the top bar, achievement panel, and post-wave summary.
 
 ### Cheat Menu (`` ` ``)
 
@@ -477,24 +524,17 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 
 ```
 myth-and-blood/
-├── index.html          # Main game page
-├── Play Myth and Blood.bat
-├── js/
-│   ├── game.js         # Core simulation
-│   ├── units.js        # Unit & building definitions
-│   ├── content-expansion.js  # Advanced units, strikes, wave events
-│   ├── strike-fx.js    # Strike sprites & battlefield animations
-│   ├── sprites.js      # Procedural unit/building graphics
-│   ├── ui.js           # HUD and menus
-│   ├── tooltips.js     # Hover tips for all controls
-│   ├── crossover.js    # Crossover operative rosters
-│   ├── game-modes.js   # Campaign modes & challenges
-│   ├── achievements.js # 1,000 achievements
-│   ├── encyclopedia.js # In-game manual/lore
-│   └── ...
-├── css/style.css
+├── index.html          # Main game page; loads js/ in order
+├── js/                 # The game (game.js is the core simulation)
+├── css/                # style.css plus the theme-v2.css HUD layer
+├── data/               # Unit, building, enemy and strike definitions (JSON)
+├── mods/               # Mod loader manifest and an example mod
+├── scripts/            # Build, tests and the headless simulation
+├── src/                # TypeScript sources for the service/event/data cores
 └── electron/           # Desktop wrapper
 ```
+
+Developer commands: `npm run test:all`, `npm run check`, `npm run build`.
 
 ---
 
@@ -514,32 +554,35 @@ Open **CHEATS** on the main menu (or press `` ` `` in-game). Unlocks persist bet
 
 ### Meta unlocks (persistent)
 
-| Code                      | Effect                                                        |
-| ------------------------- | ------------------------------------------------------------- |
-| `Austin 3:16`             | Unlock WWE Academy                                            |
-| `whatcha gonna do`        | Unlock WWE Academy (alias)                                    |
-| `hell walks`              | Unlock Doomslayer hero                                        |
-| `Doomslayer`              | Unlock Doomslayer hero (alias)                                |
-| `115`                     | Unlock Element 115 crew + Element 115 Barracks                |
-| `Primus`                  | Unlock Primis Origins crew + Primis Shrine                    |
-| `Halo`                    | Unlock UNSC heroes + Spartan Academy                          |
-| `Gears`                   | Unlock COG squad + COG Academy                                |
-| `One to Rule Them All`    | Unlock LOTR Fellowship + Rivendell Camp                       |
-| `Hanma`                   | Unlock Baki fighters + Hanma Dojo                             |
-| `ジョジョの奇妙な冒険`    | Unlock JoJo Parts 1–7 + Stand Arrow Shrine (Part 7 = cavalry) |
-| `jojos bizarre adventure` | Unlock JoJo roster (alias)                                    |
-| `FOTNS`                   | Unlock Fist of the North Star fighters + North Star Dojo      |
-| `Dragon Soul`             | Unlock Dragon Ball Z-Fighters + Capsule Corp                  |
-| `THE ONE PIECE IS REAL`   | Unlock **all** cheat content at once                          |
+| Code               | Effect                                          |
+| ------------------ | ----------------------------------------------- |
+| `iron creed`       | Unlock the Grand Coliseum                       |
+| `arena calls`      | Unlock the Grand Coliseum (alias)               |
+| `hell walks`       | Unlock the Hellbane hero                        |
+| `hellbane`         | Unlock the Hellbane hero (alias)                |
+| `void residue`     | Unlock the Void Residue Crew and its barracks   |
+| `first circle`     | Unlock the First Circle and its shrine          |
+| `orbital vanguard` | Unlock the Orbital Vanguard and its academy     |
+| `iron trench`      | Unlock the Iron Trench Coalition                |
+| `ninefold march`   | Unlock the Ninefold March and its camp          |
+| `iron pit`         | Unlock the Iron Pit Guild and its dojo          |
+| `bound spirit`     | Unlock the Bound Spirit Court and its shrine    |
+| `spirit court`     | Unlock the Bound Spirit Court (alias)           |
+| `north star`       | Unlock the North Star Ascetics and their dojo   |
+| `skyburst`         | Unlock the Skyburst Order and its base          |
+| `crimson legions`  | Unlock the Crimson Legions                      |
+| `crystal light`    | Unlock the Crystal Vanguard                     |
+| `rift cult`        | Unlock the Rift Cult                            |
+| `eternal crusade`  | Unlock the Crimson Legions trial reward (alias) |
+| `voicebound`       | Unlock the Voicebound Pact                      |
+| `open every gate`  | Unlock **all** cheat content at once            |
 
 ### In-game only (start a battle first)
 
-| Code                    | Effect                              |
-| ----------------------- | ----------------------------------- |
-| `IDDQD`                 | +500 TP and max army morale         |
-| `Rosebud`               | +1000 TP                            |
-| `there can be only one` | Eliminate all enemies on the field  |
-| `gotta catch em all`    | Deploy one of every troop type free |
-| `gotta catch 'em all`   | Same as above (alias)               |
-| `it's morphin time`     | Spawn 5 knights                     |
-| `its morphin time`      | Spawn 5 knights (alias)             |
+| Code               | Effect                              |
+| ------------------ | ----------------------------------- |
+| `kings ransom`     | +500 TP and max army morale         |
+| `war chest`        | +1000 TP                            |
+| `clear the field`  | Eliminate all enemies on the field  |
+| `muster all`       | Deploy one of every troop type free |
+| `knights assemble` | Spawn 5 knights                     |

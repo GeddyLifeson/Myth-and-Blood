@@ -1,10 +1,11 @@
 /**
- * Smoke tests — Ultimis / Element 115 unlock via Doomslayer horde-fortress challenge.
+ * Smoke tests — Ultimis / Element 115 unlock via Hellbane horde-fortress challenge.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -51,14 +52,6 @@ function loadModules() {
   };
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { MetaProgress, Achievements, isZombieTypeEnemy, ACHIEVEMENT_LIST } = loadModules();
 
 MetaProgress.reset();
@@ -69,7 +62,10 @@ ok(!isZombieTypeEnemy('dark_knight'), 'evil operative is not zombie-type horde')
 ok(!isZombieTypeEnemy('troll'), 'troll brute is not zombie-type horde');
 
 const hordeAch = ACHIEVEMENT_LIST.find((a) => a.id === 'ultimis_horde_150');
-ok(hordeAch && hordeAch.rule === 'diff_zombie_fortress:doomslayer:150', 'ultimis horde achievement exists');
+ok(
+  hordeAch && hordeAch.rule === 'diff_zombie_fortress:doomslayer:150',
+  'ultimis horde achievement exists'
+);
 
 Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
 for (let w = 1; w <= 150; w++) {
@@ -82,12 +78,19 @@ ok(Achievements.evaluateRule('unlock:ultimis'), 'ultimis unlock rule passes');
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
-Achievements.onEvent('zombie_building_lost', { buildType: 'wall', attackerType: 'goblin', wave: 12 });
+Achievements.onEvent('zombie_building_lost', {
+  buildType: 'wall',
+  attackerType: 'goblin',
+  wave: 12,
+});
 for (let w = 1; w <= 150; w++) {
   Achievements.onEvent('wave_complete', { wave: w, difficulty: 'doomslayer', units: [] });
 }
 ok(!MetaProgress.is115Unlocked(), 'horde building loss blocks Element 115 unlock');
-ok(!Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'), 'horde loss fails fortress rule');
+ok(
+  !Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'),
+  'horde loss fails fortress rule'
+);
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -99,8 +102,8 @@ ok(!MetaProgress.is115Unlocked(), 'wave 149 does not unlock Element 115 yet');
 Achievements.onEvent('wave_complete', { wave: 150, difficulty: 'doomslayer', units: [] });
 ok(MetaProgress.is115Unlocked(), 'wave 150 triggers Element 115 unlock');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll ultimis-unlock tests passed');

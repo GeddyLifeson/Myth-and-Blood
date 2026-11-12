@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(seed) {
   const noop = () => {};
@@ -140,8 +133,8 @@ ok(Game.getState().wave === 2, 'wave 2 started');
 const afterWave2 = decoSig();
 ok(afterWave2 === afterWave1, 'wave 2 dawn does not reshuffle existing terrain');
 
-if (failed) {
-  console.error(`\n${failed} terrain-persistence test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} terrain-persistence test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll terrain-persistence tests passed.');

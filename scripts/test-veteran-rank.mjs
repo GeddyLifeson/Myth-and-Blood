@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot() {
   const noop = () => {};
@@ -154,7 +147,10 @@ const healerSnap = Game.getUnitsSnapshot().find((u) => u.type === 'healer' && u.
 ok(healerSnap?.id, 'healer appears in snapshot');
 const healer = Game.getUnitById(healerSnap.id);
 ok(healer && healer.id === healerSnap.id && healer.type === 'healer', 'resolve healer');
-ok(healer.type === 'healer' || healer.combatType === 'healer', `healer type is healer (${healer.type}/${healer.combatType})`);
+ok(
+  healer.type === 'healer' || healer.combatType === 'healer',
+  `healer type is healer (${healer.type}/${healer.combatType})`
+);
 sb.ensureHealerStats?.(healer);
 ok(healer.healAmount > 0, `healer has healAmount (${healer.healAmount})`);
 ok(sb.isSpecialistUnit(healer), `healer counts as specialist (team=${healer.team})`);
@@ -192,8 +188,8 @@ const cavSpd0 = cav.speed;
 sb.addVetStar(cav, 'silver');
 ok(cav.speed > cavSpd0, 'cavalry gains speed on silver star');
 
-if (failed) {
-  console.error(`\n${failed} veteran-rank test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} veteran-rank test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll veteran-rank tests passed.');

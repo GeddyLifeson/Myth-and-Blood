@@ -60,8 +60,7 @@ class GameDataSystem {
     // ContentExpansion mutates BuildDefs/UnitDefs after first load; re-apply so async
     // loadAll/reload from data/*.json does not wipe watchtower/traps/economy sites.
     const ce = (globalThis as Record<string, unknown>).ContentExpansion as
-      | { registerDefs?: () => void }
-      | undefined;
+      { registerDefs?: () => void } | undefined;
     if (ce?.registerDefs) ce.registerDefs();
 
     const fd = (globalThis as Record<string, unknown>).FactionDepth as
@@ -87,9 +86,7 @@ class GameDataSystem {
     if (typeof DecompressionStream === 'undefined') {
       throw new Error('DecompressionStream unavailable');
     }
-    const stream = res.body!.pipeThrough(
-      new DecompressionStream(format as CompressionFormat)
-    );
+    const stream = res.body!.pipeThrough(new DecompressionStream(format as CompressionFormat));
     const text = await new Response(stream).text();
     return JSON.parse(text);
   }

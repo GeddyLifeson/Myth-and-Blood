@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const foundSrc = readFileSync(join(JS, 'foundational-medieval-layer.js'), 'utf8');
@@ -32,14 +33,6 @@ function loadModules() {
   return { ...mods, researchStub: sb.Research };
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { FoundationalMedievalLayer, TechTreeBranches, researchStub } = loadModules();
 
 // Martial root
@@ -63,7 +56,10 @@ TechTreeBranches.onWaveStart(50, { wave: 50, showMessage: () => {}, addHighlight
 ok(TechTreeBranches.getRootId() === 'arcane', 'arcane root from academies and mages');
 TechTreeBranches.completeInvest('arcane_root', {});
 const fx = TechTreeBranches.getCombinedEffects(60);
-ok(fx.scienceGainMult > 1 && fx.researchSpeedMult > 1, 'arcane root grants science and research mods');
+ok(
+  fx.scienceGainMult > 1 && fx.researchSpeedMult > 1,
+  'arcane root grants science and research mods'
+);
 
 // Mythic root
 FoundationalMedievalLayer.resetRun();
@@ -103,8 +99,8 @@ ok(intel.toLowerCase().includes('tech'), 'intel mentions tech branch');
 const fourRoots = Object.keys(TechTreeBranches.ROOT_BRANCHES);
 ok(fourRoots.length === 4 && fourRoots.includes('tech'), 'four root branches defined');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll tech tree branch tests passed');

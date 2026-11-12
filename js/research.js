@@ -83,7 +83,7 @@ const Research = (() => {
     {
       id: 'xf_fotns',
       faction: 'fotns',
-      name: 'North Star Fist Archives',
+      name: 'Seven Star Fist Archives',
       cost: 120,
       wave: 1,
       tier: 4,
@@ -160,7 +160,7 @@ const Research = (() => {
       wave: 1,
       tier: 6,
       prereq: ['xf_jojo', 'xf_dragonball'],
-      desc: 'Rip-and-tear containment theory — unlock Doomslayer deployment.',
+      desc: 'Rend-and-ruin containment theory — unlock Hellbane deployment.',
     },
   ];
 
@@ -532,7 +532,9 @@ const Research = (() => {
     const n = Math.max(0, Number(amount) || 0);
     if (n <= 0) return 0;
     const branchFx =
-      typeof TechTreeBranches !== 'undefined' ? TechTreeBranches.getCombinedEffects(ctx.wave) : null;
+      typeof TechTreeBranches !== 'undefined'
+        ? TechTreeBranches.getCombinedEffects(ctx.wave)
+        : null;
     const gainMult = (ctx.scienceGainMult || 1) * (branchFx?.scienceGainMult || 1);
     const speedMult = (ctx.researchSpeedMult || 1) * (branchFx?.researchSpeedMult || 1);
     const granted = n * gainMult;
@@ -677,10 +679,6 @@ const Research = (() => {
       Game.syncInteractionState();
     }
     return true;
-  }
-
-  function isCompleted(id) {
-    return completed.has(id);
   }
 
   function prereqsMet(node, wave) {
@@ -878,10 +876,12 @@ const Research = (() => {
     }
     if (node.faction) {
       const label =
-        node.faction === 'wwe' ? 'Grand Coliseum' : `${(node.faction || '').toUpperCase()} barracks`;
+        node.faction === 'wwe'
+          ? 'Grand Coliseum'
+          : `${(typeof CrossoverFactions !== 'undefined' && CrossoverFactions[node.faction]?.label) || 'Faction'} barracks`;
       return `Unlocks ${label} construction`;
     }
-    if (node.id === 'doom_protocol') return 'Unlocks Doomslayer deployment (with meta unlock)';
+    if (node.id === 'doom_protocol') return 'Unlocks Hellbane deployment (with meta unlock)';
     return '';
   }
 
@@ -994,7 +994,7 @@ const Research = (() => {
       academy:
         'Academy Charter trains core troops free each round; Support Corps and Knight Order branch into specialist and officer halls.',
       crossover:
-        'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Doomslayer still needs Hellgate Containment.',
+        'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Hellbane still needs Hellgate Containment.',
       secret:
         'Tonic Stations Science unlocks all perk machines. Hellgate Containment is the ultimate evolved-allies capstone.',
     };
@@ -1040,7 +1040,12 @@ const Research = (() => {
     treeDelegated = true;
     tree.addEventListener('click', (e) => {
       const btn = e.target?.closest?.('[data-research]');
-      if (!btn || btn.disabled || btn.classList.contains('done') || btn.classList.contains('locked'))
+      if (
+        !btn ||
+        btn.disabled ||
+        btn.classList.contains('done') ||
+        btn.classList.contains('locked')
+      )
         return;
       e.preventDefault();
       e.stopPropagation();
@@ -1070,8 +1075,7 @@ const Research = (() => {
         ? TechTreeBranches.getNodesForUI?.(wave)?.activeInfo
         : null;
 
-    const reserveLabel =
-      reserveScience > 0.05 ? ` · Reserve ${reserveScience.toFixed(1)} SP` : '';
+    const reserveLabel = reserveScience > 0.05 ? ` · Reserve ${reserveScience.toFixed(1)} SP` : '';
     // Tree rebuild only when structure changes (nodes/locks/active id). SP ticks only touch headers.
     const treeSig = [
       wave,
@@ -1124,10 +1128,7 @@ const Research = (() => {
           ${items
             .map((n) => {
               const tip = escAttr(n.lockReason || n.desc || '');
-              const disabled =
-                n.done || n.locked || (activeId && !n.active)
-                  ? 'disabled'
-                  : '';
+              const disabled = n.done || n.locked || (activeId && !n.active) ? 'disabled' : '';
               const cls = [
                 'research-node',
                 n.done ? 'done' : '',
@@ -1272,7 +1273,6 @@ const Research = (() => {
     startResearch,
     cancelResearch,
     completeResearch,
-    isCompleted,
     isDeployUnlocked,
     isBuildUnlocked,
     registerModUnlocks,
@@ -1281,8 +1281,6 @@ const Research = (() => {
     isDoomResearchUnlocked,
     isTpVeteranUpgradeUnlocked,
     countLabs,
-    getKillScienceValue,
-    getWaveKillScienceCap,
     getKillScienceStatus,
     getActiveInfo,
     getNodesForUI,

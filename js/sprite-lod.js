@@ -25,7 +25,11 @@ const SpriteLod = (() => {
   function getUnitLod(unit, sceneLod, ctx = {}) {
     if (ctx.selectedIds?.has?.(unit.id)) return LOD.FULL;
     if (isImportantUnit(unit, ctx.selectedIds)) return Math.min(sceneLod, LOD.MEDIUM);
-    if ((unit.attackAnimTimer || 0) > 0 || unit.animState === 'attack' || unit.animState === 'hurt') {
+    if (
+      (unit.attackAnimTimer || 0) > 0 ||
+      unit.animState === 'attack' ||
+      unit.animState === 'hurt'
+    ) {
       return Math.min(sceneLod, LOD.MEDIUM);
     }
     let lod = sceneLod;
@@ -51,10 +55,6 @@ const SpriteLod = (() => {
     return 0.3;
   }
 
-  function spawnCountScale(lod) {
-    return particleMultForLod(lod);
-  }
-
   function cacheFrameForLod(lod, frame, animState = 'idle') {
     if (animState === 'attack' || animState === 'hurt' || animState === 'death') return frame;
     return lod >= LOD.LOW ? 0 : frame;
@@ -66,14 +66,12 @@ const SpriteLod = (() => {
   }
 
   return {
-    LOD,
     getSceneLod,
     getUnitLod,
     isImportantUnit,
     shouldDrawUnitOverlays,
     shouldDrawUnitRings,
     particleMultForLod,
-    spawnCountScale,
     cacheFrameForLod,
     cacheAnimForLod,
   };

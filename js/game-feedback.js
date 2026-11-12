@@ -232,7 +232,12 @@ const GameFeedback = (() => {
     if (casualties >= 3)
       tips.push({ id: 'losses', icon: '⚠', text: 'Heavy losses — reinforce.', priority: 8 });
     if (tp >= 50 && wave >= 8)
-      tips.push({ id: 'economy', icon: '💰', text: 'Strong TP — expand or research.', priority: 4 });
+      tips.push({
+        id: 'economy',
+        icon: '💰',
+        text: 'Strong TP — expand or research.',
+        priority: 4,
+      });
     if (tp < 3 && army > 0)
       tips.push({ id: 'tight', icon: '⏳', text: 'Tight TP — hold and clear.', priority: 3 });
 
@@ -259,12 +264,6 @@ const GameFeedback = (() => {
     };
   }
 
-  /** Suggest a one-line spend when player has free TP at night. */
-  function suggestSpend(ctx = {}) {
-    const tips = buildNightTips(ctx);
-    return tips[0] || null;
-  }
-
   function onWaveStart(wave, opts = {}) {
     const label = opts.boss
       ? 'BOSS WAVE'
@@ -273,7 +272,13 @@ const GameFeedback = (() => {
         : opts.siege
           ? 'SIEGE WAVE'
           : `WAVE ${wave}`;
-    const color = opts.boss ? '#ff4040' : opts.horde ? '#ff7030' : opts.siege ? '#c08040' : '#e8d5b0';
+    const color = opts.boss
+      ? '#ff4040'
+      : opts.horde
+        ? '#ff7030'
+        : opts.siege
+          ? '#c08040'
+          : '#e8d5b0';
     showBanner(label, opts.subtitle || 'Hold the line', color, 72, 'wave');
   }
 
@@ -328,7 +333,8 @@ const GameFeedback = (() => {
     ctx.textBaseline = 'middle';
 
     const y = canvasH * 0.18 + (1 - pop) * 12;
-    const size = (banner.kind === 'perfect' ? 28 : banner.kind === 'streak' ? 24 : 22) * (0.85 + pop * 0.2);
+    const size =
+      (banner.kind === 'perfect' ? 28 : banner.kind === 'streak' ? 24 : 22) * (0.85 + pop * 0.2);
 
     // Soft plate behind text
     const plateW = Math.min(canvasW * 0.7, 420);
@@ -404,10 +410,6 @@ const GameFeedback = (() => {
     return { kills: waveKills, deaths: wavePlayerDeaths };
   }
 
-  function getLastSummary() {
-    return lastSummary;
-  }
-
   function getDangerLevel() {
     return dangerLevel;
   }
@@ -418,14 +420,6 @@ const GameFeedback = (() => {
 
   function shouldAutoPauseNight() {
     return settings().autoPauseNight;
-  }
-
-  function getBestStreak() {
-    return bestStreak;
-  }
-
-  function getCleanSweeps() {
-    return cleanSweeps;
   }
 
   function getHighlights() {
@@ -447,14 +441,12 @@ const GameFeedback = (() => {
     allowHitStop,
     allowDamageNumbers,
     allowGore,
-    showBanner,
     onEnemyKilled,
     onPlayerDeath,
     onWaveClear,
     onWaveStart,
     buildNightTips,
     getNightTips,
-    suggestSpend,
     getRunSnapshot,
     updateDanger,
     update,
@@ -462,10 +454,7 @@ const GameFeedback = (() => {
     drawDangerVignette,
     drawLowHpPulse,
     getKillStreak,
-    getBestStreak,
-    getCleanSweeps,
     getWaveStats,
-    getLastSummary,
     getDangerLevel,
     getMinimapDangerPulse,
     getBanner,
@@ -473,4 +462,3 @@ const GameFeedback = (() => {
     shouldAutoPauseNight,
   };
 })();
-

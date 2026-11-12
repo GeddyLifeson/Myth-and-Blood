@@ -37,10 +37,6 @@ const CombatFX = (() => {
     add({ type: 'slash', x, y, rotation, color, life: 14, scale: 1 });
   }
 
-  function muzzleFlash(x, y, rotation, color = '#ffe080') {
-    add({ type: 'muzzle', x, y, rotation, color, life: 9, scale: 1 });
-  }
-
   function spellCast(x, y, color = '#a080ff') {
     add({ type: 'cast', x, y, color, life: 20, scale: 1 });
   }
@@ -103,10 +99,6 @@ const CombatFX = (() => {
     if (hitStopFrames <= 0) return false;
     hitStopFrames--;
     return true;
-  }
-
-  function getHitStopFrames() {
-    return hitStopFrames;
   }
 
   function flashScreen(alpha = 0.15, color = '#ffffff') {
@@ -317,7 +309,6 @@ const CombatFX = (() => {
   return {
     add,
     meleeSlash,
-    muzzleFlash,
     spellCast,
     arrowLoose,
     hitSpark,
@@ -325,8 +316,6 @@ const CombatFX = (() => {
     healPulse,
     requestHitStop,
     consumeHitStop,
-    getHitStopFrames,
-    flashScreen,
     update,
     draw,
     drawScreenFlash,

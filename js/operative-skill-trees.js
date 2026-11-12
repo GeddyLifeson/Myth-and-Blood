@@ -17,7 +17,7 @@ const OperativeSkillTrees = (() => {
         },
         hulk_up: {
           id: 'hulk_up',
-          name: 'Hulk Up',
+          name: 'Second Wind',
           cost: 2,
           requires: ['showmanship'],
           desc: '+8% melee damage',
@@ -61,7 +61,7 @@ const OperativeSkillTrees = (() => {
         },
         wunder_chain: {
           id: 'wunder_chain',
-          name: 'Wunder Chain',
+          name: 'Arc Chain',
           cost: 2,
           requires: ['frag_drill'],
           desc: '+10% ability damage',
@@ -154,7 +154,7 @@ const OperativeSkillTrees = (() => {
       nodes: {
         lancer_disc: {
           id: 'lancer_disc',
-          name: 'Lancer Discipline',
+          name: 'Rifle Discipline',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
@@ -213,7 +213,7 @@ const OperativeSkillTrees = (() => {
         },
         king_returned: {
           id: 'king_returned',
-          name: 'King Returned',
+          name: 'Crown Reclaimed',
           cost: 3,
           requires: ['ranger_eye', 'dwarf_axe'],
           desc: '+10% ability damage',
@@ -226,7 +226,7 @@ const OperativeSkillTrees = (() => {
       nodes: {
         demon_back: {
           id: 'demon_back',
-          name: 'Demon Back',
+          name: 'Fiend’s Back',
           cost: 1,
           desc: '+8% melee damage',
           bonus: { meleeDmg: 0.08 },
@@ -267,8 +267,8 @@ const OperativeSkillTrees = (() => {
           desc: '+8% ability damage',
           bonus: { abilityDmg: 0.08 },
         },
-        hamon: {
-          id: 'hamon',
+        sunbreath: {
+          id: 'sunbreath',
           name: 'Solar Breath',
           cost: 2,
           requires: ['stand_awaken'],
@@ -285,9 +285,9 @@ const OperativeSkillTrees = (() => {
         },
         made_in_heaven: {
           id: 'made_in_heaven',
-          name: 'Made in Heaven',
+          name: 'Heaven’s Tempo',
           cost: 3,
-          requires: ['hamon', 'spin'],
+          requires: ['sunbreath', 'spin'],
           desc: '+10% ability, +2 morale',
           bonus: { abilityDmg: 0.1, maxMorale: 2 },
         },
@@ -528,7 +528,7 @@ const OperativeSkillTrees = (() => {
       const onField = (units || []).filter(
         (u) => u.team === 'player' && u.hp > 0 && getFactionForUnit(u) === fid
       ).length;
-      if (!nodes.length && !onField && !(runPoints[fid] || 0)) continue;
+      if (!nodes.length && !onField && !runPoints[fid]) continue;
       factions.push({
         factionId: fid,
         label: tree.label,
@@ -555,15 +555,67 @@ const OperativeSkillTrees = (() => {
     };
   }
 
+  /**
+   * Skill-tree shop, drawn into every `.operative-skills-panel` host (Legion Archive and
+   * Grand Coliseum screens). Trees appear once a faction has operatives, points or nodes.
+   */
+  function renderPanel() {
+    const hosts = document.querySelectorAll('.operative-skills-panel');
+    if (!hosts.length) return;
+    const gs = typeof Game !== 'undefined' ? Game.getState?.() : null;
+    const snap = getSnapshot(gs?.wave || 0, gs?.units || []);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const html = snap.factions.length
+      ? snap.factions
+          .map(
+            (f) => `
+        <div class="skill-tree">
+          <div class="skill-tree-head">
+            <span class="skill-tree-name">${esc(f.label)}</span>
+            <span class="skill-tree-points">${f.availablePoints} of ${f.totalBudget} point(s) free</span>
+          </div>
+          <div class="skill-tree-nodes">
+            ${f.nodes
+              .map((n) => {
+                const state = n.owned ? 'owned' : n.canBuy ? 'buyable' : 'locked';
+                const why = n.owned
+                  ? 'Owned'
+                  : n.canBuy
+                    ? `Buy for ${n.cost}`
+                    : canPurchase(f.factionId, n.id).reason;
+                return `<button type="button" class="skill-node skill-node-${state}"
+                  data-skill-faction="${esc(f.factionId)}" data-skill-node="${esc(n.id)}"
+                  ${n.owned || !n.canBuy ? 'disabled' : ''} title="${esc(why)}">
+                  <span class="skill-node-name">${esc(n.name)}</span>
+                  <span class="skill-node-desc">${esc(n.desc)}</span>
+                  <span class="skill-node-cost">${n.owned ? '✓ owned' : `${n.cost} pt`}</span>
+                </button>`;
+              })
+              .join('')}
+          </div>
+        </div>`
+          )
+          .join('')
+      : '<p class="panel-hint">Recruit an operative to open that faction\'s skill tree. Points come from recruits, waves survived and faction mastery.</p>';
+    hosts.forEach((host) => {
+      host.innerHTML = `<div class="skill-tree-title">OPERATIVE SKILLS</div>${html}`;
+      if (host.dataset.skillBound) return;
+      host.dataset.skillBound = '1';
+      host.addEventListener('click', (e) => {
+        const btn = e.target.closest?.('[data-skill-node]');
+        if (!btn || btn.disabled) return;
+        const res = purchaseNode(btn.dataset.skillFaction, btn.dataset.skillNode);
+        if (res.ok && typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+        renderPanel();
+      });
+    });
+  }
+
   return {
     FACTION_TREES,
-    STORAGE_KEY,
+    renderPanel,
     resetRun,
-    getTree,
-    getFactionForUnit,
-    getPurchasedNodes,
     getAvailablePoints,
-    canPurchase,
     purchaseNode,
     grantSkillPoint,
     onRecruit,
@@ -572,7 +624,6 @@ const OperativeSkillTrees = (() => {
     modifyDamage,
     modifyDamageTaken,
     getSnapshot,
-    aggregateBonuses,
   };
 })();
 

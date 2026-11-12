@@ -149,10 +149,6 @@ const NeutralWildlife = (() => {
     announced = false;
   }
 
-  function getDef(type) {
-    return NEUTRAL_TYPES[type] || null;
-  }
-
   function scaleStat(base, wave, territoryTier = 0) {
     const w = 1 + Math.min(0.65, (wave || 0) / 150);
     const t = 1 + Math.min(0.25, (territoryTier || 0) * 0.04);
@@ -386,7 +382,7 @@ const NeutralWildlife = (() => {
       }
       const neutrals = (units || []).filter((u) => u.team === 'neutral' && u.hp > 0).length;
       if (
-        ctx.rng?.() < spawnChance &&
+        (ctx.rng || Math.random)() < spawnChance &&
         neutrals < 2 &&
         (units || []).filter((u) => u.team === 'enemy' && u.hp > 0).length >= 3
       ) {
@@ -405,7 +401,7 @@ const NeutralWildlife = (() => {
           );
           type = pick.type;
         }
-        const spot = pickSpawnPoint(ctx.worldW, ctx.worldH, ctx.rallyY, ctx.rng, {
+        const spot = pickSpawnPoint(ctx.worldW, ctx.worldH, ctx.rallyY, ctx.rng || Math.random, {
           territoryTier: ctx.territoryTier,
           wave,
         });
@@ -450,8 +446,7 @@ const NeutralWildlife = (() => {
       // Edge-adjacent fights often fail strict LOS through border decorations — still engage.
       const hasLos = lineOfSight?.(unit.x, unit.y, foe.x, foe.y);
       const closeEnough =
-        Math.hypot(foe.x - unit.x, foe.y - unit.y) <=
-        (unit.aggroRadius || 140) * 1.15;
+        Math.hypot(foe.x - unit.x, foe.y - unit.y) <= (unit.aggroRadius || 140) * 1.15;
       if (hasLos === false && !closeEnough) {
         unit.combatTargetId = null;
       } else {
@@ -534,10 +529,8 @@ const NeutralWildlife = (() => {
 
   return {
     WAVE_MIN,
-    NEUTRAL_TYPES,
     EVENTS,
     resetRun,
-    getDef,
     createUnit,
     seedDens,
     onWaveStart,

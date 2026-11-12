@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const mp = readFileSync(join(JS, 'meta-progress.js'), 'utf8');
@@ -33,24 +34,28 @@ function loadModules() {
     `${mp}\n;\n${achData}\n;\n${ach}\n;globalThis.MetaProgress = MetaProgress;\nglobalThis.Achievements = Achievements;\nglobalThis.ACHIEVEMENT_LIST = ACHIEVEMENT_LIST;`,
     ctx
   );
-  return { MetaProgress: ctx.MetaProgress, Achievements: ctx.Achievements, ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
+  return {
+    MetaProgress: ctx.MetaProgress,
+    Achievements: ctx.Achievements,
+    ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
+  };
 }
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
 
 const fellowAch = ACHIEVEMENT_LIST.find((a) => a.id === 'lotr_fellowship_victory');
-ok(fellowAch && fellowAch.rule === 'run_fellowship_morale:8:0.55', 'lotr fellowship achievement exists');
+ok(
+  fellowAch && fellowAch.rule === 'run_fellowship_morale:8:0.55',
+  'lotr fellowship achievement exists'
+);
 
 function sample(high, wave) {
-  Achievements.onEvent('army_morale_sample', { wave, high, ratio: high ? 0.8 : 0.3, combatCount: 4 });
+  Achievements.onEvent('army_morale_sample', {
+    wave,
+    high,
+    ratio: high ? 0.8 : 0.3,
+    combatCount: 4,
+  });
 }
 
 MetaProgress.reset();
@@ -81,8 +86,8 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 for (let w = 1; w <= 10; w++) sample(true, w);
 ok(Achievements.evaluateRule('morale_high_waves:10'), 'ten high morale waves milestone');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll lotr-unlock tests passed');

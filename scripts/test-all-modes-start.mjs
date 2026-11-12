@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const MODES = [
   'campaign',
@@ -18,14 +19,6 @@ const MODES = [
   'pve_horde',
 ];
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const noop = () => {};
 const els = new Map();
 function mkEl(id, tag = 'div') {
@@ -33,7 +26,19 @@ function mkEl(id, tag = 'div') {
     id,
     tagName: tag.toUpperCase(),
     style: {},
-    classList: { _s: new Set(), add(x) { this._s.add(x); }, remove(x) { this._s.delete(x); }, contains(x) { return this._s.has(x); }, toggle() {} },
+    classList: {
+      _s: new Set(),
+      add(x) {
+        this._s.add(x);
+      },
+      remove(x) {
+        this._s.delete(x);
+      },
+      contains(x) {
+        return this._s.has(x);
+      },
+      toggle() {},
+    },
     textContent: '',
     innerHTML: '',
     hidden: false,
@@ -63,10 +68,24 @@ const sb = {
   Math,
   Array,
   Object,
-  setTimeout: (fn) => { fn(); return 0; },
+  setTimeout: (fn) => {
+    fn();
+    return 0;
+  },
   clearTimeout: noop,
-  requestAnimationFrame: (fn) => { fn(); return 0; },
-  localStorage: { _d: {}, getItem(k) { return this._d[k] ?? null; }, setItem(k, v) { this._d[k] = v; } },
+  requestAnimationFrame: (fn) => {
+    fn();
+    return 0;
+  },
+  localStorage: {
+    _d: {},
+    getItem(k) {
+      return this._d[k] ?? null;
+    },
+    setItem(k, v) {
+      this._d[k] = v;
+    },
+  },
   performance: { now: () => 0 },
   innerWidth: 1280,
   innerHeight: 720,
@@ -86,7 +105,10 @@ sb.globalThis = sb;
 sb.matchMedia = () => ({ matches: false, addListener: noop, removeListener: noop });
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
-const { Game, GameModes, SpriteGen } = vm.runInContext(`${code}\n({ Game, GameModes, SpriteGen })`, vm.createContext(sb));
+const { Game, GameModes, SpriteGen } = vm.runInContext(
+  `${code}\n({ Game, GameModes, SpriteGen })`,
+  vm.createContext(sb)
+);
 SpriteGen.prewarmCache = () => {};
 
 Game.init(cvs);
@@ -116,8 +138,8 @@ for (const modeId of MODES) {
   GameModes.endSession();
 }
 
-if (failed) {
-  console.error(`\n${failed} all-modes test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} all-modes test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll mode start tests passed.');

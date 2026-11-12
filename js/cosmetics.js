@@ -73,7 +73,7 @@ const Cosmetics = (() => {
     hell_walker: {
       label: 'Hell Walker',
       unlock: 'creative_skin_doom',
-      desc: 'Unlocked at Doom mastery tier IV.',
+      desc: 'Unlocked at Hellbane mastery tier IV.',
       body: '#1a3020',
       accent: '#40c060',
       mark: '#80ff80',
@@ -95,7 +95,7 @@ const Cosmetics = (() => {
       mark: '#ff4020',
     },
     imperium_herald: {
-      label: "Crimson Legions",
+      label: 'Crimson Legions',
       unlock: 'creative_skin_imperium',
       desc: 'Unlocked at Imperium mastery tier IV.',
       body: '#384858',
@@ -456,14 +456,10 @@ const Cosmetics = (() => {
     resolveVictoryCopy,
     spawnVictoryConfetti,
     getVictoryBackdropClass,
-    drawBannerPreview,
     renderSettings,
     bindSettings,
     isUnlockMet,
-    UNIT_SKINS,
     VICTORY_THEMES,
-    BANNER_PATTERNS,
-    BANNER_EMBLEMS,
   };
 })();
 

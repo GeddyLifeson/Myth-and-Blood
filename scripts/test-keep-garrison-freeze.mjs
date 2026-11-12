@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function el(id = '') {
   return {
@@ -162,10 +155,7 @@ try {
 ok(!!Game, 'Game loaded');
 // Avoid sprite prewarm requiring full canvas API surface.
 try {
-  const SpriteGen = vm.runInContext(
-    'typeof SpriteGen !== "undefined" ? SpriteGen : null',
-    vmCtx
-  );
+  const SpriteGen = vm.runInContext('typeof SpriteGen !== "undefined" ? SpriteGen : null', vmCtx);
   if (SpriteGen) SpriteGen.prewarmCache = () => {};
 } catch (_) {
   /* ignore */
@@ -296,5 +286,5 @@ ok(maxTick < 500, `max tick ${maxTick}ms under 500ms`);
 ok(total < 20000, `total ${total}ms under 20s for ${TICKS} ticks`);
 console.log({ total, maxTick, wave: Game.getState()?.wave, units: Game.getState()?.units?.length });
 
-if (failed) process.exit(1);
+if (failures()) process.exit(1);
 console.log('\nKeep garrison freeze smoke passed.');

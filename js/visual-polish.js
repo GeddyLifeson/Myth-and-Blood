@@ -158,8 +158,7 @@ const VisualPolish = (() => {
       unit.isNamedBoss ||
       unit.isPlanetBoss ||
       (typeof isEliteEnemy === 'function' && isEliteEnemy(unit));
-    const allowGore =
-      typeof GameFeedback === 'undefined' || GameFeedback.allowGore?.() !== false;
+    const allowGore = typeof GameFeedback === 'undefined' || GameFeedback.allowGore?.() !== false;
     if (drawCorpses && allowGore) {
       const dir = unit.team === 'player' ? -1 : 1;
       deathCorpses.push({
@@ -242,8 +241,7 @@ const VisualPolish = (() => {
       ctx.translate(c.x + (c.knockX || 0) * knock, c.y + (c.knockY || 0) * knock);
 
       ctx.globalAlpha = a * 0.42;
-      ctx.fillStyle =
-        c.team === 'enemy' ? 'rgba(110,22,22,0.55)' : 'rgba(70,28,48,0.5)';
+      ctx.fillStyle = c.team === 'enemy' ? 'rgba(110,22,22,0.55)' : 'rgba(70,28,48,0.5)';
       ctx.beginPath();
       ctx.ellipse(0, 7, poolR, poolR * 0.32, 0, 0, Math.PI * 2);
       ctx.fill();
@@ -252,7 +250,7 @@ const VisualPolish = (() => {
       ctx.globalAlpha = a * 0.9;
       ctx.scale(1 - flatten * 0.12, 1 - flatten * 0.58);
       const img = SpriteGen.getUnitCanvas(c.type, c.rotation, c.team, 0, 1, 'death');
-      ctx.drawImage(img, -18, -18, 36, 36);
+      ctx.drawImage(img, -31, -31, 62, 62);
 
       if (c.isElite && prog < 0.35) {
         ctx.globalAlpha = (1 - prog / 0.35) * 0.35;
@@ -265,100 +263,6 @@ const VisualPolish = (() => {
       ctx.restore();
       ctx.globalAlpha = 1;
     }
-  }
-
-  function drawConquestSectors(ctx, worldW, mapH, sectors = [], bossActive = false) {
-    if (!sectors.length) return;
-    ctx.save();
-    const northH = mapH * 0.42;
-    for (const s of sectors) {
-      const w = Math.max(1, (s.x1 || 0) - (s.x0 || 0));
-      const playerPct = s.playerControl ?? 100 - (s.enemyControl || 0);
-      const alpha = s.eliminated ? 0.08 : 0.1 + (playerPct / 100) * 0.22;
-      ctx.fillStyle = s.eliminated
-        ? 'rgba(80, 200, 120, 0.14)'
-        : `${hexToRgba(s.color || '#80a0c0', alpha)}`;
-      ctx.fillRect(s.x0, 0, w, northH);
-      if (!s.eliminated) {
-        const conqW = w * (playerPct / 100);
-        ctx.fillStyle = hexToRgba(s.color || '#80ffa0', 0.2 + playerPct * 0.003);
-        ctx.fillRect(s.x0, 0, conqW, northH);
-      }
-      ctx.strokeStyle = s.eliminated
-        ? 'rgba(120, 255, 160, 0.55)'
-        : hexToRgba(s.color || '#c08060', 0.45);
-      ctx.lineWidth = s.eliminated ? 2 : 1;
-      ctx.setLineDash(s.eliminated ? [] : [6, 8]);
-      ctx.strokeRect(s.x0 + 1, 2, w - 2, northH - 4);
-      ctx.setLineDash([]);
-      if (w > 36) {
-        ctx.font = '8px Cinzel';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = s.eliminated ? 'rgba(160, 255, 190, 0.9)' : 'rgba(255, 220, 180, 0.82)';
-        const label = s.eliminated ? `${s.name} FALLEN` : `${s.name} ${playerPct}%`;
-        ctx.fillText(label, s.x0 + w / 2, 14);
-      }
-    }
-    if (bossActive) {
-      ctx.font = '9px Cinzel';
-      ctx.fillStyle = 'rgba(255, 40, 120, 0.9)';
-      ctx.textAlign = 'center';
-      ctx.fillText('— WORLDHEART TYRANT —', worldW / 2, northH - 8);
-    }
-    ctx.restore();
-  }
-
-  function hexToRgba(hex, alpha = 1) {
-    const h = String(hex || '#888').replace('#', '');
-    const full =
-      h.length === 3
-        ? h
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : h;
-    const n = parseInt(full, 16);
-    if (Number.isNaN(n)) return `rgba(128,128,128,${alpha})`;
-    const r = (n >> 16) & 255;
-    const g = (n >> 8) & 255;
-    const b = n & 255;
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-
-  function drawHostileTerritory(ctx, worldW, mapH, lineY, control, tierLabel) {
-    if (!lineY || lineY <= mapH * 0.1 || control < 0.08) return;
-    const depth = Math.max(0, Math.min(1, control));
-    ctx.save();
-    const grad = ctx.createLinearGradient(0, 0, 0, lineY + 40);
-    grad.addColorStop(0, `rgba(120, 20, 30, ${0.22 + depth * 0.28})`);
-    grad.addColorStop(0.65, `rgba(80, 16, 24, ${0.12 + depth * 0.18})`);
-    grad.addColorStop(1, 'rgba(40, 12, 18, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, worldW, lineY + 36);
-
-    ctx.strokeStyle = `rgba(255, 70, 60, ${0.45 + depth * 0.35})`;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([14, 10]);
-    ctx.beginPath();
-    ctx.moveTo(0, lineY);
-    ctx.lineTo(worldW, lineY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.font = '9px Cinzel';
-    ctx.fillStyle = `rgba(255, 120, 100, ${0.75 + depth * 0.2})`;
-    ctx.textAlign = 'center';
-    const label = tierLabel ? `— HOSTILE TERRITORY · ${tierLabel} —` : '— HOSTILE TERRITORY —';
-    ctx.fillText(label, worldW / 2, lineY - 6);
-
-    for (let i = 0; i < 5; i++) {
-      const px = (worldW / 6) * (i + 0.5) + Math.sin(Date.now() * 0.001 + i) * 8;
-      ctx.fillStyle = `rgba(255, 60, 50, ${0.15 + depth * 0.2})`;
-      ctx.beginPath();
-      ctx.arc(px, lineY + 10 + (i % 2) * 6, 3 + depth * 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
   }
 
   function drawBiomeRegions(ctx, worldW, mapH, bands = []) {
@@ -665,9 +569,7 @@ const VisualPolish = (() => {
     for (const side of unlocked) {
       const active = activeSet.has(side);
       ctx.save();
-      ctx.strokeStyle = active
-        ? `rgba(255,110,70,${0.75 + pulse * 0.2})`
-        : 'rgba(120,96,80,0.35)';
+      ctx.strokeStyle = active ? `rgba(255,110,70,${0.75 + pulse * 0.2})` : 'rgba(120,96,80,0.35)';
       ctx.lineWidth = active ? 1.5 : 1;
       ctx.setLineDash(active ? [4, 3] : [2, 4]);
       ctx.beginPath();
@@ -1062,7 +964,8 @@ const VisualPolish = (() => {
       typeof Particles !== 'undefined'
     ) {
       const everyN = weather.type === 'storm' ? 2 : 3;
-      if (tick % everyN === 0) Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
+      if (tick % everyN === 0)
+        Particles.weatherRain(worldW * Math.random(), mapH * Math.random() * 0.6);
     }
     if (weather.type === 'mist') {
       ctx.fillStyle = 'rgba(180,200,220,0.08)';
@@ -1099,53 +1002,139 @@ const VisualPolish = (() => {
 
   function drawTitleArt(ctx, w, h) {
     const tick = titleTick;
+    // Blood dusk sky
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    grad.addColorStop(0, '#1a2818');
-    grad.addColorStop(0.5, '#2a4028');
-    grad.addColorStop(1, '#141810');
+    grad.addColorStop(0, '#0a0608');
+    grad.addColorStop(0.45, '#3a0a0e');
+    grad.addColorStop(0.75, '#7a1612');
+    grad.addColorStop(1, '#120808');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
-    const moonX = w - 60 + Math.sin(tick * 0.02) * 4;
-    ctx.fillStyle = 'rgba(220,220,255,0.85)';
+    // Blood moon with a slow pulse
+    const moonX = w * 0.5;
+    const moonY = h * 0.42;
+    const moonR = h * 0.3 + Math.sin(tick * 0.03) * 1.5;
+    const halo = ctx.createRadialGradient(moonX, moonY, moonR * 0.6, moonX, moonY, moonR * 2.1);
+    halo.addColorStop(0, 'rgba(255,60,40,0.38)');
+    halo.addColorStop(1, 'rgba(255,60,40,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#d8281c';
     ctx.beginPath();
-    ctx.arc(moonX, 36, 18, 0, Math.PI * 2);
+    ctx.arc(moonX, moonY, moonR, 0, Math.PI * 2);
     ctx.fill();
-    ctx.fillStyle = '#1a2818';
+    ctx.fillStyle = 'rgba(90,6,10,0.55)';
+    for (const [dx, dy, r] of [
+      [-0.35, -0.2, 0.22],
+      [0.3, 0.25, 0.3],
+      [0.1, -0.45, 0.14],
+    ]) {
+      ctx.beginPath();
+      ctx.arc(moonX + dx * moonR, moonY + dy * moonR, r * moonR, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Crows
+    ctx.strokeStyle = '#050305';
+    ctx.lineWidth = 1.6;
+    for (let i = 0; i < 5; i++) {
+      const bx = ((tick * 0.35 + i * 97) % (w + 40)) - 20;
+      const by = 26 + i * 13 + Math.sin(tick * 0.05 + i) * 4;
+      const flap = Math.sin(tick * 0.25 + i * 2) * 3;
+      ctx.beginPath();
+      ctx.moveTo(bx - 6, by - flap);
+      ctx.quadraticCurveTo(bx - 2, by - 3, bx, by);
+      ctx.quadraticCurveTo(bx + 2, by - 3, bx + 6, by - flap);
+      ctx.stroke();
+    }
+
+    // Black keep and broken spires against the moon
+    ctx.fillStyle = '#050305';
     ctx.beginPath();
-    ctx.arc(moonX + 8, 32, 16, 0, Math.PI * 2);
+    ctx.moveTo(0, h);
+    ctx.lineTo(0, h * 0.74);
+    const ridge = [
+      [0.06, 0.7],
+      [0.1, 0.52],
+      [0.13, 0.7],
+      [0.2, 0.66],
+      [0.24, 0.44],
+      [0.26, 0.38],
+      [0.28, 0.44],
+      [0.3, 0.62],
+      [0.36, 0.6],
+      [0.38, 0.5],
+      [0.4, 0.5],
+      [0.4, 0.56],
+      [0.44, 0.56],
+      [0.44, 0.48],
+      [0.47, 0.48],
+      [0.47, 0.3],
+      [0.5, 0.22],
+      [0.53, 0.3],
+      [0.53, 0.48],
+      [0.56, 0.48],
+      [0.56, 0.56],
+      [0.6, 0.56],
+      [0.6, 0.5],
+      [0.62, 0.5],
+      [0.64, 0.6],
+      [0.72, 0.64],
+      [0.75, 0.4],
+      [0.77, 0.46],
+      [0.79, 0.66],
+      [0.88, 0.7],
+      [0.92, 0.56],
+      [0.95, 0.72],
+      [1, 0.76],
+    ];
+    for (const [px, py] of ridge) ctx.lineTo(px * w, py * h);
+    ctx.lineTo(w, h);
+    ctx.closePath();
     ctx.fill();
+    // lit windows
+    ctx.fillStyle = 'rgba(255,90,40,0.85)';
+    for (const [px, py] of [
+      [0.5, 0.36],
+      [0.455, 0.53],
+      [0.545, 0.53],
+      [0.255, 0.48],
+      [0.755, 0.5],
+    ]) {
+      if (Math.sin(tick * 0.07 + px * 40) > -0.7) ctx.fillRect(px * w - 1.5, py * h, 3, 5);
+    }
 
-    SpriteGen.drawTree(ctx, 50 + Math.sin(tick * 0.015) * 2, 50, 28);
-    SpriteGen.drawTree(ctx, w - 70, 70, 24);
-    SpriteGen.drawRock(ctx, w / 2, 90, 18);
+    // The host: spears and banners along the ridge line
+    ctx.strokeStyle = '#050305';
+    ctx.lineWidth = 1.4;
+    for (let i = 0; i < 34; i++) {
+      const sx = (i / 33) * w;
+      const sway = Math.sin(tick * 0.04 + i) * 1.2;
+      const base = h * 0.86 + Math.sin(i * 1.7) * 4;
+      ctx.beginPath();
+      ctx.moveTo(sx, base);
+      ctx.lineTo(sx + sway, base - 20 - (i % 4) * 5);
+      ctx.stroke();
+      if (i % 6 === 2) {
+        ctx.fillStyle = '#8a0c12';
+        ctx.fillRect(sx + sway, base - 34, 9, 6);
+      }
+    }
+    ctx.fillStyle = '#050305';
+    ctx.fillRect(0, h * 0.86, w, h * 0.14);
 
-    ctx.fillStyle = 'rgba(0,0,0,0.35)';
-    ctx.fillRect(0, h - 55, w, 55);
-    ['footman', 'knight', 'archer', 'mage', 'cavalry'].forEach((t, i) => {
-      const bob = Math.sin(tick * 0.08 + i) * 2;
-      const img = SpriteGen.getUnitCanvas(t, -90, 'player', Math.floor(tick / 8) % 2, 1, 'idle');
-      ctx.drawImage(img, 24 + i * 36, h - 58 + bob, 30, 30);
-    });
-    ['orc', 'goblin', 'dark_knight', 'siege_tower'].forEach((t, i) => {
-      const img = SpriteGen.getUnitCanvas(
-        t === 'siege_tower' ? 'dark_knight' : t,
-        90,
-        'enemy',
-        0,
-        1,
-        'walk'
-      );
-      ctx.drawImage(img, w - 160 + i * 34, 28 + Math.sin(tick * 0.06 + i) * 3, 28, 28);
-    });
-
-    ctx.strokeStyle = 'rgba(200,160,80,0.5)';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(4, 4, w - 8, h - 8);
-    ctx.font = '8px Cinzel';
-    ctx.fillStyle = 'rgba(200,180,120,0.7)';
+    // Ink frame
+    ctx.strokeStyle = '#050305';
+    ctx.lineWidth = 6;
+    ctx.strokeRect(3, 3, w - 6, h - 6);
+    ctx.strokeStyle = 'rgba(200,30,30,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(7, 7, w - 14, h - 14);
+    ctx.font = '700 9px Cinzel';
+    ctx.fillStyle = 'rgba(228,220,196,0.85)';
     ctx.textAlign = 'center';
-    ctx.fillText('DEFEND THE REALM', w / 2, h - 8);
+    ctx.fillText('THE SIEGE NEVER ENDS', w / 2, h - 10);
   }
 
   function updateAudioMix(gs) {
@@ -1339,8 +1328,6 @@ const VisualPolish = (() => {
   }
 
   return {
-    getEraId,
-    computeBattleIntensity,
     drawKingdomBanner,
     registerDeath,
     addScreenShake,
@@ -1352,8 +1339,6 @@ const VisualPolish = (() => {
     drawDeathCorpses,
     drawBiomeRegions,
     drawTerritoryBorders,
-    drawConquestSectors,
-    drawHostileTerritory,
     drawMultiFrontIndicators,
     drawMinimapOverlay,
     getMinimapFlankLabel,
@@ -1362,12 +1347,8 @@ const VisualPolish = (() => {
     drawMapEventSite,
     drawAtmosphere,
     drawHordeIntensity,
-    getHordeIntensity,
     drawTitleArt,
     updateAudioMix,
-    FACTION_ACCENT,
-    BASE_W,
-    BASE_H,
   };
 })();
 

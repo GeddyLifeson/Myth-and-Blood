@@ -114,7 +114,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Mythic Alliance Seed',
       hint: 'Crystallize Mythic path — evolved heroes (waves 1–150)',
-      desc: 'Foundational DNA — Dempsey, Kael Skyburst, and mythic champions echo forever.',
+      desc: 'Foundational DNA — Splinter Vale, Kael Skyburst, and mythic champions echo forever.',
       cost: 1,
       prereq: ['crown_age_mark'],
       foundationPath: 'mythic_alliance',
@@ -493,7 +493,11 @@ const EternalLegacyTree = (() => {
     const invested = data.investedIds;
     const reqs = def.prereq || [];
     if (reqs.every((p) => invested.includes(p))) return true;
-    if (def.foundationPrereq?.length && def.foundationPath && hasFoundationPath(def.foundationPath)) {
+    if (
+      def.foundationPrereq?.length &&
+      def.foundationPath &&
+      hasFoundationPath(def.foundationPath)
+    ) {
       return def.foundationPrereq.every((p) => invested.includes(p));
     }
     return false;
@@ -577,8 +581,7 @@ const EternalLegacyTree = (() => {
       if (!def?.effects) continue;
       const e = def.effects;
       const branchMult =
-        typeof StoryLore !== 'undefined' &&
-        StoryLore.getDominantBranch?.() === def.branch
+        typeof StoryLore !== 'undefined' && StoryLore.getDominantBranch?.() === def.branch
           ? 1.1
           : 1;
 
@@ -629,7 +632,10 @@ const EternalLegacyTree = (() => {
     if (unit.isCrossover || unit.isWwe) return true;
     if (unit.crossoverFaction || unit.factionId) return true;
     // Global helpers take a type string (crossover.js / wwe.js).
-    if (typeof globalThis.isCrossoverUnit === 'function' && globalThis.isCrossoverUnit !== isCrossoverUnit) {
+    if (
+      typeof globalThis.isCrossoverUnit === 'function' &&
+      globalThis.isCrossoverUnit !== isCrossoverUnit
+    ) {
       try {
         if (globalThis.isCrossoverUnit(unit.type)) return true;
       } catch (_) {
@@ -637,7 +643,8 @@ const EternalLegacyTree = (() => {
       }
     }
     if (typeof isWweUnit === 'function' && isWweUnit(unit.type)) return true;
-    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCrossoverType?.(unit.type)) return true;
+    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCrossoverType?.(unit.type))
+      return true;
     return unit.type.startsWith('xf_') || unit.type.includes('crossover');
   }
 
@@ -715,12 +722,6 @@ const EternalLegacyTree = (() => {
       }
     }
     return { startTp: fx.startTp, invested: data.investedIds.length };
-  }
-
-  function getBranchNodes(branchId) {
-    return Object.values(TREE_NODES)
-      .filter((n) => n.branch === branchId)
-      .sort((a, b) => (a.tier || 0) - (b.tier || 0) || a.name.localeCompare(b.name));
   }
 
   function getMenuSnapshot() {
@@ -867,21 +868,15 @@ const EternalLegacyTree = (() => {
 
   return {
     BRANCHES,
-    TIER_LABELS,
     TREE_NODES,
     computeEchoShards,
-    getSpentShards,
-    getAvailableShards,
     refreshUnlocks,
-    prereqsMet,
     canInvest,
     investNode,
     isInvested,
     getCombinedEffects,
     applyUnitBonuses,
     applyRunStartBonuses,
-    getAscensionTier,
-    getBranchNodes,
     getMenuSnapshot,
     getStateSnapshot,
     getLegacyEntries,

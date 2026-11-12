@@ -8,8 +8,7 @@ const Particles = (() => {
 
   function setBudget(unitsOnField, qualityMult = 1, spriteLod = 0) {
     const base = unitsOnField > 80 ? 160 : unitsOnField > 50 ? 220 : 280;
-    const lodMult =
-      typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
+    const lodMult = typeof SpriteLod !== 'undefined' ? SpriteLod.particleMultForLod(spriteLod) : 1;
     lodSpawnScale = lodMult;
     MAX_PARTICLES = Math.max(40, Math.floor(base * Math.max(0.2, qualityMult) * lodMult));
     trim(true);
@@ -178,18 +177,6 @@ const Particles = (() => {
       size: 3,
     });
     trim();
-  }
-
-  function magic(x, y, color = '#8040ff') {
-    spawn(x, y, {
-      count: 12,
-      speed: 2.5,
-      life: 35,
-      colors: [color, '#c080ff', '#ffe080'],
-      size: 3,
-      rise: 1,
-      gravity: -0.04,
-    });
   }
 
   function heal(x, y) {
@@ -521,13 +508,11 @@ const Particles = (() => {
   }
 
   return {
-    spawn,
     blood,
     bloodSpray,
     impactDust,
     critBurst,
     explosion,
-    magic,
     heal,
     lightning,
     dust,

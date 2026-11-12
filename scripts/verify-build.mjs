@@ -27,6 +27,14 @@ need(join(DIST, 'data', 'units.json'), 'data');
 need(join(DIST, 'mods', 'manifest.json'), 'mods manifest');
 
 const html = readFileSync(join(DIST, 'index.html'), 'utf8');
+// Every stylesheet the built page links must exist in dist, and the theme layer must be bundled.
+for (const m of html.matchAll(/<link rel="stylesheet" href="([^"]+)"/g)) {
+  if (!/^https?:/.test(m[1])) need(join(DIST, m[1]), `stylesheet ${m[1]}`);
+}
+if (!readFileSync(join(DIST, 'css', 'style.min.css'), 'utf8').includes('body.ui-v2')) {
+  console.error('FAIL: dist stylesheet is missing the ui-v2 theme rules');
+  failed++;
+}
 if (html.includes('<script src="js/floatingText.js">')) {
   console.error('FAIL: dist/index.html still references unbundled scripts');
   failed++;

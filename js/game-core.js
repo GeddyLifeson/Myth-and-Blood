@@ -83,7 +83,7 @@ const GameCore = (() => {
     'hidden_potential',
     'perfect_form',
     'hakai',
-    'hamon',
+    'sunbreath',
     'sunlight_yellow',
     'energy_sword',
   ]);
@@ -680,7 +680,11 @@ const GameCore = (() => {
       dy = from.y - target.y;
     const dist = Math.hypot(dx, dy);
     if (dist <= standoff || dist < 0.01) return { x: from.x, y: from.y };
-    const scale = (dist - standoff) / dist;
+    // The point `standoff` short of the target, on the line back toward `from`.
+    // (This used to scale by (dist - standoff), which lands `standoff` away from the
+    // mover instead: a 16px step. Far targets then got a one-node path that terrain
+    // could snap backwards, and the unit oscillated in place for the rest of the wave.)
+    const scale = standoff / dist;
     return { x: target.x + dx * scale, y: target.y + dy * scale };
   }
 
@@ -725,7 +729,7 @@ const GameCore = (() => {
   }
 
   function getDeployCostMult() {
-    return 1;
+    return typeof SiegeLoop !== 'undefined' ? SiegeLoop.deployCostMult() : 1;
   }
 
   function enemyRotationForSide(side) {
