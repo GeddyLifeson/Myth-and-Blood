@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadUnits() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -31,13 +32,6 @@ function loadUnits() {
 }
 
 const U = loadUnits();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(U.smoothstep(0) === 0 && U.smoothstep(1) === 1, 'smoothstep endpoints');
 ok(
@@ -97,8 +91,8 @@ const tp200 = GameDepth.waveTpScale(200);
 const tp201 = GameDepth.waveTpScale(201);
 ok(tp200 <= tp199 && tp201 <= tp200, 'TP scale eases down across wave 200');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll progression-curve smoke tests passed');

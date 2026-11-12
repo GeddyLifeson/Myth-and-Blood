@@ -4,6 +4,7 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
+import { ok, failures } from './lib/harness.mjs';
 
 const JS = join(process.cwd(), 'js');
 const src = readFileSync(join(JS, 'game-runtime.js'), 'utf8');
@@ -11,14 +12,6 @@ const sb = { Object, Array, Map, Set };
 sb.window = sb;
 sb.globalThis = sb;
 const { GameRuntime } = vm.runInContext(`${src}\n({ GameRuntime })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const unit = {
   path: [{ x: 1, y: 2 }],
@@ -68,5 +61,5 @@ ok(
   'cloneWaveMods preserves overrides'
 );
 
-if (failed) process.exit(1);
+if (failures()) process.exit(1);
 console.log('\nAll game-runtime tests passed.');

@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
+import { ok, failures } from './lib/harness.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const JS = join(root, 'js');
@@ -34,14 +35,6 @@ for (const f of ['floatingText.js', 'effects.js', 'particles.js']) {
   const exportName =
     f === 'floatingText.js' ? 'FloatingText' : f === 'effects.js' ? 'CombatFX' : 'Particles';
   vm.runInContext(`${code}\nthis.${exportName} = ${exportName};`, ctx);
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const FloatingText = ctx.FloatingText;
@@ -118,5 +111,5 @@ CombatFX.drawScreenFlash(mockCtx, 800, 600);
 Particles.draw(mockCtx, null);
 ok(true, 'draw paths run without throw');
 
-console.log(failed ? `\n${failed} failed` : '\nAll combat-juice tests passed.');
-process.exit(failed ? 1 : 0);
+console.log(failures() ? `\n${failures()} failures()` : '\nAll combat-juice tests passed.');
+process.exit(failures() ? 1 : 0);

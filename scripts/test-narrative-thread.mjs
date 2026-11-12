@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const eternalSrc = readFileSync(join(JS, 'eternal-legacy-tree.js'), 'utf8');
@@ -52,14 +53,6 @@ function loadModules() {
     `${eternalSrc}\n;\n${foundSrc}\n;\n${ascSrc}\n;\n${synSrc}\n;\n${ntSrc}\n;\n${gsSrc}\n({ FoundationalMedievalLayer, AscensionSystem, ThematicEraSynergies, NarrativeThread, GrandStrategy: typeof GrandStrategy !== 'undefined' ? GrandStrategy : null })`,
     ctx
   );
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { FoundationalMedievalLayer, ThematicEraSynergies, NarrativeThread, GrandStrategy } =
@@ -168,8 +161,8 @@ ok(
   'intel mentions crown legends'
 );
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll narrative thread tests passed');

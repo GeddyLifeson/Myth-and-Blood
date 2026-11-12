@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadCounterplay() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -26,13 +27,6 @@ function loadCounterplay() {
 }
 
 const { StrategyCounterplay } = loadCounterplay();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 StrategyCounterplay.resetRun();
 
@@ -84,4 +78,4 @@ ok(
   'cavalry counter pool has no player units'
 );
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

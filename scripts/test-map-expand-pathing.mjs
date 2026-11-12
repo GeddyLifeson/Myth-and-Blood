@@ -6,14 +6,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(seed = 11) {
   const noop = () => {};
@@ -292,6 +285,6 @@ Game.selectBuild?.('wall');
 ok(Game.getState().selectedBuild === 'wall', 'select wall build');
 
 console.log(
-  failed ? `\n${failed} test(s) failed` : '\nAll map-expand-pathing + faction tests passed'
+  failures() ? `\n${failures()} test(s) failed` : '\nAll map-expand-pathing + faction tests passed'
 );
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

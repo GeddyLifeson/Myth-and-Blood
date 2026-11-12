@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -42,14 +43,6 @@ function loadModules() {
     playerHasCastleCompound: ctx.playerHasCastleCompound,
     ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
   };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const {
@@ -107,8 +100,8 @@ Achievements.onEvent('building_complete', { buildType: 'castle', compound: true 
 for (let w = 1; w <= 50; w++) Achievements.onEvent('wave_complete', { wave: w, units: [] });
 ok(Achievements.evaluateRule('sanctum_intact:50'), 'wave 50 with intact sanctum milestone');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll primis-unlock tests passed');

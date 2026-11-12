@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const eternalSrc = readFileSync(join(JS, 'eternal-legacy-tree.js'), 'utf8');
@@ -68,14 +69,6 @@ function loadModules() {
     `${eternalSrc}\n;\n${foundSrc}\n;\n${techSrc}\n;\n${mbSrc}\n;\n${gsSrc}\n;\n${lbSrc}\n;\n${igSrc}\n;\n${epfSrc}\n;\n${apeSrc}\n({ FoundationalMedievalLayer, TechTreeBranches, GrandStrategy: typeof GrandStrategy !== 'undefined' ? GrandStrategy : null, IntergalacticLayer: typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer : null, ArcanePathEvolution })`,
     ctx
   );
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { FoundationalMedievalLayer, GrandStrategy, IntergalacticLayer, ArcanePathEvolution } =
@@ -156,8 +149,8 @@ ok(
 const html = ArcanePathEvolution.renderPanelHtml({ wave: 450 });
 ok(html.includes('Weavers') || html.includes('Aether'), 'panel shows weaver progression');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll arcane-path-evolution tests passed');

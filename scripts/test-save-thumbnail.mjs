@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = readFileSync(join(JS, 'save-thumbnail.js'), 'utf8');
 const sb = {
@@ -49,14 +50,6 @@ sb.globalThis = sb;
 
 const { SaveThumbnail } = vm.runInContext(`${code}\n({ SaveThumbnail })`, vm.createContext(sb));
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 ok(typeof SaveThumbnail?.formatSavedAt === 'function', 'SaveThumbnail exported');
 const when = SaveThumbnail.formatSavedAt(Date.UTC(2026, 6, 7, 14, 30));
 ok(when.includes('2026') || when.includes('Jul') || when.length > 4, 'formatSavedAt');
@@ -84,4 +77,4 @@ const thumb = SaveThumbnail.captureFromMinimapData({
 });
 ok(thumb?.startsWith('data:image/jpeg'), 'minimap thumbnail capture');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

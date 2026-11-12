@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function boot(step = 0) {
   const sb = {
@@ -39,14 +40,6 @@ function boot(step = 0) {
   return UX;
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const earlyUx = boot(0);
 ok(
   earlyUx.resolveTutorialStep({ wave: 1, creativeMode: false })?.step?.title ===
@@ -76,4 +69,4 @@ ok(
 
 ok(earlyUx.TUTORIAL_STEPS.length >= 24, 'tutorial catalog expanded');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

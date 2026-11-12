@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadFactionDepth() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -42,13 +43,6 @@ function loadFactionDepth() {
 }
 
 const { FD, sb } = loadFactionDepth();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(
   FD.stackSynergyBonuses([0.15, 0.1]) < 0.25,
@@ -113,4 +107,4 @@ ok(meleeUnit.synergyMelee < 0.33, 'triple melee synergy uses diminishing returns
 const audit = FD.auditFairRepresentation();
 ok(audit.ok, `audit passes: ${audit.issues.join('; ') || 'clean'}`);
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

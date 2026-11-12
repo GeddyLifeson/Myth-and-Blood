@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function mockStorage() {
   const store = {};
@@ -87,14 +88,6 @@ function seedMixed(FML) {
   for (let i = 0; i < 10; i++) FML.recordDeploy('archer', 20);
   for (let i = 0; i < 10; i++) FML.recordDeploy('mage', 50);
   FML.recordDeploy('goku', 60);
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { FoundationalMedievalLayer, ThematicEraSynergies, HybridPowerFantasy, GrandStrategy } =
@@ -219,8 +212,8 @@ ok(!GrandStrategy || gsMods.playerDmgMult > 1, 'GS merges power fantasy tactical
 const intel = HybridPowerFantasy.formatIntelNote({ wave: 500 });
 ok(intel.toLowerCase().includes('power fantasy'), 'intel note mentions power fantasy');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll hybrid power fantasy tests passed');

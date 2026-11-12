@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
@@ -49,14 +50,6 @@ function loadModules() {
     isZombieTypeEnemy: ctx.isZombieTypeEnemy,
     ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
   };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { MetaProgress, Achievements, isZombieTypeEnemy, ACHIEVEMENT_LIST } = loadModules();
@@ -109,8 +102,8 @@ ok(!MetaProgress.is115Unlocked(), 'wave 149 does not unlock Element 115 yet');
 Achievements.onEvent('wave_complete', { wave: 150, difficulty: 'doomslayer', units: [] });
 ok(MetaProgress.is115Unlocked(), 'wave 150 triggers Element 115 unlock');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll ultimis-unlock tests passed');

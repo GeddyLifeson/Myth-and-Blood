@@ -5,20 +5,13 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = readFileSync(join(JS, 'sprite-lod.js'), 'utf8');
 const sb = { Math, Object, Array, Set };
 sb.globalThis = sb;
 
 const { SpriteLod } = vm.runInContext(`${code}\n({ SpriteLod })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const gfxQ = {
   spriteLodFloor: 1,
@@ -69,8 +62,8 @@ ok(
   'attacking unit capped at medium LOD even when far'
 );
 
-if (failed) {
-  console.error(`\n${failed} sprite-lod test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} sprite-lod test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll sprite-lod tests passed.');

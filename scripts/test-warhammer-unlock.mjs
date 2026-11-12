@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const mp = readFileSync(join(JS, 'meta-progress.js'), 'utf8');
@@ -38,14 +39,6 @@ function loadModules() {
     Achievements: ctx.Achievements,
     ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
   };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
@@ -123,8 +116,8 @@ for (let w = 1; w <= 12; w++) sampleForts(10, w);
 for (let w = 1; w <= 3; w++) repelBoss(w * 20);
 ok(Achievements.evaluateRule('named_boss_repels:3'), 'three named boss repel milestone');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll warhammer-unlock tests passed');

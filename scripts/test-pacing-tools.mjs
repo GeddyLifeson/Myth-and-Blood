@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadPacingTools() {
   const src = readFileSync(join(JS, 'pacing-tools.js'), 'utf8');
@@ -26,13 +27,6 @@ function loadPacingTools() {
 }
 
 const { PacingTools } = loadPacingTools();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 PacingTools.resetRun();
 
@@ -117,5 +111,5 @@ ok(intelQueue.includes('queued'), 'formatIntelNote when queue saturated');
 const hud = PacingTools.formatHudLine({ gameSpeed: 8, paused: true });
 ok(hud.includes('8×') && hud.includes('PAUSED'), 'formatHudLine shows speed and pause');
 
-console.log(failed ? `\n${failed} test(s) failed` : '\nAll pacing-tools tests passed');
-process.exit(failed ? 1 : 0);
+console.log(failures() ? `\n${failures()} test(s) failed` : '\nAll pacing-tools tests passed');
+process.exit(failures() ? 1 : 0);

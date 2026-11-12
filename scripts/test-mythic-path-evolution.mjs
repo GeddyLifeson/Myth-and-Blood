@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const eternalSrc = readFileSync(join(JS, 'eternal-legacy-tree.js'), 'utf8');
@@ -68,14 +69,6 @@ function loadModules() {
     `${eternalSrc}\n;\n${foundSrc}\n;\n${techSrc}\n;\n${mbSrc}\n;\n${gsSrc}\n;\n${lbSrc}\n;\n${igSrc}\n;\n${epfSrc}\n;\n${mypSrc}\n({ FoundationalMedievalLayer, TechTreeBranches, GrandStrategy: typeof GrandStrategy !== 'undefined' ? GrandStrategy : null, IntergalacticLayer: typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer : null, MythicPathEvolution })`,
     ctx
   );
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { FoundationalMedievalLayer, GrandStrategy, IntergalacticLayer, MythicPathEvolution } =
@@ -148,8 +141,8 @@ MythicPathEvolution.spawnTestPantheon('pantheon');
 const html = MythicPathEvolution.renderPanelHtml({ wave: 450 });
 ok(html.includes('Pantheon') || html.includes('Bloodlines'), 'unlocked panel shows progression');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll mythic-path-evolution tests passed');

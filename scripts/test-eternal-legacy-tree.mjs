@@ -5,6 +5,7 @@ import { readFileSync, writeFileSync, unlinkSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const STORAGE = join(JS, '..', 'test-eternal-legacy-storage.json');
 
@@ -59,13 +60,6 @@ function loadEternalLegacy(extra = {}) {
 }
 
 let { EternalLegacyTree } = loadEternalLegacy();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(EternalLegacyTree.BRANCHES.iron_crown?.label === 'Iron Crown', 'iron crown branch');
 ok(Object.keys(EternalLegacyTree.TREE_NODES).length >= 20, 'tree has 20+ nodes');
@@ -118,5 +112,7 @@ ok(
 
 ok(EternalLegacyTree.getLegacyEntries().length >= 1, 'encyclopedia entries');
 
-console.log(failed ? `\n${failed} test(s) failed` : '\nAll eternal-legacy-tree tests passed');
-process.exit(failed ? 1 : 0);
+console.log(
+  failures() ? `\n${failures()} test(s) failed` : '\nAll eternal-legacy-tree tests passed'
+);
+process.exit(failures() ? 1 : 0);

@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadAscension(extra = {}) {
   const src = readFileSync(join(JS, 'ascension-system.js'), 'utf8');
@@ -28,14 +29,6 @@ function loadAscension(extra = {}) {
   sb.globalThis = sb;
   const ctx = vm.createContext(sb);
   return vm.runInContext(`${src}\n({ AscensionSystem })`, ctx);
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { AscensionSystem } = loadAscension();
@@ -130,4 +123,4 @@ ok(
   'footman galactic label'
 );
 
-process.exit(failed > 0 ? 1 : 0);
+process.exit(failures() > 0 ? 1 : 0);

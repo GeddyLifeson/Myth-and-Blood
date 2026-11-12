@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadProgressionRestarts() {
   const prSrc = readFileSync(join(JS, 'progression-restarts.js'), 'utf8');
@@ -21,13 +22,6 @@ function loadProgressionRestarts() {
 }
 
 const { ProgressionRestarts } = loadProgressionRestarts();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 ok(ProgressionRestarts.ESCALATION_RESTARTS.length === 2, 'two escalation gates (100, 200)');
 ok(ProgressionRestarts.isEscalationWave(100), 'wave 100 is escalation');
@@ -167,4 +161,4 @@ const state = ProgressionRestarts.getStateSnapshot({ wave: 200 });
 ok(state.firedCount === 1, 'state snapshot fired count');
 ok(state.lastRestart?.shortName === 'Dominion', 'state snapshot last restart');
 
-process.exit(failed > 0 ? 1 : 0);
+process.exit(failures() > 0 ? 1 : 0);

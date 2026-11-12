@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function bootLegacyRuns(runs = 0) {
   const huCode = readFileSync(join(JS, 'html-util.js'), 'utf8');
@@ -48,14 +49,6 @@ function bootLegacyRuns(runs = 0) {
   return { GameModes, Onboarding };
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { GameModes, Onboarding } = bootLegacyRuns(0);
 ok(Onboarding.RECOMMENDED_STARTS.length >= 3, 'recommended starts defined');
 ok(typeof Onboarding.prepareCampaignStart === 'function', 'prepareCampaignStart exported');
@@ -77,4 +70,4 @@ ok(Onboarding.isGuidedRunActive(), 'guided run active when enabled');
 Onboarding.dismissPanel();
 ok(!Onboarding.shouldShowPanel(), 'panel hidden after dismiss');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

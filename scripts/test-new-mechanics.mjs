@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const sb = {
   Math,
@@ -37,14 +38,6 @@ load('neutral-wildlife.js', 'NeutralWildlife');
 const NR = load('neutral-relations.js', 'NeutralRelations');
 const BS = load('biome-spawn.js', 'BiomeSpawn');
 const OST = load('operative-skill-trees.js', 'OperativeSkillTrees');
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 NR.resetRun();
 ok(NR.getReputation() === 0, 'neutral relations starts neutral');
@@ -115,4 +108,4 @@ ok(dmg === 110, 'skill melee modifier');
 ok(Object.keys(OST.FACTION_TREES).length >= 8, 'eight faction trees defined');
 ok(BS.BIOME_PROFILES.forest.wildlifeMult > 1, 'forest boosts wildlife');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

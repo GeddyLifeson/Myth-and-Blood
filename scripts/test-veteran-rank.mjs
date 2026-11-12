@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 function boot() {
   const noop = () => {};
@@ -195,8 +188,8 @@ const cavSpd0 = cav.speed;
 sb.addVetStar(cav, 'silver');
 ok(cav.speed > cavSpd0, 'cavalry gains speed on silver star');
 
-if (failed) {
-  console.error(`\n${failed} veteran-rank test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} veteran-rank test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll veteran-rank tests passed.');

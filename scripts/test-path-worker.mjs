@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function bootSandbox() {
   const sb = { Math, Object, Array, Set, Map, Uint8Array, Worker: undefined };
@@ -24,14 +25,6 @@ const WaveCompositionCore = loadInto(ctx, 'wave-composition-core.js', 'WaveCompo
 loadInto(ctx, 'path-worker-bridge.js', 'PathWorkerBridge');
 const Pathfinding = loadInto(ctx, 'pathfinding.js', 'Pathfinding');
 const PathWorkerBridge = vm.runInContext('PathWorkerBridge', ctx);
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 PathfindingCore.init(640, 480);
 const gridW = Math.ceil(640 / PathfindingCore.CELL);
@@ -102,8 +95,8 @@ const pathAfterRebuild = Pathfinding.findPath(
 );
 ok(pathAfterRebuild.length > 0, 'sync findPath works after walk grid rebuild');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll path-worker smoke tests passed');

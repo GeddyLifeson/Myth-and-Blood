@@ -6,6 +6,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const MODES = [
   'campaign',
@@ -17,14 +18,6 @@ const MODES = [
   'planet_conquest',
   'pve_horde',
 ];
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const noop = () => {};
 const els = new Map();
@@ -318,8 +311,8 @@ ok(menuHidden(), 'planet_conquest: menu still hidden while settings open');
 Game.quitToMenu?.();
 GameModes.endSession();
 
-if (failed) {
-  console.error(`\n${failed} UI menu-hide test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} UI menu-hide test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll UI menu-hide tests passed.');

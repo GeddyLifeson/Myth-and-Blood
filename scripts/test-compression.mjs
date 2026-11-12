@@ -7,17 +7,10 @@ import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { gunzipSync, brotliDecompressSync } from 'zlib';
 import { spawnSync } from 'child_process';
+import { ok, failures } from './lib/harness.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 if (!existsSync(DIST)) {
   // Build on demand so the suite passes from a clean checkout.
@@ -26,7 +19,7 @@ if (!existsSync(DIST)) {
     stdio: 'ignore',
   });
   if (r.status !== 0 || !existsSync(DIST)) {
-    console.error('Build failed; run npm run build to see why');
+    console.error('Build failures(); run npm run build to see why');
     process.exit(1);
   }
 }
@@ -58,8 +51,8 @@ ok(
   'bundle br smaller'
 );
 
-if (failed) {
-  console.error(`test-compression: ${failed} failure(s)`);
+if (failures()) {
+  console.error(`test-compression: ${failures()} failure(s)`);
   process.exit(1);
 }
 console.log('test-compression: OK');

@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = readFileSync(join(JS, 'spatial.js'), 'utf8');
 const sb = { Math, Object, Array, Map, Set };
@@ -12,14 +13,6 @@ sb.window = sb;
 sb.globalThis = sb;
 
 const { Spatial } = vm.runInContext(`${code}\n({ Spatial })`, vm.createContext(sb));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const W = 1200;
 const H = 900;
@@ -67,8 +60,8 @@ ok(outside.length === 0, 'hazard point query outside all zones');
 const mixed = Spatial.queryRadius(200, 200, 50, (e) => e.kind === 'hazard');
 ok(mixed.length === 1, 'queryRadius includes hazard layer');
 
-if (failed) {
-  console.error(`\n${failed} spatial test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} spatial test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll spatial tests passed.');

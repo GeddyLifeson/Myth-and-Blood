@@ -5,14 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
+import { ok, failures } from './lib/harness.mjs';
 
 const dynamic = readFileSync(join(JS, 'dynamic-map-events.js'), 'utf8');
 const hazards = readFileSync(join(JS, 'faction-hazards.js'), 'utf8');
@@ -90,4 +83,4 @@ ok(loot.tp >= 10, 'expedition returns meaningful TP loot');
 ok(loot.science >= 1, 'expedition returns science loot');
 ok(PCE.getExpeditionLootScale(200) > PCE.getExpeditionLootScale(50), 'loot scales into RTS era');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

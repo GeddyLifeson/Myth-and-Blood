@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 // The game rolls dice with Math.random (flee direction, accuracy). A fixed seed keeps
 // these assertions from failing one run in eight.
@@ -21,14 +22,6 @@ function seededMath() {
   for (const k of Object.getOwnPropertyNames(Math)) m[k] = Math[k];
   m.random = rnd;
   return m;
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 function boot() {
@@ -189,8 +182,8 @@ ok(
   'retreating mage does not rubber-band'
 );
 
-if (failed) {
-  console.error(`\n${failed} outpost-garrison test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} outpost-garrison test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll outpost-garrison tests passed.');

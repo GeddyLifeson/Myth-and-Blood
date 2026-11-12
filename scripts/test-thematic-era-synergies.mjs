@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function mockStorage() {
   const store = {};
@@ -81,14 +82,6 @@ function seedMythic(FML) {
   FML.recordDeploy('goku', 60);
   FML.recordDeploy('tank_dempsey', 65);
   FML.recordFaction('gears', 70);
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { FoundationalMedievalLayer, AscensionSystem, ThematicEraSynergies, GrandStrategy } =
@@ -183,8 +176,8 @@ ok(intel.includes('Synergy'), 'intel note mentions synergy');
 const hud = ThematicEraSynergies.formatHudLine({ wave: 200 });
 ok(hud.includes('%') || hud.includes('Echo') || hud.includes('T'), 'hud line populated');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll thematic era synergy tests passed');

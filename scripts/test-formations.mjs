@@ -5,17 +5,10 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 const code = readFileSync(join(JS, 'formations.js'), 'utf8');
 const F = vm.runInContext(`${code}; Formations;`, vm.createContext({ Math, Object, Array }));
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 const line = F.computeOffsets(5, 'line');
 ok(
@@ -34,4 +27,4 @@ ok(spread.length === 8 && Math.abs(spread[1].x - spread[0].x) > 20, 'spread has 
 
 ok(F.nextFormationId('line') === 'column', 'formation cycle');
 
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

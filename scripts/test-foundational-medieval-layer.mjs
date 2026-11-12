@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function mockStorage() {
   const store = {};
@@ -49,13 +50,6 @@ function loadModules(extra = {}) {
 }
 
 const { FoundationalMedievalLayer, EternalLegacyTree } = loadModules();
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
 
 FoundationalMedievalLayer.resetRun();
 FoundationalMedievalLayer.onRunStart({ creative: false });
@@ -110,6 +104,6 @@ ok(
 ok(FoundationalMedievalLayer.getLegacyEntries().length >= 1, 'encyclopedia entry');
 
 console.log(
-  failed ? `\n${failed} test(s) failed` : '\nAll foundational-medieval-layer tests passed'
+  failures() ? `\n${failures()} test(s) failed` : '\nAll foundational-medieval-layer tests passed'
 );
-process.exit(failed ? 1 : 0);
+process.exit(failures() ? 1 : 0);

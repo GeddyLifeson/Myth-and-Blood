@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const mp = readFileSync(join(JS, 'meta-progress.js'), 'utf8');
@@ -37,14 +38,6 @@ function loadModules() {
     Achievements: ctx.Achievements,
     ACHIEVEMENT_LIST: ctx.ACHIEVEMENT_LIST,
   };
-}
-
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
 }
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
@@ -85,8 +78,8 @@ Achievements.onEvent('game_end', { victory: true, wave: 80, enemyStructuresRazed
 ok(!MetaProgress.isGearsUnlocked(), 'victory with too few razes blocks unlock');
 ok(Achievements.evaluateRule('enemy_structures_razed:6'), 'six raze milestone passes');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll gears-unlock tests passed');

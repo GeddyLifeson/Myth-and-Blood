@@ -5,6 +5,7 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
 import { JS } from './headless-manifest.mjs';
+import { ok, failures } from './lib/harness.mjs';
 
 function loadModules() {
   const eternalSrc = readFileSync(join(JS, 'eternal-legacy-tree.js'), 'utf8');
@@ -69,14 +70,6 @@ function loadModules() {
   );
 }
 
-let failed = 0;
-function ok(cond, msg) {
-  if (!cond) {
-    console.error('FAIL:', msg);
-    failed++;
-  } else console.log('OK:', msg);
-}
-
 const { FoundationalMedievalLayer, GrandStrategy, IntergalacticLayer, EternalPathFramework } =
   loadModules();
 
@@ -125,8 +118,8 @@ const html = EternalPathFramework.renderPanelHtml({ wave: 400 });
 ok(html.includes('ETERNAL PATHS'), 'panel html renders');
 ok(html.includes('Medieval'), 'panel shows era chain');
 
-if (failed) {
-  console.error(`\n${failed} test(s) failed`);
+if (failures()) {
+  console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
 console.log('\nAll eternal-path-framework tests passed');
