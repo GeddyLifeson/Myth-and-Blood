@@ -19,7 +19,7 @@ if (!existsSync(DIST)) {
     stdio: 'ignore',
   });
   if (r.status !== 0 || !existsSync(DIST)) {
-    console.error('Build failures(); run npm run build to see why');
+    console.error('Build failed; run npm run build to see why');
     process.exit(1);
   }
 }
