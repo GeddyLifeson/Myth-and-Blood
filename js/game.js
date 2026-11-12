@@ -2197,6 +2197,88 @@ const Game = (() => {
     }
   }
 
+  /** Live view of the battle for the SiegeLoop module. */
+  const siegeCtx = {
+    get wave() {
+      return GS.wave;
+    },
+    get tick() {
+      return GS.updateTick;
+    },
+    get units() {
+      return GS.units;
+    },
+    get worldW() {
+      return GS.worldW;
+    },
+    get worldH() {
+      return GS.worldH;
+    },
+    get rallyY() {
+      return GS.rallyY;
+    },
+    get deployY() {
+      return GS.deployY;
+    },
+    get isNight() {
+      return GS.timeOfDay === 'night';
+    },
+    get creative() {
+      return !!GS.creativeMode;
+    },
+    get modeId() {
+      return getRunModeId();
+    },
+    /** Mode picked on the menu; the session for a new run is created after the army spawns. */
+    get menuModeId() {
+      return svc('GameModes')?.getMenu?.().modeId || 'campaign';
+    },
+    get missLimit() {
+      return getDifficulty().missLimit;
+    },
+    get enemyCountMult() {
+      return getDifficulty().enemyCountMult;
+    },
+    get general() {
+      return findPlayerGeneral();
+    },
+    get casualties() {
+      return GS.playerCasualtiesThisWave;
+    },
+    get enemiesLeft() {
+      return countActiveEnemies();
+    },
+    get queueLeft() {
+      return GS.spawnQueue.length;
+    },
+    get boss() {
+      return GS.namedBossWave
+        ? { name: GS.namedBossWave.name, title: GS.namedBossWave.title }
+        : null;
+    },
+    rng: () => gameRandom(),
+    showMessage: (text, duration) => showMessage(text, duration),
+    float: (x, y, text, color) => svc('FloatingText')?.status?.(x, y, text, color),
+    playSfx: (name) => playSfx(name),
+    shake: (n) => svc('VisualPolish')?.addScreenShake?.(n),
+    addTp: (n) => {
+      GS.tactical += n;
+      sanitizeTactical();
+    },
+    spawnEnemy: (type, x, y) => {
+      const pos = clampPos(x, y);
+      const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: 'north' });
+      u.huntMode = true;
+      GS.units.push(u);
+      return u;
+    },
+    unitName: (u) => (typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type),
+    defeat: () => {
+      if (GS.state === 'playing') endGame(false);
+    },
+  };
+  SiegeLoop.bindContext(() => siegeCtx);
+
   function isDayPhase() {
     return GS.timeOfDay === 'day';
   }
@@ -2575,6 +2657,7 @@ const Game = (() => {
     GS.nightTimer = 0;
     refreshUnitCounts();
     awardRoundTP();
+    SiegeLoop.onNightBegin(siegeCtx);
     refreshUnitCounts();
     const playerUnits = [];
     for (let i = 0; i < GS.units.length; i++) {
@@ -2797,6 +2880,7 @@ const Game = (() => {
 
   function beginDayPhase(manual = false) {
     if (!isNightPhase()) return;
+    const secondsLeft = getNightSecondsRemaining();
     GS.timeOfDay = 'day';
     GS.nightTimer = 0;
     // Unstick any orphaned async paths before the wave fills the spawn queue.
@@ -2813,8 +2897,14 @@ const Game = (() => {
         manual,
       });
     }
-    if (manual) showMessage('Dawn breaks — the assault begins!', 160);
+    const earlyTp = manual ? SiegeLoop.earlyCallBonus(secondsLeft, siegeCtx) : 0;
+    if (earlyTp > 0) {
+      GS.tactical += earlyTp;
+      sanitizeTactical();
+      showMessage(`Horn sounded early — +${earlyTp} TP. The assault begins!`, 200);
+    } else if (manual) showMessage('Dawn breaks — the assault begins!', 160);
     startNextWave();
+    SiegeLoop.onWaveStart(siegeCtx);
     invalidateStateCache();
   }
 
@@ -2929,6 +3019,7 @@ const Game = (() => {
     ) {
       dmg = Math.round(dmg * 1.35);
     }
+    if (target) dmg = SiegeLoop.modifyDamage(unit, target, dmg, GS.updateTick);
     if (svc('ContentExpansion')) dmg = svc('ContentExpansion').modifyCalcDamage(unit, target, dmg);
     if (svc('StrategyCounterplay')) {
       dmg = svc('StrategyCounterplay').modifyDamage(unit, target, dmg);
@@ -3132,6 +3223,54 @@ const Game = (() => {
       tryRtsMapExpansion,
       bootstrapPlaceComplete,
       bootstrapSpawnArmy,
+      // Veterans march into the new era: the soldiers with the most kills and waves survive the reset.
+      captureVeterans: (limit = 10) =>
+        GS.units
+          .filter(
+            (u) =>
+              u.team === 'player' &&
+              u.hp > 0 &&
+              !u.isDoomslayer &&
+              ((u.kills || 0) >= 5 || (u.wavesSurvived || 0) >= 5 || u.honorName || u.isGeneral)
+          )
+          .sort(
+            (a, b) =>
+              (b.isGeneral ? 1e6 : 0) +
+              (b.kills || 0) * 2 +
+              (b.wavesSurvived || 0) -
+              ((a.isGeneral ? 1e6 : 0) + (a.kills || 0) * 2 + (a.wavesSurvived || 0))
+          )
+          .slice(0, limit)
+          .map((u) => serializeUnitSnap(u)),
+      restoreVeterans: (snaps) => {
+        let n = 0;
+        for (const us of snaps || []) {
+          ensurePlayerUnitDef(us.type);
+          const x = GS.worldW / 2 - 110 + (n % 10) * 24;
+          const y = GS.deployY + 26 + Math.floor(n / 10) * 24;
+          const u = createUnit(us.type, x, y, 'player');
+          if (!u) continue;
+          Object.assign(u, us, { x, y });
+          u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
+          u.hp = u.maxHp;
+          u.targetX = x;
+          u.targetY = GS.rallyY;
+          u.path = [];
+          u.pathIndex = 0;
+          u.combatTargetId = null;
+          u.garrisoned = false;
+          u.wallGarrisoned = false;
+          u.stationedKeep = null;
+          u.retreatingToMed = null;
+          u.atMedicalTent = null;
+          u.demoralized = false;
+          u.huntMode = GS.globalHunt;
+          if (typeof repairHonorName === 'function') repairHonorName(u);
+          GS.units.push(u);
+          n++;
+        }
+        return n;
+      },
       bootstrapEnemyEconomyForWave,
       grantBootstrapUnlocks: (w) => {
         if (svc('Research')) svc('Research').grantBootstrapUnlocks(w);
@@ -3496,6 +3635,7 @@ const Game = (() => {
     // so without a guard difficulty, kingdom and legacy bonuses stacked twice.
     if (u.statModsApplied) return u;
     u.statModsApplied = true;
+    SiegeLoop.applySpawnMods(u);
     const diff = getDifficulty();
     if (diff.allyHpMult && diff.allyHpMult !== 1) {
       u.maxHp = Math.floor(u.maxHp * diff.allyHpMult);
@@ -4250,6 +4390,12 @@ const Game = (() => {
         vetBronze: u.vetBronze,
         vetSilver: u.vetSilver,
         vetGold: u.vetGold,
+        fleeing: !!u.fleeing,
+        pinned: !!u.pinned,
+        lineBreaker: !!u.lineBreaker,
+        pathLen: u.path?.length || 0,
+        pathPending: !!u.pathPending,
+        spawnSide: u.spawnSide,
       }));
   }
 
@@ -6054,6 +6200,8 @@ const Game = (() => {
       );
       if (raidBld) return { kind: 'building', target: raidBld };
     }
+    // Line-breakers ignore the army and run for the line; they only fight what blocks them.
+    if (unit.lineBreaker) return { kind: 'advance', target: null };
     const general = findPlayerGeneral();
     if (
       general &&
@@ -6533,7 +6681,7 @@ const Game = (() => {
     releaseAllBuildings();
     refreshUnitCounts();
     GS.moveMarkers = [];
-    GS.tactical = diff.startingTp;
+    GS.tactical = diff.startingTp + SiegeLoop.startRun(siegeCtx);
     GS.wave = 0;
     GS.kills = 0;
     GS.misses = 0;
@@ -7829,6 +7977,7 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
+    SiegeLoop.endRun();
     if (!GS.creativeMode) {
       ach('game_end', {
         victory,
@@ -11765,6 +11914,8 @@ const Game = (() => {
     if (unit.team === 'player' && svc('DynamicMapEvents')) {
       actual *= svc('DynamicMapEvents').getActiveMods().playerDamageTakenMult || 1;
     }
+    if (unit.team === 'player') actual = SiegeLoop.modifyDamageTaken(unit, actual, GS.updateTick);
+    if (actual > 0 && opts.attackerTeam !== unit.team) SiegeLoop.noteCombat(GS.updateTick);
     if (unit.team === 'player' && svc('CrownLegacies') && !GS.creativeMode) {
       actual *= svc('CrownLegacies').getCombinedEffects().damageTakenMult || 1;
     }
@@ -11929,8 +12080,9 @@ const Game = (() => {
         if (svc('GameEvents')) {
           svc('GameEvents').emit(svc('GameEvents').GameEvent.ENEMY_SLAIN, { unit, wave: GS.wave });
         }
+        SiegeLoop.onUnitDeath(unit, killer, siegeCtx);
         if (killer) {
-          killer.experience = (killer.experience || 0) + 2;
+          killer.experience = (killer.experience || 0) + 2 + SiegeLoop.killXpBonus();
           if (svc('Legacy')) svc('Legacy').recordKill(killer.type, unit.type);
           if (typeof FoundationalMedievalLayer !== 'undefined') {
             FoundationalMedievalLayer.recordKill(killer.type, GS.wave);
@@ -11995,6 +12147,7 @@ const Game = (() => {
         }
       }
       if (unit.team === 'player') {
+        SiegeLoop.onUnitDeath(unit, null, siegeCtx);
         GS.runPlayerDeaths++;
         GS.playerCasualtiesThisWave++;
         if (typeof GameFeedback !== 'undefined') GameFeedback.onPlayerDeath();
@@ -12822,7 +12975,8 @@ const Game = (() => {
     if (unit.combatType === 'healer' || unit.combatType === 'builder') return;
     if (unit.pinned) return;
 
-    const foeInRange = findNearestFoeInRange(unit);
+    // An enemy storming the line does not stop to trade blows.
+    const foeInRange = unit.stormLine ? null : findNearestFoeInRange(unit);
     if (foeInRange) {
       unit.combatTargetId = foeInRange.id;
       if (inAttackRange(unit, foeInRange)) {
@@ -12833,7 +12987,7 @@ const Game = (() => {
       }
     }
 
-    if (!foeInRange && unit.attackAnimTimer <= 0) {
+    if (!foeInRange && unit.attackAnimTimer <= 0 && !unit.stormLine) {
       const siegeScanR =
         (unit.meleeRange || MELEE_STANDOFF) + getBuildingHitRadius({ radius: 30 }) + 48;
       if (useSpatialQueries()) {
@@ -12923,7 +13077,11 @@ const Game = (() => {
       destX = target.x;
       destY = target.y;
     } else {
-      const adv = getEnemyAdvancePoint(unit);
+      // Nothing left to fight: the enemy walks through the line.
+      if (!unit.lineBreaker && SiegeLoop.unopposedBreaks(siegeCtx)) unit.lineBreaker = true;
+      const adv = unit.lineBreaker
+        ? SiegeLoop.breachGoal(unit, siegeCtx)
+        : getEnemyAdvancePoint(unit);
       destX = adv.x;
       destY = adv.y;
     }
@@ -13051,6 +13209,7 @@ const Game = (() => {
           playSfx('bossWarn');
         }
         u.huntMode = true;
+        SiegeLoop.tagEnemySpawn(u, siegeCtx);
         GS.units.push(u);
         const baseInterval =
           GS.creativeMode && GS.creativeCustomWave?.interval
@@ -13154,7 +13313,18 @@ const Game = (() => {
       if (typeof GameFeedback !== 'undefined') GameFeedback.update();
       return;
     }
+    // The last kill of a wave lands in slow motion.
+    if (
+      (typeof GameFeedback === 'undefined' || GameFeedback.allowHitStop()) &&
+      SiegeLoop.consumeSlowMoSkip()
+    ) {
+      svc('FloatingText')?.update?.();
+      svc('Particles')?.update?.();
+      if (svc('VisualPolish')) svc('VisualPolish').update();
+      return;
+    }
     GS.updateTick++;
+    if (GS.state === 'playing') SiegeLoop.update(siegeCtx);
     markUpdatePhase('update-begin', `w${GS.wave} u${GS.units.length}`);
     if (svc('Perf')) {
       svc('Perf').setUpdateTick(GS.updateTick);
@@ -13780,6 +13950,7 @@ const Game = (() => {
         0,
         0
       );
+      SiegeLoop.drawGround(GS.ctx);
       if (svc('LivingPlanet') && svc('VisualPolish') && gfxQ?.drawBorders !== false) {
         svc('VisualPolish').drawBiomeRegions(
           GS.ctx,
@@ -14261,6 +14432,7 @@ const Game = (() => {
       }
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
+      SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
       svc('Particles').draw(GS.ctx, vBounds);
       svc('FloatingText').draw(GS.ctx, vBounds);
 
@@ -14664,6 +14836,9 @@ const Game = (() => {
           displayName,
           roleLabel,
           honorName: u.honorName,
+          kills: u.kills || 0,
+          wavesSurvived: u.wavesSurvived || 0,
+          counterNote: SiegeLoop.COUNTER_NOTES[u.type] || '',
           hp: u.hp,
           maxHp: u.maxHp,
           morale: u.morale,
@@ -14868,6 +15043,10 @@ const Game = (() => {
 
   function serializeUnitSnap(u) {
     return {
+      kills: u.kills || 0,
+      wavesSurvived: u.wavesSurvived || 0,
+      lineBreaker: !!u.lineBreaker,
+      stormLine: !!u.stormLine,
       id: u.id,
       type: u.type,
       x: u.x,
@@ -14970,6 +15149,7 @@ const Game = (() => {
       tactical: GS.tactical,
       kills: GS.kills,
       misses: GS.misses,
+      siegeLoop: SiegeLoop.exportState(),
       timeOfDay: GS.timeOfDay,
       nightTimer: GS.nightTimer,
       waveProgress: GS.waveProgress,
@@ -15258,6 +15438,7 @@ const Game = (() => {
       resetCamera();
       GS.spatialFrame = -1;
       if (svc('Research') && snap.research) svc('Research').restoreSnapshot(snap.research);
+      SiegeLoop.importState(snap.siegeLoop || null, siegeCtx);
       if (typeof ProgressionRestarts !== 'undefined') {
         if (snap.progressionRestarts) {
           ProgressionRestarts.restoreSnapshot(snap.progressionRestarts);
@@ -15355,6 +15536,7 @@ const Game = (() => {
     }
     if (svc('GameModes')) svc('GameModes').endSession();
     GS.state = 'menu';
+    SiegeLoop.endRun();
     GS.paused = false;
     const audio = svc('AudioEngine') || (typeof AudioEngine !== 'undefined' ? AudioEngine : null);
     try {
@@ -15440,6 +15622,7 @@ const Game = (() => {
       kills: GS.kills,
       misses: GS.runPlayerDeaths,
       playerDeaths: GS.runPlayerDeaths,
+      siegeLoop: SiegeLoop.getHudState(siegeCtx),
       unitProducers: unitCounts.unitProducers,
       creativeMode: GS.creativeMode,
       creativeTool: GS.creativeTool,

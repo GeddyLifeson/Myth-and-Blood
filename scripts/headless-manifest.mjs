@@ -38,6 +38,7 @@ export const HEADLESS_FILES = [
   'cheats.js',
   'advanced-difficulty.js',
   'legacy.js',
+  'siege-loop.js',
   'crown-legacies.js',
   'chronicles.js',
   'story-lore.js',

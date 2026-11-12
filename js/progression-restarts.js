@@ -155,6 +155,7 @@ const ProgressionRestarts = (() => {
     const researchDone = ctx.getResearchCompletedCount?.() || 0;
     const scienceGrant = def.scienceBonus + Math.min(12, Math.floor(researchDone / 2));
 
+    const veterans = ctx.captureVeterans?.() || [];
     ctx.releaseAllUnits?.();
     ctx.releaseAllBuildings?.();
     ctx.clearProjectiles?.();
@@ -169,6 +170,7 @@ const ProgressionRestarts = (() => {
     bootstrapPlayerBase(def, ctx);
     ctx.bootstrapSpawnArmy?.(def.army);
     if (def.extraArmy?.length) ctx.bootstrapSpawnArmy?.(def.extraArmy);
+    const veteransKept = veterans.length ? ctx.restoreVeterans?.(veterans) || 0 : 0;
     ctx.bootstrapEnemyEconomyForWave?.(wave);
     ctx.grantBootstrapUnlocks?.(wave);
 
@@ -203,6 +205,12 @@ const ProgressionRestarts = (() => {
       `Progression Restart — ${def.name}. Tactical map reset; legacies, research (${researchDone} complete)${eternalNote}, and ${baseTp + (legacy.startTp || 0)} TP imported.`,
       440
     );
+    if (veteransKept > 0) {
+      ctx.showMessage?.(
+        `${veteransKept} veteran${veteransKept === 1 ? '' : 's'} marched into the new era with you.`,
+        320
+      );
+    }
     ctx.showMessage?.(def.tagline, 360);
     ctx.floatingText?.(ctx.worldW / 2, 56, def.shortName.toUpperCase(), def.color);
 

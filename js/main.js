@@ -523,6 +523,10 @@
         if (typeof UX !== 'undefined') UX.toggleMessageLog?.();
         return;
       }
+      if ((key === '[' || key === ']') && Game.isPlaying()) {
+        SiegeLoop.order(key === '[' ? 'warCry' : 'holdLine');
+        return;
+      }
       if (e.key === 'F10') {
         e.preventDefault();
         if (typeof ErrorReporting !== 'undefined' && ErrorReporting.openBugReport) {

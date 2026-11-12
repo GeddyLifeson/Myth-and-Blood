@@ -46,6 +46,7 @@ export const GAME_SCRIPTS = [
   'game-modes.js',
   'onboarding.js',
   'legacy.js',
+  'siege-loop.js',
   'crown-legacies.js',
   'foundational-medieval-layer.js',
   'eternal-legacy-tree.js',

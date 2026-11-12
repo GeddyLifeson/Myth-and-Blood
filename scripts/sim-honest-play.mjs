@@ -15,7 +15,7 @@ import { boot } from './lib/harness.mjs';
 const MAX_TICKS = Number(process.env.HONEST_TICKS || 60000);
 const SEEDS = Number(process.env.HONEST_SEEDS || 3);
 const STALL_TICKS = Number(process.env.HONEST_STALL_TICKS || 8000);
-const DIFFS = ['baby', 'normal', 'chad', 'doomslayer'];
+const DIFFS = (process.env.HONEST_DIFFS || 'baby,normal,chad,doomslayer').split(',');
 // Deploy order the bot cycles through; it buys the next one it can afford.
 const ROSTER = [
   'footman',
@@ -59,6 +59,33 @@ function playOne(diff, seed) {
       lastWaveTick = t;
     } else if (t - lastWaveTick > STALL_TICKS) {
       stalledAt = s.wave;
+      if (process.env.HONEST_DEBUG) {
+        const live = Game.getUnitsSnapshot?.() || [];
+        console.log(
+          JSON.stringify({
+            timeOfDay: s.timeOfDay,
+            enemiesRemaining: s.enemiesRemaining,
+            siege: s.siegeLoop && {
+              breaches: s.siegeLoop.breaches,
+              limit: s.siegeLoop.breachLimit,
+            },
+            units: live.map((u) =>
+              [
+                u.team,
+                u.type,
+                Math.round(u.x),
+                Math.round(u.y),
+                u.fleeing ? 'fleeing' : '',
+                u.pinned ? 'pinned' : '',
+                u.lineBreaker ? 'runner' : '',
+                `path${u.pathLen}${u.pathPending ? '?' : ''}`,
+              ]
+                .filter(Boolean)
+                .join(' ')
+            ),
+          })
+        );
+      }
       break;
     }
     try {
@@ -104,6 +131,9 @@ function playOne(diff, seed) {
     deployed,
     maxArmy,
     kills: fin.kills ?? null,
+    breaches: fin.siegeLoop?.breaches ?? 0,
+    breachLimit: fin.siegeLoop?.breachLimit ?? null,
+    spoils: fin.siegeLoop?.edicts?.length ?? 0,
     campaignWon: !!fin.campaignWon,
     threw,
   };
@@ -115,7 +145,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, 4000 + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }

@@ -502,7 +502,7 @@ const UX = (() => {
     // Include vet stars / promote eligibility so rank-ups refresh the panel while selected.
     const structureKey = multi
       ? `m:${info.length}:${gs.selectionFormationLabel || 'Box'}`
-      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}`;
+      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
 
     if (!multi) {
       const u = info[0];
@@ -596,6 +596,8 @@ const UX = (() => {
         </div>
         ${formatScaling(u)}
         ${formatLateAbility(u)}
+        <div class="unit-info-row service-row"><span>Service</span> ${u.kills || 0} kill${u.kills === 1 ? '' : 's'} · ${u.wavesSurvived || 0} wave${u.wavesSurvived === 1 ? '' : 's'} survived</div>
+        ${u.counterNote ? `<div class="unit-info-row counter-row">${escapeHtml(u.counterNote)}</div>` : ''}
         <div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
         ${
