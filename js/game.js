@@ -3581,6 +3581,18 @@ const Game = (() => {
     }
     if (typeof TechTreeBranches !== 'undefined' && !GS.creativeMode) {
       const fx = TechTreeBranches.getCombinedEffects(GS.wave);
+      // These four were shown on the tree ("Dmg ×1.xx") but never applied.
+      if (fx.playerDmgMult > 1 && u.damage) u.damage = Math.floor(u.damage * fx.playerDmgMult);
+      if (fx.hpMult > 1) {
+        u.maxHp = Math.floor(u.maxHp * fx.hpMult);
+        u.hp = Math.min(u.hp, u.maxHp);
+      }
+      if (fx.archerDmgMult > 1 && u.type === 'archer' && u.damage) {
+        u.damage = Math.floor(u.damage * fx.archerDmgMult);
+      }
+      if (fx.siegeMult > 1 && (u.type === 'sapper' || u.type === 'ballista')) {
+        u.siegeMult = (u.siegeMult || 1) * fx.siegeMult;
+      }
       if (fx.footmanHpMult > 1 && (u.type === 'footman' || u.type === 'pikeman')) {
         u.maxHp = Math.floor(u.maxHp * fx.footmanHpMult);
         u.hp = Math.min(u.hp, u.maxHp);
@@ -6448,7 +6460,11 @@ const Game = (() => {
     const eco = getSettlementTpBonus();
     // No arbitrary 120 ceiling — multi-hamlet / high-wave income was being clipped.
     // Bank still hard-capped by sanitizeTactical / TP_SANITY_CAP.
-    const gained = Math.max(0, Math.floor(getTpPerRound() + GS.pendingLevy));
+    const techTpMult =
+      typeof TechTreeBranches !== 'undefined' && !GS.creativeMode
+        ? TechTreeBranches.getCombinedEffects(GS.wave).tpIncomeMult || 1
+        : 1;
+    const gained = Math.max(0, Math.floor(getTpPerRound() * techTpMult + GS.pendingLevy));
     GS.tactical += gained;
     GS.pendingLevy = 0;
     sanitizeTactical();
@@ -14890,6 +14906,14 @@ const Game = (() => {
       morale: u.morale,
       maxMorale: u.maxMorale,
       perks: u.perks ? [...u.perks] : [],
+      // Perk effects that are flags or multipliers rather than plain stats; without them
+      // a loaded unit still listed the perk but had lost what it does.
+      hasQuickRevive: u.hasQuickRevive,
+      hasElementalPop: u.hasElementalPop,
+      hasPhdFlopper: u.hasPhdFlopper,
+      hasVultureAid: u.hasVultureAid,
+      hasTombstone: u.hasTombstone,
+      attackSpeedMult: u.attackSpeedMult,
       huntMode: u.huntMode,
       generalStars: u.generalStars,
       isGeneral: !!u.isGeneral,
@@ -15165,6 +15189,18 @@ const Game = (() => {
         }
         if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
         GS.units.push(u);
+      }
+      // Re-link wall slots: walls are rebuilt with empty slots, so a saved wall garrison
+      // would otherwise stand frozen while other footmen marched to the same slot.
+      for (const u of GS.units) {
+        if (!u.wallGarrisoned || u.team !== 'player') continue;
+        const wall = GS.buildings.find((b) => b.id === u.wallGarrisoned);
+        const slot = wall && wall.hp > 0 ? wall.wallSlots?.[u.wallSlotIndex] : null;
+        if (slot && !slot.unitId) slot.unitId = u.id;
+        else {
+          u.wallGarrisoned = null;
+          u.wallSlotIndex = null;
+        }
       }
       // Re-link outpost garrisons from unit.garrisoned (building.garrisonUnitId may be stale).
       for (const u of GS.units) {
