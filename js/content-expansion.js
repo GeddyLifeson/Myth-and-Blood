@@ -309,7 +309,7 @@ const ContentExpansion = (() => {
         secret: true,
       },
       perk_mule_kick: {
-        name: 'Mule Kick',
+        name: 'Packmule Tonic',
         cost: 10,
         hp: 130,
         cover: 0.2,
@@ -322,7 +322,7 @@ const ContentExpansion = (() => {
         secret: true,
       },
       perk_sleight: {
-        name: 'Sleight of Hand',
+        name: 'Quickhands Tonic',
         cost: 10,
         hp: 130,
         cover: 0.2,
@@ -899,7 +899,7 @@ const ContentExpansion = (() => {
           },
         },
         mule_kick: {
-          name: 'Mule Kick',
+          name: 'Packmule Tonic',
           tags: ['ranged', 'support'],
           desc: 'Carry a secondary weapon slot (+18% ranged dmg)',
           apply(u) {
@@ -907,7 +907,7 @@ const ContentExpansion = (() => {
           },
         },
         sleight: {
-          name: 'Sleight of Hand',
+          name: 'Quickhands Tonic',
           tags: ['support', 'ranged'],
           desc: 'Spy/courier actions cost -1 TP (min 0)',
           apply(u) {
@@ -2012,10 +2012,10 @@ const ContentExpansion = (() => {
         name: 'Twinshot Brew',
         body: 'Ranged — bonus follow-up shot at 55% damage (applied on hit in combat).',
       },
-      { cat: 'perks', name: 'Mule Kick', body: 'Ranged & support — +18% ranged damage.' },
+      { cat: 'perks', name: 'Packmule Tonic', body: 'Ranged & support — +18% ranged damage.' },
       {
         cat: 'perks',
-        name: 'Sleight of Hand',
+        name: 'Quickhands Tonic',
         body: 'Support & ranged — spy/courier actions cost -1 TP.',
       },
     ];

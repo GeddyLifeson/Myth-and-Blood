@@ -60,7 +60,7 @@ const Tooltips = (() => {
     builder: 'Erects structures within build range. Auto-repair toggle in meta panel.',
     courier: 'Dispatches one royal message per wave. Must be alive on the field.',
     general: 'Command aura buffs nearby troops. Auto-paths to Keep; mans castle walls.',
-    doomslayer_hero: 'Legend unlocked at wave 200 on Doomslayer difficulty. One per field.',
+    doomslayer_hero: 'Legend unlocked at wave 200 on Hellbane difficulty. One per field.',
   };
 
   const ACADEMY_NOTE =

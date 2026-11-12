@@ -115,7 +115,7 @@ const LoreData = (() => {
           multifront: 'Survive to multi-front war (wave 25+)',
         }[val] || `Unlock era: ${val}`,
       meta_wwe: 'Unlock the Grand Coliseum',
-      meta_doom: 'Unlock the Doomslayer',
+      meta_doom: 'Unlock the Hellbane',
       meta_crossover: 'Unlock any evolved faction',
       faction: `Recruit ${val} evolved operatives`,
     };
@@ -288,7 +288,7 @@ const LoreData = (() => {
     necromancer: {
       flavor: 'Death priests who refill the horde from corpses.',
       threat: 'Elite caster',
-      weak: 'Hamon, burst',
+      weak: 'Sunbreath, burst',
       counter: 'bound spirit operatives, focus fire',
     },
     berserker: {
@@ -568,7 +568,7 @@ const LoreData = (() => {
     {
       wave: 1000,
       name: 'Hellscape Breach',
-      hook: "Reality thins. Even legends falter. The Doomslayer's blade returns to mortal scale — the true endgame begins.",
+      hook: "Reality thins. Even legends falter. The Hellbane's blade returns to mortal scale — the true endgame begins.",
       rule: 'era:hellscape',
     },
   ];
@@ -838,7 +838,7 @@ const LoreData = (() => {
       for (const [id, def] of Object.entries(SpyActions)) {
         entries.push(
           entry('orders', def.name, `${def.desc}. Cost ${def.cost} TP. One spy action per wave.`, {
-            classified: 'Sleight of Hand perk reduces spy/courier costs by 1 TP.',
+            classified: 'Quickhands Tonic perk reduces spy/courier costs by 1 TP.',
             classifiedRule: 'achievements:50',
           })
         );
@@ -897,7 +897,8 @@ const LoreData = (() => {
         'Bronze Stars',
         'Combat troops earn bronze from kills. 3 bronze → 1 silver → 1 gold → TP promotion eligibility (Veteran Doctrine research required).',
         {
-          classified: 'Vulture Aid: kills may grant +1 TP — bronze farmers become economy engines.',
+          classified:
+            'Scavenger’s Tonic: kills may grant +1 TP — bronze farmers become economy engines.',
           classifiedRule: 'achievements:25',
         }
       ),
@@ -1101,7 +1102,7 @@ const LoreData = (() => {
         'Evolved operatives are your evolved allies — rare power spikes early (1–2 operatives flip sieges), full faction armies with synergies mid-game, and Planet Warfare demolition experts after wave 200. See Crossover System tab for full curve, secret rosters, and operative list.',
         {
           classified:
-            'Planet Warfare operatives (Baird, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
+            'Planet Warfare operatives (Gearwright, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
           classifiedRule: 'meta_crossover',
         }
       ),
@@ -1141,7 +1142,7 @@ const LoreData = (() => {
         'Day: assaults. Night: prep, +35% builder speed, perk collection.',
         {
           classified:
-            'Bray Wyatt lantern punishes enemy accuracy at dusk — schedule elite waves around light level.',
+            'Lantern Prophet lantern punishes enemy accuracy at dusk — schedule elite waves around light level.',
           classifiedRule: 'meta_wwe',
         }
       ),
@@ -1151,7 +1152,7 @@ const LoreData = (() => {
         'Reality thins — legendary damage falls to mortal scale.',
         {
           classified:
-            'Doomslayer one-shots end here. Only sustained evolved synergies and settlement economy survive.',
+            'Hellbane one-shots end here. Only sustained evolved synergies and settlement economy survive.',
           classifiedRule: 'era:hellscape',
         }
       ),

@@ -3,9 +3,9 @@
  */
 const Cheats = (() => {
   const CODES = {
-    'austin 3:16': {
+    'iron creed': {
       id: 'austin',
-      message: 'THE STONEBREAKER SAID SO — Grand Coliseum unlocked!',
+      message: 'THE IRON CREED HOLDS — Grand Coliseum unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
         if (typeof Achievements !== 'undefined') {
@@ -15,9 +15,9 @@ const Cheats = (() => {
         }
       },
     },
-    iddqd: {
+    'kings ransom': {
       id: 'godmode',
-      message: 'IDDQD — +500 TP and full morale!',
+      message: 'KING\u2019S RANSOM — +500 TP and full morale!',
       inGameOnly: true,
       apply() {
         if (typeof Game !== 'undefined' && Game.isPlaying()) {
@@ -26,23 +26,23 @@ const Cheats = (() => {
         }
       },
     },
-    rosebud: {
+    'war chest': {
       id: 'rosebud',
-      message: 'ROSEBUD — +1000 Simoleons... I mean TP!',
+      message: 'WAR CHEST — +1000 TP!',
       inGameOnly: true,
       apply() {
         if (typeof Game !== 'undefined' && Game.isPlaying()) Game.applyCheatEffect('tp', 1000);
       },
     },
-    'there can be only one': {
+    'clear the field': {
       id: 'highlander',
-      message: 'THERE CAN BE ONLY ONE — all enemies on field eliminated!',
+      message: 'FIELD CLEARED — all enemies on field eliminated!',
       inGameOnly: true,
       apply() {
         if (typeof Game !== 'undefined' && Game.isPlaying()) Game.applyCheatEffect('clear_enemies');
       },
     },
-    'gotta catch em all': {
+    'muster all': {
       id: 'pokemon',
       message: 'Deploy one of every troop type FREE!',
       inGameOnly: true,
@@ -51,7 +51,7 @@ const Cheats = (() => {
           Game.applyCheatEffect('deploy_all_free');
       },
     },
-    "gotta catch 'em all": {
+    'muster everyone': {
       id: 'pokemon',
       message: 'Deploy one of every troop type FREE!',
       inGameOnly: true,
@@ -62,7 +62,7 @@ const Cheats = (() => {
     },
     'hell walks': {
       id: 'doomhero',
-      message: 'HELL WALKS — Doomslayer hero unlocked!',
+      message: 'HELL WALKS — Hellbane hero unlocked!',
       apply() {
         MetaProgress.unlockDoomslayerHero();
         if (typeof Achievements !== 'undefined') {
@@ -71,9 +71,9 @@ const Cheats = (() => {
         }
       },
     },
-    doomslayer: {
+    hellbane: {
       id: 'doomslayer',
-      message: 'DOOMSLAYER — The hero walks among mortals!',
+      message: 'HELLBANE — The hero walks among mortals!',
       apply() {
         MetaProgress.unlockDoomslayerHero();
         if (typeof Achievements !== 'undefined') {
@@ -82,9 +82,9 @@ const Cheats = (() => {
         }
       },
     },
-    'whatcha gonna do': {
+    'arena calls': {
       id: 'wwe',
-      message: 'WHAT ARE YOU GONNA DO — Grand Coliseum unlocked!',
+      message: 'THE ARENA CALLS — Grand Coliseum unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
         if (typeof Achievements !== 'undefined') {
@@ -93,25 +93,25 @@ const Cheats = (() => {
         }
       },
     },
-    "it's morphin time": {
+    'knights assemble': {
       id: 'rangers',
-      message: 'GO GO POWER — +5 knights spawn!',
+      message: 'KNIGHTS ASSEMBLE — +5 knights spawn!',
       inGameOnly: true,
       apply() {
         if (typeof Game !== 'undefined' && Game.isPlaying())
           Game.applyCheatEffect('spawn_knights', 5);
       },
     },
-    'its morphin time': {
+    'knights, assemble': {
       id: 'rangers',
-      message: 'GO GO POWER — +5 knights spawn!',
+      message: 'KNIGHTS ASSEMBLE — +5 knights spawn!',
       inGameOnly: true,
       apply() {
         if (typeof Game !== 'undefined' && Game.isPlaying())
           Game.applyCheatEffect('spawn_knights', 5);
       },
     },
-    115: {
+    'void residue': {
       id: 'cod115',
       message:
         '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
@@ -121,16 +121,16 @@ const Cheats = (() => {
         Achievements?.tryUnlock('ultimis_unlock');
       },
     },
-    primus: {
+    'first circle': {
       id: 'primus',
-      message: 'PRIMUS — First Circle crew unlocked! Build the First Circle Shrine.',
+      message: 'FIRST CIRCLE — crew unlocked! Build the First Circle Shrine.',
       apply() {
         MetaProgress.unlockPrimus();
         Achievements?.tryUnlock('cheat_used');
         Achievements?.tryUnlock('primis_unlock');
       },
     },
-    halo: {
+    'orbital vanguard': {
       id: 'halo',
       message: 'ORBITAL VANGUARD — Orbital heroes & Vanguard Academy unlocked!',
       apply() {
@@ -139,16 +139,16 @@ const Cheats = (() => {
         Achievements?.tryUnlock('halo_unlock');
       },
     },
-    gears: {
+    'iron trench': {
       id: 'gears',
-      message: 'IRON TRENCH — Trench squad & Lancer Academy unlocked!',
+      message: 'IRON TRENCH — Trench squad & Trenchsaw Academy unlocked!',
       apply() {
         MetaProgress.unlockGears();
         Achievements?.tryUnlock('cheat_used');
         Achievements?.tryUnlock('gears_unlock');
       },
     },
-    'one to rule them all': {
+    'ninefold march': {
       id: 'lotr',
       message: 'NINE RINGS FALL — Fellowship of Ninefold March unlocked!',
       apply() {
@@ -157,16 +157,16 @@ const Cheats = (() => {
         Achievements?.tryUnlock('lotr_unlock');
       },
     },
-    hanma: {
+    'iron pit': {
       id: 'hanma',
-      message: 'HANMA — pit fighters unlocked! Build the Iron Pit Guild.',
+      message: 'IRON PIT — pit fighters unlocked! Build the Iron Pit Guild.',
       apply() {
         MetaProgress.unlockBaki();
         Achievements?.tryUnlock('cheat_used');
         Achievements?.tryUnlock('baki_unlock');
       },
     },
-    ジョジョの奇妙な冒険: {
+    'bound spirit': {
       id: 'jojo',
       message: 'Spirit Court sigil — bound spirit heroes (Parts 1–7) unlocked! Part 7 = cavalry.',
       apply() {
@@ -175,25 +175,25 @@ const Cheats = (() => {
         Achievements?.tryUnlock('jojo_unlock');
       },
     },
-    'jojos bizarre adventure': {
+    'spirit court': {
       id: 'jojo',
-      message: 'BOUND SPIRIT COURT — Parts 1–7 unlocked! Golden Ball Run cavalry ready.',
+      message: 'BOUND SPIRIT COURT — Parts 1–7 unlocked! Gilded Derby cavalry ready.',
       apply() {
         MetaProgress.unlockJojo();
         Achievements?.tryUnlock('cheat_used');
         Achievements?.tryUnlock('jojo_unlock');
       },
     },
-    fotns: {
+    'north star': {
       id: 'fotns',
-      message: 'FOTNS — North Star Fist masters unlocked!',
+      message: 'NORTH STAR — Seven Star Fist masters unlocked!',
       apply() {
         MetaProgress.unlockFotns();
         Achievements?.tryUnlock('cheat_used');
         Achievements?.tryUnlock('fotns_unlock');
       },
     },
-    'dragon soul': {
+    skyburst: {
       id: 'dragonball',
       message: 'SKYBURST SOUL — skyburst fighters unlocked! Build Skyburst Foundry.',
       apply() {
@@ -202,7 +202,7 @@ const Cheats = (() => {
         Achievements?.tryUnlock('dragonball_unlock');
       },
     },
-    'for the emperor': {
+    'crimson legions': {
       id: 'imperium',
       message: 'FOR THE CRIMSON THRONE — crimson legion unlocked! Build the Crimson Chapel.',
       apply() {
@@ -218,9 +218,9 @@ const Cheats = (() => {
         Achievements?.tryUnlock('cheat_used');
       },
     },
-    'let the galaxy burn': {
+    'rift cult': {
       id: 'warp',
-      message: 'LET THE GALAXY BURN — Rift Cult unlocked! Build the Rift Cult Shrine.',
+      message: 'RIFT CULT — unlocked! Build the Rift Cult Shrine.',
       apply() {
         MetaProgress.unlockWarp();
         Achievements?.tryUnlock('cheat_used');
@@ -236,7 +236,7 @@ const Cheats = (() => {
         Achievements?.tryUnlock('warhammer_unlock');
       },
     },
-    'dragonborn legacy': {
+    voicebound: {
       id: 'tes',
       message:
         'WYRM CALLER LEGACY — Voicebound Pact roster unlocked! Voice shouts await. Build the Wyrmcaller Moot Hall.',
@@ -246,10 +246,10 @@ const Cheats = (() => {
         Achievements?.tryUnlock('tes_unlock');
       },
     },
-    'the one piece is real': {
+    'open every gate': {
       id: 'onepiece',
       message:
-        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Coliseum, Doomslayer, every evolved roster!',
+        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Coliseum, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
         Achievements?.tryUnlock('wwe_unlock');
@@ -296,35 +296,6 @@ const Cheats = (() => {
     return Object.keys(CODES).map((k) => `"${k}"`);
   }
 
-  function getCheatList() {
-    return [
-      { code: 'Austin 3:16', effect: 'Unlock Grand Coliseum' },
-      { code: 'whatcha gonna do', effect: 'Unlock Grand Coliseum (alias)' },
-      { code: 'hell walks / Doomslayer', effect: 'Unlock Doomslayer hero' },
-      {
-        code: '115',
-        effect: 'Unlock Void Residue crew (Splinter Vale, Dr. Volkov, Brass Kozlov, Blade Sato)',
-      },
-      { code: 'Primus', effect: 'Unlock First Circle crew' },
-      { code: 'Halo', effect: 'Unlock Orbital heroes + Vanguard Academy' },
-      { code: 'Gears', effect: 'Unlock Trench squad + Lancer Academy' },
-      { code: 'One to Rule Them All', effect: 'Unlock Ninefold Fellowship + March Camp' },
-      { code: 'Hanma', effect: 'Unlock pit fighters + Iron Pit Guild' },
-      {
-        code: 'Spirit Court sigil',
-        effect: 'Unlock Bound Spirit Court (Parts 1–7) (Pt.7 = cavalry)',
-      },
-      { code: 'FOTNS', effect: 'Unlock North Star Ascetic fighters' },
-      { code: 'Dragon Soul', effect: 'Unlock Skyburst Order + Skyburst Foundry' },
-      { code: 'ALL FRACTURES UNSEALED', effect: 'Unlock ALL cheat content at once' },
-      { code: 'IDDQD', effect: 'In-game: +500 TP, max morale' },
-      { code: 'Rosebud', effect: 'In-game: +1000 TP' },
-      { code: 'there can be only one', effect: 'In-game: clear all enemies' },
-      { code: 'gotta catch em all', effect: 'In-game: deploy every troop type free' },
-      { code: "it's morphin time", effect: 'In-game: spawn 5 knights' },
-    ];
-  }
-
   function togglePanel() {
     const panel = document.getElementById('cheats-screen');
     if (!panel) return;
@@ -356,7 +327,7 @@ const Cheats = (() => {
     });
   }
 
-  return { init, submit, togglePanel, getLastMessage, getCodeHints, getCheatList, normalize };
+  return { init, submit, togglePanel, getLastMessage, getCodeHints, normalize };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

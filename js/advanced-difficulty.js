@@ -1,6 +1,6 @@
 /**
  * Advanced difficulty modifiers — stacks on base difficulty %.
- * Baby 50%, Normal 100%, Chad 150%, Doomslayer 200%.
+ * Baby 50%, Normal 100%, Chad 150%, Hellbane 200%.
  */
 const DIFFICULTY_BASE_PERCENT = {
   baby: 50,

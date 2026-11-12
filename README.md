@@ -405,12 +405,12 @@ Standard foes include goblins, orcs, archers, mages, warg riders, harpies, burro
 
 ## Difficulty
 
-| Mode       | Effective % | Summary                           |
-| ---------- | ----------- | --------------------------------- |
-| Baby       | 50%         | Forgiving — extra TP, weaker foes |
-| Normal     | 100%        | Balanced                          |
-| Chad       | 150%        | Harder, faster hordes             |
-| Doomslayer | 200%        | Hell marches                      |
+| Mode     | Effective % | Summary                           |
+| -------- | ----------- | --------------------------------- |
+| Baby     | 50%         | Forgiving — extra TP, weaker foes |
+| Normal   | 100%        | Balanced                          |
+| Chad     | 150%        | Harder, faster hordes             |
+| Hellbane | 200%        | Hell marches                      |
 
 ### Advanced Difficulty
 
@@ -434,9 +434,9 @@ Unlock allied factions through the Research Lab, meta progress, or cheat codes. 
 
 Build tonic machines at night once they are researched or a roster is unlocked. Heroes collect up to **4 tonics** — Ironbrew, Field Revival, Swiftstep Tonic, Endurance Draft, Deadeye Elixir, and more.
 
-### Secret: The Doomslayer Hero
+### Secret: The Hellbane Hero
 
-- Unlocked by surviving to **wave 200 on Doomslayer difficulty**, or via cheat (see appendix).
+- Unlocked by surviving to **wave 200 on Hellbane difficulty**, or via cheat (see appendix).
 - Deploy cost: **10,000 TP**.
 - Near-unkillable; heals over time; auto-abilities based on battlefield pressure; one-hit sword (except in Hellscape at wave 1001+).
 
@@ -446,7 +446,7 @@ Build tonic machines at night once they are researched or a roster is unlocked. 
 
 ### Encyclopedia (`I`)
 
-In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **Coliseum champions**, **Legion operatives**, and **The Doomslayer** (teaser entries until unlocked).
+In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **Coliseum champions**, **Legion operatives**, and **The Hellbane** (teaser entries until unlocked).
 
 ### Achievements (`A`)
 
@@ -514,32 +514,35 @@ Open **CHEATS** on the main menu (or press `` ` `` in-game). Unlocks persist bet
 
 ### Meta unlocks (persistent)
 
-| Code                      | Effect                                           |
-| ------------------------- | ------------------------------------------------ |
-| `Austin 3:16`             | Unlock the Grand Coliseum                        |
-| `whatcha gonna do`        | Unlock the Grand Coliseum (alias)                |
-| `hell walks`              | Unlock Doomslayer hero                           |
-| `Doomslayer`              | Unlock Doomslayer hero (alias)                   |
-| `115`                     | Unlock the Void Residue Crew and its barracks    |
-| `Primus`                  | Unlock the First Circle and its shrine           |
-| `Halo`                    | Unlock the Orbital Vanguard and its academy      |
-| `Gears`                   | Unlock the Iron Trench Coalition and its academy |
-| `One to Rule Them All`    | Unlock the Ninefold March and its camp           |
-| `Hanma`                   | Unlock the Iron Pit Guild and its dojo           |
-| `ジョジョの奇妙な冒険`    | Unlock the Bound Spirit Court and its shrine     |
-| `jojos bizarre adventure` | Unlock the Bound Spirit Court (alias)            |
-| `FOTNS`                   | Unlock the North Star Ascetics and their dojo    |
-| `Dragon Soul`             | Unlock the Skyburst Order and its base           |
-| `THE ONE PIECE IS REAL`   | Unlock **all** cheat content at once             |
+| Code               | Effect                                          |
+| ------------------ | ----------------------------------------------- |
+| `iron creed`       | Unlock the Grand Coliseum                       |
+| `arena calls`      | Unlock the Grand Coliseum (alias)               |
+| `hell walks`       | Unlock the Hellbane hero                        |
+| `hellbane`         | Unlock the Hellbane hero (alias)                |
+| `void residue`     | Unlock the Void Residue Crew and its barracks   |
+| `first circle`     | Unlock the First Circle and its shrine          |
+| `orbital vanguard` | Unlock the Orbital Vanguard and its academy     |
+| `iron trench`      | Unlock the Iron Trench Coalition                |
+| `ninefold march`   | Unlock the Ninefold March and its camp          |
+| `iron pit`         | Unlock the Iron Pit Guild and its dojo          |
+| `bound spirit`     | Unlock the Bound Spirit Court and its shrine    |
+| `spirit court`     | Unlock the Bound Spirit Court (alias)           |
+| `north star`       | Unlock the North Star Ascetics and their dojo   |
+| `skyburst`         | Unlock the Skyburst Order and its base          |
+| `crimson legions`  | Unlock the Crimson Legions                      |
+| `crystal light`    | Unlock the Crystal Vanguard                     |
+| `rift cult`        | Unlock the Rift Cult                            |
+| `eternal crusade`  | Unlock the Crimson Legions trial reward (alias) |
+| `voicebound`       | Unlock the Voicebound Pact                      |
+| `open every gate`  | Unlock **all** cheat content at once            |
 
 ### In-game only (start a battle first)
 
-| Code                    | Effect                              |
-| ----------------------- | ----------------------------------- |
-| `IDDQD`                 | +500 TP and max army morale         |
-| `Rosebud`               | +1000 TP                            |
-| `there can be only one` | Eliminate all enemies on the field  |
-| `gotta catch em all`    | Deploy one of every troop type free |
-| `gotta catch 'em all`   | Same as above (alias)               |
-| `it's morphin time`     | Spawn 5 knights                     |
-| `its morphin time`      | Spawn 5 knights (alias)             |
+| Code               | Effect                              |
+| ------------------ | ----------------------------------- |
+| `kings ransom`     | +500 TP and max army morale         |
+| `war chest`        | +1000 TP                            |
+| `clear the field`  | Eliminate all enemies on the field  |
+| `muster all`       | Deploy one of every troop type free |
+| `knights assemble` | Spawn 5 knights                     |

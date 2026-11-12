@@ -83,7 +83,7 @@ const Research = (() => {
     {
       id: 'xf_fotns',
       faction: 'fotns',
-      name: 'North Star Fist Archives',
+      name: 'Seven Star Fist Archives',
       cost: 120,
       wave: 1,
       tier: 4,
@@ -160,7 +160,7 @@ const Research = (() => {
       wave: 1,
       tier: 6,
       prereq: ['xf_jojo', 'xf_dragonball'],
-      desc: 'Rip-and-tear containment theory — unlock Doomslayer deployment.',
+      desc: 'Rend-and-ruin containment theory — unlock Hellbane deployment.',
     },
   ];
 
@@ -878,10 +878,10 @@ const Research = (() => {
       const label =
         node.faction === 'wwe'
           ? 'Grand Coliseum'
-          : `${(node.faction || '').toUpperCase()} barracks`;
+          : `${(typeof CrossoverFactions !== 'undefined' && CrossoverFactions[node.faction]?.label) || 'Faction'} barracks`;
       return `Unlocks ${label} construction`;
     }
-    if (node.id === 'doom_protocol') return 'Unlocks Doomslayer deployment (with meta unlock)';
+    if (node.id === 'doom_protocol') return 'Unlocks Hellbane deployment (with meta unlock)';
     return '';
   }
 
@@ -994,7 +994,7 @@ const Research = (() => {
       academy:
         'Academy Charter trains core troops free each round; Support Corps and Knight Order branch into specialist and officer halls.',
       crossover:
-        'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Doomslayer still needs Hellgate Containment.',
+        'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Hellbane still needs Hellgate Containment.',
       secret:
         'Tonic Stations Science unlocks all perk machines. Hellgate Containment is the ultimate evolved-allies capstone.',
     };

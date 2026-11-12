@@ -1,5 +1,5 @@
 /**
- * Persistent unlocks — Grand Coliseum, Doomslayer hero, cheat flags.
+ * Persistent unlocks — Grand Coliseum, Hellbane hero, cheat flags.
  */
 const MetaProgress = (() => {
   const STORAGE_KEY = 'myth-and-blood-meta-v1';

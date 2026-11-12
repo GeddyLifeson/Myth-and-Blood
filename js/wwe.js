@@ -30,7 +30,7 @@ const WWE_SHOWMANSHIP_ABILITIES = new Set([
   'jackknife',
   'ora_rush',
   'king_crimson',
-  'hamon',
+  'sunbreath',
   'sunlight_yellow',
   'star_platinum',
 ]);
@@ -88,7 +88,7 @@ const WweDefs = {
     color: '#c04040',
   },
   ric_flair: {
-    name: 'The Nature Lord',
+    name: 'The Gilded Lord',
     cost: 75,
     hp: 180,
     accuracy: 48,
@@ -174,7 +174,7 @@ const WweDefs = {
     color: '#2060a0',
   },
   bautista: {
-    name: 'The Animal Lord',
+    name: 'The Wild Lord',
     cost: 86,
     hp: 230,
     accuracy: 46,
@@ -191,7 +191,7 @@ const WweDefs = {
     color: '#505050',
   },
   roman_reigns: {
-    name: 'The Tribal Chief',
+    name: 'The Island Sovereign',
     cost: 94,
     hp: 250,
     accuracy: 48,
@@ -208,7 +208,7 @@ const WweDefs = {
     color: '#303030',
   },
   shawn_michaels: {
-    name: 'Sweet Chin Ace',
+    name: 'Heartland Ace',
     cost: 82,
     hp: 175,
     accuracy: 58,
@@ -221,11 +221,11 @@ const WweDefs = {
     experience: 13,
     canHunt: true,
     ability: 'sweet_chin',
-    abilityDesc: 'Sweet Chin Kick — high crit finisher.',
+    abilityDesc: 'Chin Check Kick — high crit finisher.',
     color: '#c0a060',
   },
   bret_hart: {
-    name: 'The Hitman',
+    name: 'The Technician',
     cost: 78,
     hp: 190,
     accuracy: 56,
@@ -293,7 +293,7 @@ const WweDefs = {
     color: '#706050',
   },
   razor_ramon: {
-    name: 'The Razor Duke',
+    name: 'The Bladed Duke',
     cost: 76,
     hp: 185,
     accuracy: 50,
@@ -306,11 +306,11 @@ const WweDefs = {
     experience: 11,
     canHunt: true,
     ability: 'razors_edge',
-    abilityDesc: 'Razor Edge — steady DPS boost.',
+    abilityDesc: 'Duke’s Edge — steady DPS boost.',
     color: '#c0c0c0',
   },
   kevin_nash: {
-    name: 'The Diesel Tower',
+    name: 'The Freight Tower',
     cost: 84,
     hp: 245,
     accuracy: 42,
@@ -327,7 +327,7 @@ const WweDefs = {
     color: '#304060',
   },
   roddy_piper: {
-    name: 'The Pit Piper',
+    name: 'The Bagpipe Brawler',
     cost: 74,
     hp: 170,
     accuracy: 52,
@@ -340,11 +340,11 @@ const WweDefs = {
     experience: 12,
     canHunt: true,
     ability: 'piper_pit',
-    abilityDesc: 'Pit Talk — buffs allies when he scores.',
+    abilityDesc: 'Brawl Talk — buffs allies when he scores.',
     color: '#c06030',
   },
   hacksaw_duggan: {
-    name: 'The Hacksaw Patriot',
+    name: 'The Timber Patriot',
     cost: 70,
     hp: 200,
     accuracy: 38,
@@ -361,7 +361,7 @@ const WweDefs = {
     color: '#c04040',
   },
   junkyard_dog: {
-    name: 'The Junkyard Bruiser',
+    name: 'The Scrapyard Bruiser',
     cost: 72,
     hp: 210,
     accuracy: 42,
@@ -395,7 +395,7 @@ const WweDefs = {
     color: '#4060c0',
   },
   eddie_guerrero: {
-    name: 'The Latino Liege',
+    name: 'The Border Liege',
     cost: 80,
     hp: 165,
     accuracy: 54,
@@ -412,7 +412,7 @@ const WweDefs = {
     color: '#c0a040',
   },
   chris_benoit: {
-    name: 'The Crippler Ace',
+    name: 'The Submission Ace',
     cost: 82,
     hp: 175,
     accuracy: 56,
@@ -425,7 +425,7 @@ const WweDefs = {
     experience: 14,
     canHunt: true,
     ability: 'crippler',
-    abilityDesc: 'Crippler Lock — high single-target DPS.',
+    abilityDesc: 'Ace Lock — high single-target DPS.',
     color: '#404040',
   },
   oba_femi: {
@@ -446,7 +446,7 @@ const WweDefs = {
     color: '#208040',
   },
   brock_lesnar: {
-    name: 'The Beast Incarnate',
+    name: 'The Beast Unchained',
     cost: 105,
     hp: 290,
     accuracy: 46,
@@ -463,7 +463,7 @@ const WweDefs = {
     color: '#c04040',
   },
   cm_punk: {
-    name: 'The Straightedge Rebel',
+    name: 'The Clean-Living Rebel',
     cost: 84,
     hp: 180,
     accuracy: 52,
@@ -480,7 +480,7 @@ const WweDefs = {
     color: '#303030',
   },
   seth_rollins: {
-    name: 'The Architect',
+    name: 'The Schemer',
     cost: 88,
     hp: 185,
     accuracy: 54,
@@ -498,7 +498,7 @@ const WweDefs = {
     color: '#c04080',
   },
   sheamus: {
-    name: 'The Celtic Warrior',
+    name: 'The Gaelic Brawler',
     cost: 80,
     hp: 220,
     accuracy: 44,
@@ -533,7 +533,7 @@ const WweDefs = {
     color: '#304030',
   },
   randy_orton: {
-    name: 'The Apex Predator',
+    name: 'The Ambush Hunter',
     cost: 91,
     hp: 205,
     accuracy: 53,

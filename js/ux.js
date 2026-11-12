@@ -126,8 +126,8 @@ const UX = (() => {
     },
     {
       when: (gs) => gs.crossoverUnlocked,
-      title: 'Crossover Operatives',
-      body: 'Open <strong>CROSSOVER HUB</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
+      title: 'Legion Operatives',
+      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
       highlight: 'crossover-hub-open',
     },
     {

@@ -83,7 +83,7 @@ const GameCore = (() => {
     'hidden_potential',
     'perfect_form',
     'hakai',
-    'hamon',
+    'sunbreath',
     'sunlight_yellow',
     'energy_sword',
   ]);

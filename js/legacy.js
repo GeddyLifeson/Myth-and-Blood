@@ -225,7 +225,13 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Crossover Service',
         body: leg.factionsUsed.length
-          ? `Factions fielded: ${leg.factionsUsed.join(', ')}.`
+          ? `Factions fielded: ${leg.factionsUsed
+              .map(
+                (f) =>
+                  (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[f]?.label) ||
+                  (f === 'wwe' ? 'Grand Coliseum' : f)
+              )
+              .join(', ')}.`
           : 'Recruit evolved operatives to log evolved service.',
       },
       {

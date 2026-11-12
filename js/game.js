@@ -7566,7 +7566,7 @@ const Game = (() => {
       if (heal > 0) {
         u.hp = Math.min(u.maxHp, u.hp + heal);
         svc('FloatingText').heal(u.x, u.y, heal);
-        showMessage("The Doomslayer absorbs hell's wrath — massive heal!", 200);
+        showMessage("The Hellbane absorbs hell's wrath — massive heal!", 200);
       }
     }
   }
@@ -7813,7 +7813,7 @@ const Game = (() => {
       showMessage(`BOSS WAVE ${GS.wave}!`);
     } else showMessage(`Dawn breaks — Wave ${GS.wave} assault begins!`);
     if (GS.wave === 1001) {
-      showMessage("HELLSCAPE — even the Doomslayer's blade falters here!", 400);
+      showMessage("HELLSCAPE — even the Hellbane's blade falters here!", 400);
       svc('FloatingText').status(GS.worldW / 2, 80, 'HELLSCAPE', '#ff2020');
     }
     applyWweWaveStartPulse();
@@ -10064,13 +10064,11 @@ const Game = (() => {
           svc('MetaProgress').isDoomslayerHeroUnlocked() ||
           (svc('Research') && svc('Research').isDoomResearchUnlocked(getResearchOpts()));
         if (!doomOk) {
-          showMessage(
-            'Research Hellgate Containment or survive wave 200 on Doomslayer difficulty!'
-          );
+          showMessage('Research Hellgate Containment or survive wave 200 on Hellbane difficulty!');
           return false;
         }
         if (GS.units.some((u) => u.isDoomslayer && u.hp > 0)) {
-          showMessage('The Doomslayer already walks the field!');
+          showMessage('The Hellbane already walks the field!');
           return false;
         }
       }
@@ -12094,7 +12092,7 @@ const Game = (() => {
         if (e.team !== 'enemy' || e.hp <= 0) continue;
         if (unitDistSq(unit, e) < ripR2) takeDamage(e, doomslayerDamage(e), { crit: true });
       }
-      svc('FloatingText').status(unit.x, unit.y, 'RIP & TEAR', '#ff4040');
+      svc('FloatingText').status(unit.x, unit.y, 'REND & RUIN', '#ff4040');
       svc('Particles').dust(unit.x, unit.y);
     } else if (foesOnAllies >= 3 && (unit.doomProtectCd || 0) <= 0) {
       unit.doomProtectCd = 90;
@@ -14206,7 +14204,7 @@ const Game = (() => {
           GS.ctx.fillStyle = '#ff4020';
           GS.ctx.font = '6px Cinzel';
           GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('DOOM', u.x, u.y - 22);
+          GS.ctx.fillText('BANE', u.x, u.y - 22);
         }
         if (gfxQ?.generalOverlay !== false && u.isGeneral && u.hp > 0) {
           GS.ctx.strokeStyle = 'rgba(255,215,0,0.7)';

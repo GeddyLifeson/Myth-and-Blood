@@ -1,5 +1,5 @@
 /**
- * Smoke tests — Ultimis / Element 115 unlock via Doomslayer horde-fortress challenge.
+ * Smoke tests — Ultimis / Element 115 unlock via Hellbane horde-fortress challenge.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';

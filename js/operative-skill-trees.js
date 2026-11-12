@@ -17,7 +17,7 @@ const OperativeSkillTrees = (() => {
         },
         hulk_up: {
           id: 'hulk_up',
-          name: 'Hulk Up',
+          name: 'Second Wind',
           cost: 2,
           requires: ['showmanship'],
           desc: '+8% melee damage',
@@ -61,7 +61,7 @@ const OperativeSkillTrees = (() => {
         },
         wunder_chain: {
           id: 'wunder_chain',
-          name: 'Wunder Chain',
+          name: 'Arc Chain',
           cost: 2,
           requires: ['frag_drill'],
           desc: '+10% ability damage',
@@ -154,7 +154,7 @@ const OperativeSkillTrees = (() => {
       nodes: {
         lancer_disc: {
           id: 'lancer_disc',
-          name: 'Lancer Discipline',
+          name: 'Rifle Discipline',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
@@ -213,7 +213,7 @@ const OperativeSkillTrees = (() => {
         },
         king_returned: {
           id: 'king_returned',
-          name: 'King Returned',
+          name: 'Crown Reclaimed',
           cost: 3,
           requires: ['ranger_eye', 'dwarf_axe'],
           desc: '+10% ability damage',
@@ -226,7 +226,7 @@ const OperativeSkillTrees = (() => {
       nodes: {
         demon_back: {
           id: 'demon_back',
-          name: 'Demon Back',
+          name: 'Fiend’s Back',
           cost: 1,
           desc: '+8% melee damage',
           bonus: { meleeDmg: 0.08 },
@@ -267,8 +267,8 @@ const OperativeSkillTrees = (() => {
           desc: '+8% ability damage',
           bonus: { abilityDmg: 0.08 },
         },
-        hamon: {
-          id: 'hamon',
+        sunbreath: {
+          id: 'sunbreath',
           name: 'Solar Breath',
           cost: 2,
           requires: ['stand_awaken'],
@@ -285,9 +285,9 @@ const OperativeSkillTrees = (() => {
         },
         made_in_heaven: {
           id: 'made_in_heaven',
-          name: 'Made in Heaven',
+          name: 'Heaven’s Tempo',
           cost: 3,
-          requires: ['hamon', 'spin'],
+          requires: ['sunbreath', 'spin'],
           desc: '+10% ability, +2 morale',
           bonus: { abilityDmg: 0.1, maxMorale: 2 },
         },

@@ -512,7 +512,7 @@ const GameModes = (() => {
     else tips.push('Waves 200+: enemy RTS — hunt engineers, siege enemy settlements first.');
 
     if (difficultyId === 'doomslayer')
-      tips.push('Doomslayer base: expect faster spawns — protect academies and barracks.');
+      tips.push('Hellbane base: expect faster spawns — protect academies and barracks.');
     if (session?.ironman)
       tips.push('Ironman: no quick save — scout and rally before committing TP.');
 

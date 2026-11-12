@@ -262,13 +262,13 @@ const STRATS = [
   [
     'wwe_cheat',
     (Gm, t, C) => {
-      if (t === 1) C.submit('Austin 3:16');
+      if (t === 1) C.submit('iron creed');
     },
   ],
   [
     'doom_cheat',
     (Gm, t, C) => {
-      if (t === 1) C.submit('Doomslayer');
+      if (t === 1) C.submit('Hellbane');
     },
   ],
   [
@@ -280,19 +280,19 @@ const STRATS = [
   [
     'iddqd',
     (Gm, t, C) => {
-      if (t % 200 === 0) C.submit('iddqd');
+      if (t % 200 === 0) C.submit('kings ransom');
     },
   ],
   [
     'rosebud',
     (Gm, t, C) => {
-      if (t % 350 === 0) C.submit('rosebud');
+      if (t % 350 === 0) C.submit('war chest');
     },
   ],
   [
     'highlander',
     (Gm, t, C) => {
-      if (t % 250 === 0) C.submit('there can be only one');
+      if (t % 250 === 0) C.submit('clear the field');
     },
   ],
   [

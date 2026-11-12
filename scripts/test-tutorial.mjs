@@ -63,7 +63,7 @@ ok(
 const lateUx = boot(13);
 ok(
   lateUx.resolveTutorialStep({ wave: 30, creativeMode: false, crossoverUnlocked: true })?.step
-    ?.title === 'Crossover Operatives',
+    ?.title === 'Legion Operatives',
   'crossover step when hub unlocked'
 );
 

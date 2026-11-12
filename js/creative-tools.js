@@ -46,7 +46,7 @@ const CreativeTools = (() => {
     },
     {
       id: 'crossover_duel',
-      name: 'Crossover Duel',
+      name: 'Legion Duel',
       desc: 'Wave 25 — test crossover vs elites.',
       wave: 25,
       tp: 15000,

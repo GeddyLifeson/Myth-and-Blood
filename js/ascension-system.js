@@ -85,8 +85,8 @@ const AscensionSystem = (() => {
       },
       galactic: {
         id: 'star_lancer',
-        label: 'Star Lancer',
-        short: 'Lancer',
+        label: 'Star Trenchsaw',
+        short: 'Trenchsaw',
         weapon: 'Solar Lance',
         cost: 26,
         requiresStage: 'realm_champion',

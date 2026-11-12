@@ -54,7 +54,7 @@ const ThematicEraSynergies = (() => {
   const ECHO_DEFS = {
     goku: {
       id: 'goku',
-      label: 'Echo of the Saiyan Champion',
+      label: 'Echo of the Skyburst Champion',
       short: 'Kael Skyburst Echo',
       role: 'fleet_commander',
       cost: 16,
@@ -65,7 +65,7 @@ const ThematicEraSynergies = (() => {
     tank_dempsey: {
       id: 'tank_dempsey',
       label: 'Echo of the Siege Legend',
-      short: 'Dempsey Echo',
+      short: 'Vale Echo',
       role: 'advisor',
       cost: 14,
       playerDmgMult: 1.05,

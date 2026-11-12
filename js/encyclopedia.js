@@ -7,36 +7,36 @@ const Encyclopedia = (() => {
   const COLISEUM_TEASE = {
     stone_cold:
       'The Stonebreaker — court records say elites fall to a sudden stunner and the crowd goes silent.',
-    the_rock: 'The Mountain King lays the smack down; kill streaks get louder when he headlines.',
-    ric_flair: 'The Nature Lord — allies near him fight with extra swagger. Woooo!',
-    hulk_hogan: 'The Titan — below half health he hulks up and refuses to stay down.',
+    the_rock: 'The Mountain King lays down the law; kill streaks get louder when he headlines.',
+    ric_flair: 'The Gilded Lord — allies near him fight with extra swagger. Woooo!',
+    hulk_hogan: 'The Titan — below half health he powers up and refuses to stay down.',
     macho_man: 'Sky Elbow Ace drops elbows from the high ground. Snap into it.',
     sting: 'The Crow Sentinel strikes from the shadows. Wounded prey rarely escape the deathlock.',
     john_cena: 'The Patriot never gives up — damage seems to bounce off when the fight turns ugly.',
-    bautista: 'The Animal Lord — his bomb shakes everyone standing too close.',
-    roman_reigns: 'The Tribal Chief — the spear ends arguments and several orcs at once.',
+    bautista: 'The Wild Lord — his bomb shakes everyone standing too close.',
+    roman_reigns: 'The Island Sovereign — the spear ends arguments and several orcs at once.',
     shawn_michaels:
-      'Sweet Chin Ace — chin music rings out when the moment is right, usually a crit.',
-    bret_hart: 'The Hitman — sharpshooter locks a single foe in misery.',
+      'Heartland Ace — a chin check rings out when the moment is right, usually a crit.',
+    bret_hart: 'The Technician — sharpshooter locks a single foe in misery.',
     undertaker: 'The Grave Walker — tombstones spread dread; enemy morale withers nearby.',
     kane: 'The Inferno Brother — chokeslams hit harder the bigger the target.',
     andre_giant: 'The Colossus — footsteps cause splash damage; walls fear him.',
-    razor_ramon: 'The Razor Duke — steady, stylish, inevitable edge damage.',
-    kevin_nash: 'The Diesel Tower — power bombs echo through the ranks.',
-    roddy_piper: 'The Pit Piper — hot tag energy; when he scores, allies feel it.',
-    hacksaw_duggan: 'The Hacksaw Patriot — rally pulses on wave start when he is signed.',
-    junkyard_dog: 'The Junkyard Bruiser — headbutts stun on impact.',
+    razor_ramon: 'The Bladed Duke — steady, stylish, inevitable edge damage.',
+    kevin_nash: 'The Freight Tower — power bombs echo through the ranks.',
+    roddy_piper: 'The Bagpipe Brawler — hot tag energy; when he scores, allies feel it.',
+    hacksaw_duggan: 'The Timber Patriot — rally pulses on wave start when he is signed.',
+    junkyard_dog: 'The Scrapyard Bruiser — headbutts stun on impact.',
     rey_mysterio: 'The Luchador Phantom — too fast to pin, too clever to catch.',
-    eddie_guerrero: 'The Latino Liege — lie, cheat, steal; maybe pick an elite pocket for TP.',
-    chris_benoit: 'The Crippler Ace — surgical, cruel, single-target devastation.',
+    eddie_guerrero: 'The Border Liege — lie, cheat, steal; maybe pick an elite pocket for TP.',
+    chris_benoit: 'The Submission Ace — surgical, cruel, single-target devastation.',
     oba_femi: 'The Rising Champion — surrounded is when he hits hardest.',
-    brock_lesnar: 'The Beast Incarnate — if you are wounded, you are gone.',
-    cm_punk: 'The Straightedge Rebel — go-to-sleep finishes anyone already hurting.',
-    seth_rollins: 'The Architect — curb stomps from range at wounded targets.',
-    sheamus: 'The Celtic Warrior — brogue kick leaves a line of bodies.',
+    brock_lesnar: 'The Beast Unchained — if you are wounded, you are gone.',
+    cm_punk: 'The Clean-Living Rebel — lights-out knee finishes anyone already hurting.',
+    seth_rollins: 'The Schemer — boot stomps from range at wounded targets.',
+    sheamus: 'The Gaelic Brawler — running boot leaves a line of bodies.',
     bray_wyatt:
       'The Lantern Prophet — his lantern dims enemy accuracy when dusk falls on the field.',
-    randy_orton: 'The Apex Predator — outta nowhere on anyone already hurting.',
+    randy_orton: 'The Ambush Hunter — outta nowhere on anyone already hurting.',
   };
 
   const CATEGORIES = [
@@ -54,7 +54,7 @@ const Encyclopedia = (() => {
     { id: 'campaign', label: 'Campaign' },
     { id: 'honor', label: 'Honor & Veterans' },
     { id: 'wwe', label: 'Grand Coliseum Champions' },
-    { id: 'doomslayer', label: 'Doomslayer' },
+    { id: 'doomslayer', label: 'Hellbane' },
     { id: 'crossover_meta', label: 'Evolved Allies System' },
     { id: 'crossover_ultimis', label: 'Void Residue' },
     { id: 'crossover_primis', label: 'First Circle' },
@@ -426,7 +426,7 @@ const Encyclopedia = (() => {
     {
       cat: 'eras',
       name: 'Day & Night Cycle',
-      body: "Day brings enemy assaults — visibility is best at dawn and fades toward dusk as the wave wears on. Night is prep: no spawns, +35% builder speed, and time to reposition. Bray Wyatt's lantern punishes enemy sight — especially in low light.",
+      body: "Day brings enemy assaults — visibility is best at dawn and fades toward dusk as the wave wears on. Night is prep: no spawns, +35% builder speed, and time to reposition. Lantern Prophet's lantern punishes enemy sight — especially in low light.",
     },
 
     {
@@ -563,18 +563,18 @@ const Encyclopedia = (() => {
       {
         cat: 'doomslayer',
         tease: !unlocked,
-        name: unlocked ? 'The Doomslayer' : '??? The Doomslayer',
+        name: unlocked ? 'The Hellbane' : '??? The Hellbane',
         body:
           unlocked && def
             ? `Deploy for ${def.cost} TP. HP ${def.hp} · near-unkillable damage reduction. Heals half his missing health every 2 waves. Auto-abilities: Rend & Ruin cleave when swarmed, Guardian heal when allies are pressed, mass cleave when hordes gather. His blade one-shots most foes — except in Hellscape.`
-            : "A figure in green armor, spoken of only after a commander survives wave 200 on Doomslayer difficulty. Cost: ten thousand TP. They say he heals from the abyss, ripostes entire hordes alone, and carries a sword that ends wars in one swing. Unlock him — or don't — and find out if the legends lie.",
+            : "A figure in green armor, spoken of only after a commander survives wave 200 on Hellbane difficulty. Cost: ten thousand TP. They say he heals from the abyss, ripostes entire hordes alone, and carries a sword that ends wars in one swing. Unlock him — or don't — and find out if the legends lie.",
       },
       {
         cat: 'doomslayer',
         tease: true,
         name: 'Rend & Ruin',
         body: unlocked
-          ? 'When four or more enemies close on the Doomslayer, he unleashes Rend & Ruin — AoE devastation. Cooldown applies.'
+          ? 'When four or more enemies close on the Hellbane, he unleashes Rend & Ruin — AoE devastation. Cooldown applies.'
           : '??? When the Slayer is surrounded, witnesses report... something. The reports stop mid-sentence.',
       },
       {
@@ -582,21 +582,21 @@ const Encyclopedia = (() => {
         tease: true,
         name: 'Guardian Protocol',
         body: unlocked
-          ? 'When three or more enemies threaten allies, the Doomslayer heals the army and grants a brief rally.'
+          ? 'When three or more enemies threaten allies, the Hellbane heals the army and grants a brief rally.'
           : '??? Allies near him supposedly fight harder when the line breaks. No field manual confirms this.',
       },
       {
         cat: 'doomslayer',
         tease: true,
         name: 'Hellscape (Wave 1001+)',
-        body: "Beyond wave 1000, reality thins. Even the Doomslayer's legendary blade falters against hellscape-level threats — damage returns to mortal scale. Survive that far and you have seen the true endgame.",
+        body: "Beyond wave 1000, reality thins. Even the Hellbane's legendary blade falters against hellscape-level threats — damage returns to mortal scale. Survive that far and you have seen the true endgame.",
       },
       {
         cat: 'doomslayer',
         tease: !unlocked,
         name: unlocked ? 'How to Unlock' : '??? How to Unlock',
         body: unlocked
-          ? 'Reach wave 200 on Doomslayer difficulty in a single run — or discover another way in. The realm remembers how you unlocked him.'
+          ? 'Reach wave 200 on Hellbane difficulty in a single run — or discover another way in. The realm remembers how you unlocked him.'
           : "Survive to wave 200 on the hardest named difficulty. Some say forbidden words exist somewhere outside the Crown's official records. The field manual does not say where.",
       },
     ];
@@ -726,22 +726,22 @@ const Encyclopedia = (() => {
 
     marcus_fenix: [
       'Gruff trench veteran — chainsaw screams mean someone is about to die.',
-      'Marcus Ironhart is the trench captain — Burst Lancer chainsaw finishers on low HP. Core of any trench roster.',
+      'Marek Ironhart is the trench captain — Burst Trenchsaw chainsaw finishers on low HP. Core of any trench roster.',
       'Center your gun line; Dom heals him when paired.',
     ],
     dom_santiago: [
       'Brothers in arms — Ironhart fights better when Dom is close.',
-      "Dom Calder heals Ironhart when nearby and brings Brothers in Arms sustain. Keep Dom within Ironhart's screen.",
+      "Dane Calder heals Ironhart when nearby and brings Brothers in Arms sustain. Keep Dom within Ironhart's screen.",
       'Never split Dom from Ironhart on hard waves.',
     ],
     damon_baird: [
       'Sarcastic tech head — structures and siege towers fear him.',
-      'Damon Gearwright deals bonus damage vs siege and buildings. Tech Head makes him your anti-tower specialist.',
+      'Darren Gearwright deals bonus damage vs siege and buildings. Tech Head makes him your anti-tower specialist.',
       'Send Gearwright against siege towers and enemy hamlets.',
     ],
     augustus_cole: [
       'The Iron Charge has no brakes — charges through enemy lines.',
-      'Augustus Cole is heavy melee — Iron Charge charges through formations. Flank when the line stalls.',
+      'Augustus Thrash is heavy melee — Iron Charge charges through formations. Flank when the line stalls.',
       'Use on open maps after walls pin the horde.',
     ],
     anthony_carmine: [
@@ -776,7 +776,7 @@ const Encyclopedia = (() => {
       'Counter warg riders and assassins from safety.',
     ],
     gimli: [
-      'Nobody tosses a dwarf — axe cleave splashes siege targets.',
+      'Nobody throws a dwarf — axe cleave splashes siege targets.',
       'Stone Axe Lord is siege melee — Axe Cleave splashes on siege targets. Put him on walls facing towers.',
       'Pair with sappers on structure-heavy waves.',
     ],
@@ -787,7 +787,7 @@ const Encyclopedia = (() => {
     ],
     frodo: [
       'Scout ring — small, evasive, lifts ally morale.',
-      'Halfling Scout evades and spreads morale aura. Ring Bearer keeps fragile lines from breaking — not a fighter.',
+      'Halfling Scout evades and spreads morale aura. Burden Bearer keeps fragile lines from breaking — not a fighter.',
       'Keep Halfling Scout behind the march company; let others tank.',
     ],
     boromir: [
@@ -802,8 +802,8 @@ const Encyclopedia = (() => {
     ],
 
     baki_hanma: [
-      'Demon Back awakens below half health — the son of the Ogre.',
-      'Ironson Baki spikes damage when wounded. Demon Back turns a losing duel into a reversal — risky but explosive.',
+      'Fiend’s Back awakens below half health — the son of the Ogre.',
+      'Ironson Bakari spikes damage when wounded. Fiend’s Back turns a losing duel into a reversal — risky but explosive.',
       'Let him take some damage before expecting peak output.',
     ],
     yujiro_hanma: [
@@ -812,23 +812,23 @@ const Encyclopedia = (() => {
       'Save for boss waves; protect from ranged kiting.',
     ],
     doppo_orochi: [
-      'Karate precision — Goudou finishes wounded targets cleanly.',
-      'Doppo Serpent punishes wounded foes with Goudou precision strikes. Reliable second-line duelist.',
-      'Pair with Ironson Baki — soften targets, Doppo executes.',
+      'Karate precision — Iron Way finishes wounded targets cleanly.',
+      'Daigo Serpent punishes wounded foes with Iron Way precision strikes. Reliable second-line duelist.',
+      'Pair with Ironson Bakari — soften targets, Doppo executes.',
     ],
     jack_hanma: [
       'Bite first, talk never — bonus damage vs larger enemies.',
-      'Jack Ironson chews through bruisers — Bite bonus vs larger enemies. Strong vs trolls and siege.',
+      'Jax Ironson chews through bruisers — Bite bonus vs larger enemies. Strong vs trolls and siege.',
       'Send Jack at trolls and tall elites.',
     ],
     oliva_biscuit: [
       'Iron Body — American heavyweight who barely moves, barely bleeds.',
-      'Oliva Biscuit is ultra-tank melee with Iron Body damage reduction. Slower than Ironson Baki but nearly unmovable.',
+      'Olivar Granite is ultra-tank melee with Iron Body damage reduction. Slower than Ironson Bakari but nearly unmovable.',
       'Hold a lane alone while strikers rotate.',
     ],
     kaku_kaioh: [
       'Aiki counters reckless attackers — judo on a medieval map.',
-      'Kaku Kaioh counters reckless attackers with Aiki — punishes berserkers and warg riders.',
+      'Kaku Seastorm counters reckless attackers with Aiki — punishes berserkers and warg riders.',
       'Place where enemies charge your line.',
     ],
     pickle: [
@@ -839,12 +839,12 @@ const Encyclopedia = (() => {
 
     jonathan_joestar: [
       'Gentleman fighter — Solar Pulse purges undead elites.',
-      'Jonathan Ashford is Part 1 melee — Solar Pulse bonus vs undead elites like necromancers.',
+      'Jonas Ashford is Part 1 melee — Solar Pulse bonus vs undead elites like necromancers.',
       'Send at necromancer waves.',
     ],
     dio_brando_p1: [
       'Crimson Chill — Part 1 crimson lord slows enemy morale.',
-      'Dio Crimson is fast melee that saps enemy morale with Crimson Chill.',
+      'Dorian Crimson is fast melee that saps enemy morale with Crimson Chill.',
       'Disrupt enemy morale while Jonathan holds the line.',
     ],
     zeppeli: [
@@ -854,82 +854,82 @@ const Encyclopedia = (() => {
     ],
     joseph_joestar_p2: [
       'Oh my God! Trick shots and Violet Snare debuffs.',
-      'Joseph Ashford is ranged trickster — Violet Snare scouting debuffs and unpredictable damage.',
+      'Josiah Ashford is ranged trickster — Violet Snare scouting debuffs and unpredictable damage.',
       'Ranged harass behind walls.',
     ],
     caesar_zeppeli: [
       'Pressure Cutter crits from range — pressure bubbles find weak points.',
-      'Caesar Zephyr is Part 2 ranged crit — Pressure Cutter rewards accurate shots.',
+      'Cassius Zephyr is Part 2 ranged crit — Pressure Cutter rewards accurate shots.',
       'Outpost garrison for crit fishing.',
     ],
     stroheim: [
       'Iron science — bonus damage vs siege units.',
-      'Rudol Ironclad is heavy ranged anti-siege — Iron Science shreds towers.',
+      'Rudolf Ironclad is heavy ranged anti-siege — Iron Science shreds towers.',
       'Counter siege tower waves.',
     ],
     jotaro_kujo: [
       'Spirit Rush — rapid finisher pins elites and shreds them.',
-      'Jotaro Ashen is Part 3 melee powerhouse — Spirit Rush rapid finisher on pinned foes. Elite deletion.',
-      "Focus fire elites into Jotaro Ashen's lane.",
+      'Jiro Ashen is Part 3 melee powerhouse — Spirit Rush rapid finisher on pinned foes. Elite deletion.',
+      "Focus fire elites into Jiro Ashen's lane.",
     ],
     kakyoin: [
       'Emerald Spray — emerald splash AoE from safety.',
-      'Noriaki Emerald provides Part 3 ranged AoE — Emerald Spray hits clusters.',
+      'Nori Emerald provides Part 3 ranged AoE — Emerald Spray hits clusters.',
       'Behind walls vs grouped spawns.',
     ],
     polnareff: [
       'Silver Flurry flurries wounded foes — fast melee skirmisher.',
-      'Jean Pierre Silver is speedy Part 3 melee — Silver Flurry flurries low HP targets.',
+      'Jean-Luc Silver is speedy Part 3 melee — Silver Flurry flurries low HP targets.',
       'Chase wounded routed enemies.',
     ],
     avdol: [
       'Crimson Flame — fire splash on every hit.',
-      'Mohammed Flame is Part 3 support-ranged — Crimson Flame fire splash chips groups.',
+      'Mahmoud Flame is Part 3 support-ranged — Crimson Flame fire splash chips groups.',
       'Mid-line fire support.',
     ],
     josuke_higashikata: [
       'Restorative March — heals allies he passes on the march.',
-      'Josuke Diamond is Part 4 support — Restorative March heals allies in his path. Move him through wounded troops.',
-      'March Josuke through retreating allies.',
+      'Jun Diamond is Part 4 support — Restorative March heals allies in his path. Move him through wounded troops.',
+      'March Jun through retreating allies.',
     ],
     okuyasu: [
       'The Hand erases space — burst single-target deletion.',
-      'Okuyasu Hand is Part 4 bruiser — The Hand erases space for burst damage. Simple, violent, effective.',
+      'Oku Hand is Part 4 bruiser — The Hand erases space for burst damage. Simple, violent, effective.',
       'Point at high-priority single targets.',
     ],
     rohan_kishibe: [
       'Script Ward — debuffs enemy accuracy from range.',
-      'Rohan Artist is Part 4 ranged debuffer — Script Ward ruins enemy accuracy.',
+      'Ronan Artist is Part 4 ranged debuffer — Script Ward ruins enemy accuracy.',
       'Opposite enemy archer lanes.',
     ],
     kira_yoshikage: [
       'Quiet Erase — final toll on wounded prey.',
-      'Yoshikage Quiet executes wounded foes with Quiet Erase — quiet, lethal Part 4 finisher.',
+      'Yoshi Quiet executes wounded foes with Quiet Erase — quiet, lethal Part 4 finisher.',
       'Mop up after your line softens the wave.',
     ],
     giorno_giovanna: [
       'Golden Pulse — heals allies on kill.',
-      'Giorno Gold is Part 5 support — Golden Pulse heals on kill. gold-court sustain engine.',
+      'Gio Gold is Part 5 support — Golden Pulse heals on kill. gold-court sustain engine.',
       'Keep in active kill zones.',
     ],
     bruno_bucciarati: [
       'Zip Fingers — zip reposition and rally allies.',
-      'Bruno Zipper rallies and repositions with Zip Fingers — high morale leader.',
+      'Bruno Clasp rallies and repositions with Zip Fingers — high morale leader.',
       'Use for pep-talk positioning before pushes.',
     ],
     guido_mista: [
       'Ricochet Pistols ricochet — one shot, several targets.',
-      "Guido Mista's Ricochet Pistols ricochet hits multiple foes — Part 5 ranged multitarget.",
+      "Guy Pistols's Ricochet Pistols ricochet hits multiple foes — Part 5 ranged multitarget.",
       'Counter spread formations.',
     ],
     diavolo: [
       'Crimson Erase — deletes wounded targets from time.',
-      'Diavolo is Part 5 assassin — Crimson Erase removes wounded enemies. Expensive but decisive.',
+      'the Scarlet Regent is Part 5 assassin — Crimson Erase removes wounded enemies. Expensive but decisive.',
       'Elite and assassin hunter.',
     ],
     jolyne_cujoh: [
-      'Stone Free strings slow enemies — Part 6 control melee.',
-      'Jolyne String slows with Stone Free — Part 6 control fighter.',
+      'Unbound Thread strings slow enemies — Part 6 control melee.',
+      'Jolie String slows with Unbound Thread — Part 6 control fighter.',
       'Hold chokepoints while allies DPS.',
     ],
     weather_report: [
@@ -939,48 +939,48 @@ const Encyclopedia = (() => {
     ],
     ermes_costello: [
       'Kiss duplicates pressure — elite kills spawn more pain.',
-      'Ermes Costello stacks pressure with Kiss — elite kills duplicate harassment.',
+      'Erma Kiss stacks pressure with Kiss — elite kills duplicate harassment.',
       'Elite-heavy waves.',
     ],
     johnny_joestar: [
-      'Rotation ACT4 — Golden Ball Run cavalry with infinite rotation finisher.',
-      'Johnny Rotation is Part 7 cavalry — Rotation ACT4 charge finisher. Fastest bound spirit hunter on expanded maps.',
+      'Infinite Spin — Gilded Derby cavalry with infinite rotation finisher.',
+      'Johan Rotation is derby cavalry — Infinite Spin charge finisher. Fastest bound spirit hunter on expanded maps.',
       'Hunt on wide territory; needs open lanes.',
     ],
     gyro_zeppeli: [
-      'Steel Ball golden spin — ranged cavalry cleave on charge.',
-      'Gyro Ballista is Part 7 ranged cavalry — Steel Ball cleave on charge. Tag-team with Johnny Rotation.',
-      'Pair with Johnny Rotation for golden ball hunt missions.',
+      'Steel Ball perfect spin — ranged cavalry cleave on charge.',
+      'Gyre Ballista is Part 7 ranged cavalry — Steel Ball cleave on charge. Tag-team with Johan Rotation.',
+      'Pair with Johan Rotation for golden ball hunt missions.',
     ],
     diego_brando: [
       'Predator Form — predatory charge damage.',
-      'Diego Brando is Part 7 fast cavalry — Predator Form predatory charges. Aggressive hunter.',
+      'Diego Fang is Part 7 fast cavalry — Predator Form predatory charges. Aggressive hunter.',
       'Flank and hunt; high speed, lower morale.',
     ],
     lucy_steel: [
-      'Ticket to Ride — support cavalry rally aura.',
-      'Lucy Steel is Part 7 support cavalry — Ticket to Ride rally aura for mounted allies.',
-      'Ride with Johnny Rotation and Gyro Ballista for morale.',
+      'Borrowed Luck — support cavalry rally aura.',
+      'Lucia Ticket is Part 7 support cavalry — Borrowed Luck rally aura for mounted allies.',
+      'Ride with Johan Rotation and Gyre Ballista for morale.',
     ],
 
     kenshiro: [
-      'Fate was sealed — North Star Fist finisher legend.',
-      'Ken Northstar is the North Star successor — rapid finisher on low HP. Elite and bruiser executioner.',
+      'Fate was sealed — Seven Star Fist finisher legend.',
+      'Kenji Sevenstar is the North Star successor — rapid finisher on low HP. Elite and bruiser executioner.',
       'Focus fire until finisher range.',
     ],
     raoh: [
-      'Ken-Oh — terror aura and siege bonus. The conqueror walks.',
-      'Raoh is slow but terrifying — Ken-Oh aura and siege bonus. Boss-tier melee presence.',
+      'Conqueror — terror aura and siege bonus. The conqueror walks.',
+      'Rao is slow but terrifying — Conqueror aura and siege bonus. Boss-tier melee presence.',
       'Boss waves and structure pushes.',
     ],
     toki: [
-      'Hakke Shou heals allies in aura — gentle fist, iron will.',
-      'Toki heals allies in aura with Hakke Shou — mandatory North Star support.',
+      'Open Palm Burst heals allies in aura — gentle fist, iron will.',
+      'Toki heals allies in aura with Open Palm Burst — mandatory North Star support.',
       'Center your melee blob on Toki.',
     ],
     rei: [
-      'Nanto Suichō Ken — fast strikes hit multiple foes.',
-      'Rei is fast multi-hit melee — Nanto Suichō Ken cleaves several targets.',
+      'Waterbird Fist — fast strikes hit multiple foes.',
+      'Rei is fast multi-hit melee — Waterbird Fist cleaves several targets.',
       'Counter fast enemy swarms.',
     ],
     jaggi: [
@@ -989,7 +989,7 @@ const Encyclopedia = (() => {
       'Disrupt enemy morale lines.',
     ],
     shin: [
-      'Nanto Hakuro Ken — heavy single-target blows.',
+      'White Heron Fist — heavy single-target blows.',
       'Shin delivers Nanto Hakuro heavy single-target blows — mini-boss duelist.',
       'Point at high-HP single targets.',
     ],
@@ -1006,7 +1006,7 @@ const Encyclopedia = (() => {
     ],
     piccolo: [
       'Piercing Beam pierces high-HP targets from range.',
-      'Namek Sage is support-ranged — Piercing Beam pierces tanks. Beam sniper.',
+      'Verdant Sage is support-ranged — Piercing Beam pierces tanks. Beam sniper.',
       'Focus fire high-HP targets in his lane.',
     ],
     gohan: [
@@ -1015,8 +1015,8 @@ const Encyclopedia = (() => {
       'Risky anchor — heal after spike.',
     ],
     trunks: [
-      'Burning Attack — ranged burst finisher from the future.',
-      'Trunks is ranged burst — Burning Attack finisher at distance.',
+      'Blazing Volley — ranged burst finisher from the future.',
+      'Future Blade is ranged burst — Blazing Volley finisher at distance.',
       'Backline finisher behind tanks.',
     ],
     frieza: [
@@ -1042,7 +1042,7 @@ const Encyclopedia = (() => {
     ],
     chaplain: [
       'Litanies of hate shake enemy morale on every strike.',
-      'Chaplain is melee support — Litany of Hate debuffs foes in his aura. Morale weapon for breaking blobs.',
+      'Chaplain is melee support — Litany of Wrath debuffs foes in his aura. Morale weapon for breaking blobs.',
       'Hold the front beside Terminators; let hate do the work.',
     ],
     librarian: [
@@ -1062,7 +1062,7 @@ const Encyclopedia = (() => {
     ],
     terminator: [
       'Storm shield pulses when the warsuit is wounded.',
-      'Heavy Terminator is the crimson legions anchor — Storm Shield grants brief soak below 45% HP. Slow but unmovable.',
+      'Heavy Bulwark is the crimson legions anchor — Storm Shield grants brief soak below 45% HP. Slow but unmovable.',
       'Hold chokepoints; do not chase fast cavalry.',
     ],
     dreadnought: [
@@ -1077,13 +1077,13 @@ const Encyclopedia = (() => {
       'Lead the party; pair with White Mage sustain.',
     ],
     black_mage: [
-      'Firaga bursts when enemies cluster.',
-      'Black Mage is AoE ranged — Firaga fires when multiple foes are near the target.',
+      'Greater Flame bursts when enemies cluster.',
+      'Black Mage is AoE ranged — Greater Flame fires when multiple foes are near the target.',
       'Backline behind walls facing wide approaches.',
     ],
     white_mage: [
-      'Curaga heals allies in combat aura.',
-      'White Mage is support caster — Curaga trickle-heals nearby allies on every strike.',
+      'Greater Mend heals allies in combat aura.',
+      'White Mage is support caster — Greater Mend trickle-heals nearby allies on every strike.',
       'Keep mid-line near your melee core.',
     ],
     dragoon_knight: [
@@ -1093,12 +1093,12 @@ const Encyclopedia = (() => {
     ],
     summoner: [
       'Aeon strike — extra damage vs elite enemies.',
-      'Summoner is elite-slaying ranged — Aeon Strike punishes bosses and dark knights.',
+      'Summoner is elite-slaying ranged — Avatar Strike punishes bosses and dark knights.',
       'Focus fire elites in the Summoner lane.',
     ],
     limit_striker: [
       'Limit break — massive spike when wounded.',
-      'Limit Striker is risk-reward melee — Limit Break doubles down below 40% HP. Let them take hits first.',
+      'Limit Striker is risk-reward melee — Breaking Point doubles down below 40% HP. Let them take hits first.',
       'Frontline finisher; heal after the burst window.',
     ],
     crystal_sentinel: [
@@ -1134,7 +1134,7 @@ const Encyclopedia = (() => {
     ],
     possessed_marine: [
       'Daemon fire splashes elite targets.',
-      'Possessed Marine is ranged chaos — Daemon Fire AoE vs elites.',
+      'Possessed Legionary is ranged chaos — Daemon Fire AoE vs elites.',
       'Backline finisher for boss waves.',
     ],
 
@@ -1203,7 +1203,7 @@ const Encyclopedia = (() => {
     const role = `${def.combatTag} ${def.type}`;
     const part =
       def.jojoPart === 7
-        ? ' · Golden Ball Run cavalry'
+        ? ' · Gilded Derby cavalry'
         : def.jojoPart
           ? ` · Bound Spirit Part ${def.jojoPart}`
           : '';
@@ -1236,7 +1236,7 @@ const Encyclopedia = (() => {
     if (!unlocked) {
       const ultimisTrial =
         factionId === 'ultimis'
-          ? ' Survive to wave 150 on Doomslayer without losing a single building to the endless horde — or discover another way in.'
+          ? ' Survive to wave 150 on Hellbane without losing a single building to the endless horde — or discover another way in.'
           : '';
       const primisTrial =
         factionId === 'primis'
@@ -1318,7 +1318,7 @@ const Encyclopedia = (() => {
       {
         cat: 'crossover_meta',
         name: 'How to Recruit',
-        body: "1) Unlock the faction roster. 2) Build that faction's barracks with your Builder. 3) Open Legion Archive from the HUD. 4) Pay TP to deploy operatives onto the rally line. Signed operatives appear in your Legacy roll. Tonic Stations machines unlock after any secret roster (Coliseum, Doomslayer, or evolved allies) is active.",
+        body: "1) Unlock the faction roster. 2) Build that faction's barracks with your Builder. 3) Open Legion Archive from the HUD. 4) Pay TP to deploy operatives onto the rally line. Signed operatives appear in your Legacy roll. Tonic Stations machines unlock after any secret roster (Coliseum, Hellbane, or evolved allies) is active.",
       },
     ];
 
@@ -1346,7 +1346,7 @@ const Encyclopedia = (() => {
       {
         cat: 'perks',
         name: 'Tonic Stations System',
-        body: 'Build machines after unlocking a secret roster (Coliseum, Doomslayer, or evolved heroes). Eligible units collect perks during night prep — up to 4 perks based on stars earned. Each perk favors melee, ranged, or support tags.',
+        body: 'Build machines after unlocking a secret roster (Coliseum, Hellbane, or evolved heroes). Eligible units collect perks during night prep — up to 4 perks based on stars earned. Each perk favors melee, ranged, or support tags.',
       },
       { cat: 'perks', name: 'Ironbrew', body: 'Melee & support — +35% max HP.' },
       {
@@ -1357,12 +1357,12 @@ const Encyclopedia = (() => {
       { cat: 'perks', name: 'Swiftstep Tonic', body: 'Melee & ranged — faster attacks.' },
       { cat: 'perks', name: 'Endurance Draft', body: 'Melee & ranged — faster movement.' },
       { cat: 'perks', name: 'Deadeye Elixir', body: 'Ranged only — +22 accuracy.' },
-      { cat: 'perks', name: 'Elemental Pop', body: 'Ranged & melee — splash damage on hits.' },
+      { cat: 'perks', name: 'Storm Fizz', body: 'Ranged & melee — splash damage on hits.' },
       { cat: 'perks', name: 'Impact Ward', body: 'Melee only — explosion immunity.' },
-      { cat: 'perks', name: "Brawler's Brew", body: 'Melee only — +28% melee damage.' },
+      { cat: 'perks', name: 'Brawler’s Brew', body: 'Melee only — +28% melee damage.' },
       {
         cat: 'perks',
-        name: "Scavenger's Tonic",
+        name: 'Scavenger’s Tonic',
         body: 'Ranged & support — kills may grant +1 TP.',
       },
       {

@@ -653,7 +653,7 @@ const DIFFICULTIES = {
   },
   doomslayer: {
     id: 'doomslayer',
-    label: 'Doomslayer',
+    label: 'Hellbane',
     tagline: 'Hell marches. No mercy.',
     enemyHpMult: 1.7,
     enemyDmgMult: 1.48,

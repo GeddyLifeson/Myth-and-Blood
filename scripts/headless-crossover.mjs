@@ -312,10 +312,10 @@ function testCrossoverHubUI(MP, Hub, doc) {
       tabs.innerHTML.includes('ultimis'),
     'faction tabs should render unlocked factions'
   );
-  // IP-scrubbed roster names (was Tank Dempsey → Splinter Vale).
+  // IP-scrubbed roster names (was Tank Splinter Vale → Splinter Vale).
   assert(
     grid.innerHTML.includes('Splinter Vale') ||
-      grid.innerHTML.includes('Tank Dempsey') ||
+      grid.innerHTML.includes('Tank Splinter Vale') ||
       grid.innerHTML.includes('tank_dempsey') ||
       grid.innerHTML.includes('Need barracks'),
     'roster grid should list ultimis operatives'
@@ -333,7 +333,8 @@ function testCrossoverHubUI(MP, Hub, doc) {
   };
   Hub.renderRoster(gsWithBase);
   assert(
-    !grid.innerHTML.includes('Need barracks on field') || grid.innerHTML.includes('Tank Dempsey'),
+    !grid.innerHTML.includes('Need barracks on field') ||
+      grid.innerHTML.includes('Tank Splinter Vale'),
     'ultimis roster should not show need-base when barracks on field'
   );
 
@@ -509,7 +510,7 @@ function testGameRecruitFlow(exp) {
   assert(!dup, 'recruitCrossoverOperative should block duplicate named crossover on field');
   assert(Game.getState().tactical === tpBeforeDup, 'duplicate recruit should not spend TP');
 
-  Cheats.submit('115');
+  Cheats.submit('void residue');
   assert(MetaProgress.is115Unlocked(), 'cheat 115 should unlock ultimis meta');
 }
 
@@ -1775,10 +1776,13 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
   const early = entries.find((e) => e.name === 'Early Game — Rare Power Spikes');
   assert(early?.body?.includes('mini-bosses'), 'early game entry should describe rare spikes');
   const planet = entries.find((e) => e.name === 'Planet Warfare Operatives (Wave 200+)');
-  assert(planet?.body?.includes('Baird'), 'planet ops should list Tech Head / Baird');
+  assert(planet?.body?.includes('Gearwright'), 'planet ops should list Tech Head / Gearwright');
   assert(planet?.body?.includes('Kael Skyburst'), 'planet ops should list Skyburst Wave');
   const secret = entries.find((e) => e.name === 'Secret Content & Meta Unlocks');
-  assert(secret?.body?.includes('WWE'), 'secret content should mention WWE');
+  assert(
+    secret?.body?.includes('Grand Coliseum'),
+    'secret content should mention the Grand Coliseum'
+  );
   assert(
     FactionDepth.PLANET_WARFARE_OPERATIVES?.tech_head?.siegeMult >= 2,
     'tech_head should have siege mult'

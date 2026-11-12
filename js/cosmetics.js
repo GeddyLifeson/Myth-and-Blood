@@ -73,7 +73,7 @@ const Cosmetics = (() => {
     hell_walker: {
       label: 'Hell Walker',
       unlock: 'creative_skin_doom',
-      desc: 'Unlocked at Doom mastery tier IV.',
+      desc: 'Unlocked at Hellbane mastery tier IV.',
       body: '#1a3020',
       accent: '#40c060',
       mark: '#80ff80',

@@ -1,6 +1,6 @@
 /**
  * Generates exactly 1,000 achievements.
- * Milestone #316 "And That's The Bottom Line" unlocks at 316 total unlocks (not all others).
+ * Milestone #316 "And That Is Final" unlocks at 316 total unlocks (not all others).
  */
 const ACHIEVEMENT_TARGET = 1450;
 const ACHIEVEMENT_META_316_ID = 'bottom_line';
@@ -12,7 +12,7 @@ const ACHIEVEMENT_TIERS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', me
 
 const CROSSOVER_ACH_FACTIONS = [
   { key: 'wwe', label: 'Grand Coliseum Champions', cat: 'crossover_wwe', build: 'wwe_academy' },
-  { key: 'doom', label: 'Doomslayer / Hell', cat: 'crossover_doom', build: null },
+  { key: 'doom', label: 'Hellbane / Hell', cat: 'crossover_doom', build: null },
   { key: 'ultimis', label: 'Void Residue', cat: 'crossover_ultimis', build: 'element_barracks' },
   { key: 'primis', label: 'First Circle', cat: 'crossover_primis', build: 'primis_shrine' },
   { key: 'halo', label: 'Orbital Vanguard', cat: 'crossover_halo', build: 'spartan_academy' },
@@ -85,7 +85,7 @@ function getFactionOperativeIds(factionKey) {
 
 function getOperativeName(factionKey, id) {
   if (factionKey === 'wwe' && WweDefs?.[id]) return WweDefs[id].name;
-  if (id === 'doomslayer_hero') return 'Doomslayer';
+  if (id === 'doomslayer_hero') return 'Hellbane';
   if (CrossoverDefs?.[id]) return CrossoverDefs[id].name;
   return id;
 }
@@ -474,7 +474,7 @@ function buildVanillaAchievements() {
   }
 
   const diffs = ['baby', 'normal', 'chad', 'doomslayer'];
-  const diffLabels = { baby: 'Baby', normal: 'Normal', chad: 'Chad', doomslayer: 'Doomslayer' };
+  const diffLabels = { baby: 'Baby', normal: 'Normal', chad: 'Chad', doomslayer: 'Hellbane' };
   const diffWaves = [25, 50, 100, 200, 500, 1000, 2000];
   for (const d of diffs) {
     for (const w of diffWaves) {
@@ -673,14 +673,14 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'wwe_attitude',
-        'Attitude Era',
+        'Defiant Era',
         'Clear wave 100 with full coliseum roster on field.',
         'crossover_wave:wwe:100',
         'gold',
       ],
       [
         'wwe_showmanship_victory',
-        'Can You Smell What The Crown Is Cooking?',
+        'Can You Taste What The Crown Is Cooking?',
         'Entertainment and larger-than-life charisma — win a campaign while fielding showmanship champions for most waves.',
         'run_wwe_showmanship:8:0.55',
         'gold',
@@ -694,7 +694,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'wwe_attitude_spam',
-        'Attitude Adjustment',
+        'Stance Adjustment',
         'Fire showmanship-style abilities sixty times in one run.',
         'showmanship_ability_uses:60',
         'silver',
@@ -763,7 +763,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'gears_siege_6',
-        'Burst Lancer Doctrine',
+        'Burst Trenchsaw Doctrine',
         'Raze six enemy structures in one run.',
         'enemy_structures_razed:6',
         'silver',
@@ -809,7 +809,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'primis_sanctum_wave_50',
-        'Origins Seal',
+        'First Circle Seal',
         'Reach wave 50 with your castle inner sanctum never breached.',
         'sanctum_intact:50',
         'silver',
@@ -826,14 +826,14 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'ultimis_horde_150',
         'Survive the Endless Horde',
-        'Survive the endless horde no matter what — reach wave 150 on Doomslayer without losing a building to the horde.',
+        'Survive the endless horde no matter what — reach wave 150 on Hellbane without losing a building to the horde.',
         'diff_zombie_fortress:doomslayer:150',
         'gold',
       ],
       [
         'ultimis_flawless_walls',
-        'Pack-a-Punched Defenses',
-        'Clear wave 50 on Doomslayer with no horde-grunt structure losses.',
+        'Forge-Tempered Defenses',
+        'Clear wave 50 on Hellbane with no horde-grunt structure losses.',
         'diff_zombie_fortress:doomslayer:50',
         'silver',
       ],
@@ -849,64 +849,64 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'doom_hero_unlock',
         'Rend and Ruin',
-        'Survive to wave 200 on Doomslayer difficulty.',
+        'Survive to wave 200 on Hellbane difficulty.',
         'unlock:doom_hero',
         'gold',
       ],
       [
         'doom_hero_deploy',
         'Hell Walker',
-        'Deploy the Doomslayer hero.',
+        'Deploy the Hellbane hero.',
         'deploy:doomslayer_hero',
         'bronze',
       ],
       ['hellscape_1001', 'Hellscape Survivor', 'Reach wave 1001.', 'wave:1001', 'gold'],
       [
         'doom_hero_50',
-        'Doom Eternal 50',
-        'Keep Doomslayer alive for 50 waves.',
+        'Hell Eternal 50',
+        'Keep Hellbane alive for 50 waves.',
         'doom_alive:50',
         'silver',
       ],
       [
         'doom_hero_100',
-        'Doom Eternal 100',
-        'Keep Doomslayer alive for 100 waves.',
+        'Hell Eternal 100',
+        'Keep Hellbane alive for 100 waves.',
         'doom_alive:100',
         'gold',
       ],
       [
         'doom_rip_100',
-        'Rip & Tear 100',
-        'Doomslayer scores 100 kills in one battle.',
+        'Rend & Ruin 100',
+        'Hellbane scores 100 kills in one battle.',
         'doom_session_kills:100',
         'silver',
       ],
       [
         'doom_rip_1000',
-        'Rip & Tear 1000',
-        'Doomslayer scores 1000 kills (lifetime).',
+        'Rend & Ruin 1000',
+        'Hellbane scores 1000 kills (lifetime).',
         'doom_lifetime_kills:1000',
         'gold',
       ],
       [
         'doom_flawless_50',
         'Hell Untouched',
-        'Reach wave 50 on Doomslayer with 0 ally losses.',
+        'Reach wave 50 on Hellbane with 0 ally losses.',
         'diff_flawless:doomslayer:50',
         'gold',
       ],
       [
         'doom_bfg',
-        'BFG Division',
-        'Clear wave 200 on Doomslayer difficulty.',
+        'Big Gun Division',
+        'Clear wave 200 on Hellbane difficulty.',
         'diff_wave:doomslayer:200',
         'gold',
       ],
       [
         'doom_500',
         'Hell Walker 500',
-        'Reach wave 500 on Doomslayer difficulty.',
+        'Reach wave 500 on Hellbane difficulty.',
         'diff_wave:doomslayer:500',
         'gold',
       ],
@@ -928,7 +928,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'jojo_alliance_waves',
-        'Bizarre Alliance',
+        'Uncanny Alliance',
         'End ten waves with three evolved heroes fighting side by side.',
         'stand_alliance_waves:10',
         'silver',
@@ -948,8 +948,8 @@ function buildFactionAchievements(cfg, targetPerFaction) {
     list.push(
       achEntry({
         id: 'jojo_steel_ball_run',
-        name: 'Golden Ball Run',
-        desc: 'Field Bound Spirit Part 7 cavalry operatives.',
+        name: 'Gilded Derby',
+        desc: 'Field Bound Spirit derby cavalry operatives.',
         cat: cfg.cat,
         rule: 'crossover_flag:jojo:cavalry',
         tier: 'gold',
@@ -986,7 +986,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'tes_dragonborn_victory',
         'Wyrmcaller Legacy',
-        "Heroic destiny across every school of power — win after wave 100 with an Immortal from each Eternal Path and slay a major boss by Thu'um or dragon-fire.",
+        'Heroic destiny across every school of power — win after wave 100 with an Immortal from each Eternal Path and slay a major boss by Voice or dragon-fire.',
         'run_dragonborn_legacy:100',
         'gold',
       ],
@@ -1045,14 +1045,14 @@ function buildFactionAchievements(cfg, targetPerFaction) {
     const fotnsExtras = [
       [
         'fotns_hokuto_victory',
-        'You Are Already Dead',
+        'You Fell Before You Knew',
         'One-man-army legend — win a campaign after a lone hero lands the killing blow on a named warlord with no other allies on the field.',
         'run_hokuto_solo',
         'gold',
       ],
       [
         'fotns_omae_wa_mou',
-        'North Star Fist',
+        'Seven Star Fist',
         'Slay a named warlord with a single hero standing alone on the battlefield.',
         'solo_hero_named_boss',
         'silver',
@@ -1101,8 +1101,8 @@ function buildSynergyAndSecrets() {
     }),
     achEntry({
       id: 'cheat_austin',
-      name: 'Austin 3:16',
-      desc: 'Enter the Austin 3:16 cheat.',
+      name: 'Sworn to the Creed',
+      desc: 'Enter the iron creed cheat.',
       cat: 'secrets',
       rule: 'cheat:austin',
       hidden: true,
@@ -1142,7 +1142,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'gears_unlock',
       name: 'Iron Trench Coalition',
-      desc: 'Grind them down — Trench Academy and Lancer squad unlocked.',
+      desc: 'Grind them down — Trench Academy and Trenchsaw squad unlocked.',
       cat: 'secrets',
       rule: 'unlock:gears',
       tier: 'gold',
@@ -1150,7 +1150,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'lotr_unlock',
       name: 'Ninefold March',
-      desc: 'Hope and fellowship — Rivendell Camp and the Fellowship roster unlocked.',
+      desc: 'Hope and fellowship — Ninefold Camp and the Fellowship roster unlocked.',
       cat: 'secrets',
       rule: 'unlock:lotr',
       tier: 'gold',
@@ -1173,8 +1173,8 @@ function buildSynergyAndSecrets() {
     }),
     achEntry({
       id: 'fotns_unlock',
-      name: 'North Star Fist',
-      desc: 'Your fate was sealed before the strike — Hokuto Dojo and Fist of the North Star roster unlocked.',
+      name: 'Seven Star Fist',
+      desc: 'Your fate was sealed before the strike — North Star Dojo and North Star Ascetics roster unlocked.',
       cat: 'secrets',
       rule: 'unlock:fotns',
       tier: 'gold',
@@ -1254,7 +1254,7 @@ function buildSynergyAndSecrets() {
     }),
     achEntry({
       id: 'synergy_ki_stand',
-      name: 'Ki & Stand',
+      name: 'Ki & Spirit',
       desc: 'Field Skyburst Order and bound spirit operatives together.',
       cat: 'secrets',
       rule: 'synergy:ki_stand',
@@ -1328,7 +1328,7 @@ function buildMetaAchievements() {
     }),
     achEntry({
       id: ACHIEVEMENT_META_316_ID,
-      name: "And That's The Bottom Line",
+      name: 'And That Is Final',
       desc: 'Reach the 316 achievement milestone — Grand Coliseum unlocked.',
       cat: 'meta',
       rule: 'unlocked_count:316',
