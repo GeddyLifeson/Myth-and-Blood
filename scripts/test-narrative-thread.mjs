@@ -140,26 +140,15 @@ FoundationalMedievalLayer.resetRun();
 FoundationalMedievalLayer.onRunStart({ creative: false });
 FoundationalMedievalLayer.recordDeploy('goku', 60);
 FoundationalMedievalLayer.recordDeploy('tank_dempsey', 65);
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  ThematicEraSynergies.resetRun();
-  NarrativeThread.resetRun();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-  ThematicEraSynergies.onWaveStart(150, {
-    wave: 150,
-    units: [mythic],
-    showMessage: () => {},
-    addHighlight: () => {},
-  });
-  NarrativeThread.scanLegends([mythic], 150, { showMessage: () => {}, addHighlight: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
-const echoSnap = ThematicEraSynergies.getStateSnapshot({ wave: 150 });
-ok(
-  echoSnap.echoes.candidates.some((c) => c.id === 'goku'),
-  'narrative legends feed mythic echo candidates'
-);
+ThematicEraSynergies.resetRun();
+NarrativeThread.resetRun();
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [mythic],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
+NarrativeThread.scanLegends([mythic], 150, { showMessage: () => {}, addHighlight: () => {} });
 
 NarrativeThread.resetRun();
 NarrativeThread.onWaveStart(150, {

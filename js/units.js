@@ -520,7 +520,6 @@ function getWorldSize(waveNum) {
     baseH: BASE_FIELD_H,
     rtsEra: waveNum >= ACADEMY_ERA_WAVE,
     enemyRtsEra: false,
-    fixedBattlefield: false,
   };
 }
 

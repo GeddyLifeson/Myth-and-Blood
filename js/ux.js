@@ -198,19 +198,6 @@ const UX = (() => {
       highlight: 'wave-intel-text',
     },
     {
-      minWave: 200,
-      when: (gs) => undefined,
-      title: 'Hostile Map Control',
-      body: 'From wave 200 the map creeps red — hostile control tightens vision, spawn pace, and northern fog. Push back with counter-offensives and hold multiple unit types to pierce wards.',
-      highlight: 'control-hud',
-    },
-    {
-      when: (gs) => undefined,
-      title: 'Planet Conquest',
-      body: 'From wave 500, <strong>true victory</strong> requires shattering the <strong>Worldheart Tyrant</strong>. Eliminate two or more realms to awaken it, field three+ unit types to pierce its ward, then finish the boss — check the <strong>CONQUEST</strong> chip.',
-      highlight: 'conquest-hud',
-    },
-    {
       minWave: 80,
       maxWave: 140,
       when: (gs) =>

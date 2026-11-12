@@ -74,13 +74,6 @@ ok(
   'WWE step when academy unlocked'
 );
 
-const pwUx = boot(23);
-ok(
-  pwUx.resolveTutorialStep({ wave: 210, creativeMode: false, planetWarfare: { active: true } })
-    ?.step?.title === 'Hostile Map Control',
-  'planet warfare step at wave 200+'
-);
-
 ok(earlyUx.TUTORIAL_STEPS.length >= 24, 'tutorial catalog expanded');
 
 process.exit(failed ? 1 : 0);

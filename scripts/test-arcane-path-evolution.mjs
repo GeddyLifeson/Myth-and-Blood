@@ -120,12 +120,6 @@ const mage = {
 ArcanePathEvolution.applyWeaverUnitBonuses(mage, 80);
 ok(mage.weaverFounder && mage.weaverLineage, 'founding mage lineage bonuses');
 
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
 ok(!GrandStrategy || GrandStrategy.getKingdomPathId() === 'arcane', 'kingdom arcane path');
 ArcanePathEvolution.recordAction('edict_ley_surge', { wave: 160, label: 'Ley Surge' });
 ArcanePathEvolution.recordAction('template_arcane_sentinel', {
@@ -140,12 +134,6 @@ ok(
 );
 ok(!GrandStrategy || kingdomMods.researchSpeedMult > 1, 'kingdom weaver mods buff research');
 
-if (IntergalacticLayer) {
-  IntergalacticLayer?.resetRun?.();
-  IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
-} else {
-  console.log('SKIP IntergalacticLayer assertions (macro layer removed)');
-}
 ok(
   !IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'aether_lords',
   'arcane run resolves aether_lords'
@@ -157,7 +145,6 @@ ok(singularity.active && singularity.playerDmgMult > 1.05, 'singularity warps in
 ok(singularity.countMult < 1, 'singularity relieves enemy pressure');
 
 const galMage = { team: 'player', type: 'wizard', maxHp: 60, hp: 60, damage: 45, range: 200 };
-IntergalacticLayer?.applyCosmicUnitBonuses?.(galMage, 450);
 ok(
   !IntergalacticLayer ||
     galMage.physicsRewrite ||

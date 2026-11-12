@@ -49,19 +49,19 @@ ok(U.rtsMapBlend(174) === 0 && U.rtsMapBlend(205) === 1, 'RTS map blend range');
 const w99 = U.getWorldSize(99);
 const w100 = U.getWorldSize(100);
 const w101 = U.getWorldSize(101);
-// Fixed battlefield: wave defense uses a constant map size (no RTS map expand).
-ok(w100.w === w99.w && w100.h === w99.h, 'map size stable into wave 100 (fixed field)');
+// The realm gains land every 10 waves (capped before the RTS era), with no extra jump at 100.
+ok(w100.w >= w99.w && w100.h >= w99.h, 'map never shrinks into wave 100');
 ok(w101.w === w100.w && w101.h === w100.h, 'no map cliff at wave 100');
-ok(!!w100.fixedBattlefield, 'getWorldSize marks fixedBattlefield');
-// Soft territory tier still climbs for content (hazards/biomes) without growing the map.
+ok(U.getWorldSize(50).w > U.getWorldSize(1).w, 'map grows across the early campaign');
+// Territory tier climbs for content (hazards/biomes) alongside the map.
 ok(w100.tier >= w99.tier, 'content tier non-decreasing into wave 100');
 ok(U.getTerritoryTier(35) >= 2, 'wave 35 reaches hazard/forest content tier');
 
 const w199 = U.getWorldSize(199);
 const w200 = U.getWorldSize(200);
 const w201 = U.getWorldSize(201);
-ok(w200.w === w199.w && w201.w === w200.w, 'map size stable through wave 200 (fixed field)');
-ok(w200.h === w199.h && w201.h === w200.h, 'map height stable through wave 200');
+ok(w200.w > w199.w && w200.h > w199.h, 'RTS era widens the map at wave 200');
+ok(w201.w === w200.w && w201.h === w200.h, 'map stable right after the wave 200 bump');
 ok(w200.tier >= w199.tier, 'content tier non-decreasing through wave 200');
 
 const c99 = U.getWaveConfig(99).count;

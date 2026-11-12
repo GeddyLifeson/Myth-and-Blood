@@ -19,6 +19,11 @@ class GameServicesSystem {
   has(id) {
     return this._services.has(id);
   }
+  require(id) {
+    const s = this.get(id);
+    if (s == null) throw new Error(`GameServices: missing "${id}"`);
+    return s;
+  }
   get ctx() {
     return this._ctx;
   }

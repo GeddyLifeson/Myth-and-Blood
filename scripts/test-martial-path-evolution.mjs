@@ -118,45 +118,32 @@ const footman = { team: 'player', type: 'footman', id: 'gf-1', maxHp: 100, hp: 1
 MartialPathEvolution.applyLegionUnitBonuses(footman, 80);
 ok(footman.legionGeneFather && footman.legionAncestry, 'gene-father ancestry bonuses');
 
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-  ok(!GrandStrategy || GrandStrategy.getKingdomPathId() === 'martial', 'kingdom martial path');
-  MartialPathEvolution.recordAction('template_shield_wall', { wave: 160, label: 'Shield Wall' });
-  MartialPathEvolution.recordAction('order_fortify', { wave: 165, label: 'Fortify' });
-  MartialPathEvolution.recordAction('edict_honor_oath_edict', { wave: 168, label: 'Honor Oath' });
-  const kingdomMods = GrandStrategy?.getTacticalModifiers?.(170) || { hpMult: 1, playerDmgMult: 1 };
-  ok(!GrandStrategy || !GrandStrategy || kingdomMods.hpMult > 1, 'kingdom legion mods buff HP');
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
+ok(!GrandStrategy || GrandStrategy.getKingdomPathId() === 'martial', 'kingdom martial path');
+MartialPathEvolution.recordAction('template_shield_wall', { wave: 160, label: 'Shield Wall' });
+MartialPathEvolution.recordAction('order_fortify', { wave: 165, label: 'Fortify' });
+MartialPathEvolution.recordAction('edict_honor_oath_edict', { wave: 168, label: 'Honor Oath' });
+const kingdomMods = GrandStrategy?.getTacticalModifiers?.(170) || { hpMult: 1, playerDmgMult: 1 };
+ok(!GrandStrategy || !GrandStrategy || kingdomMods.hpMult > 1, 'kingdom legion mods buff HP');
 
-if (IntergalacticLayer) {
-  IntergalacticLayer?.resetRun?.();
-  IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
-  ok(
-    !IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'eternal_legion',
-    'footman run resolves eternal_legion'
-  );
-  MartialPathEvolution.spawnTestLegion('eternal_legion');
-  MartialPathEvolution.recordAction('defensive_invasion', { wave: 410, label: 'Defend homeworld' });
-  const line = MartialPathEvolution.getUnbreakingLineMods({
-    wave: 410,
-    defensive: true,
-    lastStandActive: true,
-  });
-  ok(line.active && line.playerDmgMult > 1.05, 'unbreaking line boosts defensive last stand');
-  ok(line.hpMult > 1, 'unbreaking line boosts HP');
-  ok(line.countMult < 1, 'unbreaking line relieves enemy count pressure');
-  const galFoot = { team: 'player', type: 'knight', maxHp: 200, hp: 200, damage: 40 };
-  IntergalacticLayer?.applyCosmicUnitBonuses?.(galFoot, 450);
-  ok(
-    !IntergalacticLayer || galFoot.legionShieldWall || galFoot.cosmicLegacyApplied,
-    'galactic knight gets legion bonuses'
-  );
-} else {
-  console.log('SKIP IntergalacticLayer assertions (macro layer removed)');
-}
+ok(
+  !IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'eternal_legion',
+  'footman run resolves eternal_legion'
+);
+MartialPathEvolution.spawnTestLegion('eternal_legion');
+MartialPathEvolution.recordAction('defensive_invasion', { wave: 410, label: 'Defend homeworld' });
+const line = MartialPathEvolution.getUnbreakingLineMods({
+  wave: 410,
+  defensive: true,
+  lastStandActive: true,
+});
+ok(line.active && line.playerDmgMult > 1.05, 'unbreaking line boosts defensive last stand');
+ok(line.hpMult > 1, 'unbreaking line boosts HP');
+ok(line.countMult < 1, 'unbreaking line relieves enemy count pressure');
+const galFoot = { team: 'player', type: 'knight', maxHp: 200, hp: 200, damage: 40 };
+ok(
+  !IntergalacticLayer || galFoot.legionShieldWall || galFoot.cosmicLegacyApplied,
+  'galactic knight gets legion bonuses'
+);
 
 const html = MartialPathEvolution.renderPanelHtml({ wave: 450 });
 ok(

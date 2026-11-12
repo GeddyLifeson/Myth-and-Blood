@@ -127,6 +127,15 @@ class GameDataSystem {
     }
     return this;
   }
+  reload(pack) {
+    if (pack) {
+      this._applyPack(pack);
+    } else if (typeof GameDataBundle !== 'undefined') {
+      this._applyPack(GameDataBundle);
+    }
+    this.refreshDependents();
+    return this;
+  }
 }
 const GameData = new GameDataSystem();
 GameData.loadSync();

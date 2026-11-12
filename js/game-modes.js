@@ -37,14 +37,7 @@ const GameModes = (() => {
       id: 'academy_era',
       label: 'Academy Era',
       subtitle: 'Jump to wave 100+',
-      desc: 'Start at wave 100–200 on the same fixed map — academies, hamlets, and heavier northern assaults.',
-    },
-    {
-      id: 'planet_conquest',
-      label: 'Planet Conquest',
-      subtitle: 'Shelved',
-      desc: 'Planet conquest layer removed. Use Campaign or Survival for wave defense.',
-      future: true,
+      desc: 'Start at wave 100–200 on the grown late-game map — academies, hamlets, and heavier northern assaults.',
     },
     {
       id: 'async_coop',

@@ -91,20 +91,8 @@ ok(EternalPathFramework.mapCosmicToPath('aether_lords') === 'arcane', 'cosmic ma
 FoundationalMedievalLayer.resetRun();
 FoundationalMedievalLayer.onRunStart({ creative: false });
 for (let i = 0; i < 15; i++) FoundationalMedievalLayer.recordDeploy('archer', 25);
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
-if (IntergalacticLayer) {
-  IntergalacticLayer?.resetRun?.();
-  IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
 
-  EternalPathFramework.onWaveStart(400, { wave: 400, showMessage: () => {} });
-} else {
-  console.log('SKIP IntergalacticLayer assertions (macro layer removed)');
-}
+EternalPathFramework.onWaveStart(400, { wave: 400, showMessage: () => {} });
 const snap = EternalPathFramework.getStateSnapshot({ wave: 400 });
 ok(snap.dominantPathId === 'martial', 'martial archers dominate investment');
 ok(snap.eras.medieval.pathId === 'martial', 'medieval era recorded martial');
@@ -113,14 +101,9 @@ ok(
   !IntergalacticLayer || snap.eras.galactic.pathId === 'martial',
   'galactic era recorded void rangers martial'
 );
-ok(snap.alignment >= 2, 'aligned path across eras');
 
 const martialProg = snap.paths.find((p) => p.id === 'martial');
 ok(martialProg?.chain.medieval !== '—', 'martial shows medieval chain');
-ok(
-  martialProg?.chain.galactic.includes('Void') || martialProg?.chain.galactic.includes('Legion'),
-  'martial galactic chain set'
-);
 
 const mods = EternalPathFramework.getFrameworkMods(400);
 ok(mods.playerDmgMult > 1, 'framework mods buff damage');

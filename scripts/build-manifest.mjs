@@ -96,6 +96,7 @@ export const GAME_SCRIPTS = [
   'game-runtime.js',
   'game-core.js',
   'game-state.js',
+  'procgen-obstacles.js',
   'game.js',
   'damage-preview.js',
   'perf.js',

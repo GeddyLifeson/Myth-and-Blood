@@ -117,12 +117,6 @@ const hero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 120, hp: 120, da
 MythicPathEvolution.applyChampionUnitBonuses(hero, 60);
 ok(hero.firstChampion && hero.championLineage, 'first champion bonuses');
 
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
 ok(!GrandStrategy || GrandStrategy.getKingdomPathId() === 'mythic', 'kingdom mythic path');
 MythicPathEvolution.recordAction('edict_heroic_muster', { wave: 155, label: 'Heroic Muster' });
 MythicPathEvolution.recordAction('recruit_hero_echo', { wave: 160, label: 'Echo' });
@@ -131,12 +125,6 @@ const kingdomMods = GrandStrategy?.getTacticalModifiers?.(165) || { hpMult: 1, p
 ok(!GrandStrategy || kingdomMods.playerDmgMult > 1, 'bloodline mods buff damage');
 ok(!GrandStrategy || kingdomMods.eliteSlots > 0, 'bloodline grants elite slots');
 
-if (IntergalacticLayer) {
-  IntergalacticLayer?.resetRun?.();
-  IntergalacticLayer?.onWaveStart?.(400, { wave: 400, showMessage: () => {} });
-} else {
-  console.log('SKIP IntergalacticLayer assertions (macro layer removed)');
-}
 ok(
   !IntergalacticLayer || IntergalacticLayer.getCosmicPathId() === 'pantheon_ascendant',
   'mythic resolves pantheon'
@@ -148,7 +136,6 @@ ok(armada.active && armada.eternalChampion, 'godblood armada active');
 ok(armada.countMult < 1, 'armada relieves enemy pressure');
 
 const galHero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 200, hp: 200, damage: 60 };
-IntergalacticLayer?.applyCosmicUnitBonuses?.(galHero, 450);
 ok(
   !IntergalacticLayer ||
     galHero.eternalChampion ||

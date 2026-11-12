@@ -103,21 +103,15 @@ const { FoundationalMedievalLayer, ThematicEraSynergies, HybridPowerFantasy, Gra
 // Pure arcane → Wizard-Kings
 seedPureArcane(FoundationalMedievalLayer);
 ok(HybridPowerFantasy.evaluatePathPurity() === 'pure_arcane', 'pure arcane purity detected');
-if (GrandStrategy) {
-  GrandStrategy?.resetRun?.();
-  ThematicEraSynergies.resetRun();
-  HybridPowerFantasy.resetRun();
-  GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
-  ThematicEraSynergies.onWaveStart(150, {
-    wave: 150,
-    units: [],
-    showMessage: () => {},
-    addHighlight: () => {},
-  });
-  HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
-} else {
-  console.log('SKIP GrandStrategy assertions (macro layer removed)');
-}
+ThematicEraSynergies.resetRun();
+HybridPowerFantasy.resetRun();
+ThematicEraSynergies.onWaveStart(150, {
+  wave: 150,
+  units: [],
+  showMessage: () => {},
+  addHighlight: () => {},
+});
+HybridPowerFantasy.onWaveStart(150, { wave: 150, showMessage: () => {}, addHighlight: () => {} });
 const pendingArcane = HybridPowerFantasy.getStateSnapshot({ wave: 400 });
 ok(
   pendingArcane.pending && pendingArcane.fantasyId === null,
@@ -155,10 +149,8 @@ ok(
 // Pure martial → Honor Legion
 seedPureMartial(FoundationalMedievalLayer);
 ok(HybridPowerFantasy.evaluatePathPurity() === 'pure_martial', 'pure martial purity detected');
-GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
 ThematicEraSynergies.onWaveStart(150, {
   wave: 150,
   units: [],
@@ -197,8 +189,6 @@ ok(
 seedMixed(FoundationalMedievalLayer);
 HybridPowerFantasy.resetRun();
 ThematicEraSynergies.resetRun();
-GrandStrategy?.resetRun?.();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
 ThematicEraSynergies.onWaveStart(150, {
   wave: 150,
   units: [],
@@ -211,10 +201,8 @@ ok(!mixedSnap.active, 'mixed path does not unlock apex fantasy');
 
 // GS tactical merge
 seedPureMartial(FoundationalMedievalLayer);
-GrandStrategy?.resetRun?.();
 ThematicEraSynergies.resetRun();
 HybridPowerFantasy.resetRun();
-GrandStrategy?.onWaveStart?.(150, { wave: 150, showMessage: () => {} });
 ThematicEraSynergies.onWaveStart(150, {
   wave: 150,
   units: [],

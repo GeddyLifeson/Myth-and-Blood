@@ -6,6 +6,7 @@ import { existsSync, readFileSync, statSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { gunzipSync, brotliDecompressSync } from 'zlib';
+import { spawnSync } from 'child_process';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const DIST = join(ROOT, 'dist');
@@ -19,8 +20,15 @@ function ok(cond, msg) {
 }
 
 if (!existsSync(DIST)) {
-  console.error('Run npm run build first');
-  process.exit(1);
+  // Build on demand so the suite passes from a clean checkout.
+  const r = spawnSync(process.execPath, [join(ROOT, 'scripts', 'build.mjs')], {
+    cwd: ROOT,
+    stdio: 'ignore',
+  });
+  if (r.status !== 0 || !existsSync(DIST)) {
+    console.error('Build failed; run npm run build to see why');
+    process.exit(1);
+  }
 }
 
 const unitsPath = join(DIST, 'data', 'units.json');
