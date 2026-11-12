@@ -124,10 +124,6 @@ const AudioEngine = (() => {
     if (sfxGain && ctx) sfxGain.gain.setValueAtTime(sfxVol, ctx.currentTime);
   }
 
-  function getVolumes() {
-    return { master: masterVol, music: musicVol, sfx: sfxVol, muted };
-  }
-
   function setMuted(value) {
     muted = !!value;
     if (masterGain && ctx) {
@@ -737,7 +733,6 @@ const AudioEngine = (() => {
     setMasterVolume,
     setMusicVolume,
     setSfxVolume,
-    getVolumes,
   };
 })();
 

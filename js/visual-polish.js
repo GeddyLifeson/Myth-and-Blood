@@ -265,100 +265,6 @@ const VisualPolish = (() => {
     }
   }
 
-  function drawConquestSectors(ctx, worldW, mapH, sectors = [], bossActive = false) {
-    if (!sectors.length) return;
-    ctx.save();
-    const northH = mapH * 0.42;
-    for (const s of sectors) {
-      const w = Math.max(1, (s.x1 || 0) - (s.x0 || 0));
-      const playerPct = s.playerControl ?? 100 - (s.enemyControl || 0);
-      const alpha = s.eliminated ? 0.08 : 0.1 + (playerPct / 100) * 0.22;
-      ctx.fillStyle = s.eliminated
-        ? 'rgba(80, 200, 120, 0.14)'
-        : `${hexToRgba(s.color || '#80a0c0', alpha)}`;
-      ctx.fillRect(s.x0, 0, w, northH);
-      if (!s.eliminated) {
-        const conqW = w * (playerPct / 100);
-        ctx.fillStyle = hexToRgba(s.color || '#80ffa0', 0.2 + playerPct * 0.003);
-        ctx.fillRect(s.x0, 0, conqW, northH);
-      }
-      ctx.strokeStyle = s.eliminated
-        ? 'rgba(120, 255, 160, 0.55)'
-        : hexToRgba(s.color || '#c08060', 0.45);
-      ctx.lineWidth = s.eliminated ? 2 : 1;
-      ctx.setLineDash(s.eliminated ? [] : [6, 8]);
-      ctx.strokeRect(s.x0 + 1, 2, w - 2, northH - 4);
-      ctx.setLineDash([]);
-      if (w > 36) {
-        ctx.font = '8px Cinzel';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = s.eliminated ? 'rgba(160, 255, 190, 0.9)' : 'rgba(255, 220, 180, 0.82)';
-        const label = s.eliminated ? `${s.name} FALLEN` : `${s.name} ${playerPct}%`;
-        ctx.fillText(label, s.x0 + w / 2, 14);
-      }
-    }
-    if (bossActive) {
-      ctx.font = '9px Cinzel';
-      ctx.fillStyle = 'rgba(255, 40, 120, 0.9)';
-      ctx.textAlign = 'center';
-      ctx.fillText('— WORLDHEART TYRANT —', worldW / 2, northH - 8);
-    }
-    ctx.restore();
-  }
-
-  function hexToRgba(hex, alpha = 1) {
-    const h = String(hex || '#888').replace('#', '');
-    const full =
-      h.length === 3
-        ? h
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : h;
-    const n = parseInt(full, 16);
-    if (Number.isNaN(n)) return `rgba(128,128,128,${alpha})`;
-    const r = (n >> 16) & 255;
-    const g = (n >> 8) & 255;
-    const b = n & 255;
-    return `rgba(${r},${g},${b},${alpha})`;
-  }
-
-  function drawHostileTerritory(ctx, worldW, mapH, lineY, control, tierLabel) {
-    if (!lineY || lineY <= mapH * 0.1 || control < 0.08) return;
-    const depth = Math.max(0, Math.min(1, control));
-    ctx.save();
-    const grad = ctx.createLinearGradient(0, 0, 0, lineY + 40);
-    grad.addColorStop(0, `rgba(120, 20, 30, ${0.22 + depth * 0.28})`);
-    grad.addColorStop(0.65, `rgba(80, 16, 24, ${0.12 + depth * 0.18})`);
-    grad.addColorStop(1, 'rgba(40, 12, 18, 0)');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, worldW, lineY + 36);
-
-    ctx.strokeStyle = `rgba(255, 70, 60, ${0.45 + depth * 0.35})`;
-    ctx.lineWidth = 2;
-    ctx.setLineDash([14, 10]);
-    ctx.beginPath();
-    ctx.moveTo(0, lineY);
-    ctx.lineTo(worldW, lineY);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    ctx.font = '9px Cinzel';
-    ctx.fillStyle = `rgba(255, 120, 100, ${0.75 + depth * 0.2})`;
-    ctx.textAlign = 'center';
-    const label = tierLabel ? `— HOSTILE TERRITORY · ${tierLabel} —` : '— HOSTILE TERRITORY —';
-    ctx.fillText(label, worldW / 2, lineY - 6);
-
-    for (let i = 0; i < 5; i++) {
-      const px = (worldW / 6) * (i + 0.5) + Math.sin(Date.now() * 0.001 + i) * 8;
-      ctx.fillStyle = `rgba(255, 60, 50, ${0.15 + depth * 0.2})`;
-      ctx.beginPath();
-      ctx.arc(px, lineY + 10 + (i % 2) * 6, 3 + depth * 2, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
   function drawBiomeRegions(ctx, worldW, mapH, bands = []) {
     if (!bands.length) return;
     ctx.save();
@@ -1336,8 +1242,6 @@ const VisualPolish = (() => {
   }
 
   return {
-    getEraId,
-    computeBattleIntensity,
     drawKingdomBanner,
     registerDeath,
     addScreenShake,
@@ -1349,8 +1253,6 @@ const VisualPolish = (() => {
     drawDeathCorpses,
     drawBiomeRegions,
     drawTerritoryBorders,
-    drawConquestSectors,
-    drawHostileTerritory,
     drawMultiFrontIndicators,
     drawMinimapOverlay,
     getMinimapFlankLabel,
@@ -1359,12 +1261,8 @@ const VisualPolish = (() => {
     drawMapEventSite,
     drawAtmosphere,
     drawHordeIntensity,
-    getHordeIntensity,
     drawTitleArt,
     updateAudioMix,
-    FACTION_ACCENT,
-    BASE_W,
-    BASE_H,
   };
 })();
 

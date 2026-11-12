@@ -557,13 +557,8 @@ const OperativeSkillTrees = (() => {
 
   return {
     FACTION_TREES,
-    STORAGE_KEY,
     resetRun,
-    getTree,
-    getFactionForUnit,
-    getPurchasedNodes,
     getAvailablePoints,
-    canPurchase,
     purchaseNode,
     grantSkillPoint,
     onRecruit,
@@ -572,7 +567,6 @@ const OperativeSkillTrees = (() => {
     modifyDamage,
     modifyDamageTaken,
     getSnapshot,
-    aggregateBonuses,
   };
 })();
 

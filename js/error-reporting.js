@@ -577,12 +577,6 @@ const ErrorReporting = (() => {
     }
   }
 
-  function stopWatchdog() {
-    if (!watchdogWorker) return;
-    watchdogWorker.terminate();
-    watchdogWorker = null;
-  }
-
   function pingWatchdog() {
     lastHeartbeatAt = now();
     lastPingAt = lastHeartbeatAt;
@@ -942,11 +936,7 @@ const ErrorReporting = (() => {
     captureFreeze,
     runGuarded,
     isDegraded,
-    getDegraded,
     disableSubsystem,
-    resetDegradation,
-    exportLog,
-    copyReport,
     clearLog,
     flush,
     getRecent,
@@ -962,12 +952,9 @@ const ErrorReporting = (() => {
     getLastPhase,
     shouldSkipExtraSimSteps,
     startWatchdog,
-    stopWatchdog,
     openBugReport,
-    closeBugReport,
     submitBugReport,
     STALL_MS,
-    SLOW_FRAME_MS,
     FREEZE_FRAME_MS,
   };
 })();

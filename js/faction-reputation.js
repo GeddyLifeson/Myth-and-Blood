@@ -382,7 +382,6 @@ const FactionReputation = (() => {
     onWaveEnd,
     checkWaveAnnouncement,
     getStateSnapshot,
-    formatHostilitySummary,
   };
 })();
 

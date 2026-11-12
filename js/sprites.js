@@ -2028,17 +2028,6 @@ const SpriteGen = (() => {
     ctx.restore();
   }
 
-  function drawPathLine(ctx, x1, y1, x2, y2) {
-    ctx.strokeStyle = 'rgba(240,220,80,0.45)';
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
-
   function drawTitleArt(ctx, w, h) {
     if (typeof VisualPolish !== 'undefined') {
       VisualPolish.drawTitleArt(ctx, w, h);
@@ -2082,7 +2071,6 @@ const SpriteGen = (() => {
     drawMoraleBar,
     drawVetStars,
     drawProjectile,
-    drawPathLine,
     drawTitleArt,
     UNIT_STYLE,
     registerUnitStyle(type, style) {

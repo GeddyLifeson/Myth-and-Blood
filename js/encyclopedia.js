@@ -1654,7 +1654,7 @@ const Encyclopedia = (() => {
     });
   }
 
-  return { init, open, close, isOpen, togglePanel, renderPanel, getAllEntries };
+  return { init, open, close, isOpen, togglePanel, renderPanel };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

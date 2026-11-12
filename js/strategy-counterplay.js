@@ -310,7 +310,6 @@ const StrategyCounterplay = (() => {
     formatCounterIntel,
     maybeAnnounce,
     getActive,
-    isSiegeTarget,
     STRATEGIES,
   };
 })();

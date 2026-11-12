@@ -321,10 +321,6 @@ const AdvancedDifficulty = (() => {
     lockedForRun = false;
   }
 
-  function isLockedForRun() {
-    return lockedForRun;
-  }
-
   function getActiveIds() {
     return [...active];
   }
@@ -537,17 +533,13 @@ const AdvancedDifficulty = (() => {
     getActiveIds,
     getActiveModCount,
     getCombinedMods,
-    getPlayerVisionRange,
-    isEnemySpotted,
     isEnemyFogHidden,
     getDifficultyPercent,
     getModifiers,
-    getPresets: () => PRESETS,
     getConflictGroups,
     applyPreset,
     lockForRun,
     unlockForRun,
-    isLockedForRun,
     renderPanel,
     togglePanel,
   };

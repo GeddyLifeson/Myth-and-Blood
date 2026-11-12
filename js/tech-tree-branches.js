@@ -886,16 +886,11 @@ const TechTreeBranches = (() => {
 
   return {
     ROOT_BRANCHES,
-    BRANCH_NODES,
     ROOT_LOCK_WAVE,
     resetRun,
     onRunStart,
     onWaveStart,
-    evaluateRootScores,
-    lockRootBranch,
-    resolveRootAtWave,
     getRootId,
-    getRootDef,
     getNodesForBranch,
     getCombinedEffects,
     getTechTreeLabel,

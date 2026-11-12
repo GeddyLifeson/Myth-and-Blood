@@ -507,17 +507,9 @@ const LevelEditor = (() => {
     onSessionStart,
     onMapClick,
     getToolOverlayLabel,
-    setTool,
     clearToolSelection,
-    pushUndo,
-    undo,
-    redo,
     saveToLibrary,
-    loadFromLibrary,
     importLevel,
-    exportLevel,
-    newBlankLevel,
     snapPos,
-    isGridSnap: () => gridSnap,
   };
 })();

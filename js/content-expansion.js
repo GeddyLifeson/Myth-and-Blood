@@ -2052,7 +2052,6 @@ const ContentExpansion = (() => {
     getWaveEvent,
     getEncyclopediaEntries,
     pickWaveEvent,
-    WAVE_EVENTS,
   };
 })();
 

@@ -259,10 +259,6 @@ const CreativeTools = (() => {
     return true;
   }
 
-  function stopReplay() {
-    replayPlaying = false;
-  }
-
   function tickRecord() {
     if (!recording || !Game?.isCreativeMode?.()) return;
     recordAcc++;
@@ -391,8 +387,6 @@ const CreativeTools = (() => {
 
   return {
     VERSION,
-    TEMPLATES,
-    UNIT_PRESETS,
     parseWaveComposer,
     formatWaveComposer,
     onSessionStart,
@@ -410,7 +404,6 @@ const CreativeTools = (() => {
     importReplay,
     playReplay,
     rewindReplay,
-    stopReplay,
     recordFrame,
     tickRecord,
     tickStress,

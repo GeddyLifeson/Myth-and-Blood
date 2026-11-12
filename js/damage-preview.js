@@ -261,10 +261,6 @@ const DamagePreview = (() => {
 
   return {
     ctxFromState,
-    referenceEnemyType,
-    buildAttacker,
-    buildReferenceEnemy,
-    damageRange,
     previewUnitVsEnemy,
     previewAbility,
     formatDeployTip,

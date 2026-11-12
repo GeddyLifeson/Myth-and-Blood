@@ -402,15 +402,6 @@ class ColonyValueSystem {
     }
   }
 
-  formatKingdomSummary(colony) {
-    if (!colony) return 'Kingdom strength unknown';
-    const b = colony.breakdown;
-    return (
-      `Kingdom ${colony.total} (${colony.tier.label} · ${colony.threatRatio.toFixed(2)}×) — ` +
-      `Army ${b.military} · Works ${b.structures} · Treasury ${b.economy}`
-    );
-  }
-
   formatWaveNote(colony, pressure) {
     if (!colony || !pressure) return '';
     const pct = Math.round((pressure.countMult - 1) * 100);

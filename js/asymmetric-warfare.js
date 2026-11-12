@@ -265,22 +265,14 @@ const AsymmetricWarfare = (() => {
   }
 
   return {
-    PLAYER_ROLE,
-    HOST_ROLE,
-    HOST_LEVEL_THRESHOLDS,
     resetRun,
     getHostThreatLevel,
-    getHostLevelDef,
-    getCommanderTier,
     computeCommanderAuthority,
     addThreatXp,
     onWaveStart,
     onWaveEnd,
     onHostStructureDestroyed,
     getAsymmetricMods,
-    formatPlayerMicro,
-    formatPlayerMacro,
-    formatHostSummary,
     checkHostLevelAnnouncements,
     getStateSnapshot,
   };

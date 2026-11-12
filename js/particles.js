@@ -179,18 +179,6 @@ const Particles = (() => {
     trim();
   }
 
-  function magic(x, y, color = '#8040ff') {
-    spawn(x, y, {
-      count: 12,
-      speed: 2.5,
-      life: 35,
-      colors: [color, '#c080ff', '#ffe080'],
-      size: 3,
-      rise: 1,
-      gravity: -0.04,
-    });
-  }
-
   function heal(x, y) {
     spawn(x, y, {
       count: 10,
@@ -520,13 +508,11 @@ const Particles = (() => {
   }
 
   return {
-    spawn,
     blood,
     bloodSpray,
     impactDust,
     critBurst,
     explosion,
-    magic,
     heal,
     lightning,
     dust,

@@ -145,10 +145,6 @@ class GameDepthSystem {
     return true;
   }
 
-  hybridDeployCostMult() {
-    return 1;
-  }
-
   getGeneralAuraBreakdown(gen) {
     if (!gen?.stationedKeep) {
       return {
@@ -228,14 +224,6 @@ class GameDepthSystem {
       recentBreaks: recent,
       cascade: recent.length >= GameDepthSystem.MORALE_CASCADE_THRESHOLD,
     };
-  }
-
-  weightedSpawnSide(sides, spawnIdx) {
-    if (sides.length <= 1) return sides[0];
-    const newest = sides[sides.length - 1];
-    const roll = Math.random();
-    if (roll < 0.55) return newest;
-    return sides[spawnIdx % sides.length];
   }
 
   isBossWave(wave) {
@@ -465,19 +453,6 @@ class GameDepthSystem {
     const keep = buildings.find((b) => b.castleGroup === groupId && b.isKeep);
     if (!keep) return false;
     return Math.hypot(unit.x - keep.x, unit.y - keep.y) < CASTLE_COMPOUND_OFFSET + 20;
-  }
-
-  specialistLateAbility(unit) {
-    if (typeof getSpecialistLateAbilityInfo === 'function') {
-      const info = getSpecialistLateAbilityInfo(unit);
-      return info?.unlocked ? info.id : null;
-    }
-    if (!unit || typeof isSpecialistLateAbilityUnlocked !== 'function') return null;
-    if (!isSpecialistLateAbilityUnlocked(unit)) return null;
-    if (unit.type === 'healer') return 'mass_mend';
-    if (unit.type === 'builder') return 'rapid_repair';
-    if (unit.type === 'courier') return 'twin_dispatch';
-    return null;
   }
 
   isIpOperative(unit) {

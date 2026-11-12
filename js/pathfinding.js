@@ -171,81 +171,6 @@ const Pathfinding = (() => {
     return walkGrids[profile];
   }
 
-  function findNearestWalkable(endX, endY, unit, isTerrainBlockedFn) {
-    const ex = Number(endX);
-    const ey = Number(endY);
-    if (!Number.isFinite(ex) || !Number.isFinite(ey) || !gridW || !gridH) {
-      return { x: endX, y: endY, cx: 0, cy: 0, valid: false };
-    }
-    const profile = getWalkProfile(unit);
-    const grid = ensureWalkGrid(profile, unit, isTerrainBlockedFn);
-    if (!walkGridUsable(grid)) {
-      return { x: ex, y: ey, cx: 0, cy: 0, valid: false };
-    }
-
-    const end = toCell(ex, ey);
-    // Exact end is already walkable — keep the caller's world point (not cell center).
-    if (!grid[end.cy * gridW + end.cx]) {
-      return { x: ex, y: ey, cx: end.cx, cy: end.cy, valid: true };
-    }
-
-    // Reuse core BFS so radius/visit caps stay consistent with findPathOnGrid.
-    if (typeof PathfindingCore.findNearestWalkableCell === 'function') {
-      // findNearestWalkableCell is not exported — use local BFS.
-    }
-
-    const maxRadius = 20;
-    const maxVisit = Math.min(gridW * gridH, (maxRadius * 2 + 1) * (maxRadius * 2 + 1));
-    const visited = new Uint8Array(gridW * gridH);
-    const queueCx = new Int16Array(maxVisit);
-    const queueCy = new Int16Array(maxVisit);
-    const queueDist = new Int16Array(maxVisit);
-    let head = 0;
-    let tail = 0;
-    queueCx[0] = end.cx;
-    queueCy[0] = end.cy;
-    queueDist[0] = 0;
-    tail = 1;
-    visited[end.cy * gridW + end.cx] = 1;
-
-    const dirs = [
-      [0, 1],
-      [1, 0],
-      [0, -1],
-      [-1, 0],
-      [1, 1],
-      [-1, 1],
-      [1, -1],
-      [-1, -1],
-    ];
-
-    while (head < tail) {
-      const curCx = queueCx[head];
-      const curCy = queueCy[head];
-      const curDist = queueDist[head];
-      head++;
-      if (curDist > maxRadius) break;
-      if (!grid[curCy * gridW + curCx]) {
-        const w = toWorld(curCx, curCy);
-        return { x: w.x, y: w.y, cx: curCx, cy: curCy, valid: true };
-      }
-      for (let d = 0; d < dirs.length; d++) {
-        const nx = curCx + dirs[d][0];
-        const ny = curCy + dirs[d][1];
-        if (nx < 0 || ny < 0 || nx >= gridW || ny >= gridH) continue;
-        const k = ny * gridW + nx;
-        if (visited[k]) continue;
-        if (tail >= maxVisit) break;
-        visited[k] = 1;
-        queueCx[tail] = nx;
-        queueCy[tail] = ny;
-        queueDist[tail] = curDist + 1;
-        tail++;
-      }
-    }
-    return { x: ex, y: ey, cx: end.cx, cy: end.cy, valid: false };
-  }
-
   function findPath(startX, startY, endX, endY, unit, isTerrainBlockedFn, opts = {}) {
     if (typeof isTerrainBlockedFn !== 'function' || !gridW || !gridH) return [];
     const ck = cacheKey(startX, startY, endX, endY, unit);
@@ -270,17 +195,13 @@ const Pathfinding = (() => {
   return {
     init,
     findPath,
-    findNearestWalkable,
     clearCache,
     invalidateWalkGrids,
     rebuildWalkGrids,
     rebuildWalkGridsStaggered,
     isStaggeredRebuildComplete,
     getWalkProfile,
-    buildWalkGrid,
-    clonePath,
     CELL,
-    PROFILE_UNITS,
   };
 })();
 

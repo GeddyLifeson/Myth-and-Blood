@@ -56,12 +56,6 @@ class GameEventsSystem {
     else this._listeners.clear();
     return this;
   }
-  listenerCount(event) {
-    if (event) return this._listeners.get(event)?.length ?? 0;
-    let n = 0;
-    for (const list of this._listeners.values()) n += list.length;
-    return n;
-  }
   _add(event, handler, priority, once) {
     const list = this._listeners.get(event) ?? [];
     if (list.some((entry) => entry.fn === handler)) return;

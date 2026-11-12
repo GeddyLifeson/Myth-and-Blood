@@ -1425,14 +1425,8 @@ const Achievements = (() => {
     renderPanel,
     togglePanel,
     resetSession,
-    checkAll,
     evaluateRule,
     updateTopBar,
-    hasClub316,
-    CLUB_316_ID,
-    META_316_ID,
-    MILLENNIUM_ID,
-    TARGET,
   };
 })();
 

@@ -463,17 +463,6 @@ const Game = (() => {
     applyCamera();
   }
 
-  /** Pan tactical camera to a world point (sector assault focus). */
-  function focusWorld(wx, wy, opts = {}) {
-    if (Number.isFinite(wx)) GS.cameraWorldX = wx;
-    if (Number.isFinite(wy)) GS.cameraWorldY = wy;
-    if (opts.zoom != null && Number.isFinite(opts.zoom)) {
-      GS.cameraZoom = Math.max(0.55, Math.min(2.2, opts.zoom));
-    }
-    GS.cameraPlaced = true;
-    applyCamera();
-  }
-
   function getCameraViewport() {
     const insets = getPanelInsets();
     const width = Math.max(1, GS.canvas.width - insets.left - insets.right);
@@ -14397,22 +14386,6 @@ const Game = (() => {
     if (svc('Perf')) svc('Perf').end('draw');
   }
 
-  function purchaseOperativeSkill(faction, nodeId) {
-    if (!svc('OperativeSkillTrees')) return { ok: false, reason: 'Skill trees unavailable' };
-    const result = svc('OperativeSkillTrees').purchaseNode(faction, nodeId);
-    if (result.ok) {
-      for (const u of GS.units) {
-        if (u.team === 'player' && u.hp > 0) svc('OperativeSkillTrees').applyToUnit(u, GS.units);
-      }
-      const tree = svc('OperativeSkillTrees').getTree(faction);
-      const node = tree?.nodes?.[nodeId];
-      showMessage(`${tree?.label || faction}: ${node?.name || nodeId} unlocked!`, 260);
-    } else if (result.reason) {
-      showMessage(result.reason);
-    }
-    return result;
-  }
-
   function recruitCrossoverOperative(id) {
     const def = CrossoverDefs[id];
     if (!def) return false;
@@ -15840,20 +15813,14 @@ const Game = (() => {
     getHudRevision,
     getState,
     getDiagSnapshot,
-    endGame,
     setGameSpeed,
     cycleGameSpeed,
     resetSimClock,
     getSimulationSteps,
-    GAME_SPEED_OPTIONS:
-      typeof PacingTools !== 'undefined'
-        ? PacingTools.SPEED_OPTIONS
-        : [1, 1.5, 2, 3, 4, 5, 6, 8, 10],
     getSelectedUnitsInfo,
     getMinimapData,
     panCameraToFraction,
     focusSelection,
-    focusWorld,
     setSelectedHunt,
     toggleSelectedHunt,
     setSelectionFormation,
@@ -15871,7 +15838,6 @@ const Game = (() => {
     setDifficulty,
     recruitWweSuperstar,
     recruitCrossoverOperative,
-    purchaseOperativeSkill,
     applyCheatEffect,
     getDifficultyPercent,
     beginDayPhase,
@@ -15905,7 +15871,6 @@ const Game = (() => {
     creativeSpawnPlayerAt,
     creativeSpawnPlayerBuildingAt,
     creativeSpawnEnemyBuildingAt,
-    creativeSpawnSquadAt,
     creativeResetUnitToDef,
     creativeApplyStatEditor,
     creativeFillStatEditorFromSelection,
@@ -15941,7 +15906,6 @@ const Game = (() => {
     zoomCameraAt,
     zoomCameraToScale,
     getCameraZoom,
-    isScreenInMapViewport,
     isScreenInMapArea,
     setCameraKey,
     onSettingsChanged,
@@ -15955,7 +15919,6 @@ const Game = (() => {
     ascendSelectedUnit,
     recruitSelectedEcho,
     getAsymmetricMods,
-    getAsymmetricSnapshot,
   };
 })();
 

@@ -456,14 +456,10 @@ const Cosmetics = (() => {
     resolveVictoryCopy,
     spawnVictoryConfetti,
     getVictoryBackdropClass,
-    drawBannerPreview,
     renderSettings,
     bindSettings,
     isUnlockMet,
-    UNIT_SKINS,
     VICTORY_THEMES,
-    BANNER_PATTERNS,
-    BANNER_EMBLEMS,
   };
 })();
 

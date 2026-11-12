@@ -395,7 +395,6 @@ const MetaProgress = (() => {
     getCrossoverRecruited,
     getCheatsUsed,
     reset,
-    getData: () => ({ ...data }),
     getFactionMasteryTitles,
     getEarnedCreativeUnlocks,
     hasCreativeSkin,

@@ -724,12 +724,6 @@ const EternalLegacyTree = (() => {
     return { startTp: fx.startTp, invested: data.investedIds.length };
   }
 
-  function getBranchNodes(branchId) {
-    return Object.values(TREE_NODES)
-      .filter((n) => n.branch === branchId)
-      .sort((a, b) => (a.tier || 0) - (b.tier || 0) || a.name.localeCompare(b.name));
-  }
-
   function getMenuSnapshot() {
     load();
     refreshUnlocks();
@@ -874,21 +868,15 @@ const EternalLegacyTree = (() => {
 
   return {
     BRANCHES,
-    TIER_LABELS,
     TREE_NODES,
     computeEchoShards,
-    getSpentShards,
-    getAvailableShards,
     refreshUnlocks,
-    prereqsMet,
     canInvest,
     investNode,
     isInvested,
     getCombinedEffects,
     applyUnitBonuses,
     applyRunStartBonuses,
-    getAscensionTier,
-    getBranchNodes,
     getMenuSnapshot,
     getStateSnapshot,
     getLegacyEntries,

@@ -276,13 +276,6 @@ const MultiFrontSiege = (() => {
     };
   }
 
-  function mergeWaveSides(plan, rolledSides) {
-    if (!plan?.waveSides?.length) return rolledSides;
-    if (plan.waveSides.length >= 2) return plan.waveSides;
-    const merged = [...new Set([...(rolledSides || []), ...plan.waveSides])];
-    return merged.length ? merged : rolledSides;
-  }
-
   function checkWaveAnnouncement(wave, activeCount, hooks = {}) {
     if (
       announcedMultiFront ||
@@ -327,20 +320,15 @@ const MultiFrontSiege = (() => {
 
   return {
     MULTI_FRONT_MIN_WAVE,
-    MULTI_FRONT_MIN_FACTIONS,
     FRONT_LABELS,
-    SIEGE_DOCTRINES,
-    FACTION_DOCTRINES,
     resetRun,
     buildFrontPlan,
     getCurrentPlan,
     pickSpawnSide,
     pickCounterRaidTarget,
     resolveCounterRaidSpawn,
-    mergeWaveSides,
     checkWaveAnnouncement,
     getStateSnapshot,
-    formatIntel,
   };
 })();
 

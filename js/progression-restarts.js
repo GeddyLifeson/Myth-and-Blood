@@ -356,14 +356,12 @@ const ProgressionRestarts = (() => {
 
   return {
     ESCALATION_RESTARTS,
-    getRestartDef,
     isEscalationWave,
     shouldSkip,
     resetRun,
     syncFiredThroughWave,
     restoreSnapshot,
     getSnapshot,
-    bootstrapPlayerBase,
     performRestart,
     onWaveStart,
     getStateSnapshot,

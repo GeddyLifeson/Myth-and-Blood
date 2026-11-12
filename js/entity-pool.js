@@ -63,17 +63,6 @@ const EntityPool = (() => {
     }
   }
 
-  /** In-place filter; returns the same array reference. */
-  function purgeInPlace(list, keepFn) {
-    let w = 0;
-    for (let i = 0; i < list.length; i++) {
-      const item = list[i];
-      if (keepFn(item)) list[w++] = item;
-    }
-    list.length = w;
-    return list;
-  }
-
   /** In-place removal of dead units; returns the same array reference. */
   function purgeDeadFromList(list) {
     let w = 0;
@@ -117,12 +106,9 @@ const EntityPool = (() => {
     acquireBuilding,
     releaseBuilding,
     purgeDeadFromList,
-    purgeInPlace,
     releaseAllFrom,
     reset,
     getStats,
-    MAX_UNIT_POOL,
-    MAX_BUILDING_POOL,
   };
 })();
 

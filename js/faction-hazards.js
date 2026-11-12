@@ -113,10 +113,6 @@ const FactionHazards = (() => {
     spreadMessages = 0;
   }
 
-  function getHazardDef(type) {
-    return HAZARD_TYPES[type] || null;
-  }
-
   function getActiveFactions(wave) {
     if (typeof EnemyFactions === 'undefined') return [];
     return EnemyFactions.getActiveFactions(wave);
@@ -517,7 +513,6 @@ const FactionHazards = (() => {
     MIN_TERRITORY_TIER,
     HAZARD_TYPES,
     resetRun,
-    getHazardDef,
     spawnInitial,
     applyToUnit,
     onWaveStart,

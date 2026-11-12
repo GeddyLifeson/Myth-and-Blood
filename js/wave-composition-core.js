@@ -69,7 +69,7 @@ const WaveCompositionCore = (() => {
     return queue;
   }
 
-  return { buildWeightedSpawnQueue, mulberry32 };
+  return { buildWeightedSpawnQueue };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

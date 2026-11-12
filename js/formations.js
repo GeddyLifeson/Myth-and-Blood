@@ -119,7 +119,6 @@ const Formations = (() => {
 
   return {
     FORMATIONS,
-    ORDER,
     getFormation,
     getLabel,
     computeOffsets,

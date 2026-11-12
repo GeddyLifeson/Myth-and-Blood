@@ -2270,9 +2270,6 @@ const CrossoverHub = (() => {
   function getSelected() {
     return selectedId;
   }
-  function getActiveFaction() {
-    return activeFaction;
-  }
 
   function init() {
     document.getElementById('crossover-hub-open')?.addEventListener('click', () => {
@@ -2320,9 +2317,6 @@ const CrossoverHub = (() => {
     togglePanel,
     renderRoster,
     getSelected,
-    getActiveFaction,
     rosterForFaction,
-    getFeaturedOperativeId,
-    sortUnlockedFactions,
   };
 })();

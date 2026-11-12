@@ -491,5 +491,5 @@ const CreativeMode = (() => {
     syncToggles(gs);
   }
 
-  return { init, togglePanel, onHudUpdate, showInGame };
+  return { init, togglePanel, onHudUpdate };
 })();

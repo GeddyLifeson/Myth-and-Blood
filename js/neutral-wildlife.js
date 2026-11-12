@@ -149,10 +149,6 @@ const NeutralWildlife = (() => {
     announced = false;
   }
 
-  function getDef(type) {
-    return NEUTRAL_TYPES[type] || null;
-  }
-
   function scaleStat(base, wave, territoryTier = 0) {
     const w = 1 + Math.min(0.65, (wave || 0) / 150);
     const t = 1 + Math.min(0.25, (territoryTier || 0) * 0.04);
@@ -533,10 +529,8 @@ const NeutralWildlife = (() => {
 
   return {
     WAVE_MIN,
-    NEUTRAL_TYPES,
     EVENTS,
     resetRun,
-    getDef,
     createUnit,
     seedDens,
     onWaveStart,

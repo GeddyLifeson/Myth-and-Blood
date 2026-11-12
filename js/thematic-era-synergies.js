@@ -498,19 +498,15 @@ const ThematicEraSynergies = (() => {
   resetRun();
 
   return {
-    SYNERGY_DEFS,
     ECHO_DEFS,
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     resetRun,
     resolveThematicPath,
     getPathId,
-    getSynergyDef,
     getAncestralWeaponMult,
     getArcaneInfusionMods,
     getHeroEchoMods,
-    getSynergyTacticalMods,
-    getCombinedTacticalMods,
     getArcaneFleetRuneMult,
     getTechTreeLabel,
     applyThematicUnitBonuses,

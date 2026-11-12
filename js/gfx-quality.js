@@ -233,10 +233,6 @@ const GfxQuality = (() => {
     return effectiveTier;
   }
 
-  function getSetting() {
-    return setting;
-  }
-
   function getLabel() {
     const labels = { high: 'High', normal: 'Normal', reduced: 'Reduced', potato: 'Potato' };
     if (setting === 'auto') return `Auto (${labels[effectiveTier] || effectiveTier})`;
@@ -297,14 +293,12 @@ const GfxQuality = (() => {
     tick,
     get,
     getTier,
-    getSetting,
     getLabel,
     quantizeRotation,
     quantizeScale,
     shouldDrawUnitOverlay,
     allowProjectileTrails,
     allowDeathFx,
-    TIER_ORDER,
   };
 })();
 

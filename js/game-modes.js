@@ -427,15 +427,6 @@ const GameModes = (() => {
     return !isIronman();
   }
 
-  /** Economy / raze-settlements victory disabled — pure wave survival. */
-  function allowsEconomyVictory() {
-    return false;
-  }
-
-  function isPlanetConquestMode() {
-    return session?.modeId === 'planet_conquest';
-  }
-
   function getNightPrepMult() {
     return session?.timedNightMult ?? 1;
   }
@@ -794,14 +785,8 @@ const GameModes = (() => {
     if (!menu.seed) menu.recommendedStartId = null;
   }
 
-  function clearMenuSeed() {
-    menu.seed = '';
-    menu.recommendedStartId = null;
-  }
-
   return {
     MODES,
-    ACADEMY_START_OPTIONS,
     load,
     save,
     init,
@@ -811,29 +796,17 @@ const GameModes = (() => {
     endSession,
     restoreSession,
     getSession,
-    isIronman,
     canQuickSave,
     canRestartWave,
-    allowsEconomyVictory,
-    isPlanetConquestMode,
     getNightPrepMult,
     tickElapsed,
-    computeScore,
     recordResult,
-    getDailyChallenge,
-    getWeeklyChallenge,
-    getLeaderboard,
-    getPersonalBest,
     getScalingAdvice,
-    getScalingBreakdown,
-    exportSeedShare,
-    importSeedShare,
     random,
     createRng,
     setMenuMode,
     getMenu,
     setMenuSeed,
-    clearMenuSeed,
   };
 })();
 

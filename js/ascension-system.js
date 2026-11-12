@@ -476,46 +476,6 @@ const AscensionSystem = (() => {
     return unit.ascensionTitle;
   }
 
-  function getAscensionDmgMult(unit) {
-    if (!unit?.ascensionStageId) return 1;
-    const key = getChainKey(unit);
-    const chain = key ? UNIT_CHAINS[key] : null;
-    if (!chain) return 1;
-    let mult = 1;
-    for (const era of ['kingdom', 'galactic']) {
-      const s = getStageDef(chain, era);
-      if (!s) continue;
-      if (
-        unit.ascensionStageId === s.id ||
-        (era === 'galactic' && unit.ascensionStageId === chain.galactic?.id)
-      ) {
-        if (s.dmgMult) mult *= s.dmgMult;
-      }
-      if (unit.ascensionStageId === chain.kingdom?.id && era === 'kingdom' && s.dmgMult) {
-        mult = s.dmgMult;
-      }
-    }
-    const key2 = getChainKey(unit);
-    const c = key2 ? UNIT_CHAINS[key2] : null;
-    if (!c) return 1;
-    if (unit.ascensionStageId === c.kingdom?.id && c.kingdom?.dmgMult) return c.kingdom.dmgMult;
-    if (unit.ascensionStageId === c.galactic?.id) {
-      return (c.kingdom?.dmgMult || 1) * (c.galactic?.dmgMult || 1);
-    }
-    return mult;
-  }
-
-  function getAscensionHpMult(unit) {
-    const key = getChainKey(unit);
-    const c = key ? UNIT_CHAINS[key] : null;
-    if (!c || !unit?.ascensionStageId) return 1;
-    if (unit.ascensionStageId === c.kingdom?.id && c.kingdom?.hpMult) return c.kingdom.hpMult;
-    if (unit.ascensionStageId === c.galactic?.id) {
-      return (c.kingdom?.hpMult || 1) * (c.galactic?.hpMult || 1);
-    }
-    return 1;
-  }
-
   function onWaveStart(wave, ctx = {}) {
     if (!run) resetRun();
     if (ctx.creative) return null;
@@ -594,9 +554,7 @@ const AscensionSystem = (() => {
   resetRun();
 
   return {
-    ERA_GATES,
     UNIT_CHAINS,
-    BUILDING_CHAINS,
     resetRun,
     onRunStart,
     onWaveStart,
@@ -607,8 +565,6 @@ const AscensionSystem = (() => {
     reapplyAscensionBonuses,
     applySpawnBonusesFromBuildings,
     getDisplayTitle,
-    getAscensionDmgMult,
-    getAscensionHpMult,
     grantLegacyPoints,
     spendLegacyPoints,
     getStateSnapshot,

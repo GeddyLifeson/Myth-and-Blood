@@ -829,7 +829,7 @@ const Tooltips = (() => {
     }
   }
 
-  return { init, hide, refreshDynamic };
+  return { init, refreshDynamic };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

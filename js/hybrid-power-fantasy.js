@@ -351,16 +351,12 @@ const HybridPowerFantasy = (() => {
   resetRun();
 
   return {
-    FANTASY_DEFS,
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     APEX_WAVE,
     resetRun,
     evaluatePathPurity,
-    matchFantasyForRun,
-    getFantasyDef,
     isActive,
-    getFantasyTier,
     getFleetMods,
     getTacticalMods,
     applyUnitFantasy,

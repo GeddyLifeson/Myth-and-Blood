@@ -212,7 +212,6 @@ const PathWorkerBridge = (() => {
     shutdown,
     isSupported,
     isReady,
-    gridsAreReady,
     postWalkGrids,
     cancelPendingPaths,
     getGridGen,
@@ -221,7 +220,6 @@ const PathWorkerBridge = (() => {
     drainPathResults,
     prefetchSpawnQueue,
     takePrefetchedSpawnQueue,
-    PROFILE_ORDER,
   };
 })();
 

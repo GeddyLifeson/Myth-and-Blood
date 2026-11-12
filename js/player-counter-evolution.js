@@ -419,10 +419,8 @@ const PlayerCounterEvolution = (() => {
     isUnlocked,
     canExpedition,
     isCounterDoctrineUnlocked,
-    getUnlockedCounterDoctrines,
     getFactionModifiers,
     getEffectiveStage,
-    buildExpeditionTargets,
     executeCounterDoctrine,
     dispatchExpedition,
     resolveExpeditions,
@@ -430,7 +428,6 @@ const PlayerCounterEvolution = (() => {
     getExpeditionLootScale,
     checkWaveAnnouncement,
     getStateSnapshot,
-    isExpeditionUnit,
   };
 })();
 

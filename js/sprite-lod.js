@@ -55,10 +55,6 @@ const SpriteLod = (() => {
     return 0.3;
   }
 
-  function spawnCountScale(lod) {
-    return particleMultForLod(lod);
-  }
-
   function cacheFrameForLod(lod, frame, animState = 'idle') {
     if (animState === 'attack' || animState === 'hurt' || animState === 'death') return frame;
     return lod >= LOD.LOW ? 0 : frame;
@@ -70,14 +66,12 @@ const SpriteLod = (() => {
   }
 
   return {
-    LOD,
     getSceneLod,
     getUnitLod,
     isImportantUnit,
     shouldDrawUnitOverlays,
     shouldDrawUnitRings,
     particleMultForLod,
-    spawnCountScale,
     cacheFrameForLod,
     cacheAnimForLod,
   };

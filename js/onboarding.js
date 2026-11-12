@@ -284,7 +284,5 @@ const Onboarding = (() => {
     selectStart,
     dismissPanel,
     onGuidedTutorialDismissed,
-    setGuidedRunEnabled,
-    getSelectedStart: () => getStart(state.selectedStartId),
   };
 })();

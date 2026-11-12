@@ -342,8 +342,6 @@ const NarrativeThread = (() => {
   resetRun();
 
   return {
-    CROWN_ERA_BEATS,
-    LEGEND_KINDS,
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     APEX_WAVE,
@@ -352,8 +350,6 @@ const NarrativeThread = (() => {
     onWaveStart,
     onHeroHonored,
     scanLegends,
-    canonizeLegend,
-    classifyLegend,
     getLegendPowerMods,
     getTacticalMods,
     applyLegendBonuses,

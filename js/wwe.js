@@ -562,14 +562,6 @@ function isWweUnit(type) {
 const WweAcademy = (() => {
   let selectedId = null;
 
-  function canBuildAcademy(gs) {
-    return (
-      MetaProgress.isWweUnlocked() &&
-      (gs.tactical ?? 0) >= WWE_ACADEMY_COST &&
-      (gs.liveBuilders ?? 0) >= WWE_ACADEMY_BUILDERS
-    );
-  }
-
   function renderRoster(gs) {
     const grid = document.getElementById('wwe-roster-grid');
     if (!grid) return;
@@ -644,5 +636,5 @@ const WweAcademy = (() => {
     });
   }
 
-  return { init, togglePanel, renderRoster, canBuildAcademy, getSelected };
+  return { init, togglePanel, renderRoster, getSelected };
 })();

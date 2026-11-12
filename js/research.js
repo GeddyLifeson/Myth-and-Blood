@@ -681,10 +681,6 @@ const Research = (() => {
     return true;
   }
 
-  function isCompleted(id) {
-    return completed.has(id);
-  }
-
   function prereqsMet(node, wave) {
     if ((node.wave || 0) > (wave || 0)) return false;
     for (const p of node.prereq || []) {
@@ -1277,7 +1273,6 @@ const Research = (() => {
     startResearch,
     cancelResearch,
     completeResearch,
-    isCompleted,
     isDeployUnlocked,
     isBuildUnlocked,
     registerModUnlocks,
@@ -1286,8 +1281,6 @@ const Research = (() => {
     isDoomResearchUnlocked,
     isTpVeteranUpgradeUnlocked,
     countLabs,
-    getKillScienceValue,
-    getWaveKillScienceCap,
     getKillScienceStatus,
     getActiveInfo,
     getNodesForUI,

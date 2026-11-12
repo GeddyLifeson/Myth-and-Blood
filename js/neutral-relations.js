@@ -85,10 +85,6 @@ const NeutralRelations = (() => {
     return reputation;
   }
 
-  function reduceReputation(amount, wave = 0) {
-    return addReputation(-amount, wave);
-  }
-
   function shouldSkipPlayerAggro(unit, target, wave) {
     if (!target || target.team !== 'player') return false;
     if (unit?.alliedToPlayer) return true;
@@ -310,15 +306,11 @@ const NeutralRelations = (() => {
     getStance,
     isPactActive,
     addReputation,
-    reduceReputation,
-    shouldSkipPlayerAggro,
     findAggroTarget,
     onWildlifeSlain,
     onWaveEnd,
     onHuntPact,
     onWaveStart,
-    rollDiplomacyEvent,
-    spawnAlliedPack,
     getWildlifeSpawnMult,
     getStateSnapshot,
     formatSummary,

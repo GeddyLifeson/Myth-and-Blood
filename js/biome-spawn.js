@@ -190,9 +190,7 @@ const BiomeSpawn = (() => {
   return {
     BIOME_PROFILES,
     getBiomeAt,
-    getSpawnProfileAt,
     getDominantProfile,
-    applyWeightBiases,
     mergeSpawnWeights,
     adjustSpawnCount,
     biasSpawnPosition,

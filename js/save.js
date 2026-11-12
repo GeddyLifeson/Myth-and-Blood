@@ -195,13 +195,7 @@ const SaveManager = (() => {
 
   return {
     init,
-    listSlots,
-    saveToSlot,
-    loadFromSlot,
-    deleteSlot,
     renderPauseSlots,
-    validateSlot,
-    SLOT_COUNT,
   };
 })();
 

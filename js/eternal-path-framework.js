@@ -186,13 +186,6 @@ const EternalPathFramework = (() => {
     return null;
   }
 
-  function mapKingdomToPath(kingdomPathId) {
-    if (kingdomPathId === 'martial' || kingdomPathId === 'arcane' || kingdomPathId === 'mythic') {
-      return kingdomPathId;
-    }
-    return null;
-  }
-
   function mapCosmicToPath(cosmicPathId) {
     if (!cosmicPathId) return null;
     for (const pathId of PATH_IDS) {
@@ -679,20 +672,15 @@ const EternalPathFramework = (() => {
     KINGDOM_WAVE,
     GALACTIC_WAVE,
     PATH_IDS,
-    ETERNAL_PATHS,
     resetRun,
     mapFoundationToPath,
-    mapKingdomToPath,
     mapCosmicToPath,
-    syncFromLayers,
     onWaveStart,
     getDominantPathId,
     getPathTier,
-    getDominantTier,
     getFrameworkMods,
     getPathForUnit,
     applyPathUnitBonuses,
-    getPathProgression,
     getStateSnapshot,
     formatHudLine,
     formatIntelNote,

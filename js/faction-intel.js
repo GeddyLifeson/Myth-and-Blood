@@ -43,10 +43,6 @@ const FactionIntel = (() => {
     return focusedFactionId;
   }
 
-  function getFocusedFaction() {
-    return focusedFactionId;
-  }
-
   function getAllFactionDefs() {
     if (typeof EnemyFactions === 'undefined') return [];
     return Object.values(EnemyFactions.FACTIONS).sort((a, b) => a.waveMin - b.waveMin);
@@ -416,18 +412,14 @@ const FactionIntel = (() => {
 
   return {
     WAVE_MIN,
-    STAGE_LABELS,
     init,
     openPanel,
     closePanel,
     togglePanel,
     isPanelOpen,
     focusFaction,
-    getFocusedFaction,
-    selectFaction: focusFaction,
     buildIntelRows,
     formatSummary,
-    drawThreatMap,
     renderPanel,
     getStateSnapshot,
   };

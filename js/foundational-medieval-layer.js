@@ -421,7 +421,6 @@ const FoundationalMedievalLayer = (() => {
   load();
 
   return {
-    WAVE_MAX,
     PATHS,
     resetRun,
     onRunStart,
@@ -439,13 +438,11 @@ const FoundationalMedievalLayer = (() => {
     hasCrystallizedPath,
     getCrystallizedPaths,
     getRunSnapshot,
-    getPersistentSnapshot,
     getStateSnapshot,
     formatHudLine,
     formatIntelNote,
     getRunModifiers,
     getLegacyEntries,
-    isActiveWave,
   };
 })();
 
