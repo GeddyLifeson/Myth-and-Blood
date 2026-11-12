@@ -141,12 +141,6 @@ const MythicPathEvolution = (() => {
 
   function isPantheonPathActive(wave = 0) {
     if (!isUnlocked()) return false;
-    if ((wave | 0) >= GALACTIC_WAVE && typeof IntergalacticLayer !== 'undefined') {
-      if (IntergalacticLayer.getCosmicPathId?.() === 'pantheon_ascendant') return true;
-    }
-    if ((wave | 0) >= KINGDOM_WAVE && typeof GrandStrategy !== 'undefined') {
-      if (GrandStrategy.getKingdomPathId?.() === 'mythic') return true;
-    }
     if (typeof TechTreeBranches !== 'undefined' && TechTreeBranches.getRootId?.() === 'mythic') {
       return true;
     }
@@ -172,12 +166,9 @@ const MythicPathEvolution = (() => {
     if (!state) return;
     const wave = state._lastWave || 0;
     const galactic = (wave | 0) >= GALACTIC_WAVE;
-    const pantheon =
-      typeof IntergalacticLayer !== 'undefined' &&
-      IntergalacticLayer.getCosmicPathId?.() === 'pantheon_ascendant';
     const tier = scoreTier(state.legendScore, ARMADA_THRESHOLDS);
     state.godbloodArmada.tier = tier;
-    state.godbloodArmada.active = galactic && isPantheonPathActive(wave) && (pantheon || tier >= 1);
+    state.godbloodArmada.active = galactic && isPantheonPathActive(wave) && tier >= 1;
   }
 
   function isChampionUnlockReason(reason) {
@@ -403,8 +394,7 @@ const MythicPathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic =
-        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic = null;
       if (cosmic === 'pantheon_ascendant') {
         ctx.showMessage?.(
           'Pantheon Ascendant — literal gods and eternal champions now lead fleets across the void.',

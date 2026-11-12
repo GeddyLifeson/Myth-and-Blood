@@ -528,7 +528,7 @@ const OperativeSkillTrees = (() => {
       const onField = (units || []).filter(
         (u) => u.team === 'player' && u.hp > 0 && getFactionForUnit(u) === fid
       ).length;
-      if (!nodes.length && !onField && !(runPoints[fid] || 0)) continue;
+      if (!nodes.length && !onField && !runPoints[fid]) continue;
       factions.push({
         factionId: fid,
         label: tree.label,

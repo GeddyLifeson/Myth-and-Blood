@@ -123,12 +123,6 @@ const ArcanePathEvolution = (() => {
   }
 
   function isWeaverPathActive(wave = 0) {
-    if ((wave | 0) >= GALACTIC_WAVE && typeof IntergalacticLayer !== 'undefined') {
-      if (IntergalacticLayer.getCosmicPathId?.() === 'aether_lords') return true;
-    }
-    if ((wave | 0) >= KINGDOM_WAVE && typeof GrandStrategy !== 'undefined') {
-      if (GrandStrategy.getKingdomPathId?.() === 'arcane') return true;
-    }
     if (typeof TechTreeBranches !== 'undefined' && TechTreeBranches.getRootId?.() === 'arcane') {
       return true;
     }
@@ -153,12 +147,9 @@ const ArcanePathEvolution = (() => {
     if (!state) return;
     const wave = state._lastWave || 0;
     const galactic = (wave | 0) >= GALACTIC_WAVE;
-    const aetherLords =
-      typeof IntergalacticLayer !== 'undefined' &&
-      IntergalacticLayer.getCosmicPathId?.() === 'aether_lords';
     const tier = scoreTier(state.warpScore, SINGULARITY_THRESHOLDS);
     state.singularity.tier = tier;
-    state.singularity.active = galactic && isWeaverPathActive(wave) && (aetherLords || tier >= 1);
+    state.singularity.active = galactic && isWeaverPathActive(wave) && tier >= 1;
   }
 
   function recordAction(actionKey, detail = {}) {
@@ -350,8 +341,7 @@ const ArcanePathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic =
-        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic = null;
       if (cosmic === 'aether_lords') {
         ctx.showMessage?.(
           'Weavers of Fate ascend — early mages become cosmic sorcerers rewriting physics among the stars.',

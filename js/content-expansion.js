@@ -1059,12 +1059,6 @@ const ContentExpansion = (() => {
     ctx = gameCtx;
   }
 
-  function resolveSvc(id) {
-    if (ctx?.svc) return ctx.svc(id);
-    if (ctx?.services?.get) return ctx.services.get(id);
-    return typeof globalThis !== 'undefined' ? (globalThis[id] ?? null) : null;
-  }
-
   const ECONOMY_GEN_TP_CAP = 6;
 
   function countEconomyGens() {

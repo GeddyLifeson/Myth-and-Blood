@@ -1463,10 +1463,7 @@ const Encyclopedia = (() => {
     const chronicles = typeof Chronicles !== 'undefined' ? Chronicles.getEncyclopediaEntries() : [];
     const story = typeof StoryLore !== 'undefined' ? StoryLore.getEncyclopediaEntries() : [];
     const legacy = typeof Legacy !== 'undefined' ? Legacy.getLegacyEntries() : [];
-    const journey =
-      typeof LayerDesign !== 'undefined' && LayerDesign.getEncyclopediaEntries
-        ? LayerDesign.getEncyclopediaEntries()
-        : [];
+    const journey = [];
     return [
       ...journey,
       ...loreExpanded,

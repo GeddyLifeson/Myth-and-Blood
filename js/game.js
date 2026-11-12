@@ -188,7 +188,6 @@ const Game = (() => {
   GS.gsCtxCache = null;
   GS.igCtxFrame = -1;
   GS.igCtxCache = null;
-  GS.grandStrategyHookFns = null;
   GS.thematicSynSnapTick = -1;
   GS.thematicSynSnapCache = null;
   GS.snapCacheTick = -1;
@@ -198,11 +197,8 @@ const Game = (() => {
   GS.evolutionMeterTick = -1;
   GS.evolutionMeterCache = null;
   GS.updateThrottleCtx = null;
-  GS.macroPanelRenderTick = 0;
-  const MACRO_PANEL_RENDER_EVERY = 5;
   GS.castleAnchorTick = -1;
   const castleAnchorCache = new Map();
-  const exportUnitsScratch = [];
   const overlapNeighborsScratch = [];
   GS.cachedSelectedSet = null;
   GS.cachedSelectionSig = '';
@@ -792,14 +788,6 @@ const Game = (() => {
     return true;
   }
 
-  function cycleSelectionFormation() {
-    if (typeof Formations === 'undefined') return GS.selectionFormation;
-    GS.selectionFormation = Formations.nextFormationId(GS.selectionFormation);
-    if (typeof Analytics !== 'undefined') Analytics.onFormationUsed(GS.selectionFormation);
-    syncInteractionState();
-    return GS.selectionFormation;
-  }
-
   function reformSelectionFormation(formationId = GS.selectionFormation) {
     const live = getSelectedLiveUnits();
     if (live.length < 2) {
@@ -863,10 +851,6 @@ const Game = (() => {
 
   function trackPointer(sx, sy) {
     GS.pointerScreen = { sx, sy };
-  }
-
-  function getPointerScreen() {
-    return GS.pointerScreen;
   }
 
   function handlePointerMove(sx, sy) {
@@ -963,14 +947,6 @@ const Game = (() => {
     return {
       x: GS.cameraWorldX + (sx - vp.centerX) / GS.viewScale,
       y: GS.cameraWorldY + (sy - vp.centerY) / GS.viewScale,
-    };
-  }
-
-  function worldToScreen(wx, wy) {
-    const vp = getCameraViewport();
-    return {
-      x: vp.centerX + (wx - GS.cameraWorldX) * GS.viewScale,
-      y: vp.centerY + (wy - GS.cameraWorldY) * GS.viewScale,
     };
   }
 
@@ -1311,30 +1287,6 @@ const Game = (() => {
   }
 
   /** One-time full-map terrain roll (wave 1). Later growth uses populateNewTerritory only. */
-  /** Pending hazard spawn opts for next generateBattlefield (e.g. conquest night 0). */
-  GS.pendingHazardSpawnOpts = null;
-  /** Extra waves to keep fair hazard placement (conquest night 0 + first dawn). */
-  GS.conquestHazardGraceWaves = 0;
-
-  function setHazardSpawnOpts(opts) {
-    GS.pendingHazardSpawnOpts = opts || null;
-  }
-
-  function getConquestHazardGraceOpts() {
-    if (GS.conquestHazardGraceWaves <= 0) return null;
-    return {
-      densityMult: 0.32,
-      northOnly: true,
-      excludeNearPlayerRally: true,
-      rallyClearRadius: 140,
-      maxHazards: 5,
-      noSpread: true,
-      noTopUp: false,
-      scaleMult: 0.55,
-      damageMult: 0.65,
-    };
-  }
-
   function generateBattlefield() {
     const preserved = GS.decorations.filter((d) => d.type === 'barricade' && d.hp > 0);
     GS.decorations = [...preserved];
@@ -1364,8 +1316,7 @@ const Game = (() => {
     }
 
     if (svc('GameDepth')) {
-      const hazCtx = GS.pendingHazardSpawnOpts || {};
-      GS.pendingHazardSpawnOpts = null;
+      const hazCtx = {};
       GS.hazards = svc('GameDepth').spawnHazards(
         GS.worldW,
         GS.worldH,
@@ -2772,43 +2723,6 @@ const Game = (() => {
       }
     }
     playSfx('nightFall');
-    if (svc('IntergalacticLayer')) {
-      svc('IntergalacticLayer').onWaveEnd(GS.wave, getIntergalacticCtx());
-    }
-    if (typeof HybridMoments !== 'undefined') {
-      const hybridWin =
-        GS.playerCasualtiesThisWave <= Math.max(2, Math.floor(GS.waveEnemyTotal * 0.35));
-      HybridMoments.onWaveEnd(
-        GS.wave,
-        {
-          wave: GS.wave,
-          worldW: GS.worldW,
-          showMessage,
-          addHighlight,
-          floatingText: floatStatus,
-        },
-        hybridWin
-      );
-    }
-    if (svc('GrandStrategy')) {
-      svc('GrandStrategy').onWaveEnd(GS.wave, {
-        ...getGrandStrategyCtx(),
-        grantReinforce: (n) => {
-          let spawned = 0;
-          for (let i = 0; i < n; i++) {
-            const u = spawnUnit('footman', GS.worldW / 2 - 40 + i * 28, GS.deployY, 'player');
-            if (!u) break;
-            applyPlayerStatMods(u);
-            u.targetY = GS.rallyY;
-            GS.units.push(u);
-            spawned++;
-          }
-          if (spawned > 0) {
-            showMessage(`Grand Strategy levies — ${spawned} reinforcement(s) mustered!`, 240);
-          }
-        },
-      });
-    }
     prefetchSpawnQueueForWave(GS.wave + 1);
     svc('FloatingText')?.prune?.(true);
     svc('Particles')?.prune?.(true);
@@ -3039,27 +2953,8 @@ const Game = (() => {
         }
       }
     }
-    if (
-      unit.team === 'player' &&
-      svc('IntergalacticLayer') &&
-      svc('IntergalacticLayer').isActive(GS.wave)
-    ) {
-      const igDmg = svc('IntergalacticLayer').getPlanetaryDefenseMods().playerDmgMult || 1;
-      dmg = Math.floor(dmg * igDmg);
-      const cosmicDmg = svc('IntergalacticLayer').getCosmicUnitDmgMult?.(unit, GS.wave) || 1;
-      if (cosmicDmg > 1) dmg = Math.round(dmg * cosmicDmg);
-      if (svc('IntergalacticLayer').shouldCosmicFirstStandKill) {
-        dmg = svc('IntergalacticLayer').shouldCosmicFirstStandKill(unit, target, dmg);
-      }
-    }
-    if (unit.team === 'player' && svc('GrandStrategy') && svc('GrandStrategy').isActive(GS.wave)) {
-      const gsDmg = svc('GrandStrategy').getTacticalModifiers(GS.wave).playerDmgMult || 1;
-      if (gsDmg > 1) dmg = Math.round(dmg * gsDmg);
-    }
     if (unit.team === 'player' && svc('GameDepth') && svc('GameDepth').isVanillaAlly(unit)) {
       let obsoleteMult = svc('GameDepth').getVanillaObsoleteMult(unit, GS.wave);
-      const cosmicFloor = svc('IntergalacticLayer')?.getCosmicObsoleteOverride?.(unit, GS.wave);
-      if (cosmicFloor != null) obsoleteMult = Math.max(obsoleteMult, cosmicFloor);
       dmg = Math.round(dmg * obsoleteMult);
     }
     const out = Math.round(dmg);
@@ -3089,21 +2984,6 @@ const Game = (() => {
       isDayPhase: isDayPhase(),
       visionMult: getFogVisionMult(),
     };
-    if (
-      svc('PlanetWarfare') &&
-      svc('PlanetWarfare').isActive(GS.wave) &&
-      !svc('PlanetWarfare').isPositionSpotted(unit.x, unit.y, {
-        wave: GS.wave,
-        worldH: GS.worldH,
-        units: GS.units,
-        buildings: GS.buildings,
-        unit,
-        visionMult: getFogVisionMult(),
-        control: svc('PlanetWarfare').getControl(),
-      })
-    ) {
-      return true;
-    }
     if (svc('AdvancedDifficulty') && svc('AdvancedDifficulty').isEnemyFogHidden) {
       return svc('AdvancedDifficulty').isEnemyFogHidden(unit, fogCtx);
     }
@@ -3168,7 +3048,7 @@ const Game = (() => {
       activeFactionStages: activeStages,
       hostKingdomTotal,
       enemySiteCount: unitCounts.enemyEconomy,
-      planetControl: svc('PlanetWarfare') ? svc('PlanetWarfare').getControl() : 0,
+      planetControl: 0,
       waveSince200: Math.max(
         0,
         GS.wave - (typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200)
@@ -3203,132 +3083,6 @@ const Game = (() => {
     return cachedSnap('asymmetricWarfareLight', () =>
       svc('AsymmetricWarfare').getStateSnapshot(getAsymmetricContext(true))
     );
-  }
-
-  function getGrandStrategyHookFns() {
-    if (GS.grandStrategyHookFns) return GS.grandStrategyHookFns;
-    GS.grandStrategyHookFns = {
-      spawnMidWaveUnits: (types) => {
-        if (GS.state !== 'playing' || !isDayPhase() || !types?.length) return 0;
-        let spawned = 0;
-        for (let i = 0; i < types.length; i++) {
-          const u = spawnUnit(
-            types[i],
-            60 + Math.random() * Math.max(80, GS.worldW - 120),
-            GS.deployY - 10,
-            'player'
-          );
-          if (!u) continue;
-          applyPlayerStatMods(u);
-          if (svc('ContentExpansion')) svc('ContentExpansion').applyLoadoutToUnit(u);
-          u.targetY = GS.rallyY;
-          u.huntMode = GS.globalHunt && u.canHunt;
-          GS.units.push(u);
-          spawned++;
-        }
-        if (spawned > 0) playSfx('reinforce');
-        return spawned;
-      },
-      queueReinforce: (types) => {
-        if (GS.state !== 'playing' || !types?.length) return 0;
-        for (const t of types) GS.pendingReinforce.push(t);
-        return types.length;
-      },
-      healPlayerArmy: (amount) => {
-        let healed = 0;
-        for (const u of GS.units) {
-          if (u.team !== 'player' || u.hp <= 0) continue;
-          const before = u.hp;
-          u.hp = Math.min(u.maxHp, u.hp + (amount || 0));
-          if (u.hp > before) {
-            healed++;
-            svc('Particles')?.heal?.(u.x, u.y);
-          }
-        }
-        return healed;
-      },
-      boostPlayerMorale: (amount) => {
-        let n = 0;
-        for (const u of GS.units) {
-          if (u.team !== 'player' || u.hp <= 0) continue;
-          u.morale = Math.min(u.maxMorale, u.morale + (amount || 0));
-          u.demoralized = false;
-          u.witnessDeaths = 0;
-          n++;
-        }
-        return n;
-      },
-      delayEnemySpawns: (ticks) => {
-        if (GS.state !== 'playing' || !isDayPhase()) return false;
-        const t = Math.max(0, ticks | 0);
-        GS.spawnDelayBonus += t;
-        GS.spawnTimer += t;
-        return true;
-      },
-      damageEnemyArmyPct: (pct) => {
-        let n = 0;
-        const p = Math.max(0, Math.min(0.5, pct || 0));
-        for (const u of GS.units) {
-          if (u.team !== 'enemy' || u.hp <= 0) continue;
-          const dmg = Math.max(1, Math.floor(u.hp * p));
-          u.hp = Math.max(1, u.hp - dmg);
-          n++;
-        }
-        return n;
-      },
-    };
-    return GS.grandStrategyHookFns;
-  }
-
-  function getGrandStrategyTacticalHooks() {
-    return {
-      phase: isNightPhase() ? 'night' : 'day',
-      ...getGrandStrategyHookFns(),
-    };
-  }
-
-  function getIntergalacticCtx() {
-    if (GS.igCtxFrame === GS.presentationFrame && GS.igCtxCache) return GS.igCtxCache;
-    const asym = getAsymmetricSnapshotLight();
-    GS.igCtxCache = {
-      wave: GS.wave,
-      planetControl: svc('PlanetWarfare') ? svc('PlanetWarfare').getControl() : 0,
-      hostThreat: asym?.hostThreatLevel ?? 0,
-      creative: GS.creativeMode,
-      paused: GS.paused,
-      now: performance.now?.() || Date.now(),
-      showMessage,
-      addHighlight,
-    };
-    GS.igCtxFrame = GS.presentationFrame;
-    return GS.igCtxCache;
-  }
-
-  function getGrandStrategyCtx() {
-    if (GS.gsCtxFrame === GS.presentationFrame && GS.gsCtxCache) return GS.gsCtxCache;
-    const colony = GS.colonySnapshot || getLiveColonyState()?.colony;
-    const asym = getAsymmetricSnapshotLight();
-    GS.gsCtxCache = {
-      wave: GS.wave,
-      colonyRatio: colony?.threatRatio ?? 1,
-      planetControl: svc('PlanetWarfare') ? svc('PlanetWarfare').getControl() : 0,
-      hostThreat: asym?.hostThreatLevel ?? 0,
-      enemyBuildings: unitCounts.enemyBuildings,
-      tactical: GS.tactical,
-      playerArmy: unitCounts.player,
-      hamlets: unitCounts.hamlets,
-      buildings: GS.buildings,
-      spyNetwork: GS.spyNetwork,
-      creative: GS.creativeMode,
-      paused: GS.paused,
-      now: performance.now?.() || Date.now(),
-      showMessage,
-      addHighlight,
-      phase: isNightPhase() ? 'night' : 'day',
-      ...getGrandStrategyHookFns(),
-    };
-    GS.gsCtxFrame = GS.presentationFrame;
-    return GS.gsCtxCache;
   }
 
   function getProgressionRestartCtx() {
@@ -3481,10 +3235,6 @@ const Game = (() => {
     if (svc('AdvancedDifficulty'))
       return svc('AdvancedDifficulty').getDifficultyPercent(GS.difficultyId);
     return DIFFICULTY_BASE_PERCENT[GS.difficultyId] ?? 100;
-  }
-
-  function getMissLimit() {
-    return getDifficulty().missLimit ?? getDifficultyDef(GS.difficultyId).missLimit;
   }
 
   function findLivePlayerOfType(type) {
@@ -3718,7 +3468,6 @@ const Game = (() => {
     }
     if (u) applyPlayerStatMods(u);
     svc('UI').updateHUD(true);
-    if (svc('GrandStrategy')?.panelOpen) svc('GrandStrategy').renderPanel?.(getState());
     return true;
   }
 
@@ -3772,9 +3521,6 @@ const Game = (() => {
         if (mythic) u.morale = Math.min(u.maxMorale, u.morale + fmods.mythicMorale);
       }
       u.foundationalDnaApplied = true;
-    }
-    if (typeof IntergalacticLayer !== 'undefined' && !GS.creativeMode) {
-      IntergalacticLayer.applyCosmicUnitBonuses(u, GS.wave);
     }
     if (typeof AscensionSystem !== 'undefined' && !GS.creativeMode) {
       AscensionSystem.applySpawnBonusesFromBuildings(u, GS.buildings);
@@ -5487,14 +5233,6 @@ const Game = (() => {
           y: 8 + Math.random() * 20,
         };
     }
-    if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
-      pos = svc('PlanetWarfare').modifySpawnPos(side, pos, {
-        wave: GS.wave,
-        worldW: GS.worldW,
-        worldH: GS.worldH,
-        control: svc('PlanetWarfare').getControl(),
-      });
-    }
     if (svc('BiomeSpawn')) {
       pos = svc('BiomeSpawn').biasSpawnPosition(
         pos,
@@ -5533,14 +5271,6 @@ const Game = (() => {
     }
     if (sides.length <= 1) return sides[0] || 'north';
     return sides[Math.floor(gameRandom() * sides.length)];
-  }
-
-  function countUnitProducingBuildings() {
-    let n = 0;
-    for (const b of GS.buildings) {
-      if (isUnitProducingBuilding(b)) n++;
-    }
-    return n;
   }
 
   function checkPlayerElimination() {
@@ -5702,25 +5432,6 @@ const Game = (() => {
     }
   }
 
-  /** Immortal veterans on field so endgame modes can found any academy type. */
-  function bootstrapAcademyMentorsForEndgame() {
-    const mentorTypes = [
-      ...new Set(ACADEMY_BUILD_TYPES.map((t) => getAcademyMentorUnitType(t)).filter(Boolean)),
-    ];
-    let ox = GS.worldW / 2 - 140;
-    const y = GS.deployY - 95;
-    for (const type of mentorTypes) {
-      const u = spawnUnit(type, ox, y, 'player');
-      applyPlayerStatMods(u);
-      u.vetTier = MAX_VETERAN_TIER;
-      if (type === 'footman') u.honorName = u.honorName || 'Crown';
-      u.targetY = GS.rallyY;
-      u.huntMode = GS.globalHunt;
-      GS.units.push(u);
-      ox += 26;
-    }
-  }
-
   function bootstrapAcademyEraStart(targetWave) {
     const tw = Math.max(ACADEMY_ERA_WAVE, Math.min(targetWave || 105, 500));
     releaseAllUnits();
@@ -5782,148 +5493,6 @@ const Game = (() => {
     }
     refreshUnitCounts();
     invalidateStateCache();
-  }
-
-  function bootstrapPlanetConquestStart() {
-    const tw = (typeof PlanetConquest !== 'undefined' && PlanetConquest.WAVE_MIN) || 500;
-    releaseAllUnits();
-    releaseAllBuildings();
-    GS.wave = tw;
-    GS.tactical = 180;
-    applyWorldSize(GS.wave);
-    // Fair first night: thin northern hazards, clear of player rally (no burn carpet).
-    setHazardSpawnOpts({
-      densityMult: 0.28,
-      northOnly: true,
-      excludeNearPlayerRally: true,
-      rallyClearRadius: 140,
-      maxHazards: 4,
-      noSpread: true,
-      scaleMult: 0.55,
-      damageMult: 0.65,
-      noFallback: false,
-    });
-    // Keep fair placement through first dawn (begin day → WAVE_START) so burn carpet cannot return.
-    GS.conquestHazardGraceWaves = 1;
-    generateBattlefield();
-    invalidateObstacles();
-    resetCamera();
-    tryRtsMapExpansion();
-
-    const cx = GS.worldW / 2;
-    const wy = GS.rallyY - 50;
-    for (let i = -4; i <= 4; i++) bootstrapPlaceComplete('wall', cx + i * 28, wy);
-    bootstrapPlaceComplete('outpost', cx, wy - 35);
-    bootstrapPlaceComplete('hamlet', cx - 150, wy - 95);
-    bootstrapPlaceComplete('hamlet', cx + 150, wy - 95);
-    bootstrapPlaceComplete('merchant_guild', cx, wy - 125);
-    [
-      'academy_footman',
-      'academy_archer',
-      'academy_knight',
-      'academy_mage',
-      'academy_builder',
-      'academy_sapper',
-    ].forEach((t, i) => {
-      bootstrapPlaceComplete(t, cx - 120 + i * 42, wy - 28);
-    });
-
-    bootstrapSpawnArmy([
-      { type: 'knight', count: 8 },
-      { type: 'archer', count: 8 },
-      { type: 'footman', count: 6 },
-      { type: 'mage', count: 3 },
-      { type: 'builder', count: 4 },
-      { type: 'sapper', count: 3 },
-      { type: 'scout', count: 2 },
-    ]);
-    bootstrapSpawnArmy([
-      { type: 'knight', count: 4 },
-      { type: 'archer', count: 4 },
-    ]);
-    bootstrapEnemyEconomyForWave(tw);
-    if (svc('Research')) svc('Research').grantBootstrapUnlocks(tw);
-    invalidateObstacles();
-
-    GS.timeOfDay = 'night';
-    GS.nightTimer = Math.floor(
-      NIGHT_PREP_TICKS * (svc('GameModes') ? svc('GameModes').getNightPrepMult() : 1)
-    );
-    addHighlight('era', `Planet Conquest — wave ${tw}`);
-    bootstrapAcademyMentorsForEndgame();
-    if (svc('PlanetConquest')) {
-      svc('PlanetConquest').onWaveStart(GS.wave, getPlanetConquestCtx());
-    }
-    // Seed full progression + GS/IG so jump-in feels earned (§7).
-    if (typeof MacroBootstrap !== 'undefined') {
-      const session = svc('GameModes') ? svc('GameModes').getSession() : null;
-      MacroBootstrap.bootstrapProgressionForWave(tw, {
-        showMessage,
-        addHighlight,
-        creative: false,
-        silent: true,
-        pathPreset: session?.pathPreset || null,
-      });
-    } else {
-      svc('GrandStrategy')?.bootstrapForWave?.(tw, { showMessage, addHighlight });
-      svc('IntergalacticLayer')?.bootstrapForWave?.(tw, { showMessage, addHighlight });
-    }
-    refreshUnitCounts();
-    invalidateStateCache();
-
-    // Planet map hub first (§0.3.3) — deploy to surface enters night prep.
-    // If the strategic map is unavailable (headless / missing module), stay on surface unpaused.
-    showMessage(
-      `Planet Conquest — wave ${tw}. Choose a sector on the planet map, then deploy to the surface.`,
-      420
-    );
-    svc('FloatingText')?.status?.(GS.worldW / 2, 56, 'PLANET CONQUEST', '#c060ff');
-    if (typeof StrategicMapView !== 'undefined' && StrategicMapView.open) {
-      setPaused(true, { silent: true });
-      let opened = false;
-      try {
-        opened = !!StrategicMapView.open({
-          scale: 'planet',
-          source: 'planet_conquest',
-          intro: true,
-          silent: true,
-        });
-      } catch (err) {
-        opened = false;
-        if (typeof console !== 'undefined') console.warn?.('Strategic map intro failed', err);
-      }
-      if (!opened) {
-        setPaused(false, { silent: true });
-        showMessage(
-          `Planet Conquest — wave ${tw}. Night prep on the surface. Eliminate realms, then Worldheart.`,
-          360
-        );
-      }
-    }
-  }
-
-  /** Called when leaving conquest intro map onto the surface. */
-  function onPlanetConquestSurfaceDeploy(opts = {}) {
-    const fid =
-      opts.factionId ||
-      (typeof PlanetConquest !== 'undefined' ? PlanetConquest.getFocusedSector?.() : null);
-    if (fid && typeof PlanetConquest !== 'undefined' && PlanetConquest.getSectorCenterX) {
-      const sx = PlanetConquest.getSectorCenterX(fid, GS.worldW);
-      if (sx != null) focusWorld(sx, GS.rallyY - 40, { zoom: 1 });
-    } else {
-      resetCamera();
-    }
-    showMessage(
-      'Surface night prep — ember rings burn living troops; route around orc fire pits in the north.',
-      380
-    );
-    if (fid) {
-      const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
-      showMessage(
-        `Assault focus: ${def?.name || fid} sector. Push that band when day begins.`,
-        280
-      );
-    }
   }
 
   function maybeCampaignNarrative() {
@@ -6015,32 +5584,6 @@ const Game = (() => {
     endGame(true);
   }
 
-  function getPlanetConquestCtx(hooks = {}) {
-    return {
-      modeId: getRunModeId(),
-      worldW: GS.worldW,
-      worldH: GS.worldH,
-      buildings: GS.buildings,
-      units: GS.units,
-      spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
-      hooks: {
-        showMessage,
-        addHighlight,
-        floatingText: floatStatus,
-        ...hooks,
-      },
-    };
-  }
-
-  function checkPlanetConquestVictory() {
-    if (GS.creativeMode || GS.state !== 'playing') return;
-    const modeId = getRunModeId();
-    if (!svc('PlanetConquest') || !svc('PlanetConquest').shouldUseConquestVictory(GS.wave, modeId))
-      return;
-    if (!svc('PlanetConquest').isVictoryReady(GS.wave, modeId)) return;
-    triggerPlanetConquestVictory();
-  }
-
   GS._gameEventBusWired = false;
 
   /** Register lifecycle subscribers — keeps module hooks out of game-loop call sites. */
@@ -6074,22 +5617,10 @@ const Game = (() => {
       if (svc('Chronicles')) {
         svc('Chronicles').appendWaveReport(p.wave, p.chronicleReport);
       }
-      if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(p.wave)) {
-        svc('PlanetWarfare').onWaveEnd(p.wave, { buildings: GS.buildings, showMessage });
-      }
       if (svc('AsymmetricWarfare')) {
-        const pw = svc('PlanetWarfare')
-          ? svc('PlanetWarfare').getStateSnapshot(
-              p.wave,
-              GS.worldW,
-              GS.worldH,
-              GS.buildings,
-              GS.units
-            )
-          : null;
         svc('AsymmetricWarfare').onWaveEnd(p.wave, {
           enemySitesCleared: p.enemySitesCleared,
-          northernKills: pw?.northernKillsThisWave || 0,
+          northernKills: 0,
           structuresRazed: p.structuresRazed,
         });
       }
@@ -6104,10 +5635,6 @@ const Game = (() => {
       }
       if (svc('NeutralRelations')) {
         svc('NeutralRelations').onWaveEnd(p.wave, { hooks: { showMessage } });
-      }
-      if (svc('PlanetConquest')) {
-        svc('PlanetConquest').onWaveEnd(p.wave, getPlanetConquestCtx());
-        checkPlanetConquestVictory();
       }
       if (svc('DynamicMapEvents')) {
         svc('DynamicMapEvents').prepareNextEvent(p.wave + 1, {
@@ -6147,8 +5674,7 @@ const Game = (() => {
         });
       }
       if (svc('FactionHazards')) {
-        const graceOpts = getConquestHazardGraceOpts() || {};
-        if (GS.conquestHazardGraceWaves > 0) GS.conquestHazardGraceWaves--;
+        const graceOpts = {};
         if (!p.hazards.length && p.territoryTier >= svc('FactionHazards').MIN_TERRITORY_TIER) {
           p.hazards = svc('FactionHazards').spawnInitial(
             GS.worldW,
@@ -6193,19 +5719,6 @@ const Game = (() => {
       }
       if (svc('OperativeSkillTrees')) {
         svc('OperativeSkillTrees').onWaveStart(p.wave, GS.units);
-      }
-      if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(p.wave)) {
-        const hostSnap = svc('EnemyFactions')
-          ? svc('EnemyFactions').getStateSnapshot(p.wave, GS.buildings, GS.spawnQueue)
-          : null;
-        p.planetCreep = svc('PlanetWarfare').onWaveStart(p.wave, {
-          buildings: GS.buildings,
-          hostKingdomTotal: hostSnap?.hostKingdomTotal || 0,
-          asymmetricCreepMult: getAsymmetricMods().planetCreepMult || 1,
-        });
-      }
-      if (svc('PlanetConquest')) {
-        svc('PlanetConquest').onWaveStart(p.wave, getPlanetConquestCtx());
       }
       if (svc('AsymmetricWarfare')) {
         const asymCtx = getAsymmetricContext();
@@ -6256,18 +5769,8 @@ const Game = (() => {
           researchSpeedMult: eternalFx?.researchSpeedMult,
         });
       }
-      if (svc('PlanetWarfare')) {
-        svc('PlanetWarfare').onEnemySlain(p.unit, { wave: p.wave, worldH: GS.worldH });
-      }
       if (svc('FactionReputation')) {
         svc('FactionReputation').onEnemySlain(p.unit, p.wave, { hooks: { showMessage } });
-      }
-      if (svc('PlanetConquest')) {
-        svc('PlanetConquest').onEnemySlain(p.unit, p.wave, getPlanetConquestCtx());
-        if (p.unit.isPlanetBoss) {
-          svc('PlanetConquest').onPlanetBossSlain(p.unit, p.wave, getPlanetConquestCtx());
-        }
-        checkPlanetConquestVictory();
       }
     });
 
@@ -6358,24 +5861,6 @@ const Game = (() => {
       wave: GS.wave,
       playerUnits,
     });
-  }
-
-  function triggerPlanetConquestVictory() {
-    if (GS.state !== 'playing') return;
-    if (!svc('PlanetConquest')?.isBossDefeated?.()) return;
-    GS.victoryReason = 'planet_conquest';
-    addHighlight('campaign', 'Worldheart Tyrant slain — true victory');
-    const narrative = LoreData?.CAMPAIGN_NARRATIVE?.trueVictory;
-    showMessage(
-      narrative?.hook ||
-        'Chronicle — The Worldheart Tyrant falls. True victory — the planet is yours.',
-      480
-    );
-    if (narrative?.sub) showMessage(narrative.sub, 400);
-    else showMessage('Every hostile realm is broken. Your crown rules the world.', 400);
-    svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2 - 20, 'TRUE VICTORY', '#80ffa0');
-    ach('true_victory', { bossSlain: true, wave: GS.wave, mode: getRunModeId() });
-    endGame(true);
   }
 
   function tryRtsMapExpansion() {
@@ -7078,7 +6563,6 @@ const Game = (() => {
       eliteSlots: 0,
     };
     GS.hazards = [];
-    GS.conquestHazardGraceWaves = 0;
     GS.mapsRevealed = false;
     GS.generalThreatCount = 0;
     GS.generalThreatCd = 0;
@@ -7107,7 +6591,6 @@ const Game = (() => {
     }
     if (svc('EnemyFactions')) svc('EnemyFactions').resetRun();
     if (svc('FactionReputation')) svc('FactionReputation').resetRun();
-    if (svc('PlanetWarfare')) svc('PlanetWarfare').resetRun();
     if (svc('AsymmetricWarfare')) svc('AsymmetricWarfare').resetRun();
     if (svc('SettlementRaids')) svc('SettlementRaids').resetRun();
     if (svc('MultiFrontSiege')) svc('MultiFrontSiege').resetRun();
@@ -7120,10 +6603,7 @@ const Game = (() => {
     if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').resetRun();
     if (svc('DynamicMapEvents')) svc('DynamicMapEvents').resetRun();
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
-    if (svc('GrandStrategy')) svc('GrandStrategy').resetRun();
-    if (svc('IntergalacticLayer')) svc('IntergalacticLayer').resetRun();
     if (typeof ProgressionRestarts !== 'undefined') ProgressionRestarts.resetRun();
-    if (typeof HybridMoments !== 'undefined') HybridMoments.resetRun();
     if (typeof PacingTools !== 'undefined') PacingTools.resetRun();
     if (typeof FoundationalMedievalLayer !== 'undefined') FoundationalMedievalLayer.resetRun();
     if (typeof AscensionSystem !== 'undefined') AscensionSystem.resetRun();
@@ -7131,7 +6611,6 @@ const Game = (() => {
     if (typeof HybridPowerFantasy !== 'undefined') HybridPowerFantasy.resetRun();
     if (typeof NarrativeThread !== 'undefined') NarrativeThread.resetRun();
     if (typeof TechTreeBranches !== 'undefined') TechTreeBranches.resetRun();
-    if (typeof GrandStrategyMidBranches !== 'undefined') GrandStrategyMidBranches.resetRun();
     if (typeof IntergalacticLateBranches !== 'undefined') IntergalacticLateBranches.resetRun();
     if (typeof EternalPathFramework !== 'undefined') EternalPathFramework.resetRun();
     if (typeof MartialPathEvolution !== 'undefined') MartialPathEvolution.resetRun();
@@ -7162,15 +6641,6 @@ const Game = (() => {
         GS.difficultyId = modeDifficulty;
       }
     }
-    if (svc('PlanetConquest')) {
-      svc('PlanetConquest').resetRun({
-        forcedMode: !GS.creativeMode && runSession?.modeId === 'planet_conquest',
-      });
-    }
-    if (typeof LayerDesign !== 'undefined') {
-      LayerDesign.resetAnnouncements?.();
-      LayerDesign.renderMenuJourneyPanel?.();
-    }
     if (typeof Onboarding !== 'undefined') {
       Onboarding.onRunStarted({ creative: GS.creativeMode, session: runSession });
     }
@@ -7190,8 +6660,7 @@ const Game = (() => {
       });
     }
     const academyEraMode = !GS.creativeMode && runSession?.modeId === 'academy_era';
-    const planetConquestMode = !GS.creativeMode && runSession?.modeId === 'planet_conquest';
-    if (!GS.creativeMode && !academyEraMode && !planetConquestMode) {
+    if (!GS.creativeMode && !academyEraMode) {
       for (let i = 0; i < 4; i++) {
         const u = spawnUnit('footman', 80 + i * 70, GS.deployY, 'player');
         applyPlayerStatMods(u);
@@ -7219,10 +6688,7 @@ const Game = (() => {
     if (typeof TechTreeBranches !== 'undefined') {
       TechTreeBranches.onRunStart({ creative: GS.creativeMode, showMessage });
     }
-    if (typeof GrandStrategyMidBranches !== 'undefined') {
-      GrandStrategyMidBranches.resetRun();
-    }
-    if (svc('CrownLegacies') && !GS.creativeMode && !academyEraMode && !planetConquestMode) {
+    if (svc('CrownLegacies') && !GS.creativeMode && !academyEraMode) {
       svc('CrownLegacies').applyRunStartBonuses({
         creative: false,
         deployY: GS.deployY,
@@ -7239,12 +6705,7 @@ const Game = (() => {
         hooks: { showMessage },
       });
     }
-    if (
-      typeof EternalLegacyTree !== 'undefined' &&
-      !GS.creativeMode &&
-      !academyEraMode &&
-      !planetConquestMode
-    ) {
+    if (typeof EternalLegacyTree !== 'undefined' && !GS.creativeMode && !academyEraMode) {
       const eternal = EternalLegacyTree.applyRunStartBonuses({
         creative: false,
         units: GS.units,
@@ -7284,22 +6745,6 @@ const Game = (() => {
         difficulty: GS.difficultyId,
         creative: false,
         mode: 'academy_era',
-        wave: GS.wave,
-      });
-    } else if (planetConquestMode) {
-      bootstrapPlanetConquestStart();
-      const modeNote = runSession?.ironman ? ' · IRONMAN' : '';
-      showMessage(
-        `${diff.label} (${getDifficultyPercent()}%) · Planet Conquest${modeNote} — night prep at wave ${GS.wave}.`,
-        360
-      );
-      if (runSession?.mods?.length) {
-        showMessage(`Active modifiers: ${runSession.mods.length}`, 260);
-      }
-      ach('game_start', {
-        difficulty: GS.difficultyId,
-        creative: false,
-        mode: 'planet_conquest',
         wave: GS.wave,
       });
     } else {
@@ -7343,32 +6788,6 @@ const Game = (() => {
         startNextWave();
       }
     }
-  }
-
-  function buildSiegeSpawnQueue() {
-    const diff = getDifficulty();
-    const wallCount = countPlayerWalls();
-    const siegeProg =
-      typeof academyProgress === 'function'
-        ? academyProgress(GS.wave)
-        : Math.min(1, GS.wave / ACADEMY_ERA_WAVE);
-    const towerCount = Math.max(
-      1,
-      Math.floor(
-        (4 + siegeProg * 16 + Math.floor(wallCount / 2)) *
-          diff.siegeTowerMult *
-          (diff.siegeWaveMult || 1)
-      )
-    );
-    GS.spawnQueue = [];
-    for (let i = 0; i < towerCount; i++) {
-      GS.spawnQueue.push('siege_tower', 'goblin_sapper', 'orc', 'orc', 'goblin');
-      if (GS.wave >= 10) GS.spawnQueue.push('shaman');
-      if (GS.wave >= 15) GS.spawnQueue.push('goblin_engineer');
-    }
-    GS.waveEnemyTotal = GS.spawnQueue.length;
-    GS.waveProgress = 0;
-    showMessage(`SIEGE WAVE ${GS.wave}! ${towerCount} siege tower(s) advancing!`);
   }
 
   const SPAWN_ELITE_TYPES = [
@@ -7633,15 +7052,6 @@ const Game = (() => {
         : GS.currentWaveConfig.boss;
     const colonyAssess = assessColonyThreat(GS.wave);
     let colonyPressure = colonyAssess?.pressure;
-    if (svc('GrandStrategy') && colonyPressure) {
-      colonyPressure = svc('GrandStrategy').applyPressureMods(colonyPressure);
-    }
-    if (svc('IntergalacticLayer') && colonyPressure) {
-      colonyPressure = svc('IntergalacticLayer').applyPressureMods(colonyPressure);
-    }
-    if (typeof HybridMoments !== 'undefined' && colonyPressure) {
-      colonyPressure = HybridMoments.applyPressureMods(colonyPressure);
-    }
 
     const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
     const forceHorde =
@@ -7686,9 +7096,6 @@ const Game = (() => {
         GS.spawnQueue = svc('EnemyFactions').biasHordeQueue(GS.spawnQueue, GS.wave, gameRandom);
         GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
       }
-      if (svc('PlanetConquest')) {
-        GS.spawnQueue = svc('PlanetConquest').filterSpawnQueue(GS.spawnQueue, GS.wave);
-      }
       GS.waveEnemyTotal = GS.spawnQueue.length;
       GS.waveProgress = 0;
       const towers = GS.spawnQueue.filter((t) => t === 'siege_tower').length;
@@ -7719,25 +7126,10 @@ const Game = (() => {
         if (roster)
           GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
       }
-      if (svc('GrandStrategy')) {
-        const gsNote = svc('GrandStrategy').formatIntelNote(GS.wave);
-        if (gsNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${gsNote}` : gsNote;
-      }
-      if (svc('IntergalacticLayer')) {
-        const igNote = svc('IntergalacticLayer').formatIntelNote(GS.wave);
-        if (igNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${igNote}` : igNote;
-      }
       if (typeof ProgressionRestarts !== 'undefined') {
         const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
         if (prNote)
           GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
-      }
-      if (typeof HybridMoments !== 'undefined') {
-        const hmNote = HybridMoments.formatIntelNote({ wave: GS.wave });
-        if (hmNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${hmNote}` : hmNote;
       }
       if (typeof PacingTools !== 'undefined') {
         const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
@@ -7778,11 +7170,6 @@ const Game = (() => {
         const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
         if (techNote)
           GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
-      }
-      if (typeof GrandStrategyMidBranches !== 'undefined') {
-        const mbNote = GrandStrategyMidBranches.formatIntelNote({ wave: GS.wave });
-        if (mbNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mbNote}` : mbNote;
       }
       if (typeof EternalPathFramework !== 'undefined') {
         const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
@@ -7993,9 +7380,6 @@ const Game = (() => {
     if (svc('EnemyFactions')) {
       GS.spawnQueue = svc('EnemyFactions').biasSpawnQueue(GS.spawnQueue, GS.wave, gameRandom);
       GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
-      if (svc('PlanetConquest')) {
-        GS.spawnQueue = svc('PlanetConquest').filterSpawnQueue(GS.spawnQueue, GS.wave);
-      }
     }
     if (asymElites > 0 && !GS.waveModifiers.noElites) {
       const elitePool = elites.filter((t) => pool.includes(t) || EnemyDefs[t]);
@@ -8029,21 +7413,9 @@ const Game = (() => {
       GS.nextWaveIntel =
         (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
     }
-    if (svc('GrandStrategy')) {
-      const gsNote = svc('GrandStrategy').formatIntelNote(GS.wave);
-      if (gsNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${gsNote}` : gsNote;
-    }
-    if (svc('IntergalacticLayer')) {
-      const igNote = svc('IntergalacticLayer').formatIntelNote(GS.wave);
-      if (igNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${igNote}` : igNote;
-    }
     if (typeof ProgressionRestarts !== 'undefined') {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
-    }
-    if (typeof HybridMoments !== 'undefined') {
-      const hmNote = HybridMoments.formatIntelNote({ wave: GS.wave });
-      if (hmNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${hmNote}` : hmNote;
     }
     if (typeof PacingTools !== 'undefined') {
       const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
@@ -8080,10 +7452,6 @@ const Game = (() => {
       const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
       if (techNote)
         GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
-    }
-    if (typeof GrandStrategyMidBranches !== 'undefined') {
-      const mbNote = GrandStrategyMidBranches.formatIntelNote({ wave: GS.wave });
-      if (mbNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mbNote}` : mbNote;
     }
     if (typeof EternalPathFramework !== 'undefined') {
       const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
@@ -8168,10 +7536,6 @@ const Game = (() => {
     }
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       FoundationalMedievalLayer.onWaveStart(GS.wave, { wave: GS.wave, showMessage, addHighlight });
-    }
-    if (typeof HybridMoments !== 'undefined') {
-      HybridMoments.syncFromLayers({ wave: GS.wave });
-      HybridMoments.onWaveStart(GS.wave, { wave: GS.wave, showMessage, addHighlight });
     }
     if (!(GS.creativeMode && !GS.creativeSettings.useCampaignRules) && svc('GameDepth')) {
       const tenure = svc('GameDepth').applyVeteranTenureScaling(GS.units, GS.wave);
@@ -8282,12 +7646,6 @@ const Game = (() => {
     resetWaveModifiers();
     GS.playerCasualtiesThisWave = 0;
     GS.structuresRazedThisWave = 0;
-    if (svc('GrandStrategy')) {
-      svc('GrandStrategy').onWaveStart(GS.wave, getGrandStrategyCtx());
-    }
-    if (svc('IntergalacticLayer')) {
-      svc('IntergalacticLayer').onWaveStart(GS.wave, getIntergalacticCtx());
-    }
     if (typeof AscensionSystem !== 'undefined' && !GS.creativeMode) {
       AscensionSystem.onWaveStart(GS.wave, {
         wave: GS.wave,
@@ -8373,9 +7731,6 @@ const Game = (() => {
         creative: GS.creativeMode,
       });
     }
-    if (typeof LayerDesign !== 'undefined') {
-      LayerDesign.onWaveStart(GS.wave, { showMessage, addHighlight });
-    }
     buildSpawnQueue();
     if (GS.namedBossWave && svc('MonsterBosses')) {
       svc('MonsterBosses').spawnPackStructures(
@@ -8389,85 +7744,6 @@ const Game = (() => {
           showMessage,
         }
       );
-    }
-    if (svc('GrandStrategy') && !GS.creativeMode) {
-      const mobCtx = {
-        ...getGrandStrategyCtx(),
-        wave: GS.wave,
-        isBoss: !!(
-          GS.currentWaveConfig?.boss ||
-          (svc('GameDepth') && svc('GameDepth').isBossWave?.(GS.wave))
-        ),
-        isHorde: isHordeWave(),
-        enemyCount: GS.spawnQueue.length,
-        colonyPressure: GS.colonyThreatMods,
-        namedBoss: !!GS.namedBossWave,
-        multiFront: GS.multiFrontPlan,
-        hasSiege: GS.spawnQueue.includes('siege_tower'),
-        spawnQueue: GS.spawnQueue,
-        grantTactical: (n) => {
-          if (n > 0 && !(GS.creativeMode && GS.creativeSettings.freeResources)) {
-            GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
-            sanitizeTactical();
-          }
-        },
-        applyPlayerCasualties: (n) => {
-          let left = Math.max(0, n | 0);
-          const victims = GS.units
-            .filter(
-              (u) =>
-                u.team === 'player' && u.hp > 0 && !u.isGeneral && !u.isDoomslayer && !u.isNamedBoss
-            )
-            .sort((a, b) => (a.experience || 0) - (b.experience || 0) || a.hp - b.hp);
-          for (const u of victims) {
-            if (left <= 0) break;
-            u.hp = 0;
-            left--;
-            GS.playerCasualtiesThisWave++;
-            GS.runPlayerDeaths++;
-          }
-        },
-        scratchBuilding: () => {
-          const pool = GS.buildings.filter((b) => b.owner === 'player' && b.hp > 0 && b.complete);
-          const b = pool[Math.floor(Math.random() * pool.length)];
-          if (b) {
-            b.hp = Math.max(1, b.hp - Math.floor((b.maxHp || 100) * 0.14));
-            showMessage(`Routed template — ${b.type || 'hold'} took stray damage!`, 240);
-          }
-        },
-      };
-      const auto = svc('GrandStrategy').tryAutoResolveWave(GS.wave, mobCtx);
-      if (auto?.resolved) {
-        GS.spawnQueue = [];
-        GS.waveEnemyTotal = 0;
-        GS.currentHordeWave = null;
-        GS.waveProgress = 1;
-        showMessage(auto.summary, 380);
-        addHighlight(auto.victory ? 'mobilization' : 'routed', auto.highlight);
-        svc('FloatingText').status(
-          GS.worldW / 2,
-          52,
-          auto.victory ? 'TEMPLATE VICTORY' : 'TEMPLATE ROUTED',
-          auto.victory ? '#80c0ff' : '#ff8060'
-        );
-        enterNightPhase();
-        return;
-      }
-      if (auto?.major) {
-        showMessage(
-          `Major battle — Wave ${GS.wave} requires your personal command (${auto.reason}).`,
-          320
-        );
-        if (typeof HybridMoments !== 'undefined') {
-          HybridMoments.onMobilizationMajor(GS.wave, auto, {
-            wave: GS.wave,
-            worldW: GS.worldW,
-            showMessage,
-            addHighlight,
-            floatingText: floatStatus,
-          });
-        }
-      }
     }
     spawnFactionCounterRaids();
     GS.spawnTimer = 90 + GS.spawnDelayBonus;
@@ -8723,10 +7999,6 @@ const Game = (() => {
     if (svc('UI')) svc('UI').updateSpeedControl?.(GS.gameSpeed);
   }
 
-  function getGameSpeed() {
-    return GS.gameSpeed;
-  }
-
   function cycleGameSpeed() {
     const next =
       typeof PacingTools !== 'undefined'
@@ -8959,14 +8231,6 @@ const Game = (() => {
     playSfx('click');
     syncInteractionState();
     return true;
-  }
-
-  function selectCourierMessage(msg) {
-    const toggleOff = GS.selectedCourierMsg === msg;
-    clearSelection();
-    if (!toggleOff) GS.selectedCourierMsg = msg;
-    syncInteractionState();
-    playSfx('click');
   }
 
   function executeSpyAction(action) {
@@ -9723,22 +8987,6 @@ const Game = (() => {
           },
         });
       }
-      if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
-        const push = svc('PlanetWarfare').onEnemyStructureDestroyed({
-          wave: GS.wave,
-          worldH: GS.worldH,
-        });
-        if (push?.delta < -0.02) {
-          showMessage(
-            `Hostile territory pushed back — control ${Math.round(svc('PlanetWarfare').getControl() * 100)}%.`,
-            280
-          );
-        }
-      }
-      if (svc('PlanetConquest')) {
-        svc('PlanetConquest').onEnemyStructureDestroyed(b, GS.wave, getPlanetConquestCtx());
-        checkPlanetConquestVictory();
-      }
       if (svc('AsymmetricWarfare')) {
         const lvl = svc('AsymmetricWarfare').onHostStructureDestroyed();
         if (lvl?.delta < 0) {
@@ -10120,20 +9368,6 @@ const Game = (() => {
       unit.pathPending = false;
     }
     GS.moveMarkers.push({ x: pos.x, y: pos.y, life: 150, unitId: unit.id });
-  }
-
-  function toggleHunt(unit) {
-    if (!unit.canHunt) return;
-    if (unit.huntMode) {
-      enterHoldStance(unit, { reassign: true });
-      showMessage('Hold post — return to station');
-    } else {
-      unit.huntMode = true;
-      unit.manualOrder = false;
-      unit.pathRecalc = 0;
-      clearHoldPost(unit);
-      showMessage('Unit will hunt enemies');
-    }
   }
 
   function toggleGlobalHunt() {
@@ -11144,18 +10378,6 @@ const Game = (() => {
 
   function getLivingPlanetCtx() {
     if (GS.livingPlanetCtxTick === GS.updateTick) return GS.livingPlanetCtxCache;
-    const pw =
-      svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)
-        ? cachedSnap('planetWarfare', () =>
-            svc('PlanetWarfare').getStateSnapshot(
-              GS.wave,
-              GS.worldW,
-              GS.worldH,
-              GS.buildings,
-              GS.units
-            )
-          )
-        : null;
     GS.livingPlanetCtxCache = {
       worldW: GS.worldW,
       worldH: GS.worldH,
@@ -11163,7 +10385,7 @@ const Game = (() => {
       baseH: BASE_FIELD_H,
       territoryTier: GS.territoryTier,
       wave: GS.wave,
-      hostileLineY: pw?.hostileLineY ?? null,
+      hostileLineY: null,
     };
     GS.livingPlanetCtxTick = GS.updateTick;
     return GS.livingPlanetCtxCache;
@@ -11360,10 +10582,6 @@ const Game = (() => {
   function outpostMarchDistSq(unit, op) {
     const slot = getOutpostGarrisonSlot(op, unit);
     return posDistSq(unit.x, unit.y, slot.x, slot.y);
-  }
-
-  function outpostMarchDist(unit, op) {
-    return Math.sqrt(outpostMarchDistSq(unit, op));
   }
 
   function completeOutpostGarrison(gu, op, slot) {
@@ -11695,29 +10913,6 @@ const Game = (() => {
       return posDistSq(wall.x, wall.y, anchor.x, anchor.y) <= seek * seek;
     }
     return false;
-  }
-
-  function isInsideCastleBounds(unit, groupId) {
-    let minX = Infinity,
-      maxX = -Infinity,
-      minY = Infinity,
-      maxY = -Infinity;
-    let n = 0;
-    for (let i = 0; i < GS.buildings.length; i++) {
-      const p = GS.buildings[i];
-      if (p.castleGroup !== groupId || !p.complete) continue;
-      n++;
-      const r = p.radius || 20;
-      minX = Math.min(minX, p.x - r);
-      maxX = Math.max(maxX, p.x + r);
-      minY = Math.min(minY, p.y - r);
-      maxY = Math.max(maxY, p.y + r);
-    }
-    if (!n) return false;
-    const pad = 8;
-    return (
-      unit.x >= minX - pad && unit.x <= maxX + pad && unit.y >= minY - pad && unit.y <= maxY + pad
-    );
   }
 
   function checkCastleCompoundBreaches() {
@@ -13810,10 +13005,7 @@ const Game = (() => {
             : cfg.interval || 90;
         const hordeMult = GS.currentHordeWave?.intervalMult || 1;
         const colonyInterval = GS.colonyThreatMods?.intervalMult || 1;
-        const planetInterval =
-          svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)
-            ? svc('PlanetWarfare').getSpawnIntervalMult()
-            : 1;
+        const planetInterval = 1;
         const asymInterval = getAsymmetricMods().enemyIntervalMult || 1;
         GS.spawnTimer = Math.max(
           8,
@@ -13963,10 +13155,6 @@ const Game = (() => {
     }
 
     updateDayNightCycle();
-    if (svc('PlanetConquest') && svc('PlanetConquest').isActive(GS.wave, getRunModeId())) {
-      const bossTick = svc('PlanetConquest').tickPlanetBoss(GS.wave, getPlanetConquestCtx());
-      if (bossTick?.slain) checkPlanetConquestVictory();
-    }
     if (GS.wave >= 10 && GS.updateTick % 45 === 0) normalizeEnemyEconomyBuildings();
     if (GS.creativeMode && svc('CreativeTools')) {
       svc('CreativeTools').tickStress();
@@ -14463,28 +13651,6 @@ const Game = (() => {
         directShow: directShowMessage,
       });
     }
-    const gsPanelOpen = svc('GrandStrategy')?.isPanelOpen?.();
-    const igPanelOpen = svc('IntergalacticLayer')?.isPanelOpen?.();
-    const gsActive = svc('GrandStrategy')?.isActive?.(GS.wave);
-    const igActive = svc('IntergalacticLayer')?.isActive?.(GS.wave);
-    if (gsPanelOpen || igPanelOpen) {
-      GS.macroPanelRenderTick++;
-      const renderMacroPanels = GS.macroPanelRenderTick % MACRO_PANEL_RENDER_EVERY === 0;
-      if (svc('GrandStrategy')) {
-        svc('GrandStrategy').tick(0, getGrandStrategyCtx());
-        if (gsPanelOpen && renderMacroPanels) svc('GrandStrategy').renderPanel(getState());
-      }
-      if (svc('IntergalacticLayer')) {
-        svc('IntergalacticLayer').tick(0, getIntergalacticCtx());
-        if (igPanelOpen && renderMacroPanels) svc('IntergalacticLayer').renderPanel(getState());
-      }
-    } else if (gsActive || igActive) {
-      GS.macroPanelRenderTick = 0;
-      if (gsActive) svc('GrandStrategy').tick(0, getGrandStrategyCtx());
-      if (igActive) svc('IntergalacticLayer').tick(0, getIntergalacticCtx());
-    } else {
-      GS.macroPanelRenderTick = 0;
-    }
     svc('Particles').update();
     CombatFX.update();
     StrikeFX?.update?.();
@@ -14584,44 +13750,6 @@ const Game = (() => {
           grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
           GS.ctx.fillStyle = grad;
           GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
-        }
-        if (svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)) {
-          const pw = cachedSnap('planetWarfare', () =>
-            svc('PlanetWarfare').getStateSnapshot(
-              GS.wave,
-              GS.worldW,
-              GS.worldH,
-              GS.buildings,
-              GS.units
-            )
-          );
-          svc('VisualPolish').drawHostileTerritory(
-            GS.ctx,
-            GS.worldW,
-            getMapViewH(),
-            pw.hostileLineY,
-            pw.hostileControl,
-            pw.tier
-          );
-        }
-        if (svc('PlanetConquest') && svc('PlanetConquest').isActive(GS.wave, getRunModeId())) {
-          const pc = cachedSnap('planetConquest', () =>
-            svc('PlanetConquest').getStateSnapshot(
-              GS.wave,
-              GS.worldW,
-              GS.worldH,
-              GS.buildings,
-              GS.units,
-              getRunModeId()
-            )
-          );
-          svc('VisualPolish').drawConquestSectors(
-            GS.ctx,
-            GS.worldW,
-            getMapViewH(),
-            pc.sectors || [],
-            pc.planetBossActive
-          );
         }
       }
       svc('SpriteGen').drawAttackSideMarkers(
@@ -15558,16 +14686,6 @@ const Game = (() => {
     const vp = getCameraViewport();
     const halfW = vp.width / (2 * GS.viewScale);
     const halfH = vp.height / (2 * GS.viewScale);
-    const pw =
-      svc('PlanetWarfare') && svc('PlanetWarfare').isActive(GS.wave)
-        ? svc('PlanetWarfare').getStateSnapshot(
-            GS.wave,
-            GS.worldW,
-            GS.worldH,
-            GS.buildings,
-            GS.units
-          )
-        : null;
     const minimapUnits = [];
     for (const u of GS.units) {
       if (u.hp <= 0) continue;
@@ -15582,7 +14700,7 @@ const Game = (() => {
           baseH: BASE_FIELD_H,
           territoryTier: GS.territoryTier,
           wave: GS.wave,
-          hostileLineY: pw?.hostileLineY ?? null,
+          hostileLineY: null,
         })
       : null;
     const mf =
@@ -15603,7 +14721,7 @@ const Game = (() => {
       attackSides: getWaveAttackSides(),
       unlockedAttackSides: getUnlockedAttackSides(GS.wave),
       multiFront: mf,
-      planetWarfare: pw,
+
       livingPlanet: lp,
       viewX: GS.cameraWorldX - halfW,
       viewY: GS.cameraWorldY - halfH,
@@ -16243,14 +15361,6 @@ const Game = (() => {
     const army = unitCounts.player;
     const liveColony = getLiveColonyState();
     const displayColony = liveColony.colony || GS.colonySnapshot;
-    const grandStrategySnap = pathSnap('grandStrategyState', 150, () =>
-      svc('GrandStrategy') ? svc('GrandStrategy').getStateSnapshot({ wave: GS.wave }) : null
-    );
-    const intergalacticSnap = pathSnap('intergalacticState', 400, () =>
-      svc('IntergalacticLayer')
-        ? svc('IntergalacticLayer').getStateSnapshot({ wave: GS.wave })
-        : null
-    );
     const thematicSynergySnap = getThematicSynSnap();
     const snapshot = {
       state: GS.state,
@@ -16379,21 +15489,7 @@ const Game = (() => {
       factionReputation: pathSnap('factionReputation', 6, () =>
         svc('FactionReputation') ? svc('FactionReputation').getStateSnapshot(GS.wave) : null
       ),
-      planetConquest: pathSnap(
-        'planetConquest',
-        typeof PlanetConquest !== 'undefined' ? PlanetConquest.WAVE_MIN : 500,
-        () =>
-          svc('PlanetConquest')
-            ? svc('PlanetConquest').getStateSnapshot(
-                GS.wave,
-                GS.worldW,
-                GS.worldH,
-                GS.buildings,
-                GS.units,
-                getRunModeId()
-              )
-            : null
-      ),
+      planetConquest: pathSnap('planetConquest', 500, () => null),
       crownLegacies: cachedSnap('crownLegacies', () =>
         svc('CrownLegacies') && !GS.creativeMode ? svc('CrownLegacies').getStateSnapshot() : null
       ),
@@ -16428,11 +15524,7 @@ const Game = (() => {
           ? TechTreeBranches.getStateSnapshot({ wave: GS.wave })
           : null
       ),
-      grandStrategyMidBranches: pathSnap('grandStrategyMidBranches', 150, () =>
-        typeof GrandStrategyMidBranches !== 'undefined'
-          ? GrandStrategyMidBranches.getStateSnapshot({ wave: GS.wave })
-          : null
-      ),
+      grandStrategyMidBranches: pathSnap('grandStrategyMidBranches', 150, () => null),
       intergalacticLateBranches: pathSnap('intergalacticLateBranches', 400, () =>
         typeof IntergalacticLateBranches !== 'undefined'
           ? IntergalacticLateBranches.getStateSnapshot({ wave: GS.wave })
@@ -16466,16 +15558,7 @@ const Game = (() => {
       planetWarfare: pathSnap(
         'planetWarfare',
         typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200,
-        () =>
-          svc('PlanetWarfare')
-            ? svc('PlanetWarfare').getStateSnapshot(
-                GS.wave,
-                GS.worldW,
-                GS.worldH,
-                GS.buildings,
-                GS.units
-              )
-            : null
+        () => null
       ),
       asymmetricWarfare: getAsymmetricSnapshot(),
       settlementRaids: pathSnap('settlementRaids', 150, () =>
@@ -16636,32 +15719,14 @@ const Game = (() => {
       story: cachedSnap('story', () =>
         typeof StoryLore !== 'undefined' ? StoryLore.getSessionSnapshot() : null
       ),
-      grandStrategy: grandStrategySnap,
-      intergalactic: intergalacticSnap,
-      layerModes: cachedSnap('layerModes', () =>
-        typeof LayerDesign !== 'undefined'
-          ? LayerDesign.getModesSnapshot({
-              wave: GS.wave,
-              phase: isNightPhase() ? 'night' : 'day',
-              grandStrategy: grandStrategySnap,
-              intergalactic: intergalacticSnap,
-              planetConquest:
-                svc('PlanetConquest') && svc('PlanetConquest').getStateSnapshot
-                  ? svc('PlanetConquest').getStateSnapshot(GS.wave)
-                  : null,
-            })
-          : null
-      ),
+
+      layerModes: cachedSnap('layerModes', () => null),
       progressionRestart: cachedSnap('progressionRestart', () =>
         typeof ProgressionRestarts !== 'undefined'
           ? ProgressionRestarts.getStateSnapshot({ wave: GS.wave })
           : null
       ),
-      hybridMoments: cachedSnap('hybridMoments', () =>
-        typeof HybridMoments !== 'undefined'
-          ? HybridMoments.getStateSnapshot({ wave: GS.wave })
-          : null
-      ),
+      hybridMoments: cachedSnap('hybridMoments', () => null),
       pacingTools: cachedSnap('pacingTools', () =>
         typeof PacingTools !== 'undefined'
           ? PacingTools.getStateSnapshot({
@@ -16671,10 +15736,7 @@ const Game = (() => {
             })
           : null
       ),
-      grandStrategyHooks:
-        svc('GrandStrategy') && svc('GrandStrategy').isActive(GS.wave)
-          ? getGrandStrategyTacticalHooks()
-          : null,
+
       creativeCustomWave: GS.creativeCustomWave
         ? { ...GS.creativeCustomWave, count: GS.creativeCustomWave.queue?.length }
         : null,
@@ -16760,7 +15822,6 @@ const Game = (() => {
     selectMoveBuilding,
     selectRotateWall,
     cycleWallPlacementFacing,
-    selectCourierMessage,
     executeSpyAction,
     sendCourierMessage,
     executeDoctrine,
@@ -16769,7 +15830,6 @@ const Game = (() => {
     dispatchRaidStrike,
     respondMapEvent,
     toggleGlobalHunt,
-    toggleHunt,
     toggleBuilderAutoRepair,
     clearSelection,
     selectUnit,
@@ -16781,7 +15841,6 @@ const Game = (() => {
     getState,
     getDiagSnapshot,
     endGame,
-    getGameSpeed,
     setGameSpeed,
     cycleGameSpeed,
     resetSimClock,
@@ -16795,12 +15854,9 @@ const Game = (() => {
     panCameraToFraction,
     focusSelection,
     focusWorld,
-    onPlanetConquestSurfaceDeploy,
-    setHazardSpawnOpts,
     setSelectedHunt,
     toggleSelectedHunt,
     setSelectionFormation,
-    cycleSelectionFormation,
     reformSelectionFormation,
     moveSelectionToWorld,
     restartCurrentWave,
@@ -16813,7 +15869,6 @@ const Game = (() => {
     exportGameState,
     importGameState,
     setDifficulty,
-    getDifficultyId: () => GS.difficultyId,
     recruitWweSuperstar,
     recruitCrossoverOperative,
     purchaseOperativeSkill,
@@ -16883,7 +15938,6 @@ const Game = (() => {
     handlePointerMove,
     handlePointerUp,
     trackPointer,
-    getPointerScreen,
     zoomCameraAt,
     zoomCameraToScale,
     getCameraZoom,
@@ -16891,9 +15945,7 @@ const Game = (() => {
     isScreenInMapArea,
     setCameraKey,
     onSettingsChanged,
-    wasDragPan: () => GS.dragMoved,
     setLoadout: (id) => svc('ContentExpansion') && svc('ContentExpansion').setLoadout(id),
-    getLoadout: () => (svc('ContentExpansion') ? svc('ContentExpansion').getLoadout() : 'balanced'),
     getLoadouts: () => (svc('ContentExpansion') ? svc('ContentExpansion').getLoadouts() : {}),
     startResearch,
     cancelResearch,

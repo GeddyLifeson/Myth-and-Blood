@@ -122,10 +122,6 @@ const NarrativeThread = (() => {
       const snap = FoundationalMedievalLayer.getRunSnapshot?.();
       if (snap?.leadingLabel) return `the Ancient Crown of ${snap.leadingLabel}`;
     }
-    if (typeof GrandStrategy !== 'undefined') {
-      const path = GrandStrategy.getKingdomEvolutionSnapshot?.();
-      if (path?.pathLabel) return `the Ancient Crown — ${path.pathLabel}`;
-    }
     return 'the Ancient Crown';
   }
 

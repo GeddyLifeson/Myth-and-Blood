@@ -134,10 +134,6 @@ const ThematicEraSynergies = (() => {
   }
 
   function resolveThematicPath() {
-    if (typeof GrandStrategy !== 'undefined') {
-      const id = GrandStrategy.getKingdomPathId?.();
-      if (id) return id;
-    }
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const run = FoundationalMedievalLayer.getRunSnapshot?.();
       if (run?.leading) return mapFoundationToPath(run.leading) || 'martial';

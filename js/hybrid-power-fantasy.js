@@ -114,7 +114,6 @@ const HybridPowerFantasy = (() => {
     if (typeof ThematicEraSynergies !== 'undefined') {
       return ThematicEraSynergies.getPathId?.() || ThematicEraSynergies.resolveThematicPath?.();
     }
-    if (typeof GrandStrategy !== 'undefined') return GrandStrategy.getKingdomPathId?.();
     const snap = getFoundationScores();
     if (snap?.leading === 'arcane_dominion') return 'arcane';
     if (snap?.leading === 'mythic_alliance') return 'mythic';

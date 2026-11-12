@@ -157,7 +157,6 @@ const EternalPathFramework = (() => {
 
   const TIER_THRESHOLDS = [12, 28, 48, 72];
   const ERA_ALIGNMENT_BONUS = 8;
-  const ERA_MISMATCH_PENALTY = 3;
 
   let state = null;
 
@@ -260,49 +259,13 @@ const EternalPathFramework = (() => {
   function syncKingdomEra(wave) {
     if ((wave | 0) < KINGDOM_WAVE) return;
     if (state.eras.kingdom.pathId) return;
-    if (typeof GrandStrategy === 'undefined') return;
-    const kingdomId = GrandStrategy.getKingdomPathId?.();
-    const pathId = mapKingdomToPath(kingdomId);
-    if (pathId) {
-      const label = ETERNAL_PATHS[pathId]?.eras?.kingdom?.label;
-      recordEraResolution('kingdom', pathId, kingdomId, label, wave);
-    }
-    const techRoot =
-      typeof TechTreeBranches !== 'undefined' ? TechTreeBranches.getRootId?.() : null;
-    if (techRoot === 'tech' && !state.eras.kingdom.pathId) {
-      recordEraResolution(
-        'kingdom',
-        'tech',
-        'engineering',
-        ETERNAL_PATHS.tech.eras.kingdom.label,
-        wave
-      );
-    }
+    return;
   }
 
   function syncGalacticEra(wave) {
     if ((wave | 0) < GALACTIC_WAVE) return;
     if (state.eras.galactic.pathId) return;
-    if (typeof IntergalacticLayer === 'undefined') return;
-    const cosmicId = IntergalacticLayer.getCosmicPathId?.();
-    const pathId = mapCosmicToPath(cosmicId);
-    if (pathId && cosmicId) {
-      const galDef = ETERNAL_PATHS[pathId]?.eras?.galactic?.[cosmicId];
-      recordEraResolution('galactic', pathId, cosmicId, galDef?.label || cosmicId, wave);
-    }
-    if (
-      !state.eras.galactic.pathId &&
-      typeof TechTreeBranches !== 'undefined' &&
-      TechTreeBranches.getRootId?.() === 'tech'
-    ) {
-      recordEraResolution(
-        'galactic',
-        'tech',
-        'stellar_foundry',
-        ETERNAL_PATHS.tech.eras.galactic.stellar_foundry.label,
-        wave
-      );
-    }
+    return;
   }
 
   function recomputeAlignment() {

@@ -2066,10 +2066,6 @@ function isCrossoverUnit(type) {
   return !!CrossoverDefs[type];
 }
 
-function isRosterUnit(type) {
-  return (typeof isWweUnit === 'function' && isWweUnit(type)) || isCrossoverUnit(type);
-}
-
 function getCrossoverCombatTag(unit) {
   if (!unit) return 'melee';
   if (unit.combatTag) return unit.combatTag;

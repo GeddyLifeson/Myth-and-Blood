@@ -130,7 +130,6 @@ const CreativeTools = (() => {
   let replayFrames = [];
   let replayPlaying = false;
   let replayIndex = 0;
-  let replayTimer = 0;
 
   let stress = { active: false, type: 'goblin', every: 30, max: 150, acc: 0 };
   let recordAcc = 0;

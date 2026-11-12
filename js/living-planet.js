@@ -384,7 +384,7 @@ const LivingPlanet = (() => {
 
   function getStateSnapshot(territoryTier, wave, rawCtx = {}) {
     const ctx = buildContext({ ...rawCtx, territoryTier, wave });
-    const hostileActive = typeof PlanetWarfare !== 'undefined' && PlanetWarfare.isActive(wave);
+    const hostileActive = false;
     const unlocked = getUnlockedBiomes(territoryTier, wave, hostileActive);
     const labels = unlocked.map((id) => BIOMES[id].shortName);
     const bands = getRegionBands(ctx);

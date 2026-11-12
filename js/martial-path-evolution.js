@@ -111,13 +111,6 @@ const MartialPathEvolution = (() => {
   }
 
   function isLegionPathActive(wave = 0) {
-    if ((wave | 0) >= GALACTIC_WAVE && typeof IntergalacticLayer !== 'undefined') {
-      const cosmic = IntergalacticLayer.getCosmicPathId?.();
-      if (cosmic === 'eternal_legion') return true;
-    }
-    if ((wave | 0) >= KINGDOM_WAVE && typeof GrandStrategy !== 'undefined') {
-      if (GrandStrategy.getKingdomPathId?.() === 'martial') return true;
-    }
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const run = FoundationalMedievalLayer.getRunSnapshot?.();
       if (run?.leading === 'longbow_legacy' && getFootmanHeavyFromMedieval()) return true;
@@ -139,13 +132,9 @@ const MartialPathEvolution = (() => {
     if (!state) return;
     const wave = state._lastWave || 0;
     const galactic = (wave | 0) >= GALACTIC_WAVE;
-    const eternalLegion =
-      typeof IntergalacticLayer !== 'undefined' &&
-      IntergalacticLayer.getCosmicPathId?.() === 'eternal_legion';
     const tier = scoreTier(state.defensiveScore, UNBREAKING_THRESHOLDS);
     state.unbreakingLine.tier = tier;
-    state.unbreakingLine.active =
-      galactic && isLegionPathActive(wave) && (eternalLegion || tier >= 1);
+    state.unbreakingLine.active = galactic && isLegionPathActive(wave) && tier >= 1;
   }
 
   function recordAction(actionKey, detail = {}) {
@@ -332,8 +321,7 @@ const MartialPathEvolution = (() => {
       );
     }
     if ((wave | 0) === GALACTIC_WAVE) {
-      const cosmic =
-        typeof IntergalacticLayer !== 'undefined' ? IntergalacticLayer.getCosmicPathId?.() : null;
+      const cosmic = null;
       if (cosmic === 'eternal_legion') {
         ctx.showMessage?.(
           'The Eternal Legion rises — gene-forged knights in power armor still fight shield-wall formation against star fleets.',

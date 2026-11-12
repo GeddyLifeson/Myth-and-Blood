@@ -17,34 +17,12 @@ const NIGHT_PREP_TICKS = NIGHT_TICKS_PER_SECOND * NIGHT_PREP_SECONDS;
 const NIGHT_BUILD_MULT = 1.35;
 const ACADEMY_HYBRID_WAVES = 5;
 const SETTLEMENT_TP_SOFT_CAP = 18;
-const SETTLEMENT_WARN_WAVE = 0;
-const HAMLET_BUILDERS_REQUIRED = 5;
-const HAMLET_WAVE_BUILD_TIME = 5;
 const HAMLET_AURA_RADIUS = 130;
 const HAMLET_TP_PER_ROUND = 5;
-const VILLAGE_BUILDERS_REQUIRED = 6;
-const VILLAGE_WAVE_BUILD_TIME = 6;
-const VILLAGE_AURA_RADIUS = 145;
-const VILLAGE_TP_PER_ROUND = 8;
-const TOWN_BUILDERS_REQUIRED = 7;
-const TOWN_WAVE_BUILD_TIME = 7;
-const TOWN_AURA_RADIUS = 160;
-const TOWN_TP_PER_ROUND = 10;
-const CITY_BUILDERS_REQUIRED = 8;
-const CITY_WAVE_BUILD_TIME = 8;
-const CITY_AURA_RADIUS = 175;
-const CITY_TP_PER_ROUND = 12;
-const METROPOLIS_BUILDERS_REQUIRED = 10;
-const METROPOLIS_WAVE_BUILD_TIME = 10;
-const METROPOLIS_AURA_RADIUS = 195;
-const METROPOLIS_TP_PER_ROUND = 15;
 const RTS_MAP_EXPAND_W = 180;
 const RTS_MAP_EXPAND_H = 220;
 const ATTACK_SIDE_INTERVAL = 25;
 const ATTACK_SIDES = ['north', 'east', 'west', 'south'];
-const HEALER_ACADEMY_WAVE_INTERVAL = 5;
-const GENERAL_ACADEMY_WAVE_INTERVAL = 10;
-const GENERAL_PROMOTE_GOLD_STARS = 3;
 /** Highest veteran rank index (Immortal / Saint of the Realm). */
 const MAX_VETERAN_TIER = 6;
 /** Extra specialist abilities unlock after this many lifetime gold stars. */
@@ -559,11 +537,6 @@ function isEnemyRtsEra(_waveNum) {
   return false;
 }
 
-function isSettlementBuild(type) {
-  const def = BuildDefs[type];
-  return !!(def?.isSettlement || def?.isHamlet || def?.isMerchantGuild);
-}
-
 function getBuildingProgressRatio(b) {
   if (b.complete) return 1;
   if (b.waveBuildRequired) return (b.waveBuildProgress || 0) / b.waveBuildRequired;
@@ -624,7 +597,6 @@ function getDeployY(worldH) {
 function getDefaultRallyY(worldH) {
   return worldH - 100;
 }
-const MISS_LIMIT = 10;
 const TP_PER_ROUND = 7;
 const STARTING_TP = 7;
 
@@ -892,14 +864,6 @@ function isEliteEnemy(unit) {
     !!unit &&
     unit.team === 'enemy' &&
     (ELITE_ENEMIES.includes(unit.type) || isMonsterEnemy(unit) || isNamedBoss(unit))
-  );
-}
-
-function isEvilOperativeEnemy(unit) {
-  return (
-    !!unit &&
-    unit.team === 'enemy' &&
-    (unit.isEvilOperative || isEnemyEvilOperativeType(unit.type) || isNamedBoss(unit))
   );
 }
 
@@ -1495,15 +1459,6 @@ function getWaveConfig(waveNum) {
   const boss = waveNum % 10 === 0;
 
   return { count, pool, interval, boss, hpScale, dmgScale };
-}
-
-function previewWaveComposition(waveNum, sampleSize = 8) {
-  const cfg = getWaveConfig(waveNum);
-  const samples = Array.from(
-    { length: sampleSize },
-    () => cfg.pool[Math.floor(Math.random() * cfg.pool.length)]
-  );
-  return [...new Set(samples.map((t) => EnemyDefs[t]?.name || t))].join(', ');
 }
 
 const ENEMY_SPRITE_MAP = {

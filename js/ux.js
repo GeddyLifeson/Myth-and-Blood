@@ -199,13 +199,13 @@ const UX = (() => {
     },
     {
       minWave: 200,
-      when: (gs) => gs.planetWarfare?.active,
+      when: (gs) => undefined,
       title: 'Hostile Map Control',
       body: 'From wave 200 the map creeps red — hostile control tightens vision, spawn pace, and northern fog. Push back with counter-offensives and hold multiple unit types to pierce wards.',
       highlight: 'control-hud',
     },
     {
-      when: (gs) => gs.planetConquest?.active,
+      when: (gs) => undefined,
       title: 'Planet Conquest',
       body: 'From wave 500, <strong>true victory</strong> requires shattering the <strong>Worldheart Tyrant</strong>. Eliminate two or more realms to awaken it, field three+ unit types to pierce its ward, then finish the boss — check the <strong>CONQUEST</strong> chip.',
       highlight: 'conquest-hud',
@@ -975,23 +975,6 @@ const UX = (() => {
       }
     }
 
-    const pw = data.planetWarfare;
-    if (pw?.active && pw.hostileLineY) {
-      const ly = pw.hostileLineY * sy;
-      const grad = minimapCtx.createLinearGradient(0, 0, 0, ly + 4);
-      grad.addColorStop(0, `rgba(140, 30, 40, ${0.35 + (pw.hostileControl || 0) * 0.3})`);
-      grad.addColorStop(1, 'rgba(60, 20, 28, 0)');
-      minimapCtx.fillStyle = grad;
-      minimapCtx.fillRect(0, 0, w, ly + 2);
-      minimapCtx.strokeStyle = 'rgba(255, 80, 70, 0.65)';
-      minimapCtx.setLineDash([3, 3]);
-      minimapCtx.beginPath();
-      minimapCtx.moveTo(0, ly);
-      minimapCtx.lineTo(w, ly);
-      minimapCtx.stroke();
-      minimapCtx.setLineDash([]);
-    }
-
     let flankLabel = null;
     if (typeof VisualPolish !== 'undefined') {
       flankLabel = VisualPolish.drawMinimapOverlay(minimapCtx, w, h, data, 'bands');
@@ -1029,10 +1012,7 @@ const UX = (() => {
       minimapCtx.fillText(flankLabel, w - 4, labelY);
       labelY += 10;
     }
-    if (pw?.active) {
-      minimapCtx.fillStyle = pw.tierColor || 'rgba(255,120,100,0.85)';
-      minimapCtx.fillText(`Host ${pw.hostileControlPct}%`, w - 4, labelY);
-    } else if (lp?.summary) {
+    if (lp?.summary) {
       minimapCtx.fillStyle = 'rgba(120,160,110,0.8)';
       minimapCtx.fillText(lp.summary.slice(0, 18), w - 4, labelY);
     } else if (data.territoryTier > 0) {

@@ -53,17 +53,13 @@ const FactionIntel = (() => {
   }
 
   function isEliminated(factionId, gs) {
-    if (gs.planetConquest?.sectors) {
-      const s = gs.planetConquest.sectors.find((sec) => sec.factionId === factionId);
-      if (s?.eliminated) return true;
-    }
-    return typeof PlanetConquest !== 'undefined' && PlanetConquest.isFactionEliminated?.(factionId);
+    return false;
   }
 
   function buildIntelRows(gs) {
     const wave = gs.wave || 0;
     const activeMap = new Map((gs.enemyFactions?.activeFactions || []).map((f) => [f.id, f]));
-    const conquestMap = new Map((gs.planetConquest?.sectors || []).map((s) => [s.factionId, s]));
+    const conquestMap = new Map([].map((s) => [s.factionId, s]));
     const counterMap = new Map((gs.counterEvolution?.targets || []).map((t) => [t.factionId, t]));
     const frontMap = new Map((gs.multiFrontSiege?.assignments || []).map((a) => [a.factionId, a]));
     const repMap = new Map((gs.factionReputation?.factions || []).map((f) => [f.factionId, f]));
@@ -205,12 +201,6 @@ const FactionIntel = (() => {
           ctx.fillStyle = 'rgba(255, 80, 60, 0.35)';
           ctx.fillRect(x0 + 2, sy + 1, barW - 4, segH - 2);
         }
-      }
-
-      if (row.conquestPct != null && row.status !== 'eliminated' && gs.planetConquest?.active) {
-        const conqH = mapH * (row.conquestPct / 100);
-        ctx.fillStyle = 'rgba(80, 200, 120, 0.28)';
-        ctx.fillRect(x0 + 2, mapTop + mapH - conqH, barW - 4, conqH);
       }
 
       if (row.status === 'eliminated') {

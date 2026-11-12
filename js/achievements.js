@@ -173,13 +173,6 @@ const Achievements = (() => {
     }
   }
 
-  function unlockedCountExcludingMeta() {
-    return [...unlocked].filter((id) => {
-      const a = LIST.find((x) => x.id === id);
-      return a && !a.meta;
-    }).length;
-  }
-
   function effectiveUnlockCount() {
     return unlocked.size;
   }

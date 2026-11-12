@@ -525,9 +525,7 @@ const EnemyFactions = (() => {
   function getActiveFactions(wave) {
     return Object.values(FACTIONS)
       .filter((f) => wave >= f.waveMin)
-      .filter(
-        (f) => !(typeof PlanetConquest !== 'undefined' && PlanetConquest.isFactionEliminated(f.id))
-      )
+      .filter((f) => !false)
       .map((f) => ({
         ...f,
         currentTier: getFactionTier(f.id, wave),

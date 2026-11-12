@@ -1319,79 +1319,6 @@ const UI = (() => {
     refreshMapEventPanel(gs);
     if (typeof FactionIntel !== 'undefined') FactionIntel.renderPanel(gs);
 
-    const layerHud = document.getElementById('layer-modes-hud');
-    const layerStack = document.getElementById('layer-modes-stack');
-    const eraBar = document.getElementById('era-journey-bar');
-    const eraNow = document.getElementById('era-journey-now');
-    const layerModes = gs.layerModes;
-    if (layerHud && layerStack) {
-      layerHud.style.display = layerModes ? '' : 'none';
-      if (layerModes) {
-        layerStack.innerHTML =
-          typeof LayerDesign !== 'undefined'
-            ? LayerDesign.renderStackMarkup(layerModes)
-            : layerModes.stackNote || '—';
-        layerStack.title =
-          layerModes.eraNote || layerModes.stackNote || layerModes.principles?.summary || '';
-        layerHud.classList.toggle('layer-modes-focused', layerModes.focusedLayer !== 'tactical');
-      }
-    }
-    if (eraBar && typeof LayerDesign !== 'undefined' && layerModes) {
-      eraBar.innerHTML = LayerDesign.renderEraBarMarkup(layerModes);
-      eraBar.style.display = '';
-    }
-    if (eraNow && layerModes?.currentEra) {
-      const e = layerModes.currentEra;
-      eraNow.textContent = `Stage ${e.stage}: ${e.label}`;
-      eraNow.style.color = e.color || '';
-      eraNow.title = e.primaryVerb || '';
-      eraNow.style.display = '';
-    }
-    if (typeof LayerDesign !== 'undefined') {
-      LayerDesign.renderStackPanel('grand-strategy-layer-modes', {
-        wave: gs.wave,
-        phase: gs.timeOfDay,
-        grandStrategy: gs.grandStrategy,
-        intergalactic: gs.intergalactic,
-        planetConquest: gs.planetConquest,
-      });
-      LayerDesign.renderStackPanel('intergalactic-layer-modes', {
-        wave: gs.wave,
-        phase: gs.timeOfDay,
-        grandStrategy: gs.grandStrategy,
-        intergalactic: gs.intergalactic,
-        planetConquest: gs.planetConquest,
-      });
-      LayerDesign.bindChipClicks?.();
-    }
-
-    const hmHud = document.getElementById('hybrid-moments-hud');
-    const hmText = document.getElementById('hybrid-moments-text');
-    const hmSnap = gs.hybridMoments;
-    if (hmHud && hmText) {
-      const line =
-        typeof HybridMoments !== 'undefined'
-          ? HybridMoments.formatHudLine({ wave: gs.wave })
-          : hmSnap?.hudLine || '';
-      const show = !!line || !!hmSnap?.pending || !!hmSnap?.battleActive;
-      hmHud.style.display = show ? '' : 'none';
-      if (show) {
-        hmText.textContent =
-          line ||
-          (hmSnap?.battleActive
-            ? `ZOOM ${hmSnap.active?.shortLabel || 'BATTLE'}`
-            : hmSnap?.pending
-              ? `${hmSnap.pending} offer(s)`
-              : '—');
-        hmHud.classList.toggle('hybrid-moments-active', !!hmSnap?.battleActive);
-        hmHud.title = hmSnap?.battleActive
-          ? `Fighting hybrid moment — ${hmSnap.active?.label || 'tactical battle'}`
-          : hmSnap?.nextOffer
-            ? `Zoom in: ${hmSnap.nextOffer.label}`
-            : 'Major macro events can zoom in to tactical real-time battles';
-      }
-    }
-
     const fmHud = document.getElementById('foundational-medieval-hud');
     const fmText = document.getElementById('foundational-medieval-text');
     const fmSnap = gs.foundationalMedieval;
@@ -1511,47 +1438,6 @@ const UI = (() => {
       }
     }
 
-    const mbHud = document.getElementById('gs-mid-branch-hud');
-    const mbText = document.getElementById('gs-mid-branch-text');
-    const mbSnap = gs.grandStrategyMidBranches;
-    if (mbHud && mbText) {
-      const line =
-        typeof GrandStrategyMidBranches !== 'undefined'
-          ? GrandStrategyMidBranches.formatHudLine({ wave: gs.wave })
-          : mbSnap?.hudLine || '';
-      // Mid branches only form 150–175; don't force the badge (and its bare '?' fallback)
-      // into view at wave 150 before anything has actually started tracking.
-      const show = !!line || mbSnap?.tracking || mbSnap?.resolved;
-      mbHud.style.display = show ? '' : 'none';
-      if (show) {
-        mbText.textContent = line || 'Branches ?';
-        mbHud.title = mbSnap?.resolved
-          ? 'Mid branches resolved — territorial, governance, and doctrine shape tactical waves'
-          : 'Mid branches form from empire actions between waves 150–175';
-      }
-    }
-
-    const lbHud = document.getElementById('ig-late-branch-hud');
-    const lbText = document.getElementById('ig-late-branch-text');
-    const lbSnap = gs.intergalacticLateBranches;
-    if (lbHud && lbText) {
-      const line =
-        typeof IntergalacticLateBranches !== 'undefined'
-          ? IntergalacticLateBranches.formatHudLine({ wave: gs.wave })
-          : lbSnap?.hudLine || '';
-      // Same fix as mid-branches above — late branches form through wave 425; don't force
-      // the badge into view at wave 400 before anything has actually started tracking.
-      const show = !!line || lbSnap?.tracking || lbSnap?.resolved;
-      lbHud.style.display = show ? '' : 'none';
-      if (show) {
-        lbText.textContent = line || 'Ascend ?';
-        if (lbSnap?.ascensionColor) lbHud.style.borderColor = lbSnap.ascensionColor;
-        lbHud.title = lbSnap?.resolved
-          ? `${lbSnap.ascensionLabel || 'Ascension'} — ${lbSnap.epithet || 'final form'}`
-          : 'Late branches form from galactic actions and earlier legacies through wave 425';
-      }
-    }
-
     const pfHud = document.getElementById('power-fantasy-hud');
     const pfText = document.getElementById('power-fantasy-text');
     const pfSnap = gs.powerFantasy;
@@ -1634,183 +1520,6 @@ const UI = (() => {
             : 'Major escalation restarts import legacies, tech, and bonuses';
       }
     }
-
-    const gsHud = document.getElementById('grand-strategy-hud');
-    const gsText = document.getElementById('grand-strategy-text');
-    const gsBtn = document.getElementById('grand-strategy-btn');
-    const gsSnap = gs.grandStrategy;
-    const gsUnlocked =
-      !!gsSnap?.active ||
-      (typeof GrandStrategy !== 'undefined' && GrandStrategy.isUnlocked?.(gs.wave));
-    if (gsHud && gsText) {
-      const show = gsUnlocked;
-      gsHud.style.display = show ? '' : 'none';
-      if (show) {
-        const orders = gsSnap.orders || 0;
-        const builds = gsSnap.domainProjects || 0;
-        const events = gsSnap.activeEvents || 0;
-        const plots = gsSnap.activeIntrigues || 0;
-        const dynastyEvts = gsSnap.activeDynastyEvents || 0;
-        const spies = gsSnap.espionage || 0;
-        const autoWins = gsSnap.mobilization?.autoResolvedTotal || 0;
-        const tact = gsSnap.tactical;
-        const tactNote = tact?.wavesLeft > 0 && tact?.note ? ` · ${tact.note.slice(0, 18)}` : '';
-        const alertNote =
-          (events > 0 ? ` · ${events} evt!` : '') +
-          (plots > 0 ? ` · ${plots} plot` : '') +
-          (dynastyEvts > 0 ? ` · ${dynastyEvts} dyn` : '') +
-          (spies > 0 ? ` · ${spies} spy` : '');
-        const mobNote = gsSnap.mobilization?.enabled && autoWins > 0 ? ` · ${autoWins} auto` : '';
-        const eco = gsSnap.economy;
-        const dyn = gsSnap.dynasty;
-        const edicts = gsSnap.edicts;
-        const ecoNote =
-          eco?.supplyCrisisWaves > 0 || eco?.rebellionWaves > 0
-            ? ' · CRISIS'
-            : eco?.rebellionRisk >= 55
-              ? ' · unrest'
-              : '';
-        const dynNote =
-          dyn?.regencyWaves > 0 || dyn?.successionCrisisWaves > 0
-            ? ' · DYN'
-            : dyn?.dynastyPrestige < 35
-              ? ' · line weak'
-              : '';
-        const edictNote =
-          edicts?.remaining > 0 &&
-          typeof GrandStrategy !== 'undefined' &&
-          GrandStrategy.isPanelOpen()
-            ? ' · EDICT'
-            : edicts?.edictsThisWave > 0
-              ? ` · ${edicts.edictsThisWave} ed`
-              : '';
-        const kingdom = gsSnap.kingdomEvolution;
-        const pathNote = kingdom?.resolved ? ` · ${kingdom.pathLabel} T${kingdom.tier}` : '';
-        gsText.textContent = `${gsSnap.season || '—'} · ${orders} ord · ${builds} bld${pathNote}${mobNote}${ecoNote}${dynNote}${edictNote}${alertNote}${tactNote}`;
-        const mob = gsSnap.mobilization;
-        gsText.title = `Grand Strategy — Treasury ${Math.floor(gsSnap.treasury || 0)} · House ${dyn?.houseName || '—'} · Prestige ${dyn?.dynastyPrestige ?? 0} · Template ${mob?.templateLabel || '—'}${kingdom?.resolved ? ` · ${kingdom.pathLabel}` : ''} · Shift+G`;
-        gsText.className =
-          'stat-value grand-strategy-value' + (orders > 0 ? ' grand-strategy-active' : '');
-      }
-    }
-    if (gsBtn) {
-      // Soft-lock: always visible; dimmed when locked. Do NOT use disabled=
-      // (disabled buttons swallow clicks and feel "broken").
-      gsBtn.style.display = '';
-      gsBtn.disabled = false;
-      gsBtn.setAttribute('aria-disabled', gsUnlocked ? 'false' : 'true');
-      gsBtn.classList.toggle('layer-btn-locked', !gsUnlocked);
-      gsBtn.title = gsUnlocked
-        ? 'Grand Strategy — kingdom map (Shift+G)'
-        : 'Grand Strategy unlocks at wave 150 (Shift+G) — click for details';
-      gsBtn.classList.toggle(
-        'grand-strategy-open',
-        gsUnlocked && typeof GrandStrategy !== 'undefined' && GrandStrategy.isPanelOpen()
-      );
-    }
-    if (typeof GrandStrategy !== 'undefined') GrandStrategy.renderPanel(gs);
-
-    const igHud = document.getElementById('intergalactic-hud');
-    const igText = document.getElementById('intergalactic-text');
-    const igBtn = document.getElementById('intergalactic-btn');
-    const igSnap = gs.intergalactic;
-    const igUnlocked =
-      !!igSnap?.active ||
-      (typeof IntergalacticLayer !== 'undefined' && IntergalacticLayer.isUnlocked?.(gs.wave));
-    if (igHud && igText) {
-      const show = igUnlocked;
-      igHud.style.display = show ? '' : 'none';
-      if (show) {
-        const zoom = igSnap.zoomedPlanet?.label || 'Aurion Prime';
-        const siegeNote = igSnap.homeworldSiege ? ' · SIEGE' : '';
-        const ordNote = igSnap.orders > 0 ? ` · ${igSnap.orders} fleet` : '';
-        const bldNote = igSnap.planetProjects > 0 ? ` · ${igSnap.planetProjects} bld` : '';
-        const crisisNote = igSnap.activeCrises > 0 ? ` · ${igSnap.activeCrises} crisis` : '';
-        const empire = igSnap.empire;
-        const domNote = empire?.dominantFaction
-          ? ` · ${empire.dominantFaction.label.split(' ').pop()}`
-          : '';
-        const unrestNote = empire?.highUnrest ? ` · ${empire.highUnrest} unrest` : '';
-        const warfare = igSnap.warfare;
-        const warOffer = warfare?.wars?.filter((w) => w.battleOffered).length || 0;
-        const warActive = warfare?.wars?.filter((w) => w.battleActive).length || 0;
-        const warNote = warOffer
-          ? ` · ${warOffer} war!`
-          : warActive
-            ? ` · ${warActive} battle`
-            : '';
-        const exp = igSnap.exploration;
-        const anomNote = exp?.activeAnomalies ? ` · ${exp.activeAnomalies} anom` : '';
-        const precNote = exp?.precursorClues > 0 ? ` · P${exp.precursorClues}` : '';
-        const politics = igSnap.politics;
-        const fedNote = politics?.federationLabel
-          ? ` · ${politics.federationLabel.split(' ')[0]}`
-          : '';
-        const tradeNote = politics?.activeDeals ? ` · ${politics.activeDeals} trade` : '';
-        const spyNote =
-          politics?.spyExposure >= 40
-            ? ' · exposed'
-            : politics?.activeSpy
-              ? ` · ${politics.activeSpy} spy`
-              : '';
-        const endgame = igSnap.endgame;
-        const gcNote = endgame?.galacticCrisis
-          ? ` · ${endgame.galacticCrisis.label.split(' ').pop()} ${endgame.galacticCrisis.severity}%`
-          : endgame?.empireCollapsed
-            ? ' · COLLAPSED'
-            : '';
-        const echoes = igSnap.narrativeEchoes;
-        const echoNote = echoes?.active?.length ? ` · ${echoes.active.length} echo` : '';
-        const cosmic = igSnap.cosmicEvolution;
-        const cosmicNote = cosmic?.resolved ? ` · ${cosmic.pathLabel} T${cosmic.tier}` : '';
-        const sep = igSnap.separation;
-        const invNote = sep?.invasionActive
-          ? ` · INVASION`
-          : sep?.invasionOffers
-            ? ` · ${sep.invasionOffers} inv!`
-            : '';
-        igText.textContent = `${igSnap.time || '—'} · ${zoom}${cosmicNote}${siegeNote}${ordNote}${bldNote}${crisisNote}${domNote}${unrestNote}${warNote}${anomNote}${precNote}${fedNote}${tradeNote}${spyNote}${gcNote}${echoNote}${invNote}`;
-        const dev = igSnap.selectedDevelopment;
-        const devNote = dev
-          ? ` · ${dev.districtsUsed}/${dev.districtSlots} dist · Happy ${Math.round(dev.pops?.happiness || 0)}`
-          : '';
-        const ethicsNote = empire?.ethics?.length
-          ? ` · ${empire.ethics.map((e) => e.label).join(', ')}`
-          : '';
-        igText.title = `Galaxy — Alloys ${Math.floor(igSnap.alloys || 0)} · Energy ${Math.floor(igSnap.energy || 0)} · Autonomy ${empire?.avgAutonomy || 0}%${cosmic?.resolved ? ` · ${cosmic.pathLabel}` : ''}${devNote}${ethicsNote} · Shift+U`;
-        igText.className =
-          'stat-value intergalactic-value' +
-          (igSnap.defenseInstances > 0 ||
-          igSnap.homeworldSiege ||
-          igSnap.activeCrises > 0 ||
-          empire?.highUnrest > 0 ||
-          warOffer > 0 ||
-          warActive > 0 ||
-          exp?.activeAnomalies > 0 ||
-          endgame?.galacticCrisis ||
-          endgame?.empireCollapsed ||
-          echoes?.active?.length > 0 ||
-          sep?.invasionActive ||
-          sep?.invasionOffers > 0
-            ? ' intergalactic-active'
-            : '');
-      }
-    }
-    if (igBtn) {
-      // Soft-lock: always clickable so locked state can explain unlock wave.
-      igBtn.style.display = '';
-      igBtn.disabled = false;
-      igBtn.setAttribute('aria-disabled', igUnlocked ? 'false' : 'true');
-      igBtn.classList.toggle('layer-btn-locked', !igUnlocked);
-      igBtn.title = igUnlocked
-        ? 'Intergalactic — galaxy map (Shift+U)'
-        : 'Intergalactic unlocks at wave 400 (Shift+U) — click for details';
-      igBtn.classList.toggle(
-        'intergalactic-open',
-        igUnlocked && typeof IntergalacticLayer !== 'undefined' && IntergalacticLayer.isPanelOpen()
-      );
-    }
-    if (typeof IntergalacticLayer !== 'undefined') IntergalacticLayer.renderPanel(gs);
 
     document.querySelectorAll('.doctrine-btn').forEach((btn) => {
       const id = btn.dataset.doctrine;
@@ -1954,56 +1663,10 @@ const UI = (() => {
       }
     }
 
-    const conquestHud = document.getElementById('conquest-hud');
-    const conquestEl = document.getElementById('conquest-text');
-    const pc = gs.planetConquest;
-    if (conquestHud && conquestEl) {
-      const show = !!pc?.active;
-      conquestHud.style.display = show ? '' : 'none';
-      if (show) {
-        const label = pc.summary || '—';
-        conquestEl.textContent = label.slice(0, 22) + (label.length > 22 ? '…' : '');
-        const sectorTips = (pc.sectors || [])
-          .map(
-            (s) =>
-              `${s.fullName || s.name}: ${s.eliminated ? 'ELIMINATED' : `${s.playerControl}% conquered`}`
-          )
-          .join('\n');
-        const goalLine = pc.trueVictoryLabel || 'TRUE WIN: Defeat Worldheart Tyrant';
-        const bossNote = pc.planetBossActive
-          ? `\n\n${goalLine}\nWorldheart Tyrant ${pc.planetBossHpPct ?? '?'}%${pc.planetBossShielded ? ' — warded (field 3+ unit types)' : ''}`
-          : `\n\n${goalLine}\nEliminations: ${pc.eliminations || 0} · ${pc.remaining || 0} realms remain · Boss at ${pc.bossEliminationsMin || 2}+ fallen`;
-        conquestEl.title = (sectorTips || 'Planet conquest sectors') + bossNote;
-        conquestEl.className =
-          'stat-value conquest-value' +
-          (pc.victoryReady ? ' conquest-victory' : pc.planetBossActive ? ' conquest-boss' : '');
-        conquestEl.style.color = pc.planetBossActive ? '#ff4080' : pc.victoryReady ? '#80ffa0' : '';
-      }
-    }
-
     const controlHud = document.getElementById('control-hud');
     const controlEl = document.getElementById('control-text');
-    const pw = gs.planetWarfare;
     if (controlHud && controlEl) {
-      const show = pw?.active;
-      controlHud.style.display = show ? '' : 'none';
-      if (show) {
-        const pct = pw.hostileControlPct ?? 0;
-        controlEl.textContent = `${pct}% ${pw.tier || ''}`;
-        controlEl.title =
-          pw.controlNote ||
-          `Hostile map control — vision ×${(pw.visionMult ?? 1).toFixed(2)}, spawn pace ×${(pw.spawnIntervalMult ?? 1).toFixed(2)}`;
-        const tierClass =
-          pct >= 72
-            ? 'control-critical'
-            : pct >= 52
-              ? 'control-contested'
-              : pct >= 32
-                ? 'control-pressured'
-                : '';
-        controlEl.className = `stat-value control-value${tierClass ? ` ${tierClass}` : ''}`;
-        controlEl.style.color = pw.tierColor || '';
-      }
+      controlHud.style.display = 'none';
     }
 
     const realmHud = document.getElementById('realm-hud');
@@ -2061,13 +1724,11 @@ const UI = (() => {
       const mapNote =
         me?.activeSummary || (me?.pending && me?.event?.name ? `${me.event.name} pending` : '');
       const repNote = gs.factionReputation?.summary;
-      const conquestNote = gs.planetConquest?.active ? gs.planetConquest.summary : '';
       // Prefer short structured brief over nextWaveIntel (which piles meta notes).
       const briefParts = [];
       if (gs.namedBoss) briefParts.push(String(gs.namedBoss));
       else if (bossPack) briefParts.push(String(bossPack).slice(0, 28));
       if (mfNote) briefParts.push(String(mfNote).slice(0, 28));
-      else if (conquestNote) briefParts.push(String(conquestNote).slice(0, 28));
       else if (mapNote) briefParts.push(String(mapNote).slice(0, 28));
       else if (repNote) briefParts.push(String(repNote).slice(0, 28));
       else if (pactNote || biomeNote || hazNote || wildNote) {
@@ -2352,13 +2013,13 @@ const UI = (() => {
       gs.asymmetricWarfare?.playerMacro,
       gs.asymmetricWarfare?.playerMicro,
       gs.enemyFactions?.activeSummary,
-      gs.planetWarfare?.hostileControlPct,
-      gs.planetConquest?.summary,
-      gs.planetConquest?.eliminations,
-      gs.planetConquest?.remaining,
-      gs.planetConquest?.planetBossActive,
-      gs.planetConquest?.planetBossHpPct,
-      gs.planetConquest?.victoryReady,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
       (gs.buildableAcademies || []).join(','),
       gs.settlementRaids?.summary,
       gs.settlementRaids?.pendingCount,
