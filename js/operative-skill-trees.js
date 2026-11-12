@@ -555,8 +555,65 @@ const OperativeSkillTrees = (() => {
     };
   }
 
+  /**
+   * Skill-tree shop, drawn into every `.operative-skills-panel` host (Legion Archive and
+   * Grand Coliseum screens). Trees appear once a faction has operatives, points or nodes.
+   */
+  function renderPanel() {
+    const hosts = document.querySelectorAll('.operative-skills-panel');
+    if (!hosts.length) return;
+    const gs = typeof Game !== 'undefined' ? Game.getState?.() : null;
+    const snap = getSnapshot(gs?.wave || 0, gs?.units || []);
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    const html = snap.factions.length
+      ? snap.factions
+          .map(
+            (f) => `
+        <div class="skill-tree">
+          <div class="skill-tree-head">
+            <span class="skill-tree-name">${esc(f.label)}</span>
+            <span class="skill-tree-points">${f.availablePoints} of ${f.totalBudget} point(s) free</span>
+          </div>
+          <div class="skill-tree-nodes">
+            ${f.nodes
+              .map((n) => {
+                const state = n.owned ? 'owned' : n.canBuy ? 'buyable' : 'locked';
+                const why = n.owned
+                  ? 'Owned'
+                  : n.canBuy
+                    ? `Buy for ${n.cost}`
+                    : canPurchase(f.factionId, n.id).reason;
+                return `<button type="button" class="skill-node skill-node-${state}"
+                  data-skill-faction="${esc(f.factionId)}" data-skill-node="${esc(n.id)}"
+                  ${n.owned || !n.canBuy ? 'disabled' : ''} title="${esc(why)}">
+                  <span class="skill-node-name">${esc(n.name)}</span>
+                  <span class="skill-node-desc">${esc(n.desc)}</span>
+                  <span class="skill-node-cost">${n.owned ? '✓ owned' : `${n.cost} pt`}</span>
+                </button>`;
+              })
+              .join('')}
+          </div>
+        </div>`
+          )
+          .join('')
+      : '<p class="panel-hint">Recruit an operative to open that faction\'s skill tree. Points come from recruits, waves survived and faction mastery.</p>';
+    hosts.forEach((host) => {
+      host.innerHTML = `<div class="skill-tree-title">OPERATIVE SKILLS</div>${html}`;
+      if (host.dataset.skillBound) return;
+      host.dataset.skillBound = '1';
+      host.addEventListener('click', (e) => {
+        const btn = e.target.closest?.('[data-skill-node]');
+        if (!btn || btn.disabled) return;
+        const res = purchaseNode(btn.dataset.skillFaction, btn.dataset.skillNode);
+        if (res.ok && typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+        renderPanel();
+      });
+    });
+  }
+
   return {
     FACTION_TREES,
+    renderPanel,
     resetRun,
     getAvailablePoints,
     purchaseNode,

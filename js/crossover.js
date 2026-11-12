@@ -2264,7 +2264,10 @@ const CrossoverHub = (() => {
     if (!panel) return;
     if (factionId) activeFaction = factionId;
     const open = panel.classList.toggle('active');
-    if (open) renderRoster(typeof Game !== 'undefined' ? Game.getState() : null);
+    if (open) {
+      renderRoster(typeof Game !== 'undefined' ? Game.getState() : null);
+      if (typeof OperativeSkillTrees !== 'undefined') OperativeSkillTrees.renderPanel();
+    }
   }
 
   function getSelected() {

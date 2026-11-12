@@ -5799,3 +5799,78 @@ body.game-playing #night-prep-card:not([hidden]) {
 .menu-quit-btn[hidden] {
   display: none;
 }
+
+/* Operative skill trees (Legion Archive / Grand Coliseum) */
+.operative-skills-panel {
+  margin: 12px 0;
+  text-align: left;
+}
+.skill-tree-title {
+  font-family: 'Cinzel', serif;
+  font-size: calc(12px * var(--font-scale));
+  letter-spacing: 1px;
+  color: #d8c090;
+  margin-bottom: 6px;
+}
+.skill-tree {
+  border: 1px solid #4a3c2a;
+  border-radius: 6px;
+  padding: 8px;
+  margin-bottom: 8px;
+  background: rgba(20, 16, 10, 0.55);
+}
+.skill-tree-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: calc(12px * var(--font-scale));
+  color: #f0e0c0;
+  margin-bottom: 6px;
+}
+.skill-tree-points {
+  color: #90c8ff;
+}
+.skill-tree-nodes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 6px;
+}
+.skill-node {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  text-align: left;
+  border-radius: 4px;
+  border: 1px solid #4a4a5a;
+  background: rgba(30, 34, 48, 0.9);
+  color: #d0d4e0;
+  font-size: calc(11px * var(--font-scale));
+  cursor: pointer;
+}
+.skill-node-name {
+  font-weight: 700;
+}
+.skill-node-desc {
+  color: #a8b0c0;
+}
+.skill-node-cost {
+  color: #90c8ff;
+}
+.skill-node-buyable {
+  border-color: #c0a040;
+}
+.skill-node-buyable:hover {
+  background: rgba(72, 56, 24, 0.95);
+}
+.skill-node-owned {
+  border-color: #50a060;
+  cursor: default;
+}
+.skill-node-owned .skill-node-cost {
+  color: #70d088;
+}
+.skill-node-locked {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

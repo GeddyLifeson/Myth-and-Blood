@@ -608,6 +608,7 @@ const WweAcademy = (() => {
       return;
     }
     const open = panel.classList.toggle('active');
+    if (open && typeof OperativeSkillTrees !== 'undefined') OperativeSkillTrees.renderPanel();
     if (open) renderRoster(typeof Game !== 'undefined' ? Game.getState() : null);
   }
 
