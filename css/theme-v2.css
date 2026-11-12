@@ -3,7 +3,7 @@
  * Layered on style.css. Keeps all selectors/IDs; redesigns chrome, density, hierarchy.
  */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Source+Sans+3:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Source+Sans+3:wght@400;600;700&family=Pirata+One&display=swap');
 
 /* ── Design tokens ─────────────────────────────────────────── */
 body.ui-v2 {
@@ -1102,4 +1102,205 @@ body.ui-v2 #message-box {
   bottom: calc(var(--hint-bar-h, 22px) + 16px);
   max-width: min(60vw, 820px);
   text-align: center;
+}
+
+/* ── Ink & blood theme: black panels, bone text, blood accents ─────────────── */
+body.ui-v2 {
+  --ink-950: #060506;
+  --ink-900: #0b090b;
+  --ink-850: #120f12;
+  --ink-800: #1a1518;
+  --ink-700: #2a2024;
+  --ink-600: #3c2a2e;
+
+  --gold-400: #e8dcc0;
+  --gold-500: #c8b890;
+  --gold-600: #9a8a68;
+  --gold-dim: #6a2a2a;
+
+  --blood-400: #ff4a3a;
+  --blood-500: #c81e1e;
+  --blood-600: #8a1014;
+
+  --text-primary: #ece4d0;
+  --text-secondary: #b0a490;
+  --text-muted: #7a6e68;
+
+  --border-soft: rgba(190, 40, 40, 0.3);
+  --border-strong: rgba(230, 60, 50, 0.7);
+  --glass: rgba(9, 7, 9, 0.92);
+  --glass-deep: rgba(4, 3, 4, 0.96);
+  --glass-highlight: rgba(255, 90, 70, 0.05);
+  --shadow-panel: 0 4px 18px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(200, 40, 40, 0.08);
+}
+
+body.ui-v2,
+body.ui-v2 #game-container {
+  background-color: #050405;
+}
+
+body.ui-v2 #left-panel,
+body.ui-v2 #right-panel {
+  background: linear-gradient(180deg, rgba(10, 8, 10, 0.96) 0%, rgba(6, 5, 6, 0.96) 100%);
+  border-color: rgba(190, 40, 40, 0.35);
+}
+
+body.ui-v2 .deploy-btn,
+body.ui-v2 .ability-btn,
+body.ui-v2 .build-btn,
+body.ui-v2 .spy-btn,
+body.ui-v2 .courier-btn,
+body.ui-v2 .meta-btn,
+body.ui-v2 .doctrine-btn,
+body.ui-v2 .counter-doctrine-btn,
+body.ui-v2 .loadout-btn,
+body.ui-v2 .formation-btn,
+body.ui-v2 .side-tab {
+  background: linear-gradient(180deg, #1c1619 0%, #0c0a0c 100%);
+  border: 1px solid #3a2226;
+  border-radius: 1px;
+  box-shadow: inset 0 0 0 1px #000;
+  color: var(--text-primary);
+}
+body.ui-v2 .deploy-btn:hover,
+body.ui-v2 .ability-btn:hover,
+body.ui-v2 .build-btn:hover,
+body.ui-v2 .spy-btn:hover,
+body.ui-v2 .courier-btn:hover,
+body.ui-v2 .meta-btn:hover,
+body.ui-v2 .doctrine-btn:hover,
+body.ui-v2 .counter-doctrine-btn:hover,
+body.ui-v2 .side-tab:hover {
+  background: linear-gradient(180deg, #3a1216 0%, #1a080a 100%);
+  border-color: var(--blood-500);
+  color: #fff;
+}
+body.ui-v2 .deploy-btn.selected,
+body.ui-v2 .ability-btn.selected,
+body.ui-v2 .build-btn.selected,
+body.ui-v2 .courier-btn.selected,
+body.ui-v2 .meta-btn.selected,
+body.ui-v2 .meta-btn.pending,
+body.ui-v2 .side-tab.active {
+  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  border-color: var(--blood-400);
+  color: #fff;
+  box-shadow:
+    inset 0 0 0 1px #000,
+    0 0 10px rgba(220, 40, 30, 0.45);
+}
+body.ui-v2 .cost {
+  color: var(--blood-400);
+}
+body.ui-v2 .panel-header {
+  color: var(--gold-400);
+  border-left-color: var(--blood-500);
+  letter-spacing: 0.1em;
+}
+
+body.ui-v2 .game-title {
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-weight: 400;
+  font-size: calc(64px * var(--font-scale));
+  letter-spacing: 0.06em;
+  color: #ece4d0;
+  text-shadow:
+    3px 3px 0 #000,
+    -1px -1px 0 #000,
+    0 0 26px rgba(220, 30, 24, 0.55);
+  animation: none;
+}
+body.ui-v2 .game-title .accent {
+  font-size: calc(56px * var(--font-scale));
+  color: var(--blood-500);
+  text-shadow:
+    3px 3px 0 #000,
+    0 0 18px rgba(255, 40, 30, 0.7);
+}
+body.ui-v2 .subtitle {
+  color: var(--blood-400);
+}
+body.ui-v2 .menu-content {
+  background: linear-gradient(180deg, rgba(12, 9, 11, 0.97) 0%, rgba(5, 4, 5, 0.98) 100%);
+  border: 2px solid #000;
+  outline: 1px solid rgba(190, 40, 40, 0.55);
+  box-shadow:
+    0 0 0 4px #000,
+    0 18px 60px rgba(0, 0, 0, 0.8);
+}
+body.ui-v2 .menu-btn {
+  background: linear-gradient(180deg, #1c1619 0%, #0a080a 100%);
+  border: 1px solid #4a2428;
+  border-radius: 1px;
+  color: var(--text-primary);
+  box-shadow: 3px 3px 0 #000;
+}
+body.ui-v2 .menu-btn:hover {
+  background: linear-gradient(180deg, #4a1216 0%, #1e080a 100%);
+  border-color: var(--blood-400);
+  color: #fff;
+}
+body.ui-v2 .menu-btn.primary {
+  background: linear-gradient(180deg, #c81e1e 0%, #7a0c10 60%, #48060a 100%);
+  border-color: #ff5a4a;
+  color: #fff;
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: calc(24px * var(--font-scale));
+  letter-spacing: 0.08em;
+  box-shadow:
+    4px 4px 0 #000,
+    0 0 26px rgba(220, 30, 24, 0.5);
+}
+body.ui-v2 #title-art {
+  border: 3px solid #000;
+  outline: 1px solid rgba(190, 40, 40, 0.6);
+  border-radius: 0;
+}
+body.ui-v2 .diff-btn,
+body.ui-v2 .mode-btn {
+  background: #120e10;
+  border-color: #3a2226;
+  border-radius: 1px;
+  color: var(--text-primary);
+}
+body.ui-v2 .diff-btn.selected,
+body.ui-v2 .mode-btn.selected {
+  background: #7a0c10;
+  border-color: var(--blood-400);
+  color: #fff;
+}
+body.ui-v2 #top-bar .stat-group {
+  background: rgba(8, 6, 8, 0.85);
+  border-color: rgba(190, 40, 40, 0.3);
+  border-radius: 1px;
+}
+body.ui-v2 #top-bar .top-bar-actions .cmd-top-btn {
+  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  border-color: var(--blood-400);
+  color: #fff;
+}
+body.ui-v2 #message-box {
+  background: rgba(6, 4, 6, 0.94);
+  border: 1px solid var(--blood-500);
+  border-radius: 1px;
+  box-shadow: 3px 3px 0 #000;
+  color: var(--text-primary);
+}
+
+#launch-overlay {
+  background: #050405;
+}
+.launch-overlay-title {
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: calc(54px * var(--font-scale));
+  letter-spacing: 0.06em;
+  color: #ece4d0;
+  text-shadow:
+    3px 3px 0 #000,
+    0 0 26px rgba(220, 30, 24, 0.6);
+}
+.launch-overlay-sub {
+  color: #ff4a3a;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
 }

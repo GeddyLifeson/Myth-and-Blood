@@ -14045,7 +14045,7 @@ const Game = (() => {
         const sprScale = svc('GfxQuality')
           ? svc('GfxQuality').quantizeScale(u.spriteScale || 1)
           : Math.round((u.spriteScale || 1) * 4) / 4;
-        const drawSz = 36 * sprScale;
+        const drawSz = (svc('SpriteGen').UNIT_DRAW_SIZE || 62) * sprScale;
         // spriteType is derived from type at spawn and should always be a string; fall back
         // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
         // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
