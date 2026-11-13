@@ -1309,7 +1309,7 @@ body.ui-v2 #message-box {
 #siege-strip {
   position: fixed;
   left: calc(var(--panel-width, 136px) + 14px);
-  top: calc(84px * var(--font-scale, 1));
+  top: calc(108px * var(--font-scale, 1));
   z-index: 40;
   display: flex;
   flex-direction: column;
@@ -1537,4 +1537,30 @@ body.ui-v2 #message-box {
   .siege-chip.danger {
     animation-duration: 0.01s;
   }
+}
+
+/* After-action report on the game-over screen */
+.result-siege {
+  margin: 10px auto 14px;
+  max-width: 560px;
+  text-align: left;
+  font-family: 'Cinzel', serif;
+  font-size: calc(12px * var(--font-scale, 1));
+  color: #d8cfba;
+  border-left: 3px solid #c8202a;
+  padding: 4px 12px;
+  background: rgba(6, 4, 6, 0.6);
+}
+.result-siege:empty {
+  display: none;
+}
+.result-siege h3 {
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: calc(18px * var(--font-scale, 1));
+  color: #ff4a3a;
+  margin: 8px 0 4px;
+  font-weight: normal;
+}
+.result-siege div {
+  padding: 1px 0;
 }

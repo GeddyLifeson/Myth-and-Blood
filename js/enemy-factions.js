@@ -425,6 +425,7 @@ const EnemyFactions = (() => {
   Object.assign(UNIT_FACTION, {
     goblin: 'goblin_hordes',
     plague_rat: 'goblin_hordes',
+    goblin_firebrand: 'goblin_hordes',
     goblin_sapper: 'goblin_hordes',
     goblin_burrower: 'goblin_hordes',
     goblin_engineer: 'goblin_hordes',

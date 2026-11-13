@@ -399,6 +399,44 @@ const ContentExpansion = (() => {
         isEvilOperative: true,
         evilRole: 'sky_hunter',
       },
+      orc_shieldbearer: {
+        name: 'Orc Shieldbearer',
+        hp: 150,
+        accuracy: 30,
+        damage: 14,
+        range: 22,
+        meleeRange: 22,
+        speed: 0.42,
+        type: 'melee',
+        reward: 0,
+        morale: 60,
+      },
+      goblin_firebrand: {
+        name: 'Goblin Firebrand',
+        hp: 34,
+        accuracy: 34,
+        damage: 16,
+        range: 120,
+        meleeRange: 18,
+        speed: 0.7,
+        type: 'ranged',
+        projectile: 'bolt',
+        reward: 0,
+        morale: 12,
+      },
+      wailing_wraith: {
+        name: 'Wailing Wraith',
+        hp: 62,
+        accuracy: 36,
+        damage: 18,
+        range: 26,
+        meleeRange: 26,
+        speed: 0.75,
+        type: 'melee',
+        reward: 0,
+        morale: 100,
+        flying: true,
+      },
       plague_rat: {
         name: 'Plague Rat',
         hp: 28,
@@ -936,6 +974,9 @@ const ContentExpansion = (() => {
     ENEMY_SPRITE_MAP.bone_summoner = 'bone_summoner';
     ENEMY_SPRITE_MAP.sky_drake = 'sky_drake';
     ENEMY_SPRITE_MAP.plague_rat = 'plague_rat';
+    ENEMY_SPRITE_MAP.orc_shieldbearer = 'orc_shieldbearer';
+    ENEMY_SPRITE_MAP.goblin_firebrand = 'goblin_firebrand';
+    ENEMY_SPRITE_MAP.wailing_wraith = 'wailing_wraith';
     ENEMY_SPRITE_MAP.abomination = 'abomination';
     ENEMY_SPRITE_MAP.behemoth = 'behemoth';
     ENEMY_SPRITE_MAP.iron_colossus = 'iron_colossus';
@@ -1014,6 +1055,9 @@ const ContentExpansion = (() => {
         goblin_burrower: { body: '#485828', accent: '#708838', mark: '#604020', size: 7 },
         bone_summoner: { body: '#383028', accent: '#a0a090', mark: '#80ff80', size: 9 },
         plague_rat: { body: '#4a4838', accent: '#706858', mark: '#80c040', size: 6 },
+        orc_shieldbearer: { body: '#3a4a2a', accent: '#8a8478', mark: '#c8202a', size: 11 },
+        goblin_firebrand: { body: '#586a2c', accent: '#ff7a20', mark: '#ffd040', size: 7 },
+        wailing_wraith: { body: '#2a2a3a', accent: '#b8c0d8', mark: '#80e0ff', size: 9 },
         hellbound_legionnaire: { body: '#3a2838', accent: '#7040a0', mark: '#ff4060', size: 9 },
         nightmare_strider: { body: '#302838', accent: '#604878', mark: '#c080ff', size: 10 },
         dreadborn_champion: { body: '#281828', accent: '#503050', mark: '#ff2040', size: 12 },
@@ -1043,7 +1087,10 @@ const ContentExpansion = (() => {
     const _getWaveConfig = getWaveConfig;
     getWaveConfig = function (waveNum) {
       const cfg = _getWaveConfig(waveNum);
+      if (waveNum >= 5) cfg.pool.push('goblin_firebrand');
       if (waveNum >= 6) cfg.pool.push('harpy', 'plague_rat');
+      if (waveNum >= 7) cfg.pool.push('orc_shieldbearer');
+      if (waveNum >= 12) cfg.pool.push('wailing_wraith');
       if (waveNum >= 9) cfg.pool.push('goblin_burrower');
       if (waveNum >= 11) cfg.pool.push('bone_summoner');
       if (waveNum >= 14) cfg.pool.push('sky_drake', 'harpy');

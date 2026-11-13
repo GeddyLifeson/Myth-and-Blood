@@ -1946,6 +1946,15 @@ const Game = (() => {
     if (!foe || foe.team === unit.team || !isValidCombatFoe(foe)) return false;
     // Player units cannot chase/fire on fog-hidden host troops (matches render + minimap).
     if (unit.team === 'player' && foe.team === 'enemy' && isEnemyHiddenByFog(foe)) return false;
+    // Troops do not charge the spot where the enemy appears; they engage once a squad
+    // has formed up and advanced, or when it is already on top of them.
+    if (
+      unit.team === 'player' &&
+      SiegeLoop.isMustering(foe) &&
+      posDistSq(unit.x, unit.y, foe.x, foe.y) > 140 * 140
+    ) {
+      return false;
+    }
     return true;
   }
 
@@ -2272,6 +2281,7 @@ const Game = (() => {
       const pos = clampPos(x, y);
       const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: 'north' });
       u.huntMode = true;
+      u.mustered = true;
       GS.units.push(u);
       return u;
     },
@@ -8035,7 +8045,7 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
-    SiegeLoop.endRun();
+    SiegeLoop.endRun(siegeCtx);
     if (!GS.creativeMode) {
       ach('game_end', {
         victory,
@@ -11975,7 +11985,9 @@ const Game = (() => {
     if (unit.team === 'player') actual = SiegeLoop.modifyDamageTaken(unit, actual, GS.updateTick);
     actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
     if (!(actual > 0)) return 0;
-    if (actual > 0 && opts.attackerTeam !== unit.team) SiegeLoop.noteCombat(GS.updateTick);
+    // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
+    // from out of reach must not hold a wave open forever.
+    if (actual > 0 && unit.team === 'enemy') SiegeLoop.noteCombat(GS.updateTick);
     if (unit.team === 'player' && svc('CrownLegacies') && !GS.creativeMode) {
       actual *= svc('CrownLegacies').getCombinedEffects().damageTakenMult || 1;
     }
@@ -12087,10 +12099,13 @@ const Game = (() => {
     if (
       !nonCombat &&
       !Roster.blocksPin(unit) &&
+      !(unit.team === 'enemy' && (unit.pinImmuneUntil || 0) > GS.updateTick) &&
       Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
     ) {
       unit.pinned = true;
       unit.pinTimer = 50;
+      // A volley can stop an enemy once; massed archers can no longer hold it in place forever.
+      if (unit.team === 'enemy') unit.pinImmuneUntil = GS.updateTick + 290;
     }
     if (unit.hp <= 0) {
       unit.hp = 0;
@@ -13034,8 +13049,50 @@ const Game = (() => {
     }
   }
 
+  /**
+   * Flyers ignore terrain and go straight at what they want: the line if they are
+   * line-breakers, support troops if they are raiders, otherwise the nearest soldier.
+   * They used to drift to a fixed hover point and wait there, which could stall a wave.
+   */
+  function updateFlyerAI(unit) {
+    if (unit.pinned || unit.attackAnimTimer > 0) return;
+    let dest = null;
+    if (!unit.lineBreaker) {
+      const prey =
+        (Roster.preference(unit) === 'support' && findPreferredPlayer(unit, Roster.isSupport)) ||
+        findNearestPlayer(unit);
+      if (prey) {
+        unit.combatTargetId = prey.id;
+        if (inAttackRange(unit, prey)) {
+          unit.animState = 'idle';
+          return;
+        }
+        dest = prey;
+      } else if (SiegeLoop.unopposedBreaks(siegeCtx)) {
+        unit.lineBreaker = true;
+      } else {
+        dest = getEnemyAdvancePoint(unit);
+      }
+    }
+    if (!dest) dest = SiegeLoop.breachGoal(unit, siegeCtx);
+    const dx = dest.x - unit.x;
+    const dy = dest.y - unit.y;
+    const dist = Math.hypot(dx, dy);
+    if (dist < 2) return;
+    const step = Math.min(dist, unit.speed);
+    const pos = clampPos(unit.x + (dx / dist) * step, unit.y + (dy / dist) * step);
+    unit.x = pos.x;
+    unit.y = pos.y;
+    unit.rotation = (Math.atan2(dy, dx) * 180) / Math.PI;
+    unit.animState = 'walk';
+  }
+
   function updateEnemyAI(unit) {
     if (unit.hp <= 0) return;
+    if (unit.flying && unit.combatType !== 'siege' && GS.state === 'playing' && !GS.creativeMode) {
+      updateFlyerAI(unit);
+      return;
+    }
     if (svc('ContentExpansion') && svc('ContentExpansion').updateEnemyAI(unit)) return;
     if (unit.type === 'siege_tower' && updateSiegeTower(unit)) return;
     if (unit.combatType === 'healer' || unit.combatType === 'builder') return;
@@ -13320,13 +13377,13 @@ const Game = (() => {
           ) + Math.floor(Math.random() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
         );
         // Enemies arrive in squads, not a trickle: a squad lands together, then a longer lull.
-        const squad = GS.creativeMode ? 1 : Math.min(6, 1 + Math.floor(GS.wave / 5));
+        const squad = GS.creativeMode ? 1 : Math.min(10, 2 + Math.floor(GS.wave / 4));
         if ((GS.spawnSquadLeft || 0) > 1) {
           GS.spawnSquadLeft--;
           spawnGap = 6;
         } else {
           GS.spawnSquadLeft = squad;
-          spawnGap = Math.floor(spawnGap * squad * 0.8);
+          spawnGap = Math.floor(spawnGap * squad * 0.4);
         }
         GS.spawnTimer = spawnGap;
       }

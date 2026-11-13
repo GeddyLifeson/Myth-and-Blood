@@ -347,6 +347,32 @@ const Roster = (() => {
       weak: 'Fragile; kill it first.',
       kite: true,
     },
+    orc_shieldbearer: {
+      role: 'Shield wall',
+      trait:
+        'Tower Shield — arrows and bolts do 55% less to it, and enemies beside it take 10% less.',
+      weak: 'Mages, sappers, and anything that gets behind it.',
+      armourVsRanged: 0.45,
+      wardAura: { r: 60 },
+      noPin: true,
+    },
+    goblin_firebrand: {
+      role: 'Arsonist',
+      trait:
+        'Firebomb — its bombs splash, keep burning for several seconds, and it prefers your buildings.',
+      weak: 'Fragile; cavalry and archers kill it fast.',
+      kite: true,
+      prefer: 'building',
+      splashEvery: { n: 1, r: 34, pct: 0.5 },
+      plague: { dps: 4, ticks: 180 },
+    },
+    wailing_wraith: {
+      role: 'Terror',
+      trait: 'Dirge — soldiers near it steadily lose morale. It flies, and it never routs.',
+      weak: 'Low health. Bards and War Cry restore what it drains.',
+      dirgeAura: { r: 120, morale: 2.5 },
+      fearless: true,
+    },
     sky_drake: {
       role: 'Flying artillery',
       trait: 'Fire Breath — every shot burns everything near the target.',
@@ -622,7 +648,7 @@ const Roster = (() => {
   function onSpawn(unit, wave = 0) {
     // Enemies used to land one blow in four all game. Their aim now improves as the siege goes on.
     if (unit.team === 'enemy' && unit.accuracy > 0) {
-      unit.accuracy = Math.min(85, unit.accuracy + 8 + Math.min(22, wave));
+      unit.accuracy = Math.min(85, unit.accuracy + Math.min(30, wave * 1.5));
     }
     const p = profileOf(unit);
     if (!p) return;
@@ -920,6 +946,13 @@ const Roster = (() => {
         forNear(u, p.dressing.r, (o) => {
           if (o.team === u.team && o.hp < o.maxHp) {
             o.hp = Math.min(o.maxHp, o.hp + o.maxHp * p.dressing.pct * (SLOW_TICK / 60));
+          }
+        });
+      }
+      if (p.dirgeAura) {
+        forNear(u, p.dirgeAura.r, (o) => {
+          if (o.team !== u.team && o.maxMorale > 0 && !o.isGeneral && o.morale > 0) {
+            o.morale = Math.max(0, o.morale - p.dirgeAura.morale * (SLOW_TICK / 60));
           }
         });
       }
