@@ -2245,6 +2245,9 @@ const Game = (() => {
     get casualties() {
       return GS.playerCasualtiesThisWave;
     },
+    get army() {
+      return unitCounts.player;
+    },
     get enemiesLeft() {
       return countActiveEnemies();
     },
@@ -2273,6 +2276,14 @@ const Game = (() => {
       return u;
     },
     unitName: (u) => (typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type),
+    /** Secondary damage from traits (splash, thorns, poison). Never triggers traits again. */
+    hurt: (u, amount, attacker, echo) =>
+      takeDamage(u, amount, {
+        attacker: attacker || null,
+        attackerTeam: attacker ? attacker.team : u.team === 'player' ? 'enemy' : 'player',
+        rosterEcho: !!echo,
+        splash: true,
+      }),
     defeat: () => {
       if (GS.state === 'playing') endGame(false);
     },
@@ -3019,7 +3030,10 @@ const Game = (() => {
     ) {
       dmg = Math.round(dmg * 1.35);
     }
-    if (target) dmg = SiegeLoop.modifyDamage(unit, target, dmg, GS.updateTick);
+    if (target) {
+      dmg = SiegeLoop.modifyDamage(unit, target, dmg, GS.updateTick);
+      dmg = Roster.modifyDamage(unit, target, dmg, siegeCtx);
+    }
     if (svc('ContentExpansion')) dmg = svc('ContentExpansion').modifyCalcDamage(unit, target, dmg);
     if (svc('StrategyCounterplay')) {
       dmg = svc('StrategyCounterplay').modifyDamage(unit, target, dmg);
@@ -6193,6 +6207,42 @@ const Game = (() => {
     return best;
   }
 
+  /** Nearest living player unit matching `want`, re-checked about once a second per enemy. */
+  function findPreferredPlayer(unit, want) {
+    if ((unit.preyUntil || 0) > GS.updateTick && unit.preyId) {
+      const kept = getUnitById(unit.preyId);
+      if (kept && kept.hp > 0 && !kept.fleeing && !kept.garrisoned) return kept;
+    }
+    let best = null;
+    let bestD = 420 * 420;
+    for (const p of GS.units) {
+      if (p.team !== 'player' || p.hp <= 0 || p.fleeing || p.demoralized || p.garrisoned) continue;
+      if (!want(p)) continue;
+      const d = posDistSq(p.x, p.y, unit.x, unit.y);
+      if (d < bestD) {
+        bestD = d;
+        best = p;
+      }
+    }
+    unit.preyId = best ? best.id : null;
+    unit.preyUntil = GS.updateTick + 60;
+    return best;
+  }
+
+  function findNearestPlayerStructure(unit) {
+    let best = null;
+    let bestD = 460 * 460;
+    for (const b of GS.buildings) {
+      if (b.owner !== 'player' || !(b.hp > 0) || !isSiegeableStructure(b)) continue;
+      const d = posDistSq(b.x, b.y, unit.x, unit.y);
+      if (d < bestD) {
+        bestD = d;
+        best = b;
+      }
+    }
+    return best;
+  }
+
   function findEnemyMoveTarget(unit) {
     if (unit.isCounterRaid && unit.raidTargetId) {
       const raidBld = GS.buildings.find(
@@ -6226,6 +6276,14 @@ const Game = (() => {
         : 0.35;
     if (settlement && Math.random() < raidChance) {
       return { kind: 'building', target: settlement };
+    }
+    const want = Roster.preference(unit);
+    if (want === 'support') {
+      const prey = findPreferredPlayer(unit, Roster.isSupport);
+      if (prey) return { kind: 'unit', target: prey };
+    } else if (want === 'building') {
+      const site = findNearestPlayerStructure(unit);
+      if (site) return { kind: 'building', target: site };
     }
     const tactical = findTacticalTarget(unit);
     if (tactical) return { kind: 'unit', target: tactical };
@@ -11915,6 +11973,8 @@ const Game = (() => {
       actual *= svc('DynamicMapEvents').getActiveMods().playerDamageTakenMult || 1;
     }
     if (unit.team === 'player') actual = SiegeLoop.modifyDamageTaken(unit, actual, GS.updateTick);
+    actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
+    if (!(actual > 0)) return 0;
     if (actual > 0 && opts.attackerTeam !== unit.team) SiegeLoop.noteCombat(GS.updateTick);
     if (unit.team === 'player' && svc('CrownLegacies') && !GS.creativeMode) {
       actual *= svc('CrownLegacies').getCombinedEffects().damageTakenMult || 1;
@@ -12024,7 +12084,11 @@ const Game = (() => {
       unit.combatType === 'builder' ||
       unit.combatType === 'courier' ||
       unit.combatType === 'healer';
-    if (!nonCombat && Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)) {
+    if (
+      !nonCombat &&
+      !Roster.blocksPin(unit) &&
+      Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
+    ) {
       unit.pinned = true;
       unit.pinTimer = 50;
     }
@@ -12081,6 +12145,7 @@ const Game = (() => {
           svc('GameEvents').emit(svc('GameEvents').GameEvent.ENEMY_SLAIN, { unit, wave: GS.wave });
         }
         SiegeLoop.onUnitDeath(unit, killer, siegeCtx);
+        Roster.onDeath(unit, killer, siegeCtx);
         if (killer) {
           killer.experience = (killer.experience || 0) + 2 + SiegeLoop.killXpBonus();
           if (svc('Legacy')) svc('Legacy').recordKill(killer.type, unit.type);
@@ -12148,6 +12213,7 @@ const Game = (() => {
       }
       if (unit.team === 'player') {
         SiegeLoop.onUnitDeath(unit, null, siegeCtx);
+        Roster.onDeath(unit, null, siegeCtx);
         GS.runPlayerDeaths++;
         GS.playerCasualtiesThisWave++;
         if (typeof GameFeedback !== 'undefined') GameFeedback.onPlayerDeath();
@@ -12979,6 +13045,28 @@ const Game = (() => {
     const foeInRange = unit.stormLine ? null : findNearestFoeInRange(unit);
     if (foeInRange) {
       unit.combatTargetId = foeInRange.id;
+      // Skirmishers give ground when a soldier closes in, then turn and shoot again.
+      const kiteD = Roster.kiteDistance(unit);
+      if (kiteD > 0 && unit.attackAnimTimer <= 0) {
+        unit.kiteCd = (unit.kiteCd || 0) - 1;
+        const gap = unitDistance(unit, foeInRange);
+        if (gap < kiteD && unit.kiteCd <= 0) {
+          const away = clampPos(
+            unit.x + ((unit.x - foeInRange.x) / Math.max(1, gap)) * 70,
+            unit.y + ((unit.y - foeInRange.y) / Math.max(1, gap)) * 70
+          );
+          unit.kiteCd = 150;
+          if (setUnitPath(unit, away.x, away.y)) {
+            unit.pathTargetId = 'kite';
+            unit.kiteMove = 40;
+          }
+        }
+        if ((unit.kiteMove || 0) > 0 && unit.path?.length) {
+          unit.kiteMove--;
+          followPath(unit);
+          return;
+        }
+      }
       if (inAttackRange(unit, foeInRange)) {
         unit.path = [];
         unit.pathIndex = 0;
@@ -13210,6 +13298,7 @@ const Game = (() => {
         }
         u.huntMode = true;
         SiegeLoop.tagEnemySpawn(u, siegeCtx);
+        Roster.onSpawn(u, GS.creativeMode ? 0 : GS.wave);
         GS.units.push(u);
         const baseInterval =
           GS.creativeMode && GS.creativeCustomWave?.interval
@@ -13219,7 +13308,7 @@ const Game = (() => {
         const colonyInterval = GS.colonyThreatMods?.intervalMult || 1;
         const planetInterval = 1;
         const asymInterval = getAsymmetricMods().enemyIntervalMult || 1;
-        GS.spawnTimer = Math.max(
+        let spawnGap = Math.max(
           8,
           Math.floor(
             baseInterval *
@@ -13230,6 +13319,16 @@ const Game = (() => {
               asymInterval
           ) + Math.floor(Math.random() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
         );
+        // Enemies arrive in squads, not a trickle: a squad lands together, then a longer lull.
+        const squad = GS.creativeMode ? 1 : Math.min(6, 1 + Math.floor(GS.wave / 5));
+        if ((GS.spawnSquadLeft || 0) > 1) {
+          GS.spawnSquadLeft--;
+          spawnGap = 6;
+        } else {
+          GS.spawnSquadLeft = squad;
+          spawnGap = Math.floor(spawnGap * squad * 0.8);
+        }
+        GS.spawnTimer = spawnGap;
       }
     } else if (isDayPhase() && GS.spawnQueue.length === 0 && countActiveEnemies() === 0) {
       if (!(GS.creativeMode && GS.creativeSettings.noAutoCycle)) enterNightPhase();
@@ -13324,7 +13423,10 @@ const Game = (() => {
       return;
     }
     GS.updateTick++;
-    if (GS.state === 'playing') SiegeLoop.update(siegeCtx);
+    if (GS.state === 'playing') {
+      SiegeLoop.update(siegeCtx);
+      Roster.update(siegeCtx);
+    }
     markUpdatePhase('update-begin', `w${GS.wave} u${GS.units.length}`);
     if (svc('Perf')) {
       svc('Perf').setUpdateTick(GS.updateTick);
@@ -14839,6 +14941,7 @@ const Game = (() => {
           kills: u.kills || 0,
           wavesSurvived: u.wavesSurvived || 0,
           counterNote: SiegeLoop.COUNTER_NOTES[u.type] || '',
+          roster: Roster.describe(u),
           hp: u.hp,
           maxHp: u.maxHp,
           morale: u.morale,

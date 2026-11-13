@@ -80,30 +80,36 @@ function start(seed, diff = 'normal') {
   ok(after > before, `calling the wave early pays TP (${before} -> ${after})`);
 }
 
-// --- line-breakers appear, reach the line and end the run when nobody stops them ----------
+// --- line-breakers appear and reach the line when nobody stops them -----------------------
+// A run with no recruits can also end by elimination before anything breaches, so several
+// seeds are played and at least one must show a breach.
 {
-  const { Game } = start(13, 'normal');
   let sawRunner = false;
   let maxBreaches = 0;
   let spoilsOffered = false;
-  let t = 0;
-  for (; t < 90000 && Game.isPlaying(); t++) {
-    Game.update();
-    if (t % 120 === 0) {
-      Game.updatePresentation?.();
-      const s = Game.getState();
-      if (s.timeOfDay === 'night') Game.beginDayPhase(true);
-      if (s.siegeLoop.pendingSpoils > 0) spoilsOffered = true;
-      maxBreaches = Math.max(maxBreaches, s.siegeLoop.breaches);
-      if (Game.getUnitsSnapshot().some((u) => u.lineBreaker)) sawRunner = true;
+  let bestWave = 0;
+  for (const seed of [13, 14, 15, 16]) {
+    const { Game } = start(seed, 'normal');
+    for (let t = 0; t < 60000 && Game.isPlaying(); t++) {
+      Game.update();
+      if (t % 60 === 0) {
+        Game.updatePresentation?.();
+        const s = Game.getState();
+        if (s.timeOfDay === 'night') Game.beginDayPhase(true);
+        if (s.siegeLoop.pendingSpoils > 0) spoilsOffered = true;
+        maxBreaches = Math.max(maxBreaches, s.siegeLoop.breaches);
+        if (Game.getUnitsSnapshot().some((u) => u.lineBreaker)) sawRunner = true;
+      }
     }
+    Game.updatePresentation?.();
+    const fin = Game.getState();
+    maxBreaches = Math.max(maxBreaches, fin.siegeLoop.breaches);
+    bestWave = Math.max(bestWave, fin.wave);
+    if (sawRunner && maxBreaches > 0) break;
   }
-  Game.updatePresentation?.();
-  const s = Game.getState();
   ok(sawRunner, 'line-breakers spawn');
   ok(maxBreaches > 0, `enemies breach an undefended line (${maxBreaches} breaches)`);
-  console.log(`  (run reached wave ${s.wave} in ${t} ticks, playing=${Game.isPlaying()})`);
-  ok(spoilsOffered || s.wave < 5, 'spoils are offered after wave 5 when the run lasts that long');
+  ok(spoilsOffered || bestWave < 5, 'spoils are offered after wave 5 when the run lasts that long');
 }
 
 // --- Warband mode: fewer, tougher soldiers --------------------------------------------------
@@ -120,6 +126,10 @@ function start(seed, diff = 'normal') {
   api.Game.start();
   ok(api.SiegeLoop.isWarband(), 'Warband mode is active after starting in it');
   ok(api.SiegeLoop.deployCostMult() === 2, 'Warband doubles deploy cost');
+  ok(
+    Math.abs(api.SiegeLoop.deployCostMult(45) - 4) < 1e-9,
+    'a host of 45 doubles recruit cost again'
+  );
   const footman = api.Game.getUnitsSnapshot().find((u) => u.type === 'footman');
   ok(
     !footman || footman.maxHp >= 160,

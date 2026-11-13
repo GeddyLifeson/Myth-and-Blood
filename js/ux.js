@@ -598,6 +598,7 @@ const UX = (() => {
         ${formatLateAbility(u)}
         <div class="unit-info-row service-row"><span>Service</span> ${u.kills || 0} kill${u.kills === 1 ? '' : 's'} · ${u.wavesSurvived || 0} wave${u.wavesSurvived === 1 ? '' : 's'} survived</div>
         ${u.counterNote ? `<div class="unit-info-row counter-row">${escapeHtml(u.counterNote)}</div>` : ''}
+        ${u.roster ? `<div class="unit-info-row roster-row"><strong>${escapeHtml(u.roster.role)}</strong> — ${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>` : ''}
         <div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
         ${

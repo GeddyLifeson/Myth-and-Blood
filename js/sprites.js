@@ -425,202 +425,7 @@ const SpriteGen = (() => {
       drawLowMarker(ctx, style, team, 90, style.size * 0.88, animState, type);
       return;
     }
-    if (lod >= 1) {
-      drawMediumUnit(ctx, type, 90, team, frame, animState);
-      return;
-    }
-    const shape = type.startsWith('boss_')
-      ? BOSS_ARCHETYPE[type] || 'behemoth'
-      : type === 'cinderbound_juggernaut'
-        ? 'iron_colossus'
-        : type;
-    const style = resolveUnitStyle(type, team, shape in UNIT_STYLE ? shape : 'behemoth');
-    const r = style.size;
-    const walkBob = animState === 'walk' ? Math.sin(frame * 1.2) * 2.5 : 0;
-    const pulse = Math.sin(frame * 0.25) * 0.5 + 0.5;
-
-    ctx.fillStyle = 'rgba(0,0,0,0.45)';
-    ctx.beginPath();
-    ctx.ellipse(0, 3, r * 1.15, r * 0.55, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    if (shape === 'behemoth') {
-      ctx.fillStyle = bodyGradient(ctx, 0, walkBob, r * 1.1, style.body);
-      ctx.beginPath();
-      ctx.ellipse(0, walkBob, r * 1.1, r * 0.95, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = style.accent;
-      for (const side of [-1, 1]) {
-        ctx.beginPath();
-        ctx.moveTo(side * r * 0.9, -r * 0.3 + walkBob);
-        ctx.lineTo(side * r * 1.2, -r * 0.8 + walkBob);
-        ctx.lineTo(side * r * 0.5, -r * 0.5 + walkBob);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.fillStyle = style.mark;
-      ctx.beginPath();
-      ctx.arc(-5, -2 + walkBob, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(5, -2 + walkBob, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#2a1810';
-      ctx.beginPath();
-      ctx.arc(-r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(r * 0.85, r * 0.4 + walkBob, 5, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (shape === 'iron_colossus') {
-      ctx.fillStyle = bodyGradientV(ctx, 0, -r * 0.9 + walkBob, r * 1.8, style.body);
-      ctx.fillRect(-r * 0.85, -r * 0.9 + walkBob, r * 1.7, r * 1.8);
-      ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 2;
-      ctx.strokeRect(-r * 0.85, -r * 0.9 + walkBob, r * 1.7, r * 1.8);
-      ctx.fillStyle = style.mark;
-      for (let i = -1; i <= 1; i++) {
-        ctx.beginPath();
-        ctx.arc(i * 8, -r * 0.5 + walkBob, 2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(i * 8, r * 0.3 + walkBob, 2, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = `rgba(255,120,40,${0.5 + pulse * 0.4})`;
-      ctx.fillRect(-6, -2 + walkBob, 12, 10);
-    } else if (shape === 'elder_wyrm') {
-      ctx.fillStyle = bodyGradient(ctx, 0, walkBob * 0.5, r * 0.75, style.body);
-      ctx.beginPath();
-      ctx.ellipse(0, walkBob * 0.5, r * 0.75, r * 0.55, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = style.accent;
-      ctx.beginPath();
-      ctx.moveTo(-r * 1.3, walkBob);
-      ctx.quadraticCurveTo(-r * 0.4, -r * 1.1 + walkBob, 0, -r * 0.3 + walkBob);
-      ctx.quadraticCurveTo(r * 0.4, -r * 1.1 + walkBob, r * 1.3, walkBob);
-      ctx.fill();
-      ctx.fillStyle = style.body;
-      ctx.beginPath();
-      ctx.ellipse(0, -r * 0.55 + walkBob, r * 0.35, r * 0.25, 0, 0, Math.PI * 2);
-      ctx.fill();
-      if (animState === 'attack') {
-        ctx.fillStyle = 'rgba(255,100,30,0.65)';
-        ctx.beginPath();
-        ctx.moveTo(-5, -r * 0.7 + walkBob);
-        ctx.lineTo(0, -r * 1.5 + walkBob);
-        ctx.lineTo(5, -r * 0.7 + walkBob);
-        ctx.closePath();
-        ctx.fill();
-      }
-      ctx.fillStyle = '#ff4040';
-      ctx.beginPath();
-      ctx.arc(-3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(3, -r * 0.55 + walkBob, 2, 0, Math.PI * 2);
-      ctx.fill();
-    } else if (shape === 'abomination') {
-      const wobble = Math.sin(frame * 0.8) * 2;
-      ctx.fillStyle = bodyGradient(ctx, -4 + wobble * 0.3, walkBob, r * 0.85, style.body);
-      ctx.beginPath();
-      ctx.ellipse(-4 + wobble * 0.3, walkBob, r * 0.85, r * 0.7, -0.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = bodyGradient(ctx, 6 - wobble * 0.2, walkBob + 2, r * 0.7, style.body);
-      ctx.beginPath();
-      ctx.ellipse(6 - wobble * 0.2, walkBob + 2, r * 0.7, r * 0.65, 0.15, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = style.mark;
-      for (const [ex, ey] of [
-        [-6, -2],
-        [0, -4],
-        [7, -1],
-        [-3, 4],
-        [5, 5],
-      ]) {
-        ctx.beginPath();
-        ctx.arc(ex + wobble * 0.2, ey + walkBob, 2 + pulse, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 3;
-      for (let i = 0; i < 5; i++) {
-        const ang = (i / 5) * Math.PI * 2 + frame * 0.15;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(ang) * r * 0.5, Math.sin(ang) * r * 0.5 + walkBob);
-        ctx.lineTo(Math.cos(ang) * r * 0.95, Math.sin(ang) * r * 0.95 + walkBob);
-        ctx.stroke();
-      }
-    } else if (shape === 'void_stalker') {
-      ctx.fillStyle = bodyGradient(ctx, 0, walkBob, r * 0.65, style.body);
-      ctx.beginPath();
-      ctx.ellipse(0, walkBob, r * 0.55, r * 1.05, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#101018';
-      ctx.beginPath();
-      ctx.arc(0, -r * 0.55 + walkBob, r * 0.5, Math.PI, 0);
-      ctx.fill();
-      ctx.fillStyle = style.mark;
-      ctx.beginPath();
-      ctx.arc(-4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(4, -r * 0.45 + walkBob, 2.5, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.strokeStyle = style.accent;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-r * 0.6, r * 0.2 + walkBob);
-      ctx.lineTo(-r * 1.1, r * 0.7 + walkBob);
-      ctx.moveTo(r * 0.6, r * 0.2 + walkBob);
-      ctx.lineTo(r * 1.1, r * 0.7 + walkBob);
-      ctx.stroke();
-    }
-
-    if (type.startsWith('boss_')) {
-      ctx.strokeStyle = `rgba(255,215,0,${0.45 + pulse * 0.35})`;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(0, walkBob * 0.5, r + 8, r * 0.9 + 8, 0, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = `rgba(255,215,0,${0.75 + pulse * 0.2})`;
-      ctx.beginPath();
-      ctx.moveTo(-9, -r * 0.82 + walkBob);
-      ctx.lineTo(-5, -r * 1.2 + walkBob);
-      ctx.lineTo(0, -r * 0.98 + walkBob);
-      ctx.lineTo(5, -r * 1.2 + walkBob);
-      ctx.lineTo(9, -r * 0.82 + walkBob);
-      ctx.closePath();
-      ctx.fill();
-      if (type === 'boss_grimm' || type === 'boss_malachar') {
-        ctx.fillStyle = `rgba(255,80,20,${0.35 + pulse * 0.25})`;
-        ctx.beginPath();
-        ctx.arc(0, walkBob, r + 6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    } else {
-      ctx.strokeStyle = teamStroke(team);
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.ellipse(0, walkBob * 0.5, r + 4, r * 0.85 + 4, 0, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    if (animState === 'attack') {
-      ctx.fillStyle = 'rgba(255,40,40,0.4)';
-      ctx.beginPath();
-      ctx.arc(0, 0, r + 8, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    if (animState === 'death') {
-      ctx.fillStyle = 'rgba(80,20,20,0.5)';
-      ctx.beginPath();
-      ctx.ellipse(0, 5, r * 1.2, r * 0.4, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.5;
-    } else {
-      ctx.globalAlpha = 1;
-    }
+    drawInkMonster(ctx, type, team, frame, animState);
   }
 
   function drawSiegeTowerUnit(ctx, style, team, frame, animState, lod = 0) {
@@ -1077,6 +882,358 @@ const SpriteGen = (() => {
     return inkProxy;
   }
 
+  /**
+   * Bosses and giant monsters in the inked horror-comic style: a black mass,
+   * bone detail, blood-red eyes. One silhouette per shape; bosses wear a crown of horns.
+   */
+  function drawInkMonster(ctx, type, team, frame, animState) {
+    const boss = type.startsWith('boss_');
+    const shape = boss
+      ? BOSS_ARCHETYPE[type] || 'behemoth'
+      : type === 'cinderbound_juggernaut'
+        ? 'iron_colossus'
+        : type;
+    const style = resolveUnitStyle(type, team, shape in UNIT_STYLE ? shape : 'behemoth');
+    const r = Math.min(24, style.size * 1.2);
+    const bob = animState === 'walk' ? Math.sin(frame * 1.2) * 1.8 : 0;
+    const lunge = animState === 'attack' ? 3 : 0;
+    // Lift the hide toward bone so the black outline and features read against it.
+    const lift = (hex, amt) => {
+      const n = parseInt(String(hex).replace('#', ''), 16);
+      if (!Number.isFinite(n)) return hex;
+      const mix = (c, to) => Math.round(c + (to - c) * amt);
+      return `rgb(${mix((n >> 16) & 255, 228)},${mix((n >> 8) & 255, 220)},${mix(n & 255, 196)})`;
+    };
+    const hide = lift(style.body, 0.28);
+    const trim = lift(style.accent, 0.34);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(1.5, 4, r * 1.25, r * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+    if (animState === 'death') {
+      ctx.fillStyle = 'rgba(140,10,16,0.65)';
+      ctx.beginPath();
+      ctx.ellipse(0, 4, r * 1.6, r * 0.85, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 0.6;
+    }
+
+    ctx.save();
+    ctx.translate(0, bob + lunge);
+    ctx.lineJoin = 'round';
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 2.6;
+    const blob = (pts, fill) => {
+      ctx.beginPath();
+      ctx.moveTo(pts[0][0] * r, pts[0][1] * r);
+      for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0] * r, pts[i][1] * r);
+      ctx.closePath();
+      ctx.fillStyle = fill;
+      ctx.fill();
+      ctx.stroke();
+    };
+    const eye = (x, y, w = 0.12) => {
+      ctx.fillStyle = BLOOD;
+      ctx.beginPath();
+      ctx.ellipse(x * r, y * r, w * r, w * r * 0.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ff5040';
+      ctx.fillRect(x * r - 0.6, y * r - 0.6, 1.2, 1.2);
+    };
+
+    if (shape === 'behemoth') {
+      // Horned bulk: hunched shoulders, tusks, a skull plate.
+      blob(
+        [
+          [-1.05, 0.1],
+          [-0.95, -0.55],
+          [-0.45, -0.9],
+          [0.45, -0.9],
+          [0.95, -0.55],
+          [1.05, 0.1],
+          [0.7, 0.75],
+          [0, 0.95],
+          [-0.7, 0.75],
+        ],
+        hide
+      );
+      for (const sd of [-1, 1]) {
+        blob(
+          [
+            [sd * 0.55, 0.25],
+            [sd * 1.25, 0.75],
+            [sd * 1.05, 0.15],
+          ],
+          BONE
+        );
+        blob(
+          [
+            [sd * 0.3, 0.75],
+            [sd * 0.42, 1.2],
+            [sd * 0.12, 0.85],
+          ],
+          BONE
+        );
+      }
+      blob(
+        [
+          [-0.42, 0.25],
+          [0, 0.05],
+          [0.42, 0.25],
+          [0.3, 0.8],
+          [0, 0.95],
+          [-0.3, 0.8],
+        ],
+        BONE
+      );
+      eye(-0.2, 0.42);
+      eye(0.2, 0.42);
+      ctx.fillStyle = INK;
+      ctx.fillRect(-0.05 * r, 0.6 * r, 0.1 * r, 0.22 * r);
+    } else if (shape === 'iron_colossus') {
+      // Riveted slab: square plates, a slit visor, furnace glow.
+      blob(
+        [
+          [-0.95, -0.8],
+          [0.95, -0.8],
+          [1.1, 0.3],
+          [0.7, 0.9],
+          [-0.7, 0.9],
+          [-1.1, 0.3],
+        ],
+        hide
+      );
+      blob(
+        [
+          [-1.3, -0.5],
+          [-0.9, -0.7],
+          [-0.85, 0.35],
+          [-1.25, 0.25],
+        ],
+        trim
+      );
+      blob(
+        [
+          [1.3, -0.5],
+          [0.9, -0.7],
+          [0.85, 0.35],
+          [1.25, 0.25],
+        ],
+        trim
+      );
+      blob(
+        [
+          [-0.5, 0.1],
+          [0.5, 0.1],
+          [0.42, 0.75],
+          [-0.42, 0.75],
+        ],
+        INK
+      );
+      ctx.fillStyle = '#ff5a20';
+      ctx.fillRect(-0.36 * r, 0.3 * r, 0.72 * r, 0.1 * r);
+      ctx.fillStyle = BONE;
+      for (const [x, y] of [
+        [-0.7, -0.55],
+        [0.7, -0.55],
+        [-0.75, 0],
+        [0.75, 0],
+        [0, -0.6],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(x * r, y * r, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.strokeStyle = BLOOD;
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(-0.3 * r, -0.75 * r);
+      ctx.lineTo(-0.1 * r, -0.2 * r);
+      ctx.lineTo(-0.35 * r, 0.05 * r);
+      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.6;
+    } else if (shape === 'void_stalker') {
+      // Lean shadow: hooded wedge, two long blades.
+      for (const sd of [-1, 1]) {
+        blob(
+          [
+            [sd * 0.45, 0.1],
+            [sd * 1.45, 0.95],
+            [sd * 1.2, 1.05],
+            [sd * 0.3, 0.4],
+          ],
+          BONE
+        );
+      }
+      blob(
+        [
+          [0, -1.1],
+          [0.6, -0.5],
+          [0.7, 0.3],
+          [0.3, 0.9],
+          [0, 1.05],
+          [-0.3, 0.9],
+          [-0.7, 0.3],
+          [-0.6, -0.5],
+        ],
+        INK
+      );
+      blob(
+        [
+          [-0.34, 0.2],
+          [0, 0.05],
+          [0.34, 0.2],
+          [0.2, 0.75],
+          [0, 0.85],
+          [-0.2, 0.75],
+        ],
+        hide
+      );
+      eye(-0.15, 0.42, 0.1);
+      eye(0.15, 0.42, 0.1);
+      ctx.strokeStyle = BLOOD;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(0, -1.0 * r);
+      ctx.lineTo(0, -0.3 * r);
+      ctx.stroke();
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.6;
+    } else if (shape === 'elder_wyrm') {
+      // Winged serpent seen from above: torn wings, a horned head, a spined tail.
+      const flap = Math.sin(frame * 0.9) * 0.12;
+      for (const sd of [-1, 1]) {
+        blob(
+          [
+            [sd * 0.25, -0.2],
+            [sd * 1.45, -0.75 - flap],
+            [sd * 1.3, -0.25],
+            [sd * 1.5, 0.1 + flap],
+            [sd * 1.05, 0.05],
+            [sd * 1.0, 0.45],
+            [sd * 0.6, 0.2],
+            [sd * 0.3, 0.35],
+          ],
+          hide
+        );
+      }
+      blob(
+        [
+          [-0.3, -1.2],
+          [0.3, -1.2],
+          [0.4, 0.2],
+          [0, 0.45],
+          [-0.4, 0.2],
+        ],
+        trim
+      );
+      blob(
+        [
+          [-0.35, 0.2],
+          [0, 0.05],
+          [0.35, 0.2],
+          [0.26, 0.85],
+          [0, 1.1],
+          [-0.26, 0.85],
+        ],
+        hide
+      );
+      for (const sd of [-1, 1])
+        blob(
+          [
+            [sd * 0.25, 0.25],
+            [sd * 0.6, -0.05],
+            [sd * 0.38, 0.4],
+          ],
+          BONE
+        );
+      eye(-0.16, 0.55, 0.1);
+      eye(0.16, 0.55, 0.1);
+      ctx.fillStyle = BONE;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.moveTo(-0.08 * r, (-1.05 + i * 0.28) * r);
+        ctx.lineTo(0, (-1.2 + i * 0.28) * r);
+        ctx.lineTo(0.08 * r, (-1.05 + i * 0.28) * r);
+        ctx.fill();
+      }
+    } else {
+      // Abomination: a stitched, swollen mass with too many eyes and exposed ribs.
+      blob(
+        [
+          [-0.9, -0.35],
+          [-0.55, -0.9],
+          [0.1, -1.0],
+          [0.75, -0.7],
+          [1.05, -0.05],
+          [0.85, 0.65],
+          [0.2, 1.0],
+          [-0.55, 0.85],
+          [-1.05, 0.3],
+        ],
+        hide
+      );
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 1.6;
+      for (let i = 0; i < 4; i++) {
+        ctx.beginPath();
+        ctx.arc(0.25 * r, (-0.45 + i * 0.22) * r, 0.42 * r, Math.PI * 0.15, Math.PI * 0.85);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 1.2;
+      for (let i = 0; i < 5; i++) {
+        const y = (-0.6 + i * 0.3) * r;
+        ctx.beginPath();
+        ctx.moveTo(-0.62 * r, y);
+        ctx.lineTo(-0.38 * r, y + 0.08 * r);
+        ctx.stroke();
+      }
+      ctx.lineWidth = 2.6;
+      eye(-0.45, 0.35, 0.14);
+      eye(0.1, 0.55, 0.1);
+      eye(0.5, 0.2, 0.08);
+      blob(
+        [
+          [-0.2, 0.7],
+          [0.35, 0.72],
+          [0.25, 0.95],
+          [-0.1, 0.95],
+        ],
+        INK
+      );
+      ctx.fillStyle = BONE;
+      for (let i = 0; i < 4; i++) ctx.fillRect((-0.14 + i * 0.12) * r, 0.72 * r, 0.06 * r, 0.1 * r);
+    }
+
+    if (boss) {
+      // Crown of horns and a blood halo mark every named warlord.
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2;
+      for (const x of [-0.5, -0.25, 0, 0.25, 0.5]) {
+        const h = x === 0 ? 0.55 : 0.36;
+        blob(
+          [
+            [x - 0.1, -0.88],
+            [x, -0.88 - h],
+            [x + 0.1, -0.88],
+          ],
+          BONE
+        );
+      }
+      ctx.strokeStyle = BLOOD;
+      ctx.lineWidth = 1.6;
+      ctx.globalAlpha *= 0.85;
+      ctx.beginPath();
+      ctx.arc(0, 0, r * 1.38, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.globalAlpha = 1;
+  }
+
   function drawUnitTopDown(ctx, type, rotation, team, frame = 0, animState = 'idle', lod = 0) {
     // Defense-in-depth: every branch below calls type.startsWith(...) unguarded. A unit
     // whose spriteType desyncs from its type (stale pooled field, bad save data, etc.)
@@ -1096,7 +1253,7 @@ const SpriteGen = (() => {
       return;
     }
     if (type === 'siege_tower') {
-      drawSiegeTowerUnit(ctx, UNIT_STYLE.siege_tower, team, frame, animState, lod);
+      drawSiegeTowerUnit(inkCtx(ctx), UNIT_STYLE.siege_tower, team, frame, animState, lod);
       return;
     }
     if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {

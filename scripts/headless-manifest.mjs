@@ -81,6 +81,7 @@ export const HEADLESS_FILES = [
   'formations.js',
   'damage-preview.js',
   'pacing-tools.js',
+  'roster.js',
   'game-core.js',
   'game-state.js',
   'game.js',
