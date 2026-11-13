@@ -116,4 +116,4 @@ export const GAME_SCRIPTS = [
 /** Worker bundle: inlined into dist/js/path-worker.js */
 export const WORKER_SCRIPTS = ['pathfinding-core.js', 'wave-composition-core.js', 'path-worker.js'];
 
-export const COPY_DIRS = ['data', 'mods'];
+export const COPY_DIRS = ['data', 'mods', 'assets'];

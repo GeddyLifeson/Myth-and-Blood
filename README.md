@@ -430,6 +430,8 @@ Traits are drawn on the field so you can see why a fight is going the way it is:
 - **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
 - With one breach left before defeat, the edges of the screen stay red.
 
+The set-piece sounds (breach horn, muster drums, warlord's roar, the General's orders, spoils, wave clear, defeat, the wraith's wail and the night drone) are orchestral recordings made in MuseScore Studio with Muse Sounds; they live in `assets/sfx/` and `tools/sfx/` explains how to rebuild them. Combat sounds are synthesized in code, and every recording has a synthesized fallback.
+
 Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
 
 When the run ends, the game-over screen shows the siege in brief: breaches, line-breakers cut down, spoils taken, your deadliest soldier, the veterans who fell and any ribbons earned.
@@ -638,6 +640,8 @@ myth-and-blood/
 ├── js/                 # The game (game.js is the core simulation)
 ├── css/                # style.css plus the theme-v2.css HUD layer
 ├── data/               # Unit, building, enemy and strike definitions (JSON)
+├── assets/sfx/         # Recorded orchestral cues (OGG)
+├── tools/sfx/          # How the cues were made
 ├── mods/               # Mod loader manifest and an example mod
 ├── scripts/            # Build, tests and the headless simulation
 ├── src/                # TypeScript sources for the service/event/data cores

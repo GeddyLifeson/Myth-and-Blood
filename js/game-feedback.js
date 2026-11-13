@@ -191,6 +191,7 @@ const GameFeedback = (() => {
       showBanner(title, lines[1], color, perfect ? 110 : 90, perfect ? 'perfect' : 'clear');
       if (typeof AudioEngine !== 'undefined') {
         if (perfect) AudioEngine.SFX.perfectClear?.();
+        else if (typeof AudioEngine.play === 'function') AudioEngine.play('waveClear');
         else AudioEngine.SFX.waveClear?.();
       }
     }

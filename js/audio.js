@@ -98,8 +98,82 @@ const AudioEngine = (() => {
    * @param {string} name
    * @param {...any} args
    */
+  // ------------------------------------------------------------ recorded cues
+  // Orchestral cues recorded in MuseScore Studio with Muse Sounds (see tools/sfx).
+  // Each one replaces the synthesized sound of the same name once it has loaded;
+  // until then, or if a file cannot be fetched, the synthesized version plays.
+  const SAMPLE_FILES = {
+    breachHorn: 'breach_horn',
+    musterDrums: 'muster_drums',
+    bossRoar: 'boss_roar',
+    warCry: 'war_cry',
+    holdLine: 'hold_line',
+    spoilsClaim: 'spoils_claim',
+    waveClear: 'wave_clear',
+    defeat: 'defeat',
+    wraithWail: 'wraith_wail',
+    enrage: 'enrage',
+    crateOpen: 'crate_open',
+    nightDrone: 'night_drone',
+  };
+  const SAMPLE_GAIN = { wraithWail: 0.5, crateOpen: 0.7, spoilsClaim: 0.8, nightDrone: 0.35 };
+  const samples = {};
+  let samplesRequested = false;
+
+  /** fetch() refuses file:// pages (the desktop build, or index.html opened directly); XHR does not. */
+  function fetchBytes(url) {
+    const viaXhr = () =>
+      new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = () =>
+          xhr.response && xhr.response.byteLength
+            ? resolve(xhr.response)
+            : reject(new Error('empty'));
+        xhr.onerror = () => reject(new Error('xhr'));
+        xhr.send();
+      });
+    if (typeof location !== 'undefined' && location.protocol === 'file:') return viaXhr();
+    return fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+      .catch(viaXhr);
+  }
+
+  function loadSamples() {
+    if (samplesRequested || !ctx || typeof fetch !== 'function') return;
+    samplesRequested = true;
+    for (const [name, file] of Object.entries(SAMPLE_FILES)) {
+      fetchBytes(`assets/sfx/${file}.ogg`)
+        .then((data) => ctx.decodeAudioData(data))
+        .then((buffer) => {
+          samples[name] = buffer;
+        })
+        .catch(() => {
+          /* keep the synthesized fallback */
+        });
+    }
+  }
+
+  /** Plays a recorded cue if it has loaded. Returns the source node, or null. */
+  function playSample(name, { loop = false, dest = null } = {}) {
+    const buffer = samples[name];
+    if (!buffer || !ctx || muted || ctx.state !== 'running') return null;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = loop;
+    const gain = ctx.createGain();
+    gain.gain.value = SAMPLE_GAIN[name] ?? 1;
+    source.connect(gain);
+    gain.connect(dest || sfxGain);
+    source.start();
+    return source;
+  }
+
   function play(name, ...args) {
     try {
+      loadSamples();
+      if (SAMPLE_FILES[name] && playSample(name)) return;
       const fn = SFX[name];
       if (typeof fn === 'function') fn(...args);
     } catch (e) {
@@ -827,9 +901,16 @@ const AudioEngine = (() => {
   let ambDrone = null;
   let ambDroneGain = null;
   let ambTimer = null;
+  let ambNightLoop = null;
 
   function stopAmbience() {
     ambMode = 'off';
+    try {
+      ambNightLoop?.stop();
+    } catch (_) {
+      /* already stopped */
+    }
+    ambNightLoop = null;
     if (ambTimer) {
       clearTimeout(ambTimer);
       ambTimer = null;
@@ -897,8 +978,21 @@ const AudioEngine = (() => {
         ambDroneGain.connect(masterGain);
         ambDrone.start();
       }
+      // At night the recorded string drone plays if it has loaded; the sine drone is the fallback.
+      loadSamples();
+      if (ambNightLoop) {
+        try {
+          ambNightLoop.stop();
+        } catch (_) {
+          /* already stopped */
+        }
+        ambNightLoop = null;
+      }
+      if (ambMode === 'night') {
+        ambNightLoop = playSample('nightDrone', { loop: true, dest: masterGain });
+      }
       ambDroneGain.gain.setTargetAtTime(
-        ambMode === 'night' && !muted ? 0.035 : 0,
+        ambMode === 'night' && !muted && !ambNightLoop ? 0.035 : 0,
         ctx.currentTime,
         2
       );
@@ -935,6 +1029,8 @@ const AudioEngine = (() => {
     startMenuMusic,
     stopMusic,
     setAmbience,
+    /** Names of the recorded cues that have loaded; the rest are playing synthesized. */
+    getLoadedCues: () => Object.keys(samples),
     updateMix,
     toggleMute,
     setMuted,

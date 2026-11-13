@@ -1,0 +1,19 @@
+{
+  "bpm": 120,
+  "barsPerCue": 4,
+  "secondsPerCue": 8,
+  "cues": [
+    "breach_horn",
+    "muster_drums",
+    "boss_roar",
+    "war_cry",
+    "hold_line",
+    "spoils_claim",
+    "wave_clear",
+    "defeat",
+    "night_drone",
+    "wraith_wail",
+    "enrage",
+    "crate_open"
+  ]
+}

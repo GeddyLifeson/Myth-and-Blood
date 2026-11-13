@@ -25,6 +25,7 @@ need(join(DIST, 'js', 'path-worker.js'), 'path worker');
 need(join(DIST, 'css', 'style.min.css'), 'css');
 need(join(DIST, 'data', 'units.json'), 'data');
 need(join(DIST, 'mods', 'manifest.json'), 'mods manifest');
+need(join(DIST, 'assets', 'sfx', 'breach_horn.ogg'), 'recorded sound cues');
 
 const html = readFileSync(join(DIST, 'index.html'), 'utf8');
 // Every stylesheet the built page links must exist in dist, and the theme layer must be bundled.
