@@ -509,12 +509,13 @@ const SpriteGen = (() => {
    * The visible part of an attack, drawn in the figure's own space (forward is up):
    * a slash arc for melee, a drawn and loosed bow, a flare at the staff tip for casters.
    */
-  function drawAttackFlourish(ctx, kind, f, r, style, enemy) {
+  function drawAttackFlourish(ctx, kind, f, r, style, enemy, hand) {
     ctx.save();
     ctx.lineCap = 'round';
     if (kind === 'melee') {
       if (f === 1 || f === 2) {
-        const reach = r * (f === 1 ? 1.9 : 2.2);
+        // Big figures would otherwise swing the arc off the sprite canvas.
+        const reach = Math.min(r * (f === 1 ? 1.9 : 2.2), 29.5 - r * 0.2);
         const from = -Math.PI * (f === 1 ? 0.95 : 0.8);
         const to = -Math.PI * (f === 1 ? 0.45 : 0.1);
         ctx.strokeStyle = INK;
@@ -542,57 +543,199 @@ const SpriteGen = (() => {
         }
       }
     } else if (kind === 'bow') {
-      const bx = r * 0.55;
-      const by = -r * 1.0;
+      // A recurve held out ahead of the body: grip furthest forward, limbs sweeping
+      // back to tips that flick forward again. Frames 0-1 draw, 2-3 loose.
+      const bx = r * 0.6;
+      const by = -r * 1.25;
+      const w = r * 1.02;
       const drawn = f <= 1;
+      const pull = drawn ? r * (f === 0 ? 0.7 : 1.15) : 0;
+      // The limbs bend further back the harder the string is pulled.
+      const flex = r * (0.2 + (pull / r) * 0.07);
+      const limbs = () => {
+        ctx.beginPath();
+        ctx.moveTo(bx - w, by + flex - r * 0.05);
+        ctx.quadraticCurveTo(bx - w * 0.9, by + flex + r * 0.16, bx - w * 0.68, by + flex * 0.9);
+        ctx.quadraticCurveTo(bx - w * 0.3, by + r * 0.02, bx, by);
+        ctx.quadraticCurveTo(bx + w * 0.3, by + r * 0.02, bx + w * 0.68, by + flex * 0.9);
+        ctx.quadraticCurveTo(bx + w * 0.9, by + flex + r * 0.16, bx + w, by + flex - r * 0.05);
+      };
+      ctx.lineJoin = 'round';
       ctx.strokeStyle = INK;
-      ctx.lineWidth = 3.4;
-      ctx.beginPath();
-      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.lineWidth = 4.2;
+      limbs();
       ctx.stroke();
-      ctx.strokeStyle = '#8a5a2a';
+      ctx.strokeStyle = enemy ? '#9a5a40' : '#b87a38';
+      ctx.lineWidth = 2.2;
+      limbs();
+      ctx.stroke();
+      // Grip wrap
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(bx - r * 0.1, by + r * 0.01);
+      ctx.lineTo(bx + r * 0.1, by + r * 0.01);
+      ctx.stroke();
+      const sy = by + flex - r * 0.05;
+      const nock = sy + pull;
+      // String: taut to the nock while drawn, straight (and humming) once loosed.
+      for (const [c, lw] of [
+        [INK, 2],
+        [BONE, 0.9],
+      ]) {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = lw;
+        ctx.beginPath();
+        ctx.moveTo(bx - w, sy);
+        ctx.lineTo(bx, nock);
+        ctx.lineTo(bx + w, sy);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 0.9;
+      if (f === 2) {
+        ctx.globalAlpha = 0.5;
+        for (const d of [-0.07, 0.07]) {
+          ctx.beginPath();
+          ctx.moveTo(bx - w, sy);
+          ctx.quadraticCurveTo(bx, sy + r * d * 2, bx + w, sy);
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+      }
+      // Never let the arrow or its streak leave the sprite canvas.
+      const lim = -29;
+      if (drawn) {
+        const tip = Math.max(lim, by - r * (f === 0 ? 0.75 : 0.4));
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        ctx.moveTo(bx, nock);
+        ctx.lineTo(bx, tip + 2);
+        ctx.stroke();
+        ctx.strokeStyle = BONE;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(bx, nock);
+        ctx.lineTo(bx, tip + 2);
+        ctx.stroke();
+        // Fletching at the nock, a barbed head at the tip
+        ctx.strokeStyle = enemy ? '#ff5040' : BONE;
+        ctx.lineWidth = 1.1;
+        ctx.beginPath();
+        ctx.moveTo(bx - 1.8, nock + 1.2);
+        ctx.lineTo(bx, nock - 1.4);
+        ctx.lineTo(bx + 1.8, nock + 1.2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(bx, tip - 2.2);
+        ctx.lineTo(bx - 2.4, tip + 2.2);
+        ctx.lineTo(bx + 2.4, tip + 2.2);
+        ctx.closePath();
+        ctx.fillStyle = enemy ? '#ff5040' : BONE;
+        ctx.fill();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+        // Drawing hand at the nock
+        ctx.beginPath();
+        ctx.arc(bx, nock, r * 0.17, 0, Math.PI * 2);
+        inkFill(ctx, hand || BONE, 1);
+      } else {
+        // Loosed: the arrow is a streak already clear of the bow.
+        const head = Math.max(lim, by - r * (f === 2 ? 0.9 : 1.5));
+        const tail = Math.min(by - r * 0.15, head + r * (f === 2 ? 1.0 : 0.7));
+        ctx.strokeStyle = INK;
+        ctx.globalAlpha = f === 2 ? 0.9 : 0.4;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.moveTo(bx, tail);
+        ctx.lineTo(bx, head);
+        ctx.stroke();
+        ctx.strokeStyle = enemy ? '#ff7a50' : BONE;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(bx, tail);
+        ctx.lineTo(bx, head);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+      }
+      // Bow hand on the grip
+      ctx.beginPath();
+      ctx.arc(bx, by + r * 0.08, r * 0.17, 0, Math.PI * 2);
+      inkFill(ctx, hand || BONE, 1);
+    } else if (kind === 'lance') {
+      // Couched on the wind-up, driven straight out on the strike.
+      const x = r * 0.72;
+      const tip = Math.max(-26.5, -r * [1.25, 1.05, 2.5, 2.15][f]);
+      const butt = tip + r * 2.3;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3.8;
+      ctx.beginPath();
+      ctx.moveTo(x, butt);
+      ctx.lineTo(x, tip + 3);
+      ctx.stroke();
+      ctx.strokeStyle = enemy ? '#5a4a52' : '#b08a50';
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.moveTo(x, butt);
+      ctx.lineTo(x, tip + 3);
       ctx.stroke();
-      const lx = bx + Math.cos(Math.PI * 1.18) * r * 0.95;
-      const rx = bx + Math.cos(Math.PI * 1.82) * r * 0.95;
-      const ey = by + r * 0.5 + Math.sin(Math.PI * 1.18) * r * 0.95;
-      const pull = drawn ? r * (f === 0 ? 0.35 : 0.6) : 0;
-      ctx.strokeStyle = BONE;
-      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(lx, ey);
-      ctx.lineTo(bx, ey + pull);
-      ctx.lineTo(rx, ey);
-      ctx.stroke();
-      if (drawn) {
+      ctx.moveTo(x, tip - 2.5);
+      ctx.lineTo(x - 2.6, tip + 4);
+      ctx.lineTo(x + 2.6, tip + 4);
+      ctx.closePath();
+      inkFill(ctx, enemy ? '#ff5040' : BONE, 1.1);
+      // Vamplate guarding the hand
+      ctx.beginPath();
+      ctx.arc(x, tip + r * 1.45, r * 0.24, 0, Math.PI * 2);
+      inkFill(ctx, style.accent, 1.1);
+      if (f === 2) {
+        ctx.strokeStyle = enemy ? '#ff5040' : BONE;
+        ctx.lineWidth = 1.4;
+        for (const sd of [-1, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(x + sd * 3.5, tip + 1);
+          ctx.lineTo(x + sd * 7, tip - 2);
+          ctx.stroke();
+        }
+      }
+    } else if (kind === 'claw') {
+      // The mount rakes with both forepaws.
+      const reach = Math.max(-28, -r * [1.15, 0.95, 2.1, 1.8][f]);
+      for (const sd of [-1, 1]) {
+        const px = sd * r * (f >= 2 ? 0.42 : 0.62);
         ctx.strokeStyle = INK;
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 4.2;
         ctx.beginPath();
-        ctx.moveTo(bx, ey + pull);
-        ctx.lineTo(bx, by - r * 0.9);
+        ctx.moveTo(sd * r * 0.4, -r * 0.55);
+        ctx.lineTo(px, reach + 3);
         ctx.stroke();
-        ctx.fillStyle = BONE;
-        ctx.beginPath();
-        ctx.moveTo(bx, by - r * 1.25);
-        ctx.lineTo(bx - 2.2, by - r * 0.85);
-        ctx.lineTo(bx + 2.2, by - r * 0.85);
-        ctx.closePath();
-        ctx.fill();
-      } else {
-        // Loosed: a streak where the arrow left.
-        ctx.strokeStyle = `rgba(228,220,196,${f === 2 ? 0.8 : 0.35})`;
-        ctx.lineWidth = 1.6;
-        ctx.beginPath();
-        ctx.moveTo(bx, by - r * (f === 2 ? 1.0 : 1.6));
-        ctx.lineTo(bx, by - r * (f === 2 ? 2.2 : 2.8));
-        ctx.stroke();
+        for (const k of [-1, 0, 1]) {
+          ctx.beginPath();
+          ctx.moveTo(px + k * 1.6 - 0.9, reach + 3);
+          ctx.lineTo(px + k * 2.4, reach - 1.5);
+          ctx.lineTo(px + k * 1.6 + 0.9, reach + 3);
+          ctx.closePath();
+          inkFill(ctx, BONE, 0.8);
+        }
+        if (f === 2) {
+          ctx.strokeStyle = enemy ? '#ff5040' : BONE;
+          ctx.lineWidth = 1.3;
+          for (const k of [-1, 0, 1]) {
+            ctx.beginPath();
+            ctx.moveTo(px + k * 2.6 + sd * 2, reach + r * 0.75);
+            ctx.lineTo(px + k * 2.6, reach + r * 0.2);
+            ctx.stroke();
+          }
+        }
       }
     } else {
       const cx = r * 0.55;
       const cy = -r * 1.75;
-      const glow = 2.5 + f * 1.8;
+      // Flare and rays are held inside the sprite canvas.
+      const glow = Math.min(2.5 + f * 1.8, 29 + cy - 3);
       ctx.fillStyle = INK;
       ctx.beginPath();
       ctx.arc(cx, cy, glow + 1.5, 0, Math.PI * 2);
@@ -607,7 +750,8 @@ const SpriteGen = (() => {
         const a = (k * Math.PI) / 3 + f * 0.4;
         ctx.beginPath();
         ctx.moveTo(cx + Math.cos(a) * (glow + 2), cy + Math.sin(a) * (glow + 2));
-        ctx.lineTo(cx + Math.cos(a) * (glow + 5 + f), cy + Math.sin(a) * (glow + 5 + f));
+        const tipR = Math.min(glow + 5 + f, 30 + cy);
+        ctx.lineTo(cx + Math.cos(a) * tipR, cy + Math.sin(a) * tipR);
         ctx.stroke();
       }
     }
@@ -628,18 +772,32 @@ const SpriteGen = (() => {
     const enemy = team === 'enemy';
     const walk = animState === 'walk';
     const bob = walk ? Math.sin(frame * 1.5) * 1.2 : 0;
-    const lunge = animState === 'attack' ? 4 : 0;
+    const attacking = animState === 'attack';
+    const hurt = animState === 'hurt';
+    const swingFrame = attacking ? Math.max(0, Math.min(3, Math.floor(frame))) : 0;
+    // Step back on the wind-up, then drive forward as the blow lands.
+    const lunge = attacking ? [-3, -1, 5, 3][swingFrame] : 0;
     const undead = enemy && UNDEAD_RE.test(type);
     const caster = CASTER_TYPES.has(type) || type === 'healer' || type === 'shaman';
     const mounted = MOUNTED_TYPES.has(type);
+    const fightKind = BOW_TYPES.has(type)
+      ? 'bow'
+      : type === 'cavalry' || type === 'dark_knight'
+        ? 'lance'
+        : mounted
+          ? 'claw'
+          : caster
+            ? 'cast'
+            : 'melee';
     const greenskin =
+      type.startsWith('goblin_') ||
       type === 'orc' ||
       type === 'goblin' ||
       type === 'orc_archer' ||
       type === 'orc_shieldbearer' ||
       type === 'troll' ||
-      type === 'war_chief' ||
-      type.startsWith('goblin_');
+      type === 'war_chief';
+    const skin = undead ? BONE : enemy ? (greenskin ? '#6f9a3c' : '#8a3a4c') : '#d9b08c';
     const brute =
       type === 'orc' ||
       type === 'orc_shieldbearer' ||
@@ -674,17 +832,43 @@ const SpriteGen = (() => {
     ctx.save();
     ctx.rotate(((rotation + 90) * Math.PI) / 180);
     ctx.translate(0, bob - lunge * 0.5);
+    if (hurt) {
+      // Flinch: knocked back off the front foot, twisted away from the blow.
+      ctx.translate(-r * 0.12, r * 0.34);
+      ctx.rotate(0.2);
+      ctx.scale(1.04, 0.9);
+    }
     ctx.lineJoin = 'round';
 
     // Mount under the rider
     if (mounted) {
       const hide = type === 'cavalry' ? '#4a2c18' : type === 'warg_rider' ? '#34343c' : '#1c0c12';
+      // Rearing: the forequarters swell and the head tosses forward, peaking on the wind-up.
+      const rear = attacking ? [0.6, 1, 0.35, 0.1][swingFrame] : 0;
+      const gait = walk ? Math.sin(frame * 1.5) * r * 0.08 : 0;
       ctx.beginPath();
-      ctx.ellipse(0, r * 0.3, r * 0.62, r * 1.4, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, r * (0.3 - rear * 0.06), r * (0.62 + rear * 0.1), r * 1.4, 0, 0, Math.PI * 2);
       inkFill(ctx, hide);
       ctx.beginPath();
-      ctx.ellipse(0, -r * 1.25, r * 0.32, r * 0.5, 0, 0, Math.PI * 2);
+      ctx.ellipse(
+        0,
+        -r * (1.25 + rear * 0.16) + gait,
+        r * (0.32 + rear * 0.07),
+        r * (0.5 + rear * 0.08),
+        0,
+        0,
+        Math.PI * 2
+      );
       inkFill(ctx, shadeHex(hide, 0.12));
+      if (rear > 0.5) {
+        // Flared nostrils, visible only while it rears
+        ctx.fillStyle = type === 'cavalry' ? INK : '#ff3a1c';
+        for (const sd of [-1, 1]) {
+          ctx.beginPath();
+          ctx.arc(sd * r * 0.14, -r * (1.6 + rear * 0.16), r * 0.06, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -728,15 +912,18 @@ const SpriteGen = (() => {
     ctx.shadowOffsetY = 1.2;
     ctx.shadowBlur = 0;
     ctx.translate(mounted ? 0 : r * 0.55, 0);
-    const attacking = animState === 'attack';
-    const swingFrame = frame % 4;
-    const fightKind = BOW_TYPES.has(type) ? 'bow' : caster ? 'cast' : 'melee';
     // A melee swing winds up behind the shoulder and follows through across the body.
     if (attacking && fightKind === 'melee') ctx.rotate([-1.0, -0.25, 0.75, 1.05][swingFrame]);
+    // On the march the weapon arm swings with the stride; a flinch throws it wide.
+    else if (walk && !mounted) ctx.rotate(Math.sin(frame * 1.5) * 0.2);
+    else if (hurt) ctx.rotate(0.55);
     ctx.scale(1.25, 1.25);
-    drawWeaponSilhouette(ctx, type, style, r * 0.42, animState, frame % 2);
+    // While shooting, the bow itself is drawn over the body further down.
+    if (!(attacking && fightKind === 'bow'))
+      drawWeaponSilhouette(ctx, type, style, r * 0.42, hurt ? 'idle' : animState, frame % 2);
     ctx.restore();
-    if (attacking) drawAttackFlourish(ctx, fightKind, swingFrame, r, style, enemy);
+    if (attacking && fightKind !== 'bow')
+      drawAttackFlourish(ctx, fightKind, swingFrame, r, style, enemy);
 
     // Shoulders
     ctx.beginPath();
@@ -760,8 +947,12 @@ const SpriteGen = (() => {
 
     // Shield on the off hand
     if (SHIELD_TYPES.has(type)) {
-      const sx = -r * 0.95;
-      const sy = -r * 0.6;
+      // Raised across the body on the wind-up, dropped back as the blow goes in;
+      // it rocks with the stride on the march and is flung wide by a hit.
+      const raise = attacking ? [1, 0.55, 0, 0.15][swingFrame] : 0;
+      const sway = walk ? Math.sin(frame * 1.5) * r * 0.08 : 0;
+      const sx = -r * (0.95 - raise * 0.5) - (hurt ? r * 0.25 : 0);
+      const sy = -r * (0.6 + raise * 0.5) - sway + (hurt ? r * 0.3 : 0);
       ctx.beginPath();
       if (type === 'footman' || type === 'pikeman') {
         ctx.arc(sx, sy, r * 0.55, 0, Math.PI * 2);
@@ -783,7 +974,6 @@ const SpriteGen = (() => {
     // Head
     const hy = -r * 0.12;
     const hr = r * (brute ? 0.56 : 0.5);
-    const skin = undead ? BONE : enemy ? (greenskin ? '#6f9a3c' : '#8a3a4c') : '#d9b08c';
     if (greenskin) {
       for (const side of [-1, 1]) {
         ctx.beginPath();
@@ -918,6 +1108,30 @@ const SpriteGen = (() => {
         inkFill(ctx, shadeHex(style.body, -0.2));
       }
     }
+    // Archers hold the bow out over the body, so it is drawn last.
+    if (attacking && fightKind === 'bow')
+      drawAttackFlourish(ctx, 'bow', swingFrame, r, style, enemy, skin);
+    if (hurt) {
+      // A short fleck of blood thrown off the front, where the blow came in.
+      ctx.strokeStyle = BLOOD;
+      ctx.lineCap = 'round';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.moveTo(r * 0.1, -r * 0.85);
+      ctx.lineTo(r * 0.45, -r * 1.35);
+      ctx.stroke();
+      ctx.fillStyle = BLOOD;
+      for (const [x, y, w] of [
+        [0.62, -1.55, 1.5],
+        [0.2, -1.5, 1.1],
+        [-0.3, -1.2, 1.3],
+        [0.85, -1.15, 0.9],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(x * r, y * r, w, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
     if (animState !== 'death') ctx.globalAlpha = 1;
   }
@@ -1021,6 +1235,15 @@ const SpriteGen = (() => {
     return inkProxy;
   }
 
+  /** How far each monster shape steps back (negative) or drives forward on each attack frame. */
+  const MONSTER_ATTACK_SHIFT = {
+    behemoth: [0, 0, 3, 2],
+    iron_colossus: [-1, -2, 3, 1],
+    void_stalker: [-2, -3, 2, 1],
+    elder_wyrm: [-2, -3, -3, -2],
+    abomination: [-2, -3, 2, 1],
+  };
+
   /**
    * Bosses and giant monsters in the inked horror-comic style: a black mass,
    * bone detail, blood-red eyes. One silhouette per shape; bosses wear a crown of horns.
@@ -1033,9 +1256,21 @@ const SpriteGen = (() => {
         ? 'iron_colossus'
         : type;
     const style = resolveUnitStyle(type, team, shape in UNIT_STYLE ? shape : 'behemoth');
-    const r = Math.min(24, style.size * 1.2);
+    // Capped so the tallest marks (banner, standard, horn crown, halo), which reach
+    // about 1.5r from the centre, stay inside the 72-unit sprite canvas.
+    const r = Math.min(21, style.size * 1.2);
     const bob = animState === 'walk' ? Math.sin(frame * 1.2) * 1.8 : 0;
-    const lunge = animState === 'attack' ? 3 : 0;
+    const atk = animState === 'attack';
+    const hurt = animState === 'hurt';
+    // Attack frames: 0-1 wind up (a beat of warning), 2 lands the blow, 3 settles.
+    const f = atk ? Math.max(0, Math.min(3, Math.floor(frame))) : 0;
+    const windup = atk && f <= 1;
+    // Monsters face down the canvas, so +y is forward.
+    const shift = atk
+      ? (MONSTER_ATTACK_SHIFT[shape] || MONSTER_ATTACK_SHIFT.abomination)[f]
+      : hurt
+        ? -2.5
+        : 0;
     // Lift the hide toward bone so the black outline and features read against it.
     const lift = (hex, amt) => {
       const n = parseInt(String(hex).replace('#', ''), 16);
@@ -1059,10 +1294,41 @@ const SpriteGen = (() => {
     }
 
     ctx.save();
-    ctx.translate(0, bob + lunge);
+    ctx.translate(0, bob + shift);
+    if (atk && shape === 'behemoth') {
+      // Rearing: seen from above the bulk swells as it rises, then drops back.
+      const k = [1.05, 1.1, 1, 1][f];
+      ctx.translate(0, -0.6 * r);
+      ctx.scale(k, k);
+      ctx.translate(0, 0.6 * r);
+    } else if (
+      atk &&
+      shape !== 'iron_colossus' &&
+      shape !== 'void_stalker' &&
+      shape !== 'elder_wyrm'
+    ) {
+      // The abomination gathers itself, then bulges forward behind its maw.
+      ctx.scale([1.04, 1.07, 0.98, 1][f], [0.95, 0.92, 1.06, 1.02][f]);
+    }
     ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
     ctx.strokeStyle = INK;
     ctx.lineWidth = 2.6;
+    const inkLine = (pts, color, lw) => {
+      for (const [c, w] of [
+        [INK, lw + 2.2],
+        [color, lw],
+      ]) {
+        ctx.strokeStyle = c;
+        ctx.lineWidth = w;
+        ctx.beginPath();
+        ctx.moveTo(pts[0][0] * r, pts[0][1] * r);
+        for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0] * r, pts[i][1] * r);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 2.6;
+    };
     const blob = (pts, fill) => {
       ctx.beginPath();
       ctx.moveTo(pts[0][0] * r, pts[0][1] * r);
@@ -1073,11 +1339,13 @@ const SpriteGen = (() => {
       ctx.stroke();
     };
     const eye = (x, y, w = 0.12) => {
-      ctx.fillStyle = BLOOD;
+      // Eyes flare on the wind-up: the tell before the blow.
+      const ew = w * (windup ? 1.45 : 1);
+      ctx.fillStyle = windup ? '#ff3a1c' : BLOOD;
       ctx.beginPath();
-      ctx.ellipse(x * r, y * r, w * r, w * r * 0.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(x * r, y * r, ew * r, ew * r * 0.6, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = '#ff5040';
+      ctx.fillStyle = windup ? '#ffd040' : '#ff5040';
       ctx.fillRect(x * r - 0.6, y * r - 0.6, 1.2, 1.2);
     };
 
@@ -1130,6 +1398,73 @@ const SpriteGen = (() => {
       eye(0.2, 0.42);
       ctx.fillStyle = INK;
       ctx.fillRect(-0.05 * r, 0.6 * r, 0.1 * r, 0.22 * r);
+      if (atk) {
+        // Overhead slam: both fists go up and out, then come down together in front.
+        const [fx, fy, fs] = [
+          [1.0, 0.3, 0.25],
+          [0.74, -0.38, 0.34],
+          [0.5, 1.1, 0.23],
+          [0.58, 1.0, 0.2],
+        ][f];
+        if (f >= 2) {
+          // Shockwave and thrown dust where the fists land.
+          const grow = f === 2 ? 1 : 1.12;
+          ctx.globalAlpha *= f === 2 ? 1 : 0.5;
+          for (const [c, w] of [
+            [INK, 4.6],
+            [BONE, 2.2],
+          ]) {
+            ctx.strokeStyle = c;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.ellipse(
+              0,
+              0.8 * r,
+              1.22 * r * grow,
+              0.52 * r * grow,
+              0,
+              Math.PI * 0.06,
+              Math.PI * 0.94
+            );
+            ctx.stroke();
+          }
+          if (f === 2) {
+            ctx.strokeStyle = BONE;
+            ctx.lineWidth = 1.5;
+            for (let i = 0; i < 7; i++) {
+              const a = Math.PI * (0.1 + i * 0.1333);
+              ctx.beginPath();
+              ctx.moveTo(Math.cos(a) * 1.3 * r, (0.8 + Math.sin(a) * 0.56) * r);
+              ctx.lineTo(Math.cos(a) * 1.5 * r, (0.8 + Math.sin(a) * 0.64) * r);
+              ctx.stroke();
+            }
+          }
+          ctx.globalAlpha /= f === 2 ? 1 : 0.5;
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 2.6;
+        }
+        for (const sd of [-1, 1]) {
+          inkLine(
+            [
+              [sd * 0.9, 0.05],
+              [sd * fx, fy],
+            ],
+            hide,
+            0.2 * r
+          );
+          ctx.beginPath();
+          ctx.arc(sd * fx * r, fy * r, fs * r, 0, Math.PI * 2);
+          ctx.fillStyle = trim;
+          ctx.fill();
+          ctx.stroke();
+          ctx.fillStyle = BONE;
+          for (const k of [-1, 0, 1]) {
+            ctx.beginPath();
+            ctx.arc((sd * fx + k * fs * 0.5) * r, (fy + fs * 0.45) * r, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          }
+        }
+      }
     } else if (shape === 'iron_colossus') {
       // Riveted slab: square plates, a slit visor, furnace glow.
       blob(
@@ -1152,15 +1487,60 @@ const SpriteGen = (() => {
         ],
         trim
       );
+      // Piston punch: the right plate arm draws back, then drives out on its rod.
+      const arm = atk ? [-0.2, -0.36, 0.72, 0.34][f] : 0;
+      if (arm > 0) {
+        blob(
+          [
+            [0.98, -0.55],
+            [1.2, -0.55],
+            [1.2, -0.62 + arm],
+            [0.98, -0.62 + arm],
+          ],
+          BONE
+        );
+      }
       blob(
         [
-          [1.3, -0.5],
-          [0.9, -0.7],
-          [0.85, 0.35],
-          [1.25, 0.25],
+          [1.3, -0.5 + arm],
+          [0.9, -0.7 + arm],
+          [0.85, 0.35 + arm],
+          [1.25, 0.25 + arm],
         ],
         trim
       );
+      if (atk) {
+        // A knuckle plate caps the punching arm.
+        blob(
+          [
+            [0.8, 0.3 + arm],
+            [1.33, 0.18 + arm],
+            [1.33, 0.5 + arm],
+            [0.84, 0.58 + arm],
+          ],
+          INK
+        );
+        ctx.fillStyle = BONE;
+        for (const x of [0.92, 1.07, 1.22]) {
+          ctx.beginPath();
+          ctx.arc(x * r, (0.44 + arm - (x - 0.92) * 0.25) * r, 1.1, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        if (f === 2) {
+          ctx.strokeStyle = BONE;
+          ctx.lineWidth = 1.6;
+          for (const a of [0.08, 0.3, 0.7, 0.92]) {
+            const ca = Math.cos(Math.PI * a);
+            const sa = Math.sin(Math.PI * a);
+            ctx.beginPath();
+            ctx.moveTo((1.07 + ca * 0.1) * r, (1.33 + sa * 0.05) * r);
+            ctx.lineTo((1.07 + ca * 0.3) * r, (1.33 + sa * 0.16) * r);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 2.6;
+        }
+      }
       blob(
         [
           [-0.5, 0.1],
@@ -1170,8 +1550,16 @@ const SpriteGen = (() => {
         ],
         INK
       );
-      ctx.fillStyle = '#ff5a20';
-      ctx.fillRect(-0.36 * r, 0.3 * r, 0.72 * r, 0.1 * r);
+      // The furnace slit burns hotter as the punch builds.
+      const heat = atk ? [0.45, 0.85, 1, 0.5][f] : 0;
+      if (heat > 0) {
+        ctx.fillStyle = `rgba(255,120,40,${0.4 * heat})`;
+        ctx.beginPath();
+        ctx.ellipse(0, 0.38 * r, 0.62 * r, (0.2 + heat * 0.16) * r, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.fillStyle = heat > 0.7 ? '#ffd860' : heat > 0 ? '#ff8a30' : '#ff5a20';
+      ctx.fillRect(-0.36 * r, (0.3 - heat * 0.05) * r, 0.72 * r, (0.1 + heat * 0.14) * r);
       ctx.fillStyle = BONE;
       for (const [x, y] of [
         [-0.7, -0.55],
@@ -1195,16 +1583,42 @@ const SpriteGen = (() => {
       ctx.lineWidth = 2.6;
     } else if (shape === 'void_stalker') {
       // Lean shadow: hooded wedge, two long blades.
+      // Scissor slash: the blades open wide and back, then snap across each other.
+      const ang = atk ? [0.12, -0.3, 1.78, 1.95][f] : 0.68;
+      const ca = Math.cos(ang);
+      const sa = Math.sin(ang);
+      // Held wide the blades are foreshortened so the tips stay on the canvas.
+      const bl = atk && f <= 1 ? 1.02 : 1.2;
       for (const sd of [-1, 1]) {
         blob(
           [
-            [sd * 0.45, 0.1],
-            [sd * 1.45, 0.95],
-            [sd * 1.2, 1.05],
-            [sd * 0.3, 0.4],
-          ],
+            [0, -0.17],
+            [bl, -0.07],
+            [bl + 0.06, 0.07],
+            [0, 0.17],
+          ].map(([x, y]) => [sd * (0.4 + x * ca - y * sa), 0.25 + x * sa + y * ca]),
           BONE
         );
+      }
+      if (atk && f >= 2) {
+        // Two crossing cuts hang in the air ahead of it.
+        ctx.globalAlpha *= f === 2 ? 1 : 0.45;
+        for (const sd of [-1, 1]) {
+          for (const [c, w] of [
+            [INK, 4.4],
+            ['#ff5040', 2],
+          ]) {
+            ctx.strokeStyle = c;
+            ctx.lineWidth = w;
+            ctx.beginPath();
+            ctx.moveTo(sd * 1.3 * r, 0.45 * r);
+            ctx.quadraticCurveTo(sd * 0.75 * r, 1.4 * r, -sd * 0.55 * r, 1.42 * r);
+            ctx.stroke();
+          }
+        }
+        ctx.globalAlpha /= f === 2 ? 1 : 0.45;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
       }
       blob(
         [
@@ -1242,7 +1656,9 @@ const SpriteGen = (() => {
       ctx.lineWidth = 2.6;
     } else if (shape === 'elder_wyrm') {
       // Winged serpent seen from above: torn wings, a horned head, a spined tail.
-      const flap = Math.sin(frame * 0.9) * 0.12;
+      const flap = atk ? [0.1, 0.22, -0.1, -0.04][f] : Math.sin(frame * 0.9) * 0.12;
+      // The neck coils back on the wind-up, then snaps out behind the flame.
+      const neck = atk ? [-0.18, -0.34, 0.05, 0.02][f] : 0;
       for (const sd of [-1, 1]) {
         blob(
           [
@@ -1268,6 +1684,38 @@ const SpriteGen = (() => {
         ],
         trim
       );
+      if (atk && f >= 2) {
+        // A cone of fire, kept short enough to stay on the sprite canvas.
+        const y0 = 1.0 + neck;
+        const y1 = Math.min(y0 + 0.85, (33 - shift) / r);
+        const len = y1 - y0;
+        const w = f === 2 ? 1.0 : 1.2;
+        const flame = (k, kl, fill) =>
+          blob(
+            [
+              [-0.12, y0],
+              [-w * k * 0.6, y0 + len * kl * 0.45],
+              [-w * k, y0 + len * kl * 0.86],
+              [-w * k * 0.58, y0 + len * kl * 0.76],
+              [-w * k * 0.3, y0 + len * kl],
+              [0, y0 + len * kl * 0.8],
+              [w * k * 0.3, y0 + len * kl],
+              [w * k * 0.58, y0 + len * kl * 0.76],
+              [w * k, y0 + len * kl * 0.86],
+              [w * k * 0.6, y0 + len * kl * 0.45],
+              [0.12, y0],
+            ],
+            fill
+          );
+        ctx.globalAlpha *= f === 2 ? 1 : 0.7;
+        flame(1, 1, f === 2 ? '#ff6a1c' : BLOOD);
+        ctx.lineWidth = 1;
+        flame(0.55, 0.8, f === 2 ? '#ffd040' : '#ff7a20');
+        ctx.lineWidth = 2.6;
+        ctx.globalAlpha /= f === 2 ? 1 : 0.7;
+      }
+      ctx.save();
+      ctx.translate(0, neck * r);
       blob(
         [
           [-0.35, 0.2],
@@ -1290,6 +1738,19 @@ const SpriteGen = (() => {
         );
       eye(-0.16, 0.55, 0.1);
       eye(0.16, 0.55, 0.1);
+      if (atk) {
+        // Fire gathering in the throat, brightest just before it is loosed.
+        const glow = [0.1, 0.17, 0.14, 0.08][f];
+        ctx.fillStyle = INK;
+        ctx.beginPath();
+        ctx.arc(0, 0.95 * r, glow * r + 1.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = f === 1 ? '#ffd040' : '#ff7a20';
+        ctx.beginPath();
+        ctx.arc(0, 0.95 * r, glow * r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
       ctx.fillStyle = BONE;
       for (let i = 0; i < 4; i++) {
         ctx.beginPath();
@@ -1334,17 +1795,84 @@ const SpriteGen = (() => {
       eye(-0.45, 0.35, 0.14);
       eye(0.1, 0.55, 0.1);
       eye(0.5, 0.2, 0.08);
-      blob(
-        [
-          [-0.2, 0.7],
-          [0.35, 0.72],
-          [0.25, 0.95],
-          [-0.1, 0.95],
-        ],
-        INK
-      );
-      ctx.fillStyle = BONE;
-      for (let i = 0; i < 4; i++) ctx.fillRect((-0.14 + i * 0.12) * r, 0.72 * r, 0.06 * r, 0.1 * r);
+      if (!atk) {
+        blob(
+          [
+            [-0.2, 0.7],
+            [0.35, 0.72],
+            [0.25, 0.95],
+            [-0.1, 0.95],
+          ],
+          INK
+        );
+        ctx.fillStyle = BONE;
+        for (let i = 0; i < 4; i++)
+          ctx.fillRect((-0.14 + i * 0.12) * r, 0.72 * r, 0.06 * r, 0.1 * r);
+      } else {
+        // Lunging maw: the mouth gapes wider each frame until the bite lands.
+        const g = [0.3, 0.5, 1, 0.6][f];
+        const mx = 0.07;
+        const hw = 0.28 + g * 0.3;
+        const top = 0.7 - g * 0.24;
+        const bot = 0.95 + g * 0.17;
+        blob(
+          [
+            [mx - hw, top + 0.04],
+            [mx, top - 0.03],
+            [mx + hw, top + 0.06],
+            [mx + hw * 0.92, bot - 0.1],
+            [mx + hw * 0.4, bot],
+            [mx - hw * 0.4, bot],
+            [mx - hw * 0.92, bot - 0.12],
+          ],
+          INK
+        );
+        ctx.fillStyle = BLOOD;
+        ctx.beginPath();
+        ctx.ellipse(
+          mx * r,
+          ((top + bot) / 2 + 0.02) * r,
+          hw * 0.55 * r,
+          (bot - top) * 0.26 * r,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.fill();
+        // Fangs, upper row pointing forward and lower row pointing back.
+        const n = 5;
+        const th = 0.07 + g * 0.13;
+        ctx.fillStyle = BONE;
+        for (let i = 0; i < n; i++) {
+          const x = mx + (i / (n - 1) - 0.5) * hw * 1.5;
+          const tw = (hw * 0.75) / n;
+          ctx.beginPath();
+          ctx.moveTo((x - tw) * r, (top + 0.04) * r);
+          ctx.lineTo(x * r, (top + 0.04 + th) * r);
+          ctx.lineTo((x + tw) * r, (top + 0.04) * r);
+          ctx.closePath();
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo((x * 0.8 - tw) * r, (bot - 0.05) * r);
+          ctx.lineTo(x * 0.8 * r, (bot - 0.05 - th * 0.8) * r);
+          ctx.lineTo((x * 0.8 + tw) * r, (bot - 0.05) * r);
+          ctx.closePath();
+          ctx.fill();
+        }
+        if (f === 2) {
+          // Spittle thrown off the snap.
+          ctx.strokeStyle = BONE;
+          ctx.lineWidth = 1.4;
+          for (const sd of [-1, 1]) {
+            ctx.beginPath();
+            ctx.moveTo((mx + sd * (hw + 0.06)) * r, (bot - 0.05) * r);
+            ctx.lineTo((mx + sd * (hw + 0.24)) * r, (bot + 0.06) * r);
+            ctx.stroke();
+          }
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 2.6;
+        }
+      }
     }
 
     if (boss) {
@@ -1355,15 +1883,15 @@ const SpriteGen = (() => {
         // War banner on a pole at his back, and a broken tusk.
         ctx.beginPath();
         ctx.moveTo(-0.75 * r, -0.2 * r);
-        ctx.lineTo(-0.75 * r, -1.55 * r);
+        ctx.lineTo(-0.75 * r, -1.48 * r);
         ctx.stroke();
         blob(
           [
-            [-0.75, -1.5],
-            [-0.05, -1.35],
-            [-0.3, -1.15],
-            [-0.05, -0.95],
-            [-0.75, -1.0],
+            [-0.75, -1.44],
+            [-0.05, -1.3],
+            [-0.3, -1.12],
+            [-0.05, -0.93],
+            [-0.75, -0.98],
           ],
           BLOOD
         );
@@ -1397,11 +1925,11 @@ const SpriteGen = (() => {
         blob(
           [
             [-0.95, -0.5],
-            [-1.25, -1.35],
+            [-1.25, -1.3],
             [-0.6, -1.05],
-            [0, -1.5],
+            [0, -1.45],
             [0.6, -1.05],
-            [1.25, -1.35],
+            [1.25, -1.3],
             [0.95, -0.5],
           ],
           INK
@@ -1497,14 +2025,14 @@ const SpriteGen = (() => {
             [
               [x, -0.75],
               [x + 0.28, -0.75],
-              [x + 0.24, -1.3],
-              [x + 0.04, -1.3],
+              [x + 0.24, -1.2],
+              [x + 0.04, -1.2],
             ],
             INK
           );
           ctx.fillStyle = 'rgba(120,112,108,0.7)';
           ctx.beginPath();
-          ctx.arc((x + 0.14) * r, (-1.5 - (frame % 3) * 0.06) * r, 0.2 * r, 0, Math.PI * 2);
+          ctx.arc((x + 0.14) * r, (-1.28 - (frame % 3) * 0.04) * r, 0.15 * r, 0, Math.PI * 2);
           ctx.fill();
         }
         ctx.fillStyle = '#ff5a20';
@@ -1513,23 +2041,23 @@ const SpriteGen = (() => {
         // A marshal's standard and spiked pauldrons.
         ctx.beginPath();
         ctx.moveTo(0.85 * r, -0.2 * r);
-        ctx.lineTo(0.85 * r, -1.6 * r);
+        ctx.lineTo(0.85 * r, -1.48 * r);
         ctx.stroke();
         blob(
           [
-            [0.85, -1.55],
-            [1.5, -1.45],
-            [1.5, -1.0],
-            [0.85, -1.1],
+            [0.85, -1.44],
+            [1.45, -1.34],
+            [1.45, -0.92],
+            [0.85, -1.02],
           ],
           INK
         );
         blob(
           [
-            [1.0, -1.38],
-            [1.35, -1.32],
-            [1.35, -1.12],
-            [1.0, -1.18],
+            [1.0, -1.28],
+            [1.32, -1.22],
+            [1.32, -1.04],
+            [1.0, -1.1],
           ],
           BLOOD
         );
@@ -1587,6 +2115,21 @@ const SpriteGen = (() => {
       ctx.arc(0, 0, r * 1.38, 0, Math.PI * 2);
       ctx.stroke();
     }
+    if (hurt) {
+      // Flinch: a spray of blood off the face.
+      ctx.fillStyle = BLOOD;
+      for (const [x, y, w] of [
+        [-0.5, 1.15, 1.8],
+        [-0.15, 1.32, 1.4],
+        [0.3, 1.25, 2],
+        [0.62, 1.05, 1.3],
+        [0.05, 1.12, 1.1],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(x * r, y * r, w, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     ctx.restore();
     ctx.globalAlpha = 1;
   }
@@ -1630,12 +2173,15 @@ const SpriteGen = (() => {
       typeof GfxQuality !== 'undefined'
         ? GfxQuality.quantizeScale(scale)
         : Math.round(scale * 4) / 4;
+    // A flinch is a single pose, so every frame shares one cache entry.
     const cacheFrame =
-      typeof SpriteLod !== 'undefined'
-        ? SpriteLod.cacheFrameForLod(lodLevel, frame, animState)
-        : lodLevel >= 2 && animState !== 'attack' && animState !== 'hurt' && animState !== 'death'
-          ? 0
-          : frame;
+      animState === 'hurt'
+        ? 0
+        : typeof SpriteLod !== 'undefined'
+          ? SpriteLod.cacheFrameForLod(lodLevel, frame, animState)
+          : lodLevel >= 2 && animState !== 'attack' && animState !== 'hurt' && animState !== 'death'
+            ? 0
+            : frame;
     const cacheAnim =
       typeof SpriteLod !== 'undefined'
         ? SpriteLod.cacheAnimForLod(lodLevel, animState)
