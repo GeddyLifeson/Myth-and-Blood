@@ -2,6 +2,9 @@
  * Roster — one clear job, one signature trait and one weakness for every troop,
  * enemy, boss, operative and champion.
  *
+ * Troops and enemies are profiled below. The 104 operatives and 29 champions each
+ * have their own profile in data/roster-profiles.json.
+ *
  * Profiles are data. The small set of mechanics below reads them at four points:
  * when damage is dealt, when damage is taken, when a unit dies, and on a slow tick
  * that handles auras, regeneration, poison, pack counts and boss phases.
@@ -104,7 +107,58 @@ const Roster = (() => {
     },
   };
 
-  // Operatives and champions share archetypes, picked from their stats.
+  // Every operative and champion has its own profile in data/roster-profiles.json.
+  // The archetypes below, picked from stats, are the fallback for a unit without one
+  // (a modded operative, for example).
+  const BUNDLED = typeof GameDataBundle !== 'undefined' ? GameDataBundle.rosterProfiles : null;
+  const PROFILES = { ...(BUNDLED && BUNDLED.champions), ...(BUNDLED && BUNDLED.operatives) };
+
+  /** Every mechanic key a profile may carry. Anything else in the data is a mistake. */
+  const MECHANICS = [
+    'brace',
+    'farShot',
+    'closeWeak',
+    'splashEvery',
+    'runDown',
+    'dressing',
+    'bulwarkAura',
+    'dodgeRanged',
+    'spotAura',
+    'songAura',
+    'bossBane',
+    'reflectCharge',
+    'vsType',
+    'cleave',
+    'flatResist',
+    'thorns',
+    'pounceEach',
+    'pounce',
+    'backstab',
+    'hex',
+    'plague',
+    'bloodRage',
+    'killCheer',
+    'swarm',
+    'regen',
+    'armourVsRanged',
+    'noPin',
+    'warAura',
+    'wardAura',
+    'deathBurst',
+    'frail',
+    'fearless',
+    'dirgeAura',
+    // Added with the individual operative and champion profiles.
+    'lifesteal',
+    'execute',
+    'lastStand',
+    'guard',
+    'killHeal',
+    'ramp',
+    'stagger',
+    'expose',
+  ];
+
   const ARCHETYPES = {
     op_juggernaut: {
       role: 'Juggernaut',
@@ -626,6 +680,7 @@ const Roster = (() => {
     if (unit.team === 'enemy') return ENEMIES[unit.type] || null;
     if (unit.team !== 'player') return null;
     if (TROOPS[unit.type]) return TROOPS[unit.type];
+    if (PROFILES[unit.type]) return PROFILES[unit.type];
     if (unit.isCrossover || unit.isWwe) {
       unit.rosterKey = archetypeKey(unit);
       unit.rosterFaction = unit.isWwe ? null : factionOf(unit);
@@ -640,7 +695,7 @@ const Roster = (() => {
   }
 
   function describeType(type, team) {
-    const p = team === 'enemy' ? ENEMIES[type] : TROOPS[type];
+    const p = team === 'enemy' ? ENEMIES[type] : TROOPS[type] || PROFILES[type];
     return p ? { role: p.role, trait: p.trait, weak: p.weak } : null;
   }
 
@@ -677,6 +732,19 @@ const Roster = (() => {
     const len = Math.hypot(dx, dy);
     if (len < 1) return false;
     return (dx * Math.cos(rad) + dy * Math.sin(rad)) / len < -0.5;
+  }
+
+  function heal(unit, amount) {
+    if (unit.hp > 0 && unit.hp < unit.maxHp) unit.hp = Math.min(unit.maxHp, unit.hp + amount);
+  }
+
+  /** Hold a target in place. Bosses, monsters, elites and unpinnable units shrug it off. */
+  function pin(target, ticks, tick) {
+    if (isBig(target) || blocksPin(target) || (target.pinImmuneUntil || 0) > tick) return;
+    target.pinned = true;
+    target.pinTimer = Math.max(target.pinTimer || 0, ticks);
+    // Same rule as a volley pin: an enemy cannot be held in place over and over.
+    if (target.team === 'enemy') target.pinImmuneUntil = tick + 290;
   }
 
   function splash(attacker, target, radius, amount, ctx) {
@@ -733,6 +801,15 @@ const Roster = (() => {
       attacker.lastPounceId = target.id;
       mult *= p.pounceEach;
     }
+    if (p.execute && target.hp < target.maxHp * p.execute.below) mult *= p.execute.mult;
+    if (p.ramp) {
+      if (attacker.rampId === target.id) attacker.rampN++;
+      else {
+        attacker.rampId = target.id;
+        attacker.rampN = 0;
+      }
+      mult *= 1 + Math.min(p.ramp.max, attacker.rampN * p.ramp.per);
+    }
 
     const out = mult === 1 ? dmg : Math.max(1, Math.round(dmg * mult));
 
@@ -750,6 +827,15 @@ const Roster = (() => {
         ctx.playSfx('firebomb');
         ctx.burst('strikeFire', target.x, target.y, 0.5);
       }
+    }
+    if (p.lifesteal) heal(attacker, out * p.lifesteal);
+    if (p.expose) {
+      target.exposeUntil = tick + p.expose.ticks;
+      target.exposePct = p.expose.pct;
+    }
+    if (p.stagger && attacker.lastStaggerId !== target.id) {
+      attacker.lastStaggerId = target.id;
+      pin(target, p.stagger, tick);
     }
     if (p.pounce === undefined && p.cleave && attacker.team === 'enemy') ctx.shake(1.5);
     if (p.splashEvery) {
@@ -784,6 +870,20 @@ const Roster = (() => {
     let mult = 1;
     if (unit.team === 'enemy' && (unit.wardUntil || 0) > tick) mult *= 0.9;
     if (unit.team === 'player' && (unit.bulwarkUntil || 0) > tick) mult *= 0.9;
+    if ((unit.exposeUntil || 0) > tick) mult *= 1 + (unit.exposePct || 0);
+    // A guardian nearby takes a share of the blow. The share he takes is an echo, so it
+    // is never passed on again and never triggers thorns.
+    const guardian = unit.guardBy;
+    if (
+      guardian &&
+      (unit.guardUntil || 0) > tick &&
+      guardian.hp > 0 &&
+      guardian.team === unit.team &&
+      !(opts && opts.rosterEcho)
+    ) {
+      ctx.hurt(guardian, amount * unit.guardPct, attacker, true);
+      mult *= 1 - unit.guardPct;
+    }
     const p = profileOf(unit);
     if (p) {
       if (p.brace && unit.braceN > 0) {
@@ -796,6 +896,7 @@ const Roster = (() => {
         ctx.playSfx('arrowThunk');
       }
       if (p.flatResist) mult *= 1 - p.flatResist;
+      if (p.lastStand && unit.hp < unit.maxHp * p.lastStand.below) mult *= 1 - p.lastStand.resist;
       if (p.frail) mult *= p.frail;
       if (p.armourVsRanged && ranged) mult *= p.armourVsRanged;
       if (p.dodgeRanged && ranged && ctx.rng() < p.dodgeRanged) {
@@ -884,6 +985,7 @@ const Roster = (() => {
       }
     }
     const kp = killer ? profileOf(killer) : null;
+    if (kp && kp.killHeal && killer.team !== unit.team) heal(killer, killer.maxHp * kp.killHeal);
     if (kp && kp.killCheer) {
       const r2 = kp.killCheer.r * kp.killCheer.r;
       for (const u of ctx.units) {
@@ -999,6 +1101,18 @@ const Roster = (() => {
       if (p.bulwarkAura) {
         forNear(u, p.bulwarkAura.r, (o) => {
           if (o.team === u.team) o.bulwarkUntil = until;
+        });
+      }
+      if (p.guard) {
+        forNear(u, p.guard.r, (o) => {
+          // Guardians do not cover each other, or two of them would trade blows forever.
+          if (o.team !== u.team || (o.guardBy && o.guardBy !== u && (o.guardUntil || 0) > tick))
+            return;
+          const op = profileOf(o);
+          if (op && op.guard) return;
+          o.guardBy = u;
+          o.guardPct = p.guard.pct;
+          o.guardUntil = until;
         });
       }
       if (p.spotAura) {
@@ -1208,6 +1322,8 @@ const Roster = (() => {
     ENEMIES,
     ARCHETYPES,
     FACTION_SIGNATURES,
+    PROFILES,
+    MECHANICS,
     profileOf,
     describe,
     describeType,

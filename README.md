@@ -218,18 +218,7 @@ Every soldier has one job, one signature trait and one weakness. The unit panel 
 | Knight   | 8    | Heavy infantry | Cleave — each swing also wounds a second enemy beside the target.                                       | Expensive, and mages cut through the armour.  |
 | General  | 12   | Commander      | Orders — War Cry and Hold the Line. His aura strengthens everyone near him.                             | Every enemy on the field wants him dead.      |
 
-**Operatives and champions** share seven archetypes, chosen from their stats; each keeps its own named ability on top.
-
-| Archetype  | Trait                                                                                                         | Weakness                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Juggernaut | Immovable — takes 12% less damage and hurts anyone who strikes him in melee.                                  | Slow; line-breakers run past him.            |
-| Duelist    | First Blood — the opening strike on each new target lands 60% harder, and blows from behind hit harder still. | Thin armour for a front-line fighter.        |
-| Vanguard   | Cleave — each swing also wounds a second enemy beside the target.                                             | No answer to ranged fire.                    |
-| Marksman   | Long Shot — 20% more damage at range and 15% more to bosses and elites.                                       | Deals 40% less when an enemy is in his face. |
-| Suppressor | Suppressing Fire — targets he hits deal 20% less damage for a few seconds.                                    | Short reach for a ranged fighter.            |
-| Lancer     | Run Down — 60% more damage to line-breakers and routing enemies.                                              | Pikes and trolls stop a charge cold.         |
-| Medic      | Field Dressing — soldiers standing near him slowly recover on their own.                                      | A poor fighter.                              |
-| Champion   | Crowd Favourite — each kill lifts the morale of soldiers nearby, and he hits 25% harder below half health.    | Costs as much as a squad.                    |
+**Operatives and champions** each have their own profile: all 104 operatives and 29 champions carry an individual role, trait and weakness on top of their named ability, written to fit their stats and their faction. Within a faction no two play the same way. The trait text gives the real numbers, for example "+40% damage to targets below 30% health" or "takes on 20% of the damage dealt to allies within 50". Read them in the in-game encyclopedia under Roles & Counters, where they are listed faction by faction, or select a unit to see its profile in the unit panel. The profiles are data, in `data/roster-profiles.json`.
 
 **Hunt mode** (on by default): combat troops pathfind toward enemies. Click the map to override with manual orders.
 
