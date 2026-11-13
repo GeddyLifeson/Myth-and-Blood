@@ -909,6 +909,7 @@ const SiegeLoop = (() => {
       const name = veteranLabel(unit, ctx);
       run.fallen.push({ name, kills, waves, wave: ctx.wave });
       if (run.fallen.length > 12) run.fallen.shift();
+      ctx.playSfx('veteranFallen');
       ctx.showMessage(
         `${name} has fallen — ${kills} kill${kills === 1 ? '' : 's'} across ${waves} wave${waves === 1 ? '' : 's'}.`,
         260
@@ -986,7 +987,7 @@ const SiegeLoop = (() => {
       if (run.active) run.tally.ribbons.push(r.name);
       if (ctx) {
         ctx.showMessage(`Ribbon earned: ${r.name} — ${r.perk} on every future run.`, 320);
-        ctx.playSfx('buildComplete');
+        ctx.playSfx('ribbonEarned');
       }
     }
   }

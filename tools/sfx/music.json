@@ -1,0 +1,95 @@
+{
+  "bpm": 120,
+  "pieces": [
+    {
+      "name": "music_menu",
+      "startBar": 0,
+      "bars": 16,
+      "tailBars": 2,
+      "loop": true,
+      "start": 0,
+      "seconds": 32,
+      "tailSeconds": 4
+    },
+    {
+      "name": "music_siege",
+      "startBar": 18,
+      "bars": 16,
+      "tailBars": 2,
+      "loop": true,
+      "start": 36,
+      "seconds": 32,
+      "tailSeconds": 4
+    },
+    {
+      "name": "music_boss",
+      "startBar": 36,
+      "bars": 16,
+      "tailBars": 2,
+      "loop": true,
+      "start": 72,
+      "seconds": 32,
+      "tailSeconds": 4
+    },
+    {
+      "name": "victory_fanfare",
+      "startBar": 54,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 108,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "ribbon_earned",
+      "startBar": 58,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 116,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "veteran_fallen",
+      "startBar": 62,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 124,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "nightfall",
+      "startBar": 66,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 132,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "runner_alarm",
+      "startBar": 70,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 140,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "horde_warning",
+      "startBar": 74,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 148,
+      "seconds": 8,
+      "tailSeconds": 0
+    }
+  ]
+}

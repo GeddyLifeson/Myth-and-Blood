@@ -430,7 +430,7 @@ Traits are drawn on the field so you can see why a fight is going the way it is:
 - **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
 - With one breach left before defeat, the edges of the screen stay red.
 
-The set-piece sounds (breach horn, muster drums, warlord's roar, the General's orders, spoils, wave clear, defeat, the wraith's wail and the night drone) are orchestral recordings made in MuseScore Studio with Muse Sounds; they live in `assets/sfx/` and `tools/sfx/` explains how to rebuild them. Combat sounds are synthesized in code, and every recording has a synthesized fallback.
+The set-piece sounds (breach horn, muster drums, warlord's roar, the General's orders, spoils, wave clear, defeat, the wraith's wail and the night drone) are orchestral recordings made in MuseScore Studio with Muse Sounds; they live in `assets/sfx/` and `tools/sfx/` explains how to rebuild them. The music is recorded the same way: one loop for the menus, one for the battle and one that takes over while a warlord is on the field, plus short cues for nightfall, a runner breaking for the line, a horde warning, a fallen veteran, a new ribbon and victory. Combat sounds are synthesized in code, and every recording has a synthesized fallback.
 
 Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
 
