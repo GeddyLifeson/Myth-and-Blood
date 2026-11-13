@@ -11,6 +11,7 @@ Browser fantasy tactical defense game (Electron desktop build too). Public repo:
 | `js/`, `css/`                    | the game                                        |
 | `data/`                          | JSON content                                    |
 | `mods/`                          | mod API                                         |
+| `assets/sfx/`, `tools/sfx/`      | recorded sound cues, and how they were made     |
 | `scripts/`                       | build, tests, sim reports                       |
 | `electron/`, `dist/`, `release/` | desktop shell and build output                  |
 

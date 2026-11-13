@@ -920,6 +920,13 @@ const UX = (() => {
       Game.restartCurrentWave?.();
       UI.updateHUD(true);
     });
+    document.getElementById('pause-skip-intro')?.addEventListener('click', (e) => {
+      AudioEngine?.SFX?.click?.();
+      if (typeof SiegeLoop !== 'undefined') SiegeLoop.skipIntroduction();
+      e.currentTarget.hidden = true;
+      onMessage('Introduction skipped — every command is on the HUD.', 'system');
+      UI.updateHUD(true);
+    });
     document.getElementById('pause-menu')?.addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
       closePauseMenu(false);

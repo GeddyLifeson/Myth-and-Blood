@@ -1,9 +1,9 @@
 {
   "runs": 13,
-  "elapsedSec": 304.5,
+  "elapsedSec": 300.6,
   "bestWave": 1000,
   "avgWave": 808.5,
-  "avgUpdateMs": 2.64,
+  "avgUpdateMs": 2.61,
   "reached1000": [
     {
       "runId": 200,
@@ -42,7 +42,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.22
+      "avgUpdateMs": 0.21
     },
     {
       "runId": 202,
@@ -52,7 +52,7 @@
       "issues": [],
       "reached1000": true,
       "nights": 999,
-      "avgUpdateMs": 0.18
+      "avgUpdateMs": 0.17
     },
     {
       "runId": 0,
@@ -62,7 +62,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.7
+      "avgUpdateMs": 2.69
     },
     {
       "runId": 1,
@@ -72,7 +72,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.64
+      "avgUpdateMs": 3.6
     },
     {
       "runId": 2,
@@ -82,7 +82,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 4.35
+      "avgUpdateMs": 4.28
     },
     {
       "runId": 3,
@@ -92,7 +92,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.4
+      "avgUpdateMs": 3.42
     },
     {
       "runId": 4,
@@ -102,7 +102,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.39
+      "avgUpdateMs": 3.38
     },
     {
       "runId": 5,
@@ -122,7 +122,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.48
+      "avgUpdateMs": 3.3
     },
     {
       "runId": 7,
@@ -132,7 +132,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 2.62
+      "avgUpdateMs": 2.5
     },
     {
       "runId": 8,
@@ -142,7 +142,7 @@
       "issues": [],
       "reached1000": false,
       "nights": 750,
-      "avgUpdateMs": 3.26
+      "avgUpdateMs": 3.19
     }
   ]
 }

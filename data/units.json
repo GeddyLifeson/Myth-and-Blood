@@ -28,6 +28,22 @@
     "experience": 8,
     "canHunt": true
   },
+  "crossbowman": {
+    "name": "Crossbowman",
+    "cost": 5,
+    "hp": 70,
+    "accuracy": 42,
+    "damage": 44,
+    "range": 190,
+    "meleeRange": 25,
+    "speed": 0.95,
+    "type": "ranged",
+    "projectile": "arrow",
+    "morale": 12,
+    "experience": 7,
+    "canHunt": true,
+    "reloadMult": 1.8
+  },
   "mage": {
     "name": "Mage",
     "cost": 6,

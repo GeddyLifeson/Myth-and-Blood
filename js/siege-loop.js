@@ -262,6 +262,133 @@ const SiegeLoop = (() => {
     }
   }
 
+  // ------------------------------------------------------------ first steps
+  // A new commander meets one system per early wave. Nothing is locked: the parts of the
+  // HUD that belong to a later step are hidden or dimmed, and each step gets one line.
+  const FIRST_STEPS_KEY = 'myth-and-blood-first-steps-v1';
+  const FIRST_STEPS_DONE_WAVE = 10;
+  const FIRST_STEPS = [
+    {
+      id: 'deploy',
+      wave: 1,
+      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. In Hunt mode (H) soldiers fight on their own and walk back to their posts.',
+    },
+    {
+      id: 'crates',
+      wave: 2,
+      text: 'Press D to call the next wave early for bonus TP. From wave 2, supply crates land by day: walk a soldier onto one.',
+    },
+    {
+      id: 'breach',
+      wave: 3,
+      text: 'Enemies with a red pennant are line-breakers: they run past your troops. Each one that gets through is a breach, counted at the top.',
+    },
+    {
+      id: 'orders',
+      wave: 4,
+      text: "The General's orders: with a General on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
+    },
+    {
+      id: 'spoils',
+      wave: 5,
+      text: 'Every fifth wave pays spoils: after this wave, choose one of three rewards to keep for the rest of the siege.',
+    },
+    {
+      id: 'strikes',
+      wave: 6,
+      text: 'Spells and strikes are open: the Spells tab on the left (Q, W, E...) spends TP on fire, lightning and healing.',
+    },
+    {
+      id: 'intel',
+      wave: 8,
+      text: 'Spy and courier are open: the right panel scouts the next wave and sends one royal message per wave.',
+    },
+  ];
+
+  let steps = { veteran: false, skipped: false };
+
+  function loadSteps() {
+    try {
+      const raw =
+        typeof localStorage !== 'undefined' ? localStorage.getItem(FIRST_STEPS_KEY) : null;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        steps = { veteran: !!parsed.veteran, skipped: !!parsed.skipped };
+      }
+    } catch (_) {
+      /* storage unavailable */
+    }
+  }
+
+  function saveSteps() {
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(FIRST_STEPS_KEY, JSON.stringify(steps));
+      }
+    } catch (_) {
+      /* storage unavailable */
+    }
+  }
+
+  /** True while this run is introducing systems one wave at a time. */
+  function firstStepsActive(ctx) {
+    return !!(run.active && run.staged && !steps.skipped && !(ctx && ctx.creative));
+  }
+
+  /** The wave the player is preparing for: at night that is the one about to arrive. */
+  function upcomingWave(ctx) {
+    return Math.max(1, (ctx.wave || 0) + (ctx.isNight ? 1 : 0));
+  }
+
+  function stepReached(step, ctx) {
+    return upcomingWave(ctx) >= step.wave;
+  }
+
+  /** Which systems the HUD shows. Everything is shown once the introduction is over. */
+  function firstStepsState(ctx) {
+    const active = firstStepsActive(ctx);
+    const unlocked = {};
+    for (const step of FIRST_STEPS) unlocked[step.id] = !active || stepReached(step, ctx);
+    return { active, unlocked, shown: run.stepsShown ? [...run.stepsShown] : [] };
+  }
+
+  function updateFirstSteps(ctx) {
+    if (!run.active || ctx.creative) return;
+    if (!steps.veteran && ctx.wave >= FIRST_STEPS_DONE_WAVE) {
+      steps.veteran = true;
+      saveSteps();
+    }
+    if (!firstStepsActive(ctx)) return;
+    if (ctx.tick < (run.stepNextTick || 0)) return;
+    for (const step of FIRST_STEPS) {
+      if (run.stepsShown.includes(step.id) || !stepReached(step, ctx)) continue;
+      run.stepsShown.push(step.id);
+      // One line at a time, with room to read it before the next.
+      run.stepNextTick = ctx.tick + 420;
+      // Straight to the banner: a queued line could arrive a wave late or be dropped.
+      ctx.showMessage(step.text, 420, { priority: 'high', bypassQueue: true });
+      break;
+    }
+  }
+
+  /** Menu control: show the whole HUD now and stop the one-line prompts for good. */
+  function skipIntroduction() {
+    steps.skipped = true;
+    saveSteps();
+    if (hudCtx) syncHud(hudCtx());
+    return true;
+  }
+
+  /** For tests and the settings reset: start the introduction over. */
+  function resetIntroduction() {
+    steps = { veteran: false, skipped: false };
+    saveSteps();
+  }
+
+  function introductionStatus() {
+    return { veteran: steps.veteran, skipped: steps.skipped, staged: !!run.staged };
+  }
+
   // ------------------------------------------------------------- run state
   const freshRun = () => ({
     active: false,
@@ -285,6 +412,9 @@ const SiegeLoop = (() => {
     lastCombatTick: 0,
     lastEnemyCount: 0,
     nextId: 1,
+    staged: false,
+    stepsShown: [],
+    stepNextTick: 0,
   });
 
   let run = freshRun();
@@ -327,6 +457,10 @@ const SiegeLoop = (() => {
     run.counted = !ctx.creative;
     run.creativeRun = !!ctx.creative;
     run.warband = ctx.menuModeId === 'warband';
+    // Returning commanders (wave 10 reached once) and creative runs see everything at once.
+    run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
+    // Let the opening announcements pass before the first line of the introduction.
+    run.stepNextTick = (ctx.tick || 0) + 240;
     fx = computeFx();
     hideSpoils();
     syncHud(ctx);
@@ -574,11 +708,41 @@ const SiegeLoop = (() => {
         const name = (typeof EnemyDefs !== 'undefined' && EnemyDefs[t]?.name) || t;
         return prevPool.has(t) || ctx.wave < 1 ? name : `${name} (new)`;
       });
-    const count = Math.max(1, Math.round((cfg.count || 0) * (ctx.enemyCountMult || 1)));
+    const countMult = ctx.countMultFor ? ctx.countMultFor(next) : ctx.enemyCountMult || 1;
+    const count = Math.max(1, Math.round((cfg.count || 0) * countMult));
     let kind = '';
     if (cfg.boss) kind = 'Boss wave';
     else if (typeof GameDepth !== 'undefined' && GameDepth.isHordeWave?.(next)) kind = 'Horde';
-    return { wave: next, count, names, kind, runners: next >= RUNNER_FROM_WAVE };
+    return {
+      wave: next,
+      count,
+      names,
+      kind,
+      boss: !!cfg.boss,
+      runners: next >= RUNNER_FROM_WAVE,
+    };
+  }
+
+  /**
+   * What the night shows on each edge the next wave will use: where to draw the marker,
+   * which way it points, and a rough share of the host. Null when the sides are not known.
+   */
+  function spawnMarkers(ctx) {
+    const sides = ctx && ctx.isNight ? ctx.nextSides : null;
+    if (!sides || !sides.length || !run.preview) return null;
+    const w = ctx.worldW;
+    const h = ctx.worldH;
+    const share = Math.max(1, Math.round(run.preview.count / sides.length));
+    const names = run.preview.names.slice(0, 2).map((n) => n.replace(' (new)', ''));
+    const at = {
+      north: { x: w / 2, y: 30, dx: 0, dy: 1 },
+      south: { x: w / 2, y: h - 30, dx: 0, dy: -1 },
+      east: { x: w - 30, y: h / 2, dx: -1, dy: 0 },
+      west: { x: 30, y: h / 2, dx: 1, dy: 0 },
+    };
+    return sides
+      .filter((side) => at[side])
+      .map((side) => ({ side, ...at[side], count: share, names, boss: !!run.preview.boss }));
   }
 
   function previewText(p) {
@@ -764,7 +928,10 @@ const SiegeLoop = (() => {
       run.lastEnemyCount = enemies;
       checkStandoff(ctx, enemies);
     }
-    if (tick % 20 === 0) syncHud(ctx);
+    if (tick % 20 === 0) {
+      updateFirstSteps(ctx);
+      syncHud(ctx);
+    }
   }
 
   /** True on frames the simulation should skip — the last kill of a wave lands slowly. */
@@ -809,6 +976,7 @@ const SiegeLoop = (() => {
     knight: 'Strong against archers and casters',
     scout: 'Strong against archers and casters',
     archer: 'Strong against goblins and rats · weak against armour',
+    crossbowman: 'Strong against armour',
     mage: 'Strong against armour',
     ballista: 'Strong against armour',
     sapper: 'Strong against armour',
@@ -909,6 +1077,7 @@ const SiegeLoop = (() => {
       const name = veteranLabel(unit, ctx);
       run.fallen.push({ name, kills, waves, wave: ctx.wave });
       if (run.fallen.length > 12) run.fallen.shift();
+      ctx.playSfx('veteranFallen');
       ctx.showMessage(
         `${name} has fallen — ${kills} kill${kills === 1 ? '' : 's'} across ${waves} wave${waves === 1 ? '' : 's'}.`,
         260
@@ -986,7 +1155,7 @@ const SiegeLoop = (() => {
       if (run.active) run.tally.ribbons.push(r.name);
       if (ctx) {
         ctx.showMessage(`Ribbon earned: ${r.name} — ${r.perk} on every future run.`, 320);
-        ctx.playSfx('buildComplete');
+        ctx.playSfx('ribbonEarned');
       }
     }
   }
@@ -1016,6 +1185,123 @@ const SiegeLoop = (() => {
       .join('');
   }
 
+  // -------------------------------------------------------------------- score
+  const SCORE_KEY = 'myth-and-blood-scores-v1';
+  const SCORE_DIFFICULTY = { baby: 0.5, normal: 1, chad: 1.5, doomslayer: 2 };
+  const SCORE_LABELS = { baby: 'Baby', normal: 'Normal', chad: 'Chad', doomslayer: 'Hellbane' };
+  const SCORE_PER_WAVE = 100;
+  const SCORE_PER_KILL = 5;
+  const SCORE_PER_BREACH = 40;
+  const SCORE_PER_LOSS = 15;
+
+  /**
+   * Run score. Waves and kills earn points, breaches and dead soldiers cost them, and the
+   * total is multiplied for the difficulty and for every Advanced Difficulty modifier
+   * (a modifier worth +18% difficulty multiplies by 1.18, one worth -12% by 0.88).
+   * @param {{ waves?: number, kills?: number, breaches?: number, lost?: number,
+   *   difficulty?: string, modifiers?: { id?: string, label?: string, pct?: number }[] }} input
+   */
+  function computeScore(input) {
+    const waves = Math.max(0, Math.floor(input.waves || 0));
+    const kills = Math.max(0, Math.floor(input.kills || 0));
+    const breaches = Math.max(0, Math.floor(input.breaches || 0));
+    const lost = Math.max(0, Math.floor(input.lost || 0));
+    const earned = waves * SCORE_PER_WAVE + kills * SCORE_PER_KILL;
+    const penalty = breaches * SCORE_PER_BREACH + lost * SCORE_PER_LOSS;
+    const base = Math.max(0, earned - penalty);
+    const difficulty = SCORE_DIFFICULTY[input.difficulty] ? input.difficulty : 'normal';
+    const difficultyMult = SCORE_DIFFICULTY[difficulty];
+    const modifiers = (input.modifiers || []).map((m) => ({
+      label: m.label || m.id || 'Modifier',
+      mult: Math.max(0.5, 1 + (Number(m.pct) || 0) / 100),
+    }));
+    let modifierMult = 1;
+    for (const m of modifiers) modifierMult *= m.mult;
+    modifierMult = Math.round(modifierMult * 1000) / 1000;
+    return {
+      waves,
+      kills,
+      breaches,
+      lost,
+      wavePoints: waves * SCORE_PER_WAVE,
+      killPoints: kills * SCORE_PER_KILL,
+      breachPenalty: breaches * SCORE_PER_BREACH,
+      lossPenalty: lost * SCORE_PER_LOSS,
+      base,
+      difficulty,
+      difficultyMult,
+      modifiers,
+      modifierMult,
+      total: Math.round(base * difficultyMult * modifierMult),
+    };
+  }
+
+  function loadScores() {
+    try {
+      const raw = typeof localStorage !== 'undefined' ? localStorage.getItem(SCORE_KEY) : null;
+      const parsed = raw ? JSON.parse(raw) : null;
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function getBestScores() {
+    const saved = loadScores();
+    const out = {};
+    for (const id in SCORE_DIFFICULTY) out[id] = Math.max(0, Math.floor(saved[id] || 0));
+    return out;
+  }
+
+  /** Keep the best score for a difficulty. Returns true when this one is a new best. */
+  function recordScore(score) {
+    const best = getBestScores();
+    if (!(score.total > (best[score.difficulty] || 0))) return false;
+    best[score.difficulty] = score.total;
+    try {
+      if (typeof localStorage !== 'undefined') {
+        localStorage.setItem(SCORE_KEY, JSON.stringify(best));
+      }
+    } catch (_) {
+      /* storage unavailable */
+    }
+    return true;
+  }
+
+  function activeScoreModifiers() {
+    if (typeof AdvancedDifficulty === 'undefined' || !AdvancedDifficulty.getActiveIds) return [];
+    const ids = AdvancedDifficulty.getActiveIds();
+    const defs = AdvancedDifficulty.getModifiers ? AdvancedDifficulty.getModifiers() : [];
+    return ids.map((id) => defs.find((m) => m.id === id)).filter(Boolean);
+  }
+
+  /** Score the run that is ending. Creative runs are not scored. */
+  function scoreRun(ctx) {
+    if (!ctx || ctx.creative || !run.counted) return null;
+    return computeScore({
+      // The wave in progress when the realm fell does not count as cleared.
+      waves: Math.max(0, (ctx.wave || 0) - (ctx.isNight ? 0 : 1)),
+      kills: ctx.kills || 0,
+      breaches: run.breaches,
+      lost: ctx.soldiersLost || 0,
+      difficulty: ctx.difficultyId || 'normal',
+      modifiers: activeScoreModifiers(),
+    });
+  }
+
+  function renderBestScores() {
+    if (typeof document === 'undefined') return;
+    const host = document.getElementById('best-score-list');
+    if (!host) return;
+    const best = getBestScores();
+    host.innerHTML = Object.keys(SCORE_DIFFICULTY)
+      .map(
+        (id) =>
+          `<div class="ribbon-row${best[id] ? ' earned' : ''}"><span class="ribbon-name">${SCORE_LABELS[id]}</span><span class="ribbon-how">×${SCORE_DIFFICULTY[id]} score</span><span class="ribbon-perk">${best[id] ? best[id].toLocaleString('en-US') : '—'}</span></div>`
+      )
+      .join('');
+  }
+
   // ------------------------------------------------------------ save and load
   function exportState() {
     return {
@@ -1027,6 +1313,7 @@ const SiegeLoop = (() => {
       warband: run.warband,
       counted: run.counted,
       fallen: run.fallen.slice(),
+      stepsShown: [...run.stepsShown],
     };
   }
 
@@ -1034,6 +1321,11 @@ const SiegeLoop = (() => {
     run = freshRun();
     run.active = true;
     run.counted = snap ? snap.counted !== false : !ctx.creative;
+    run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
+    // A loaded siege does not repeat lines the player has already been through.
+    run.stepsShown = Array.isArray(snap?.stepsShown)
+      ? snap.stepsShown.filter((id) => FIRST_STEPS.some((st) => st.id === id))
+      : FIRST_STEPS.filter((st) => st.wave <= (ctx.wave || 0)).map((st) => st.id);
     run.warband = snap ? !!snap.warband : ctx.modeId === 'warband';
     run.creativeRun = !!ctx.creative;
     if (snap) {
@@ -1067,7 +1359,26 @@ const SiegeLoop = (() => {
     if (t.bestVeteran) {
       lines.push(`Deadliest soldier: ${esc(t.bestVeteran.name)} — ${t.bestVeteran.kills} kills`);
     }
-    let html = '<h3>The siege in brief</h3>' + lines.map((l) => `<div>${esc(l)}</div>`).join('');
+    let html = '';
+    const score = run.score;
+    if (score) {
+      const n = (v) => v.toLocaleString('en-US');
+      const rows = [
+        `Waves cleared: ${score.waves} × ${SCORE_PER_WAVE} = +${n(score.wavePoints)}`,
+        `Kills: ${score.kills} × ${SCORE_PER_KILL} = +${n(score.killPoints)}`,
+        `Breaches conceded: ${score.breaches} × ${SCORE_PER_BREACH} = −${n(score.breachPenalty)}`,
+        `Soldiers lost: ${score.lost} × ${SCORE_PER_LOSS} = −${n(score.lossPenalty)}`,
+        `${SCORE_LABELS[score.difficulty]} difficulty: ×${score.difficultyMult}`,
+      ];
+      for (const m of score.modifiers) rows.push(`${m.label}: ×${m.mult.toFixed(2)}`);
+      html +=
+        `<h3>Score: ${n(score.total)}${run.scoreIsBest ? ' — new best' : ''}</h3>` +
+        rows.map((l) => `<div>${esc(l)}</div>`).join('') +
+        (run.scoreIsBest || !run.scoreBest
+          ? ''
+          : `<div>Best on ${SCORE_LABELS[score.difficulty]}: ${n(run.scoreBest)}</div>`);
+    }
+    html += '<h3>The siege in brief</h3>' + lines.map((l) => `<div>${esc(l)}</div>`).join('');
     if (run.fallen.length) {
       html +=
         '<h3>The fallen</h3>' +
@@ -1088,14 +1399,25 @@ const SiegeLoop = (() => {
   function endRun(ctx) {
     if (ctx && ctx.ambience) ctx.ambience('off');
     if (run.active) {
+      run.score = scoreRun(ctx);
+      if (run.score) {
+        run.scoreBest = getBestScores()[run.score.difficulty] || 0;
+        run.scoreIsBest = recordScore(run.score);
+      }
       try {
+        renderBestScores();
         renderAfterAction(ctx);
       } catch (_) {
         /* partial DOM (headless harness) */
       }
     }
     run.active = false;
+    run.staged = false;
     hideSpoils();
+    if (typeof document !== 'undefined' && document.body && document.body.classList) {
+      document.body.classList.remove('first-steps');
+      for (const step of FIRST_STEPS) document.body.classList.remove(`fs-wait-${step.id}`);
+    }
     if (typeof document !== 'undefined') {
       const strip = document.getElementById('siege-strip');
       if (strip) strip.hidden = true;
@@ -1167,13 +1489,21 @@ const SiegeLoop = (() => {
     if (!strip) return;
     strip.hidden = !run.active;
     if (!run.active) return;
+    const intro = firstStepsState(ctx);
     const limit = breachLimit(ctx);
     const b = el('siege-breaches');
     if (b) {
       b.textContent = `Breaches ${run.breaches}/${limit}`;
       b.className = 'siege-chip' + (run.breaches >= limit - 1 ? ' danger' : '');
-      b.hidden = ctx.creative || ctx.wave < RUNNER_FROM_WAVE - 1;
+      b.hidden = ctx.creative || ctx.wave < RUNNER_FROM_WAVE - 1 || !intro.unlocked.breach;
     }
+    if (typeof document !== 'undefined' && document.body && document.body.classList) {
+      const cl = document.body.classList;
+      cl.toggle('first-steps', intro.active);
+      for (const step of FIRST_STEPS) cl.toggle(`fs-wait-${step.id}`, !intro.unlocked[step.id]);
+    }
+    const skipBtn = el('pause-skip-intro');
+    if (skipBtn) skipBtn.hidden = !intro.active;
     // One breach from defeat: the edges of the screen stay red.
     const flash = el('breach-flash');
     if (flash && flash.classList) {
@@ -1196,7 +1526,7 @@ const SiegeLoop = (() => {
     for (const [id, label, readyAt] of orders) {
       const btn = el(id);
       if (!btn) continue;
-      btn.hidden = !hasGeneral;
+      btn.hidden = !hasGeneral || !intro.unlocked.orders;
       const wait = Math.ceil((readyAt - ctx.tick) / 60);
       btn.disabled = wait > 0 || ctx.isNight;
       btn.textContent = wait > 0 ? `${label} ${wait}s` : label;
@@ -1297,9 +1627,90 @@ const SiegeLoop = (() => {
   }
 
   /** Crates and the red pennants that mark line-breakers. */
+  const INK = '#07050a';
+  const BONE = '#e4dcc4';
+  const BLOOD = '#a01018';
+
+  /** Night: red chevrons on each edge the next wave will come from, with what to expect. */
+  function drawSpawnMarkers(ctx2d, tick) {
+    const ctx = hudCtx ? hudCtx() : null;
+    const marks = ctx ? spawnMarkers(ctx) : null;
+    if (!marks) return;
+    const k = 1 / Math.max(0.5, ctx.viewScale || 1);
+    const pulse = (tick % 90) / 90;
+    for (const m of marks) {
+      // perpendicular to the direction of advance
+      const px = -m.dy;
+      const py = m.dx;
+      for (let i = 0; i < 3; i++) {
+        // Past the label, so the top bar never covers them.
+        const lead = (88 + i * 13 + pulse * 13) * k;
+        const cx = m.x + m.dx * lead;
+        const cy = m.y + m.dy * lead;
+        const half = (16 - i * 3) * k;
+        const back = 9 * k;
+        ctx2d.globalAlpha = Math.max(0.15, 1 - (i + pulse) / 3);
+        for (const [color, width] of [
+          [INK, 6 * k],
+          [BLOOD, 3 * k],
+        ]) {
+          ctx2d.strokeStyle = color;
+          ctx2d.lineWidth = width;
+          ctx2d.beginPath();
+          ctx2d.moveTo(cx + px * half - m.dx * back, cy + py * half - m.dy * back);
+          ctx2d.lineTo(cx, cy);
+          ctx2d.lineTo(cx - px * half - m.dx * back, cy - py * half - m.dy * back);
+          ctx2d.stroke();
+        }
+      }
+      ctx2d.globalAlpha = 1;
+      // The label sits inside the edge, clear of the HUD; the chevrons lead on from it.
+      const lx = m.x + m.dx * 60 * k;
+      const ly = m.y + m.dy * 60 * k;
+      const head = `about ${m.count}`;
+      const sub = m.names.join(', ');
+      ctx2d.font = `bold ${Math.round(12 * k)}px Georgia, serif`;
+      ctx2d.textAlign = 'center';
+      const wide =
+        Math.max(ctx2d.measureText(head).width, sub ? ctx2d.measureText(sub).width : 0) + 16 * k;
+      const tall = (sub ? 34 : 20) * k;
+      ctx2d.fillStyle = INK;
+      ctx2d.fillRect(lx - wide / 2, ly - tall / 2, wide, tall);
+      ctx2d.strokeStyle = BLOOD;
+      ctx2d.lineWidth = 1.5 * k;
+      ctx2d.strokeRect(lx - wide / 2, ly - tall / 2, wide, tall);
+      ctx2d.fillStyle = BONE;
+      ctx2d.fillText(head, lx, ly + (sub ? -3 : 4) * k);
+      if (sub) {
+        ctx2d.font = `${Math.round(10 * k)}px Georgia, serif`;
+        ctx2d.fillText(sub, lx, ly + 11 * k);
+      }
+      if (m.boss) drawSkull(ctx2d, lx - px * (wide / 2 + 14 * k), ly - py * (tall / 2 + 14 * k), k);
+    }
+    ctx2d.textAlign = 'left';
+  }
+
+  function drawSkull(ctx2d, x, y, k) {
+    ctx2d.fillStyle = BONE;
+    ctx2d.strokeStyle = INK;
+    ctx2d.lineWidth = 2 * k;
+    ctx2d.beginPath();
+    ctx2d.arc(x, y - 2 * k, 8 * k, 0, Math.PI * 2);
+    ctx2d.fill();
+    ctx2d.stroke();
+    ctx2d.fillRect(x - 4.5 * k, y + 3 * k, 9 * k, 6 * k);
+    ctx2d.strokeRect(x - 4.5 * k, y + 3 * k, 9 * k, 6 * k);
+    ctx2d.fillStyle = INK;
+    ctx2d.fillRect(x - 5 * k, y - 4 * k, 3.5 * k, 4 * k);
+    ctx2d.fillRect(x + 1.5 * k, y - 4 * k, 3.5 * k, 4 * k);
+    ctx2d.fillStyle = BLOOD;
+    ctx2d.fillRect(x - 0.8 * k, y + 0.5 * k, 1.6 * k, 2.5 * k);
+  }
+
   function drawWorld(ctx2d, units, tick) {
     if (!run.active) return;
     ctx2d.save();
+    drawSpawnMarkers(ctx2d, tick);
     // Shockwave rings from the General's orders.
     for (let i = run.rings.length - 1; i >= 0; i--) {
       const ring = run.rings[i];
@@ -1366,12 +1777,16 @@ const SiegeLoop = (() => {
       warband: run.warband,
       warCryReady: run.warCryReady,
       holdLineReady: run.holdLineReady,
+      firstSteps: firstStepsState(ctx),
+      spawnMarkers: spawnMarkers(ctx) || [],
     };
   }
 
   loadStore();
+  loadSteps();
   if (typeof document !== 'undefined' && document.addEventListener) {
     document.addEventListener('DOMContentLoaded', renderRibbonList);
+    document.addEventListener('DOMContentLoaded', renderBestScores);
   }
 
   return {
@@ -1408,6 +1823,16 @@ const SiegeLoop = (() => {
     drawGround,
     drawWorld,
     getHudState,
+    FIRST_STEPS,
+    spawnMarkers,
+    computeScore,
+    getBestScores,
+    recordScore,
+    renderBestScores,
+    lastScore: () => run.score || null,
+    skipIntroduction,
+    resetIntroduction,
+    introductionStatus,
   };
 })();
 

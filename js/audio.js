@@ -98,14 +98,163 @@ const AudioEngine = (() => {
    * @param {string} name
    * @param {...any} args
    */
+  // ------------------------------------------------------------ recorded cues
+  // Orchestral cues recorded in MuseScore Studio with Muse Sounds (see tools/sfx).
+  // Each one replaces the synthesized sound of the same name once it has loaded;
+  // until then, or if a file cannot be fetched, the synthesized version plays.
+  const SAMPLE_FILES = {
+    breachHorn: 'breach_horn',
+    musterDrums: 'muster_drums',
+    bossRoar: 'boss_roar',
+    warCry: 'war_cry',
+    holdLine: 'hold_line',
+    spoilsClaim: 'spoils_claim',
+    waveClear: 'wave_clear',
+    defeat: 'defeat',
+    wraithWail: 'wraith_wail',
+    enrage: 'enrage',
+    crateOpen: 'crate_open',
+    nightDrone: 'night_drone',
+    victory: 'victory_fanfare',
+    ribbonEarned: 'ribbon_earned',
+    veteranFallen: 'veteran_fallen',
+    nightFall: 'nightfall',
+    runnerShriek: 'runner_alarm',
+    hordeWarn: 'horde_warning',
+    musicMenu: 'music_menu',
+    musicSiege: 'music_siege',
+    musicBoss: 'music_boss',
+  };
+  /** Recorded cues with no synthesized sound of their own borrow one until they load. */
+  const SAMPLE_FALLBACK = { ribbonEarned: 'honorChime', veteranFallen: 'moraleBreak' };
+  const SAMPLE_GAIN = { wraithWail: 0.5, crateOpen: 0.7, spoilsClaim: 0.8, nightDrone: 0.35 };
+  // A cue that can fire many times in a row plays recorded once, then synthesized until this many ms pass.
+  const SAMPLE_COOLDOWN = { runnerShriek: 7000, hordeWarn: 9000, veteranFallen: 5000 };
+  const sampleLastPlayed = {};
+  const samples = {};
+  let samplesRequested = false;
+
+  /** fetch() refuses file:// pages (the desktop build, or index.html opened directly); XHR does not. */
+  function fetchBytes(url) {
+    const viaXhr = () =>
+      new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('GET', url);
+        xhr.responseType = 'arraybuffer';
+        xhr.onload = () =>
+          xhr.response && xhr.response.byteLength
+            ? resolve(xhr.response)
+            : reject(new Error('empty'));
+        xhr.onerror = () => reject(new Error('xhr'));
+        xhr.send();
+      });
+    if (typeof location !== 'undefined' && location.protocol === 'file:') return viaXhr();
+    return fetch(url)
+      .then((res) => (res.ok ? res.arrayBuffer() : Promise.reject(new Error(String(res.status)))))
+      .catch(viaXhr);
+  }
+
+  function loadSamples() {
+    if (samplesRequested || !ctx || typeof fetch !== 'function') return;
+    samplesRequested = true;
+    for (const [name, file] of Object.entries(SAMPLE_FILES)) {
+      fetchBytes(`assets/sfx/${file}.ogg`)
+        .then((data) => ctx.decodeAudioData(data))
+        .then((buffer) => {
+          samples[name] = buffer;
+          if (name.startsWith('music')) syncRecordedMusic();
+        })
+        .catch(() => {
+          /* keep the synthesized fallback */
+        });
+    }
+  }
+
+  /** Plays a recorded cue if it has loaded. Returns the source node, or null. */
+  function playSample(name, { loop = false, dest = null } = {}) {
+    const buffer = samples[name];
+    if (!buffer || !ctx || muted || ctx.state !== 'running') return null;
+    const source = ctx.createBufferSource();
+    source.buffer = buffer;
+    source.loop = loop;
+    const gain = ctx.createGain();
+    gain.gain.value = SAMPLE_GAIN[name] ?? 1;
+    source.connect(gain);
+    gain.connect(dest || sfxGain);
+    source.start();
+    return source;
+  }
+
   function play(name, ...args) {
     try {
-      const fn = SFX[name];
+      loadSamples();
+      if (SAMPLE_FILES[name] && !name.startsWith('music')) {
+        const wait = SAMPLE_COOLDOWN[name] || 0;
+        const now = Date.now();
+        if (!wait || now - (sampleLastPlayed[name] || 0) >= wait) {
+          if (playSample(name)) {
+            sampleLastPlayed[name] = now;
+            return;
+          }
+        }
+      }
+      const fn = SFX[name] || SFX[SAMPLE_FALLBACK[name]];
       if (typeof fn === 'function') fn(...args);
     } catch (e) {
       console.warn('AudioEngine.play failed', name, e);
     }
   }
+
+  // ----------------------------------------------------------- recorded music
+  // Three looping pieces (menu, siege, boss). Once a piece has loaded it takes over from the
+  // synthesized sequencer for its scene; the two cross-fade when the scene changes.
+  let recorded = null; // { name, source, gain }
+
+  function wantedMusic() {
+    if (!musicPlaying || muted) return null;
+    if (musicContext === 'menu') return 'musicMenu';
+    return mixState.boss && samples.musicBoss ? 'musicBoss' : 'musicSiege';
+  }
+
+  function fadeOutRecorded(seconds = 1.2) {
+    if (!recorded || !ctx) return;
+    const old = recorded;
+    recorded = null;
+    try {
+      const t = ctx.currentTime;
+      old.gain.gain.cancelScheduledValues(t);
+      old.gain.gain.setValueAtTime(old.gain.gain.value, t);
+      old.gain.gain.linearRampToValueAtTime(0, t + seconds);
+      old.source.stop(t + seconds + 0.05);
+    } catch (e) {
+      /* already stopped */
+    }
+  }
+
+  /** Starts, swaps or stops the recorded loop to match the current scene. */
+  function syncRecordedMusic() {
+    if (!ctx) return;
+    const want = wantedMusic();
+    if (!want || !samples[want]) {
+      if (recorded && recorded.name !== want) fadeOutRecorded();
+      return;
+    }
+    if (recorded && recorded.name === want) return;
+    if (ctx.state !== 'running') return;
+    fadeOutRecorded(1.6);
+    const source = ctx.createBufferSource();
+    source.buffer = samples[want];
+    source.loop = true;
+    const gain = ctx.createGain();
+    const t = ctx.currentTime;
+    gain.gain.setValueAtTime(0, t);
+    gain.gain.linearRampToValueAtTime(RECORDED_MUSIC_GAIN, t + 1.6);
+    source.connect(gain);
+    gain.connect(musicGain);
+    source.start();
+    recorded = { name: want, source, gain };
+  }
+  const RECORDED_MUSIC_GAIN = 1.6;
 
   function setMasterVolume(value) {
     masterVol = Math.max(0, Math.min(1, Number(value) || 0));
@@ -671,9 +820,11 @@ const AudioEngine = (() => {
     masterGain.gain.setTargetAtTime(targetMaster, t, 0.4);
     musicGain.gain.setTargetAtTime(targetMusic, t, 0.35);
     sfxGain.gain.setTargetAtTime(targetSfx, t, 0.25);
+    syncRecordedMusic();
   }
 
   function playBattlePercussion() {
+    if (recorded) return;
     if (!ctx || muted || mixState.intensity < 0.35) return;
     const t = ctx.currentTime;
     const vol = 0.06 + mixState.intensity * 0.1;
@@ -693,6 +844,10 @@ const AudioEngine = (() => {
 
   function playMusicStep(step) {
     if (!ctx || !musicPlaying || muted) return;
+    // The recorded loop for this scene is playing: the sequencer stays silent but keeps ticking,
+    // so it can pick up again if the recording ever stops.
+    syncRecordedMusic();
+    if (recorded) return;
     const theme =
       musicContext === 'menu' ? MENU_THEME : ERA_THEMES[mixState.era] || ERA_THEMES.early;
     const melody = theme.melody;
@@ -814,6 +969,8 @@ const AudioEngine = (() => {
         musicContext = 'none';
         return;
       }
+      loadSamples();
+      syncRecordedMusic();
       tickMusic();
     });
   }
@@ -827,9 +984,16 @@ const AudioEngine = (() => {
   let ambDrone = null;
   let ambDroneGain = null;
   let ambTimer = null;
+  let ambNightLoop = null;
 
   function stopAmbience() {
     ambMode = 'off';
+    try {
+      ambNightLoop?.stop();
+    } catch (_) {
+      /* already stopped */
+    }
+    ambNightLoop = null;
     if (ambTimer) {
       clearTimeout(ambTimer);
       ambTimer = null;
@@ -897,8 +1061,21 @@ const AudioEngine = (() => {
         ambDroneGain.connect(masterGain);
         ambDrone.start();
       }
+      // At night the recorded string drone plays if it has loaded; the sine drone is the fallback.
+      loadSamples();
+      if (ambNightLoop) {
+        try {
+          ambNightLoop.stop();
+        } catch (_) {
+          /* already stopped */
+        }
+        ambNightLoop = null;
+      }
+      if (ambMode === 'night') {
+        ambNightLoop = playSample('nightDrone', { loop: true, dest: masterGain });
+      }
       ambDroneGain.gain.setTargetAtTime(
-        ambMode === 'night' && !muted ? 0.035 : 0,
+        ambMode === 'night' && !muted && !ambNightLoop ? 0.035 : 0,
         ctx.currentTime,
         2
       );
@@ -918,6 +1095,7 @@ const AudioEngine = (() => {
   function stopMusic() {
     musicPlaying = false;
     musicContext = 'none';
+    fadeOutRecorded(0.8);
     if (musicTimer) {
       clearTimeout(musicTimer);
       musicTimer = null;
@@ -935,6 +1113,10 @@ const AudioEngine = (() => {
     startMenuMusic,
     stopMusic,
     setAmbience,
+    /** Names of the recorded cues that have loaded; the rest are playing synthesized. */
+    getLoadedCues: () => Object.keys(samples),
+    /** Which recorded loop is playing ('musicMenu' | 'musicSiege' | 'musicBoss'), or null. */
+    getRecordedMusic: () => (recorded ? recorded.name : null),
     updateMix,
     toggleMute,
     setMuted,

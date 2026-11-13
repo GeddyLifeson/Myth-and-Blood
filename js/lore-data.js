@@ -145,6 +145,15 @@ const LoreData = (() => {
         'Outpost garrison grants +55 range — archers behind walls can outshoot orc archers two fields away.',
       rule: 'wave:10',
     },
+    crossbowman: {
+      flavor:
+        'Guild arbalists from the river towns. The windlass is slow; the quarrel does not care about plate.',
+      mechanics:
+        'Slow-firing armour piercer. 40% more damage to armoured foes and siege engines. Keep him behind the line.',
+      classified:
+        'One quarrel in the time an archer looses nearly two arrows — waste him on goblins and the swarm walks over him.',
+      rule: 'kill:dark_knight,10',
+    },
     mage: {
       flavor: 'Court arcanists who traded tower solitude for the scream of battle.',
       mechanics: 'Arcane bolts with splash damage. Strong vs clustered foes.',

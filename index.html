@@ -113,6 +113,10 @@
                 <canvas class="btn-icon" data-sprite="archer" width="28" height="28"></canvas
                 ><span>Archer</span><span class="cost">4</span>
               </button>
+              <button class="deploy-btn" data-unit="crossbowman">
+                <canvas class="btn-icon" data-sprite="crossbowman" width="28" height="28"></canvas
+                ><span>Crossbow</span><span class="cost">5</span>
+              </button>
               <button class="deploy-btn" data-unit="mage">
                 <canvas class="btn-icon" data-sprite="mage" width="28" height="28"></canvas
                 ><span>Mage</span><span class="cost">6</span>
@@ -1485,6 +1489,14 @@
             <button id="pause-coop-handoff" class="menu-btn coop-handoff-btn" hidden>
               HAND OFF KINGDOM
             </button>
+            <button
+              id="pause-skip-intro"
+              class="menu-btn"
+              hidden
+              title="Show the whole HUD now and stop the one-line introductions"
+            >
+              SKIP THE INTRODUCTION
+            </button>
             <button id="pause-menu" class="menu-btn">MAIN MENU</button>
           </div>
           <div id="pause-online-panel" class="pause-online-panel" hidden></div>
@@ -1585,6 +1597,14 @@
               Earned across all your runs. Each one gives a small bonus on every run after.
             </p>
             <div id="ribbon-list" class="ribbon-list"></div>
+          </details>
+          <details class="menu-section">
+            <summary>Best scores</summary>
+            <p class="ribbon-intro">
+              Your best run on each difficulty. Waves and kills score; breaches and lost soldiers
+              cost. Harder settings multiply the total.
+            </p>
+            <div id="best-score-list" class="ribbon-list"></div>
           </details>
           <details class="menu-section">
             <summary>Share codes: co-op, duels &amp; seeds</summary>

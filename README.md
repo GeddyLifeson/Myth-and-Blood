@@ -62,8 +62,8 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 
 ## Core Loop
 
-1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
-2. **Day combat** — waves spawn from unlocked flanks. Troops auto-engage in Hunt mode, or click to move them manually.
+1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring, and red chevrons on the edge of the field show where it will come from. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
+2. **Day combat** — waves spawn from unlocked flanks. Troops auto-engage in Hunt mode and walk back to their posts when the fight is over, or click to move them manually.
 3. **Fight** — cast strikes, manage morale, retreat wounded troops to med tents.
 4. **Clear the wave** — all enemies defeated.
 5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
@@ -114,7 +114,19 @@ Spend TP on troops, buildings, strikes, spy actions, and courier messages.
 | 9   | Courier |
 | 0   | General |
 
-Scout, Bard, Ballista, and Pikeman are on the deploy panel (no dedicated hotkeys).
+Crossbowman, Scout, Bard, Ballista, and Pikeman are on the deploy panel (no dedicated hotkeys).
+
+### Posts
+
+Every soldier has a **post**: the spot where you deployed him, or the place you last ordered him to. In Hunt mode he leaves it to fight, helps a comrade who is fighting close by, and walks back about two seconds after the last enemy is gone, so the line you drew keeps its shape from wave to wave.
+
+| Input                  | Action                                                         |
+| ---------------------- | -------------------------------------------------------------- |
+| Click the map          | Move the selected soldiers; the destination is their new post  |
+| **B** (with selection) | Back to posts now, ignoring everything on the way              |
+| **H**                  | Hunt off: everyone stands at his post and only fights in reach |
+
+A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are retreating to a medical tent, garrisoned, routing or under a manual order are not called back, and the General keeps his own counsel. With nothing selected, **B** is still the Trade Outpost build key.
 
 ### Buildings
 
@@ -184,6 +196,7 @@ Click the map to deploy, build, cast strikes, or move selected units. Hover UI b
 | -------- | ---- | ----------------------------------------------------------------------------------- |
 | Footman  | 3    | Cheap melee; garrisons walls when General commands Keep                             |
 | Archer   | 4    | Ranged DPS; strong in outposts                                                      |
+| Crossbow | 5    | Slow, armour-piercing ranged; unlocks with Iron Weapons                             |
 | Mage     | 6    | Arcane bolts with splash damage                                                     |
 | Cavalry  | 7    | Fast melee; charge bonus                                                            |
 | Healer   | 5    | Heals allies in range (including other healers); retreats to med tents when wounded |
@@ -205,6 +218,7 @@ Every soldier has one job, one signature trait and one weakness. The unit panel 
 | -------- | ---- | -------------- | ------------------------------------------------------------------------------------------------------- | --------------------------------------------- |
 | Footman  | 3    | Line holder    | Shield Wall — takes 12% less damage for each footman or pikeman beside him, up to 36%.                  | Kills slowly.                                 |
 | Archer   | 4    | Ranged damage  | Volley — 20% more damage to targets far away.                                                           | Deals 40% less when an enemy is in his face.  |
+| Crossbow | 5    | Armour piercer | Heavy Quarrel — 40% more damage to armoured enemies and siege engines; reloads slowly.                  | Slow rate of fire; swarms overrun him.        |
 | Mage     | 6    | Area damage    | Arcane Burst — every fourth attack also hits everything near the target.                                | The most fragile soldier on the field.        |
 | Cavalry  | 7    | Runner hunter  | Run Down — 60% more damage to line-breakers and routing enemies.                                        | Pikes and trolls stop a charge cold.          |
 | Healer   | 5    | Medic          | Field Dressing — soldiers standing near a healer slowly recover on their own.                           | Cannot fight.                                 |
@@ -218,20 +232,11 @@ Every soldier has one job, one signature trait and one weakness. The unit panel 
 | Knight   | 8    | Heavy infantry | Cleave — each swing also wounds a second enemy beside the target.                                       | Expensive, and mages cut through the armour.  |
 | General  | 12   | Commander      | Orders — War Cry and Hold the Line. His aura strengthens everyone near him.                             | Every enemy on the field wants him dead.      |
 
-**Operatives and champions** share seven archetypes, chosen from their stats; each keeps its own named ability on top.
+**Operatives and champions** each have their own profile: all 104 operatives and 29 champions carry an individual role, trait and weakness on top of their named ability, written to fit their stats and their faction. Within a faction no two play the same way. The trait text gives the real numbers, for example "+40% damage to targets below 30% health" or "takes on 20% of the damage dealt to allies within 50". Read them in the in-game encyclopedia under Roles & Counters, where they are listed faction by faction, or select a unit to see its profile in the unit panel. The profiles are data, in `data/roster-profiles.json`.
 
-| Archetype  | Trait                                                                                                         | Weakness                                     |
-| ---------- | ------------------------------------------------------------------------------------------------------------- | -------------------------------------------- |
-| Juggernaut | Immovable — takes 12% less damage and hurts anyone who strikes him in melee.                                  | Slow; line-breakers run past him.            |
-| Duelist    | First Blood — the opening strike on each new target lands 60% harder, and blows from behind hit harder still. | Thin armour for a front-line fighter.        |
-| Vanguard   | Cleave — each swing also wounds a second enemy beside the target.                                             | No answer to ranged fire.                    |
-| Marksman   | Long Shot — 20% more damage at range and 15% more to bosses and elites.                                       | Deals 40% less when an enemy is in his face. |
-| Suppressor | Suppressing Fire — targets he hits deal 20% less damage for a few seconds.                                    | Short reach for a ranged fighter.            |
-| Lancer     | Run Down — 60% more damage to line-breakers and routing enemies.                                              | Pikes and trolls stop a charge cold.         |
-| Medic      | Field Dressing — soldiers standing near him slowly recover on their own.                                      | A poor fighter.                              |
-| Champion   | Crowd Favourite — each kill lifts the morale of soldiers nearby, and he hits 25% harder below half health.    | Costs as much as a squad.                    |
+The **Crossbowman** hits hard (44 damage against an archer's 28) but takes 1.8 times as long between shots, so he is wasted on goblins and earns his pay against trolls, dark knights, war chiefs, shieldbearers, siege towers and the Iron Colossus. He is researched with Iron Weapons, alongside the Sapper and the Knight.
 
-**Hunt mode** (on by default): combat troops pathfind toward enemies. Click the map to override with manual orders.
+**Hunt mode** (on by default): combat troops pathfind toward enemies, then return to their posts. Click the map to override with manual orders.
 
 ---
 
@@ -419,6 +424,8 @@ A big host is hard to feed. Past 14 soldiers on the field, every new recruit cos
 
 Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your troops in Hunt mode hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
 
+At night the next wave's flanks are already decided. Each edge it will use shows pulsing red chevrons pointing into the field, a rough head count for that side, the two most common enemy types, and a skull if a warlord is coming. Before wave 25 that is always the north; later, check all four edges before you place your line.
+
 ### Reading the battlefield
 
 Traits are drawn on the field so you can see why a fight is going the way it is:
@@ -429,6 +436,8 @@ Traits are drawn on the field so you can see why a fight is going the way it is:
 - **A red pulse** under a boss means it is enraged. Orders from the General send a ring across the field.
 - **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
 - With one breach left before defeat, the edges of the screen stay red.
+
+The set-piece sounds (breach horn, muster drums, warlord's roar, the General's orders, spoils, wave clear, defeat, the wraith's wail and the night drone) are orchestral recordings made in MuseScore Studio with Muse Sounds; they live in `assets/sfx/` and `tools/sfx/` explains how to rebuild them. The music is recorded the same way: one loop for the menus, one for the battle and one that takes over while a warlord is on the field, plus short cues for nightfall, a runner breaking for the line, a horde warning, a fallen veteran, a new ribbon and victory. Combat sounds are synthesized in code, and every recording has a synthesized fallback.
 
 Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
 
@@ -446,6 +455,7 @@ From wave 2, crates land on the field during the day. Walk any soldier onto one 
 | Cavalry, Knight, Scout | Archers and casters                       |              |
 | Archer                 | Goblins and rats                          | Armour       |
 | Mage, Ballista, Sapper | Armour (trolls, dark knights, war chiefs) |              |
+| Crossbowman            | Armour and siege engines                  | Swarms       |
 | Footman                | Berserkers                                |              |
 
 Enemy riders hit archers, mages, healers and bards harder, and pikemen take less from them. Any attack that lands **from behind** does 25% more damage and shakes the target's morale; this applies to both sides.
@@ -456,9 +466,36 @@ The unit panel shows each soldier's kills and waves survived. When a veteran fal
 
 ---
 
+## Your first sieges
+
+On your first runs the game introduces one system per early wave with a single line at the bottom of the screen, and keeps the rest of the HUD quiet until then:
+
+| Wave | Introduced                                                  |
+| ---- | ----------------------------------------------------------- |
+| 1    | Deploying troops, Hunt mode and posts                       |
+| 2    | Supply crates, and calling the wave early with **D**        |
+| 3    | Line-breakers and the breach counter                        |
+| 4    | The General's orders (War Cry, Hold the Line)               |
+| 5    | Spoils of war                                               |
+| 6    | Spells and strikes (the Spells tab is dimmed until then)    |
+| 8    | Spy and courier (the right-hand panel is dimmed until then) |
+
+Nothing is locked: a dimmed tab still works if you click it. Once you have reached wave 10 the introduction never appears again, and **Skip the introduction** in the pause menu turns it off at once. Creative mode always shows everything.
+
 ## Ribbons
 
 Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
+
+## Score
+
+The game-over screen scores the run:
+
+- **+100** for every wave cleared and **+5** for every kill
+- **−40** for every breach conceded and **−15** for every soldier lost (never below zero)
+- multiplied by the difficulty: Baby ×0.5, Normal ×1, Chad ×1.5, Hellbane ×2
+- multiplied again by each active Advanced Difficulty modifier, by its own percentage: a modifier that adds 18% difficulty multiplies by 1.18, one that removes 12% by 0.88
+
+Your best score on each difficulty is kept and listed under **Best scores** on the main menu, next to the ribbons. Creative runs and runs abandoned from the pause menu are not scored.
 
 ---
 
@@ -562,6 +599,8 @@ Every enemy has a job, a trait and a weakness. Named bosses carry two or three t
 | Chad     | 150%        | Harder, faster hordes             |
 | Hellbane | 200%        | Hell marches                      |
 
+On Chad and Hellbane the extra enemies are phased in: a third of the surplus on wave 1, two thirds on wave 2, the full host from wave 3. And on every difficulty the opening garrison does not desert during waves 1 and 2: soldiers whose morale breaks waver but stand, so a run cannot end in its first minutes because the last men walked off the field. They can still be killed.
+
 ### Advanced Difficulty
 
 From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, elite frequency, enemy type weighting, TP income, morale, breakthrough limit). Each modifier adjusts your **effective difficulty %** shown on screen.
@@ -622,7 +661,7 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 3. **Med tents save troops** — healers and combat units retreat there when badly wounded.
 4. **Save TP before wave 100** — academies (40–100 TP) and settlements are expensive.
 5. **Train mentors first** — you need Immortal veterans on field to found academies.
-6. **Use Hunt mode** — but click to reposition for flanks; not every wave hits every side.
+6. **Use Hunt mode** — but click to reposition for flanks; not every wave hits every side. Where you send a soldier becomes his post, and he comes back to it.
 7. **Scout with spy actions** — know what’s coming on siege and boss waves.
 8. **Lightning vs Fireball** — lightning is cheaper for precision; fireball for bigger blobs.
 9. **Zoom out on big maps** — pan to flanks as territory grows.
@@ -638,6 +677,8 @@ myth-and-blood/
 ├── js/                 # The game (game.js is the core simulation)
 ├── css/                # style.css plus the theme-v2.css HUD layer
 ├── data/               # Unit, building, enemy and strike definitions (JSON)
+├── assets/sfx/         # Recorded orchestral cues (OGG)
+├── tools/sfx/          # How the cues were made
 ├── mods/               # Mod loader manifest and an example mod
 ├── scripts/            # Build, tests and the headless simulation
 ├── src/                # TypeScript sources for the service/event/data cores

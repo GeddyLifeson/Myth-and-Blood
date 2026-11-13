@@ -1402,15 +1402,44 @@ const Encyclopedia = (() => {
       {
         cat: 'roles',
         name: 'How roles work',
-        body: 'Every soldier and every enemy has one job, one signature trait and one weakness. Pikes beat riders, cavalry beats archers and casters, arrows are weak against armour, and any blow from behind lands 25% harder. Select a soldier to see his role in the unit panel.',
+        body: 'Every soldier and every enemy has one job, one signature trait and one weakness. Pikes beat riders, cavalry beats archers and casters, arrows are weak against armour, and any blow from behind lands 25% harder. Champions and operatives each have their own role, trait and weakness, listed here by faction after the troops. Select a soldier to see his role in the unit panel.',
       },
     ];
     for (const [type, p] of Object.entries(Roster.TROOPS)) {
       const def = typeof UnitDefs !== 'undefined' ? UnitDefs[type] : null;
       out.push(page(def?.name || type, p, 'Weakness'));
     }
-    for (const p of Object.values(Roster.ARCHETYPES))
-      out.push(page('Operative archetype', p, 'Weakness'));
+    // Champions and operatives each have their own profile, listed faction by faction.
+    const profiles = Roster.PROFILES || {};
+    const group = (label, defs, keep) => {
+      const members = Object.entries(defs).filter(([id, def]) => profiles[id] && keep(def));
+      if (!members.length) return;
+      out.push({
+        cat: 'roles',
+        name: `${label} — ${members.length} profiles`,
+        body: members.map(([id, def]) => `${def.name} — ${profiles[id].role}`).join('\n'),
+      });
+      for (const [id, def] of members) {
+        const p = profiles[id];
+        out.push({
+          cat: 'roles',
+          name: `${def.name} — ${p.role}`,
+          body: `${label}\n\n${p.trait}\n\nWeakness: ${p.weak}`,
+        });
+      }
+    };
+    if (typeof WweDefs !== 'undefined') group('Grand Coliseum champions', WweDefs, () => true);
+    if (typeof CrossoverDefs !== 'undefined') {
+      const factions =
+        typeof CROSSOVER_FACTION_ORDER !== 'undefined'
+          ? CROSSOVER_FACTION_ORDER
+          : [...new Set(Object.values(CrossoverDefs).map((d) => d.faction))];
+      for (const fid of factions) {
+        const label =
+          (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[fid]?.label) || fid;
+        group(label, CrossoverDefs, (def) => def.faction === fid);
+      }
+    }
     for (const [type, p] of Object.entries(Roster.ENEMIES)) {
       const def = typeof EnemyDefs !== 'undefined' ? EnemyDefs[type] : null;
       out.push(page(def?.bossName || def?.name || type, p, 'How to beat it'));
@@ -1674,7 +1703,7 @@ const Encyclopedia = (() => {
     });
   }
 
-  return { init, open, close, isOpen, togglePanel, renderPanel };
+  return { init, open, close, isOpen, togglePanel, renderPanel, buildRoleEntries };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a
