@@ -78,11 +78,28 @@ const AudioEngine = (() => {
 
   function bindUnlock() {
     init();
+    // A resume() requested before the first click or key press can stay pending for good in
+    // Chromium browsers, so every gesture asks the context directly instead of reusing that call.
     const unlock = () => {
-      resume();
+      if (!ctx || ctx.state === 'running') return;
+      unlockPromise = null;
+      ctx
+        .resume()
+        .then(() => {
+          unlocked = true;
+          loadSamples();
+          if (musicPlaying && !muted) {
+            syncRecordedMusic();
+            if (!musicTimer) tickMusic();
+          }
+        })
+        .catch(() => {
+          /* the next gesture tries again */
+        });
     };
-    document.addEventListener('pointerdown', unlock, { passive: true });
-    document.addEventListener('keydown', unlock);
+    for (const type of ['pointerdown', 'pointerup', 'mousedown', 'click', 'touchend', 'keydown']) {
+      document.addEventListener(type, unlock, { passive: true, capture: true });
+    }
   }
 
   /** Run a delayed SFX callback only if still unmuted and context is live. */
@@ -953,6 +970,7 @@ const AudioEngine = (() => {
       if (!musicPlaying) return;
       playMusicStep(musicStep++);
       const theme = ERA_THEMES[mixState.era] || ERA_THEMES.early;
+      if (musicTimer) clearTimeout(musicTimer);
       musicTimer = setTimeout(tickMusic, theme.tempo);
     });
   }
