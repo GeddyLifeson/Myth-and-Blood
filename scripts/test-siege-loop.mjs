@@ -95,8 +95,10 @@ function start(seed, diff = 'normal') {
       if (t % 60 === 0) {
         Game.updatePresentation?.();
         const s = Game.getState();
+        // Spoils left unclaimed are picked automatically when the day begins, so count
+        // claimed ones too: checking only the pending offer races with the dawn below.
+        if (s.siegeLoop.pendingSpoils > 0 || s.siegeLoop.edicts.length > 0) spoilsOffered = true;
         if (s.timeOfDay === 'night') Game.beginDayPhase(true);
-        if (s.siegeLoop.pendingSpoils > 0) spoilsOffered = true;
         maxBreaches = Math.max(maxBreaches, s.siegeLoop.breaches);
         if (Game.getUnitsSnapshot().some((u) => u.lineBreaker)) sawRunner = true;
       }
@@ -104,12 +106,17 @@ function start(seed, diff = 'normal') {
     Game.updatePresentation?.();
     const fin = Game.getState();
     maxBreaches = Math.max(maxBreaches, fin.siegeLoop.breaches);
+    if (fin.siegeLoop.pendingSpoils > 0 || fin.siegeLoop.edicts.length > 0) spoilsOffered = true;
     bestWave = Math.max(bestWave, fin.wave);
     if (sawRunner && maxBreaches > 0) break;
   }
   ok(sawRunner, 'line-breakers spawn');
   ok(maxBreaches > 0, `enemies breach an undefended line (${maxBreaches} breaches)`);
-  ok(spoilsOffered || bestWave < 5, 'spoils are offered after wave 5 when the run lasts that long');
+  // The wave counter reads 5 while wave 5 is still being fought; spoils come once it is cleared.
+  ok(
+    spoilsOffered || bestWave <= 5,
+    `spoils are offered once wave 5 is cleared (best wave ${bestWave})`
+  );
 }
 
 // --- Warband mode: fewer, tougher soldiers --------------------------------------------------
