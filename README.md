@@ -413,7 +413,26 @@ After every fifth wave you are offered three rewards and keep one for the rest o
 
 ### Army upkeep
 
-A big host is hard to feed. Past 20 soldiers on the field, every new recruit costs 4% more per soldier over that mark, so the 45th soldier costs double. The surcharge shows at the top left of the screen. A bigger host also draws more line-breakers.
+A big host is hard to feed. Past 14 soldiers on the field, every new recruit costs 7% more per soldier over that mark, so around the 28th soldier the price has doubled. The surcharge shows at the top left of the screen. A bigger host also draws more line-breakers.
+
+### How a wave arrives
+
+Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your troops in Hunt mode hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
+
+### Reading the battlefield
+
+Traits are drawn on the field so you can see why a fight is going the way it is:
+
+- **Rings on the ground** show aura reach: red dashes for a war banner, green dashes for a shaman's ward, pale blue for a wraith's dirge, gold dashes for a bard's song.
+- **Marks over a unit's head:** purple diamond (hexed, deals less damage), flame (burning), green drop (poisoned), red flag (strengthened by a banner), green ring (warded).
+- **White chevrons** in front of a footman or pikeman show how many neighbours are bracing him; they flash when a blow is turned.
+- **A red pulse** under a boss means it is enraged. Orders from the General send a ring across the field.
+- **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
+- With one breach left before defeat, the edges of the screen stay red.
+
+Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
+
+When the run ends, the game-over screen shows the siege in brief: breaches, line-breakers cut down, spoils taken, your deadliest soldier, the veterans who fell and any ribbons earned.
 
 ### Supply crates
 
@@ -478,51 +497,54 @@ Standard foes include goblins, orcs, archers, mages, warg riders, harpies, burro
 
 Every enemy has a job, a trait and a weakness. Named bosses carry two or three traits and change at half health.
 
-| Enemy                  | Role                 | Trait                                                                                        | How to beat it                                               |
-| ---------------------- | -------------------- | -------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Goblin                 | Swarm                | Mob — hits harder for every goblin packed around it.                                         | Dies to anything; splash damage clears them.                 |
-| Orc                    | Line infantry        | Blood Rage — hits 25% harder once wounded below half.                                        | Slow.                                                        |
-| Orc Archer             | Skirmisher           | Loose Order — backs away when your soldiers close in.                                        | Cavalry.                                                     |
-| Dark Knight            | Armoured rider       | Plate — arrows do 30% less, and he cannot be pinned.                                         | Pikes and magic.                                             |
-| Warg Rider             | Raider               | Pounce — goes for archers, mages and healers; its first bite lands 80% harder.               | Pikes.                                                       |
-| Dark Mage              | Hexer                | Hex — soldiers it hits deal 20% less damage for a few seconds.                               | Fragile; cavalry reaches it fast.                            |
-| Troll                  | Wall breaker         | Regrowth — heals constantly, and heads for your buildings.                                   | Slow; focus fire outpaces the healing. Mages and ballistae.  |
-| Goblin Sapper          | Bomber               | Volatile — runs at your buildings and explodes when it dies.                                 | Kill it at range before it arrives.                          |
-| Necromancer            | Summoner             | Grave Call — keeps its distance and raises the dead.                                         | Fragile; kill it first.                                      |
-| Berserker              | Shock trooper        | Frenzy — hits 35% harder below half health and never routs.                                  | No armour; takes 15% more damage.                            |
-| Assassin               | General hunter       | Backstab — hunts your General; blows from behind land 50% harder still.                      | Dies to one solid hit.                                       |
-| Shaman                 | Healer               | Ward — heals the host, and enemies near it take 10% less damage.                             | Unarmed; kill it first.                                      |
-| Siege Tower            | Siege engine         | Rolling Tower — shrugs off arrows and batters walls.                                         | Sappers do double damage to it.                              |
-| Goblin Engineer        | Field engineer       | Barricades — throws up cover for the host as it advances.                                    | Barely fights.                                               |
-| War Chief              | Commander            | War Banner — enemies near the chief hit 15% harder.                                          | Kill him and the bonus is gone.                              |
-| Harpy                  | Flying raider        | Dive — flies for archers, mages and healers; its first strike lands 60% harder.              | Low health.                                                  |
-| Goblin Burrower        | Infiltrator          | Tunneller — always a line-breaker.                                                           | Cavalry and scouts run it down.                              |
-| Bone Summoner          | Summoner             | Bone Call — keeps its distance and raises the dead.                                          | Fragile; kill it first.                                      |
-| Sky Drake              | Flying artillery     | Fire Breath — every shot burns everything near the target.                                   | Ballistae.                                                   |
-| Plague Rat             | Swarm                | Plague — bites keep hurting for several seconds.                                             | Dies to anything.                                            |
-| Hellbound Legionnaire  | Suppressor           | Suppressing Fire — soldiers it hits deal 15% less damage for a few seconds.                  | Cavalry.                                                     |
-| Nightmare Strider      | Raider               | Pounce — goes for archers, mages and healers; its first strike lands 80% harder.             | Pikes.                                                       |
-| Dreadborn Champion     | Armoured commander   | Dread Banner — enemies near it hit 15% harder; arrows do 25% less to it.                     | Mages and ballistae.                                         |
-| Warp Prophet           | Hexer                | Curse — soldiers it hits deal 25% less damage for a few seconds.                             | Fragile; cavalry reaches it fast.                            |
-| Grim Revenant          | Sniper               | Dead Eye — 50% more damage at long range; prefers healers and mages.                         | Helpless up close.                                           |
-| Umbral Stalker         | Assassin             | Backstab — goes for archers, mages and healers; blows from behind land 50% harder still.     | Low health.                                                  |
-| Cinderbound Juggernaut | Burning brute        | Cinder Hide — soldiers who strike it in melee are burned.                                    | Ranged fire; it is very slow.                                |
-| Hellmortar Pack        | Artillery            | Mortar — every shell hits everything near the target.                                        | Cavalry and sappers.                                         |
-| Abomination            | Bloated brute        | Rupture — regrows flesh, and bursts when it dies.                                            | Kill it away from your line.                                 |
-| Behemoth               | Wall breaker         | Trample — every blow also hits soldiers beside the target; it heads for buildings.           | Ballistae and mages.                                         |
-| Iron Colossus          | Siege construct      | Iron Shell — arrows do 40% less and melee attackers are hurt.                                | Sappers and mages.                                           |
-| Void Stalker           | General hunter       | Void Step — hunts your General; blows from behind land 50% harder still.                     | Bodyguards around the General.                               |
-| Elder Wyrm             | Flying siege         | Wyrmfire — every breath burns everything near the target; it regrows scales.                 | Ballistae.                                                   |
-| Gorath the Breaker     | Boss — warlord       | War Banner and Blood Rage. At half health he enrages.                                        | Kill his escort first; the banner only helps those near him. |
-| Morwen the Pale        | Boss — hexer         | Hex and Grave Call. At half health she raises a pack of plague rats.                         | Cavalry; she is fragile for a boss.                          |
-| Thokk the Mountain     | Boss — mountain      | Trample and Regrowth. At half health his regrowth doubles.                                   | Ballistae and mages; he is very slow.                        |
-| Grimm Ashborne         | Boss — cinder knight | Plate and Cinder Hide. At half health he enrages.                                            | Mages; keep melee off him.                                   |
-| Vexis the Hollow       | Boss — shadow        | Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder. | Low health for a boss; pin it with a tight formation.        |
-| Iron Lord Karg         | Boss — forge walker  | Iron Shell; heads for your buildings. At half health it calls goblin sappers.                | Sappers and mages.                                           |
-| Sylvara Wyrm-Mother    | Boss — wyrm mother   | Wyrmfire. At half health she calls a flight of harpies.                                      | Ballistae.                                                   |
-| The Rotfather          | Boss — plague lord   | Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him.               | Kill him far from your line.                                 |
-| Dread Marshal Volk     | Boss — dread marshal | War Banner and Suppressing Fire. At half health he enrages.                                  | Cavalry; break his escort and he is alone.                   |
-| Malachar the Eternal   | Boss — the eternal   | Hex, Regrowth and War Banner. At half health he enrages and calls dark knights.              | Everything you have, at once.                                |
+| Enemy                  | Role                 | Trait                                                                                         | How to beat it                                               |
+| ---------------------- | -------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Goblin                 | Swarm                | Mob — hits harder for every goblin packed around it.                                          | Dies to anything; splash damage clears them.                 |
+| Orc                    | Line infantry        | Blood Rage — hits 25% harder once wounded below half.                                         | Slow.                                                        |
+| Orc Archer             | Skirmisher           | Loose Order — backs away when your soldiers close in.                                         | Cavalry.                                                     |
+| Dark Knight            | Armoured rider       | Plate — arrows do 30% less, and he cannot be pinned.                                          | Pikes and magic.                                             |
+| Warg Rider             | Raider               | Pounce — goes for archers, mages and healers; its first bite lands 80% harder.                | Pikes.                                                       |
+| Dark Mage              | Hexer                | Hex — soldiers it hits deal 20% less damage for a few seconds.                                | Fragile; cavalry reaches it fast.                            |
+| Troll                  | Wall breaker         | Regrowth — heals constantly, and heads for your buildings.                                    | Slow; focus fire outpaces the healing. Mages and ballistae.  |
+| Goblin Sapper          | Bomber               | Volatile — runs at your buildings and explodes when it dies.                                  | Kill it at range before it arrives.                          |
+| Necromancer            | Summoner             | Grave Call — keeps its distance and raises the dead.                                          | Fragile; kill it first.                                      |
+| Berserker              | Shock trooper        | Frenzy — hits 35% harder below half health and never routs.                                   | No armour; takes 15% more damage.                            |
+| Assassin               | General hunter       | Backstab — hunts your General; blows from behind land 50% harder still.                       | Dies to one solid hit.                                       |
+| Shaman                 | Healer               | Ward — heals the host, and enemies near it take 10% less damage.                              | Unarmed; kill it first.                                      |
+| Siege Tower            | Siege engine         | Rolling Tower — shrugs off arrows and batters walls.                                          | Sappers do double damage to it.                              |
+| Goblin Engineer        | Field engineer       | Barricades — throws up cover for the host as it advances.                                     | Barely fights.                                               |
+| War Chief              | Commander            | War Banner — enemies near the chief hit 15% harder.                                           | Kill him and the bonus is gone.                              |
+| Harpy                  | Flying raider        | Dive — flies for archers, mages and healers; its first strike lands 60% harder.               | Low health.                                                  |
+| Goblin Burrower        | Infiltrator          | Tunneller — always a line-breaker.                                                            | Cavalry and scouts run it down.                              |
+| Bone Summoner          | Summoner             | Bone Call — keeps its distance and raises the dead.                                           | Fragile; kill it first.                                      |
+| Orc Shieldbearer       | Shield wall          | Tower Shield — arrows and bolts do 55% less to it, and enemies beside it take 10% less.       | Mages, sappers, and anything that gets behind it.            |
+| Goblin Firebrand       | Arsonist             | Firebomb — its bombs splash, keep burning for several seconds, and it prefers your buildings. | Fragile; cavalry and archers kill it fast.                   |
+| Wailing Wraith         | Terror               | Dirge — soldiers near it steadily lose morale. It flies, and it never routs.                  | Low health. Bards and War Cry restore what it drains.        |
+| Sky Drake              | Flying artillery     | Fire Breath — every shot burns everything near the target.                                    | Ballistae.                                                   |
+| Plague Rat             | Swarm                | Plague — bites keep hurting for several seconds.                                              | Dies to anything.                                            |
+| Hellbound Legionnaire  | Suppressor           | Suppressing Fire — soldiers it hits deal 15% less damage for a few seconds.                   | Cavalry.                                                     |
+| Nightmare Strider      | Raider               | Pounce — goes for archers, mages and healers; its first strike lands 80% harder.              | Pikes.                                                       |
+| Dreadborn Champion     | Armoured commander   | Dread Banner — enemies near it hit 15% harder; arrows do 25% less to it.                      | Mages and ballistae.                                         |
+| Warp Prophet           | Hexer                | Curse — soldiers it hits deal 25% less damage for a few seconds.                              | Fragile; cavalry reaches it fast.                            |
+| Grim Revenant          | Sniper               | Dead Eye — 50% more damage at long range; prefers healers and mages.                          | Helpless up close.                                           |
+| Umbral Stalker         | Assassin             | Backstab — goes for archers, mages and healers; blows from behind land 50% harder still.      | Low health.                                                  |
+| Cinderbound Juggernaut | Burning brute        | Cinder Hide — soldiers who strike it in melee are burned.                                     | Ranged fire; it is very slow.                                |
+| Hellmortar Pack        | Artillery            | Mortar — every shell hits everything near the target.                                         | Cavalry and sappers.                                         |
+| Abomination            | Bloated brute        | Rupture — regrows flesh, and bursts when it dies.                                             | Kill it away from your line.                                 |
+| Behemoth               | Wall breaker         | Trample — every blow also hits soldiers beside the target; it heads for buildings.            | Ballistae and mages.                                         |
+| Iron Colossus          | Siege construct      | Iron Shell — arrows do 40% less and melee attackers are hurt.                                 | Sappers and mages.                                           |
+| Void Stalker           | General hunter       | Void Step — hunts your General; blows from behind land 50% harder still.                      | Bodyguards around the General.                               |
+| Elder Wyrm             | Flying siege         | Wyrmfire — every breath burns everything near the target; it regrows scales.                  | Ballistae.                                                   |
+| Gorath the Breaker     | Boss — warlord       | War Banner and Blood Rage. At half health he enrages.                                         | Kill his escort first; the banner only helps those near him. |
+| Morwen the Pale        | Boss — hexer         | Hex and Grave Call. At half health she raises a pack of plague rats.                          | Cavalry; she is fragile for a boss.                          |
+| Thokk the Mountain     | Boss — mountain      | Trample and Regrowth. At half health his regrowth doubles.                                    | Ballistae and mages; he is very slow.                        |
+| Grimm Ashborne         | Boss — cinder knight | Plate and Cinder Hide. At half health he enrages.                                             | Mages; keep melee off him.                                   |
+| Vexis the Hollow       | Boss — shadow        | Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder.  | Low health for a boss; pin it with a tight formation.        |
+| Iron Lord Karg         | Boss — forge walker  | Iron Shell; heads for your buildings. At half health it calls goblin sappers.                 | Sappers and mages.                                           |
+| Sylvara Wyrm-Mother    | Boss — wyrm mother   | Wyrmfire. At half health she calls a flight of harpies.                                       | Ballistae.                                                   |
+| The Rotfather          | Boss — plague lord   | Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him.                | Kill him far from your line.                                 |
+| Dread Marshal Volk     | Boss — dread marshal | War Banner and Suppressing Fire. At half health he enrages.                                   | Cavalry; break his escort and he is alone.                   |
+| Malachar the Eternal   | Boss — the eternal   | Hex, Regrowth and War Banner. At half health he enrages and calls dark knights.               | Everything you have, at once.                                |
 
 - **Sappers** demolish walls and settlements.
 - **Siege towers** deploy against walls every 5 waves.

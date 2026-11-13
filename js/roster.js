@@ -347,6 +347,32 @@ const Roster = (() => {
       weak: 'Fragile; kill it first.',
       kite: true,
     },
+    orc_shieldbearer: {
+      role: 'Shield wall',
+      trait:
+        'Tower Shield — arrows and bolts do 55% less to it, and enemies beside it take 10% less.',
+      weak: 'Mages, sappers, and anything that gets behind it.',
+      armourVsRanged: 0.45,
+      wardAura: { r: 60 },
+      noPin: true,
+    },
+    goblin_firebrand: {
+      role: 'Arsonist',
+      trait:
+        'Firebomb — its bombs splash, keep burning for several seconds, and it prefers your buildings.',
+      weak: 'Fragile; cavalry and archers kill it fast.',
+      kite: true,
+      prefer: 'building',
+      splashEvery: { n: 1, r: 34, pct: 0.5 },
+      plague: { dps: 4, ticks: 180 },
+    },
+    wailing_wraith: {
+      role: 'Terror',
+      trait: 'Dirge — soldiers near it steadily lose morale. It flies, and it never routs.',
+      weak: 'Low health. Bards and War Cry restore what it drains.',
+      dirgeAura: { r: 120, morale: 2.5 },
+      fearless: true,
+    },
     sky_drake: {
       role: 'Flying artillery',
       trait: 'Fire Breath — every shot burns everything near the target.',
@@ -622,7 +648,7 @@ const Roster = (() => {
   function onSpawn(unit, wave = 0) {
     // Enemies used to land one blow in four all game. Their aim now improves as the siege goes on.
     if (unit.team === 'enemy' && unit.accuracy > 0) {
-      unit.accuracy = Math.min(85, unit.accuracy + 8 + Math.min(22, wave));
+      unit.accuracy = Math.min(85, unit.accuracy + Math.min(30, wave * 1.5));
     }
     const p = profileOf(unit);
     if (!p) return;
@@ -711,13 +737,21 @@ const Roster = (() => {
     const out = mult === 1 ? dmg : Math.max(1, Math.round(dmg * mult));
 
     if (p.hex) {
+      if ((target.hexUntil || 0) <= tick) ctx.playSfx('hexCast');
       target.hexUntil = tick + p.hex.ticks;
       target.hexPct = p.hex.pct;
     }
     if (p.plague) {
       target.poisonUntil = tick + p.plague.ticks;
       target.poisonDps = p.plague.dps;
+      // Firebombs burn; bites and boils poison.
+      if (FIRE_TYPES[attacker.type]) {
+        target.burnUntil = tick + p.plague.ticks;
+        ctx.playSfx('firebomb');
+        ctx.burst('strikeFire', target.x, target.y, 0.5);
+      }
     }
+    if (p.pounce === undefined && p.cleave && attacker.team === 'enemy') ctx.shake(1.5);
     if (p.splashEvery) {
       attacker.swingN = (attacker.swingN || 0) + 1;
       if (attacker.swingN % p.splashEvery.n === 0) {
@@ -752,7 +786,15 @@ const Roster = (() => {
     if (unit.team === 'player' && (unit.bulwarkUntil || 0) > tick) mult *= 0.9;
     const p = profileOf(unit);
     if (p) {
-      if (p.brace && unit.braceN > 0) mult *= 1 - Math.min(0.36, unit.braceN * 0.12);
+      if (p.brace && unit.braceN > 0) {
+        mult *= 1 - Math.min(0.36, unit.braceN * 0.12);
+        unit.blockFlash = tick + 8;
+        ctx.playSfx('shieldBlock');
+      }
+      if (p.armourVsRanged && ranged) {
+        unit.blockFlash = tick + 8;
+        ctx.playSfx('arrowThunk');
+      }
       if (p.flatResist) mult *= 1 - p.flatResist;
       if (p.frail) mult *= p.frail;
       if (p.armourVsRanged && ranged) mult *= p.armourVsRanged;
@@ -779,6 +821,52 @@ const Roster = (() => {
   function blocksPin(unit) {
     const p = profileOf(unit);
     return !!(p && p.noPin);
+  }
+
+  const FIRE_TYPES = {
+    sky_drake: 1,
+    elder_wyrm: 1,
+    goblin_firebrand: 1,
+    boss_sylvara: 1,
+    boss_grimm: 1,
+    cinderbound_juggernaut: 1,
+  };
+  const BLAST_TYPES = {
+    sapper: 1,
+    ballista: 1,
+    hellmortar_pack: 1,
+    goblin_sapper: 1,
+    mage: 1,
+    dark_mage: 1,
+  };
+  const BOW_TYPES = {
+    archer: 1,
+    orc_archer: 1,
+    scout: 1,
+    hellbound_legionnaire: 1,
+    grim_revenant: 1,
+  };
+  const CLEAVE_TYPES = {
+    knight: 1,
+    berserker: 1,
+    behemoth: 1,
+    troll: 1,
+    dark_knight: 1,
+    cavalry: 1,
+  };
+
+  /** How a unit died, for the death animation and sound: burn, blast, arrow, cleave or fall. */
+  function deathCause(unit, opts, amount, tick = 0) {
+    const a = opts && opts.attacker;
+    if ((unit.burnUntil || 0) > tick || (a && FIRE_TYPES[a.type]) || (opts && opts.dragonStrike)) {
+      return 'burn';
+    }
+    if ((opts && opts.splash) || (a && BLAST_TYPES[a.type]) || (!a && amount >= unit.maxHp * 0.5)) {
+      return 'blast';
+    }
+    if (a && BOW_TYPES[a.type]) return 'arrow';
+    if (a && (CLEAVE_TYPES[a.type] || a.isNamedBoss || amount >= unit.maxHp * 0.6)) return 'cleave';
+    return 'fall';
   }
 
   // ------------------------------------------------------------------ deaths
@@ -851,7 +939,9 @@ const Roster = (() => {
     unit.phased = true;
     ctx.float(unit.x, unit.y - 34, 'ENRAGED', '#ff3030');
     ctx.shake(6);
-    ctx.playSfx('bossWarn');
+    ctx.playSfx('enrage');
+    rings.push({ x: unit.x, y: unit.y, max: 150, age: 0, color: '255,40,30' });
+    ctx.burst('critBurst', unit.x, unit.y);
     if (phase.enrage) unit.enraged = phase.enrage;
     if (phase.regen) unit.phaseRegen = phase.regen;
     if (phase.summon) {
@@ -923,6 +1013,17 @@ const Roster = (() => {
           }
         });
       }
+      if (p.dirgeAura && tick - (u.wailAt || -9999) > 540) {
+        u.wailAt = tick;
+        ctx.playSfx('wraithWail');
+      }
+      if (p.dirgeAura) {
+        forNear(u, p.dirgeAura.r, (o) => {
+          if (o.team !== u.team && o.maxMorale > 0 && !o.isGeneral && o.morale > 0) {
+            o.morale = Math.max(0, o.morale - p.dirgeAura.morale * (SLOW_TICK / 60));
+          }
+        });
+      }
       if (p.songAura) {
         forNear(u, p.songAura.r, (o) => {
           if (o.team === u.team && o.maxMorale > 0 && o.morale < o.maxMorale) {
@@ -935,6 +1036,151 @@ const Roster = (() => {
 
   function update(ctx) {
     if (ctx.tick % SLOW_TICK === 0) slowTick(ctx);
+  }
+
+  // ---------------------------------------------------------------- overlays
+  const rings = [];
+
+  function auraRing(c, u, radius, rgb, tick, dashed) {
+    c.strokeStyle = `rgba(${rgb},${0.28 + Math.sin(tick / 14 + u.x) * 0.08})`;
+    c.lineWidth = 1.6;
+    if (dashed) c.setLineDash([6, 6]);
+    c.beginPath();
+    c.arc(u.x, u.y, radius, 0, Math.PI * 2);
+    c.stroke();
+    if (dashed) c.setLineDash([]);
+  }
+
+  /** Everything a trait does is drawn here, so the player can see why a fight is going the way it is. */
+  function drawOverlays(c, units, tick) {
+    c.save();
+    for (let i = rings.length - 1; i >= 0; i--) {
+      const ring = rings[i];
+      ring.age++;
+      const k = ring.age / 40;
+      if (k >= 1) {
+        rings.splice(i, 1);
+        continue;
+      }
+      c.strokeStyle = `rgba(${ring.color},${(1 - k) * 0.85})`;
+      c.lineWidth = 5 * (1 - k) + 1;
+      c.beginPath();
+      c.arc(ring.x, ring.y, ring.max * (0.1 + 0.9 * k), 0, Math.PI * 2);
+      c.stroke();
+    }
+    for (let i = 0; i < units.length; i++) {
+      const u = units[i];
+      if (u.hp <= 0) continue;
+      const p = profileOf(u);
+      // Aura sources: a ring on the ground shows the reach.
+      if (p) {
+        if (p.warAura) auraRing(c, u, p.warAura.r, '220,40,30', tick, true);
+        if (p.wardAura) auraRing(c, u, p.wardAura.r, '120,200,120', tick, true);
+        if (p.dirgeAura) auraRing(c, u, p.dirgeAura.r, '150,200,255', tick, false);
+        if (p.songAura && u.team === 'player')
+          auraRing(c, u, p.songAura.r, '230,200,120', tick, true);
+      }
+      // Enraged bosses pulse red.
+      if (u.enraged) {
+        const pulse = 0.25 + Math.abs(Math.sin(tick / 9)) * 0.3;
+        c.fillStyle = `rgba(255,30,20,${pulse})`;
+        c.beginPath();
+        c.arc(u.x, u.y, 26, 0, Math.PI * 2);
+        c.fill();
+      }
+      // War Cry and Hold the Line.
+      if ((u.warCryUntil || 0) > tick) {
+        c.strokeStyle = 'rgba(255,150,60,0.75)';
+        c.lineWidth = 1.5;
+        for (let k = 0; k < 3; k++) {
+          const a = tick / 10 + (k * Math.PI * 2) / 3;
+          c.beginPath();
+          c.moveTo(u.x + Math.cos(a) * 11, u.y + Math.sin(a) * 11);
+          c.lineTo(u.x + Math.cos(a) * 17, u.y + Math.sin(a) * 17);
+          c.stroke();
+        }
+      }
+      if ((u.holdLineUntil || 0) > tick) {
+        c.strokeStyle = 'rgba(170,200,255,0.8)';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.arc(u.x, u.y, 14, Math.PI * 1.15, Math.PI * 1.85);
+        c.stroke();
+      }
+      // Braced footmen and pikemen: a bone-white chevron in front of the shield.
+      if (u.braceN > 0 && u.team === 'player') {
+        c.strokeStyle = (u.blockFlash || 0) > tick ? '#ffffff' : 'rgba(228,220,196,0.55)';
+        c.lineWidth = (u.blockFlash || 0) > tick ? 2.5 : 1.3;
+        for (let k = 0; k < u.braceN; k++) {
+          c.beginPath();
+          c.moveTo(u.x - 8, u.y - 15 - k * 3);
+          c.lineTo(u.x, u.y - 19 - k * 3);
+          c.lineTo(u.x + 8, u.y - 15 - k * 3);
+          c.stroke();
+        }
+      } else if ((u.blockFlash || 0) > tick) {
+        c.strokeStyle = '#ffffff';
+        c.lineWidth = 2;
+        c.beginPath();
+        c.arc(u.x, u.y, 13, 0, Math.PI * 2);
+        c.stroke();
+      }
+      // Status marks above the head: hex, poison, fire, banner, ward.
+      let mx = u.x - 10;
+      const my = u.y - 30;
+      if ((u.hexUntil || 0) > tick) {
+        c.fillStyle = '#b060ff';
+        c.strokeStyle = '#07050a';
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(mx, my - 4);
+        c.lineTo(mx + 4, my);
+        c.lineTo(mx, my + 4);
+        c.lineTo(mx - 4, my);
+        c.closePath();
+        c.fill();
+        c.stroke();
+        mx += 10;
+      }
+      if ((u.burnUntil || 0) > tick) {
+        const fl = Math.sin(tick / 3 + i) * 1.5;
+        c.fillStyle = '#ff7a20';
+        c.beginPath();
+        c.moveTo(mx - 4, my + 4);
+        c.lineTo(mx, my - 6 - fl);
+        c.lineTo(mx + 4, my + 4);
+        c.closePath();
+        c.fill();
+        c.fillStyle = '#ffd040';
+        c.fillRect(mx - 1, my, 2, 3);
+        mx += 10;
+      } else if ((u.poisonUntil || 0) > tick) {
+        c.fillStyle = '#80c040';
+        c.strokeStyle = '#07050a';
+        c.lineWidth = 1;
+        c.beginPath();
+        c.arc(mx, my + 1, 3.5, 0, Math.PI * 2);
+        c.fill();
+        c.stroke();
+        c.fillRect(mx - 0.8, my - 6, 1.6, 4);
+        mx += 10;
+      }
+      if (u.team === 'enemy' && (u.warAuraUntil || 0) > tick) {
+        c.fillStyle = '#c8202a';
+        c.fillRect(mx - 3, my - 4, 6, 5);
+        c.fillStyle = '#07050a';
+        c.fillRect(mx - 4, my - 5, 1.5, 10);
+        mx += 10;
+      }
+      if (u.team === 'enemy' && (u.wardUntil || 0) > tick) {
+        c.strokeStyle = '#80e080';
+        c.lineWidth = 1.5;
+        c.beginPath();
+        c.arc(mx, my, 3.5, 0, Math.PI * 2);
+        c.stroke();
+      }
+    }
+    c.restore();
   }
 
   // ---------------------------------------------------------------------- AI
@@ -969,6 +1215,8 @@ const Roster = (() => {
     modifyDamage,
     modifyDamageTaken,
     blocksPin,
+    deathCause,
+    drawOverlays,
     onDeath,
     update,
     preference,

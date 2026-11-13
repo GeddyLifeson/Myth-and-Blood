@@ -42,6 +42,7 @@ const Encyclopedia = (() => {
   const CATEGORIES = [
     { id: 'allies', label: 'Allies' },
     { id: 'enemies', label: 'Enemies' },
+    { id: 'roles', label: 'Roles & Counters' },
     { id: 'bestiary', label: 'Bestiary' },
     { id: 'buildings', label: 'Buildings' },
     { id: 'orders', label: 'Orders & Strikes' },
@@ -1389,6 +1390,34 @@ const Encyclopedia = (() => {
     ];
   }
 
+  /** One page per troop, archetype and enemy: its job, its trait and how to beat it. */
+  function buildRoleEntries() {
+    if (typeof Roster === 'undefined') return [];
+    const page = (name, p, weakLabel) => ({
+      cat: 'roles',
+      name: `${name} — ${p.role}`,
+      body: `${p.trait}\n\n${weakLabel}: ${p.weak}`,
+    });
+    const out = [
+      {
+        cat: 'roles',
+        name: 'How roles work',
+        body: 'Every soldier and every enemy has one job, one signature trait and one weakness. Pikes beat riders, cavalry beats archers and casters, arrows are weak against armour, and any blow from behind lands 25% harder. Select a soldier to see his role in the unit panel.',
+      },
+    ];
+    for (const [type, p] of Object.entries(Roster.TROOPS)) {
+      const def = typeof UnitDefs !== 'undefined' ? UnitDefs[type] : null;
+      out.push(page(def?.name || type, p, 'Weakness'));
+    }
+    for (const p of Object.values(Roster.ARCHETYPES))
+      out.push(page('Operative archetype', p, 'Weakness'));
+    for (const [type, p] of Object.entries(Roster.ENEMIES)) {
+      const def = typeof EnemyDefs !== 'undefined' ? EnemyDefs[type] : null;
+      out.push(page(def?.bossName || def?.name || type, p, 'How to beat it'));
+    }
+    return out;
+  }
+
   function buildNamedBossEntries() {
     if (typeof MonsterBosses !== 'undefined' && MonsterBosses.getEncyclopediaEntries) {
       return MonsterBosses.getEncyclopediaEntries();
@@ -1461,6 +1490,7 @@ const Encyclopedia = (() => {
       ...buildResearchEntries(),
       ...buildLoadoutEntries(),
       ...buildNamedBossEntries(),
+      ...buildRoleEntries(),
       ...buildColonyValueEntries(),
       ...buildWweEntries(),
       ...buildDoomslayerEntries(),

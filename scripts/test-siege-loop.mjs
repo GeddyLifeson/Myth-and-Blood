@@ -134,8 +134,8 @@ function start(seed, diff = 'normal') {
   ok(api.SiegeLoop.isWarband(), 'Warband mode is active after starting in it');
   ok(api.SiegeLoop.deployCostMult() === 2, 'Warband doubles deploy cost');
   ok(
-    Math.abs(api.SiegeLoop.deployCostMult(45) - 4) < 1e-9,
-    'a host of 45 doubles recruit cost again'
+    Math.abs(api.SiegeLoop.deployCostMult(24) - 3.4) < 1e-9,
+    'ten soldiers over the free 14 add 70% to recruit cost'
   );
   const footman = api.Game.getUnitsSnapshot().find((u) => u.type === 'footman');
   ok(

@@ -60,6 +60,9 @@ const SpriteGen = (() => {
     goblin_burrower: { body: '#485828', accent: '#708838', mark: '#604020', size: 7 },
     bone_summoner: { body: '#383028', accent: '#a0a090', mark: '#80ff80', size: 9 },
     plague_rat: { body: '#4a4838', accent: '#706858', mark: '#80c040', size: 6 },
+    orc_shieldbearer: { body: '#3a4a2a', accent: '#8a8478', mark: '#c8202a', size: 11 },
+    goblin_firebrand: { body: '#586a2c', accent: '#ff7a20', mark: '#ffd040', size: 7 },
+    wailing_wraith: { body: '#2a2a3a', accent: '#b8c0d8', mark: '#80e0ff', size: 9 },
     hellbound_legionnaire: { body: '#3a2838', accent: '#7040a0', mark: '#ff4060', size: 9 },
     nightmare_strider: { body: '#302838', accent: '#604878', mark: '#c080ff', size: 10 },
     dreadborn_champion: { body: '#281828', accent: '#503050', mark: '#ff2040', size: 12 },
@@ -482,9 +485,134 @@ const SpriteGen = (() => {
   const UNDEAD_RE = /bone|skelet|revenant|necro|lich|wraith|ghoul|zombie|undead|grim|plague/;
   const HOODED_TYPES = new Set(['archer', 'orc_archer', 'scout', 'assassin', 'umbral_stalker']);
   const HELM_TYPES = new Set(['footman', 'pikeman', 'sapper', 'ballista', 'cavalry']);
-  const SHIELD_TYPES = new Set(['footman', 'knight', 'pikeman', 'dark_knight', 'general']);
+  const SHIELD_TYPES = new Set([
+    'footman',
+    'knight',
+    'pikeman',
+    'dark_knight',
+    'general',
+    'orc_shieldbearer',
+  ]);
   const HORNED_TYPES = new Set(['dark_knight', 'war_chief', 'berserker', 'shaman', 'warg_rider']);
   const CLOAK_TYPES = new Set(['general', 'knight', 'dark_knight', 'scout', 'assassin', 'bard']);
+
+  const BOW_TYPES = new Set([
+    'archer',
+    'orc_archer',
+    'scout',
+    'hellbound_legionnaire',
+    'grim_revenant',
+    'goblin_firebrand',
+  ]);
+
+  /**
+   * The visible part of an attack, drawn in the figure's own space (forward is up):
+   * a slash arc for melee, a drawn and loosed bow, a flare at the staff tip for casters.
+   */
+  function drawAttackFlourish(ctx, kind, f, r, style, enemy) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    if (kind === 'melee') {
+      if (f === 1 || f === 2) {
+        const reach = r * (f === 1 ? 1.9 : 2.2);
+        const from = -Math.PI * (f === 1 ? 0.95 : 0.8);
+        const to = -Math.PI * (f === 1 ? 0.45 : 0.1);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.2, reach, from, to);
+        ctx.stroke();
+        ctx.strokeStyle = enemy ? '#ff5040' : BONE;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.2, reach, from, to);
+        ctx.stroke();
+      }
+      if (f === 3) {
+        // Follow-through: a few flecks of blood off the blade.
+        ctx.fillStyle = BLOOD;
+        for (const [x, y] of [
+          [0.9, -1.7],
+          [1.3, -1.2],
+          [1.5, -0.6],
+        ]) {
+          ctx.beginPath();
+          ctx.arc(x * r, y * r, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (kind === 'bow') {
+      const bx = r * 0.55;
+      const by = -r * 1.0;
+      const drawn = f <= 1;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3.4;
+      ctx.beginPath();
+      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+      ctx.strokeStyle = '#8a5a2a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+      const lx = bx + Math.cos(Math.PI * 1.18) * r * 0.95;
+      const rx = bx + Math.cos(Math.PI * 1.82) * r * 0.95;
+      const ey = by + r * 0.5 + Math.sin(Math.PI * 1.18) * r * 0.95;
+      const pull = drawn ? r * (f === 0 ? 0.35 : 0.6) : 0;
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(lx, ey);
+      ctx.lineTo(bx, ey + pull);
+      ctx.lineTo(rx, ey);
+      ctx.stroke();
+      if (drawn) {
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bx, ey + pull);
+        ctx.lineTo(bx, by - r * 0.9);
+        ctx.stroke();
+        ctx.fillStyle = BONE;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - r * 1.25);
+        ctx.lineTo(bx - 2.2, by - r * 0.85);
+        ctx.lineTo(bx + 2.2, by - r * 0.85);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Loosed: a streak where the arrow left.
+        ctx.strokeStyle = `rgba(228,220,196,${f === 2 ? 0.8 : 0.35})`;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - r * (f === 2 ? 1.0 : 1.6));
+        ctx.lineTo(bx, by - r * (f === 2 ? 2.2 : 2.8));
+        ctx.stroke();
+      }
+    } else {
+      const cx = r * 0.55;
+      const cy = -r * 1.75;
+      const glow = 2.5 + f * 1.8;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glow + 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glow, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = style.mark;
+      ctx.lineWidth = 1.4;
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI) / 3 + f * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * (glow + 2), cy + Math.sin(a) * (glow + 2));
+        ctx.lineTo(cx + Math.cos(a) * (glow + 5 + f), cy + Math.sin(a) * (glow + 5 + f));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
 
   function inkFill(ctx, fill, lw = 1.3) {
     ctx.fillStyle = fill;
@@ -508,11 +636,16 @@ const SpriteGen = (() => {
       type === 'orc' ||
       type === 'goblin' ||
       type === 'orc_archer' ||
+      type === 'orc_shieldbearer' ||
       type === 'troll' ||
       type === 'war_chief' ||
       type.startsWith('goblin_');
     const brute =
-      type === 'orc' || type === 'troll' || type === 'war_chief' || type === 'berserker';
+      type === 'orc' ||
+      type === 'orc_shieldbearer' ||
+      type === 'troll' ||
+      type === 'war_chief' ||
+      type === 'berserker';
 
     // Ground shadow and team ring stay unrotated so facing never hides them.
     ctx.fillStyle = 'rgba(0,0,0,0.45)';
@@ -595,9 +728,15 @@ const SpriteGen = (() => {
     ctx.shadowOffsetY = 1.2;
     ctx.shadowBlur = 0;
     ctx.translate(mounted ? 0 : r * 0.55, 0);
+    const attacking = animState === 'attack';
+    const swingFrame = frame % 4;
+    const fightKind = BOW_TYPES.has(type) ? 'bow' : caster ? 'cast' : 'melee';
+    // A melee swing winds up behind the shoulder and follows through across the body.
+    if (attacking && fightKind === 'melee') ctx.rotate([-1.0, -0.25, 0.75, 1.05][swingFrame]);
     ctx.scale(1.25, 1.25);
     drawWeaponSilhouette(ctx, type, style, r * 0.42, animState, frame % 2);
     ctx.restore();
+    if (attacking) drawAttackFlourish(ctx, fightKind, swingFrame, r, style, enemy);
 
     // Shoulders
     ctx.beginPath();
@@ -1209,6 +1348,224 @@ const SpriteGen = (() => {
     }
 
     if (boss) {
+      // Each warlord carries a mark of their own on top of the shared body.
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = INK;
+      if (type === 'boss_gorath') {
+        // War banner on a pole at his back, and a broken tusk.
+        ctx.beginPath();
+        ctx.moveTo(-0.75 * r, -0.2 * r);
+        ctx.lineTo(-0.75 * r, -1.55 * r);
+        ctx.stroke();
+        blob(
+          [
+            [-0.75, -1.5],
+            [-0.05, -1.35],
+            [-0.3, -1.15],
+            [-0.05, -0.95],
+            [-0.75, -1.0],
+          ],
+          BLOOD
+        );
+        blob(
+          [
+            [0.55, 0.25],
+            [0.95, 0.5],
+            [0.8, 0.2],
+          ],
+          INK
+        );
+      } else if (type === 'boss_thokk') {
+        // Slabs of mountain stone across the shoulders.
+        for (const [x, y, w] of [
+          [-0.75, -0.55, 0.5],
+          [0.25, -0.6, 0.55],
+          [-0.2, -0.82, 0.4],
+        ]) {
+          blob(
+            [
+              [x, y],
+              [x + w, y - 0.08],
+              [x + w - 0.06, y + 0.3],
+              [x + 0.05, y + 0.34],
+            ],
+            '#8a8478'
+          );
+        }
+      } else if (type === 'boss_malachar') {
+        // A third eye, and a tattered cloak trailing behind.
+        blob(
+          [
+            [-0.95, -0.5],
+            [-1.25, -1.35],
+            [-0.6, -1.05],
+            [0, -1.5],
+            [0.6, -1.05],
+            [1.25, -1.35],
+            [0.95, -0.5],
+          ],
+          INK
+        );
+        eye(0, 0.22, 0.13);
+        ctx.strokeStyle = BLOOD;
+        ctx.lineWidth = 1.2;
+        for (const x of [-0.8, -0.3, 0.3, 0.8]) {
+          ctx.beginPath();
+          ctx.moveTo(x * r, -0.7 * r);
+          ctx.lineTo(x * r * 1.15, -1.2 * r);
+          ctx.stroke();
+        }
+      } else if (type === 'boss_morwen') {
+        // A black veil and a bone staff.
+        blob(
+          [
+            [-0.6, -0.5],
+            [0.3, -0.95],
+            [0.85, -0.3],
+            [0.5, 0.15],
+            [-0.2, 0.2],
+            [-0.75, 0.0],
+          ],
+          INK
+        );
+        ctx.strokeStyle = BONE;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.moveTo(1.2 * r, 0.9 * r);
+        ctx.lineTo(1.2 * r, -1.1 * r);
+        ctx.stroke();
+        ctx.fillStyle = BLOOD;
+        ctx.beginPath();
+        ctx.arc(1.2 * r, -1.2 * r, 0.16 * r, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (type === 'boss_rotfather') {
+        // Boils, and a cloud of flies.
+        ctx.fillStyle = '#8a9a3a';
+        for (const [x, y, w] of [
+          [-0.6, -0.4, 0.16],
+          [0.55, -0.35, 0.13],
+          [0.7, 0.35, 0.11],
+          [-0.1, -0.7, 0.14],
+          [-0.75, 0.4, 0.1],
+        ]) {
+          ctx.beginPath();
+          ctx.arc(x * r, y * r, w * r, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+        ctx.fillStyle = INK;
+        for (let i = 0; i < 9; i++) {
+          const a = i * 0.7 + frame * 0.25;
+          ctx.fillRect(Math.cos(a) * r * 1.45, Math.sin(a * 1.3) * r * 1.3, 1.6, 1.6);
+        }
+      } else if (type === 'boss_grimm') {
+        // Cinder flames licking off the shoulders.
+        for (const sd of [-1, 1]) {
+          for (let i = 0; i < 3; i++) {
+            const x = sd * (0.35 + i * 0.22);
+            const h = 0.5 + ((i + Math.floor(frame)) % 3) * 0.14;
+            blob(
+              [
+                [x - 0.1, -0.45],
+                [x, -0.45 - h],
+                [x + 0.1, -0.45],
+              ],
+              i % 2 ? '#ff7a20' : BLOOD
+            );
+          }
+        }
+      } else if (type === 'boss_vexis') {
+        // Twin hooked daggers held wide, and slit eyes.
+        for (const sd of [-1, 1]) {
+          blob(
+            [
+              [sd * 1.15, 0.2],
+              [sd * 1.75, 0.05],
+              [sd * 1.7, 0.4],
+              [sd * 1.35, 0.5],
+            ],
+            BLOOD
+          );
+        }
+        ctx.fillStyle = '#ffd040';
+        ctx.fillRect(-0.24 * r, 0.4 * r, 0.16 * r, 0.04 * r);
+        ctx.fillRect(0.08 * r, 0.4 * r, 0.16 * r, 0.04 * r);
+      } else if (type === 'boss_karg') {
+        // Forge stacks on the back, smoking.
+        for (const x of [-0.55, 0.3]) {
+          blob(
+            [
+              [x, -0.75],
+              [x + 0.28, -0.75],
+              [x + 0.24, -1.3],
+              [x + 0.04, -1.3],
+            ],
+            INK
+          );
+          ctx.fillStyle = 'rgba(120,112,108,0.7)';
+          ctx.beginPath();
+          ctx.arc((x + 0.14) * r, (-1.5 - (frame % 3) * 0.06) * r, 0.2 * r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.fillStyle = '#ff5a20';
+        ctx.fillRect(-0.2 * r, 0.52 * r, 0.4 * r, 0.14 * r);
+      } else if (type === 'boss_volk') {
+        // A marshal's standard and spiked pauldrons.
+        ctx.beginPath();
+        ctx.moveTo(0.85 * r, -0.2 * r);
+        ctx.lineTo(0.85 * r, -1.6 * r);
+        ctx.stroke();
+        blob(
+          [
+            [0.85, -1.55],
+            [1.5, -1.45],
+            [1.5, -1.0],
+            [0.85, -1.1],
+          ],
+          INK
+        );
+        blob(
+          [
+            [1.0, -1.38],
+            [1.35, -1.32],
+            [1.35, -1.12],
+            [1.0, -1.18],
+          ],
+          BLOOD
+        );
+        for (const sd of [-1, 1])
+          blob(
+            [
+              [sd * 1.05, -0.6],
+              [sd * 1.55, -0.95],
+              [sd * 1.2, -0.35],
+            ],
+            BONE
+          );
+      } else if (type === 'boss_sylvara') {
+        // Blood-red wing membranes and a crest of spines.
+        for (const sd of [-1, 1]) {
+          blob(
+            [
+              [sd * 0.5, -0.15],
+              [sd * 1.25, -0.5],
+              [sd * 1.15, 0.0],
+              [sd * 0.75, 0.1],
+            ],
+            BLOOD
+          );
+        }
+        for (const x of [-0.2, 0, 0.2])
+          blob(
+            [
+              [x - 0.06, 0.15],
+              [x, -0.25],
+              [x + 0.06, 0.15],
+            ],
+            BONE
+          );
+      }
+      ctx.strokeStyle = INK;
       // Crown of horns and a blood halo mark every named warlord.
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2;

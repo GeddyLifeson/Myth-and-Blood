@@ -1451,7 +1451,7 @@ function getWaveConfig(waveNum) {
   const academyCount = 8 + eased * 70;
   // Hosts used to sit at 20 from wave 10 to wave 20 while income kept growing, so the
   // middle of a run had no pressure. They now grow by one a wave until the late ramp takes over.
-  const midCount = waveNum >= 3 ? Math.min(60, Math.floor(8 + waveNum * 1.25)) : 0;
+  const midCount = waveNum >= 4 ? Math.min(90, 4 + waveNum * 2) : 0;
   const count = Math.floor(Math.max(templateCount, academyCount, midCount) + post * 38);
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
@@ -1493,6 +1493,9 @@ const ENEMY_SPRITE_MAP = {
   bone_summoner: 'bone_summoner',
   sky_drake: 'sky_drake',
   plague_rat: 'plague_rat',
+  orc_shieldbearer: 'orc_shieldbearer',
+  goblin_firebrand: 'goblin_firebrand',
+  wailing_wraith: 'wailing_wraith',
   abomination: 'abomination',
   behemoth: 'behemoth',
   iron_colossus: 'iron_colossus',

@@ -351,6 +351,24 @@ const LoreData = (() => {
       weak: 'Anti-air',
       counter: 'Ballistas, orbital/skyburst evolved allies, frost nova',
     },
+    orc_shieldbearer: {
+      flavor: 'A door torn from a burned keep, carried by something that hates you.',
+      threat: 'Arrow cover for the host',
+      weak: 'Magic and flanks',
+      counter: 'Mages, sappers, cavalry from behind',
+    },
+    goblin_firebrand: {
+      flavor: 'It giggles while it lights the fuse.',
+      threat: 'Burns soldiers and buildings from range',
+      weak: 'Fragile',
+      counter: 'Cavalry, archers, scouts',
+    },
+    wailing_wraith: {
+      flavor: 'The sound gets into the ranks before the thing itself does.',
+      threat: 'Drains morale from everyone near it',
+      weak: 'Low health',
+      counter: 'Archers and ballistae; keep a bard close',
+    },
     plague_rat: {
       flavor: 'A squealing tide of teeth and fever.',
       threat: 'Swarm',

@@ -170,6 +170,8 @@ const VisualPolish = (() => {
         timer: isBig ? 72 : 52,
         max: isBig ? 72 : 52,
         isElite: isBig,
+        cause: unit.deathCause || 'fall',
+        seed: Math.random(),
         tumble: (Math.random() - 0.5) * 1.4,
         knockX: dir * (5 + Math.random() * 8),
         knockY: 2 + Math.random() * 5,
@@ -246,11 +248,98 @@ const VisualPolish = (() => {
       ctx.ellipse(0, 7, poolR, poolR * 0.32, 0, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.rotate(tumble);
-      ctx.globalAlpha = a * 0.9;
-      ctx.scale(1 - flatten * 0.12, 1 - flatten * 0.58);
       const img = SpriteGen.getUnitCanvas(c.type, c.rotation, c.team, 0, 1, 'death');
-      ctx.drawImage(img, -31, -31, 62, 62);
+      const iw = img.width;
+      const ih = img.height;
+      const seed = c.seed || 0.5;
+      if (c.cause === 'blast') {
+        // Blown apart: four pieces of the body thrown outward, tumbling as they land.
+        const fly = Math.min(1, prog * 3.2);
+        for (let q = 0; q < 4; q++) {
+          const qx = q % 2;
+          const qy = q >> 1;
+          const ang = seed * 6.28 + q * 1.57 + 0.6;
+          const dist = (14 + seed * 16 + q * 3) * fly;
+          ctx.save();
+          ctx.translate(
+            Math.cos(ang) * dist,
+            Math.sin(ang) * dist * 0.7 - Math.sin(fly * Math.PI) * 10
+          );
+          ctx.rotate(fly * (q % 2 ? 2.6 : -2.2));
+          ctx.globalAlpha = a * 0.9;
+          ctx.drawImage(img, (qx * iw) / 2, (qy * ih) / 2, iw / 2, ih / 2, -15, -15, 31, 31);
+          ctx.restore();
+        }
+        ctx.globalAlpha = a * 0.5;
+        ctx.fillStyle = '#141012';
+        ctx.beginPath();
+        ctx.ellipse(0, 6, 10 + prog * 14, 4 + prog * 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (c.cause === 'cleave') {
+        // Cut in two: the halves part and a line of blood opens between them.
+        const part = Math.min(1, prog * 4) * (8 + seed * 6);
+        for (const sd of [-1, 1]) {
+          ctx.save();
+          ctx.translate(sd * part, sd * part * 0.25);
+          ctx.rotate(tumble * 0.4 + sd * Math.min(1, prog * 3) * 0.5);
+          ctx.globalAlpha = a * 0.9;
+          ctx.scale(1, 1 - flatten * 0.45);
+          ctx.drawImage(img, sd < 0 ? 0 : iw / 2, 0, iw / 2, ih, sd < 0 ? -31 : 0, -31, 31, 62);
+          ctx.restore();
+        }
+        ctx.globalAlpha = a * 0.8;
+        ctx.strokeStyle = '#a01018';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-part * 0.6, -14);
+        ctx.lineTo(part * 0.6, 16);
+        ctx.stroke();
+      } else {
+        ctx.save();
+        ctx.rotate(tumble);
+        ctx.globalAlpha = a * 0.9;
+        ctx.scale(1 - flatten * 0.12, 1 - flatten * 0.58);
+        ctx.drawImage(img, -31, -31, 62, 62);
+        if (c.cause === 'burn') {
+          // Charred: the body blackens as it falls.
+          ctx.globalAlpha = Math.min(0.85, prog * 2.2) * a;
+          ctx.fillStyle = '#0c0a0c';
+          ctx.beginPath();
+          ctx.ellipse(0, 0, 15, 13, 0, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (c.cause === 'arrow') {
+          // Feathered: shafts standing out of the body.
+          ctx.globalAlpha = a;
+          for (let k = 0; k < 3; k++) {
+            const ax = (seed * 3 + k * 0.37) % 1;
+            const sx = -8 + ax * 16;
+            const sy = -6 + ((seed * 7 + k * 0.53) % 1) * 12;
+            ctx.strokeStyle = '#07050a';
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy);
+            ctx.lineTo(sx + 5 - k * 3, sy - 15);
+            ctx.stroke();
+            ctx.strokeStyle = '#e4dcc4';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(sx + 4 - k * 2.4, sy - 12);
+            ctx.lineTo(sx + 5 - k * 3, sy - 15);
+            ctx.stroke();
+          }
+        }
+        ctx.restore();
+        if (c.cause === 'burn' && prog < 0.8) {
+          // Embers lifting off the body.
+          ctx.fillStyle = '#ff7a20';
+          for (let k = 0; k < 5; k++) {
+            const ex = -10 + ((seed * 11 + k * 0.23) % 1) * 20;
+            const rise = ((prog * 2 + k * 0.2) % 1) * 26;
+            ctx.globalAlpha = (1 - rise / 26) * a;
+            ctx.fillRect(ex, -4 - rise, 1.8, 1.8);
+          }
+        }
+      }
 
       if (c.isElite && prog < 0.35) {
         ctx.globalAlpha = (1 - prog / 0.35) * 0.35;

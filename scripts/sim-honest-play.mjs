@@ -45,6 +45,9 @@ function playOne(diff, seed) {
   let deployed = 0;
   let threw = null;
   let maxArmy = 0;
+  let woundSamples = 0;
+  let woundShare = 0;
+  let enemySeen = 0;
   let t = 0;
   let lastWave = -1;
   let lastWaveTick = 0;
@@ -109,6 +112,28 @@ function playOne(diff, seed) {
       break;
     }
     if (t % 200 === 0) maxArmy = Math.max(maxArmy, Game.getState().army ?? 0);
+    if (
+      process.env.HONEST_TRACE &&
+      t % 60 === 0 &&
+      Game.getState().wave === Number(process.env.HONEST_TRACE)
+    ) {
+      const all = Game.getUnitsSnapshot();
+      const foes = all.filter((u) => u.team === 'enemy');
+      const mine = all.filter((u) => u.team === 'player');
+      const st = Game.getState();
+      console.log(
+        `t${t} ${st.timeOfDay} foes ${foes.length} (hp ${Math.round(foes.reduce((a, u) => a + u.hp, 0))}, avgY ${Math.round(foes.reduce((a, u) => a + u.y, 0) / (foes.length || 1))}) mine ${mine.length} (avgY ${Math.round(mine.reduce((a, u) => a + u.y, 0) / (mine.length || 1))}, minY ${Math.round(Math.min(...mine.map((u) => u.y)))}) hurt ${mine.filter((u) => u.hp < u.maxHp).length} left ${st.enemiesRemaining}`
+      );
+    }
+    if (t % 100 === 0 && Game.getUnitsSnapshot) {
+      // How hard the enemy is pressing: the share of soldiers below 60% health, sampled in daylight.
+      const mine = Game.getUnitsSnapshot().filter((u) => u.team === 'player');
+      if (mine.length && Game.getState().timeOfDay === 'day') {
+        woundSamples++;
+        woundShare += mine.filter((u) => u.hp < u.maxHp * 0.6).length / mine.length;
+        enemySeen += Game.getUnitsSnapshot().length - mine.length;
+      }
+    }
   }
   Game.updatePresentation?.();
   const fin = Game.getState();
@@ -130,6 +155,8 @@ function playOne(diff, seed) {
     ticks: t,
     deployed,
     maxArmy,
+    woundedPct: woundSamples ? Math.round((woundShare / woundSamples) * 100) : 0,
+    avgEnemies: woundSamples ? Math.round(enemySeen / woundSamples) : 0,
     kills: fin.kills ?? null,
     lost: fin.playerDeaths ?? 0,
     breaches: fin.siegeLoop?.breaches ?? 0,
@@ -146,7 +173,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, 4000 + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }

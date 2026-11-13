@@ -16,8 +16,8 @@ const SiegeLoop = (() => {
   const ORDER_RADIUS = 190;
   const REAR_ATTACK_MULT = 1.25;
   const MAX_EDICT_STACKS = 3;
-  const ARMY_FREE = 20;
-  const ARMY_UPKEEP = 0.04;
+  const ARMY_FREE = 14;
+  const ARMY_UPKEEP = 0.07;
 
   // ---------------------------------------------------------------- edicts
   const EDICTS = {
@@ -280,6 +280,8 @@ const SiegeLoop = (() => {
     warCryReady: 0,
     holdLineReady: 0,
     slowMo: 0,
+    rings: [],
+    tally: { runners: 0, crates: 0, earlyCalls: 0, ribbons: [], bosses: 0, bestVeteran: null },
     lastCombatTick: 0,
     lastEnemyCount: 0,
     nextId: 1,
@@ -328,6 +330,7 @@ const SiegeLoop = (() => {
     fx = computeFx();
     hideSpoils();
     syncHud(ctx);
+    ctx.ambience(ctx.isNight ? 'night' : 'day');
     return run.counted ? fx.startTp : 0;
   }
 
@@ -337,7 +340,7 @@ const SiegeLoop = (() => {
 
   /** Warband: half as many soldiers, each worth far more. */
   function deployCostMult(army = 0) {
-    // A big host is hard to feed: past 20 soldiers every recruit costs 4% more per head.
+    // A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head.
     const upkeep =
       run.active && !run.creativeRun ? 1 + Math.max(0, army - ARMY_FREE) * ARMY_UPKEEP : 1;
     return (run.warband ? 2 : 1) * upkeep;
@@ -377,10 +380,31 @@ const SiegeLoop = (() => {
     if (ctx.rng() >= chance) return;
     unit.lineBreaker = true;
     unit.stormLine = true;
+    ctx.playSfx('runnerShriek');
     // Runners travel light: quicker than the rest of the host, and easier to cut down.
     unit.speed *= 1.3 * Math.max(0.5, 1 - fx.runnerSlow);
     unit.maxHp = Math.max(1, Math.floor(unit.maxHp * 0.9));
     unit.hp = unit.maxHp;
+  }
+
+  /**
+   * The enemy forms up at the edge of the field before it advances. Your troops hold
+   * their ground until a squad has left that muster zone, so battles are fought in the
+   * open field and not at the spot where enemies appear.
+   */
+  function inMusterZone(u, ctx) {
+    const side = u.spawnSide || 'north';
+    const deep = side === 'north' || side === 'south';
+    const depth = (deep ? ctx.worldH : ctx.worldW) * 0.42;
+    if (side === 'north') return u.y < depth;
+    if (side === 'south') return u.y > ctx.worldH - depth;
+    if (side === 'west') return u.x < depth;
+    return u.x > ctx.worldW - depth;
+  }
+
+  /** True while an enemy is still forming up and should be left alone by auto-targeting. */
+  function isMustering(foe) {
+    return run.active && !run.creativeRun && foe.team === 'enemy' && !foe.mustered;
   }
 
   /** With no defender left to fight, every enemy goes for the line. */
@@ -475,7 +499,8 @@ const SiegeLoop = (() => {
     const left = limit - run.breaches;
     ctx.float(unit.x, unit.y - 18, 'BREACH', '#ff3030');
     ctx.shake(7);
-    ctx.playSfx('gateHit');
+    ctx.playSfx('breachHorn');
+    ctx.burst('dust', unit.x, unit.y);
     flashBreach();
     const shock = Math.max(0, 4 * (1 + fx.breachShock));
     if (shock > 0) {
@@ -527,7 +552,7 @@ const SiegeLoop = (() => {
       saveStore();
     }
     ctx.showMessage(`Spoils claimed: ${def.name}. ${def.desc}`, 240);
-    ctx.playSfx('reinforce');
+    ctx.playSfx('spoilsClaim');
     renderSpoils(ctx);
     syncHud(ctx);
     return true;
@@ -587,6 +612,7 @@ const SiegeLoop = (() => {
       ctx.showMessage('Spoils of war — choose one reward before the next assault.', 260);
     }
     run.preview = buildPreview(ctx);
+    ctx.ambience('night');
     run.crates = run.crates.filter((c) => !c.spent);
     if (run.counted) {
       const s = store.stats;
@@ -608,6 +634,7 @@ const SiegeLoop = (() => {
     const base = Math.min(5, Math.floor(secondsLeft / 10));
     if (base <= 0) return 0;
     const bonus = base * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
+    run.tally.earlyCalls++;
     if (run.counted) {
       store.stats.earlyCalls++;
       checkRibbons(ctx);
@@ -624,7 +651,13 @@ const SiegeLoop = (() => {
     run.preview = null;
     run.crateTimer = 300 + Math.floor(ctx.rng() * 500);
     run.lastCombatTick = ctx.tick;
-    if (ctx.boss) showBossCard(ctx.boss.name, ctx.boss.title);
+    if (ctx.boss) {
+      showBossCard(ctx.boss.name, ctx.boss.title);
+      ctx.playSfx('bossRoar');
+    } else if (ctx.wave >= 2) {
+      ctx.playSfx('musterDrums');
+    }
+    ctx.ambience('day');
     syncHud(ctx);
   }
 
@@ -635,10 +668,13 @@ const SiegeLoop = (() => {
     const y = top + ctx.rng() * Math.max(40, ctx.deployY - 30 - top);
     run.crates.push({ id: run.nextId++, x, y, age: 0, spent: false });
     ctx.float(x, y - 14, 'SUPPLIES', '#e8dcc0');
+    ctx.burst('dust', x, y);
+    ctx.playSfx('whoosh');
   }
 
   function openCrate(crate, opener, ctx) {
     crate.spent = true;
+    run.tally.crates++;
     if (run.counted) {
       store.stats.crates++;
       checkRibbons(ctx);
@@ -648,7 +684,8 @@ const SiegeLoop = (() => {
     if (roll < 0.14 && !fx.safeCrates && ctx.wave >= 3) {
       ctx.float(crate.x, crate.y - 14, 'AMBUSH!', '#ff4040');
       ctx.showMessage('The crate was bait — goblins spring the ambush!', 200);
-      ctx.playSfx('bossWarn');
+      ctx.playSfx('ambush');
+      ctx.burst('dust', crate.x, crate.y);
       for (let i = 0; i < 2 + Math.min(2, Math.floor(ctx.wave / 12)); i++) {
         ctx.spawnEnemy('goblin', crate.x - 24 + i * 16, crate.y - 26);
       }
@@ -676,7 +713,8 @@ const SiegeLoop = (() => {
       ctx.float(crate.x, crate.y - 14, 'RATIONS · MORALE UP', '#ffd080');
     }
     if (opener) opener.experience = (opener.experience || 0) + 1;
-    ctx.playSfx('deployConfirm');
+    ctx.playSfx('crateOpen');
+    ctx.burst('vetSpark', crate.x, crate.y);
   }
 
   // ------------------------------------------------------------------ update
@@ -703,6 +741,13 @@ const SiegeLoop = (() => {
         if (u.hp <= 0) continue;
         if (u.team === 'enemy') {
           enemies++;
+          // Line-breakers kick up dust as they run.
+          if (u.lineBreaker && tick % 18 === 0) ctx.burst('dust', u.x, u.y + 6);
+          if (!u.mustered) {
+            // The approach lasts until the squad crosses into your half, or 25 seconds at most.
+            u.musterAge = (u.musterAge || 0) + 6;
+            if (u.musterAge >= 1500 || !inMusterZone(u, ctx)) u.mustered = true;
+          }
           if (u.lineBreaker && hasBreached(u, ctx)) recordBreach(u, ctx);
           else unstickFromEdge(u, ctx);
         } else if (u.team === 'player' && liveCrates.length) {
@@ -792,6 +837,8 @@ const SiegeLoop = (() => {
 
   function modifyDamage(attacker, target, dmg, tick) {
     if (!run.active || !attacker || !target || !(dmg > 0)) return dmg;
+    // An enemy that opens fire is in the fight, wherever it stands.
+    if (attacker.team === 'enemy') attacker.mustered = true;
     let mult = counterMult(attacker, target);
     if (attacker.team !== target.team && isBehind(attacker, target)) {
       mult *= REAR_ATTACK_MULT + (attacker.team === 'player' ? fx.rearBonus : 0);
@@ -830,6 +877,7 @@ const SiegeLoop = (() => {
     if (unit.breachedLine) return;
     if (run.stains.length >= 160) run.stains.shift();
     run.stains.push({
+      scorch: unit.deathCause === 'burn' || unit.deathCause === 'blast',
       x: unit.x,
       y: unit.y + 6,
       r: unit.isNamedBoss ? 16 : 6 + ((unit.x * 7 + unit.y * 3) % 5),
@@ -842,6 +890,14 @@ const SiegeLoop = (() => {
         store.stats.kills++;
         if (unit.lineBreaker) store.stats.runnersKilled++;
         if (unit.isNamedBoss) store.stats.bosses++;
+      }
+      if (unit.lineBreaker) run.tally.runners++;
+      if (unit.isNamedBoss) run.tally.bosses++;
+      if (killer && killer.team === 'player' && !killer.isDoomslayer) {
+        const best = run.tally.bestVeteran;
+        if (!best || killer.kills > best.kills) {
+          run.tally.bestVeteran = { name: veteranLabel(killer, ctx), kills: killer.kills };
+        }
       }
       if (ctx.enemiesLeft <= 1 && ctx.queueLeft === 0 && !ctx.isNight) run.slowMo = 46;
       return;
@@ -891,11 +947,25 @@ const SiegeLoop = (() => {
     if (kind === 'warCry') {
       run.warCryReady = tick + WAR_CRY_COOLDOWN;
       ctx.float(general.x, general.y - 30, 'WAR CRY', '#ffb060');
-      ctx.playSfx('horseCharge');
+      ctx.playSfx('warCry');
+      run.rings.push({
+        x: general.x,
+        y: general.y,
+        max: ORDER_RADIUS,
+        age: 0,
+        color: '255,150,60',
+      });
     } else {
       run.holdLineReady = tick + HOLD_LINE_COOLDOWN;
       ctx.float(general.x, general.y - 30, 'HOLD THE LINE', '#c0d8ff');
-      ctx.playSfx('reinforce');
+      ctx.playSfx('holdLine');
+      run.rings.push({
+        x: general.x,
+        y: general.y,
+        max: ORDER_RADIUS,
+        age: 0,
+        color: '170,200,255',
+      });
     }
     ctx.shake(3);
     ctx.showMessage(
@@ -913,6 +983,7 @@ const SiegeLoop = (() => {
     for (const r of RIBBONS) {
       if (store.earned.includes(r.id) || !r.test(store.stats)) continue;
       store.earned.push(r.id);
+      if (run.active) run.tally.ribbons.push(r.name);
       if (ctx) {
         ctx.showMessage(`Ribbon earned: ${r.name} — ${r.perk} on every future run.`, 320);
         ctx.playSfx('buildComplete');
@@ -979,7 +1050,50 @@ const SiegeLoop = (() => {
     syncHud(ctx);
   }
 
-  function endRun() {
+  /** The after-action report on the game-over screen: what this run was made of. */
+  function renderAfterAction(ctx) {
+    const host = el('result-siege');
+    if (!host) return;
+    const esc = (t) => String(t).replace(/[<>&]/g, '');
+    const t = run.tally;
+    const lines = [];
+    if (ctx) lines.push(`Breaches: ${run.breaches} of ${breachLimit(ctx)} allowed`);
+    lines.push(`Line-breakers cut down: ${t.runners}`);
+    if (t.bosses) lines.push(`Warlords slain: ${t.bosses}`);
+    lines.push(`Crates recovered: ${t.crates} · Waves called early: ${t.earlyCalls}`);
+    if (run.edicts.length) {
+      lines.push(`Spoils: ${run.edicts.map((id) => EDICTS[id].name).join(', ')}`);
+    }
+    if (t.bestVeteran) {
+      lines.push(`Deadliest soldier: ${esc(t.bestVeteran.name)} — ${t.bestVeteran.kills} kills`);
+    }
+    let html = '<h3>The siege in brief</h3>' + lines.map((l) => `<div>${esc(l)}</div>`).join('');
+    if (run.fallen.length) {
+      html +=
+        '<h3>The fallen</h3>' +
+        run.fallen
+          .slice(-6)
+          .map(
+            (f) =>
+              `<div>${esc(f.name)} — wave ${f.wave}, ${f.kills} kill${f.kills === 1 ? '' : 's'}, ${f.waves} wave${f.waves === 1 ? '' : 's'} served</div>`
+          )
+          .join('');
+    }
+    if (t.ribbons.length) {
+      html += '<h3>Ribbons earned</h3>' + t.ribbons.map((n) => `<div>${esc(n)}</div>`).join('');
+    }
+    host.innerHTML = html;
+  }
+
+  function endRun(ctx) {
+    if (ctx && ctx.ambience) ctx.ambience('off');
+    if (run.active) {
+      try {
+        renderAfterAction(ctx);
+      } catch (_) {
+        /* partial DOM (headless harness) */
+      }
+    }
     run.active = false;
     hideSpoils();
     if (typeof document !== 'undefined') {
@@ -1009,7 +1123,7 @@ const SiegeLoop = (() => {
       '<button id="siege-warcry" class="siege-order" title="War Cry ([): soldiers near the General strike 20% harder for 8 seconds">War Cry</button>' +
       '<button id="siege-holdline" class="siege-order" title="Hold the Line (]): soldiers near the General take 40% less damage for 7 seconds">Hold the Line</button>' +
       '<span id="siege-edicts" class="siege-chip siege-edicts"></span>' +
-      '<span id="siege-upkeep" class="siege-chip" title="A big host is hard to feed. Past 20 soldiers, every recruit costs 4% more per head."></span>';
+      '<span id="siege-upkeep" class="siege-chip" title="A big host is hard to feed. Past 14 soldiers, every recruit costs 7% more per head."></span>';
     document.body.appendChild(strip);
     const spoils = document.createElement('div');
     spoils.id = 'spoils-panel';
@@ -1059,6 +1173,14 @@ const SiegeLoop = (() => {
       b.textContent = `Breaches ${run.breaches}/${limit}`;
       b.className = 'siege-chip' + (run.breaches >= limit - 1 ? ' danger' : '');
       b.hidden = ctx.creative || ctx.wave < RUNNER_FROM_WAVE - 1;
+    }
+    // One breach from defeat: the edges of the screen stay red.
+    const flash = el('breach-flash');
+    if (flash && flash.classList) {
+      flash.classList.toggle(
+        'danger',
+        !ctx.creative && run.breaches >= limit - 1 && run.breaches > 0
+      );
     }
     const p = el('siege-preview');
     if (p) {
@@ -1160,8 +1282,8 @@ const SiegeLoop = (() => {
     if (!run.active || !run.stains.length) return;
     ctx2d.save();
     for (const s of run.stains) {
-      ctx2d.globalAlpha = 0.5;
-      ctx2d.fillStyle = s.enemy ? '#4a0c0c' : '#5a1420';
+      ctx2d.globalAlpha = s.scorch ? 0.62 : 0.5;
+      ctx2d.fillStyle = s.scorch ? '#141012' : s.enemy ? '#4a0c0c' : '#5a1420';
       ctx2d.beginPath();
       ctx2d.ellipse(s.x, s.y, s.r * 1.5, s.r * 0.55, s.tilt, 0, Math.PI * 2);
       ctx2d.fill();
@@ -1178,6 +1300,21 @@ const SiegeLoop = (() => {
   function drawWorld(ctx2d, units, tick) {
     if (!run.active) return;
     ctx2d.save();
+    // Shockwave rings from the General's orders.
+    for (let i = run.rings.length - 1; i >= 0; i--) {
+      const ring = run.rings[i];
+      ring.age++;
+      const k = ring.age / 36;
+      if (k >= 1) {
+        run.rings.splice(i, 1);
+        continue;
+      }
+      ctx2d.strokeStyle = `rgba(${ring.color},${(1 - k) * 0.8})`;
+      ctx2d.lineWidth = 4 * (1 - k) + 1;
+      ctx2d.beginPath();
+      ctx2d.arc(ring.x, ring.y, ring.max * (0.15 + 0.85 * k), 0, Math.PI * 2);
+      ctx2d.stroke();
+    }
     for (const c of run.crates) {
       if (c.spent) continue;
       const bob = Math.sin((tick + c.id * 40) / 18) * 1.5;
@@ -1247,6 +1384,7 @@ const SiegeLoop = (() => {
     applySpawnMods,
     tagEnemySpawn,
     unopposedBreaks,
+    isMustering,
     noteCombat,
     breachGoal,
     onNightBegin,
