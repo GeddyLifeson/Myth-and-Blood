@@ -30,6 +30,7 @@ const SpriteGen = (() => {
     bard: { body: '#704878', accent: '#c090d0', mark: '#ffd700', size: 8 },
     ballista: { body: '#585858', accent: '#909090', mark: '#c06030', size: 10 },
     pikeman: { body: '#486878', accent: '#80a0b0', mark: '#c0c0c0', size: 9 },
+    crossbowman: { body: '#5a4a38', accent: '#a89068', mark: '#b8c0c8', size: 9 },
     troll: { body: '#4a5838', accent: '#6a7850', mark: '#3a2818', size: 12 },
     berserker: { body: '#6a3030', accent: '#a05050', mark: '#802020', size: 11 },
     assassin: { body: '#383848', accent: '#606078', mark: '#c04060', size: 8 },
@@ -498,6 +499,7 @@ const SpriteGen = (() => {
 
   const BOW_TYPES = new Set([
     'archer',
+    'crossbowman',
     'orc_archer',
     'scout',
     'hellbound_legionnaire',

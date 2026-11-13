@@ -171,8 +171,8 @@ const Research = (() => {
       cost: 35,
       wave: 3,
       category: 'military',
-      desc: 'Sappers and knights. Unlocks Siege Engineering (ballista) and Advanced Infantry (scout/pikeman).',
-      deploy: ['sapper', 'knight'],
+      desc: 'Sappers, knights and crossbowmen. Unlocks Siege Engineering (ballista) and Advanced Infantry (scout/pikeman).',
+      deploy: ['sapper', 'knight', 'crossbowman'],
     },
     {
       id: 'veteran_doctrine',

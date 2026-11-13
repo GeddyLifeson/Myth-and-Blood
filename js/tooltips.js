@@ -45,6 +45,8 @@ const Tooltips = (() => {
     footman:
       'Cheap melee line-holder. Garrisons walls under General command. Earns combat stars from kills.',
     archer: 'Long-range DPS. Garrison outposts for extended range. Keep behind cover.',
+    crossbowman:
+      '5 TP armour piercer. Slow to reload, but 40% more damage to armoured foes and siege engines. Unlock: Research Lab → Iron Weapons.',
     mage: 'Arcane bolts with splash. Strong vs clustered swarms.',
     cavalry: 'Fast melee with charge bonus. Hunts stragglers and flanks.',
     healer:
