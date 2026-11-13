@@ -419,6 +419,19 @@ A big host is hard to feed. Past 14 soldiers on the field, every new recruit cos
 
 Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your troops in Hunt mode hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
 
+### Reading the battlefield
+
+Traits are drawn on the field so you can see why a fight is going the way it is:
+
+- **Rings on the ground** show aura reach: red dashes for a war banner, green dashes for a shaman's ward, pale blue for a wraith's dirge, gold dashes for a bard's song.
+- **Marks over a unit's head:** purple diamond (hexed, deals less damage), flame (burning), green drop (poisoned), red flag (strengthened by a banner), green ring (warded).
+- **White chevrons** in front of a footman or pikeman show how many neighbours are bracing him; they flash when a blow is turned.
+- **A red pulse** under a boss means it is enraged. Orders from the General send a ring across the field.
+- **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
+- With one breach left before defeat, the edges of the screen stay red.
+
+Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
+
 When the run ends, the game-over screen shows the siege in brief: breaches, line-breakers cut down, spoils taken, your deadliest soldier, the veterans who fell and any ribbons earned.
 
 ### Supply crates

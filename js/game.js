@@ -2264,7 +2264,8 @@ const Game = (() => {
       return GS.spawnQueue.length;
     },
     get boss() {
-      return GS.namedBossWave
+      // namedBossWave lingers after its wave, so only announce on the boss wave itself.
+      return GS.namedBossWave && GS.wave % 10 === 0
         ? { name: GS.namedBossWave.name, title: GS.namedBossWave.title }
         : null;
     },
@@ -2273,6 +2274,8 @@ const Game = (() => {
     float: (x, y, text, color) => svc('FloatingText')?.status?.(x, y, text, color),
     playSfx: (name) => playSfx(name),
     shake: (n) => svc('VisualPolish')?.addScreenShake?.(n),
+    ambience: (mode) => svc('AudioEngine')?.setAmbience?.(mode),
+    burst: (kind, x, y, arg) => svc('Particles')?.[kind]?.(x, y, arg),
     addTp: (n) => {
       GS.tactical += n;
       sanitizeTactical();
@@ -12110,7 +12113,15 @@ const Game = (() => {
     if (unit.hp <= 0) {
       unit.hp = 0;
       let quickRevived = false;
-      playSfx('death');
+      unit.deathCause = Roster.deathCause(unit, opts, actual, GS.updateTick);
+      playSfx(
+        'deathVar',
+        unit.deathCause === 'fall'
+          ? isMajorBossUnit(unit) || isMonsterEnemy(unit)
+            ? 'big'
+            : 'small'
+          : unit.deathCause
+      );
       if (unit.team === 'neutral' || unit.isNeutral) {
         if (svc('NeutralWildlife')) {
           svc('NeutralWildlife').onSlain(unit, {
@@ -14383,7 +14394,10 @@ const Game = (() => {
           u.spriteType || u.type,
           drawRot,
           u.team,
-          u.frame,
+          // An attack plays its four frames across the swing, not on the walk clock.
+          u.animState === 'attack'
+            ? Math.max(0, Math.min(3, 3 - Math.floor((u.attackAnimTimer || 0) / 4)))
+            : u.frame,
           sprScale,
           u.animState,
           unitLod
@@ -14592,6 +14606,7 @@ const Game = (() => {
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
+      Roster.drawOverlays(GS.ctx, GS.units, GS.updateTick);
       svc('Particles').draw(GS.ctx, vBounds);
       svc('FloatingText').draw(GS.ctx, vBounds);
 

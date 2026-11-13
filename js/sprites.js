@@ -496,6 +496,124 @@ const SpriteGen = (() => {
   const HORNED_TYPES = new Set(['dark_knight', 'war_chief', 'berserker', 'shaman', 'warg_rider']);
   const CLOAK_TYPES = new Set(['general', 'knight', 'dark_knight', 'scout', 'assassin', 'bard']);
 
+  const BOW_TYPES = new Set([
+    'archer',
+    'orc_archer',
+    'scout',
+    'hellbound_legionnaire',
+    'grim_revenant',
+    'goblin_firebrand',
+  ]);
+
+  /**
+   * The visible part of an attack, drawn in the figure's own space (forward is up):
+   * a slash arc for melee, a drawn and loosed bow, a flare at the staff tip for casters.
+   */
+  function drawAttackFlourish(ctx, kind, f, r, style, enemy) {
+    ctx.save();
+    ctx.lineCap = 'round';
+    if (kind === 'melee') {
+      if (f === 1 || f === 2) {
+        const reach = r * (f === 1 ? 1.9 : 2.2);
+        const from = -Math.PI * (f === 1 ? 0.95 : 0.8);
+        const to = -Math.PI * (f === 1 ? 0.45 : 0.1);
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 5;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.2, reach, from, to);
+        ctx.stroke();
+        ctx.strokeStyle = enemy ? '#ff5040' : BONE;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.2, reach, from, to);
+        ctx.stroke();
+      }
+      if (f === 3) {
+        // Follow-through: a few flecks of blood off the blade.
+        ctx.fillStyle = BLOOD;
+        for (const [x, y] of [
+          [0.9, -1.7],
+          [1.3, -1.2],
+          [1.5, -0.6],
+        ]) {
+          ctx.beginPath();
+          ctx.arc(x * r, y * r, 1.4, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    } else if (kind === 'bow') {
+      const bx = r * 0.55;
+      const by = -r * 1.0;
+      const drawn = f <= 1;
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 3.4;
+      ctx.beginPath();
+      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+      ctx.strokeStyle = '#8a5a2a';
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.arc(bx, by + r * 0.5, r * 0.95, Math.PI * 1.18, Math.PI * 1.82);
+      ctx.stroke();
+      const lx = bx + Math.cos(Math.PI * 1.18) * r * 0.95;
+      const rx = bx + Math.cos(Math.PI * 1.82) * r * 0.95;
+      const ey = by + r * 0.5 + Math.sin(Math.PI * 1.18) * r * 0.95;
+      const pull = drawn ? r * (f === 0 ? 0.35 : 0.6) : 0;
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(lx, ey);
+      ctx.lineTo(bx, ey + pull);
+      ctx.lineTo(rx, ey);
+      ctx.stroke();
+      if (drawn) {
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(bx, ey + pull);
+        ctx.lineTo(bx, by - r * 0.9);
+        ctx.stroke();
+        ctx.fillStyle = BONE;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - r * 1.25);
+        ctx.lineTo(bx - 2.2, by - r * 0.85);
+        ctx.lineTo(bx + 2.2, by - r * 0.85);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Loosed: a streak where the arrow left.
+        ctx.strokeStyle = `rgba(228,220,196,${f === 2 ? 0.8 : 0.35})`;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - r * (f === 2 ? 1.0 : 1.6));
+        ctx.lineTo(bx, by - r * (f === 2 ? 2.2 : 2.8));
+        ctx.stroke();
+      }
+    } else {
+      const cx = r * 0.55;
+      const cy = -r * 1.75;
+      const glow = 2.5 + f * 1.8;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glow + 1.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = style.mark;
+      ctx.beginPath();
+      ctx.arc(cx, cy, glow, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = style.mark;
+      ctx.lineWidth = 1.4;
+      for (let k = 0; k < 6; k++) {
+        const a = (k * Math.PI) / 3 + f * 0.4;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * (glow + 2), cy + Math.sin(a) * (glow + 2));
+        ctx.lineTo(cx + Math.cos(a) * (glow + 5 + f), cy + Math.sin(a) * (glow + 5 + f));
+        ctx.stroke();
+      }
+    }
+    ctx.restore();
+  }
+
   function inkFill(ctx, fill, lw = 1.3) {
     ctx.fillStyle = fill;
     ctx.fill();
@@ -610,9 +728,15 @@ const SpriteGen = (() => {
     ctx.shadowOffsetY = 1.2;
     ctx.shadowBlur = 0;
     ctx.translate(mounted ? 0 : r * 0.55, 0);
+    const attacking = animState === 'attack';
+    const swingFrame = frame % 4;
+    const fightKind = BOW_TYPES.has(type) ? 'bow' : caster ? 'cast' : 'melee';
+    // A melee swing winds up behind the shoulder and follows through across the body.
+    if (attacking && fightKind === 'melee') ctx.rotate([-1.0, -0.25, 0.75, 1.05][swingFrame]);
     ctx.scale(1.25, 1.25);
     drawWeaponSilhouette(ctx, type, style, r * 0.42, animState, frame % 2);
     ctx.restore();
+    if (attacking) drawAttackFlourish(ctx, fightKind, swingFrame, r, style, enemy);
 
     // Shoulders
     ctx.beginPath();

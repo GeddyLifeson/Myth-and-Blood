@@ -83,6 +83,7 @@ const ctx = {
   float: () => {},
   shake: () => {},
   playSfx: () => {},
+  burst: () => {},
   showMessage: () => {},
   spawnEnemy: (type) => hurtLog.push(['spawn', type]),
   unitName: (u) => u.type,

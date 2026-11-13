@@ -1433,6 +1433,18 @@ body.ui-v2 #message-box {
   opacity: 0;
   box-shadow: inset 0 0 140px 40px rgba(220, 20, 16, 0.85);
 }
+#breach-flash.danger {
+  opacity: 0.35;
+  animation: breach-danger 1.6s ease-in-out infinite alternate;
+}
+@keyframes breach-danger {
+  from {
+    opacity: 0.18;
+  }
+  to {
+    opacity: 0.42;
+  }
+}
 #breach-flash.on {
   animation: breach-flash 0.9s ease-out;
 }

@@ -129,8 +129,10 @@ const AudioEngine = (() => {
     if (masterGain && ctx) {
       masterGain.gain.setValueAtTime(muted ? 0 : masterVol, ctx.currentTime);
     }
-    if (muted) stopMusic();
-    else {
+    if (muted) {
+      stopMusic();
+      stopAmbience();
+    } else {
       // Allow music to be re-started by UI after unmute (do not auto-resume wrong theme).
       musicPlaying = false;
       musicContext = 'none';
@@ -209,6 +211,7 @@ const AudioEngine = (() => {
   // Throttle rapid-fire hits so armies don't turn into static
   let lastHitAt = 0;
   let lastCritAt = 0;
+  let lastShriekAt = 0;
   let hitVariant = 0;
 
   function canPlayHit(minGapMs = 28) {
@@ -297,6 +300,123 @@ const AudioEngine = (() => {
     deploy() {
       playTone(440, 0.1, 'square', 0.28);
       playTone(660, 0.15, 'square', 0.22);
+    },
+    /** Death by size and cause: small, big, burn, blast, cleave. */
+    deathVar(kind = 'small') {
+      if (!canPlayHit(35)) return;
+      if (kind === 'big') {
+        sweep(220, 38, 0.8, 'sawtooth', 0.34);
+        playNoise(0.5, 0.3, 320);
+        playTone(52, 0.6, 'sine', 0.2);
+      } else if (kind === 'burn') {
+        playNoise(0.45, 0.22, 2600);
+        sweep(520, 140, 0.4, 'triangle', 0.16);
+      } else if (kind === 'blast') {
+        playNoise(0.3, 0.34, 700);
+        sweep(160, 40, 0.3, 'square', 0.26);
+      } else if (kind === 'cleave') {
+        playNoise(0.07, 0.3, 4200);
+        sweep(300, 60, 0.28, 'sawtooth', 0.26);
+        playNoise(0.2, 0.18, 380);
+      } else {
+        const base = 340 + Math.random() * 120;
+        sweep(base, 70, 0.3, 'sawtooth', 0.24);
+        playNoise(0.15, 0.2, 480);
+      }
+    },
+    /** An enemy is through the line. A low two-note horn over a drum. */
+    breachHorn() {
+      sweep(116, 110, 0.55, 'sawtooth', 0.3);
+      playTone(55, 0.9, 'sine', 0.3);
+      later(420, () => {
+        sweep(92, 82, 0.8, 'sawtooth', 0.32);
+        playNoise(0.25, 0.3, 300);
+      });
+    },
+    warCry() {
+      playNoise(0.5, 0.26, 900);
+      sweep(170, 330, 0.28, 'sawtooth', 0.26);
+      later(140, () => sweep(210, 380, 0.34, 'sawtooth', 0.22));
+      later(300, () => playNoise(0.3, 0.2, 1400));
+    },
+    holdLine() {
+      for (let i = 0; i < 3; i++) {
+        later(i * 150, () => {
+          playTone(86, 0.14, 'square', 0.34);
+          playNoise(0.08, 0.28, 500);
+        });
+      }
+      later(470, () => playTone(1150, 0.07, 'triangle', 0.18));
+    },
+    crateOpen() {
+      playNoise(0.07, 0.3, 3200);
+      playTone(210, 0.07, 'square', 0.2);
+      later(90, () => playTone(330, 0.12, 'triangle', 0.2));
+    },
+    ambush() {
+      sweep(640, 190, 0.26, 'square', 0.24);
+      playNoise(0.2, 0.26, 1800);
+      later(160, () => sweep(520, 160, 0.22, 'square', 0.2));
+    },
+    spoilsClaim() {
+      [392, 523, 659, 784].forEach((f, i) =>
+        later(i * 70, () => playTone(f, 0.22, 'triangle', 0.2))
+      );
+    },
+    bossRoar() {
+      sweep(96, 42, 1.1, 'sawtooth', 0.36);
+      playNoise(1.0, 0.3, 420);
+      playTone(58, 1.0, 'sine', 0.24);
+      later(260, () => sweep(140, 60, 0.7, 'square', 0.16));
+    },
+    enrage() {
+      sweep(64, 210, 0.5, 'sawtooth', 0.32);
+      playNoise(0.5, 0.28, 800);
+      later(380, () => sweep(210, 90, 0.4, 'sawtooth', 0.26));
+    },
+    runnerShriek() {
+      const now = performance.now?.() || Date.now();
+      if (now - lastShriekAt < 900) return;
+      lastShriekAt = now;
+      sweep(880, 1500, 0.1, 'square', 0.1);
+      later(90, () => sweep(1500, 700, 0.16, 'square', 0.09));
+    },
+    wraithWail() {
+      sweep(520, 250, 1.3, 'sine', 0.13);
+      sweep(534, 262, 1.3, 'sine', 0.1);
+      playNoise(0.9, 0.06, 2400);
+    },
+    firebomb() {
+      playNoise(0.3, 0.3, 1300);
+      sweep(320, 70, 0.3, 'sawtooth', 0.24);
+    },
+    shieldBlock() {
+      if (!canPlayHit(60)) return;
+      playTone(1180, 0.05, 'triangle', 0.16);
+      playNoise(0.03, 0.2, 5200);
+    },
+    arrowThunk() {
+      if (!canPlayHit(40)) return;
+      playNoise(0.03, 0.22, 2200);
+      playTone(140, 0.06, 'square', 0.14);
+    },
+    hexCast() {
+      sweep(820, 280, 0.24, 'sine', 0.14);
+      sweep(410, 140, 0.24, 'triangle', 0.08);
+    },
+    /** War drums as a squad forms up on its side of the field. */
+    musterDrums() {
+      [0, 180, 360, 450].forEach((ms, i) =>
+        later(ms, () => {
+          playTone(i === 3 ? 74 : 62, 0.2, 'sine', 0.3);
+          playNoise(0.06, 0.16, 260);
+        })
+      );
+    },
+    crowCaw() {
+      sweep(760, 520, 0.12, 'sawtooth', 0.045);
+      playNoise(0.1, 0.03, 2600);
+      later(170, () => sweep(720, 480, 0.14, 'sawtooth', 0.04));
     },
     death() {
       if (!canPlayHit(35)) return;
@@ -698,6 +818,95 @@ const AudioEngine = (() => {
     });
   }
 
+  // ---------------------------------------------------------------- ambience
+  // A bed of wind under the battle: brighter with crows by day, lower with a drone at night.
+  let ambMode = 'off';
+  let ambGain = null;
+  let ambFilter = null;
+  let ambSource = null;
+  let ambDrone = null;
+  let ambDroneGain = null;
+  let ambTimer = null;
+
+  function stopAmbience() {
+    ambMode = 'off';
+    if (ambTimer) {
+      clearTimeout(ambTimer);
+      ambTimer = null;
+    }
+    try {
+      ambSource?.stop();
+      ambDrone?.stop();
+    } catch (_) {
+      /* already stopped */
+    }
+    ambSource = null;
+    ambDrone = null;
+  }
+
+  function ambienceGust() {
+    if (ambMode === 'off' || !ctx || !ambGain) return;
+    const t = ctx.currentTime;
+    const night = ambMode === 'night';
+    const level = (night ? 0.028 : 0.04) * (0.6 + Math.random() * 0.8);
+    ambGain.gain.setTargetAtTime(muted ? 0 : level, t, 1.6);
+    ambFilter.frequency.setTargetAtTime((night ? 260 : 520) + Math.random() * 380, t, 2.2);
+    if (!night && !muted && Math.random() < 0.3) SFX.crowCaw();
+    ambTimer = setTimeout(ambienceGust, 3500 + Math.random() * 5000);
+  }
+
+  /** mode: 'day', 'night' or 'off'. */
+  function setAmbience(mode) {
+    if (mode === ambMode) return;
+    if (mode === 'off' || !mode) {
+      stopAmbience();
+      return;
+    }
+    const wasOff = ambMode === 'off';
+    ambMode = mode;
+    whenReady(() => {
+      if (ambMode === 'off') return;
+      if (wasOff || !ambSource) {
+        const len = ctx.sampleRate * 3;
+        const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        let last = 0;
+        for (let i = 0; i < len; i++) {
+          // Brown-ish noise: smoother than white, closer to wind.
+          last = (last + (Math.random() * 2 - 1) * 0.08) * 0.985;
+          data[i] = last * 3;
+        }
+        ambSource = ctx.createBufferSource();
+        ambSource.buffer = buffer;
+        ambSource.loop = true;
+        ambFilter = ctx.createBiquadFilter();
+        ambFilter.type = 'lowpass';
+        ambFilter.frequency.value = 500;
+        ambGain = ctx.createGain();
+        ambGain.gain.value = 0;
+        ambSource.connect(ambFilter);
+        ambFilter.connect(ambGain);
+        ambGain.connect(masterGain);
+        ambSource.start();
+        ambDrone = ctx.createOscillator();
+        ambDrone.type = 'sine';
+        ambDrone.frequency.value = 55;
+        ambDroneGain = ctx.createGain();
+        ambDroneGain.gain.value = 0;
+        ambDrone.connect(ambDroneGain);
+        ambDroneGain.connect(masterGain);
+        ambDrone.start();
+      }
+      ambDroneGain.gain.setTargetAtTime(
+        ambMode === 'night' && !muted ? 0.035 : 0,
+        ctx.currentTime,
+        2
+      );
+      if (ambTimer) clearTimeout(ambTimer);
+      ambienceGust();
+    });
+  }
+
   function startMusic() {
     beginMusic('game');
   }
@@ -725,6 +934,7 @@ const AudioEngine = (() => {
     startMusic,
     startMenuMusic,
     stopMusic,
+    setAmbience,
     updateMix,
     toggleMute,
     setMuted,
