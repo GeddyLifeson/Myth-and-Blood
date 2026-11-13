@@ -1576,3 +1576,24 @@ body.ui-v2 #message-box {
 .result-siege div {
   padding: 1px 0;
 }
+
+/* ── First steps: one system per early wave; later ones wait dimmed, never locked ── */
+body.first-steps.fs-wait-strikes #left-panel .side-tab[data-side-tab='strike'],
+body.first-steps.fs-wait-intel #right-panel .side-tab,
+body.first-steps.fs-wait-intel #right-panel .side-panel-scroll {
+  opacity: 0.32;
+  filter: grayscale(1);
+  transition: opacity 0.6s ease;
+}
+body.first-steps.fs-wait-strikes #left-panel .side-tab[data-side-tab='strike']:hover,
+body.first-steps.fs-wait-strikes #left-panel .side-tab[data-side-tab='strike']:focus-visible,
+body.first-steps.fs-wait-intel #right-panel:hover .side-tab,
+body.first-steps.fs-wait-intel #right-panel:hover .side-panel-scroll,
+body.first-steps.fs-wait-intel #right-panel:focus-within .side-tab,
+body.first-steps.fs-wait-intel #right-panel:focus-within .side-panel-scroll {
+  opacity: 0.85;
+  filter: none;
+}
+#pause-skip-intro[hidden] {
+  display: none;
+}

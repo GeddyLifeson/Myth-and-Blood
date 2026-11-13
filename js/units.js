@@ -909,6 +909,7 @@ const HONOR_NAME_POOL = [
 const HONOR_PREFIX_BY_TYPE = {
   footman: ['Syr', 'Dame', 'Captain'],
   archer: ['Syr', 'Ranger', 'Dame'],
+  crossbowman: ['Arbalist', 'Syr', 'Dame'],
   mage: ['Magister', 'Syr', 'Dame'],
   cavalry: ['Syr', 'Dame', 'Lord'],
   healer: ['Sister', 'Brother', 'Dame'],
@@ -1622,6 +1623,15 @@ function createUnit(type, x, y, team, opts = {}) {
   u.y = y;
   u.targetX = x;
   u.targetY = team === 'player' ? DEFAULT_RALLY_Y : y;
+  // A soldier's post: where he was put. In Hunt mode he walks back to it after a fight.
+  u.postX = team === 'player' ? x : null;
+  u.postY = team === 'player' ? y : null;
+  u.postIdle = 0;
+  u.postPath = null;
+  u.postPathIndex = 0;
+  u.postStall = 0;
+  u.postBest = Infinity;
+  u.returningToPost = false;
   u.hp = def.hp;
   u.maxHp = def.hp;
   u.accuracy = def.accuracy;
@@ -1631,6 +1641,8 @@ function createUnit(type, x, y, team, opts = {}) {
   u.meleeRange = def.meleeRange;
   u.speed = def.speed;
   u.combatType = def.type;
+  // Slow weapons (crossbow) wait longer between shots; 1 is the normal pace.
+  u.reloadMult = def.reloadMult > 0 ? def.reloadMult : 1;
   // Ranged siege crews (ballista) must always have a projectile or they never fire.
   u.projectile = def.projectile || (def.type === 'ranged' || def.type === 'siege' ? 'arrow' : null);
   u.healAmount = def.healAmount ?? (def.type === 'healer' ? 20 : 0);

@@ -1006,7 +1006,7 @@ const UI = (() => {
               ? 'Research: Morale Arts'
               : type === 'scout' || type === 'pikeman'
                 ? 'Research: Iron Weapons → Advanced Infantry'
-                : type === 'sapper' || type === 'knight'
+                : type === 'sapper' || type === 'knight' || type === 'crossbowman'
                   ? 'Research: Iron Weapons'
                   : type === 'general'
                     ? 'Research: Iron Weapons → Command Theory'

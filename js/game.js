@@ -281,6 +281,7 @@ const Game = (() => {
   GS.waveProgress = 0;
   GS.waveEnemyTotal = 0;
   GS.waveAttackSides = ['north'];
+  GS.nextWavePlan = null;
   GS.multiFrontPlan = null;
   GS.pointerScreen = { sx: -1, sy: -1 };
   GS.moraleAlertCooldown = 0;
@@ -1064,6 +1065,14 @@ const Game = (() => {
       if (Number.isFinite(o.holdY)) o.holdY += dy;
       if (Number.isFinite(o.pendingHoldX)) o.pendingHoldX += dx;
       if (Number.isFinite(o.pendingHoldY)) o.pendingHoldY += dy;
+      if (Number.isFinite(o.postX)) o.postX += dx;
+      if (Number.isFinite(o.postY)) o.postY += dy;
+      if (Array.isArray(o.postPath)) {
+        for (const p of o.postPath) {
+          p.x += dx;
+          p.y += dy;
+        }
+      }
       if (Number.isFinite(o.slotX)) o.slotX += dx;
       if (Number.isFinite(o.slotY)) o.slotY += dy;
       if (Array.isArray(o.path)) {
@@ -1502,6 +1511,222 @@ const Game = (() => {
     }
   }
 
+  // ---------------------------------------------------------------- posts (Hunt mode)
+  // Mud and Blood style: a soldier remembers where he was put. In Hunt mode he leaves
+  // that post to fight and walks back once the fight is over, so the line keeps its shape.
+  // This is separate from the hold stance above (holdX/holdY), which never leaves at all.
+  const POST_IDLE_TICKS = 120; // about two seconds with nothing to shoot at
+  const POST_LEAVE_DIST = 18; // closer than this counts as "at his post"
+  const POST_ARRIVE_DIST = 6;
+  const POST_GIVE_UP_TICKS = 180;
+
+  function hasPost(unit) {
+    return unit != null && Number.isFinite(unit.postX) && Number.isFinite(unit.postY);
+  }
+
+  function setUnitPost(unit, x, y) {
+    if (!unit || unit.team !== 'player') return;
+    const pos = clampPos(x, y);
+    unit.postX = pos.x;
+    unit.postY = pos.y;
+    stopPostReturn(unit);
+  }
+
+  function stopPostReturn(unit) {
+    unit.postIdle = 0;
+    unit.postPath = null;
+    unit.postPathIndex = 0;
+    unit.postStall = 0;
+    unit.postBest = Infinity;
+    unit.returningToPost = false;
+  }
+
+  /** Soldiers who keep a post at all: Hunt-mode fighters with nothing else to obey. */
+  function postReturnAllowed(unit) {
+    if (!unit || unit.team !== 'player' || unit.hp <= 0) return false;
+    if (!unit.canHunt || !unit.huntMode || unit.manualOrder || unit.isGeneral) return false;
+    if (unit.fleeing || unit.demoralized || unit.retreatingToMed || unit.atMedicalTent)
+      return false;
+    if (unit.garrisoned || unit.wallGarrisoned || unit.stationedKeep || unit.siegeDeployed)
+      return false;
+    if (hasPendingOutpostGarrison(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit))
+      return false;
+    return true;
+  }
+
+  function unitIsEngaged(unit) {
+    return !!(
+      unit.combatTargetId ||
+      unit.structureTargetId ||
+      unit.pathTargetId ||
+      unit.pathPending ||
+      (unit.path?.length && unit.pathIndex < unit.path.length) ||
+      unit.attackAnimTimer > 0 ||
+      unit.pinned
+    );
+  }
+
+  function planPostPath(unit) {
+    const direct = [{ x: unit.postX, y: unit.postY }];
+    const pf = svc('Pathfinding');
+    if (!pf?.findPath || GS.syncPathfindsThisTick >= 6) return direct;
+    GS.syncPathfindsThisTick++;
+    try {
+      const path = pf.findPath(
+        unit.x,
+        unit.y,
+        unit.postX,
+        unit.postY,
+        unit,
+        isTerrainBlockedForPath,
+        { maxNodes: 700 }
+      );
+      return path?.length ? path : direct;
+    } catch (_) {
+      return direct;
+    }
+  }
+
+  /** Walk idle Hunt-mode soldiers back to their posts. Runs every tick, after movement. */
+  function updatePostReturn() {
+    for (const unit of GS.units) {
+      if (unit.team !== 'player' || unit.hp <= 0) continue;
+      if (!postReturnAllowed(unit)) {
+        if (unit.returningToPost || unit.postIdle) stopPostReturn(unit);
+        continue;
+      }
+      if (!hasPost(unit)) {
+        // Old saves and units made by other systems: where he stands is his post.
+        unit.postX = unit.x;
+        unit.postY = unit.y;
+      }
+      if (unitIsEngaged(unit)) {
+        if (unit.returningToPost || unit.postIdle) stopPostReturn(unit);
+        continue;
+      }
+      const d = Math.hypot(unit.x - unit.postX, unit.y - unit.postY);
+      if (!unit.returningToPost) {
+        if (d <= POST_LEAVE_DIST) {
+          unit.postIdle = 0;
+          continue;
+        }
+        unit.postIdle = (unit.postIdle || 0) + 1;
+        if (unit.postIdle < POST_IDLE_TICKS) continue;
+        // Do not turn his back on an enemy that is still coming.
+        if (enemyNearPost(unit, 300)) {
+          unit.postIdle = POST_IDLE_TICKS - 30;
+          continue;
+        }
+        unit.returningToPost = true;
+        unit.postPath = planPostPath(unit);
+        unit.postPathIndex = 0;
+        unit.postStall = 0;
+        unit.postBest = d;
+      }
+      if (d <= POST_ARRIVE_DIST) {
+        stopPostReturn(unit);
+        unit.animState = 'idle';
+        continue;
+      }
+      const path = unit.postPath || [];
+      while (
+        unit.postPathIndex < path.length - 1 &&
+        Math.hypot(path[unit.postPathIndex].x - unit.x, path[unit.postPathIndex].y - unit.y) < 6
+      ) {
+        unit.postPathIndex++;
+      }
+      const wp = path[Math.min(unit.postPathIndex, path.length - 1)] || {
+        x: unit.postX,
+        y: unit.postY,
+      };
+      const moved = steerToward(unit, wp.x, wp.y);
+      unit.animState = 'walk';
+      unit.rotation = Math.round((Math.atan2(wp.y - unit.y, wp.x - unit.x) * 180) / Math.PI);
+      const nd = Math.hypot(unit.x - unit.postX, unit.y - unit.postY);
+      if (moved && nd < unit.postBest - 0.3) {
+        unit.postBest = nd;
+        unit.postStall = 0;
+      } else {
+        unit.postStall++;
+      }
+      // A comrade standing on the post, or a wall in the way: close enough is good enough,
+      // and a soldier who cannot get home stops trying until the next fight moves him.
+      if (
+        (unit.postStall > 30 && nd <= POST_LEAVE_DIST * 1.6) ||
+        unit.postStall > POST_GIVE_UP_TICKS
+      ) {
+        stopPostReturn(unit);
+        unit.postIdle = -600;
+        unit.animState = 'idle';
+      }
+    }
+  }
+
+  /** A small inked stake under each selected soldier's post, tied to him when he is away. */
+  function drawPostMarkers() {
+    const sel = GS.cachedSelectedSet;
+    if (!sel || !sel.size || !GS.ctx) return;
+    const ctx = GS.ctx;
+    const k = 1 / Math.max(0.5, GS.viewScale || 1);
+    let drawn = 0;
+    for (const u of GS.units) {
+      if (drawn >= 40) break;
+      if (u.team !== 'player' || u.hp <= 0 || !sel.has(u.id) || !hasPost(u)) continue;
+      if (!u.canHunt || u.isGeneral || u.garrisoned || u.wallGarrisoned || u.stationedKeep)
+        continue;
+      if (!isInView(u.postX, u.postY, 20)) continue;
+      drawn++;
+      const away = Math.hypot(u.x - u.postX, u.y - u.postY);
+      ctx.save();
+      if (away > POST_LEAVE_DIST) {
+        ctx.strokeStyle = 'rgba(228,220,196,0.45)';
+        ctx.lineWidth = 1 * k;
+        ctx.setLineDash([4 * k, 5 * k]);
+        ctx.beginPath();
+        ctx.moveTo(u.x, u.y);
+        ctx.lineTo(u.postX, u.postY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+      }
+      const r = 5 * k;
+      ctx.translate(u.postX, u.postY);
+      ctx.fillStyle = away > POST_LEAVE_DIST ? '#e4dcc4' : 'rgba(228,220,196,0.55)';
+      ctx.strokeStyle = '#07050a';
+      ctx.lineWidth = 1.5 * k;
+      ctx.beginPath();
+      ctx.moveTo(0, -r);
+      ctx.lineTo(r, 0);
+      ctx.lineTo(0, r);
+      ctx.lineTo(-r, 0);
+      ctx.lineTo(0, -r);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /** Order soldiers back to their posts now (hotkey B). A manual march, so nothing distracts them. */
+  function returnSelectionToPosts() {
+    const live = getSelectedLiveUnits().filter((u) => u.team === 'player' && hasPost(u));
+    if (!live.length) {
+      showMessage('Select soldiers first, then press B to send them back to their posts.', 160);
+      return false;
+    }
+    let sent = 0;
+    for (const u of live) {
+      if (u.isGeneral || u.fleeing || u.demoralized) continue;
+      if (Math.hypot(u.x - u.postX, u.y - u.postY) <= POST_ARRIVE_DIST) continue;
+      orderMove(u, u.postX, u.postY, true);
+      sent++;
+    }
+    showMessage(
+      sent ? `${sent} soldier${sent > 1 ? 's' : ''} back to post.` : 'Already at their posts.',
+      120
+    );
+    syncInteractionState();
+    return sent > 0;
+  }
+
   /** Restore hunt/hold from the global HUNT toggle after posts, med, rally, etc. */
   function applyGlobalHuntState(unit) {
     if (!unit?.canHunt) return;
@@ -1819,6 +2044,7 @@ const Game = (() => {
   const MORALE_WITNESS_RADIUS = 150;
   const MORALE_WITNESS_CLOSE = 70;
   const MORALE_WITNESS_BREAK_COUNT = 3;
+  const OPENING_RESOLVE_WAVES = 2;
   const GENERAL_RALLY_RANGE = 40;
   const GENERAL_W2W_BUFF_TICKS = 200;
 
@@ -1902,6 +2128,17 @@ const Game = (() => {
         GS.moraleAlertCooldown = 480;
         svc('FloatingText').status(GS.worldW / 2, GS.rallyY - 20, 'CASCADE', '#c080ff');
       }
+    }
+    // The opening garrison has nowhere to run to: in the first two waves soldiers waver
+    // but stand. A run cannot end on wave 1 or 2 because the last men walked off the field.
+    if (unit.team === 'player' && GS.wave <= OPENING_RESOLVE_WAVES && !GS.creativeMode) {
+      unit.morale = Math.max(unit.morale, moraleBreakThreshold(unit) + 1);
+      unit.witnessDeaths = 0;
+      if ((unit.resolveNoteTick || 0) + 300 < GS.updateTick) {
+        unit.resolveNoteTick = GS.updateTick;
+        svc('FloatingText')?.status?.(unit.x, unit.y, 'STANDS FIRM', '#e4dcc4');
+      }
+      return;
     }
     if (unit.team === 'player' && GS.wave >= ACADEMY_ERA_WAVE) {
       unit.demoralized = true;
@@ -2248,6 +2485,25 @@ const Game = (() => {
     get enemyCountMult() {
       return getDifficulty().enemyCountMult;
     },
+    /** Enemy count multiplier for a given wave (the first two waves are eased in). */
+    countMultFor: (waveNum) => openingCountMult(getDifficulty().enemyCountMult, waveNum),
+    /** Flanks the next wave will use; known only at night, after they have been rolled. */
+    get nextSides() {
+      const plan = GS.nextWavePlan;
+      return GS.timeOfDay === 'night' && plan && plan.wave === GS.wave + 1 ? plan.sides : null;
+    },
+    get viewScale() {
+      return GS.viewScale || 1;
+    },
+    get kills() {
+      return GS.kills || 0;
+    },
+    get soldiersLost() {
+      return GS.runPlayerDeaths || 0;
+    },
+    get difficultyId() {
+      return GS.difficultyId || 'normal';
+    },
     get general() {
       return findPlayerGeneral();
     },
@@ -2270,7 +2526,7 @@ const Game = (() => {
         : null;
     },
     rng: () => gameRandom(),
-    showMessage: (text, duration) => showMessage(text, duration),
+    showMessage: (text, duration, opts) => showMessage(text, duration, opts),
     float: (x, y, text, color) => svc('FloatingText')?.status?.(x, y, text, color),
     playSfx: (name) => playSfx(name),
     shake: (n) => svc('VisualPolish')?.addScreenShake?.(n),
@@ -2681,6 +2937,8 @@ const Game = (() => {
     GS.nightTimer = 0;
     refreshUnitCounts();
     awardRoundTP();
+    // Decide now where tomorrow's host comes from, so the night can show it.
+    GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
     SiegeLoop.onNightBegin(siegeCtx);
     refreshUnitCounts();
     const playerUnits = [];
@@ -3292,6 +3550,10 @@ const Game = (() => {
           u.atMedicalTent = null;
           u.demoralized = false;
           u.huntMode = GS.globalHunt;
+          // The old era's post is on a field that no longer exists.
+          u.postX = x;
+          u.postY = y;
+          stopPostReturn(u);
           if (typeof repairHonorName === 'function') repairHonorName(u);
           GS.units.push(u);
           n++;
@@ -5313,9 +5575,51 @@ const Game = (() => {
     }
 
     options.sort((a, b) => a.score - b.score);
-    const result = options[0]?.foe ?? null;
+    let result = options[0]?.foe ?? null;
+    if (!result && unit.team === 'player') result = findSquadAssistTarget(unit);
     tacticalTargetCache.set(unit.id, result);
     return result;
+  }
+
+  const SQUAD_ASSIST_ALLY_DIST = 260;
+  const SQUAD_ASSIST_FOE_DIST = 420;
+
+  /**
+   * A soldier with nothing in sight goes to help a comrade who is fighting close by.
+   * Posts spread the line out, and without this each man would meet the enemy alone.
+   */
+  function findSquadAssistTarget(unit) {
+    if (!unit.huntMode || unit.manualOrder || !unit.canHunt) return null;
+    let best = null;
+    let bestD = SQUAD_ASSIST_FOE_DIST * SQUAD_ASSIST_FOE_DIST;
+    const allyR2 = SQUAD_ASSIST_ALLY_DIST * SQUAD_ASSIST_ALLY_DIST;
+    for (const ally of GS.units) {
+      if (ally === unit || ally.team !== 'player' || ally.hp <= 0 || !ally.combatTargetId) continue;
+      if (ally.fleeing || ally.demoralized) continue;
+      if (posDistSq(unit.x, unit.y, ally.x, ally.y) > allyR2) continue;
+      const foe = getUnitById(ally.combatTargetId);
+      if (!foe || foe.team === unit.team || !isPursuableFoe(unit, foe)) continue;
+      if (foe.team === 'neutral' || foe.isNeutral) continue;
+      if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;
+      const d = posDistSq(unit.x, unit.y, foe.x, foe.y);
+      if (d < bestD) {
+        bestD = d;
+        best = foe;
+      }
+    }
+    return best;
+  }
+
+  /** True while a formed-up enemy is close enough that the fight is not over yet. */
+  function enemyNearPost(unit, dist) {
+    const r2 = dist * dist;
+    for (const foe of GS.units) {
+      if (foe.team !== 'enemy' || foe.hp <= 0 || foe.fleeing) continue;
+      if (posDistSq(unit.x, unit.y, foe.x, foe.y) > r2) continue;
+      if (SiegeLoop.isMustering(foe) || isEnemyHiddenByFog(foe)) continue;
+      return true;
+    }
+    return false;
   }
 
   function findNearestPlayer(unit) {
@@ -5470,6 +5774,27 @@ const Game = (() => {
       if (pick & (1 << i)) chosen.push(pool[i]);
     }
     return chosen;
+  }
+
+  /** Roll which flanks a wave uses, and the multi-front plan that may override them. */
+  function planWaveAttackSides(waveNum) {
+    const unlockedSides = getUnlockedAttackSides(waveNum);
+    let sides = rollWaveAttackSides(waveNum);
+    let multiFrontPlan = null;
+    if (svc('MultiFrontSiege') && svc('EnemyFactions') && !GS.creativeMode) {
+      const activeFactions = svc('EnemyFactions').getActiveFactions?.(waveNum) || [];
+      multiFrontPlan = svc('MultiFrontSiege').buildFrontPlan(
+        waveNum,
+        activeFactions,
+        unlockedSides,
+        gameRandom
+      );
+      if (multiFrontPlan?.waveSides?.length) {
+        const planned = multiFrontPlan.waveSides.filter((s) => unlockedSides.includes(s));
+        if (planned.length) sides = planned;
+      }
+    }
+    return { wave: waveNum, sides, multiFrontPlan };
   }
 
   function nextEnemySpawnSide(unitType) {
@@ -6806,6 +7131,7 @@ const Game = (() => {
     GS.waveProgress = 0;
     GS.waveEnemyTotal = 0;
     GS.waveAttackSides = ['north'];
+    GS.nextWavePlan = null;
     GS.namedBossWave = null;
     GS.bossTrackId = null;
     GS.currentHordeWave = null;
@@ -7086,6 +7412,16 @@ const Game = (() => {
     'boss_malachar',
   ];
 
+  /**
+   * Hard difficulties send extra bodies, but the first two waves arrive before the player
+   * has earned anything to answer them with. The surplus is phased in: a third of it on
+   * wave 1, two thirds on wave 2, all of it from wave 3.
+   */
+  function openingCountMult(mult, waveNum) {
+    if (!(mult > 1) || waveNum >= 3) return mult;
+    return 1 + (mult - 1) * (waveNum <= 1 ? 1 / 3 : 2 / 3);
+  }
+
   function computeSpawnFillParams(waveNum) {
     const cfg = getWaveConfig(waveNum);
     const diff = getDifficulty();
@@ -7103,7 +7439,7 @@ const Game = (() => {
       Math.floor(
         cfg.count *
           GS.waveModifiers.countMult *
-          diff.enemyCountMult *
+          openingCountMult(diff.enemyCountMult, waveNum) *
           (colonyPressure?.countMult || 1)
       )
     );
@@ -7465,7 +7801,7 @@ const Game = (() => {
       Math.floor(
         GS.currentWaveConfig.count *
           GS.waveModifiers.countMult *
-          diff.enemyCountMult *
+          openingCountMult(diff.enemyCountMult, GS.wave) *
           (colonyPressure?.countMult || 1)
       )
     );
@@ -7820,22 +8156,15 @@ const Game = (() => {
     GS.hazards = wavePrep.hazards;
     updateEnemyRTS();
     // Progressive flanks: unlock by wave, then roll which sides assault this wave.
-    const unlockedSides = getUnlockedAttackSides(GS.wave);
-    GS.waveAttackSides = rollWaveAttackSides(GS.wave);
-    GS.multiFrontPlan = null;
-    if (svc('MultiFrontSiege') && svc('EnemyFactions') && !GS.creativeMode) {
-      const activeFactions = svc('EnemyFactions').getActiveFactions?.(GS.wave) || [];
-      GS.multiFrontPlan = svc('MultiFrontSiege').buildFrontPlan(
-        GS.wave,
-        activeFactions,
-        unlockedSides,
-        gameRandom
-      );
-      if (GS.multiFrontPlan?.waveSides?.length) {
-        const planned = GS.multiFrontPlan.waveSides.filter((s) => unlockedSides.includes(s));
-        if (planned.length) GS.waveAttackSides = planned;
-      }
-    }
+    // The sides were usually rolled at nightfall so the field-edge markers told the truth;
+    // a wave that starts without a night (first wave, restarts, cheats) rolls them now.
+    const sidePlan =
+      GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave
+        ? GS.nextWavePlan
+        : planWaveAttackSides(GS.wave);
+    GS.nextWavePlan = null;
+    GS.waveAttackSides = sidePlan.sides;
+    GS.multiFrontPlan = sidePlan.multiFrontPlan;
     announceAttackSides();
     if (GS.wave === 25 || GS.wave === 50 || GS.wave === 75) {
       const labels = { 25: 'East', 50: 'West', 75: 'South' };
@@ -8381,7 +8710,7 @@ const Game = (() => {
               ? 'Locked: Research Lab → Morale Arts (wave 5+, 32 SP).'
               : type === 'scout' || type === 'pikeman'
                 ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 10+).'
-                : type === 'sapper' || type === 'knight'
+                : type === 'sapper' || type === 'knight' || type === 'crossbowman'
                   ? 'Locked: Research Lab → Iron Weapons first.'
                   : type === 'general'
                     ? 'Locked: Research Lab → Iron Weapons → Command Theory.'
@@ -9594,6 +9923,8 @@ const Game = (() => {
       unit.holdY = null;
       unit.pendingHoldX = pos.x;
       unit.pendingHoldY = pos.y;
+      // The destination of the last order is the soldier's post from now on.
+      setUnitPost(unit, pos.x, pos.y);
       unit.combatTargetId = null;
       unit.structureTargetId = null;
       unit.pathTargetId = null;
@@ -9642,6 +9973,9 @@ const Game = (() => {
           u.manualOrder = false;
           u.pathRecalc = 0;
           clearHoldPost(u);
+        } else if (hasPost(u) && !u.isGeneral) {
+          // Hunt off: stand at the post, not wherever the last chase ended.
+          enterHoldStance(u, { x: u.postX, y: u.postY });
         } else {
           enterHoldStance(u, { reassign: true });
         }
@@ -13004,7 +13338,10 @@ const Game = (() => {
         if (unit.actionTimer <= 0 && unit.attackAnimTimer <= 0) {
           fireWeapon(unit, foe);
           const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
-          unit.actionTimer = Math.max(12, Math.floor(baseCd / (unit.attackSpeedMult || 1)));
+          unit.actionTimer = Math.max(
+            12,
+            Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
+          );
         }
       } else {
         unit.combatTargetId = null;
@@ -13033,7 +13370,10 @@ const Game = (() => {
       if (unit.actionTimer <= 0) {
         fireWeapon(unit, target);
         const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
-        unit.actionTimer = Math.max(12, Math.floor(baseCd / (unit.attackSpeedMult || 1)));
+        unit.actionTimer = Math.max(
+          12,
+          Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
+        );
       }
       return;
     }
@@ -13999,6 +14339,7 @@ const Game = (() => {
     // After overlaps: hard-plant holders on station / walk anyone displaced back home.
     markUpdatePhase('hold-posts');
     updateHoldPosts();
+    updatePostReturn();
     for (let mi = GS.moveMarkers.length - 1; mi >= 0; mi--) {
       if (--GS.moveMarkers[mi].life <= 0) {
         GS.moveMarkers[mi] = GS.moveMarkers[GS.moveMarkers.length - 1];
@@ -14274,6 +14615,8 @@ const Game = (() => {
       for (const m of GS.moveMarkers) {
         if (isInView(m.x, m.y, 12)) svc('SpriteGen').drawMoveMarker(GS.ctx, m.x, m.y);
       }
+
+      drawPostMarkers();
 
       if (gfxQ?.drawLanternAuras !== false)
         for (const u of GS.units) {
@@ -15271,6 +15614,8 @@ const Game = (() => {
       wallGarrisoned: u.wallGarrisoned || null,
       wallSlotIndex: u.wallSlotIndex ?? null,
       targetY: u.targetY,
+      postX: Number.isFinite(u.postX) ? u.postX : null,
+      postY: Number.isFinite(u.postY) ? u.postY : null,
       spawnWave: u.spawnWave ?? GS.wave,
       tenureApplied: u.tenureApplied ?? 0,
       vetUpgradeEligible: !!u.vetUpgradeEligible,
@@ -15433,6 +15778,7 @@ const Game = (() => {
       GS.state = 'playing';
       GS.paused = true;
       GS.wave = snap.wave;
+      GS.nextWavePlan = null;
       GS.tactical = snap.tactical;
       GS.kills = snap.kills;
       GS.misses = snap.misses;
@@ -15518,6 +15864,7 @@ const Game = (() => {
         if (!u) continue;
         if (us.id) u.id = us.id;
         Object.assign(u, us);
+        stopPostReturn(u);
         if (u.spawnWave == null) u.spawnWave = GS.wave;
         if (u.tenureApplied == null) u.tenureApplied = 0;
         u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
@@ -16269,6 +16616,7 @@ const Game = (() => {
     getMinimapData,
     panCameraToFraction,
     focusSelection,
+    returnSelectionToPosts,
     setSelectedHunt,
     toggleSelectedHunt,
     setSelectionFormation,

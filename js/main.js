@@ -606,6 +606,13 @@
         UI.updateHUD(true);
         return;
       }
+      // B with a selection: back to posts. With nothing selected it is still Trade Outpost.
+      if (key === 'b' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && selCount > 0) {
+        e.preventDefault();
+        Game.returnSelectionToPosts?.();
+        UI.updateHUD(true);
+        return;
+      }
       if (key === 'c' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && selCount > 0) {
         Game.clearSelection();
         UI.updateHUD(true);

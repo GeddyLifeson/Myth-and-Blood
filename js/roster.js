@@ -26,6 +26,23 @@ const Roster = (() => {
       farShot: { min: 120, mult: 1.2 },
       closeWeak: { within: 55, mult: 0.6 },
     },
+    crossbowman: {
+      role: 'Armour piercer',
+      trait:
+        'Heavy Quarrel — 40% more damage to armoured enemies and siege engines; reloads slowly.',
+      weak: 'Slow rate of fire; swarms overrun him.',
+      vsType: {
+        dark_knight: 1.4,
+        troll: 1.4,
+        war_chief: 1.4,
+        siege_tower: 1.4,
+        iron_colossus: 1.4,
+        orc_shieldbearer: 1.4,
+        dreadborn_champion: 1.4,
+        cinderbound_juggernaut: 1.4,
+      },
+      closeWeak: { within: 55, mult: 0.6 },
+    },
     mage: {
       role: 'Area damage',
       trait: 'Arcane Burst — every fourth attack also hits everything near the target.',
