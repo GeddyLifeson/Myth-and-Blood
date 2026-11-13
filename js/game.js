@@ -14399,7 +14399,9 @@ const Game = (() => {
             ? Math.max(0, Math.min(3, 3 - Math.floor((u.attackAnimTimer || 0) / 4)))
             : u.frame,
           sprScale,
-          u.animState,
+          (u.hitFlash || 0) > 0 && u.animState !== 'attack' && u.animState !== 'death'
+            ? 'hurt'
+            : u.animState,
           unitLod
         );
         // Micro hit recoil offset
