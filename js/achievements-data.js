@@ -1,1419 +1,1397 @@
 /**
- * Generates exactly 1,000 achievements.
- * Milestone #316 "And That Is Final" unlocks at 316 total unlocks (not all others).
+ * Achievement list, built around the siege as it plays now.
+ *
+ * Every entry is a counter and a goal: { s: scope, k: counter, n: goal }.
+ *   scope 'r' = this run, 'l' = lifetime (kept in the save), 'x' = a legacy rule string
+ *   that js/achievements.js evaluates (the order trials, which also unlock an order).
+ * Entries that share a `ladder` are the bronze / silver / gold steps of one achievement
+ * and are drawn as one card.
+ *
+ * Names of troops, bosses, enemy factions, allied orders, difficulties and modes are
+ * never written here. Text uses {kind:id} tokens that js/achievements.js fills in from
+ * the game data when it draws, so a rename in data/*.json shows up by itself.
+ *
+ * Rewards are cosmetic only (a title, a skin, a victory theme). Nothing here gives TP,
+ * damage or any other power; the between-run bonuses are the ribbons' business.
  */
-const ACHIEVEMENT_TARGET = 1450;
+const ACHIEVEMENT_TIERS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold' };
+
+/** Families, in the order the panel shows them. */
+const ACHIEVEMENT_FAMILIES = [
+  { id: 'line', name: 'The Line', blurb: 'Breaches kept out, and the nights you nearly lost.' },
+  { id: 'runners', name: 'Line-Breakers', blurb: 'The ones who run past your troops.' },
+  { id: 'veterans', name: 'Veterans', blurb: 'Soldiers kept alive, and what they did with it.' },
+  { id: 'troops', name: 'Troops', blurb: 'Each kind of soldier, used for what it is good at.' },
+  { id: 'orders', name: 'Orders', blurb: 'Hold, the General, the early horn, spies and strikes.' },
+  { id: 'works', name: 'Works and Research', blurb: 'What you built and what you learned.' },
+  { id: 'medic', name: 'Medical Tent', blurb: 'The wounded carried off the field alive.' },
+  { id: 'spoils', name: 'Spoils of War', blurb: 'Rewards claimed every fifth wave.' },
+  { id: 'crates', name: 'Supply Crates', blurb: 'Dropped on the field. Some are bait.' },
+  {
+    id: 'camps',
+    name: 'War Camps',
+    blurb: 'Enemy camps at the top edge, burned before they feed a wave.',
+  },
+  { id: 'foes', name: 'Foes and Warlords', blurb: 'Every host beaten and every warlord slain.' },
+  { id: 'trials', name: 'Difficulty and Modes', blurb: 'The same siege, made harder.' },
+  { id: 'campaign', name: 'Campaign', blurb: 'Waves, kills and score.' },
+  {
+    id: 'allies',
+    name: 'Allied Orders',
+    blurb: 'The orders that march with you, and how you earned them.',
+  },
+  { id: 'secret', name: 'Secrets', blurb: 'Shown once earned.' },
+];
+
+/** The allied hero groups. Display names come from the game data, never from here. */
+const CROSSOVER_ACH_FACTIONS = [
+  { key: 'wwe', build: 'wwe_academy' },
+  { key: 'doom', build: null },
+  { key: 'ultimis', build: 'element_barracks' },
+  { key: 'primis', build: 'primis_shrine' },
+  { key: 'halo', build: 'spartan_academy' },
+  { key: 'gears', build: 'cog_academy' },
+  { key: 'lotr', build: 'rivendell_camp' },
+  { key: 'baki', build: 'hanma_dojo' },
+  { key: 'jojo', build: 'stand_arrow_shrine' },
+  { key: 'fotns', build: 'north_star_dojo' },
+  { key: 'dragonball', build: 'capsule_corp' },
+  { key: 'imperium', build: 'astartes_chapel' },
+  { key: 'crystal', build: 'crystal_sanctum' },
+  { key: 'warp', build: 'warp_shrine' },
+  { key: 'tes', build: 'dragon_moot' },
+];
+
+/** Mastery points for the two steps of an order's ladder (FactionDepth tiers 2 and 4). */
+const ACHIEVEMENT_MASTERY_STEPS = [150, 500];
+
+/** Orders whose top mastery step unlocks a unit skin (js/cosmetics.js). */
+const ACHIEVEMENT_MASTERY_SKINS = {
+  wwe: 'ring_champion',
+  doom: 'hell_walker',
+  crystal: 'crystal_vanguard',
+  warp: 'warp_legion',
+  imperium: 'imperium_herald',
+};
+
+const ACHIEVEMENT_ENEMY_FACTIONS = [
+  'goblin_hordes',
+  'orc_warbands',
+  'dark_legions',
+  'void_abyssal',
+  'mirror_empires',
+];
+
+const ACHIEVEMENT_BOSSES = [
+  'boss_gorath',
+  'boss_morwen',
+  'boss_thokk',
+  'boss_grimm',
+  'boss_vexis',
+  'boss_karg',
+  'boss_sylvara',
+  'boss_rotfather',
+  'boss_volk',
+  'boss_malachar',
+];
+
+const ACHIEVEMENT_DIFFICULTIES = ['baby', 'normal', 'chad', 'doomslayer'];
+
+/** Troop types whose kills are counted one by one. */
+const ACHIEVEMENT_TROOPS = [
+  'footman',
+  'archer',
+  'crossbowman',
+  'mage',
+  'cavalry',
+  'knight',
+  'pikeman',
+  'scout',
+  'ballista',
+  'sapper',
+];
+
+/**
+ * What each troop is for. A kill counts toward `sig.<troop>` when the victim is one of
+ * these types (or, for `runner` / `charge` / `blast`, when the kill was made that way).
+ */
+const ACHIEVEMENT_SIGNATURES = {
+  footman: { types: ['berserker'] },
+  archer: { types: ['goblin', 'plague_rat', 'goblin_sapper'] },
+  crossbowman: { types: ['dark_knight', 'iron_colossus', 'cinderbound_juggernaut', 'troll'] },
+  mage: { types: ['dark_knight', 'troll', 'iron_colossus', 'abomination'] },
+  cavalry: { charge: true },
+  knight: { types: ['orc_archer', 'dark_mage', 'necromancer', 'shaman', 'bone_summoner'] },
+  pikeman: { types: ['warg_rider'] },
+  scout: { runner: true },
+  ballista: { types: ['troll', 'siege_tower', 'iron_colossus', 'behemoth', 'abomination'] },
+};
+
+function buildAchievementList() {
+  const list = [];
+  const TIER3 = ['bronze', 'silver', 'gold'];
+  const TIER2 = ['silver', 'gold'];
+
+  /** One achievement. */
+  function one(family, id, name, desc, s, k, n, opts = {}) {
+    list.push({
+      id,
+      family,
+      name,
+      desc,
+      s,
+      k,
+      n,
+      tier: opts.tier || null,
+      hidden: !!opts.hidden,
+      reward: opts.reward || null,
+      ladder: opts.ladder || null,
+      long: s === 'l' && n > 1 && !opts.quick,
+      rule: s === 'x' ? k : `${s}:${k}>=${n}`,
+    });
+  }
+
+  /** Bronze / silver / gold steps of one achievement. `desc` gets the goal. */
+  function steps(family, base, names, desc, s, k, goals, opts = {}) {
+    const tiers = goals.length === 2 ? TIER2 : TIER3;
+    goals.forEach((n, i) => {
+      one(family, `${base}_${i + 1}`, names[i], desc(n), s, k, n, {
+        tier: tiers[i],
+        ladder: base,
+        hidden: opts.hidden,
+        quick: opts.quick,
+        reward: i === goals.length - 1 ? opts.reward : null,
+      });
+    });
+  }
+
+  const title = (label) => ({ type: 'title', label });
+  const skin = (id) => ({ type: 'skin', id });
+  const theme = (id) => ({ type: 'theme', id });
+
+  // ------------------------------------------------------------------ the line
+  steps(
+    'line',
+    'line_streak',
+    ['Shut Gate', 'Nothing Gets Through', 'The Wall That Walks'],
+    (n) => `Clear ${n} waves in a row without a breach, in one run.`,
+    'r',
+    'cleanStreak',
+    [5, 15, 25],
+    { reward: skin('ash_and_bone') }
+  );
+  steps(
+    'line',
+    'line_clean',
+    ['Quiet Nights', 'A Hundred Quiet Nights', 'The Realm Sleeps'],
+    (n) => `Clear ${n} waves without a breach, across all runs.`,
+    'l',
+    'cleanWaves',
+    [25, 100, 400],
+    { reward: title('Warden of the Line') }
+  );
+  steps(
+    'line',
+    'line_brink',
+    ['One More and We Fall', 'Used to the Edge', 'Lives on the Edge'],
+    (n) =>
+      n === 1
+        ? 'Clear a wave with the realm one breach from falling.'
+        : `Clear ${n} waves with the realm one breach from falling, across all runs.`,
+    'l',
+    'brinkClears',
+    [1, 5, 20]
+  );
+  one(
+    'line',
+    'line_brink_streak',
+    'Three Nights on the Brink',
+    'Clear 3 waves in a row with the realm one breach from falling.',
+    'r',
+    'brinkStreak',
+    3,
+    { tier: 'gold', reward: title('Last Gate') }
+  );
+  steps(
+    'line',
+    'line_boss',
+    ['The Warlord Knocks', 'Not Tonight', 'No Way In'],
+    (n) =>
+      n === 1
+        ? 'Clear a boss wave without a breach.'
+        : `Clear ${n} boss waves without a breach, across all runs.`,
+    'l',
+    'bossCleanWaves',
+    [1, 5, 15]
+  );
+  one(
+    'line',
+    'line_recover',
+    'Mended',
+    'Take a breach, then clear the next 5 waves without another.',
+    'r',
+    'recoverStreak',
+    5,
+    { tier: 'silver' }
+  );
+
+  // ------------------------------------------------------------------ runners
+  steps(
+    'runners',
+    'run_runners',
+    ['Tripped', 'Nobody Runs Here', 'Dead Sprint'],
+    (n) => `Cut down ${n} line-breakers in one run.`,
+    'r',
+    'runnerKills',
+    [10, 25, 60]
+  );
+  steps(
+    'runners',
+    'life_runners',
+    ['Gate Duty', 'Toll Taker', 'The Last Thing They See'],
+    (n) => `Cut down ${n.toLocaleString('en-US')} line-breakers, across all runs.`,
+    'l',
+    'runnerKills',
+    [250, 1000, 3000],
+    { reward: title('Gatewarden') }
+  );
+  one(
+    'runners',
+    'run_wave_runners',
+    'All Six',
+    'Cut down 6 line-breakers in a single wave.',
+    'r',
+    'waveRunnerKills',
+    6,
+    { tier: 'silver' }
+  );
+  one(
+    'runners',
+    'run_held',
+    'Doorman',
+    'Soldiers on a Hold order cut down 15 line-breakers, across all runs.',
+    'l',
+    'runnerHeldKills',
+    15,
+    { tier: 'silver' }
+  );
+  one(
+    'runners',
+    'run_blast',
+    'Tripwire',
+    'Sapper mines and satchels kill 10 line-breakers, across all runs.',
+    'l',
+    'runnerBlastKills',
+    10,
+    { tier: 'silver' }
+  );
+
+  // ----------------------------------------------------------------- veterans
+  steps(
+    'veterans',
+    'vet_waves',
+    ['Still Standing', 'Twelve Dawns', 'Thirty Dawns'],
+    (n) => `Keep one soldier alive for ${n} waves.`,
+    'r',
+    'vetOldest',
+    [5, 12, 30],
+    { reward: skin('veteran_grey') }
+  );
+  one(
+    'veterans',
+    'vet_waves_50',
+    'Older Than the War',
+    'Keep one soldier alive for 50 waves.',
+    'r',
+    'vetOldest',
+    50,
+    { tier: 'gold', reward: title('Father of the Company') }
+  );
+  steps(
+    'veterans',
+    'vet_kills',
+    ['Blooded', 'A Name Among Them', 'They Know His Face'],
+    (n) => `One soldier reaches ${n} kills in one run.`,
+    'r',
+    'vetKills',
+    [25, 75, 200]
+  );
+  one(
+    'veterans',
+    'vet_named',
+    'Sung About',
+    'A soldier you gave an honour name reaches 50 kills.',
+    'r',
+    'namedVetKills',
+    50,
+    { tier: 'gold' }
+  );
+  steps(
+    'veterans',
+    'vet_boss',
+    ['Everyone Came Home', 'Nobody Left Behind', 'The Warlord Took No One'],
+    (n) =>
+      n === 1
+        ? 'Clear a boss wave without losing a soldier.'
+        : `Clear ${n} boss waves without losing a soldier, across all runs.`,
+    'l',
+    'bossFlawlessWaves',
+    [1, 5, 15]
+  );
+  steps(
+    'veterans',
+    'vet_flawless',
+    ['Roll Call', 'Full Muster', 'Not One Grave'],
+    (n) => `Clear ${n} waves in a row without losing a soldier, in one run.`,
+    'r',
+    'flawlessStreak',
+    [3, 10, 20]
+  );
+  one(
+    'veterans',
+    'vet_company',
+    'The Old Company',
+    'Have 5 soldiers alive who have each seen 10 waves.',
+    'r',
+    'vets10',
+    5,
+    { tier: 'silver' }
+  );
+  steps(
+    'veterans',
+    'vet_honored',
+    ['A Name Earned', 'Roll of Honour'],
+    (n) =>
+      n === 1
+        ? 'Give a soldier an honour name.'
+        : `Give ${n} soldiers an honour name, across all runs.`,
+    'l',
+    'honored',
+    [1, 10]
+  );
+  one(
+    'veterans',
+    'vet_promoted',
+    'From the Ranks',
+    'Promote a {unit:footman} to {unit:general}.',
+    'l',
+    'footmanGenerals',
+    1,
+    { tier: 'gold' }
+  );
+  steps(
+    'veterans',
+    'vet_general',
+    ['The General Lives', 'The General Still Lives'],
+    (n) => `End ${n} waves in one run with your {unit:general} alive.`,
+    'r',
+    'generalWaves',
+    [15, 40]
+  );
+  one(
+    'veterans',
+    'vet_immortal',
+    'As Far As a Soldier Goes',
+    'Raise a soldier to the highest veteran rank.',
+    'l',
+    'immortals',
+    1,
+    { tier: 'gold' }
+  );
+
+  // ------------------------------------------------------------------- troops
+  const troopNames = {
+    footman: 'Shield Wall',
+    archer: 'Rain',
+    crossbowman: 'Through the Plate',
+    mage: 'Ash and Light',
+    cavalry: 'Hooves',
+    knight: 'Steel on Steel',
+    pikeman: 'Hedge of Points',
+    scout: 'Outrider',
+    ballista: 'Long Bolt',
+    sapper: 'Powder Hands',
+  };
+  for (const t of ACHIEVEMENT_TROOPS) {
+    one(
+      'troops',
+      `trp_${t}`,
+      troopNames[t],
+      `{unit:${t}} soldiers score 500 kills, across all runs.`,
+      'l',
+      `typeKills.${t}`,
+      500,
+      { tier: 'silver' }
+    );
+  }
+  const sig = (t, id, name, desc, n, tier = 'bronze') =>
+    one('troops', id, name, desc, 'l', `sig.${t}`, n, { tier });
+  sig(
+    'footman',
+    'trp_footman_sig',
+    'Stand and Take It',
+    '{unit:footman} soldiers kill 15 {enemy:berserker}s.',
+    15
+  );
+  sig(
+    'archer',
+    'trp_archer_sig',
+    'Vermin Shoot',
+    '{unit:archer} soldiers kill 150 goblins and rats.',
+    150
+  );
+  sig(
+    'crossbowman',
+    'trp_crossbowman_sig',
+    'Can Opener',
+    '{unit:crossbowman} soldiers kill 40 armoured enemies ({enemy:dark_knight}s, {enemy:troll}s and heavier).',
+    40,
+    'silver'
+  );
+  sig(
+    'cavalry',
+    'trp_cavalry_sig',
+    'Ridden Down',
+    '{unit:cavalry} kill 25 enemies at the end of a charge.',
+    25
+  );
+  sig(
+    'knight',
+    'trp_knight_sig',
+    'Among the Bowmen',
+    '{unit:knight} soldiers kill 40 enemy archers and casters.',
+    40
+  );
+  sig(
+    'pikeman',
+    'trp_pikeman_sig',
+    'Unhorsed',
+    '{unit:pikeman} soldiers kill 25 {enemy:warg_rider}s.',
+    25
+  );
+  sig(
+    'scout',
+    'trp_scout_sig',
+    'Run Down',
+    '{unit:scout} soldiers catch and kill 20 line-breakers.',
+    20
+  );
+  sig(
+    'ballista',
+    'trp_ballista_sig',
+    'Big Game',
+    '{unit:ballista} crews kill 15 of the largest enemies ({enemy:troll}s, siege towers and bigger).',
+    15,
+    'silver'
+  );
+  one(
+    'troops',
+    'trp_mage_splash',
+    'Three in One',
+    'A {unit:mage} blast hits 3 or more enemies at once, 10 times.',
+    'l',
+    'mageSplash3',
+    10,
+    { tier: 'bronze' }
+  );
+  steps(
+    'troops',
+    'trp_sapper_blast',
+    ['Fire in the Hole', 'Demolition Man', 'Crater Maker'],
+    (n) => `{unit:sapper} mines and satchel charges kill ${n} enemies, across all runs.`,
+    'l',
+    'blastKills',
+    [25, 150, 600],
+    { reward: title('Master Sapper') }
+  );
+  steps(
+    'troops',
+    'trp_sapper_siege',
+    ['Engine Breaker', 'Nothing Rolls Here'],
+    (n) =>
+      n === 1
+        ? 'A {unit:sapper} destroys a siege engine, an {enemy:iron_colossus} or a {enemy:hellmortar_pack}.'
+        : `{unit:sapper} soldiers destroy ${n} siege engines, colossi or hellmortars, across all runs.`,
+    'l',
+    'sapperSiege',
+    [1, 15]
+  );
+  one(
+    'troops',
+    'trp_sapper_mines',
+    'Sown Field',
+    'Have your {unit:sapper} soldiers lay 12 mines in one run.',
+    'r',
+    'minesLaid',
+    12,
+    { tier: 'silver' }
+  );
+  one(
+    'troops',
+    'trp_sapper_wave',
+    'One Loud Morning',
+    '{unit:sapper} blasts kill 8 enemies in a single wave.',
+    'r',
+    'waveBlastKills',
+    8,
+    { tier: 'gold' }
+  );
+  one(
+    'troops',
+    'trp_healer',
+    'Steady Hands',
+    'Keep a {unit:healer} alive for 15 waves.',
+    'r',
+    'healerOldest',
+    15,
+    { tier: 'silver' }
+  );
+  one(
+    'troops',
+    'trp_roster',
+    'Every Trade',
+    'Recruit 9 different kinds of troop in one run.',
+    'r',
+    'deployTypes',
+    9,
+    { tier: 'silver' }
+  );
+
+  // ------------------------------------------------------------------- orders
+  steps(
+    'orders',
+    'ord_warcry',
+    ['War Cry', 'Hoarse', 'The Voice'],
+    (n) =>
+      n === 1 ? "Give the General's War Cry." : `Give the War Cry ${n} times, across all runs.`,
+    'l',
+    'warCry',
+    [1, 15, 60]
+  );
+  steps(
+    'orders',
+    'ord_holdline',
+    ['Hold the Line', 'They Held', 'Immovable'],
+    (n) =>
+      n === 1
+        ? "Give the General's Hold the Line order."
+        : `Give Hold the Line ${n} times, across all runs.`,
+    'l',
+    'holdLine',
+    [1, 15, 60]
+  );
+  one(
+    'orders',
+    'ord_both',
+    'Both Horns',
+    'Give the War Cry and Hold the Line in the same wave.',
+    'l',
+    'bothOrders',
+    1,
+    { tier: 'silver' }
+  );
+  steps(
+    'orders',
+    'ord_held',
+    ['Stay Put', 'Rooted', 'Not One Step'],
+    (n) => `Soldiers on a Hold order make ${n} kills, across all runs.`,
+    'l',
+    'heldKills',
+    [25, 150, 600],
+    { reward: title('Anvil') }
+  );
+  one(
+    'orders',
+    'ord_holdwave',
+    'Standing Orders',
+    'Clear a wave with 5 or more soldiers on Hold.',
+    'l',
+    'holdWaves',
+    1,
+    { tier: 'bronze' }
+  );
+  one(
+    'orders',
+    'ord_hunt',
+    'Let Slip',
+    'Hunting soldiers make 150 kills in one run.',
+    'r',
+    'huntKills',
+    150,
+    { tier: 'bronze' }
+  );
+  one(
+    'orders',
+    'ord_horn',
+    'Come On Then',
+    'Call 6 waves early in one run.',
+    'r',
+    'earlyCalls',
+    6,
+    { tier: 'silver' }
+  );
+  one(
+    'orders',
+    'ord_horn_life',
+    'No Time to Waste',
+    'Call 75 waves early, across all runs.',
+    'l',
+    'earlyCalls',
+    75,
+    { tier: 'gold' }
+  );
+  one(
+    'orders',
+    'ord_keep',
+    'Field Marshal',
+    'Station your {unit:general} in the Keep.',
+    'l',
+    'generalStationed',
+    1,
+    { tier: 'bronze' }
+  );
+  one(
+    'orders',
+    'ord_strikes',
+    'Every Arrow in the Quiver',
+    'Use each of the six strikes at least once, across all runs.',
+    'l',
+    'strikes',
+    6,
+    { tier: 'silver' }
+  );
+  one(
+    'orders',
+    'ord_spy',
+    'Spymaster',
+    'Use each of the eight spy actions at least once, across all runs.',
+    'l',
+    'spy',
+    8,
+    { tier: 'silver' }
+  );
+
+  // -------------------------------------------------------- works and research
+  steps(
+    'works',
+    'wrk_types',
+    ['Camp', 'Stronghold', 'A Town Behind the Line'],
+    (n) => `Finish ${n} different kinds of building in one run.`,
+    'r',
+    'buildTypes',
+    [3, 6, 10]
+  );
+  steps(
+    'works',
+    'wrk_walls',
+    ['Palisade', 'Curtain Wall'],
+    (n) => `Have ${n} walls standing at the end of a wave.`,
+    'r',
+    'walls',
+    [8, 20]
+  );
+  one('works', 'wrk_castle', 'Raise the Keep', 'Finish a {build:castle}.', 'r', 'build.castle', 1, {
+    tier: 'silver',
+  });
+  one(
+    'works',
+    'wrk_keep',
+    'Inner Ward Untouched',
+    'Reach wave 25 with a {build:castle} whose inner ward no enemy has entered.',
+    'x',
+    'sanctum_intact:25',
+    1,
+    { tier: 'gold' }
+  );
+  steps(
+    'works',
+    'wrk_research',
+    ['Scholar', 'Learned', 'Nothing Left to Read'],
+    (n) => `Complete ${n} research projects in one run.`,
+    'r',
+    'research',
+    [3, 8, 15]
+  );
+  one(
+    'works',
+    'wrk_research_all',
+    'The Whole Library',
+    'Complete 30 different research projects, across all runs.',
+    'l',
+    'researchKinds',
+    30,
+    { tier: 'gold', reward: title('Loremaster') }
+  );
+
+  // -------------------------------------------------------------- medical tent
+  steps(
+    'medic',
+    'med_saves',
+    ['Carried Off', 'Stretcher Bearers', 'Nobody Dies Today'],
+    (n) =>
+      n === 1
+        ? 'A soldier who would have died is carried to the {build:medical_tent} alive.'
+        : `${n} soldiers are carried to the {build:medical_tent} alive, across all runs.`,
+    'l',
+    'medSaves',
+    [1, 15, 75],
+    { reward: title('Chirurgeon') }
+  );
+  one(
+    'medic',
+    'med_wave',
+    'Busy Morning',
+    'The {build:medical_tent} saves 3 soldiers in a single wave.',
+    'r',
+    'waveMedSaves',
+    3,
+    { tier: 'silver' }
+  );
+  one(
+    'medic',
+    'med_run',
+    'Field Hospital',
+    'The {build:medical_tent} saves 8 soldiers in one run.',
+    'r',
+    'medSaves',
+    8,
+    { tier: 'silver' }
+  );
+  one(
+    'medic',
+    'med_second_wind',
+    'Second Wind',
+    'A soldier saved by the {build:medical_tent} goes on to see 10 waves.',
+    'l',
+    'secondWind',
+    1,
+    { tier: 'gold' }
+  );
+
+  // -------------------------------------------------------------------- spoils
+  steps(
+    'spoils',
+    'spl_run',
+    ['To the Victor', 'War Chest Full', 'Plunder of Ten Hosts'],
+    (n) => `Claim ${n} spoils of war in one run.`,
+    'r',
+    'edicts',
+    [2, 5, 10]
+  );
+  steps(
+    'spoils',
+    'spl_life',
+    ['Quartermaster General', 'Nothing Wasted'],
+    (n) => `Claim ${n} spoils of war, across all runs.`,
+    'l',
+    'edicts',
+    [40, 150]
+  );
+  one(
+    'spoils',
+    'spl_stack',
+    'Thrice Sworn',
+    'Take the same spoil three times in one run.',
+    'r',
+    'edictStack',
+    3,
+    { tier: 'silver' }
+  );
+  one(
+    'spoils',
+    'spl_kinds',
+    'A Bit of Everything',
+    'Hold 5 different spoils in one run.',
+    'r',
+    'edictKinds',
+    5,
+    { tier: 'silver' }
+  );
+  one(
+    'spoils',
+    'spl_all',
+    'Seen Every Chest',
+    'Claim 12 different spoils at least once, across all runs.',
+    'l',
+    'edictKinds',
+    12,
+    { tier: 'gold', reward: title('Reeve of Spoils') }
+  );
+
+  // -------------------------------------------------------------------- crates
+  steps(
+    'crates',
+    'crt_run',
+    ['Scrounger', 'Forager', 'Picked Clean'],
+    (n) => `Recover ${n} supply crates in one run.`,
+    'r',
+    'crates',
+    [3, 6, 12]
+  );
+  steps(
+    'crates',
+    'crt_life',
+    ['Supply Train', 'Never Short'],
+    (n) => `Recover ${n} supply crates, across all runs.`,
+    'l',
+    'crates',
+    [100, 400]
+  );
+  one(
+    'crates',
+    'crt_ambush',
+    'Seen That Trick',
+    'Spring 10 baited crates, across all runs.',
+    'l',
+    'ambushes',
+    10,
+    { tier: 'silver' }
+  );
+
+  // ----------------------------------------------------------------- war camps
+  steps(
+    'camps',
+    'cmp_camps',
+    ['Burn It', 'Camp Breaker', 'Scorched Edge'],
+    (n) =>
+      n === 1 ? 'Destroy an enemy war camp.' : `Destroy ${n} enemy war camps, across all runs.`,
+    'l',
+    'warCamps',
+    [1, 10, 40],
+    { reward: title('Camp Breaker') }
+  );
+  one(
+    'camps',
+    'cmp_run',
+    'Nowhere to Muster',
+    'Destroy 3 enemy war camps in one run.',
+    'r',
+    'warCamps',
+    3,
+    { tier: 'silver' }
+  );
+
+  // ----------------------------------------------------------- foes and bosses
+  const foeNames = {
+    goblin_hordes: ['Pest Control', 'Goblin Bane', 'The Warrens Empty'],
+    orc_warbands: ['Broke a Warband', 'Orc Bane', 'The Drums Go Quiet'],
+    dark_legions: ['Stood Against the Legion', 'Legion Bane', 'The Black Banners Fall'],
+    void_abyssal: ['Looked Into It', 'Void Bane', 'The Deep Closes'],
+    mirror_empires: ['Broke a Mirror', 'Mirror Bane', 'No Reflection Left'],
+  };
+  for (const f of ACHIEVEMENT_ENEMY_FACTIONS) {
+    steps(
+      'foes',
+      `foe_${f}`,
+      foeNames[f],
+      (n) => `Clear ${n} waves led by the {faction:${f}}, across all runs.`,
+      'l',
+      `faction.${f}`,
+      [5, 30, 100]
+    );
+  }
+  for (const b of ACHIEVEMENT_BOSSES) {
+    one('foes', `foe_${b}`, `{boss:${b}}`, `Slay {boss:${b}}.`, 'l', `boss.${b}`, 1, {
+      tier: 'silver',
+    });
+  }
+  one(
+    'foes',
+    'foe_boss_all',
+    'Ten Warlords',
+    'Slay every one of the ten named warlords at least once.',
+    'l',
+    'bossKinds',
+    10,
+    { tier: 'gold', reward: theme('warlords_end') }
+  );
+  steps(
+    'foes',
+    'foe_boss_kills',
+    ['Warlord Hunter', 'Kingdoms of Heads'],
+    (n) => `Slay ${n} named warlords, across all runs.`,
+    'l',
+    'bossKills',
+    [15, 50]
+  );
+  one(
+    'foes',
+    'foe_boss_blast',
+    'Buried Under It',
+    'Kill a named warlord with a {unit:sapper} mine or satchel charge.',
+    'l',
+    'bossBlastKills',
+    1,
+    { tier: 'gold' }
+  );
+  steps(
+    'foes',
+    'foe_elites',
+    ['Champion Killer', 'No Champions Left'],
+    (n) => `Kill ${n} elite enemies in one run.`,
+    'r',
+    'elites',
+    [15, 60]
+  );
+
+  // ------------------------------------------------------ difficulty and modes
+  const diffNames = {
+    baby: ['First Steps', 'Finding Your Feet', 'A Gentle Victory'],
+    normal: ['Fifteen Held', 'Thirty Held', 'The Realm Held'],
+    chad: ['Hard Road', 'Harder Road', 'Against the Odds'],
+    doomslayer: ['Into the Fire', 'Still Burning', 'Through Hell and Out'],
+  };
+  for (const d of ACHIEVEMENT_DIFFICULTIES) {
+    steps(
+      'trials',
+      `diff_${d}`,
+      diffNames[d],
+      (n) =>
+        n === 100
+          ? `Win the campaign (clear wave 100) on {diff:${d}}.`
+          : `Clear wave ${n} on {diff:${d}}.`,
+      'l',
+      `diff.${d}`,
+      [15, 30, 100],
+      { quick: true, reward: d === 'doomslayer' ? title('Hellwalker') : null }
+    );
+  }
+  steps(
+    'trials',
+    'mod_wave',
+    ['Handicap', 'Three Stones in the Boot'],
+    (n) =>
+      n === 1
+        ? 'Clear wave 15 with an advanced modifier on.'
+        : `Clear wave 15 with ${n} advanced modifiers on.`,
+    'l',
+    'modsAtWave15',
+    [1, 3],
+    { quick: true }
+  );
+  const modeNames = {
+    survival: 'No End in Sight',
+    roguelike: 'One Life',
+    timed: 'Against the Glass',
+    pve_horde: 'Flood',
+    academy_era: 'Late to the War',
+  };
+  for (const [m, name] of Object.entries(modeNames)) {
+    one(
+      'trials',
+      `mode_${m}`,
+      name,
+      m === 'academy_era' ? `Clear 10 waves in {mode:${m}}.` : `Clear wave 10 in {mode:${m}}.`,
+      'l',
+      m === 'academy_era' ? `modeCleared.${m}` : `mode.${m}`,
+      10,
+      { tier: 'silver', quick: true }
+    );
+  }
+  steps(
+    'trials',
+    'mode_warband',
+    ['Sworn Band', 'The Band Endures'],
+    (n) => `Clear wave ${n} in {mode:warband}.`,
+    'l',
+    'mode.warband',
+    [8, 30],
+    { quick: true }
+  );
+  one(
+    'trials',
+    'mode_ironman',
+    'No Second Chances',
+    'Clear wave 20 with Ironman on.',
+    'l',
+    'ironmanWave',
+    20,
+    { tier: 'gold', quick: true, reward: title('Ironbound') }
+  );
+
+  // ------------------------------------------------------------------ campaign
+  const waveMarks = [
+    [5, 'Five Dawns', 'bronze'],
+    [15, 'Fifteen Dawns', 'bronze'],
+    [20, 'Twenty Dawns', 'silver'],
+    [35, 'Thirty-Five Dawns', 'silver'],
+    [75, 'Seventy-Five Dawns', 'gold'],
+  ];
+  for (const [w, name, tier] of waveMarks) {
+    one('campaign', `wave_${w}`, name, `Clear wave ${w}.`, 'r', 'wave', w, {
+      tier,
+      ladder: 'wave_marks',
+    });
+  }
+  steps(
+    'campaign',
+    'cmp_victory',
+    ['The Realm Stands', 'It Was Not Luck'],
+    (n) => (n === 1 ? 'Win the campaign: clear wave 100.' : `Win the campaign ${n} times.`),
+    'l',
+    'victories',
+    [1, 3],
+    { reward: theme('iron_dawn') }
+  );
+  one(
+    'campaign',
+    'cmp_endless',
+    'Past the End',
+    'Clear wave 150. The siege does not stop at victory.',
+    'r',
+    'wave',
+    150,
+    { tier: 'gold', reward: title('The Unrelieved') }
+  );
+  steps(
+    'campaign',
+    'life_waves',
+    ['Seasoned', 'A Lifetime at the Wall'],
+    (n) => `Clear ${n.toLocaleString('en-US')} waves, across all runs.`,
+    'l',
+    'waves',
+    [150, 1000]
+  );
+  steps(
+    'campaign',
+    'life_kills',
+    ['Bloodied', 'Charnel', 'A Sea of Them'],
+    (n) => `Kill ${n.toLocaleString('en-US')} enemies, across all runs.`,
+    'l',
+    'kills',
+    [250, 5000, 50000]
+  );
+  steps(
+    'campaign',
+    'run_kills',
+    ['Red Field', 'Heaped', 'The Crows Give Up'],
+    (n) => `Kill ${n.toLocaleString('en-US')} enemies in one run.`,
+    'r',
+    'kills',
+    [200, 500, 1500]
+  );
+  steps(
+    'campaign',
+    'run_score',
+    ['On the Board', 'Worth Writing Down', 'A Score to Beat'],
+    (n) => `Finish a run with a score of ${n.toLocaleString('en-US')} or more.`,
+    'r',
+    'score',
+    [1500, 4000, 10000]
+  );
+  one(
+    'campaign',
+    'run_score_top',
+    'The Scribes Run Out of Ink',
+    'Finish a run with a score of 25,000 or more.',
+    'r',
+    'score',
+    25000,
+    { tier: 'gold', reward: title('Chronicled') }
+  );
+
+  // -------------------------------------------------------------- allied orders
+  const trial = (id, name, desc, rule, tier = 'gold') =>
+    one('allies', id, name, desc, 'x', rule, 1, { tier });
+  trial(
+    'wwe_showmanship_victory',
+    'Trial of the {order:wwe}',
+    'Win the campaign with two or more of your showmen leading the army for most of it. Opens the {order:wwe}.',
+    'run_wwe_showmanship:8:0.55'
+  );
+  trial(
+    'doom_hero_unlock',
+    'Trial of the {order:doom}',
+    'Clear wave 200 on {diff:doomslayer}. Opens the {order:doom}.',
+    'unlock:doom_hero'
+  );
+  trial(
+    'ultimis_horde_150',
+    'Trial of the {order:ultimis}',
+    'Clear wave 150 on {diff:doomslayer} without losing a building to horde grunts. Opens the {order:ultimis}.',
+    'diff_zombie_fortress:doomslayer:150'
+  );
+  trial(
+    'primis_sanctum_victory',
+    'Trial of the {order:primis}',
+    'Win the campaign with a {build:castle} whose inner ward no enemy has entered. Opens the {order:primis}.',
+    'run_sanctum_victory'
+  );
+  trial(
+    'halo_spartan_victory',
+    'Trial of the {order:halo}',
+    'Win the campaign with your {unit:general} alive, after raising five {unit:footman} soldiers to command. Opens the {order:halo}.',
+    'run_spartan_command:5'
+  );
+  trial(
+    'gears_siege_victory',
+    'Trial of the {order:gears}',
+    'Win the campaign after destroying twelve enemy war camps or structures. Opens the {order:gears}.',
+    'run_siege_victory:12'
+  );
+  trial(
+    'lotr_fellowship_victory',
+    'Trial of the {order:lotr}',
+    'Win the campaign with army morale high at the end of most waves. Opens the {order:lotr}.',
+    'run_fellowship_morale:8:0.55'
+  );
+  trial(
+    'baki_martial_victory',
+    'Trial of the {order:baki}',
+    'Win the campaign on {diff:chad} or harder with a mostly melee army. Opens the {order:baki}.',
+    'run_martial_melee:8:0.55'
+  );
+  trial(
+    'jojo_stand_victory',
+    'Trial of the {order:jojo}',
+    'Win the campaign with three or more allied heroes recruited and fielded together for most of it. Opens the {order:jojo}.',
+    'run_stand_alliance:8:0.55:3'
+  );
+  trial(
+    'fotns_hokuto_victory',
+    'Trial of the {order:fotns}',
+    'Win the campaign after a lone hero kills a named warlord. Opens the {order:fotns}.',
+    'run_hokuto_solo'
+  );
+  trial(
+    'dragonball_planet_victory',
+    'Trial of the {order:dragonball}',
+    'Past wave 200, bring down a warlord with an army of mostly high-energy fighters. Opens the {order:dragonball}.',
+    'run_dragonball_ki:200:0.55'
+  );
+  trial(
+    'warhammer_eternal_crusade',
+    'Trial of the {order:imperium}',
+    'Win the campaign on {diff:chad} or harder holding eight fortifications throughout, with three boss waves beaten and your {unit:general} alive. Opens the {order:imperium}, {order:crystal} and {order:warp}.',
+    'run_eternal_crusade:3:8'
+  );
+  trial(
+    'tes_dragonborn_victory',
+    'Trial of the {order:tes}',
+    'Win the campaign with a top-rank veteran on each of the four paths and a dragon-kind warlord slain. Opens the {order:tes}.',
+    'run_dragonborn_legacy:100'
+  );
+  for (const f of CROSSOVER_ACH_FACTIONS) {
+    steps(
+      'allies',
+      `order_${f.key}`,
+      [`{order:${f.key}}: Trusted`, `{order:${f.key}}: Master`],
+      (n) =>
+        `Earn ${n} mastery with the {order:${f.key}}: a point for each kill by its fighters, more for abilities, recruits and waves cleared with them.`,
+      'l',
+      `mastery.${f.key}`,
+      ACHIEVEMENT_MASTERY_STEPS,
+      {
+        reward: ACHIEVEMENT_MASTERY_SKINS[f.key]
+          ? skin(ACHIEVEMENT_MASTERY_SKINS[f.key])
+          : { type: 'order_title', order: f.key },
+      }
+    );
+  }
+
+  // ------------------------------------------------------------------- secrets
+  const secret = (id, name, desc, s, k, n, opts = {}) =>
+    one('secret', id, name, desc, s, k, n, { hidden: true, ...opts });
+  secret(
+    'cheat_used',
+    'The Scribe Looks Away',
+    'Use a cheat code. Nothing else from that run is written down.',
+    'l',
+    'cheated',
+    1
+  );
+  secret(
+    'sec_first_breach',
+    'It Got Past Me',
+    'Let your first enemy through the line.',
+    'l',
+    'breaches',
+    1
+  );
+  secret(
+    'sec_leaky',
+    'Sieve',
+    'Let 3 through in a single wave and clear it anyway.',
+    'l',
+    'leakyWaves',
+    1
+  );
+  secret(
+    'sec_last_one',
+    'Last One Standing',
+    'Clear a wave with exactly one soldier left alive.',
+    'l',
+    'lastOneWaves',
+    1
+  );
+  secret(
+    'sec_headless',
+    'Headless Host',
+    'Lose your {unit:general}, then clear 5 more waves in the same run.',
+    'r',
+    'wavesAfterGeneralFell',
+    5
+  );
+  secret(
+    'sec_general_runner',
+    'Do It Yourself',
+    'Your {unit:general} personally cuts down a line-breaker.',
+    'l',
+    'generalRunnerKills',
+    1
+  );
+  secret(
+    'sec_one_kind',
+    'One Trick',
+    'Clear a wave past wave 8 with 8 or more soldiers, all of the same kind.',
+    'l',
+    'oneKindWaves',
+    1
+  );
+  secret(
+    'sec_war_chest',
+    'Just the Money',
+    'Take the {edict:war_chest} three times in one run.',
+    'r',
+    'edict.war_chest',
+    3
+  );
+  secret(
+    'sec_fallen',
+    'Carved on the Wall',
+    'Lose a veteran. The field remembers the name.',
+    'l',
+    'fallenVets',
+    1
+  );
+  secret(
+    'sec_short_reign',
+    'Short Reign',
+    'Lose the realm before the second wave.',
+    'l',
+    'fellEarly',
+    1
+  );
+
+  return list;
+}
+
+const ACHIEVEMENT_LIST = buildAchievementList();
+const ACHIEVEMENT_TARGET = ACHIEVEMENT_LIST.length;
+
+// Old ids kept so older builds and tests that name them still load.
 const ACHIEVEMENT_META_316_ID = 'bottom_line';
 const ACHIEVEMENT_CLUB_316_ID = 'club_316';
 const ACHIEVEMENT_MILLENNIUM_ID = 'millennium';
 const ACHIEVEMENT_META_ID = ACHIEVEMENT_META_316_ID;
 
-const ACHIEVEMENT_TIERS = { bronze: 'Bronze', silver: 'Silver', gold: 'Gold', meta: 'Meta' };
-
-const CROSSOVER_ACH_FACTIONS = [
-  { key: 'wwe', label: 'Grand Coliseum Champions', cat: 'crossover_wwe', build: 'wwe_academy' },
-  { key: 'doom', label: 'Hellbane / Hell', cat: 'crossover_doom', build: null },
-  { key: 'ultimis', label: 'Void Residue', cat: 'crossover_ultimis', build: 'element_barracks' },
-  { key: 'primis', label: 'First Circle', cat: 'crossover_primis', build: 'primis_shrine' },
-  { key: 'halo', label: 'Orbital Vanguard', cat: 'crossover_halo', build: 'spartan_academy' },
-  { key: 'gears', label: 'Iron Trench Coalition', cat: 'crossover_gears', build: 'cog_academy' },
-  { key: 'lotr', label: 'Ninefold March', cat: 'crossover_lotr', build: 'rivendell_camp' },
-  { key: 'baki', label: 'Iron Pit Guild', cat: 'crossover_baki', build: 'hanma_dojo' },
-  {
-    key: 'jojo',
-    label: 'Bound Spirit Court',
-    cat: 'crossover_jojo',
-    build: 'stand_arrow_shrine',
-  },
-  {
-    key: 'fotns',
-    label: 'North Star Ascetics',
-    cat: 'crossover_fotns',
-    build: 'north_star_dojo',
-  },
-  {
-    key: 'dragonball',
-    label: 'Skyburst Order',
-    cat: 'crossover_dragonball',
-    build: 'capsule_corp',
-  },
-  {
-    key: 'imperium',
-    label: 'Crimson Legions',
-    cat: 'crossover_imperium',
-    build: 'astartes_chapel',
-  },
-  {
-    key: 'crystal',
-    label: 'Crystal Vanguard',
-    cat: 'crossover_crystal',
-    build: 'crystal_sanctum',
-  },
-  {
-    key: 'warp',
-    label: 'Rift Cult',
-    cat: 'crossover_warp',
-    build: 'warp_shrine',
-  },
-  {
-    key: 'tes',
-    label: 'Voicebound Pact',
-    cat: 'crossover_tes',
-    build: 'dragon_moot',
-  },
-];
-
-function achEntry(opts) {
-  return {
-    tier: null,
-    hidden: false,
-    reward: null,
-    meta: false,
-    track: 'session',
-    ...opts,
+/**
+ * Old achievement id -> the ids in this list that it proves.
+ *
+ * The 1,450-entry list is gone, but saves made with it are not. An old unlock is carried
+ * over when it shows the player already did what a new achievement asks; everything else
+ * is retired: remembered in the save, never shown, never counted.
+ *
+ * Lifetime counters in the old save (kills, waves, kills per enemy type, spy and courier
+ * sets, order mastery) are kept as they are, so the lifetime achievements built on them
+ * unlock from the numbers and need no entry here.
+ */
+function mapLegacyAchievementId(id) {
+  const ids = new Set(ACHIEVEMENT_LIST.map((a) => a.id));
+  // Same id, same meaning: the order trials and the cheat joke.
+  if (ids.has(id)) return [id];
+  const out = [];
+  const upTo = (pairs, value) => {
+    for (const [goal, newId] of pairs) if (value >= goal) out.push(newId);
   };
-}
-
-function getFactionOperativeIds(factionKey) {
-  if (factionKey === 'wwe' && typeof WweDefs !== 'undefined') return Object.keys(WweDefs);
-  if (factionKey === 'doom') return ['doomslayer_hero'];
-  if (typeof CrossoverDefs === 'undefined') return [];
-  return Object.entries(CrossoverDefs)
-    .filter(([, d]) => d.faction === factionKey)
-    .map(([id]) => id);
-}
-
-function getOperativeName(factionKey, id) {
-  if (factionKey === 'wwe' && WweDefs?.[id]) return WweDefs[id].name;
-  if (id === 'doomslayer_hero') return 'Hellbane';
-  if (CrossoverDefs?.[id]) return CrossoverDefs[id].name;
-  return id;
-}
-
-function buildVanillaAchievements() {
-  const list = [];
-
-  const waveMilestones = [
-    1, 5, 10, 15, 20, 25, 30, 40, 50, 60, 75, 80, 90, 100, 110, 125, 150, 175, 200, 225, 250, 300,
-    350, 400, 450, 500, 600, 700, 800, 900, 1000, 1250, 1500, 1750, 2000,
-  ];
-  for (const w of waveMilestones) {
-    const tier = w >= 1000 ? 'gold' : w >= 500 ? 'silver' : w >= 100 ? 'bronze' : null;
-    list.push(
-      achEntry({
-        id: `reach_wave_${w}`,
-        name:
-          w === 1
-            ? 'First Stand'
-            : w === 100
-              ? 'Academy Threshold'
-              : w === 200
-                ? 'Hell Gate'
-                : w === 500
-                  ? 'Eternal Siege'
-                  : w === 1000
-                    ? 'Millennium March'
-                    : `Wave ${w}`,
-        desc: `Reach wave ${w} in a single battle.`,
-        cat: 'waves',
-        rule: `wave:${w}`,
-        tier,
-        track: 'session',
-      })
+  let m;
+  if ((m = /^reach_wave_(\d+)$/.exec(id))) {
+    const w = +m[1];
+    upTo(
+      [
+        [5, 'wave_5'],
+        [15, 'wave_15'],
+        [20, 'wave_20'],
+        [35, 'wave_35'],
+        [75, 'wave_75'],
+        [100, 'cmp_victory_1'],
+        [150, 'cmp_endless'],
+      ],
+      w
     );
-  }
-
-  const lifetimeWaves = [50, 100, 200, 500, 1000];
-  for (const w of lifetimeWaves) {
-    list.push(
-      achEntry({
-        id: `lifetime_wave_${w}`,
-        name: `Veteran Campaign ${w}`,
-        desc: `Clear ${w} waves across all battles (lifetime).`,
-        cat: 'waves',
-        rule: `lifetime_waves:${w}`,
-        tier: w >= 500 ? 'gold' : w >= 200 ? 'silver' : 'bronze',
-        track: 'lifetime',
-      })
+  } else if ((m = /^diff_(baby|normal|chad|doomslayer)_(?:flawless_)?(\d+)$/.exec(id))) {
+    const [, d, w] = m;
+    upTo(
+      [
+        [15, `diff_${d}_1`],
+        [30, `diff_${d}_2`],
+        [100, `diff_${d}_3`],
+      ],
+      +w
     );
-  }
-
-  const eraMilestones = [
-    ['era_academy', 'Scholar King', 'Enter the Academy Era (wave 100+).', 'era:academy', 'waves'],
-    ['era_rts', 'Settlement Age', 'Enter the RTS Era with hamlets & guilds.', 'era:rts', 'waves'],
-    ['era_enemy_rts', 'Mirror War', 'Survive Enemy RTS era (wave 200+).', 'era:enemy_rts', 'waves'],
-    [
-      'era_hellscape',
-      'Hellscape Breach',
-      'Reach Hellscape territory (wave 1001+).',
-      'era:hellscape',
-      'waves',
-    ],
-    [
-      'era_academy_master',
-      'Academy Master',
-      'Own 5 academies while in Academy Era.',
-      'academies:5',
-      'build',
-    ],
-    [
-      'era_rts_master',
-      'Lord of Settlements',
-      'Own 10 hamlets and 5 guilds at once.',
-      'settlement_chain:10:5',
-      'build',
-    ],
-  ];
-  for (const [id, name, desc, rule, cat] of eraMilestones) {
-    list.push(achEntry({ id, name, desc, cat, rule, tier: 'gold' }));
-  }
-
-  list.push(
-    achEntry({
-      id: 'true_victory_worldheart',
-      name: 'The Realm Stands',
-      desc: 'Achieve true victory — clear wave 100 and break Malachar the Eternal.',
-      cat: 'campaign',
-      rule: 'true_victory:1',
-      tier: 'gold',
-      track: 'lifetime',
-    })
-  );
-
-  const sessionKillTiers = [
-    [1, 'First Blood', 'bronze'],
-    [10, 'Skirmisher', 'bronze'],
-    [50, 'Warrior', 'bronze'],
-    [100, 'Champion', 'silver'],
-    [250, 'Slayer', 'silver'],
-    [500, 'Reaper', 'silver'],
-    [1000, 'Annihilator', 'gold'],
-    [2000, 'Extinction', 'gold'],
-    [5000, 'Genocider', 'gold'],
-    [10000, 'Mythic Butcher', 'gold'],
-  ];
-  for (const [n, name, tier] of sessionKillTiers) {
-    list.push(
-      achEntry({
-        id: `kills_${n}`,
-        name,
-        desc: `Slay ${n} enemies in one battle.`,
-        cat: 'combat',
-        rule: `session_kills:${n}`,
-        tier,
-        track: 'session',
-      })
-    );
-  }
-
-  const lifetimeKillTiers = [500, 2000, 10000, 50000, 100000];
-  for (const n of lifetimeKillTiers) {
-    list.push(
-      achEntry({
-        id: `lifetime_kills_${n}`,
-        name: `Lifetime Reaper ${n}`,
-        desc: `Slay ${n.toLocaleString()} enemies across all battles.`,
-        cat: 'combat',
-        rule: `lifetime_kills:${n}`,
-        tier: n >= 10000 ? 'gold' : n >= 2000 ? 'silver' : 'bronze',
-        track: 'lifetime',
-        reward: n >= 10000 ? { type: 'tp', amount: 25 } : null,
-      })
-    );
-  }
-
-  if (typeof EnemyDefs !== 'undefined') {
-    for (const e of Object.keys(EnemyDefs)) {
-      list.push(
-        achEntry({
-          id: `foe_first_${e}`,
-          name: `${EnemyDefs[e].name} Blood`,
-          desc: `Slay your first ${EnemyDefs[e].name}.`,
-          cat: 'combat',
-          rule: `enemy_first:${e}`,
-        })
-      );
-      list.push(
-        achEntry({
-          id: `foe_lifetime_${e}_100`,
-          name: `${EnemyDefs[e].name} Nemesis`,
-          desc: `Slay 100 ${EnemyDefs[e].name}s (lifetime).`,
-          cat: 'combat',
-          rule: `lifetime_enemy_kills:${e}:100`,
-          tier: 'silver',
-          track: 'lifetime',
-        })
+    // "Flawless" meant no soldier lost in the whole run up to that wave.
+    if (id.includes('_flawless_')) {
+      upTo(
+        [
+          [3, 'vet_flawless_1'],
+          [10, 'vet_flawless_2'],
+          [20, 'vet_flawless_3'],
+        ],
+        +w
       );
     }
-  }
-
-  const eliteTiers = [
-    [10, 'bronze'],
-    [50, 'silver'],
-    [200, 'gold'],
-  ];
-  for (const [n, tier] of eliteTiers) {
-    list.push(
-      achEntry({
-        id: `session_elites_${n}`,
-        name: `Elite Hunter ${n}`,
-        desc: `Slay ${n} elite enemies in one battle.`,
-        cat: 'combat',
-        rule: `session_elites:${n}`,
-        tier,
-      })
+  } else if ((m = /^kills_(\d+)$/.exec(id))) {
+    upTo(
+      [
+        [200, 'run_kills_1'],
+        [500, 'run_kills_2'],
+        [1500, 'run_kills_3'],
+      ],
+      +m[1]
     );
-  }
-  list.push(
-    achEntry({
-      id: 'siege_survive',
-      name: 'Siege Survivor',
-      desc: 'Clear a horde wave with embedded siege.',
-      cat: 'combat',
-      rule: 'siege_clear',
-    })
-  );
-  list.push(
-    achEntry({
-      id: 'horde_survive',
-      name: 'Horde Breaker',
-      desc: 'Clear a horde wave.',
-      cat: 'combat',
-      rule: 'horde_clear',
-      tier: 'bronze',
-    })
-  );
-  list.push(
-    achEntry({
-      id: 'boss_clear',
-      name: 'Boss Breaker',
-      desc: 'Clear a boss wave.',
-      cat: 'combat',
-      rule: 'boss_clear',
-      tier: 'silver',
-    })
-  );
-  list.push(
-    achEntry({
-      id: 'boss_flawless',
-      name: 'Boss Untouched',
-      desc: 'Clear a boss wave with zero ally losses.',
-      cat: 'combat',
-      rule: 'boss_flawless',
-      tier: 'gold',
-      hidden: true,
-    })
-  );
-
-  const armyRules = [
-    [
-      'deploy_all',
-      'Full Roster',
-      'Deploy every standard troop type in one battle.',
-      'session_deploy_all',
-      'bronze',
-    ],
-    [
-      'deploy_all_academy',
-      'Academy Roster',
-      'Deploy 8+ unit types during Academy Era.',
-      'session_deploy_8',
-      'silver',
-    ],
-    ['army_10', 'Company', 'Field 10 allies at once.', 'session_army:10', 'bronze'],
-    ['army_20', 'Battalion', 'Field 20 allies at once.', 'session_army:20', 'silver'],
-    ['army_40', 'Legion', 'Field 40 allies at once.', 'session_army:40', 'gold'],
-    ['first_veteran', 'Promoted', 'Earn a veteran upgrade.', 'session_vet:1', 'bronze'],
-    ['vet_five', 'Officer Corps', '5 veteran upgrades in one battle.', 'session_vet:5', 'silver'],
-    [
-      'vet_fifteen',
-      'Elite Command',
-      '15 veteran upgrades in one battle.',
-      'session_vet:15',
-      'gold',
-    ],
-    ['bronze_star', 'Bronze Star', 'Earn a bronze star.', 'star:bronze', 'bronze'],
-    ['silver_star', 'Silver Star', 'Earn a silver star.', 'star:silver', 'silver'],
-    ['gold_star', 'Gold Star', 'Earn a gold star.', 'star:gold', 'gold'],
-    ['honor_name', 'Crowned', 'Receive an honor name.', 'honor:1', 'silver'],
-    [
-      'honor_max',
-      'Legend of the Realm',
-      'Max gold stars and honor name on one troop.',
-      'honor_max',
-      'gold',
-    ],
-    [
-      'field_marshal',
-      'Field Marshal',
-      'Station your General in the Keep.',
-      'general_stationed',
-      'bronze',
-    ],
-    ['garrison', 'Tower Archer', 'Garrison a ranged unit.', 'garrison', 'bronze'],
-    ['garrison_8', 'Wall of Steel', 'Garrison 8 units at once.', 'garrison_count:8', 'silver'],
-    ['courier_send', 'Dispatch Rider', 'Send a courier message.', 'courier', 'bronze'],
-    ['banner_call', 'Call the Banner', 'Summon a knight via courier.', 'courier:banner', 'silver'],
-    [
-      'courier_all',
-      'Royal Messenger',
-      'Use every courier message type (lifetime).',
-      'courier_all:5',
-      'gold',
-      'lifetime',
-    ],
-    [
-      'roster_synergy',
-      'Combined Arms',
-      'Field melee, ranged, and support evolved tags at once.',
-      'roster_synergy:3',
-      'gold',
-    ],
-  ];
-  for (const row of armyRules) {
-    const [id, name, desc, rule, tier, track] = row;
-    list.push(
-      achEntry({
-        id,
-        name,
-        desc,
-        cat:
-          id.startsWith('vet') || id.includes('star') || id.includes('honor')
-            ? 'specialists'
-            : 'army',
-        rule,
-        tier,
-        track: track || 'session',
-      })
+  } else if ((m = /^lifetime_kills_(\d+)$/.exec(id))) {
+    upTo(
+      [
+        [250, 'life_kills_1'],
+        [5000, 'life_kills_2'],
+        [50000, 'life_kills_3'],
+      ],
+      +m[1]
     );
-  }
-
-  const buildRules = [
-    ['first_build', 'Groundbreaking', 'Complete any building.', 'build:any', 'bronze'],
-    ['wall_up', 'Stone Wall', 'Complete a wall.', 'build:wall', 'bronze'],
-    ['castle_up', 'Castle Lord', 'Complete a castle compound.', 'build:castle', 'silver'],
-    ['fortress', 'Fortress', 'Own 4+ walls.', 'walls:4', 'bronze'],
-    ['fortress_12', 'Citadel', 'Own 12+ walls at once.', 'walls:12', 'gold'],
-    ['hamlet_1', 'Village Founder', 'Complete a hamlet.', 'build:hamlet', 'bronze'],
-    ['hamlet_5', 'Township', 'Own 5 hamlets at once.', 'hamlets:5', 'silver'],
-    ['hamlet_40', 'Kingdom of Hamlets', 'Own 40 hamlets at once.', 'hamlets:40', 'gold'],
-    ['guild_1', 'Trade Route', 'Complete a merchant guild.', 'build:merchant_guild', 'bronze'],
-    ['guild_10', 'Merchant Empire', 'Own 10 merchant guilds at once.', 'guilds:10', 'silver'],
-    [
-      'first_academy_set',
-      'Dean of War',
-      'Complete 5 different academies.',
-      'academy_types:5',
-      'gold',
-    ],
-    ['med_mess_pair', 'Field Hospital', 'Own med tent and mess hall.', 'support_pair', 'bronze'],
-  ];
-  for (const [id, name, desc, rule, tier] of buildRules) {
-    list.push(achEntry({ id, name, desc, cat: 'build', rule, tier }));
-  }
-
-  const tacticRules = [
-    ['fireball', 'Inferno', 'Cast Fireball Barrage.', 'ability:fireball'],
-    ['lightning', 'Stormcaller', 'Cast Lightning Strike.', 'ability:lightning'],
-    ['heal_rain', 'Mercy Rain', 'Cast Healing Rain.', 'ability:heal'],
-    ['rally', 'Battle Rally', 'Cast Battle Rally.', 'ability:rally'],
-    ['reinforce', 'Reinforcements', 'Call Reinforcements.', 'ability:reinforce'],
-    ['all_strikes', 'War Mage', 'Cast every strike in one battle.', 'abilities_all:5', 'gold'],
-    ['spy_action', 'Shadow Hand', 'Use the spy network.', 'spy:any'],
-    [
-      'spy_all',
-      'Spymaster',
-      'Use all six spy actions (lifetime).',
-      'spy_all:6',
-      'gold',
-      'lifetime',
-    ],
-    ['spy_wave', 'Double Agent', 'Use 3 spy actions in one wave cycle.', 'spy_wave:3', 'silver'],
-    ['mage_splash', 'Arcane Splash', 'Mage bolt hits 2+ foes.', 'mage_splash'],
-    ['cavalry_charge', 'Thunder Hooves', 'Cavalry kill while charging.', 'cavalry_charge'],
-    [
-      'sapper_siege',
-      'Breacher',
-      'A Sapper’s mine or satchel destroys a siege tower, iron colossus or hellmortar.',
-      'sapper_siege',
-    ],
-    ['hunt_master', 'Hunt Master', 'Clear a wave with Hunt mode on.', 'hunt_wave'],
-    [
-      'last_stand',
-      'Last Stand',
-      'Clear a wave with one ally left.',
-      'last_stand',
-      'gold',
-      null,
-      true,
-    ],
-  ];
-  for (const row of tacticRules) {
-    const [id, name, desc, rule, tier, track, hidden] = row;
-    list.push(
-      achEntry({
-        id,
-        name,
-        desc,
-        cat: 'tactics',
-        rule,
-        tier,
-        track: track || 'session',
-        hidden: !!hidden,
-      })
+  } else if ((m = /^lifetime_wave_(\d+)$/.exec(id))) {
+    upTo(
+      [
+        [150, 'life_waves_1'],
+        [1000, 'life_waves_2'],
+      ],
+      +m[1]
     );
-  }
-
-  const economyRules = [
-    ['tp_100', 'War Chest', 'Hold 100 TP at once.', 'tp:100', 'bronze'],
-    ['tp_500', 'Royal Treasury', 'Hold 500 TP at once.', 'tp:500', 'silver'],
-    ['tp_2000', 'Dragon Hoard', 'Hold 2000 TP at once.', 'tp:2000', 'gold'],
-    ['tp_10000', 'Infinite War', 'Hold 10000 TP at once.', 'tp:10000', 'gold'],
-    ['settle_tp_10', 'Trade Baron', '+10 TP/round from settlements.', 'settle_tp:10', 'silver'],
-    ['settle_tp_25', 'Trade Emperor', '+25 TP/round from settlements.', 'settle_tp:25', 'gold'],
-    ['builders_5', 'Construction Corps', '5 live builders on field.', 'builders:5', 'silver'],
-    ['builders_10', 'Industrial Age', '10 live builders on field.', 'builders:10', 'gold'],
-  ];
-  for (const [id, name, desc, rule, tier] of economyRules) {
-    list.push(achEntry({ id, name, desc, cat: 'economy', rule, tier }));
-  }
-
-  const diffs = ['baby', 'normal', 'chad', 'doomslayer'];
-  const diffLabels = { baby: 'Baby', normal: 'Normal', chad: 'Chad', doomslayer: 'Hellbane' };
-  const diffWaves = [25, 50, 100, 200, 500, 1000, 2000];
-  for (const d of diffs) {
-    for (const w of diffWaves) {
-      const tier = w >= 1000 ? 'gold' : w >= 500 ? 'silver' : w >= 100 ? 'bronze' : null;
-      list.push(
-        achEntry({
-          id: `diff_${d}_${w}`,
-          name: `${diffLabels[d]} Wave ${w}`,
-          desc: `Reach wave ${w} on ${diffLabels[d]} difficulty.`,
-          cat: 'difficulty',
-          rule: `diff_wave:${d}:${w}`,
-          tier,
-        })
-      );
-    }
-    for (const [w, tier] of [
-      [20, 'bronze'],
-      [50, 'silver'],
-      [100, 'gold'],
-    ]) {
-      list.push(
-        achEntry({
-          id: `diff_${d}_flawless_${w}`,
-          name: `${diffLabels[d]} Untouchable ${w}`,
-          desc: `Reach wave ${w} on ${diffLabels[d]} with zero ally losses.`,
-          cat: 'difficulty',
-          rule: `diff_flawless:${d}:${w}`,
-          tier,
-        })
-      );
-    }
-  }
-
-  for (let mods = 1; mods <= 5; mods++) {
-    list.push(
-      achEntry({
-        id: `advanced_mods_${mods}`,
-        name: `Modifier Stack ${mods}`,
-        desc: `Win a wave with ${mods}+ advanced difficulty modifiers active.`,
-        cat: 'difficulty',
-        rule: `advanced_mods:${mods}`,
-        tier: mods >= 4 ? 'gold' : mods >= 2 ? 'silver' : 'bronze',
-      })
+  } else if ((m = /^session_elites_(\d+)$/.exec(id))) {
+    upTo(
+      [
+        [15, 'foe_elites_1'],
+        [60, 'foe_elites_2'],
+      ],
+      +m[1]
     );
+  } else {
+    const direct = {
+      true_victory_worldheart: ['cmp_victory_1'],
+      era_academy: ['cmp_victory_1'],
+      honor_name: ['vet_honored_1'],
+      honor_max: ['vet_honored_1'],
+      field_marshal: ['ord_keep'],
+      castle_up: ['wrk_castle'],
+      fortress_12: ['wrk_walls_1'],
+      sapper_siege: ['trp_sapper_siege_1'],
+      boss_flawless: ['vet_boss_1'],
+      last_stand: ['sec_last_one'],
+      primis_sanctum_wave_50: ['wrk_keep'],
+      deploy_all: ['trp_roster'],
+      cheat_austin: ['cheat_used'],
+      one_piece_real: ['cheat_used'],
+    };
+    if (direct[id]) out.push(...direct[id]);
   }
-
-  return list;
-}
-
-function fairWaveFieldMin(rosterSize) {
-  return Math.max(2, Math.min(3, Math.ceil(rosterSize * 0.5)));
-}
-
-function buildFactionAchievements(cfg, targetPerFaction) {
-  const list = [];
-  const ids = getFactionOperativeIds(cfg.key);
-  const label = cfg.label;
-  const waveFieldMin = fairWaveFieldMin(ids.length);
-
-  for (const id of ids) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_recruit_${id}`,
-        name: `Signed: ${getOperativeName(cfg.key, id)}`,
-        desc: `Recruit ${getOperativeName(cfg.key, id)}.`,
-        cat: cfg.cat,
-        rule: `crossover_recruit:${cfg.key}:${id}`,
-        track: 'lifetime',
-      })
-    );
-  }
-
-  if (ids.length > 1) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_grand_slam`,
-        name: `${label} Grand Slam`,
-        desc: `Recruit every ${label} operative.`,
-        cat: cfg.cat,
-        rule: `crossover_all:${cfg.key}`,
-        tier: 'gold',
-        track: 'lifetime',
-        reward: { type: 'tp', amount: 50 },
-      })
-    );
-  }
-
-  if (cfg.build) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_barracks`,
-        name: `${label} HQ`,
-        desc: `Complete a ${label} barracks or academy.`,
-        cat: cfg.cat,
-        rule: `build:${cfg.build}`,
-        tier: 'bronze',
-      })
-    );
-  }
-
-  const fieldCounts = [
-    ...new Set([2, 3, 5, 8, 10, ids.length].filter((n) => n > 0 && n <= Math.max(ids.length, 10))),
-  ];
-  for (const n of fieldCounts) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_field_${n}`,
-        name: `${label} Squad ${n}`,
-        desc: `Field ${n} ${label} operatives at once.`,
-        cat: cfg.cat,
-        rule: `crossover_field:${cfg.key}:${n}`,
-        tier: n >= 10 ? 'gold' : n >= 5 ? 'silver' : 'bronze',
-      })
-    );
-  }
-
-  const waveTiers = [
-    [10, 'bronze'],
-    [25, 'bronze'],
-    [50, 'silver'],
-    [100, 'silver'],
-    [200, 'gold'],
-    [500, 'gold'],
-  ];
-  for (const [w, tier] of waveTiers) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_wave_${w}`,
-        name: `${label} Wave ${w}`,
-        desc: `Clear wave ${w} with ${nLabel(cfg.key, waveFieldMin)}+ ${label} operatives on field.`,
-        cat: cfg.cat,
-        rule: `crossover_wave:${cfg.key}:${w}:${waveFieldMin}`,
-        tier,
-      })
-    );
-  }
-
-  const killTiers = [
-    [25, 'bronze'],
-    [100, 'bronze'],
-    [500, 'silver'],
-    [2000, 'silver'],
-    [10000, 'gold'],
-  ];
-  for (const [n, tier] of killTiers) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_kills_${n}`,
-        name: `${label} Slayer ${n}`,
-        desc: `${label} operatives score ${n} kills (lifetime).`,
-        cat: cfg.cat,
-        rule: `crossover_kills:${cfg.key}:${n}`,
-        tier,
-        track: 'lifetime',
-      })
-    );
-  }
-
-  const abilityTiers = [5, 25, 100, 500];
-  for (const n of abilityTiers) {
-    list.push(
-      achEntry({
-        id: `${cfg.key}_abilities_${n}`,
-        name: `${label} Finisher ${n}`,
-        desc: `Trigger ${label} abilities ${n} times (lifetime).`,
-        cat: cfg.cat,
-        rule: `crossover_abilities:${cfg.key}:${n}`,
-        tier: n >= 100 ? 'gold' : n >= 25 ? 'silver' : 'bronze',
-        track: 'lifetime',
-      })
-    );
-  }
-
-  if (cfg.key === 'wwe') {
-    const wweExtras = [
-      [
-        'wwe_squared_circle',
-        'Squared Circle',
-        'Build the Grand Coliseum.',
-        'build:wwe_academy',
-        'gold',
-      ],
-      [
-        'wwe_tag_team',
-        'Tag Team Champions',
-        'Field 4 coliseum champions at once.',
-        'crossover_field:wwe:4',
-        'silver',
-      ],
-      [
-        'wwe_showstopper',
-        'Showstopper',
-        'Clear wave 50 with 6+ coliseum champions.',
-        'crossover_wave:wwe:50',
-        'gold',
-      ],
-      [
-        'wwe_attitude',
-        'Defiant Era',
-        'Clear wave 100 with full coliseum roster on field.',
-        'crossover_wave:wwe:100',
-        'gold',
-      ],
-      [
-        'wwe_showmanship_victory',
-        'Can You Taste What The Crown Is Cooking?',
-        'Entertainment and larger-than-life charisma — win a campaign while fielding showmanship champions for most waves.',
-        'run_wwe_showmanship:8:0.55',
-        'gold',
-      ],
-      [
-        'wwe_charisma_waves',
-        'Squared Circle Charisma',
-        'End ten waves with two or more showmanship operatives leading your army.',
-        'showmanship_heavy_waves:10',
-        'silver',
-      ],
-      [
-        'wwe_attitude_spam',
-        'Stance Adjustment',
-        'Fire showmanship-style abilities sixty times in one run.',
-        'showmanship_ability_uses:60',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of wweExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'baki') {
-    const bakiExtras = [
-      [
-        'baki_martial_victory',
-        'Pure Martial Dominance',
-        'Pure martial arts dominance, one-on-one spirit — win on Chad or higher with a primarily melee army for most of the campaign.',
-        'run_martial_melee:8:0.55',
-        'gold',
-      ],
-      [
-        'baki_melee_streak',
-        'Dojo Discipline',
-        'End ten waves with at least 65% of your combat troops in melee range.',
-        'melee_focus_waves:10',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of bakiExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'lotr') {
-    const lotrExtras = [
-      [
-        'lotr_fellowship_victory',
-        'Hope Against Darkness',
-        'Hope, fellowship, standing against overwhelming darkness — win with high army morale for most of the campaign.',
-        'run_fellowship_morale:8:0.55',
-        'gold',
-      ],
-      [
-        'lotr_morale_steadfast',
-        'Steadfast Company',
-        'End ten waves with every fighter holding high morale.',
-        'morale_high_waves:10',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of lotrExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'gears') {
-    const gearsExtras = [
-      [
-        'gears_siege_victory',
-        'Grind Them Down',
-        'Gritty, cover-based warfare — win a campaign after razing twelve enemy structures.',
-        'run_siege_victory:12',
-        'gold',
-      ],
-      [
-        'gears_siege_6',
-        'Burst Trenchsaw Doctrine',
-        'Raze six enemy structures in one run.',
-        'enemy_structures_razed:6',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of gearsExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'halo') {
-    const haloExtras = [
-      [
-        'halo_spartan_victory',
-        'Never Leave a Man Behind',
-        'Sacrifice and leadership — win a campaign with your General alive after promoting five Footmen to command.',
-        'run_spartan_command:5',
-        'gold',
-      ],
-      [
-        'halo_command_pipeline',
-        'Officer Corps',
-        'Elevate five Footmen to command rank in one run.',
-        'footman_command_pipeline:5',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of haloExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'primis') {
-    const primisExtras = [
-      [
-        'primis_sanctum_victory',
-        'Timeline Integrity',
-        'Protecting the core group — win a run without letting any enemy breach your inner keep.',
-        'run_sanctum_victory',
-        'gold',
-      ],
-      [
-        'primis_sanctum_wave_50',
-        'First Circle Seal',
-        'Reach wave 50 with your castle inner sanctum never breached.',
-        'sanctum_intact:50',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of primisExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'ultimis') {
-    const ultimisExtras = [
-      [
-        'ultimis_horde_150',
-        'Survive the Endless Horde',
-        'Survive the endless horde no matter what — reach wave 150 on Hellbane without losing a building to the horde.',
-        'diff_zombie_fortress:doomslayer:150',
-        'gold',
-      ],
-      [
-        'ultimis_flawless_walls',
-        'Forge-Tempered Defenses',
-        'Clear wave 50 on Hellbane with no horde-grunt structure losses.',
-        'diff_zombie_fortress:doomslayer:50',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of ultimisExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'doom') {
-    const doomExtras = [
-      [
-        'doom_hero_unlock',
-        'Rend and Ruin',
-        'Survive to wave 200 on Hellbane difficulty.',
-        'unlock:doom_hero',
-        'gold',
-      ],
-      [
-        'doom_hero_deploy',
-        'Hellstrider',
-        'Deploy the Hellbane hero.',
-        'deploy:doomslayer_hero',
-        'bronze',
-      ],
-      ['hellscape_1001', 'Hellscape Survivor', 'Reach wave 1001.', 'wave:1001', 'gold'],
-      [
-        'doom_hero_50',
-        'Hell Eternal 50',
-        'Keep Hellbane alive for 50 waves.',
-        'doom_alive:50',
-        'silver',
-      ],
-      [
-        'doom_hero_100',
-        'Hell Eternal 100',
-        'Keep Hellbane alive for 100 waves.',
-        'doom_alive:100',
-        'gold',
-      ],
-      [
-        'doom_rip_100',
-        'Rend & Ruin 100',
-        'Hellbane scores 100 kills in one battle.',
-        'doom_session_kills:100',
-        'silver',
-      ],
-      [
-        'doom_rip_1000',
-        'Rend & Ruin 1000',
-        'Hellbane scores 1000 kills (lifetime).',
-        'doom_lifetime_kills:1000',
-        'gold',
-      ],
-      [
-        'doom_flawless_50',
-        'Hell Untouched',
-        'Reach wave 50 on Hellbane with 0 ally losses.',
-        'diff_flawless:doomslayer:50',
-        'gold',
-      ],
-      [
-        'doom_bfg',
-        'Big Gun Division',
-        'Clear wave 200 on Hellbane difficulty.',
-        'diff_wave:doomslayer:200',
-        'gold',
-      ],
-      [
-        'doom_500',
-        'Hellstrider 500',
-        'Reach wave 500 on Hellbane difficulty.',
-        'diff_wave:doomslayer:500',
-        'gold',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of doomExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'jojo') {
-    const jojoExtras = [
-      [
-        'jojo_stand_victory',
-        'This Is My Fighting Spirit!',
-        'Teamwork, bound spirits and alliances — win after recruiting three evolved heroes and keeping them on the field together for most of the campaign.',
-        'run_stand_alliance:8:0.55:3',
-        'gold',
-      ],
-      [
-        'jojo_alliance_waves',
-        'Uncanny Alliance',
-        'End ten waves with three evolved heroes fighting side by side.',
-        'stand_alliance_waves:10',
-        'silver',
-      ],
-      [
-        'jojo_multiversal_pose',
-        'Crossover Pose',
-        'End five waves with evolved heroes from two or more factions united on the field.',
-        'stand_multi_faction_waves:5',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of jojoExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-    list.push(
-      achEntry({
-        id: 'jojo_steel_ball_run',
-        name: 'Gilded Derby',
-        desc: 'Field Bound Spirit derby cavalry operatives.',
-        cat: cfg.cat,
-        rule: 'crossover_flag:jojo:cavalry',
-        tier: 'gold',
-        hidden: true,
-      })
-    );
-  }
-
-  if (cfg.key === 'dragonball') {
-    const dragonballExtras = [
-      [
-        'dragonball_planet_victory',
-        'Protect the Planet',
-        'Reach wave 200+ and defeat the planetary threat boss with a skyburst army shielding the realm.',
-        'run_dragonball_ki:200:0.55',
-        'gold',
-      ],
-      [
-        'dragonball_ki_surge',
-        'Power Level Rising',
-        'Fell a named boss at wave 100 or later with at least 55% of your combat force channeling skyburst energy.',
-        'planet_boss_high_ki',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of dragonballExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'tes') {
-    const tesExtras = [
-      [
-        'tes_dragonborn_victory',
-        'Wyrmcaller Legacy',
-        'Heroic destiny across every school of power — win after wave 100 with an Immortal from each Eternal Path and slay a major boss by Voice or dragon-fire.',
-        'run_dragonborn_legacy:100',
-        'gold',
-      ],
-      [
-        'tes_path_immortals',
-        'Voices of the Four Paths',
-        'Promote one Immortal veteran from Martial, Arcane, Tech, and Mythic paths in a single run.',
-        'path_immortal_all',
-        'silver',
-      ],
-      [
-        'tes_dragon_slayer',
-        'Wyrmfall',
-        'Defeat a major boss with a voice shout strike or wyrmcaller-style hero ability.',
-        'dragon_boss_slay',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of tesExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'imperium') {
-    const imperiumExtras = [
-      [
-        'warhammer_eternal_crusade',
-        'The Eternal Crusade',
-        'Grim endurance — win on Chad or higher while holding eight fortifications at all times, repel three named boss waves, and keep your General alive.',
-        'run_eternal_crusade:3:8',
-        'gold',
-      ],
-      [
-        'warhammer_fortress_line',
-        'Fortress World',
-        'Maintain eight active fortifications without dropping below the line after your crusade begins.',
-        'fort_line_intact',
-        'silver',
-      ],
-      [
-        'warhammer_boss_repels',
-        'Hold the Line',
-        'Repel three named boss waves without losing your General.',
-        'named_boss_repels:3',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of imperiumExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  if (cfg.key === 'fotns') {
-    const fotnsExtras = [
-      [
-        'fotns_hokuto_victory',
-        'You Fell Before You Knew',
-        'One-man-army legend — win a campaign after a lone hero lands the killing blow on a named warlord with no other allies on the field.',
-        'run_hokuto_solo',
-        'gold',
-      ],
-      [
-        'fotns_omae_wa_mou',
-        'Seven Star Fist',
-        'Slay a named warlord with a single hero standing alone on the battlefield.',
-        'solo_hero_named_boss',
-        'silver',
-      ],
-    ];
-    for (const [id, name, desc, rule, tier] of fotnsExtras) {
-      if (!list.find((a) => a.id === id))
-        list.push(achEntry({ id, name, desc, cat: cfg.cat, rule, tier }));
-    }
-  }
-
-  let mastery = 0;
-  while (list.length < targetPerFaction) {
-    const tier = mastery % 3 === 0 ? 'gold' : mastery % 2 === 0 ? 'silver' : 'bronze';
-    list.push(
-      achEntry({
-        id: `${cfg.key}_mastery_${mastery}`,
-        name: `${label} Mastery ${mastery + 1}`,
-        desc: `Earn ${(mastery + 1) * 25} ${label} mastery points.`,
-        cat: cfg.cat,
-        rule: `crossover_mastery:${cfg.key}:${(mastery + 1) * 25}`,
-        tier,
-        track: 'lifetime',
-        hidden: mastery > 8,
-      })
-    );
-    mastery++;
-  }
-
-  return list.slice(0, targetPerFaction);
-}
-
-function nLabel(key, n) {
-  return String(n);
-}
-
-function buildSynergyAndSecrets() {
-  const list = [
-    achEntry({
-      id: 'cheat_used',
-      name: 'Rule Breaker',
-      desc: 'Enter any cheat code.',
-      cat: 'secrets',
-      rule: 'cheat:any',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'cheat_austin',
-      name: 'Sworn to the Creed',
-      desc: 'Enter the iron creed cheat.',
-      cat: 'secrets',
-      rule: 'cheat:austin',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'wwe_unlock',
-      name: 'Grand Coliseum Circuit',
-      desc: 'Unlock the Grand Coliseum — join the Iron Creed or win with showmanship dominance.',
-      cat: 'secrets',
-      rule: 'unlock:wwe',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'ultimis_unlock',
-      name: 'Void Residue',
-      desc: 'Survive the endless horde no matter what — Void Residue crew and Void Residue Barracks unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:ultimis',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'primis_unlock',
-      name: 'First Circle',
-      desc: 'Protecting the core group — First Circle crew and First Circle Shrine unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:primis',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'halo_unlock',
-      name: 'Orbital Vanguard',
-      desc: 'Sacrifice and leadership — Vanguard Academy and orbital roster unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:halo',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'gears_unlock',
-      name: 'Iron Trench Coalition',
-      desc: 'Grind them down — Trench Academy and Trenchsaw squad unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:gears',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'lotr_unlock',
-      name: 'Ninefold March',
-      desc: 'Hope and comradeship — Ninefold Camp and the Ninefold March roster unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:lotr',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'baki_unlock',
-      name: 'Iron Pit Guild',
-      desc: 'Pure martial dominance — Iron Pit Guild and the pit roster unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:baki',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'jojo_unlock',
-      name: 'Bound Spirit Court',
-      desc: 'Spirit Arrow Shrine and Bound Spirit Court (Cohorts 1–7) unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:jojo',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'fotns_unlock',
-      name: 'Seven Star Fist',
-      desc: 'Your fate was sealed before the strike — North Star Dojo and North Star Ascetics roster unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:fotns',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'dragonball_unlock',
-      name: 'Skyburst Order',
-      desc: 'Power overwhelming — Skyburst Foundry and the skyburst fighter roster unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:dragonball',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'warhammer_unlock',
-      name: 'Crimson Legions & Rift Cult',
-      desc: 'The Eternal Crusade — Crimson Legions and Rift Cult unlocked. Faith & Rift await the dutiful.',
-      cat: 'secrets',
-      rule: 'unlock:warhammer',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'tes_unlock',
-      name: 'Voicebound Pact',
-      desc: 'Wyrmcaller Legacy — voice shouts, wyrmcaller heroes, and Voicebound prophecy unlocked.',
-      cat: 'secrets',
-      rule: 'unlock:tes',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'multiversal_3',
-      name: 'Multiversal Alliance',
-      desc: 'Field operatives from 3+ evolved factions in one battle.',
-      cat: 'secrets',
-      rule: 'multiversal:3',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'multiversal_5',
-      name: 'Omniversal Coalition',
-      desc: 'Field operatives from 5+ evolved factions in one battle.',
-      cat: 'secrets',
-      rule: 'multiversal:5',
-      tier: 'gold',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'crossover_completionist',
-      name: 'Crossover Completionist',
-      desc: 'Earn every evolved Grand Slam.',
-      cat: 'secrets',
-      rule: 'crossover_grand_slam_all',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'synergy_temporal',
-      name: 'Temporal Paradox',
-      desc: 'Field Void Residue and First Circle operatives together.',
-      cat: 'secrets',
-      rule: 'synergy:temporal_paradox',
-      tier: 'silver',
-    }),
-    achEntry({
-      id: 'synergy_modern',
-      name: 'Trench Vanguard',
-      desc: 'Field Orbital Vanguard and Iron Trench operatives together.',
-      cat: 'secrets',
-      rule: 'synergy:modern_warfare',
-      tier: 'silver',
-    }),
-    achEntry({
-      id: 'synergy_martial',
-      name: 'Martial Worlds',
-      desc: 'Field Iron Pit and North Star operatives together.',
-      cat: 'secrets',
-      rule: 'synergy:martial_worlds',
-      tier: 'silver',
-    }),
-    achEntry({
-      id: 'synergy_ki_stand',
-      name: 'Ki & Spirit',
-      desc: 'Field Skyburst Order and bound spirit operatives together.',
-      cat: 'secrets',
-      rule: 'synergy:ki_stand',
-      tier: 'gold',
-    }),
-    achEntry({
-      id: 'synergy_guest',
-      name: 'Guest Star',
-      desc: 'Field Coliseum with any other evolved faction.',
-      cat: 'secrets',
-      rule: 'synergy:guest_star',
-      tier: 'bronze',
-    }),
-    achEntry({
-      id: 'faction_mastery_100',
-      name: 'Faction Devotee',
-      desc: 'Earn 100 mastery points in any evolved faction.',
-      cat: 'secrets',
-      rule: 'crossover_mastery_any:100',
-      tier: 'silver',
-    }),
-    achEntry({
-      id: 'faction_mastery_500',
-      name: 'Faction Legend',
-      desc: 'Earn 500 mastery points in any evolved faction.',
-      cat: 'secrets',
-      rule: 'crossover_mastery_any:500',
-      tier: 'gold',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'creative_sandbox',
-      name: 'Lab Rat',
-      desc: 'Start a Creative Mode session.',
-      cat: 'secrets',
-      rule: 'creative_start',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'perk_collector',
-      name: 'Perk Collector',
-      desc: 'Collect 4 perks on one hero.',
-      cat: 'secrets',
-      rule: 'perks:4',
-      tier: 'silver',
-      hidden: true,
-    }),
-    achEntry({
-      id: 'one_piece_real',
-      name: 'Every Gate Open',
-      desc: 'Unlock everything at once.',
-      cat: 'secrets',
-      rule: 'cheat:one_piece',
-      hidden: true,
-    }),
-  ];
-  return list;
-}
-
-function buildMetaAchievements() {
-  return [
-    achEntry({
-      id: ACHIEVEMENT_CLUB_316_ID,
-      name: 'Iron Creed',
-      desc: 'Unlock 316 achievements — welcome to the club.',
-      cat: 'meta',
-      rule: 'unlocked_count:316',
-      meta: true,
-      tier: 'meta',
-      reward: { type: 'badge', id: 'club_316' },
-    }),
-    achEntry({
-      id: ACHIEVEMENT_META_316_ID,
-      name: 'And That Is Final',
-      desc: 'Reach the 316 achievement milestone — Grand Coliseum unlocked.',
-      cat: 'meta',
-      rule: 'unlocked_count:316',
-      meta: true,
-      tier: 'meta',
-      reward: { type: 'unlock', id: 'wwe_academy' },
-    }),
-    achEntry({
-      id: ACHIEVEMENT_MILLENNIUM_ID,
-      name: 'Millennium Legend',
-      desc: 'Unlock all 1,449 other achievements.',
-      cat: 'meta',
-      rule: 'unlocked_count:1449',
-      meta: true,
-      tier: 'meta',
-      reward: { type: 'tp', amount: 316 },
-    }),
-  ];
-}
-
-function buildAchievementList() {
-  const list = [];
-  list.push(...buildVanillaAchievements());
-
-  const vanillaCount = list.length;
-  const metaCount = 3;
-  const synergyCount = buildSynergyAndSecrets().length;
-  const reserved = metaCount + synergyCount;
-  const factionSlots = ACHIEVEMENT_TARGET - reserved;
-  const perFaction = Math.max(
-    100,
-    Math.floor((factionSlots - vanillaCount) / CROSSOVER_ACH_FACTIONS.length)
-  );
-
-  for (const cfg of CROSSOVER_ACH_FACTIONS) {
-    list.push(...buildFactionAchievements(cfg, perFaction));
-  }
-  list.push(...buildSynergyAndSecrets());
-  list.push(...buildMetaAchievements());
-
-  const seen = new Set();
-  const deduped = [];
-  for (const a of list) {
-    if (seen.has(a.id)) continue;
-    seen.add(a.id);
-    deduped.push(a);
-  }
-
-  let result = deduped;
-  let filler = 0;
-  while (result.length < ACHIEVEMENT_TARGET) {
-    result.push(
-      achEntry({
-        id: `hidden_milestone_${filler}`,
-        name: `Hidden Path ${filler + 1}`,
-        desc: 'A secret milestone on the road to 1,450.',
-        cat: 'secrets',
-        rule: `hidden_milestone:${filler + 1}`,
-        hidden: true,
-        track: 'lifetime',
-      })
-    );
-    filler++;
-  }
-  while (result.length > ACHIEVEMENT_TARGET) {
-    const idx = result.findIndex(
-      (a) => a.id.startsWith('hidden_milestone_') || a.id.includes('_mastery_')
-    );
-    if (idx >= 0) result.splice(idx, 1);
-    else result.pop();
-  }
-
-  if (result.length !== ACHIEVEMENT_TARGET) {
-    console.warn(`Achievement count: ${result.length}, target ${ACHIEVEMENT_TARGET}`);
-  }
-
-  return result;
-}
-
-const ACHIEVEMENT_LIST = buildAchievementList();
-if (typeof console !== 'undefined' && ACHIEVEMENT_LIST.length !== ACHIEVEMENT_TARGET) {
-  console.warn(`Achievement list: ${ACHIEVEMENT_LIST.length} / ${ACHIEVEMENT_TARGET}`);
+  return out.filter((n) => ids.has(n));
 }
