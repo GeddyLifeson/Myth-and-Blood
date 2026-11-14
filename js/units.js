@@ -1325,6 +1325,8 @@ function upgradeVeteranUnit(unit) {
 
 function formatUnitTypeName(type) {
   if (!type) return 'Unit';
+  // A hired hero's type is a save-file id; show the hero's name, never the id.
+  if (typeof HeroCast !== 'undefined' && HeroCast.isHero(type)) return HeroCast.displayName(type);
   return String(type)
     .replace(/_/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());

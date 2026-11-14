@@ -1,12 +1,14 @@
 /**
- * Grand Coliseum champions — secret academy roster.
+ * The Champions' Hall: twenty-nine freed pit-fighters who hire out as the Bloodsand Champions.
+ * Identifiers in this file (`wwe`, `Wwe…`) are save-file and DOM ids kept for compatibility;
+ * none of them is shown to the player. Names, titles and text come from data/champions.json.
  */
 const WWE_ACADEMY_COST = 1000;
 const WWE_ACADEMY_BUILDERS = 10;
 const WWE_ACADEMY_RECOMMENDED_HAMLETS = 2;
 const WWE_ACADEMY_RECOMMENDED_GUILDS = 1;
 
-/** Coliseum showmanship finishers — entertainment, larger-than-life charisma. */
+/** Finishing blows that play to the crowd: these lift morale as well as doing damage. */
 const WWE_SHOWMANSHIP_ABILITIES = new Set([
   'attitude',
   'woo',
@@ -66,6 +68,15 @@ function isWweUnit(type) {
 const WweAcademy = (() => {
   let selectedId = null;
 
+  /** Headings and button text for the screen. The markup is shared; the words live here. */
+  const SCREEN_TEXT = {
+    title: 'CHAMPIONS’ HALL',
+    subtitle: `Freed pit-fighters of the bloodsand, for hire. Raising the hall takes ${WWE_ACADEMY_COST} TP and ${WWE_ACADEMY_BUILDERS} builders; hamlets and guilds help.`,
+    build: 'RAISE THE CHAMPIONS’ HALL',
+    recruit: 'HIRE SELECTED',
+    empty: 'Choose a champion below.',
+  };
+
   function renderRoster(gs) {
     const grid = document.getElementById('wwe-roster-grid');
     if (!grid) return;
@@ -76,11 +87,12 @@ const WweAcademy = (() => {
         const canAfford = (gs?.tactical ?? 0) >= def.cost;
         return `
         <div class="wwe-card ${selectedId === id ? 'selected' : ''} ${!canAfford ? 'cant-afford' : ''}" data-wwe="${id}">
-          <div class="wwe-card-name" style="color:${def.color}">${def.name}</div>
+          <div class="wwe-card-name" style="color:${def.color}">${HeroCast.displayName(id)}</div>
+          <div class="wwe-card-stats wwe-card-title"><em>${HeroCast.title(id)}</em></div>
           <div class="wwe-card-cost">${def.cost} TP</div>
           <div class="wwe-card-stats">HP ${def.hp} · DMG ${def.damage} · SPD ${def.speed}</div>
           <div class="wwe-card-ability">${def.abilityDesc}</div>
-          ${recruited.has(id) ? '<div class="wwe-recruited">★ Signed</div>' : ''}
+          ${recruited.has(id) ? '<div class="wwe-recruited">★ Sworn</div>' : ''}
           ${onField ? '<div class="wwe-on-field">ON FIELD</div>' : ''}
         </div>
       `;
@@ -98,7 +110,7 @@ const WweAcademy = (() => {
     const detail = document.getElementById('wwe-selected-detail');
     if (detail && selectedId && WweDefs[selectedId]) {
       const d = WweDefs[selectedId];
-      detail.innerHTML = `<strong>${d.name}</strong> — ${d.abilityDesc}<br>Cost: ${d.cost} TP · Click RECRUIT to sign.`;
+      detail.innerHTML = `<strong>${HeroCast.fullName(selectedId)}</strong><br><em>${HeroCast.description(selectedId)}</em><br>${d.abilityDesc}<br>Cost: ${d.cost} TP · Press ${SCREEN_TEXT.recruit} to take their oath.`;
     }
   }
 
@@ -107,9 +119,9 @@ const WweAcademy = (() => {
     if (!panel) return;
     if (!MetaProgress.isWweUnlocked()) {
       const text =
-        'Join the Iron Creed (316 achievements), win with Grand Coliseum champions dominating most waves — or discover the right cheat code — to access the Grand Coliseum.';
+        'The Champions’ Hall is barred. Earn 316 achievements, win a campaign with champions leading most waves, or find the word that opens the door.';
       if (typeof InPageDialog !== 'undefined')
-        InPageDialog.message(text, 'Grand Coliseum — locked');
+        InPageDialog.message(text, 'Champions’ Hall — barred');
       else if (typeof Game !== 'undefined') Game.showMessage?.(text, 420);
       return;
     }
@@ -122,7 +134,33 @@ const WweAcademy = (() => {
     return selectedId;
   }
 
+  /** Select a champion without a click; used by tests and tools. */
+  function select(id) {
+    if (!WweDefs[id]) return false;
+    selectedId = id;
+    renderRoster(typeof Game !== 'undefined' ? Game.getState() : null);
+    return true;
+  }
+
+  function applyScreenText() {
+    const screen = document.getElementById('wwe-screen');
+    if (!screen) return;
+    const set = (sel, text) => {
+      const el = screen.querySelector(sel);
+      if (el) el.textContent = text;
+    };
+    set('.wwe-title', SCREEN_TEXT.title);
+    set('.wwe-subtitle', SCREEN_TEXT.subtitle);
+    set('#wwe-build-btn', SCREEN_TEXT.build);
+    set('#wwe-recruit-btn', SCREEN_TEXT.recruit);
+    set('#wwe-selected-detail', SCREEN_TEXT.empty);
+    // The detail text is several lines long; let the card grid give way, not this box.
+    const detail = screen.querySelector('#wwe-selected-detail');
+    if (detail) detail.style.flexShrink = '0';
+  }
+
   function init() {
+    applyScreenText();
     document.getElementById('wwe-academy-open')?.addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
       togglePanel();
@@ -144,5 +182,5 @@ const WweAcademy = (() => {
     });
   }
 
-  return { init, togglePanel, renderRoster, getSelected };
+  return { init, togglePanel, renderRoster, getSelected, select, SCREEN_TEXT };
 })();

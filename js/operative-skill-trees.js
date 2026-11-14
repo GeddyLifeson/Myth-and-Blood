@@ -1,16 +1,27 @@
 /**
- * Hero / operative skill trees — per-faction nodes spent with run skill points.
+ * Company training: a small tree of nodes for the champions and for each free company,
+ * bought with skill points earned during a run. Tree keys and node ids are save-file ids.
  */
 const OperativeSkillTrees = (() => {
   const STORAGE_KEY = 'myth-and-blood-operative-skills-v1';
 
+  /** Names come from the cast data (js/crossover.js) so the trees can never drift from it. */
+  function treeLabel(fid) {
+    return typeof HeroCast !== 'undefined' ? HeroCast.factionLabel(fid) : 'Free company';
+  }
+  function treeShort(fid) {
+    return typeof HeroCast !== 'undefined' ? HeroCast.factionShort(fid) : 'Company';
+  }
+
   const FACTION_TREES = {
     wwe: {
-      label: 'Grand Coliseum Champions',
+      get label() {
+        return treeLabel('wwe');
+      },
       nodes: {
         showmanship: {
           id: 'showmanship',
-          name: 'Showmanship',
+          name: 'Play to the Crowd',
           cost: 1,
           desc: '+3 max morale',
           bonus: { maxMorale: 3 },
@@ -25,7 +36,7 @@ const OperativeSkillTrees = (() => {
         },
         finisher: {
           id: 'finisher',
-          name: 'Finisher Craft',
+          name: 'Finishing Blow',
           cost: 2,
           requires: ['showmanship'],
           desc: '+10% ability damage',
@@ -33,7 +44,7 @@ const OperativeSkillTrees = (() => {
         },
         tag_team: {
           id: 'tag_team',
-          name: 'Tag Team Aura',
+          name: 'Fight in Pairs',
           cost: 3,
           requires: ['hulk_up', 'finisher'],
           desc: '+2 morale regen, +5 accuracy',
@@ -42,18 +53,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     ultimis: {
-      label: 'Void Residue Crew',
+      get label() {
+        return treeLabel('ultimis');
+      },
       nodes: {
         frag_drill: {
           id: 'frag_drill',
-          name: 'Frag Drill',
+          name: 'Fuse Drill',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
         },
         vodka_tank: {
           id: 'vodka_tank',
-          name: 'Vodka Tank',
+          name: 'Barrel-Banded',
           cost: 2,
           requires: ['frag_drill'],
           desc: '+12% max HP',
@@ -61,7 +74,7 @@ const OperativeSkillTrees = (() => {
         },
         wunder_chain: {
           id: 'wunder_chain',
-          name: 'Arc Chain',
+          name: 'Forked Storm',
           cost: 2,
           requires: ['frag_drill'],
           desc: '+10% ability damage',
@@ -69,7 +82,7 @@ const OperativeSkillTrees = (() => {
         },
         moon_op: {
           id: 'moon_op',
-          name: 'Moon Operator',
+          name: 'Master of the Horn',
           cost: 3,
           requires: ['vodka_tank', 'wunder_chain'],
           desc: '+8% melee, +4 morale',
@@ -78,18 +91,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     primis: {
-      label: 'First Circle',
+      get label() {
+        return treeLabel('primis');
+      },
       nodes: {
         aether_guard: {
           id: 'aether_guard',
-          name: 'Aether Guard',
+          name: 'Barrow Ward',
           cost: 1,
           desc: '+10% damage reduction aura',
           bonus: { damageTakenMult: 0.9 },
         },
         curtain: {
           id: 'curtain',
-          name: 'Iron Curtain',
+          name: 'Sealed Door',
           cost: 2,
           requires: ['aether_guard'],
           desc: '+15 max HP',
@@ -97,7 +112,7 @@ const OperativeSkillTrees = (() => {
         },
         summoning_key: {
           id: 'summoning_key',
-          name: 'Void Key',
+          name: 'Candle and Lancet',
           cost: 2,
           requires: ['aether_guard'],
           desc: '+12% ability damage',
@@ -105,7 +120,7 @@ const OperativeSkillTrees = (() => {
         },
         cycle_break: {
           id: 'cycle_break',
-          name: 'Cycle Breaker',
+          name: 'Last Door',
           cost: 3,
           requires: ['curtain', 'summoning_key'],
           desc: '+7 accuracy, +3 morale',
@@ -114,18 +129,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     halo: {
-      label: 'Orbital Vanguard',
+      get label() {
+        return treeLabel('halo');
+      },
       nodes: {
         mjolnir: {
           id: 'mjolnir',
-          name: 'Vanguard Fit',
+          name: 'Citadel Drill',
           cost: 1,
           desc: '+5 accuracy',
           bonus: { acc: 5 },
         },
         noble_team: {
           id: 'noble_team',
-          name: 'Wolf Pack',
+          name: 'Volley Line',
           cost: 2,
           requires: ['mjolnir'],
           desc: '+8% ranged damage',
@@ -133,7 +150,7 @@ const OperativeSkillTrees = (() => {
         },
         spartan_rage: {
           id: 'spartan_rage',
-          name: 'Vanguard Rage',
+          name: 'Wall-Clearing',
           cost: 2,
           requires: ['mjolnir'],
           desc: '+10% melee damage',
@@ -141,7 +158,7 @@ const OperativeSkillTrees = (() => {
         },
         chief: {
           id: 'chief',
-          name: 'Sentinel-7',
+          name: 'Warden-Captain',
           cost: 3,
           requires: ['noble_team', 'spartan_rage'],
           desc: '+12 max HP, +2 morale',
@@ -150,18 +167,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     gears: {
-      label: 'Iron Trench Coalition',
+      get label() {
+        return treeLabel('gears');
+      },
       nodes: {
         lancer_disc: {
           id: 'lancer_disc',
-          name: 'Rifle Discipline',
+          name: 'Crossbow Drill',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
         },
         chainsaw: {
           id: 'chainsaw',
-          name: 'Chainsaw Finish',
+          name: 'Saw-Edge',
           cost: 2,
           requires: ['lancer_disc'],
           desc: '+10% melee damage',
@@ -169,7 +188,7 @@ const OperativeSkillTrees = (() => {
         },
         carmine_bond: {
           id: 'carmine_bond',
-          name: 'Ironhelm Bond',
+          name: 'Engine-Breaking',
           cost: 2,
           requires: ['lancer_disc'],
           desc: '+8% siege damage',
@@ -177,7 +196,7 @@ const OperativeSkillTrees = (() => {
         },
         last_jacinto: {
           id: 'last_jacinto',
-          name: 'Last Bastion',
+          name: 'Last in the Ditch',
           cost: 3,
           requires: ['chainsaw', 'carmine_bond'],
           desc: '+10 max HP, +4 morale',
@@ -186,18 +205,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     lotr: {
-      label: 'Ninefold March',
+      get label() {
+        return treeLabel('lotr');
+      },
       nodes: {
         fellowship: {
           id: 'fellowship',
-          name: 'Company',
+          name: 'Road-Sworn',
           cost: 1,
           desc: '+3 max morale',
           bonus: { maxMorale: 3 },
         },
         ranger_eye: {
           id: 'ranger_eye',
-          name: 'Ranger Eye',
+          name: 'Fowler’s Eye',
           cost: 2,
           requires: ['fellowship'],
           desc: '+8 accuracy',
@@ -205,7 +226,7 @@ const OperativeSkillTrees = (() => {
         },
         dwarf_axe: {
           id: 'dwarf_axe',
-          name: 'Dwarf Axe',
+          name: 'Quarry Axe',
           cost: 2,
           requires: ['fellowship'],
           desc: '+9% melee damage',
@@ -213,7 +234,7 @@ const OperativeSkillTrees = (() => {
         },
         king_returned: {
           id: 'king_returned',
-          name: 'Crown Reclaimed',
+          name: 'Shrines Avenged',
           cost: 3,
           requires: ['ranger_eye', 'dwarf_axe'],
           desc: '+10% ability damage',
@@ -222,18 +243,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     baki: {
-      label: 'Iron Pit Guild',
+      get label() {
+        return treeLabel('baki');
+      },
       nodes: {
         demon_back: {
           id: 'demon_back',
-          name: 'Fiend’s Back',
+          name: 'Blooded',
           cost: 1,
           desc: '+8% melee damage',
           bonus: { meleeDmg: 0.08 },
         },
         iron_body: {
           id: 'iron_body',
-          name: 'Iron Body',
+          name: 'Anvil Flesh',
           cost: 2,
           requires: ['demon_back'],
           desc: '+14 max HP',
@@ -241,7 +264,7 @@ const OperativeSkillTrees = (() => {
         },
         ogre_slayer: {
           id: 'ogre_slayer',
-          name: 'Ogre Slayer',
+          name: 'One Blow Taught',
           cost: 2,
           requires: ['demon_back'],
           desc: '+6 accuracy',
@@ -249,7 +272,7 @@ const OperativeSkillTrees = (() => {
         },
         hanma_blood: {
           id: 'hanma_blood',
-          name: 'Pit Blood',
+          name: 'Knucklebones Won',
           cost: 3,
           requires: ['iron_body', 'ogre_slayer'],
           desc: '+12% melee, +3 morale',
@@ -258,18 +281,20 @@ const OperativeSkillTrees = (() => {
       },
     },
     jojo: {
-      label: 'Bound Spirit Court',
+      get label() {
+        return treeLabel('jojo');
+      },
       nodes: {
         stand_awaken: {
           id: 'stand_awaken',
-          name: 'Spirit Awaken',
+          name: 'First Verse',
           cost: 1,
           desc: '+8% ability damage',
           bonus: { abilityDmg: 0.08 },
         },
         sunbreath: {
           id: 'sunbreath',
-          name: 'Solar Breath',
+          name: 'Dawn Office',
           cost: 2,
           requires: ['stand_awaken'],
           desc: '+5 accuracy',
@@ -277,7 +302,7 @@ const OperativeSkillTrees = (() => {
         },
         spin: {
           id: 'spin',
-          name: 'Spin Technique',
+          name: 'Whistling Stones',
           cost: 2,
           requires: ['stand_awaken'],
           desc: '+7% ranged damage',
@@ -285,7 +310,7 @@ const OperativeSkillTrees = (() => {
         },
         made_in_heaven: {
           id: 'made_in_heaven',
-          name: 'Heaven’s Tempo',
+          name: 'Full Choir',
           cost: 3,
           requires: ['sunbreath', 'spin'],
           desc: '+10% ability, +2 morale',
@@ -374,7 +399,7 @@ const OperativeSkillTrees = (() => {
     if (getPurchasedNodes(faction).includes(nodeId)) return { ok: false, reason: 'Already owned' };
     for (const req of node.requires || []) {
       if (!getPurchasedNodes(faction).includes(req)) {
-        return { ok: false, reason: `Requires ${tree.nodes[req]?.name || req}` };
+        return { ok: false, reason: `Requires ${tree.nodes[req]?.name || 'an earlier node'}` };
       }
     }
     if (getAvailablePoints(faction) < node.cost) {
@@ -545,7 +570,7 @@ const OperativeSkillTrees = (() => {
     }
     const summary = factions
       .filter((f) => f.purchased.length)
-      .map((f) => `${f.label.split(' ')[0]} ${f.purchased.length}★`)
+      .map((f) => `${treeShort(f.factionId)} ${f.purchased.length}★`)
       .join(' · ');
     return {
       active: factions.some((f) => f.purchased.length || f.onField),
@@ -556,8 +581,8 @@ const OperativeSkillTrees = (() => {
   }
 
   /**
-   * Skill-tree shop, drawn into every `.operative-skills-panel` host (Legion Archive and
-   * Grand Coliseum screens). Trees appear once a faction has operatives, points or nodes.
+   * Skill-tree shop, drawn into every `.operative-skills-panel` host (the Free Companies and
+   * Champions' Hall screens). A tree appears once its company has heroes, points or nodes.
    */
   function renderPanel() {
     const hosts = document.querySelectorAll('.operative-skills-panel');
@@ -596,9 +621,9 @@ const OperativeSkillTrees = (() => {
         </div>`
           )
           .join('')
-      : '<p class="panel-hint">Recruit an operative to open that faction\'s skill tree. Points come from recruits, waves survived and faction mastery.</p>';
+      : '<p class="panel-hint">Hire a hero to open that company’s training. Points come from hires, waves survived and company mastery.</p>';
     hosts.forEach((host) => {
-      host.innerHTML = `<div class="skill-tree-title">OPERATIVE SKILLS</div>${html}`;
+      host.innerHTML = `<div class="skill-tree-title">COMPANY TRAINING</div>${html}`;
       if (host.dataset.skillBound) return;
       host.dataset.skillBound = '1';
       host.addEventListener('click', (e) => {
