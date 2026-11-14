@@ -57,3 +57,4 @@ game is in:
 
 - The scroll bar sometimes gets stuck.
 - The mouse wheel should scroll a side menu whenever the pointer is over it.
+- Unavailable things (locked or unaffordable troops, buildings and actions) can still be selected. They should not be.
