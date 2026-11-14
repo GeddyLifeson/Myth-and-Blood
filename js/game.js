@@ -17121,7 +17121,8 @@ const Game = (() => {
         u.medPrevHp = u.hp;
       }
       u.holding = !!u.canHunt && !!us.holding;
-      u.huntMode = !!u.canHunt && !u.holding;
+      // A march in progress keeps hunt off until it ends, as it was when saved.
+      u.huntMode = !!u.canHunt && !u.holding && !(u.manualOrder && us.huntMode === false);
       if (
         u.holding &&
         !u.garrisoned &&

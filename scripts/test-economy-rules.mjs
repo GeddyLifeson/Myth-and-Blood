@@ -358,21 +358,19 @@ function addUnit(api, type) {
   ok(Game.dispatchExpedition(faction.id) === true, 'the veteran marches a second time');
   ok(PCE.getAwayUnits().includes(vets[0]), 'the expedition holds his record while he is away');
   const snap = Game.exportGameState();
-  const saved = (snap.units || []).find((u) => u.id === ids[0]);
+  const saved = (snap.expeditionAway || []).find((u) => u.id === ids[0]);
   ok(
     saved && saved.honorName === 'Aldric the Unbroken' && saved.kills === 41,
     'a save made meanwhile still contains him, name and kills'
   );
+  ok(!(snap.units || []).some((u) => u.id === ids[0]), 'he is saved as away, not on the field');
   ok(Game.importGameState(snap) === true, 'the save loads');
-  const back = GS.units.filter((u) => u.id === ids[0]);
+  const away = PCE.getAwayUnits().filter((u) => u.id === ids[0]);
   ok(
-    back.length === 1 && back[0].honorName === 'Aldric the Unbroken',
-    'and he is on the field, once'
+    away.length === 1 && away[0].honorName === 'Aldric the Unbroken' && away[0].kills === 41,
+    'after the load he is still on the expedition, once, with his record'
   );
-  ok(
-    PCE.getAwayUnits().length === 0,
-    'the expedition is called off by the load, so he is not returned twice'
-  );
+  ok(!GS.units.some((u) => u.id === ids[0]), 'and not also on the field');
 }
 
 // --- 6. colony value has no cliff ----------------------------------------------------------------

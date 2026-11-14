@@ -152,7 +152,9 @@ const SaveRegistry = (() => {
       try {
         data = pack(sec.save());
       } catch (e) {
-        throw new Error(`Could not save ${name}: ${e && e.message ? e.message : e}`);
+        throw new Error(`Could not save ${name}: ${e && e.message ? e.message : e}`, {
+          cause: e,
+        });
       }
       out[name] = { v: sec.version, data };
     }

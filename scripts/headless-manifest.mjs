@@ -8,6 +8,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const JS = join(ROOT, 'js');
 
 export const HEADLESS_FILES = [
+  'html-util.js',
   'save-registry.js',
   'floatingText.js',
   'pathfinding-core.js',
@@ -24,6 +25,7 @@ export const HEADLESS_FILES = [
   'audio.js',
   'particles.js',
   'effects.js',
+  'game-feedback.js',
   'game-data-bundle.js',
   'game-data.js',
   'strike-fx.js',
@@ -41,10 +43,17 @@ export const HEADLESS_FILES = [
   'legacy.js',
   'siege-loop.js',
   'crown-legacies.js',
+  'eternal-legacy-tree.js',
+  'ascension-system.js',
+  'thematic-era-synergies.js',
+  'hybrid-power-fantasy.js',
+  'narrative-thread.js',
+  'tech-tree-branches.js',
   'chronicles.js',
   'story-lore.js',
   'lore-data.js',
   'game-modes.js',
+  'onboarding.js',
   'encyclopedia.js',
   'creative-tools.js',
   'research.js',
@@ -65,6 +74,7 @@ export const HEADLESS_FILES = [
   'strategy-counterplay.js',
   'faction-reputation.js',
   'enemy-factions.js',
+  'progression-restarts.js',
   // Macro layers removed (GS, IG, planet map, layer-design, hybrid-moments…)
   'foundational-medieval-layer.js',
   'eternal-path-framework.js',
