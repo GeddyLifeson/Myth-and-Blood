@@ -636,6 +636,7 @@ const SiegeLoop = (() => {
     ctx.playSfx('breachHorn');
     ctx.burst('dust', unit.x, unit.y);
     flashBreach();
+    globalThis.FieldArt?.noteBreach?.(unit.x);
     const shock = Math.max(0, 4 * (1 + fx.breachShock));
     if (shock > 0) {
       for (const u of ctx.units) {

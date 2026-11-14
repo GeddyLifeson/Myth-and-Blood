@@ -9530,6 +9530,9 @@ const Game = (() => {
     }
     b.hp = 0;
     b._destroyed = true;
+    if (!opts.silent && typeof BuildingArt !== 'undefined') {
+      BuildingArt.noteDestroyed(b, GS.updateTick);
+    }
     cleanupBuildingOccupants(b);
     detachBuildingFromBuilders(b);
     clearBuildingTargeting(b);
@@ -14427,6 +14430,8 @@ const Game = (() => {
     if (svc('Perf')) svc('Perf').begin('draw');
     const gfxQ = getGfxQuality();
     const light = getDayLightLevel();
+    const fieldArt = typeof FieldArt !== 'undefined' ? FieldArt : null;
+    const buildingArt = typeof BuildingArt !== 'undefined' ? BuildingArt : null;
     sanitizeCameraState();
     syncCameraTransform();
     if (!isMapOverlappingViewport()) clampCameraToBounds();
@@ -14456,20 +14461,24 @@ const Game = (() => {
       GS.ctx.scale(drawScale, drawScale);
       worldLayerDrawn = true;
 
-      GS.ctx.drawImage(
-        svc('SpriteGen').getBattlefieldCanvas(GS.worldW, getMapViewH(), BASE_FIELD_W, BASE_FIELD_H),
-        0,
-        0
-      );
-      SiegeLoop.drawGround(GS.ctx);
-      if (svc('LivingPlanet') && svc('VisualPolish') && gfxQ?.drawBorders !== false) {
-        svc('VisualPolish').drawBiomeRegions(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          svc('LivingPlanet').getRegionBands(getLivingPlanetCtx())
+      if (fieldArt) {
+        // Inked ground; the biomes are painted into it, so there is no tinted region box.
+        fieldArt.drawGround(GS.ctx, GS.worldW, getMapViewH(), GS.updateTick, () =>
+          svc('LivingPlanet') ? svc('LivingPlanet').getRegionBands(getLivingPlanetCtx()) : []
+        );
+      } else {
+        GS.ctx.drawImage(
+          svc('SpriteGen').getBattlefieldCanvas(
+            GS.worldW,
+            getMapViewH(),
+            BASE_FIELD_W,
+            BASE_FIELD_H
+          ),
+          0,
+          0
         );
       }
+      SiegeLoop.drawGround(GS.ctx);
       if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
         svc('VisualPolish').drawTerritoryBorders(
           GS.ctx,
@@ -14479,12 +14488,15 @@ const Game = (() => {
         );
         if (getAdvancedMods().fogOfWar && gfxQ?.drawFog !== false) {
           const fogTop = Math.max(40, GS.rallyY - 40);
-          const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
-          grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
-          grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
-          grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
-          GS.ctx.fillStyle = grad;
-          GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
+          if (fieldArt) fieldArt.drawFogOfWar(GS.ctx, GS.worldW, fogTop);
+          else {
+            const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
+            grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
+            grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
+            grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
+            GS.ctx.fillStyle = grad;
+            GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
+          }
         }
       }
       svc('SpriteGen').drawAttackSideMarkers(
@@ -14529,6 +14541,7 @@ const Game = (() => {
       if (gfxQ?.drawDecor !== false) {
         for (const d of GS.decorations) {
           if (!isInView(d.x, d.y, d.size || 16)) continue;
+          if (fieldArt && fieldArt.drawDecor(GS.ctx, d)) continue;
           if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);
@@ -14539,10 +14552,33 @@ const Game = (() => {
         }
       }
 
+      // The line enemies must not cross, then rubble, then the standing buildings.
+      if (fieldArt) {
+        fieldArt.drawLine(GS.ctx, GS.worldW, GS.worldH, GS.updateTick, {
+          dark: fieldArt.darkness(),
+        });
+      }
+      if (buildingArt) buildingArt.drawRubble(GS.ctx, GS.updateTick);
+      const artEnv = buildingArt
+        ? {
+            dark: fieldArt ? fieldArt.darkness() : 0,
+            hoverX: null,
+            hoverY: null,
+            k: 1 / Math.max(0.5, GS.viewScale),
+            lowDetail: gfxQ?.drawDecor === false,
+          }
+        : null;
+      if (artEnv && GS.pointerScreen.sx >= 0) {
+        const hw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
+        artEnv.hoverX = hw.x;
+        artEnv.hoverY = hw.y;
+      }
       for (const b of GS.buildings) {
         if (b.hp <= 0 || !isInView(b.x, b.y, b.radius || 28)) continue;
-        svc('SpriteGen').drawBuilding(GS.ctx, b);
-        if (gfxQ?.buildingHpBars !== false) {
+        if (artEnv) buildingArt.draw(GS.ctx, b, GS.updateTick, artEnv);
+        else svc('SpriteGen').drawBuilding(GS.ctx, b);
+        // The drawing shows damage itself; the bar appears only once a building is hurt.
+        if (gfxQ?.buildingHpBars !== false && (!artEnv || b.hp < b.maxHp)) {
           const barW = b.isHamlet || b.isMerchantGuild ? 40 : 32;
           ensureBuildingHealth(b);
           const hpRatio = b.maxHp > 0 ? b.hp / b.maxHp : 0;
@@ -14556,6 +14592,10 @@ const Game = (() => {
           );
         }
       }
+      if (buildingArt) {
+        buildingArt.drawCollapses(GS.ctx, GS.updateTick);
+        buildingArt.drawHover(GS.ctx, artEnv);
+      }
 
       if (
         GS.selectedBuild === 'wall' &&
@@ -14567,7 +14607,10 @@ const Game = (() => {
           const pos = clampPos(pw.x, pw.y);
           const wallDef = BuildDefs.wall;
           const valid = wallDef && !isBuildSiteBlocked(pos.x, pos.y, wallDef);
-          svc('SpriteGen').drawWallPlacementGhost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
+          const ghost = buildingArt
+            ? buildingArt.drawWallGhost
+            : svc('SpriteGen').drawWallPlacementGhost;
+          ghost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
             valid,
             radius: wallDef?.radius,
           });
@@ -14957,13 +15000,15 @@ const Game = (() => {
 
       if (svc('VisualPolish')) {
         const atm = gfxQ?.atmosphere ?? 'full';
+        // With FieldArt, VisualPolish keeps the weather clock, particles and boss dread
+        // (asked for as plain day), and FieldArt lays the weather and the light map over it.
         if (atm === 'full') {
           svc('VisualPolish').drawAtmosphere(
             GS.ctx,
             GS.worldW,
             getMapViewH(),
-            light,
-            GS.timeOfDay,
+            fieldArt ? 1 : light,
+            fieldArt ? 'day' : GS.timeOfDay,
             GS.wave,
             GS.updateTick,
             {
@@ -14971,7 +15016,12 @@ const Game = (() => {
               bossActive: unitCounts.bossActive,
             }
           );
-        } else if (atm === 'simple') {
+          if (fieldArt) {
+            fieldArt.drawWeather(GS.ctx, GS.worldW, getMapViewH(), GS.wave, GS.updateTick, {
+              lowDetail: gfxQ?.weatherParticles === false,
+            });
+          }
+        } else if (atm === 'simple' && !fieldArt) {
           svc('VisualPolish').drawAtmosphere(
             GS.ctx,
             GS.worldW,
@@ -14982,6 +15032,18 @@ const Game = (() => {
             GS.updateTick,
             { simple: true }
           );
+        }
+        if (fieldArt && (atm === 'full' || atm === 'simple')) {
+          fieldArt.drawLight(GS.ctx, GS.worldW, getMapViewH(), {
+            light,
+            phase: GS.timeOfDay,
+            tick: GS.updateTick,
+            buildings: GS.buildings,
+            units: GS.units,
+            hazards: GS.hazards,
+            simple: atm === 'simple',
+            inView: isInView,
+          });
         }
         if (GS.currentHordeWave && isDayPhase() && gfxQ?.drawOverlay !== false) {
           svc('VisualPolish').drawHordeIntensity(
