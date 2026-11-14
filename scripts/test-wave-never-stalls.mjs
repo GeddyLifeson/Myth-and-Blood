@@ -61,7 +61,7 @@ function lastEnemies(Game, GS, types, tweak) {
 {
   const { Game, GameState: GS } = start(4131);
   // Hunt off: nobody walks up the field to fetch a straggler.
-  if (GS.globalHunt) Game.toggleGlobalHunt();
+  Game.orderHoldHere();
 
   let r = lastEnemies(Game, GS, ['goblin_engineer']);
   ok(r.seen === 'goblin_engineer', 'the last enemy of the wave is a Goblin Engineer');

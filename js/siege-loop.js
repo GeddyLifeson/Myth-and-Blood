@@ -271,7 +271,7 @@ const SiegeLoop = (() => {
     {
       id: 'deploy',
       wave: 1,
-      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. In Hunt mode (H) soldiers fight on their own and walk back to their posts.',
+      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. Soldiers hunt on their own and walk back to their posts. Select one and click to move him; Shift+click sends him there to hold.',
     },
     {
       id: 'crates',

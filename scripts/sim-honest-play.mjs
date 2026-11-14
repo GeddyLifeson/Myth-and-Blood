@@ -5,6 +5,7 @@
  *
  * Usage: node scripts/sim-honest-play.mjs            (all difficulties, 3 seeds each)
  *        HONEST_TICKS=40000 HONEST_SEEDS=1 node scripts/sim-honest-play.mjs
+ *        HONEST_TENT=1 ...   the bot also fields a Builder and a Medical Tent behind its line
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -16,6 +17,8 @@ const MAX_TICKS = Number(process.env.HONEST_TICKS || 60000);
 const SEEDS = Number(process.env.HONEST_SEEDS || 3);
 const STALL_TICKS = Number(process.env.HONEST_STALL_TICKS || 8000);
 const DIFFS = (process.env.HONEST_DIFFS || 'baby,normal,chad,doomslayer').split(',');
+// With HONEST_TENT the bot buys a Builder and a Medical Tent as soon as it can afford both.
+const WITH_TENT = !!process.env.HONEST_TENT;
 // Deploy order the bot cycles through; it buys the next one it can afford.
 const ROSTER = [
   'footman',
@@ -42,6 +45,8 @@ function playOne(diff, seed) {
   Game.setDifficulty(diff);
   Game.start();
   let next = 0;
+  let tentStep = WITH_TENT ? 0 : 2;
+  let tentTries = 0;
   let deployed = 0;
   let threw = null;
   let maxArmy = 0;
@@ -95,7 +100,22 @@ function playOne(diff, seed) {
       if (s.timeOfDay === 'night') {
         const type = ROSTER[next % ROSTER.length];
         const cost = UnitDefs[type]?.cost ?? 99;
-        if (s.canDeploy && s.tactical >= cost) {
+        if (tentStep < 2 && s.canDeploy && deployed >= 4) {
+          // Builder first, then the tent just behind the deploy line.
+          if (tentStep === 0 && s.tactical >= (UnitDefs.builder?.cost ?? 99) + 5) {
+            Game.selectDeploy('builder');
+            Game.handleClick(640, 600);
+            tentStep = 1;
+          } else if (tentStep === 1 && s.tactical >= 5 && tentTries < 40) {
+            // Try a few spots; a failed placement must not hold up the night.
+            Game.selectBuild('medical_tent');
+            if (Game.handleClick(560 - (tentTries % 8) * 14, 610 - (tentTries % 3) * 12))
+              tentStep = 2;
+            else if (++tentTries >= 40) tentStep = 2;
+          } else if (t % 20 === 0) {
+            Game.beginDayPhase(true);
+          }
+        } else if (s.canDeploy && s.tactical >= cost) {
           const before = s.army ?? 0;
           Game.selectDeploy(type);
           Game.handleClick(480 + ((deployed * 37) % 320), 520 + ((deployed * 53) % 90));
@@ -170,7 +190,7 @@ function playOne(diff, seed) {
 const results = [];
 for (const diff of DIFFS) {
   for (let i = 0; i < SEEDS; i++) {
-    const r = playOne(diff, 4000 + i * 131);
+    const r = playOne(diff, Number(process.env.HONEST_SEED0 || 4000) + i * 131);
     results.push(r);
     console.log(
       `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
@@ -188,7 +208,7 @@ for (const d of DIFFS) {
 }
 console.log('\nBy difficulty:', JSON.stringify(byDiff));
 writeFileSync(
-  join(ROOT, 'scripts', 'sim-honest-report.json'),
+  join(ROOT, 'scripts', WITH_TENT ? 'sim-honest-report-tent.json' : 'sim-honest-report.json'),
   JSON.stringify({ maxTicks: MAX_TICKS, byDiff, results }, null, 2)
 );
 process.exit(results.some((r) => r.threw || r.stalled) ? 1 : 0);

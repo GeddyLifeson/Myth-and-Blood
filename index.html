@@ -1015,9 +1015,16 @@
             <button
               id="hunt-toggle"
               class="meta-btn cmd-top-btn"
-              title="Hunt mode — troops seek enemies on their own (hotkey H)"
+              title="Hunt — release Hold for the selection, or the whole army (hotkey H)"
             >
-              HUNT: ON
+              HUNT
+            </button>
+            <button
+              id="hold-here"
+              class="meta-btn cmd-top-btn"
+              title="Hold here — the selection, or the whole army, stays put and fights only what comes in reach (hotkey Shift+H)"
+            >
+              HOLD
             </button>
             <button
               id="top-pause-btn"
@@ -1653,7 +1660,7 @@
               <strong>The Journey</strong> — hold the north in the early waves, enter the Academy
               Era at wave 100 (train troops instead of buying them, found settlements), then face
               enemy settlements and wider maps from wave 200. <strong>SPEED</strong> and
-              <strong>HUNT</strong> are in the top bar.
+              <strong>HUNT</strong> / <strong>HOLD</strong> are in the top bar.
             </p>
             <p>
               <strong>TP</strong> is awarded once per round when you clear a wave (+8, scaling).
@@ -1671,8 +1678,10 @@
               grow a command aura and assign footmen to wall slots inside the compound.
             </p>
             <p>
-              <strong>Medical Tent</strong> (5 TP): wounded allies below 40% HP retreat here to
-              heal; without a tent they fight to the death.
+              <strong>Medical Tent</strong> (5 TP): once it stands, any soldier below full health
+              walks to it before anything else, heals to full and returns to his post. In a fight he
+              stays while above 50% health. 4 beds; the rest queue outside. Without a tent they
+              fight on.
             </p>
             <p>
               <strong>Enemy symmetry</strong>: horde grunts (goblins, orcs) scale slowly — late
@@ -1731,8 +1740,11 @@
               starting point immediately.
             </p>
             <p>
-              <strong>Hunt mode</strong>: soldiers pathfind toward enemies. Click to override with
-              manual move.
+              <strong>Hunt and Hold</strong>: every soldier hunts from his post and returns to it.
+              Click the map to move him (new post). <kbd>Shift</kbd>+click moves him there to
+              <strong>hold</strong>: he stays put and fights only what comes in reach, marked by a
+              small shield at his feet. <kbd>H</kbd> releases, <kbd>Shift</kbd>+<kbd>H</kbd> holds
+              here.
             </p>
             <p>
               <strong>Honor names & promotions</strong>: core troops earn stars from combat — 3 gold
@@ -1746,8 +1758,9 @@
               <kbd>O/L/C/N/M</kbd> Build (N=Med, M=Mess)
             </p>
             <p>
-              <kbd>H</kbd> Hunt · <kbd>Esc</kbd> Cancel · <kbd>Space</kbd> Pause · Fighters: bronze
-              ★ from kills · Specialists rank when they work (once/wave)
+              <kbd>H</kbd> Hunt · <kbd>Shift</kbd>+<kbd>H</kbd> Hold · <kbd>Esc</kbd> Cancel ·
+              <kbd>Space</kbd> Pause · Fighters: bronze ★ from kills · Specialists rank when they
+              work (once/wave)
             </p>
             <p>
               Elite enemies glow purple. Sappers demolish walls. Mage bolts splash. Knights resist

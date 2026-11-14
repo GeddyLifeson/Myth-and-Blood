@@ -378,7 +378,8 @@ const PlayerCounterEvolution = (() => {
         u.combatTargetId = null;
         u.manualOrder = false;
         u.fleeing = false;
-        u.huntMode = ctx.globalHunt ?? true;
+        // Hunt is the default for soldiers who can hunt (never for healers or builders).
+        u.huntMode = !!u.canHunt;
         u.expeditions = (u.expeditions || 0) + 1;
         ctx.units?.push(u);
         survivors++;

@@ -23,6 +23,7 @@ const UX = (() => {
     { keys: 'Drag (empty)', label: 'Box select' },
     { keys: 'Right-click', label: 'Deselect / cancel order' },
     { keys: 'Shift+click', label: 'Place more of the same' },
+    { keys: 'Shift+click (move)', label: 'Move and hold' },
     { keys: 'Wheel / pinch', label: 'Zoom the map' },
     { keys: 'Hold (touch)', label: 'Cancel armed order' },
   ];
@@ -52,8 +53,8 @@ const UX = (() => {
     },
     {
       maxWave: 3,
-      title: 'Hunt Mode',
-      body: '<kbd>H</kbd> toggles Hunt — soldiers path toward foes. Click a unit, then click the map to override with a manual move.',
+      title: 'Hunt and Hold',
+      body: 'Every soldier hunts from his post on his own. Click a unit, then click the map to move him: that spot is his new post. <kbd>Shift</kbd>+click sends him there to <strong>hold</strong>: he stays put and only fights what comes in reach. <kbd>H</kbd> releases a hold, <kbd>Shift</kbd>+<kbd>H</kbd> holds where he stands.',
       highlight: 'hunt-toggle',
     },
     {
@@ -497,8 +498,8 @@ const UX = (() => {
 
     // Include vet stars / promote eligibility so rank-ups refresh the panel while selected.
     const structureKey = multi
-      ? `m:${info.length}:${gs.selectionFormationLabel || 'Box'}`
-      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
+      ? `m:${info.length}:${info.filter((x) => x.holding).length}:${gs.selectionFormationLabel || 'Box'}`
+      : `s:${info[0].id}:${info[0].holding ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
 
     if (!multi) {
       const u = info[0];
@@ -544,7 +545,7 @@ const UX = (() => {
           <span class="combat-chip">Σ DMG ${Math.round(totalDmg)}</span>
           ${wounded ? `<span class="combat-chip warn">${wounded} wounded</span>` : ''}
         </div>
-        <div class="unit-info-row">Drag-select · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation · G reform · click map to move</div>
+        <div class="unit-info-row">Drag-select · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation · G reform · click map to move · Shift+click to move and hold</div>
         <div class="unit-info-chips">${info
           .slice(0, 8)
           .map((u) => `<span class="unit-chip">${escapeHtml(u.displayName)}</span>`)
@@ -560,8 +561,8 @@ const UX = (() => {
         </div>
         <div class="unit-info-actions">
           <button class="unit-quick-btn" data-action="form-reform" title="Reform in place (G)">Reform</button>
-          <button class="unit-quick-btn" data-action="hunt-on" title="Enable hunt">Hunt</button>
-          <button class="unit-quick-btn" data-action="hunt-off" title="Disable hunt">Hold</button>
+          <button class="unit-quick-btn" data-action="hunt-on" title="Hunt from their posts again (H)">Hunt</button>
+          <button class="unit-quick-btn" data-action="hunt-off" title="Hold here: stay put, fight only what comes in reach (Shift+H)">Hold here${info.some((x) => x.holding) ? ` ⛨${info.filter((x) => x.holding).length}` : ''}</button>
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
         </div>
@@ -622,7 +623,7 @@ const UX = (() => {
             : ''
         }
         <div class="unit-info-actions">
-          <button class="unit-quick-btn" data-action="hunt-toggle" title="Toggle hunt">${u.huntMode ? 'Hold Position' : 'Hunt'}</button>
+          ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? '⛨ Holding · Release' : 'Hold here'}</button>` : ''}
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
           ${u.ascensionLabel ? `<div class="unit-info-status ascension-badge">${escapeHtml(u.ascensionLabel)}${u.ascensionWeapon ? ` · ${escapeHtml(u.ascensionWeapon)}` : ''}</div>` : ''}

@@ -63,8 +63,8 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 ## Core Loop
 
 1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring, and red chevrons on the edge of the field show where it will come from. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
-2. **Day combat** — waves spawn from unlocked flanks. Troops auto-engage in Hunt mode and walk back to their posts when the fight is over, or click to move them manually.
-3. **Fight** — cast strikes, manage morale, retreat wounded troops to med tents.
+2. **Day combat** — waves spawn from unlocked flanks. Every soldier hunts from his post and walks back to it when the fight is over. Click to move him (the spot becomes his new post), or Shift+click to send him there to hold.
+3. **Fight** — cast strikes, manage morale; with a med tent on the field the wounded walk to it on their own.
 4. **Clear the wave** — all enemies defeated.
 5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
 6. **Every 5 waves, claim spoils** — choose one of three rewards that last the rest of the run.
@@ -118,17 +118,23 @@ Click a troop (or press its key), then click the field: that places one and puts
 
 A troop, building, spell or message you cannot use is dimmed and cannot be selected, by click or by key. Its tooltip says why ("needs Iron Weapons", "needs 5 TP, you have 3"). What you have selected is marked with a bone-white frame and corner on its button.
 
-### Posts
+### Posts, Hunt and Hold
 
-Every soldier has a **post**: the spot where you deployed him, or the place you last ordered him to. In Hunt mode he leaves it to fight, helps a comrade who is fighting close by, and walks back about two seconds after the last enemy is gone, so the line you drew keeps its shape from wave to wave.
+Every soldier has a **post**: the spot where you deployed him, or the place you last ordered him to.
 
-| Input                  | Action                                                         |
-| ---------------------- | -------------------------------------------------------------- |
-| Click the map          | Move the selected soldiers; the destination is their new post  |
-| **B** (with selection) | Back to posts now, ignoring everything on the way              |
-| **H**                  | Hunt off: everyone stands at his post and only fights in reach |
+**Hunt is the default for every soldier.** He leaves his post to fight what comes near it, goes for line-breakers and anything that has got past him first, helps a comrade who is fighting close by, and walks back about two seconds after the last enemy is gone, so the line you drew keeps its shape from wave to wave. He is on a leash: a melee soldier goes about 240 px from his post, an archer or mage steps forward only as far as he needs to shoot (about 140 px), and both go half as far again after a line-breaker. Nobody chases across the field on his own. The one exception keeps a wave from dragging: when the whole host is on the field and formed up, and for ten seconds no enemy has been hurt or come any closer, the hunters nearest the enemy go out as a party (at least three, more against a boss) to finish them while the rest of the line stays.
 
-A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are retreating to a medical tent, garrisoned, routing or under a manual order are not called back, and the General keeps his own counsel. With nothing selected, **B** is the Trade Outpost build key.
+**Hold is an order you give to chosen soldiers.** A held soldier stays exactly where you put him, strikes only what comes inside his weapon range, and neither chases nor goes to help. He keeps holding through saves, the med tent, a rout and rally and a new era, until you move him with a plain click or release him. A small planted shield at his feet, and on his selection card, shows who is holding. Hunting soldiers show nothing.
+
+| Input                         | Action                                                                                         |
+| ----------------------------- | ---------------------------------------------------------------------------------------------- |
+| Click the map                 | Move the selected soldiers; the destination is their new post, and they hunt from it           |
+| **Shift**+click the map       | Move them there and **hold** (on touch: long-press the spot, or use **Hold here** on the card) |
+| **Shift+H** / **HOLD** button | Hold here: the selection, or the whole army if nothing is selected                             |
+| **H** / **HUNT** button       | Release Hold: the selection, or the whole army, hunts again                                    |
+| **B** (with selection)        | Back to posts now, ignoring everything on the way                                              |
+
+A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are on their way to a medical tent, garrisoned, routing or still marching on an order are not called back, and the General keeps his own counsel. Healers and builders follow their own work and take no Hunt or Hold order. A soldier sent to a spot he cannot reach takes the nearest ground he got to as his post. With nothing selected, **B** is still the Trade Outpost build key.
 
 ### Buildings
 
@@ -180,7 +186,8 @@ Select a strike, then click the map. A targeting ring and icon follow your curso
 | ------------ | ---------------------------------------------------------------------------------------------------- |
 | ?            | Key sheet: the keys that work right now                                                              |
 | D            | Begin the day (at night)                                                                             |
-| H            | Hunt on/off (also the HUNT button in the top bar)                                                    |
+| H            | Hunt: release Hold for the selection, or the whole army (also the HUNT button)                       |
+| Shift+H      | Hold here: the selection, or the whole army, stays put (also the HOLD button)                        |
 | [            | War Cry, the General's order (needs a General on the field)                                          |
 | ]            | Hold the Line, the General's order (needs a General on the field)                                    |
 | Space        | Pause / resume                                                                                       |
@@ -263,7 +270,7 @@ The **Crossbowman** hits hard (44 damage against an archer's 28) but takes 1.8 t
 
 The **Sapper** is a field engineer. Each night he buries two mines a few steps in front of his post, on the side the next host will come from, and keeps up to four live. You see them as small inked studs; the enemy does not, and the first one to step on a mine sets it off under everyone around it. Mines stay in the ground from wave to wave and are saved with the siege. To choose the ground yourself, select a Sapper at night and **Shift+click** a spot within 190 of his post: one of his mines moves there. By day he lobs a satchel charge at the thickest knot of enemies within 110. It lands, burns its fuse for about half a second inside a dashed ring, and blows; there is no hit roll, so it is strongest against enemies that are held in place by your line. Blasts ignore armour, tower shields and braced lines, hit trolls, dark knights, war chiefs, shieldbearers and monsters half as hard again, do double damage to siege towers, iron colossi and hellmortars, and stagger what they catch (bosses only briefly). They never hurt your own soldiers or buildings, and they cannot reach flyers. In Hunt mode he follows the fight but stops a throw short of it, and he never chases flyers, which he cannot hurt. Up close he has only a knife: he backs away from anything that gets within 50 of him, and alone he dies. A Sapper who survives four nights or makes eight kills buries a third mine each night, keeps five live, and cuts a shorter fuse; nine nights or twenty kills adds one more.
 
-**Hunt mode** (on by default): combat troops pathfind toward enemies, then return to their posts. Click the map to override with manual orders.
+**Hunt** is every combat soldier's standing order: he engages enemies within a leash of his post, then returns to it. Click the map to move him, Shift+click to move him and have him **hold**. See Posts, Hunt and Hold above.
 
 ---
 
@@ -281,7 +288,7 @@ Every building needs a Builder (5 TP, two projects at a time). Builders and cour
 
 ### Support
 
-- **Medical Tent (5 TP)** — Wounded allies below 25% HP retreat here to heal. **Stretcher bearers:** once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health (marked SAVED) instead of dying. Generals are not carried.
+- **Medical Tent (5 TP)** — Once a tent is finished, any soldier below full health walks to the nearest tent with a free bed before anything else, heals to full, and goes back to his post to hunt (or to hold, if he was holding). A soldier with an enemy in weapon range, or one coming at him within 60 px, fights on while above 50% health and breaks off below it. A tent treats 4 at a time; the rest wait in line just outside and still strike what comes in reach. The walk bends round enemies where it can, and a red cross marks a soldier on his way (amber while he waits). A move order is finished first. The General, garrisoned soldiers and routing men are not sent; if the tent is destroyed everyone returns to duty. Without a tent nothing changes: soldiers fight on. **Stretcher bearers:** once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health (marked SAVED) instead of dying. Generals are not carried.
 - **Mess Hall (5 TP)** — Morale aura (+4) for nearby troops.
 - **Research Lab (18 TP, 1 Builder)** — +6 Science at every dawn (first two labs count), plus science from kills. See Research below.
 
@@ -500,7 +507,7 @@ A big host is hard to feed. Past 14 soldiers on the field, every new recruit cos
 
 ### How a wave arrives
 
-Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your troops in Hunt mode hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
+Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your hunting troops hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
 
 At night the next wave's flanks are already decided. Each edge it will use shows pulsing red chevrons pointing into the field, a rough head count for that side, the two most common enemy types, and a skull if a warlord is coming. Before wave 25 that is always the north; later, check all four edges before you place your line.
 
@@ -551,7 +558,7 @@ On your first runs the game introduces one system per early wave with a single l
 
 | Wave | Introduced                                                  |
 | ---- | ----------------------------------------------------------- |
-| 1    | Deploying troops, Hunt mode and posts                       |
+| 1    | Deploying troops, Hunt, Hold (Shift+click) and posts        |
 | 2    | Supply crates, and calling the wave early with **D**        |
 | 3    | Line-breakers and the breach counter                        |
 | 4    | Builders, works and the Research Lab                        |
@@ -741,10 +748,10 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 
 1. **Deploy a Builder early** — a wall holds three line-breakers a wave, a Trade Outpost pays for itself in five dawns, and a Research Lab on wave 3 brings knights and crossbowmen by wave 5 or 6.
 2. **Protect your General** — he draws all enemy attention; use the Keep.
-3. **Med tents save troops** — healers and combat units retreat there when badly wounded.
+3. **Med tents save troops** — every wounded soldier walks to one, so place it close behind the line and expect gaps while they heal.
 4. **Save TP before wave 100** — academies (40–100 TP) and settlements are expensive.
 5. **Train mentors first** — you need Immortal veterans on field to found academies.
-6. **Use Hunt mode** — but click to reposition for flanks; not every wave hits every side. Where you send a soldier becomes his post, and he comes back to it.
+6. **Hunt and Hold** — soldiers hunt on their own, but click to reposition for flanks; not every wave hits every side. Where you send a soldier becomes his post, and he comes back to it. Shift+click the men who must not leave a gap or a doorway.
 7. **Scout with spy actions** — know what’s coming on siege and boss waves.
 8. **Lightning vs Fireball** — lightning is cheaper for precision; fireball for bigger blobs.
 9. **Zoom out on big maps** — pan to flanks as territory grows.

@@ -84,14 +84,16 @@ const clearFoes = (GS) => {
   // A manually held soldier is left alone.
   const b = squad[1];
   clearFoes(GS);
-  Game.toggleGlobalHunt();
+  Game.selectUnit(b.id);
+  Game.orderHoldHere();
   const held = { x: b.x, y: b.y };
   run(Game, 300);
   ok(
     !b.returningToPost && Math.hypot(b.x - held.x, b.y - held.y) < 8,
     'the hold stance is untouched: a held soldier does not wander'
   );
-  Game.toggleGlobalHunt();
+  Game.orderHunt();
+  Game.selectUnit(a.id);
   // Posts survive a save and load.
   const snap = Game.exportGameState();
   const aId = a.id; // the object goes back to the pool on load
@@ -164,8 +166,8 @@ const clearFoes = (GS) => {
   ok(fs.unlocked.deploy && !fs.unlocked.strikes && !fs.unlocked.intel, 'wave 1 shows deploy only');
   run(Game, 300);
   ok(
-    GS.messages.some((m) => /Hunt mode/.test(m.text)),
-    'wave 1 prompt: deploying and Hunt mode'
+    GS.messages.some((m) => /hunt on their own/.test(m.text) && /Shift\+click/.test(m.text)),
+    'wave 1 prompt: deploying, hunting and Shift+click to hold'
   );
   const wantAt = { crates: 2, breach: 3, build: 4, spoils: 5, strikes: 6, intel: 8 };
   for (const id in wantAt) {

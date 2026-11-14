@@ -317,6 +317,7 @@
     window.addEventListener('wheel', handleWheelEvent, { passive: false, capture: true });
 
     let touchHoldTimer = null;
+    let touchDownAt = 0;
     let touchHoldStart = null;
     let pinchActive = false;
     let pinchStartDist = 0;
@@ -381,6 +382,7 @@
       const t = e.touches[0];
       const { sx, sy } = screenCoords(t);
       pointerDown = true;
+      touchDownAt = Date.now();
       const dragSlop = typeof TouchInput !== 'undefined' ? TouchInput.getDragThreshold() : 14;
       Game.handlePointerDown(sx, sy, 0, { pan: true, dragThreshold: dragSlop });
       clearTouchHold();
@@ -429,7 +431,8 @@
       if (wasClick && e.changedTouches[0]) {
         const t = e.changedTouches[0];
         const { sx, sy } = screenCoords(t);
-        Game.handleClick(sx, sy, { touch: true });
+        // A long press on the ground is the touch form of Shift + click: go there and hold.
+        Game.handleClick(sx, sy, { touch: true, hold: Date.now() - touchDownAt >= 450 });
         UI.updateHUD(true);
       }
     }
@@ -577,7 +580,8 @@
         Game.focusSelection?.();
         return true;
       },
-      hunt: () => Game.toggleGlobalHunt(),
+      hunt: () => Game.orderHunt(),
+      holdHere: () => Game.orderHoldHere(),
       order: (id) => SiegeLoop.order(id),
       loadout: (id, gs) => {
         if (!(gs.kingdomLoadoutsUnlocked || gs.wave >= 100)) return false;
