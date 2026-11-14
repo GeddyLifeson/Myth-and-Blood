@@ -237,7 +237,7 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Wall',
-      body: 'Blocks movement. 2 footman slots per wall when General commands Keep. Siege priority.',
+      body: '5 TP. Blocks movement and holds line-breakers: each wall stops up to 3 runners per wave that come within reach, and they have to stand and fight. 2 footman slots per wall when General commands Keep. Siege priority.',
     },
     {
       cat: 'buildings',
@@ -247,7 +247,7 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Medical Tent',
-      body: 'Wounded allies at ≤25% HP retreat to the globally nearest med tent. Healers flee here on any damage until safe. Units heal while garrisoned and rejoin the fight once restored.',
+      body: 'Wounded allies at ≤25% HP retreat to the globally nearest med tent. Healers flee here on any damage until safe. Units heal while garrisoned and rejoin the fight once restored. Stretcher bearers: once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health instead of dying.',
     },
     { cat: 'buildings', name: 'Mess Hall', body: 'Morale aura for nearby troops.' },
     {
@@ -263,12 +263,12 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Quarry',
-      body: '14 TP, 2 Builders. +1 TP/round (counts toward 6-site cap with trade posts). Early economy — hamlets outscale it after wave 100.',
+      body: '14 TP, 1 Builder, needs Prospecting. +3 TP at dawn, shown over the building (counts toward 6-site cap with trade posts).',
     },
     {
       cat: 'buildings',
       name: 'Trade Outpost',
-      body: '16 TP, 2 Builders. +1 TP/round and morale aura. Same 6-site cap as quarries.',
+      body: '10 TP, 1 Builder, no research. +2 TP at dawn, shown over the building, and a small morale aura. Same 6-site cap as quarries.',
     },
     {
       cat: 'buildings',
@@ -1372,7 +1372,7 @@ const Encyclopedia = (() => {
       {
         cat: 'research',
         name: 'Research Lab',
-        body: 'Build a Research Lab to analyze slain foes for Science Points and unlock the full technology tree. Stronger enemies pay more SP; each wave has an analysis cap (extra labs raise it). Open the Research tab in the encyclopedia after the game loads for all nodes, costs, prerequisites, and unlocks.',
+        body: 'Build a Research Lab (18 TP, 1 Builder) to earn Science Points: +6 SP per lab at every dawn (first two labs), plus analysis of slain foes up to a per-wave cap (extra labs raise it). Iron Weapons costs 20 SP, so knights, sappers and crossbowmen arrive two or three waves after the lab stands. Open the Research tab in the encyclopedia after the game loads for all nodes, costs, prerequisites, and unlocks.',
       },
     ];
   }

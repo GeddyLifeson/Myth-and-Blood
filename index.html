@@ -184,8 +184,22 @@
               <button class="build-btn" data-build="outpost">
                 <span>Outpost</span><span class="cost">4</span>
               </button>
+              <button
+                class="build-btn"
+                data-build="outpost_barracks"
+                title="Outpost upgrade (either this or a Granary): a free footman every third dawn."
+              >
+                <span>&rarr; Barracks</span><span class="cost">6</span>
+              </button>
+              <button
+                class="build-btn"
+                data-build="outpost_granary"
+                title="Outpost upgrade (either this or a Barracks): feeds 3 more soldiers before the recruit surcharge."
+              >
+                <span>&rarr; Granary</span><span class="cost">6</span>
+              </button>
               <button class="build-btn" data-build="wall">
-                <span>Wall</span><span class="cost">6</span>
+                <span>Wall</span><span class="cost">5</span>
               </button>
               <button class="build-btn" data-build="castle">
                 <span>Castle</span><span class="cost">50</span>
@@ -197,11 +211,11 @@
                 <span>Mess Hall</span><span class="cost">5</span>
               </button>
               <button class="build-btn" data-build="research_lab">
-                <span>Research Lab</span><span class="cost">45</span>
+                <span>Research Lab</span><span class="cost">18</span>
               </button>
               <button id="research-open" class="meta-btn research-btn">RESEARCH</button>
               <button class="build-btn" data-build="watchtower">
-                <span>Watchtower</span><span class="cost">5</span>
+                <span>Watchtower</span><span class="cost">4</span>
               </button>
               <button class="build-btn" data-build="spike_trap">
                 <span>Spike Trap</span><span class="cost">3</span>
@@ -210,7 +224,7 @@
                 <span>Quarry</span><span class="cost">14</span>
               </button>
               <button class="build-btn" data-build="trade_outpost">
-                <span>Trade Post</span><span class="cost">16</span>
+                <span>Trade Post</span><span class="cost">10</span>
               </button>
               <button class="build-btn settlement-btn" data-build="fortress_upgrade">
                 <span>Fortify</span><span class="cost">50</span>
@@ -664,16 +678,16 @@
             <div class="side-tab-pane" data-side-pane="courier" role="tabpanel">
               <div class="panel-header">COURIER MSGS</div>
               <button class="courier-btn" data-courier="reinforce">
-                <span>Reinforce</span><span class="cost">3</span>
+                <span>Reinforce</span><span class="cost">4</span>
               </button>
               <button class="courier-btn" data-courier="decree">
                 <span>Decree</span><span class="cost">2</span>
               </button>
               <button class="courier-btn" data-courier="levy">
-                <span>Tax Levy</span><span class="cost">0</span>
+                <span>Tax Levy</span><span class="cost">1</span>
               </button>
               <button class="courier-btn" data-courier="banner">
-                <span>Call Banner</span><span class="cost">5</span>
+                <span>Call Banner</span><span class="cost">6</span>
               </button>
               <button class="courier-btn" data-courier="supplies">
                 <span>Supplies</span><span class="cost">3</span>
@@ -2584,6 +2598,7 @@
     <script src="js/settlement-raids.js"></script>
     <script src="js/multi-front-siege.js"></script>
     <script src="js/monster-bosses.js"></script>
+    <script src="js/economy-rules.js"></script>
     <script src="js/player-counter-evolution.js"></script>
     <script src="js/research.js"></script>
     <script src="js/mod-loader.js"></script>

@@ -77,11 +77,11 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 - Awarded once per cleared wave.
 - Base income: **+7 TP**, plus scaling from wave number, difficulty, and late-game bonuses.
 - **Uncapped storage** — hoard as much as you need.
-- Early economy sites (max **6** quarries + trade posts combined):
-  - **Quarry (14 TP):** +1 TP/round
-  - **Trade Outpost (16 TP):** +1 TP/round and a small morale aura
+- Early economy sites (max **6** quarries + trade posts combined; a seventh is refused before any TP is spent). Their income is paid at dawn and shown as a number over each building:
+  - **Trade Outpost (10 TP, 1 Builder, no research):** +2 TP/round and a small morale aura
+  - **Quarry (14 TP, 1 Builder, Prospecting research):** +3 TP/round
 - Settlement bonuses (late game):
-  - **Hamlet:** +1 TP/round each (when complete).
+  - **Hamlet:** +5 TP/round each (when complete); Village 8, Town 10, City 12, Metropolis 15. Settlement income above 18 a round counts at 55%.
   - **Merchant Guild:** +1 TP/round each, if built within a hamlet’s aura.
   - **Fortress Upgrade** on a completed hamlet: +HP, cover, and +1 TP/round.
 
@@ -242,23 +242,55 @@ The **Crossbowman** hits hard (44 damage against an archer's 28) but takes 1.8 t
 
 ## Buildings
 
+Every building needs a Builder (5 TP, two projects at a time). Builders and couriers do not count toward the recruit surcharge. Each starter building has one job:
+
 ### Defensive
 
-- **Outpost (4 TP)** — Cover, one garrison slot, extends archer range.
-- **Wall (6 TP)** — Blocks movement; 2 footman slots per wall when General is in Keep. Rotate facing before placing.
-- **Castle (50 TP)** — Full compound: 4 walls, 4 outposts, central Keep, med tent, mess hall.
-- **Watchtower (5 TP)** — Vision radius; reveals stealth; enemy accuracy penalty in range.
-- **Spike Trap (3 TP)** — Hidden damage on first enemy crossing each cooldown.
+- **Outpost (4 TP)** — Cover (50%), one garrison slot, +55 range for the archer inside. Takes one upgrade, once (see below).
+- **Wall (5 TP)** — Blocks movement and **holds line-breakers**: each wall stops up to 3 runners per wave that come within 64 of it. A held runner (marked HELD) stops running and has to fight. 2 footman slots per wall when General is in Keep. Rotate facing before placing.
+- **Watchtower (4 TP, no research)** — While one stands, the night preview lists the next wave **by type and number** ("Watchtower report: 9 Goblin, 6 Orc, ..."). Also reveals stealth and gives +35 range.
+- **Spike Trap (3 TP, Field Engineering)** — 45 damage to the first enemy crossing, every 1.5 seconds.
+- **Castle (50 TP, Fortification)** — Full compound: 4 walls, 4 outposts, central Keep, med tent, mess hall.
 
 ### Support
 
-- **Medical Tent (5 TP)** — Wounded allies below 38% HP retreat here to heal. Healers use tents too.
-- **Mess Hall (5 TP)** — Morale aura for nearby troops.
+- **Medical Tent (5 TP)** — Wounded allies below 25% HP retreat here to heal. **Stretcher bearers:** once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health (marked SAVED) instead of dying. Generals are not carried.
+- **Mess Hall (5 TP)** — Morale aura (+4) for nearby troops.
+- **Research Lab (18 TP, 1 Builder)** — +6 Science at every dawn (first two labs count), plus science from kills. See Research below.
 
 ### Economy (early)
 
-- **Quarry (14 TP, 2 Builders)** — +1 TP/round. Counts toward the 6-site cap.
-- **Trade Outpost (16 TP, 2 Builders)** — +1 TP/round and morale aura. Same cap.
+- **Trade Outpost (10 TP, 1 Builder)** — +2 TP at dawn and a morale aura. No research. Counts toward the 6-site cap.
+- **Quarry (14 TP, 1 Builder, Prospecting)** — +3 TP at dawn. Same cap.
+
+### Outpost upgrades: Barracks or Granary
+
+A finished Outpost takes **one** of two upgrades, once; the choice is final for that Outpost. Both cost 6 TP, need Field Engineering, and are placed from the Build tab by clicking the Outpost.
+
+| Upgrade      | Effect                                                                                                  |
+| ------------ | ------------------------------------------------------------------------------------------------------- |
+| **Barracks** | A free footman musters at the Outpost every third dawn (waves 3, 6, 9, ...). First two Barracks count.  |
+| **Granary**  | Feeds 3 more soldiers before the recruit surcharge starts (14 becomes 17). First three Granaries count. |
+
+This is the pattern for either/or upgrades: the upgrade is a short build placed on its host (`isOutpostUpgrade` in `data/buildings.json`), the host keeps its type and gains an `upgrade` tag, and the rules that read the tag live in `js/economy-rules.js`.
+
+### Research
+
+Science comes from a standing Research Lab: +6 at each dawn per lab (first two), plus a share from each kill up to a per-wave cap. One project runs at a time. Seven troop types start open (Footman, Archer, Mage, Cavalry, Healer, Builder, Courier); the other eight are researched:
+
+| Research          | Cost  | From wave | Opens                                              |
+| ----------------- | ----- | --------- | -------------------------------------------------- |
+| Iron Weapons      | 20 SP | 3         | Knight, Sapper, Crossbowman                        |
+| Field Engineering | 18 SP | 3         | Spike Trap, Outpost upgrades (Barracks or Granary) |
+| Morale Arts       | 18 SP | 4         | Bard                                               |
+| Command Theory    | 30 SP | 6         | General (after Iron Weapons)                       |
+| Fortification     | 30 SP | 6         | Castle                                             |
+| Advanced Infantry | 26 SP | 7         | Scout, Pikeman (after Iron Weapons)                |
+| Prospecting       | 30 SP | 8         | Quarry (after Field Engineering)                   |
+| Siege Engineering | 34 SP | 9         | Ballista (after Iron Weapons)                      |
+| Veteran Doctrine  | 34 SP | 10        | TP promotions (after Iron Weapons)                 |
+
+A lab built on wave 3 finishes Iron Weapons around wave 5, and each later tier is two or three waves of science.
 
 ### Academies (Wave 100+)
 
@@ -286,7 +318,7 @@ Special rules:
 
 | Structure        | Cost   | Requirements                    | Effect                                 |
 | ---------------- | ------ | ------------------------------- | -------------------------------------- |
-| Hamlet           | 100 TP | 5 Builders; builds over 5 waves | +1 TP/round                            |
+| Hamlet           | 100 TP | 5 Builders; builds over 5 waves | +5 TP/round                            |
 | Merchant Guild   | 150 TP | 5 Builders                      | +1 TP/round per guild in hamlet aura   |
 | Fortress Upgrade | 50 TP  | Completed hamlet nearby         | +HP, cover, +1 TP/round on that hamlet |
 
@@ -332,11 +364,30 @@ All nine strikes have **animated icons** on the HUD and **battlefield FX** when 
 
 ### Spy Network (one action per wave)
 
-Steal TP, disrupt spawns, assassinate elites, scout next wave, poison caches, sabotage siege, deep infiltration, bribe informant — plus **Muster Deserters**, **Raid War Chest**, **Forge Maps**, and **Tunnel Network**.
+Steal TP, assassinate elites, poison caches, bribe informant, **Muster Deserters**, **Tunnel Network**, and:
+
+| Action            | Cost                   | Effect                                                                                  | Limit              |
+| ----------------- | ---------------------- | --------------------------------------------------------------------------------------- | ------------------ |
+| Disrupt Lines     | 5 TP, +1 every 6 waves | Next wave has 25% fewer enemies, but they are 12% tougher and march 15% faster          | once every 3 waves |
+| Scout Report      | 2 TP                   | The night preview lists the next wave by type and number, as a Watchtower would         |                    |
+| Deep Infiltration | 3 TP                   | The first 30% of the next wave arrive at 60% health (marked AMBUSHED)                   |                    |
+| Sabotage Siege    | 5 TP                   | No siege towers or engineers next wave, and the host arrives 10 seconds late            |                    |
+| Forge Maps        | 3 TP                   | A marked supply crate lands at dawn: never an ambush, always TP                         |                    |
+| Raid War Chest    | 4 TP                   | +6 TP now, +2 enemies next wave                                                         | once every 3 waves |
+| Settlement Raid   | 7 TP                   | Needs an enemy hold. None stand in the current game, so it is refused and costs nothing | wave 150+          |
 
 ### Courier Messages (one per wave; two with Twin Dispatch at 3 gold stars; Courier must be on field)
 
-Reinforcements, Royal Decree (+morale), Tax Levy (+TP), Call Banner (knight), Supply Train (heal all), Offer Truce, Medical Evac — plus **Royal Herald**, **Emergency Muster**, and **Open War Chest**.
+Royal Decree (+morale), Supply Train (heal all), Offer Truce, Medical Evac, **Royal Herald**, **Emergency Muster**, and:
+
+| Message        | Cost                                        | Effect                                                | Limit              |
+| -------------- | ------------------------------------------- | ----------------------------------------------------- | ------------------ |
+| Tax Levy       | 1 TP                                        | +5 TP at the next wave clear; every soldier −2 morale | once every 3 waves |
+| Reinforcements | 4 TP × army surcharge                       | 2 footmen at the next dawn                            | once every 2 waves |
+| Call Banner    | 6 TP, +2 per earlier call, × army surcharge | 1 knight at once. Needs Iron Weapons                  | once every 4 waves |
+| Open War Chest | 2 TP                                        | +4 TP                                                 | once every 3 waves |
+
+An action on cooldown shows the waves left in place of its price.
 
 One tonic reduces spy and courier costs by 1 TP.
 
@@ -418,7 +469,7 @@ After every fifth wave you are offered three rewards and keep one for the rest o
 
 ### Army upkeep
 
-A big host is hard to feed. Past 14 soldiers on the field, every new recruit costs 7% more per soldier over that mark, so around the 28th soldier the price has doubled. The surcharge shows at the top left of the screen. A bigger host also draws more line-breakers.
+A big host is hard to feed. Past 14 soldiers on the field, every new recruit costs 7% more per soldier over that mark, so around the 28th soldier the price has doubled. Builders and couriers are not counted, and each Granary (an Outpost upgrade) raises the 14 by 3. Courier reinforcements and banner knights pay the same surcharge. The surcharge shows at the top left of the screen. A bigger host also draws more line-breakers.
 
 ### How a wave arrives
 
@@ -475,16 +526,18 @@ On your first runs the game introduces one system per early wave with a single l
 | 1    | Deploying troops, Hunt mode and posts                       |
 | 2    | Supply crates, and calling the wave early with **D**        |
 | 3    | Line-breakers and the breach counter                        |
-| 4    | The General's orders (War Cry, Hold the Line)               |
+| 4    | Builders, works and the Research Lab                        |
 | 5    | Spoils of war                                               |
 | 6    | Spells and strikes (the Spells tab is dimmed until then)    |
 | 8    | Spy and courier (the right-hand panel is dimmed until then) |
+
+The General's orders (War Cry, Hold the Line) are introduced from wave 6, but only once Command Theory is researched and a General can actually be recruited.
 
 Nothing is locked: a dimmed tab still works if you click it. Once you have reached wave 10 the introduction never appears again, and **Skip the introduction** in the pause menu turns it off at once. Creative mode always shows everything.
 
 ## Ribbons
 
-Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
+Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Bonus starting TP from Ribbons, Crown Legacies and Crown of Ages together is capped at **+6**: all three still count, in that order, until the cap is reached. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
 
 ## Score
 
@@ -601,6 +654,8 @@ Every enemy has a job, a trait and a weakness. Named bosses carry two or three t
 
 On Chad and Hellbane the extra enemies are phased in: a third of the surplus on wave 1, two thirds on wave 2, the full host from wave 3. And on every difficulty the opening garrison does not desert during waves 1 and 2: soldiers whose morale breaks waver but stand, so a run cannot end in its first minutes because the last men walked off the field. They can still be killed.
 
+The host grows with the siege. Before modifiers a wave brings about 16 foes on wave 6, 32 on wave 10, 52 on wave 15 and 72 on wave 20 (four more each wave from wave 7 to 20, two more a wave after that, up to 90), and their health and damage climb every wave: about ×1.5 health on wave 10 and ×1.8 on wave 15. Baby fields about a quarter fewer, at about 60% of that health. The threat chip at the top of the screen (Humble to Empire) then scales the host to what you field: a small army draws up to a quarter fewer foes, a rich one more.
+
 ### Advanced Difficulty
 
 From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, elite frequency, enemy type weighting, TP income, morale, breakthrough limit). Each modifier adjusts your **effective difficulty %** shown on screen.
@@ -656,7 +711,7 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 
 ## Tips for New Commanders
 
-1. **Deploy a Builder early** — walls and outposts define your line.
+1. **Deploy a Builder early** — a wall holds three line-breakers a wave, a Trade Outpost pays for itself in five dawns, and a Research Lab on wave 3 brings knights and crossbowmen by wave 5 or 6.
 2. **Protect your General** — he draws all enemy attention; use the Keep.
 3. **Med tents save troops** — healers and combat units retreat there when badly wounded.
 4. **Save TP before wave 100** — academies (40–100 TP) and settlements are expensive.

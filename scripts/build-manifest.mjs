@@ -90,6 +90,7 @@ export const GAME_SCRIPTS = [
   'settlement-raids.js',
   'multi-front-siege.js',
   'monster-bosses.js',
+  'economy-rules.js',
   'player-counter-evolution.js',
   'research.js',
   'mod-loader.js',

@@ -72,6 +72,11 @@ class ColonyValueSystem {
     return typeof globalThis !== 'undefined' ? (globalThis[id] ?? null) : null;
   }
 
+  /** Opening cushion on the baseline: 54 at wave 1, falling 6 a wave to 0 at wave 10. */
+  static earlyPad(wave) {
+    return Math.max(0, 60 - 6 * Math.max(0, wave || 0));
+  }
+
   getThreatTier(ratio) {
     let tier = this.THREAT_TIERS[0];
     for (const t of this.THREAT_TIERS) {
@@ -87,8 +92,12 @@ class ColonyValueSystem {
     const military = 28 + eased * 340 + post * 200;
     const structures = 45 + eased * 460 + post * 300 + Math.min(wave, 35) * 9;
     const economy = 35 + eased * 110 + post * 75;
-    // Opening waves assume a bootstrapped kingdom (walls, academies, starter TP).
-    const earlyPad = wave <= 12 ? 220 + wave * 28 : wave <= 30 ? 120 + (30 - wave) * 5 : 0;
+    // A small cushion for the opening that fades out by wave 10. The old pad (220 + 28 per
+    // wave through wave 12, then about 200) kept every player pinned at the 0.5 floor for
+    // eleven waves, a constant x0.77 on enemy numbers, and then dropped the baseline by about
+    // 350 between waves 12 and 13: a cliff nobody could see coming. This one is continuous,
+    // so the ratio follows what the player actually fields from the first waves.
+    const earlyPad = ColonyValueSystem.earlyPad(wave);
     return Math.floor(military + structures + economy + earlyPad);
   }
 
@@ -200,7 +209,9 @@ class ColonyValueSystem {
 
     const settlementTp = this.ctx.getSettlementTpBonus?.() || 0;
     const tpPerRound = this.ctx.getTpPerRound?.() || 8;
-    const economy = tactical * 0.38 + settlementTp * 9.5 + tpPerRound * 3.8;
+    // Income used to count 3.8 per TP on top of the price of the building that earns it,
+    // so a Trade Outpost was valued twice and drew a bigger host than the same TP in soldiers.
+    const economy = tactical * 0.38 + settlementTp * 9.5 + tpPerRound * 2;
 
     const total = Math.floor(military + structures + economy);
     const baseline = this.getWaveBaseline(wave);
@@ -620,7 +631,7 @@ class ColonyValueSystem {
           '• Evolved barracks ×1.55 · Grand Coliseum ×1.65',
           '• Castle/keep ×1.25 · Wall ×0.82',
           '',
-          'Treasury — liquid TP ×0.38 + settlement TP bonus ×9.5 + wave TP income ×3.8.',
+          'Treasury — liquid TP ×0.38 + settlement TP bonus ×9.5 + wave TP income ×2.',
           'Hoarding TP raises Treasury and can tighten enemy spawn intervals (see Aggression).',
         ].join('\n'),
       },

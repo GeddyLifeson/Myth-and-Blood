@@ -77,6 +77,7 @@ export const HEADLESS_FILES = [
   'settlement-raids.js',
   'multi-front-siege.js',
   'monster-bosses.js',
+  'economy-rules.js',
   'player-counter-evolution.js',
   'formations.js',
   'damage-preview.js',

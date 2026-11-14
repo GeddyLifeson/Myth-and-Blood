@@ -50,7 +50,7 @@
     "disrupt": {
       "name": "Disrupt Supply Lines",
       "cost": 5,
-      "desc": "Next wave -35% enemy count"
+      "desc": "Next wave: 25% fewer enemies, but the rest are 12% tougher and march 15% faster. Price rises 1 TP every 6 waves."
     },
     "assassin": {
       "name": "Assassinate Captain",
@@ -60,7 +60,7 @@
     "scout": {
       "name": "Scout Report",
       "cost": 2,
-      "desc": "Exact next wave roster revealed"
+      "desc": "Next wave's make-up shown in the night preview now, as a watchtower would."
     },
     "poison": {
       "name": "Poison Caches",
@@ -70,12 +70,12 @@
     "sabotage": {
       "name": "Sabotage Siege",
       "cost": 5,
-      "desc": "Delay enemy spawns 2 seconds"
+      "desc": "No siege towers or engineers next wave, and the host arrives 10 seconds late."
     },
     "infiltrate": {
       "name": "Deep Infiltration",
       "cost": 3,
-      "desc": "Exact roster + flank directions"
+      "desc": "Ambush on the road: the first 30% of the next wave arrive at 60% health."
     },
     "bribery": {
       "name": "Bribe Informant",

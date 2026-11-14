@@ -757,7 +757,7 @@ const LoreData = (() => {
       ],
       mess_hall: ['Morale aura for nearby troops — stack with bards and rallies.', 'wave:12'],
       watchtower: [
-        'Vision reveals stealth/burrowers. Enemies in range suffer accuracy penalties.',
+        '4 TP. The night preview lists the next wave by type and number while a tower stands. Vision reveals stealth/burrowers.',
         'kill:goblin_burrower,5',
       ],
       spike_trap: [
@@ -765,11 +765,11 @@ const LoreData = (() => {
         'wave:20',
       ],
       quarry: [
-        '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement.',
+        '14 TP, 1 Builder, Prospecting research. +3 TP at dawn (shared 6-site cap with trade posts). Blocks movement.',
         'waves_cleared:15',
       ],
       trade_outpost: [
-        '16 TP, 2 Builders. +1 TP/round + morale aura. Shared 6-site cap — hamlets win late.',
+        '10 TP, 1 Builder, no research. +2 TP at dawn + morale aura. Shared 6-site cap.',
         'waves_cleared:20',
       ],
       fortress_upgrade: ['Fortify completed settlement: +HP, cover, +1 TP/round.', 'era:rts'],

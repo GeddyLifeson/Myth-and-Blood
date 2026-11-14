@@ -729,7 +729,13 @@ const GameCore = (() => {
   }
 
   function getDeployCostMult() {
-    return typeof SiegeLoop !== 'undefined' ? SiegeLoop.deployCostMult(unitCounts.player) : 1;
+    // Builders and couriers are not fed from the army's stores, and Granaries feed extra.
+    return typeof SiegeLoop !== 'undefined'
+      ? SiegeLoop.deployCostMult(
+          unitCounts.upkeepArmy ?? unitCounts.player,
+          unitCounts.freeArmyBonus || 0
+        )
+      : 1;
   }
 
   function enemyRotationForSide(side) {
