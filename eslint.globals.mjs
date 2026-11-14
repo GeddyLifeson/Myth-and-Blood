@@ -150,6 +150,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "PERK_MAX",
   "PROGRESSION_MILESTONES",
   "PacingTools",
+  "PanelModel",
   "Particles",
   "PathWorkerBridge",
   "Pathfinding",
