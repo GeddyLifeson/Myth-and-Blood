@@ -193,11 +193,17 @@ const GfxQuality = (() => {
     return 'high';
   }
 
+  /** Phones and tablets: Auto never climbs past Normal. A manual tier is left alone. */
+  const phoneSized =
+    typeof window !== 'undefined' &&
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(pointer: coarse), (max-width: 820px), (max-height: 520px)').matches;
+
   function recomputeEffective() {
     if (setting !== 'auto') {
       effectiveTier = clampTier(setting);
     } else {
-      effectiveTier = autoTier;
+      effectiveTier = phoneSized ? worseTier(autoTier, 'normal') : autoTier;
     }
     if (typeof Settings !== 'undefined' && Settings.get('reducedMotion')) {
       effectiveTier = worseTier(effectiveTier, 'reduced');

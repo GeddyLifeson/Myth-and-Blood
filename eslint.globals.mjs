@@ -133,6 +133,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "MONSTER_ENEMIES",
   "MartialPathEvolution",
   "MetaProgress",
+  "MobileUI",
   "ModAPI",
   "ModLoader",
   "MonsterBosses",
