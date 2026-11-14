@@ -498,17 +498,24 @@ class GameDepthSystem {
     };
   }
 
-  /** Evil operatives mirror crossover IP scaling — the host's answer to your champions. */
-  getEvilOperativeWaveScale(wave) {
-    return this.getIpWaveScale(wave);
+  /** Every enemy type gets at least the wave scale: cfg when given, else the wave's own. */
+  getEnemyScaleFloor(wave, cfg = {}) {
+    const own = typeof getEnemyWaveScale === 'function' ? getEnemyWaveScale(wave) : null;
+    return { hp: cfg.hpScale ?? own?.hp ?? 1, dmg: cfg.dmgScale ?? own?.dmg ?? 1 };
   }
 
-  applyEvilOperativeWaveScaling(unit, wave) {
+  /** Evil operatives mirror crossover IP scaling, never below the wave scale. */
+  getEvilOperativeWaveScale(wave, floor = this.getEnemyScaleFloor(wave)) {
+    const ip = this.getIpWaveScale(wave);
+    return { hp: Math.max(ip.hp, floor.hp), dmg: Math.max(ip.dmg, floor.dmg) };
+  }
+
+  applyEvilOperativeWaveScaling(unit, wave, floor) {
     if (!this.isEnemyEvilOperative(unit) || unit.hp <= 0) return false;
     this.ensureEnemyBaseStats(unit);
     const spawnW = unit.spawnWave ?? wave;
     const tenure = Math.max(0, wave - spawnW);
-    const waveS = this.getEvilOperativeWaveScale(wave);
+    const waveS = this.getEvilOperativeWaveScale(wave, floor);
     const tenS = this.getTenureMult(tenure, 'enemy');
     const hpRatio = unit.maxHp > 0 ? unit.hp / unit.maxHp : 1;
     unit.maxHp = Math.max(1, Math.floor(unit.baseMaxHp * waveS.hp * tenS.hp));
@@ -544,19 +551,29 @@ class GameDepthSystem {
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(wave) : 0;
 
     this.ensureEnemyBaseStats(unit);
+    const floor = this.getEnemyScaleFloor(wave, cfg);
 
     if (this.isEnemyHordeGrunt(unit)) {
       const grunt = this.getHordeGruntWaveScale(wave);
       unit.maxHp = Math.floor(
-        unit.baseMaxHp * grunt.hp * (diff.enemyHpMult || 1) * (waveMods.hpMult || 1)
+        unit.baseMaxHp *
+          Math.max(grunt.hp, floor.hp) *
+          (diff.waveHpScaleMult || 1) *
+          (diff.enemyHpMult || 1) *
+          (waveMods.hpMult || 1)
       );
       unit.hp = unit.maxHp;
       unit.damage = Math.floor(
-        unit.baseDamage * grunt.dmg * (diff.waveDmgScaleMult || 1) * (diff.enemyDmgMult || 1)
+        unit.baseDamage *
+          Math.max(grunt.dmg, floor.dmg) *
+          (diff.waveDmgScaleMult || 1) *
+          (diff.enemyDmgMult || 1)
       );
     } else if (this.isEnemyEvilOperative(unit)) {
-      this.applyEvilOperativeWaveScaling(unit, wave);
-      unit.maxHp = Math.floor(unit.maxHp * (diff.enemyHpMult || 1) * (waveMods.hpMult || 1));
+      this.applyEvilOperativeWaveScaling(unit, wave, floor);
+      unit.maxHp = Math.floor(
+        unit.maxHp * (diff.waveHpScaleMult || 1) * (diff.enemyHpMult || 1) * (waveMods.hpMult || 1)
+      );
       unit.hp = unit.maxHp;
       unit.damage = Math.floor(
         unit.damage * (diff.waveDmgScaleMult || 1) * (diff.enemyDmgMult || 1)
@@ -565,13 +582,13 @@ class GameDepthSystem {
       unit.maxHp = Math.floor(
         unit.maxHp *
           (waveMods.hpMult || 1) *
-          (cfg.hpScale || 1) *
+          floor.hp *
           (diff.waveHpScaleMult || 1) *
           (diff.enemyHpMult || 1)
       );
       unit.hp = unit.maxHp;
       unit.damage = Math.floor(
-        unit.damage * (cfg.dmgScale || 1) * (diff.waveDmgScaleMult || 1) * (diff.enemyDmgMult || 1)
+        unit.damage * floor.dmg * (diff.waveDmgScaleMult || 1) * (diff.enemyDmgMult || 1)
       );
     }
 
@@ -594,9 +611,11 @@ class GameDepthSystem {
       unit.maxHp = Math.floor(unit.maxHp * 1.15);
       unit.hp = unit.maxHp;
     }
-    if (unit.isNamedBoss && opts.namedBossScale) {
-      const mult = opts.namedBossScale;
-      unit.maxHp = Math.floor(unit.maxHp * mult);
+    if (unit.isNamedBoss) {
+      const mult = opts.namedBossScale || 1;
+      const hpMult =
+        typeof DIFFICULTY_TUNING !== 'undefined' ? DIFFICULTY_TUNING.namedBossHpMult : 3;
+      unit.maxHp = Math.floor(unit.maxHp * mult * hpMult);
       unit.hp = unit.maxHp;
       unit.damage = Math.floor(unit.damage * mult);
       unit.accuracy = Math.min(68, unit.accuracy + Math.floor((mult - 1) * 8));

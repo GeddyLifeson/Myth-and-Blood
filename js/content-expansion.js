@@ -1546,7 +1546,8 @@ const ContentExpansion = (() => {
         u.y += Math.sin(updateTick * 0.04 + u.id.charCodeAt(0)) * 0.15;
       }
 
-      if (u.team === 'enemy' && u.summoner && u.hp > 0) {
+      // A summoner ordered to storm the line stops raising minions, so the wave can end.
+      if (u.team === 'enemy' && u.summoner && u.hp > 0 && !u.stormLine) {
         u.summonTimer = (u.summonTimer || 0) - 1;
         if (u.summonTimer <= 0) {
           u.summonTimer = u.summonCooldown || 280;
@@ -1557,6 +1558,7 @@ const ContentExpansion = (() => {
           if (minion) {
             minion.maxHp = Math.floor(minion.maxHp * 0.7);
             minion.hp = minion.maxHp;
+            minion.summoned = true;
             units.push(minion);
             FloatingText?.status(sx, sy, 'RISE!', '#a060c0');
           }
