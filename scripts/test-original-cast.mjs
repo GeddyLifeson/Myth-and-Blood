@@ -872,4 +872,27 @@ ok(
   `northern-war entries match the cast data ${stale.map(([a]) => a).join(',')}`
 );
 
+// Whole source files, so only the plain name list applies, not the broad source terms.
+const NAME_ONLY = new RegExp(
+  // Wyrmcaller stays the name of a building and legacy path, so it is only barred as a hero name.
+  `(?<![\\p{L}\\p{N}])(?:${phrase(OLD_NAMES.filter((n) => !/wyrmcaller/i.test(n))).join('|')})(?![\\p{L}\\p{N}])`,
+  'iu'
+);
+const nameHit = (text) => NAME_ONLY.exec(text)?.[0];
+
+// Screens outside the cast modules that once printed old hero names.
+const staleScreens = [
+  'encyclopedia',
+  'cheats',
+  'eternal-legacy-tree',
+  'lore-data',
+  'thematic-era-synergies',
+]
+  .map((f) => [f, nameHit(readFileSync(join(JS, `${f}.js`), 'utf8'))])
+  .filter(([, hit]) => hit);
+ok(
+  staleScreens.length === 0,
+  `no old name in encyclopedia, cheats, legacy, lore or synergy text ${staleScreens.map(([f, h]) => `${f}:${h}`).join(',')}`
+);
+
 process.exit(failures() ? 1 : 0);
