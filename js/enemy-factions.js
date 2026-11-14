@@ -925,7 +925,8 @@ const EnemyFactions = (() => {
     history = [];
     lastHorde = null;
     // Unseeded runs should not all meet the same factions in the same order.
-    runSalt = Math.floor(Math.random() * 0x7fffffff);
+    // The clock, not Math.random: tests seed that, and drawing from it shifts every later roll.
+    runSalt = Date.now() & 0x7fffffff;
   }
 
   function getEvolutionStageDef(stage) {
