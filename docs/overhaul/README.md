@@ -58,3 +58,4 @@ game is in:
 - The scroll bar sometimes gets stuck.
 - The mouse wheel should scroll a side menu whenever the pointer is over it.
 - Unavailable things (locked or unaffordable troops, buildings and actions) can still be selected. They should not be.
+- Cause of the stuck scroll bar, per the owner: an unavailable item had been selected without any sign of it, and the panel kept scrolling back down to it. Fixing the selection bug should fix this; also stop the panel from auto-scrolling to the selected item while the player is scrolling.
