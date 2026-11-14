@@ -75,6 +75,24 @@ const Tooltips = (() => {
       .replace(/>/g, '&gt;');
   }
 
+  /** " · Key 3" for a panel button, from the shared key map. */
+  function keyNote(kind, id) {
+    if (typeof Hotkeys === 'undefined') return '';
+    const key =
+      kind === 'deploy'
+        ? Hotkeys.deployKey(id)
+        : Hotkeys.keyFor('night', kind === 'ability' ? 'ability' : 'build', id);
+    return key ? ` · Key ${Hotkeys.keyLabel(key)}` : '';
+  }
+
+  /** " · Needs Iron Weapons" when the item cannot be used now, from the shared rules. */
+  function whyNot(kind, id, gs) {
+    if (typeof Availability === 'undefined' || !gs) return '';
+    const res = Availability.check(kind, id, gs);
+    if (res.ok || !res.reason) return '';
+    return ` · ${res.reason.charAt(0).toUpperCase()}${res.reason.slice(1)}`;
+  }
+
   function fmtCost(cost, freeTp) {
     if (freeTp) return 'Free (Creative)';
     return cost === 0 ? 'No TP cost' : `${cost} TP`;
@@ -116,12 +134,22 @@ const Tooltips = (() => {
     const def = getPlayerUnitDef(type) || UnitDefs[type];
     if (!def) return null;
     const freeTp = gs?.creativeMode && gs?.creativeSettings?.freeResources;
-    const costMult = typeof getDeployCostMult === 'function' ? getDeployCostMult() : 1;
-    const cost = freeTp ? 0 : Math.ceil((def.cost ?? 0) * costMult);
+    const cost = freeTp
+      ? 0
+      : typeof Game !== 'undefined' && Game.getDeployCost
+        ? Game.getDeployCost(type)
+        : (def.cost ?? 0);
     const note = UNIT_NOTES[type] || `${def.name} — deploy onto the rally field.`;
-    let footer = fmtCost(cost, freeTp);
-    if (type === 'general' && gs?.hasGeneral) footer += ' · Already on field';
-    if (type === 'doomslayer_hero' && !gs?.doomslayerUnlocked) footer += ' · Locked';
+    // The price charged, and what it is made of when upkeep or Warband raises it.
+    let footer =
+      (typeof Availability !== 'undefined' && gs
+        ? Availability.deployPriceText(type, gs)
+        : fmtCost(cost, freeTp)) + keyNote('deploy', type);
+    const why = whyNot('deploy', type, gs);
+    if (why) footer += why;
+    else if (type !== 'general' && type !== 'doomslayer_hero') {
+      footer += ' · Hold Shift to place more';
+    }
     const tip = { title: def.name, body: `${note} ${unitStats(def)}`, footer };
     if (typeof DamagePreview !== 'undefined') {
       return withDamagePreview(tip, DamagePreview.formatDeployTip(type, gs));
@@ -194,7 +222,8 @@ const Tooltips = (() => {
       else if (status?.reason) footer = status.reason;
       else footer += ' · Find an Immortal veteran first';
     }
-    if (def?.isPerkMachine && !gs?.perksUnlocked) footer += ' · Unlock roster cheat first';
+    footer += keyNote('build', type);
+    if (def && !def.isAcademy) footer += whyNot('build', type, gs);
     return { title: def?.name || type.replace(/_/g, ' '), body, footer };
   }
 
@@ -213,7 +242,10 @@ const Tooltips = (() => {
     const tip = {
       title: ab.name,
       body: abilityDesc(id, ab),
-      footer: fmtCost(cost, freeTp) + ' · Click map to strike',
+      footer:
+        fmtCost(cost, freeTp) +
+        keyNote('ability', id) +
+        (whyNot('ability', id, gs) || ' · Click the field to strike'),
     };
     if (typeof DamagePreview !== 'undefined') {
       return withDamagePreview(tip, DamagePreview.formatAbilityTip(id, gs));
@@ -228,16 +260,7 @@ const Tooltips = (() => {
     const cost =
       typeof ContentExpansion !== 'undefined' ? ContentExpansion.getSpyCost(id, base) : base;
     let footer = `${cost} TP · One action per wave`;
-    const stageReq = def.kingdomStage || 0;
-    if (stageReq > 0 && (gs?.kingdomStage || 1) < stageReq) {
-      const name =
-        typeof KINGDOM_EVOLUTION_STAGES !== 'undefined'
-          ? KINGDOM_EVOLUTION_STAGES[stageReq]?.name
-          : `stage ${stageReq}`;
-      footer += ` · Unlocks in ${name}`;
-    }
-    if (gs?.spyUsedThisWave) footer += ' · Used this wave';
-    if (gs?.tactical < cost) footer += ' · Not enough TP';
+    footer += whyNot('spy', id, gs);
     return { title: def.name, body: def.desc, footer };
   }
 
@@ -254,17 +277,7 @@ const Tooltips = (() => {
         ? `${cost} TP · ${perWave} messages per wave (Twin Dispatch)`
         : `${cost} TP · One message per wave`;
     if (perWave > 1 && used > 0) footer += ` · ${used}/${perWave} sent`;
-    const stageReq = def.kingdomStage || 0;
-    if (stageReq > 0 && (gs?.kingdomStage || 1) < stageReq) {
-      const name =
-        typeof KINGDOM_EVOLUTION_STAGES !== 'undefined'
-          ? KINGDOM_EVOLUTION_STAGES[stageReq]?.name
-          : `stage ${stageReq}`;
-      footer += ` · Unlocks in ${name}`;
-    }
-    if (!gs?.hasCourier) footer += ' · Need live Courier';
-    if (used >= perWave) footer += ' · Used this wave';
-    if (gs?.courierCooldown > 0) footer += ` · Cooldown ${gs.courierCooldown}`;
+    footer += whyNot('courier', id, gs);
     return { title: def.name, body: def.desc, footer };
   }
 
@@ -339,8 +352,8 @@ const Tooltips = (() => {
       },
       'speed-toggle': {
         title: 'Game Speed',
-        body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click (or press ]) to cycle from 1× up to 10×.`,
-        footer: 'Hotkey: ] · Paused always runs 1×',
+        body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click to cycle from 1× up to 10×.`,
+        footer: 'No key — use this button · Paused always runs 1×',
       },
       'wwe-academy-open': {
         title: 'Grand Coliseum',

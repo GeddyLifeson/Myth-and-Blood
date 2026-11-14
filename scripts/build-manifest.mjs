@@ -13,6 +13,8 @@ export const GAME_SCRIPTS = [
   // scripts/check-manifest-sync.mjs enforces this.
   'touch-input.js',
   'html-util.js',
+  'dialog.js',
+  'hotkeys.js',
   'floatingText.js',
   'pathfinding-core.js',
   'pathfinding.js',
@@ -107,6 +109,7 @@ export const GAME_SCRIPTS = [
   'error-reporting.js',
   'analytics.js',
   'settings.js',
+  'availability.js',
   'tooltips.js',
   'ux.js',
   'ui.js',

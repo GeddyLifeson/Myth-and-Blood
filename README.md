@@ -87,34 +87,36 @@ Clear every wave to earn TP, expand territory, unlock new systems, and push into
 
 Spend TP on troops, buildings, strikes, spy actions, and courier messages.
 
+The **TACTICAL PTS** number in the top bar is your purse, to the point, at all times (paused included). Its bar is full when you can pay for the dearest troop or strike on offer. Past fourteen soldiers every recruit costs 7% more per head (**army upkeep**); recruit buttons, their tooltips and the "Recruit cost +N%" chip all show the price you will actually be charged.
+
 ---
 
 ## Controls
 
+Press **?** at any time for the keys that work on the screen you are looking at. Every panel button shows its key in the corner, and its tooltip names it. No key does two things on one screen; the lists below say which screen each belongs to.
+
 ### Map navigation
 
-| Input        | Action                           |
-| ------------ | -------------------------------- |
-| Click + drag | Pan the map                      |
-| Mouse wheel  | Zoom in/out (toward cursor)      |
-| Arrow keys   | Pan the map (works while paused) |
+| Input        | Action                                                                       |
+| ------------ | ---------------------------------------------------------------------------- |
+| Click + drag | Pan the map                                                                  |
+| Mouse wheel  | Over the field: zoom toward the cursor. Over a side panel: scroll that panel |
+| Arrow keys   | Pan the map                                                                  |
 
 ### Deployment
 
-| Key | Unit    |
-| --- | ------- |
-| 1   | Footman |
-| 2   | Archer  |
-| 3   | Mage    |
-| 4   | Cavalry |
-| 5   | Healer  |
-| 6   | Knight  |
-| 7   | Builder |
-| 8   | Sapper  |
-| 9   | Courier |
-| 0   | General |
+Recruit keys follow what you have unlocked. The starting roster takes the first keys in panel order, and each troop you unlock takes the next free key and keeps it for the run.
 
-Crossbowman, Scout, Bard, Ballista, and Pikeman are on the deploy panel (no dedicated hotkeys).
+| Key       | Troop                                                                   |
+| --------- | ----------------------------------------------------------------------- |
+| 1 2 3 4 5 | Footman, Archer, Mage, Cavalry, Healer                                  |
+| 6 7       | Builder, Courier                                                        |
+| 8 9 0     | The next three unlocks (with Iron Weapons: Crossbowman, Knight, Sapper) |
+| Shift+1…  | Every unlock after the tenth (Scout, Bard, Ballista, Pikeman, General)  |
+
+Click a troop (or press its key), then click the field: that places one and puts the troop away. **Hold Shift and click** to place one and keep the same troop ready; keep clicking to place more. It ends when you let go of Shift, when you cannot pay for the next one, or on Esc or right-click. Each soldier past the fourteenth makes the next recruit dearer (army upkeep); the button shows the price you will be charged, with the base price struck through beside it, and a tag at the cursor shows the next price while you place. Shift-click repeats buildings the same way (a run of walls). The General is one of a kind and is never repeated. On a touch screen each tap places one.
+
+A troop, building, spell or message you cannot use is dimmed and cannot be selected, by click or by key. Its tooltip says why ("needs Iron Weapons", "needs 5 TP, you have 3"). What you have selected is marked with a bone-white frame and corner on its button.
 
 ### Posts
 
@@ -126,7 +128,7 @@ Every soldier has a **post**: the spot where you deployed him, or the place you 
 | **B** (with selection) | Back to posts now, ignoring everything on the way              |
 | **H**                  | Hunt off: everyone stands at his post and only fights in reach |
 
-A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are retreating to a medical tent, garrisoned, routing or under a manual order are not called back, and the General keeps his own counsel. With nothing selected, **B** is still the Trade Outpost build key.
+A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are retreating to a medical tent, garrisoned, routing or under a manual order are not called back, and the General keeps his own counsel. With nothing selected, **B** is the Trade Outpost build key.
 
 ### Buildings
 
@@ -146,17 +148,20 @@ Spike Trap, Quarry, Fortress Upgrade, and Academies are panel-only.
 
 ### Strikes
 
-| Key | Ability          |
-| --- | ---------------- |
-| Q   | Fireball Barrage |
-| W   | Lightning Strike |
-| E   | Healing Rain     |
-| R   | Reinforcements   |
-| T   | Battle Rally     |
-| F   | Meteor Shower    |
-| J   | Frost Nova       |
-| K   | Scout Flare      |
-| X   | Fortify Zone     |
+| Key | Ability                                 |
+| --- | --------------------------------------- |
+| Q   | Fireball Barrage                        |
+| W   | Lightning Strike                        |
+| E   | Healing Rain                            |
+| R   | Reinforcements                          |
+| T   | Battle Rally                            |
+| F   | Meteor Shower                           |
+| J   | Frost Nova                              |
+| K   | Scout Flare                             |
+| X   | Fortify Zone                            |
+| P   | Arcane Dispel (needs a living Mage)     |
+| S   | Voice Shout (needs the Voicebound Pact) |
+| ; ' | Fire Breath, Ice Form (Voicebound Pact) |
 
 Select a strike, then click the map. A targeting ring and icon follow your cursor.
 
@@ -171,20 +176,40 @@ Select a strike, then click the map. A targeting ring and icon follow your curso
 
 ### General
 
-| Key          | Action                                                                                                                                       |
-| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| D            | Begin day phase (during night prep)                                                                                                          |
-| H            | Toggle Hunt mode (also the HUNT button in the top bar)                                                                                       |
-| ]            | Cycle game speed, 1× to 10× (also the SPEED button in the top bar)                                                                           |
-| Space        | Pause                                                                                                                                        |
-| Esc          | Cancel selection / close panels                                                                                                              |
-| C / G / F    | With units selected: clear selection / reform formation / focus camera. With nothing selected they are the Castle, Hamlet and Meteor hotkeys |
-| Alt+1–5      | Formation presets for the selected group                                                                                                     |
-| V            | Mute/unmute sound                                                                                                                            |
-| A            | Achievements                                                                                                                                 |
-| I            | Encyclopedia                                                                                                                                 |
-| ` (backtick) | Cheat menu                                                                                                                                   |
-| P            | Creative Lab panel (Creative Mode only)                                                                                                      |
+| Key          | Action                                                                                               |
+| ------------ | ---------------------------------------------------------------------------------------------------- |
+| ?            | Key sheet: the keys that work right now                                                              |
+| D            | Begin the day (at night)                                                                             |
+| H            | Hunt on/off (also the HUNT button in the top bar)                                                    |
+| [            | War Cry, the General's order (needs a General on the field)                                          |
+| ]            | Hold the Line, the General's order (needs a General on the field)                                    |
+| Space        | Pause / resume                                                                                       |
+| Esc          | Cancel what is armed or selected; with nothing to cancel, the pause menu; closes an open panel first |
+| Tab          | Select the next soldier (and centre the view on him); Shift+Tab opens the message log                |
+| Z            | Balanced loadout (wave 100+)                                                                         |
+| V            | Mute/unmute sound                                                                                    |
+| A            | Achievements                                                                                         |
+| I            | Encyclopedia                                                                                         |
+| ` (backtick) | Cheat menu                                                                                           |
+| F3 / F10     | Performance overlay / bug report                                                                     |
+| Enter        | Main menu: begin the defense. After the battle: fight again                                          |
+
+Game speed has no key: use the SPEED button in the top bar.
+
+### Keys by screen
+
+The game keeps one key map per screen (`js/hotkeys.js`). Where a letter appears twice below, it is on different screens.
+
+| Screen               | What changes                                                                                                                                                                                                                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Night, day           | Everything above. D only at night                                                                                                                                                                                                                                                                      |
+| Soldiers selected    | Esc or C clears the selection, F centres the view, B sends them back to their posts, G reforms (two or more), U promotes a veteran, Alt+1–5 picks Line, Column, Wedge, Box or Spread. Meteor (F) and the Castle, Hamlet, Trade Outpost and Merchant Guild keys (C, G, B, U) are off until you deselect |
+| Placing or aiming    | Esc cancels. While placing a wall, R turns it instead of calling Reinforcements                                                                                                                                                                                                                        |
+| Building picked up   | Esc puts it back                                                                                                                                                                                                                                                                                       |
+| Paused               | Space or Esc resumes; Shift+Tab, V, A, I, `, ? still work; nothing else does                                                                                                                                                                                                                           |
+| Spoils of war        | 1, 2, 3 take a reward; arrow keys and Enter choose; nothing else works, Esc included                                                                                                                                                                                                                   |
+| Creative mode        | P opens the Creative Lab panel (Arcane Dispel has no key here)                                                                                                                                                                                                                                         |
+| Main menu, game over | Enter, Esc (closes an open panel), V, A, I, `, ?                                                                                                                                                                                                                                                       |
 
 Click the map to deploy, build, cast strikes, or move selected units. Hover UI buttons for tooltips.
 
@@ -414,7 +439,7 @@ From wave 3, some enemies carry a **red pennant**. These are line-breakers: they
 
 ### Spoils of war
 
-After every fifth wave you are offered three rewards and keep one for the rest of the run: more damage, less damage taken, extra TP per wave, a higher breach limit, night healing, and others. Each can be taken up to three times. The siege does not pause for the choice; spoils left unclaimed at dawn are picked for you.
+After every fifth wave you are offered three rewards and keep one for the rest of the run: more damage, less damage taken, extra TP per wave, a higher breach limit, night healing, and others. Each can be taken up to three times. The choice opens in the middle of the screen and the siege waits: the night clock stops and nothing else can be clicked or pressed until you take one (keys 1, 2, 3, or the arrow keys and Enter).
 
 ### Army upkeep
 
@@ -650,7 +675,7 @@ Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficul
 
 ### Cheat Menu (`` ` ``)
 
-Open from the main menu **CHEATS** button or in-game with backtick. Codes are not listed in the Encyclopedia — check the appendix at the bottom of this README if you want the full list.
+Open from the main menu **CHEATS** button or in-game with backtick. Codes are not listed in the Encyclopedia — check the appendix at the bottom of this README if you want the full list. Any code voids the run it is used in (or, for a code entered on the menu, the next run): no best score, no ribbon progress or ribbons, and no achievements for the rest of that run, and the after-action report says **Cheats used — run not recorded**.
 
 ---
 

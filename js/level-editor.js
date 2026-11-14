@@ -431,10 +431,23 @@ const LevelEditor = (() => {
     });
     document.getElementById('level-editor-delete')?.addEventListener('click', () => {
       const id = document.getElementById('level-editor-library')?.value;
-      if (!id || !confirm('Delete this saved level?')) return;
-      AudioEngine?.SFX?.click?.();
-      deleteFromLibrary(id);
-      Game?.showMessage?.('Level deleted from library.', 140);
+      if (!id) return;
+      const remove = () => {
+        AudioEngine?.SFX?.click?.();
+        deleteFromLibrary(id);
+        Game?.showMessage?.('Level deleted from library.', 140);
+      };
+      if (typeof InPageDialog === 'undefined') {
+        remove();
+        return;
+      }
+      InPageDialog.confirm('Delete this saved level?', {
+        title: 'Delete level',
+        okLabel: 'Delete',
+        danger: true,
+      }).then((yes) => {
+        if (yes) remove();
+      });
     });
     document.getElementById('level-editor-new')?.addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
