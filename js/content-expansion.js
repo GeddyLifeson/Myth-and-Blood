@@ -2116,6 +2116,20 @@ const ContentExpansion = (() => {
     return fortifyZones;
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('ContentExpansion', {
+      save: () => ({ waveEventId, fortifyZones }),
+      load(data) {
+        waveEventId = null;
+        fortifyZones = [];
+        if (!data) return;
+        waveEventId = data.waveEventId ?? null;
+        if (Array.isArray(data.fortifyZones)) fortifyZones = data.fortifyZones;
+      },
+    });
+  }
+
   return {
     bind,
     /** Re-apply expansion unit/building defs after GameData hot-reload (loadAll wipes globals). */

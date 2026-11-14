@@ -611,6 +611,20 @@ const OperativeSkillTrees = (() => {
     });
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('OperativeSkillTrees', {
+      save: () => ({ runPoints, lastWaveGrant }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.runPoints && typeof data.runPoints === 'object') runPoints = data.runPoints;
+        if (data.lastWaveGrant && typeof data.lastWaveGrant === 'object')
+          lastWaveGrant = data.lastWaveGrant;
+      },
+    });
+  }
+
   return {
     FACTION_TREES,
     renderPanel,

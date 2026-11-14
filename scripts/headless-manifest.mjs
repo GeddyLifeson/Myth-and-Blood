@@ -8,6 +8,7 @@ export const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const JS = join(ROOT, 'js');
 
 export const HEADLESS_FILES = [
+  'save-registry.js',
   'floatingText.js',
   'pathfinding-core.js',
   'pathfinding.js',

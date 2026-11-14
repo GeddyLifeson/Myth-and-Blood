@@ -884,6 +884,19 @@ const TechTreeBranches = (() => {
 
   resetRun();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('TechTreeBranches', {
+      save: () => ({ state, rootAnnounced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+        rootAnnounced = !!data.rootAnnounced;
+      },
+    });
+  }
+
   return {
     ROOT_BRANCHES,
     ROOT_LOCK_WAVE,

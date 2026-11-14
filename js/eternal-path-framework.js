@@ -667,6 +667,18 @@ const EternalPathFramework = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('EternalPathFramework', {
+      save: () => ({ state }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+      },
+    });
+  }
+
   return {
     ROOT_LOCK_WAVE,
     KINGDOM_WAVE,

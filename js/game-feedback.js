@@ -434,6 +434,40 @@ const GameFeedback = (() => {
     return dangerLevel * pulse;
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('GameFeedback', {
+      save: () => ({
+        killStreak,
+        streakTimer,
+        waveKills,
+        wavePlayerDeaths,
+        multiKillLife,
+        multiKillCount,
+        bestStreak,
+        cleanSweeps,
+        totalWaveClears,
+        peakWaveKills,
+        runHighlights,
+      }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Number.isFinite(data.killStreak)) killStreak = data.killStreak;
+        if (Number.isFinite(data.streakTimer)) streakTimer = data.streakTimer;
+        if (Number.isFinite(data.waveKills)) waveKills = data.waveKills;
+        if (Number.isFinite(data.wavePlayerDeaths)) wavePlayerDeaths = data.wavePlayerDeaths;
+        if (Number.isFinite(data.multiKillLife)) multiKillLife = data.multiKillLife;
+        if (Number.isFinite(data.multiKillCount)) multiKillCount = data.multiKillCount;
+        if (Number.isFinite(data.bestStreak)) bestStreak = data.bestStreak;
+        if (Number.isFinite(data.cleanSweeps)) cleanSweeps = data.cleanSweeps;
+        if (Number.isFinite(data.totalWaveClears)) totalWaveClears = data.totalWaveClears;
+        if (Number.isFinite(data.peakWaveKills)) peakWaveKills = data.peakWaveKills;
+        if (Array.isArray(data.runHighlights)) runHighlights = data.runHighlights;
+      },
+    });
+  }
+
   return {
     resetRun,
     resetWave,

@@ -3469,6 +3469,8 @@ const Game = (() => {
     svc('Chronicles')?.prune?.();
     // Refresh HUD so planet-event buttons unlock (canRespond + night) this frame.
     invalidateStateCache();
+    // Autosave at each nightfall into its own slots (the last three are kept).
+    if (typeof SaveManager !== 'undefined' && SaveManager.autosave) SaveManager.autosave();
   }
 
   function applyNightRecovery() {
@@ -16723,7 +16725,7 @@ const Game = (() => {
   }
 
   function serializeUnitSnap(u) {
-    return {
+    const out = {
       kills: u.kills || 0,
       wavesSurvived: u.wavesSurvived || 0,
       lineBreaker: !!u.lineBreaker,
@@ -16811,6 +16813,65 @@ const Game = (() => {
             .filter(Boolean)
         : null,
     };
+    // Everything else a unit carries (muster state, timers, flags, boss names, fields other
+    // modules add) is copied as it stands, so a new field is saved without touching this list.
+    return captureSaveFields(u, out, UNIT_SAVE_SKIP);
+  }
+
+  // Live fields that are rebuilt on load, or are links to live objects (saved as ids above).
+  const UNIT_SAVE_SKIP = new Set([
+    'path',
+    'pathIndex',
+    'pathRecalc',
+    'pathPending',
+    'pathReqId',
+    'pathWaitTicks',
+    'postPath',
+    'postPathIndex',
+    'building',
+    'buildQueue',
+    // Drawing state only.
+    'frame',
+    'frameTimer',
+    'hitFlash',
+    'hitFlashMax',
+    'blockFlash',
+  ]);
+  const BUILDING_SAVE_SKIP = new Set(['wallSlots']);
+
+  /** Plain JSON data only: no functions, no live units or buildings, nothing deep or huge. */
+  function isPlainSaveData(v, depth = 0) {
+    if (v === null) return true;
+    const t = typeof v;
+    if (t === 'string' || t === 'boolean') return true;
+    if (t === 'number') return Number.isFinite(v);
+    if (t !== 'object' || depth > 5) return false;
+    if (Array.isArray(v)) {
+      if (v.length > 400) return false;
+      for (let i = 0; i < v.length; i++) if (!isPlainSaveData(v[i], depth + 1)) return false;
+      return true;
+    }
+    if (Object.prototype.toString.call(v) !== '[object Object]') return false;
+    // A live unit or canvas, not data.
+    if ('spriteType' in v || 'getContext' in v) return false;
+    const keys = Object.keys(v);
+    if (keys.length > 400) return false;
+    for (let i = 0; i < keys.length; i++) if (!isPlainSaveData(v[keys[i]], depth + 1)) return false;
+    return true;
+  }
+
+  /** Copy every saveable own field of `src` that `out` does not already have. */
+  function captureSaveFields(src, out, skip) {
+    for (const k of Object.keys(src)) {
+      if (k in out || (skip && skip.has(k))) continue;
+      const v = src[k];
+      if (v === undefined || typeof v === 'function') continue;
+      if (typeof v === 'number' && !Number.isFinite(v)) continue;
+      if (v !== null && typeof v === 'object') {
+        if (isPlainSaveData(v)) out[k] = JSON.parse(JSON.stringify(v));
+      } else out[k] = v;
+    }
+    return out;
   }
 
   function collectAliveUnitSnaps() {
@@ -16821,48 +16882,114 @@ const Game = (() => {
       const u = GS.units[i];
       if (u.hp > 0) out.push(serializeUnitSnap(u));
     }
-    // Soldiers away on an expedition are saved as standing at the muster line, so a save
-    // can never lose a veteran. (Loading calls the expedition off; see importGameState.)
-    const away = svc('PlayerCounterEvolution')?.getAwayUnits?.() || [];
-    for (let i = 0; i < away.length; i++) {
-      const u = away[i];
-      if (!(u.hp > 0)) continue;
-      const snapU = serializeUnitSnap(u);
-      snapU.x = GS.worldW / 2 + (i - (away.length - 1) / 2) * 18;
-      snapU.y = GS.deployY;
-      out.push(snapU);
-    }
     return out;
   }
 
-  // Save format. 1: original. 2: adds nextWavePlan (tomorrow's attack sides, rolled at
-  // nightfall) and the cheats-used flag. Loading accepts 1..SAVE_VERSION; anything else
-  // (a newer build's save, a damaged number) is refused before any state is touched.
-  const SAVE_VERSION = 2;
+  // Save format: version, checksum, migration chain and validation live in
+  // js/save-registry.js (SaveFormat). Module state goes through SaveRegistry sections.
+  const SAVE_VERSION = SaveFormat.VERSION;
 
   function isSupportedSaveVersion(v) {
-    return Number.isInteger(v) && v >= 1 && v <= SAVE_VERSION;
+    return SaveFormat.isSupportedVersion(v);
   }
 
   const SAVE_SIDES = ['north', 'east', 'west', 'south'];
 
-  /** A saved spawn plan is used only if it is for the coming wave and names real sides. */
+  /**
+   * A saved spawn plan is used only if it is for the coming wave and names real sides.
+   * Everything else in the plan (sectors, leader, multi-front detail) is carried as it is.
+   */
   function restoreNextWavePlan(plan, wave) {
     if (!plan || plan.wave !== wave + 1 || !Array.isArray(plan.sides)) return null;
     const sides = plan.sides.filter((x) => SAVE_SIDES.includes(x));
     if (!sides.length || sides.length !== plan.sides.length) return null;
-    let multiFrontPlan = null;
+    let copy = null;
     try {
-      multiFrontPlan = plan.multiFrontPlan ? JSON.parse(JSON.stringify(plan.multiFrontPlan)) : null;
+      copy = JSON.parse(JSON.stringify(plan));
     } catch (_) {
-      multiFrontPlan = null;
+      return null;
     }
-    return { wave: plan.wave, sides, multiFrontPlan };
+    copy.sides = sides;
+    copy.multiFrontPlan = copy.multiFrontPlan || null;
+    return copy;
   }
+
+  // Run state on GS that has no better home in the save. Each is plain data.
+  const SAVE_RUN_FIELDS = [
+    'bossTrackId',
+    'campaignNarrativeFlags',
+    'castleBreachRecorded',
+    'castleBreachWarned',
+    'colonyThreatMods',
+    'generalThreatCd',
+    'generalThreatCount',
+    'hazards',
+    'huntQuietTicks',
+    'huntSweep',
+    'lastStandActive',
+    'mapsRevealed',
+    'moraleAlertCooldown',
+    'multiFrontPlan',
+    'nextWaveIntel',
+    'playerCasualtiesThisWave',
+    'runStructuresRazed',
+    'spawnSquadLeft',
+    'spyNetwork',
+    'structuresRazedThisWave',
+    'unmannedWallWarned',
+    'victoryReason',
+    'waveAttackSides',
+    'waveTimer',
+  ];
+
+  // Module state the game saves on behalf of modules that already had an export/import pair.
+  SaveRegistry.setClock(() => GS.updateTick);
+  SaveRegistry.register('SiegeLoop', {
+    save: () => SiegeLoop.exportState(),
+    load: (data) => SiegeLoop.importState(data, siegeCtx),
+  });
+  SaveRegistry.register('EconomyRules', {
+    save: () => (typeof EconomyRules !== 'undefined' ? EconomyRules.exportState() : null),
+    load(data) {
+      if (typeof EconomyRules === 'undefined') return;
+      EconomyRules.importState(data);
+      // A loaded run has already had its starting bonus.
+      if (!data) EconomyRules.grantStartTp(EconomyRules.START_TP_BONUS_CAP);
+    },
+  });
+  SaveRegistry.register('Research', {
+    save: () => (svc('Research') ? svc('Research').getSnapshot() : null),
+    load(data) {
+      const research = svc('Research');
+      if (!research) return;
+      if (data) research.restoreSnapshot(data);
+      else research.resetRun?.();
+    },
+  });
+  SaveRegistry.register('ProgressionRestarts', {
+    save: () =>
+      typeof ProgressionRestarts !== 'undefined' ? ProgressionRestarts.getSnapshot() : null,
+    load(data) {
+      if (typeof ProgressionRestarts === 'undefined') return;
+      if (data) ProgressionRestarts.restoreSnapshot(data);
+      else {
+        ProgressionRestarts.resetRun();
+        ProgressionRestarts.syncFiredThroughWave(GS.wave);
+      }
+    },
+  });
 
   function exportGameState() {
     if (GS.state !== 'playing') return null;
-    return {
+    const run = {};
+    for (const key of SAVE_RUN_FIELDS) {
+      const v = GS[key];
+      if (v === undefined) continue;
+      if (v === null || typeof v !== 'object') run[key] = v;
+      else if (isPlainSaveData(v)) run[key] = JSON.parse(JSON.stringify(v));
+    }
+    const away = svc('PlayerCounterEvolution')?.getAwayUnits?.() || [];
+    const snap = {
       version: SAVE_VERSION,
       savedAt: Date.now(),
       wave: GS.wave,
@@ -16871,7 +16998,6 @@ const Game = (() => {
       tactical: GS.tactical,
       kills: GS.kills,
       misses: GS.misses,
-      siegeLoop: SiegeLoop.exportState(),
       timeOfDay: GS.timeOfDay,
       nightTimer: GS.nightTimer,
       waveProgress: GS.waveProgress,
@@ -16882,7 +17008,7 @@ const Game = (() => {
       globalHunt: GS.globalHunt,
       builderAutoRepair: GS.builderAutoRepair,
       tpAwardedForWave: GS.tpAwardedForWave,
-      spawnQueue: [...GS.spawnQueue],
+      spawnQueue: JSON.parse(JSON.stringify(GS.spawnQueue)),
       waveEnemyTotal: GS.waveEnemyTotal,
       spawnTimer: GS.spawnTimer,
       currentHordeWave: GS.currentHordeWave
@@ -16893,7 +17019,6 @@ const Game = (() => {
         : null,
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
-      economyRules: typeof EconomyRules !== 'undefined' ? EconomyRules.exportState() : null,
       scoutedWave: GS.scoutedWave ?? -1,
       pendingReinforce: [...GS.pendingReinforce],
       spawnDelayBonus: GS.spawnDelayBonus,
@@ -16912,326 +17037,479 @@ const Game = (() => {
       pendingWaveMods: { ...GS.pendingWaveMods },
       fallenPool: GS.fallenPool.map((f) => ({ ...f })),
       // Mid-combat projectiles (arrows/bolts still in flight).
-      projectiles: GS.projectiles.map((p) => ({
-        x: p.x,
-        y: p.y,
-        tx: p.tx,
-        ty: p.ty,
-        type: p.type,
-        damage: p.damage,
-        team: p.team,
-        speed: p.speed,
-        accuracy: p.accuracy,
-        targetId: p.targetId,
-        sourceId: p.sourceId,
-        sourceType: p.sourceType,
-        splash: !!p.splash,
-        angle: p.angle || 0,
-      })),
+      projectiles: GS.projectiles.map((p) => captureSaveFields(p, {}, null)),
       units: collectAliveUnitSnaps(),
-      buildings: GS.buildings.map((b) => ({
-        id: b.id,
-        type: b.type,
-        x: b.x,
-        y: b.y,
-        hp: b.hp,
-        maxHp: b.maxHp,
-        complete: b.complete,
-        owner: b.owner,
-        buildProgress: b.buildProgress,
-        waveBuildRequired: b.waveBuildRequired || 0,
-        waveBuildProgress: b.waveBuildProgress || 0,
-        facing: b.facing || null,
-        isHamlet: !!b.isHamlet,
-        isMerchantGuild: !!b.isMerchantGuild,
-        isAcademy: !!b.isAcademy,
-        isResearchLab: !!b.isResearchLab,
-        isEnemySettlement: !!b.isEnemySettlement,
-        isResourceGen: !!b.isResourceGen,
-        isSettlement: !!b.isSettlement,
-        isWatchtower: !!b.isWatchtower,
-        isKeep: !!b.isKeep,
-        isMedical: !!b.isMedical,
-        isMessHall: !!b.isMessHall,
-        isWweAcademy: !!b.isWweAcademy,
-        isCrossoverBarracks: !!b.isCrossoverBarracks,
-        isPerkMachine: !!b.isPerkMachine,
-        academyUnit: b.academyUnit || null,
-        crossoverFaction: b.crossoverFaction || null,
-        fortressTier: b.fortressTier || 0,
-        upgrade: b.upgrade || null,
-        upgradeName: b.upgradeName || null,
-        garrisonUnitId: b.garrisonUnitId || null,
-        slotX: b.slotX,
-        slotY: b.slotY,
-        castleGroup: b.castleGroup || null,
-        enemyFaction: b.enemyFaction || null,
-      })),
-      sessionHighlights: [...GS.sessionHighlights],
+      // Soldiers away on an expedition keep their own list; the expedition itself is in
+      // the PlayerCounterEvolution section and gets them back on load.
+      expeditionAway: away.filter((u) => u.hp > 0).map((u) => serializeUnitSnap(u)),
+      buildings: GS.buildings.map((b) =>
+        captureSaveFields(
+          b,
+          {
+            id: b.id,
+            type: b.type,
+            x: b.x,
+            y: b.y,
+            hp: b.hp,
+            maxHp: b.maxHp,
+            complete: b.complete,
+            owner: b.owner,
+            buildProgress: b.buildProgress,
+            waveBuildRequired: b.waveBuildRequired || 0,
+            waveBuildProgress: b.waveBuildProgress || 0,
+            facing: b.facing || null,
+            isHamlet: !!b.isHamlet,
+            isMerchantGuild: !!b.isMerchantGuild,
+            isAcademy: !!b.isAcademy,
+            isResearchLab: !!b.isResearchLab,
+            isEnemySettlement: !!b.isEnemySettlement,
+            isResourceGen: !!b.isResourceGen,
+            isSettlement: !!b.isSettlement,
+            isWatchtower: !!b.isWatchtower,
+            isKeep: !!b.isKeep,
+            isMedical: !!b.isMedical,
+            isMessHall: !!b.isMessHall,
+            isWweAcademy: !!b.isWweAcademy,
+            isCrossoverBarracks: !!b.isCrossoverBarracks,
+            isPerkMachine: !!b.isPerkMachine,
+            academyUnit: b.academyUnit || null,
+            crossoverFaction: b.crossoverFaction || null,
+            fortressTier: b.fortressTier || 0,
+            upgrade: b.upgrade || null,
+            upgradeName: b.upgradeName || null,
+            garrisonUnitId: b.garrisonUnitId || null,
+            slotX: b.slotX,
+            slotY: b.slotY,
+            castleGroup: b.castleGroup || null,
+            enemyFaction: b.enemyFaction || null,
+          },
+          BUILDING_SAVE_SKIP
+        )
+      ),
+      // The field itself: trees, rocks, barricades, crates and barrels exactly where they are.
+      terrain: {
+        initialized: !!GS.terrainInitialized,
+        decorations: GS.decorations.map((d) => captureSaveFields(d, {}, null)),
+      },
+      run,
+      // Position in the seeded stream (seeded runs only; other rolls use Math.random).
+      rng: svc('GameModes')?.getRngState?.() ?? null,
+      sessionHighlights: GS.sessionHighlights.map((h) => ({ ...h })),
       campaignVictoryDeclared: !!GS.campaignVictoryDeclared,
-      research: svc('Research') ? svc('Research').getSnapshot() : null,
-      progressionRestarts:
-        typeof ProgressionRestarts !== 'undefined' ? ProgressionRestarts.getSnapshot() : null,
       // Mode rules + advanced difficulty — required so load/quickload keeps fog/horde/challenge.
       advancedMods: svc('AdvancedDifficulty') ? svc('AdvancedDifficulty').getActiveIds() : [],
       modeSession: svc('GameModes') ? svc('GameModes').getSession() : null,
+      modules: SaveRegistry.saveAll(),
     };
+    return SaveFormat.seal(snap);
   }
 
-  function importGameState(snap) {
-    if (!snap || !isSupportedSaveVersion(snap.version)) return false;
-    try {
-      GS.state = 'playing';
-      GS.paused = true;
-      GS.wave = snap.wave;
-      GS.nextWavePlan = null;
-      GS.cheatsUsed = !!snap.cheatsUsed;
-      GS.tactical = snap.tactical;
-      GS.kills = snap.kills;
-      GS.misses = snap.misses;
-      GS.timeOfDay = snap.timeOfDay;
-      GS.nightTimer = snap.nightTimer || 0;
-      GS.waveProgress = snap.waveProgress || 0;
-      GS.difficultyId = snap.difficultyId || GS.difficultyId;
-      // Restore challenge/mode session and modifiers before units/combat use them.
-      if (svc('GameModes') && snap.modeSession) {
-        svc('GameModes').restoreSession(snap.modeSession);
-      } else if (svc('AdvancedDifficulty') && Array.isArray(snap.advancedMods)) {
-        svc('AdvancedDifficulty').setActive(snap.advancedMods);
+  /** Build one unit from its saved record. Null when this game has no such unit type. */
+  function restoreUnitFromSnap(us, legacy) {
+    ensurePlayerUnitDef(us.type);
+    const u = createUnit(us.type, us.x, us.y, us.team || 'player');
+    if (!u) return null;
+    if (us.id) u.id = us.id;
+    Object.assign(u, us);
+    if (legacy) stopPostReturn(u);
+    if (u.team === 'player') {
+      if (legacy) {
+        // Saves before format 3 did not hold a march in progress or the med-tent state:
+        // the soldier walks to his post (the order's destination).
+        u.manualOrder = false;
+        u.medHurt = u.hp < u.maxHp * 0.97;
+        u.medPrevHp = u.hp;
       }
-      // Saves from before per-soldier Hold carried one global switch; off meant everyone held.
-      const legacyHoldAll = snap.globalHunt === false;
-      GS.globalHunt = true;
-      GS.builderAutoRepair = snap.builderAutoRepair ?? GS.builderAutoRepair;
-      GS.tpAwardedForWave = snap.tpAwardedForWave ?? -1;
-      GS.runPlayerDeaths = snap.runPlayerDeaths ?? snap.misses ?? 0;
-      GS.pendingLevy = snap.pendingLevy ?? 0;
-      if (typeof EconomyRules !== 'undefined') {
-        EconomyRules.importState(snap.economyRules);
-        // A loaded run has already had its starting bonus.
-        if (!snap.economyRules) EconomyRules.grantStartTp(EconomyRules.START_TP_BONUS_CAP);
+      u.holding = !!u.canHunt && !!us.holding;
+      u.huntMode = !!u.canHunt && !u.holding;
+      if (
+        u.holding &&
+        !u.garrisoned &&
+        !u.wallGarrisoned &&
+        !u.stationedKeep &&
+        !(Number.isFinite(u.holdX) && Number.isFinite(u.holdY))
+      ) {
+        const hp = clampPos(u.postX ?? u.x, u.postY ?? u.y);
+        u.holdX = hp.x;
+        u.holdY = hp.y;
       }
-      GS.scoutedWave = snap.scoutedWave ?? -1;
-      svc('PlayerCounterEvolution')?.recallAll?.();
-      GS.pendingReinforce = Array.isArray(snap.pendingReinforce) ? [...snap.pendingReinforce] : [];
-      GS.spawnDelayBonus = snap.spawnDelayBonus ?? 0;
-      GS.courierCooldown = Math.max(0, snap.courierCooldown | 0);
-      GS.courierMessagesUsedThisWave =
-        snap.courierMessagesUsedThisWave != null
-          ? snap.courierMessagesUsedThisWave | 0
-          : snap.courierUsedThisWave
-            ? 1
-            : 0;
-      GS.spyUsedThisWave = !!snap.spyUsedThisWave;
-      GS.doctrineUsedThisWave = !!snap.doctrineUsedThisWave;
-      GS.counterDoctrineUsedThisWave = !!snap.counterDoctrineUsedThisWave;
-      GS.expeditionUsedThisWave = !!snap.expeditionUsedThisWave;
-      GS.rallyTimer = snap.rallyTimer ?? 0;
-      GS.firstWallWave = snap.firstWallWave ?? null;
-      GS.namedBossWave = snap.namedBossWave ? { ...snap.namedBossWave } : null;
-      if (snap.waveModifiers) GS.waveModifiers = { ...snap.waveModifiers };
-      if (snap.pendingWaveMods) GS.pendingWaveMods = { ...snap.pendingWaveMods };
-      GS.fallenPool = Array.isArray(snap.fallenPool) ? snap.fallenPool.map((f) => ({ ...f })) : [];
-      GS.sessionHighlights = snap.sessionHighlights || [];
-      // Older saves past wave 100 predate the flag; treat them as already won.
-      GS.campaignVictoryDeclared =
-        snap.campaignVictoryDeclared ?? (snap.wave || 0) > CAMPAIGN_VICTORY_WAVE;
-      applyWorldSize(GS.wave);
-      releaseAllUnits();
-      GS.projectiles = [];
-      releaseAllBuildings();
+    }
+    if (u.spawnWave == null) u.spawnWave = GS.wave;
+    if (u.tenureApplied == null) u.tenureApplied = 0;
+    u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
+    u.hp = Math.min(u.maxHp, Math.max(1, us.hp || u.hp));
+    if (u.isGeneral == null) u.isGeneral = u.type === 'general';
+    // Siege / expansion roster combat fields can vanish on older snaps.
+    if (u.type === 'ballista') {
+      if (!u.projectile) u.projectile = 'arrow';
+      if (!(u.siegeMult > 1)) u.siegeMult = 2.2;
+      if (u.combatType !== 'ranged' && u.combatType !== 'siege') u.combatType = 'ranged';
+    }
+    if ((u.combatType === 'ranged' || u.combatType === 'siege') && !u.projectile) {
+      u.projectile = 'arrow';
+    }
+    if (typeof ensureHealerStats === 'function') ensureHealerStats(u);
+    if (legacy) {
+      if (typeof repairHonorName === 'function') repairHonorName(u);
+      if (svc('GameDepth') && u.team === 'player' && svc('GameDepth').isIpOperative(u)) {
+        svc('GameDepth').applyIpWaveScaling(u, GS.wave);
+      }
+      if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
+    }
+    // Paths are never saved; the unit asks for a new one on its next step.
+    u.path = [];
+    u.pathIndex = 0;
+    return u;
+  }
+
+  /**
+   * Put a checked, current-version save on the field. Throws if anything is wrong; the
+   * caller (importGameState) then restores what was there before. Returns warnings to show.
+   */
+  function applySnapshot(snap) {
+    const warnings = [];
+    const legacy = !!snap.legacy;
+    GS.state = 'playing';
+    GS.paused = true;
+    GS.wave = snap.wave;
+    GS.nextWavePlan = null;
+    GS.cheatsUsed = !!snap.cheatsUsed;
+    GS.tactical = snap.tactical;
+    GS.kills = snap.kills || 0;
+    GS.misses = snap.misses || 0;
+    GS.timeOfDay = snap.timeOfDay;
+    GS.nightTimer = snap.nightTimer || 0;
+    GS.waveProgress = snap.waveProgress || 0;
+    GS.difficultyId = snap.difficultyId || GS.difficultyId;
+    // Restore challenge/mode session and modifiers before units/combat use them.
+    if (svc('GameModes') && snap.modeSession) {
+      svc('GameModes').restoreSession(snap.modeSession);
+      // A seeded run carries on from where its stream was, not from the start of it.
+      if (Number.isInteger(snap.rng)) svc('GameModes').setRngState?.(snap.rng);
+    } else if (svc('AdvancedDifficulty') && Array.isArray(snap.advancedMods)) {
+      svc('AdvancedDifficulty').setActive(snap.advancedMods);
+    }
+    GS.globalHunt = true;
+    GS.builderAutoRepair = snap.builderAutoRepair ?? GS.builderAutoRepair;
+    GS.tpAwardedForWave = snap.tpAwardedForWave ?? -1;
+    GS.runPlayerDeaths = snap.runPlayerDeaths ?? snap.misses ?? 0;
+    GS.pendingLevy = snap.pendingLevy ?? 0;
+    GS.scoutedWave = snap.scoutedWave ?? -1;
+    GS.pendingReinforce = Array.isArray(snap.pendingReinforce) ? [...snap.pendingReinforce] : [];
+    GS.spawnDelayBonus = snap.spawnDelayBonus ?? 0;
+    GS.courierCooldown = Math.max(0, snap.courierCooldown | 0);
+    GS.courierMessagesUsedThisWave = snap.courierMessagesUsedThisWave | 0;
+    GS.spyUsedThisWave = !!snap.spyUsedThisWave;
+    GS.doctrineUsedThisWave = !!snap.doctrineUsedThisWave;
+    GS.counterDoctrineUsedThisWave = !!snap.counterDoctrineUsedThisWave;
+    GS.expeditionUsedThisWave = !!snap.expeditionUsedThisWave;
+    GS.rallyTimer = snap.rallyTimer ?? 0;
+    GS.firstWallWave = snap.firstWallWave ?? null;
+    GS.namedBossWave = snap.namedBossWave ? { ...snap.namedBossWave } : null;
+    if (snap.waveModifiers) GS.waveModifiers = { ...snap.waveModifiers };
+    if (snap.pendingWaveMods) GS.pendingWaveMods = { ...snap.pendingWaveMods };
+    GS.fallenPool = Array.isArray(snap.fallenPool) ? snap.fallenPool.map((f) => ({ ...f })) : [];
+    GS.sessionHighlights = Array.isArray(snap.sessionHighlights)
+      ? snap.sessionHighlights.map((h) => ({ ...h }))
+      : [];
+    // Older saves past wave 100 predate the flag; treat them as already won.
+    GS.campaignVictoryDeclared =
+      snap.campaignVictoryDeclared ?? (snap.wave || 0) > CAMPAIGN_VICTORY_WAVE;
+    // Short-lived state that is not saved starts clean.
+    GS.moraleCascadeState = { recentBreaks: [], cascade: false, tick: 0 };
+    GS.huntSweep = false;
+    GS.huntQuietTicks = 0;
+    GS.huntFront = Infinity;
+    GS.moveMarkers = [];
+    GS.selectedUnitId = null;
+    GS.selectedUnitIds = [];
+    GS.bossTrackId = null;
+    GS.multiFrontPlan = null;
+    GS.spawnSquadLeft = 0;
+    // Run fields with no column of their own (see SAVE_RUN_FIELDS).
+    const run = snap.run && typeof snap.run === 'object' ? snap.run : {};
+    for (const key of SAVE_RUN_FIELDS) {
+      if (!(key in run) || key === 'hazards') continue;
+      const v = run[key];
+      GS[key] = v !== null && typeof v === 'object' ? JSON.parse(JSON.stringify(v)) : v;
+    }
+    applyWorldSize(GS.wave);
+    releaseAllUnits();
+    GS.projectiles = [];
+    releaseAllBuildings();
+    if (snap.terrain && Array.isArray(snap.terrain.decorations)) {
+      // The saved field, exactly: nothing is rolled again.
+      GS.decorations = snap.terrain.decorations.map((d) => JSON.parse(JSON.stringify(d)));
+      GS.hazards = Array.isArray(run.hazards) ? JSON.parse(JSON.stringify(run.hazards)) : [];
+      GS.terrainInitialized = snap.terrain.initialized !== false;
+    } else {
+      // A save from before format 3 has no terrain in it.
       GS.decorations = [];
       generateBattlefield();
-      for (const bs of snap.buildings || []) {
-        const b = createBuilding(bs.type, bs.x, bs.y, bs.owner || 'player', {
-          facing: bs.facing || undefined,
-          slotX: bs.slotX,
-          slotY: bs.slotY,
-          castleGroup: bs.castleGroup || undefined,
-        });
-        if (bs.id) b.id = bs.id;
-        Object.assign(b, bs);
-        if (bs.complete) b.complete = true;
-        // Re-assert def flags so old saves missing fields still work.
-        const def = BuildDefs[b.type];
-        if (def) {
-          if (def.isResearchLab) b.isResearchLab = true;
-          if (def.isAcademy) b.isAcademy = true;
-          if (def.academyUnit) b.academyUnit = b.academyUnit || def.academyUnit;
-          if (def.isEnemySettlement) b.isEnemySettlement = true;
-          if (def.isResourceGen) b.isResourceGen = true;
-          if (def.isHamlet) b.isHamlet = true;
-          if (def.isMerchantGuild) b.isMerchantGuild = true;
-          if (def.isWatchtower) b.isWatchtower = true;
-          if (def.isKeep) b.isKeep = true;
-          if (def.isWweAcademy) b.isWweAcademy = true;
-          if (def.isCrossoverBarracks) b.isCrossoverBarracks = true;
-        }
-        if (b.type === 'wall' && b.facing) {
-          b.wallSlots = getWallSlotPositions(b.facing, b.x, b.y);
-        }
-        normalizeEnemyEconomyBuilding(b);
-        ensureBuildingHealth(b);
-        GS.buildings.push(b);
+    }
+    let droppedBuildings = 0;
+    for (const bs of snap.buildings || []) {
+      if (!BuildDefs[bs.type]) {
+        droppedBuildings++;
+        continue;
       }
-      for (const us of snap.units || []) {
-        ensurePlayerUnitDef(us.type);
-        const u = createUnit(us.type, us.x, us.y, us.team || 'player');
-        if (!u) continue;
-        if (us.id) u.id = us.id;
-        Object.assign(u, us);
-        stopPostReturn(u);
-        if (u.team === 'player') {
-          // Standing order: Hold only if the save says so, Hunt otherwise. A march in
-          // progress is not saved, so he walks to his post (the order's destination).
-          u.manualOrder = false;
-          u.medHurt = u.hp < u.maxHp * 0.97;
-          u.medPrevHp = u.hp;
-          u.holding = !!u.canHunt && (!!us.holding || legacyHoldAll);
-          u.huntMode = !!u.canHunt && !u.holding;
-          if (u.holding && !u.garrisoned && !u.wallGarrisoned && !u.stationedKeep) {
-            const hp = clampPos(u.postX ?? u.x, u.postY ?? u.y);
-            u.holdX = hp.x;
-            u.holdY = hp.y;
+      const b = createBuilding(bs.type, bs.x, bs.y, bs.owner || 'player', {
+        facing: bs.facing || undefined,
+        slotX: bs.slotX,
+        slotY: bs.slotY,
+        castleGroup: bs.castleGroup || undefined,
+      });
+      if (bs.id) b.id = bs.id;
+      Object.assign(b, bs);
+      if (bs.complete) b.complete = true;
+      // Re-assert def flags so old saves missing fields still work.
+      const def = BuildDefs[b.type];
+      if (def) {
+        if (def.isResearchLab) b.isResearchLab = true;
+        if (def.isAcademy) b.isAcademy = true;
+        if (def.academyUnit) b.academyUnit = b.academyUnit || def.academyUnit;
+        if (def.isEnemySettlement) b.isEnemySettlement = true;
+        if (def.isResourceGen) b.isResourceGen = true;
+        if (def.isHamlet) b.isHamlet = true;
+        if (def.isMerchantGuild) b.isMerchantGuild = true;
+        if (def.isWatchtower) b.isWatchtower = true;
+        if (def.isKeep) b.isKeep = true;
+        if (def.isWweAcademy) b.isWweAcademy = true;
+        if (def.isCrossoverBarracks) b.isCrossoverBarracks = true;
+      }
+      if (b.type === 'wall' && b.facing) {
+        b.wallSlots = getWallSlotPositions(b.facing, b.x, b.y);
+      }
+      normalizeEnemyEconomyBuilding(b);
+      ensureBuildingHealth(b);
+      GS.buildings.push(b);
+    }
+    let droppedUnits = 0;
+    for (const us of snap.units || []) {
+      const u = restoreUnitFromSnap(us, legacy);
+      if (!u) {
+        droppedUnits++;
+        continue;
+      }
+      GS.units.push(u);
+    }
+    // Re-link wall slots: walls are rebuilt with empty slots, so a saved wall garrison
+    // would otherwise stand frozen while other footmen marched to the same slot.
+    for (const u of GS.units) {
+      if (!u.wallGarrisoned || u.team !== 'player') continue;
+      const wall = GS.buildings.find((b) => b.id === u.wallGarrisoned);
+      const slot = wall && wall.hp > 0 ? wall.wallSlots?.[u.wallSlotIndex] : null;
+      if (slot && !slot.unitId) slot.unitId = u.id;
+      else {
+        u.wallGarrisoned = null;
+        u.wallSlotIndex = null;
+      }
+    }
+    // Re-link outpost garrisons from unit.garrisoned (building.garrisonUnitId may be stale).
+    for (const u of GS.units) {
+      if (!u.garrisoned || u.team !== 'player') continue;
+      const op = GS.buildings.find((b) => b.id === u.garrisoned);
+      if (op && op.hp > 0) {
+        op.garrisonUnitId = u.id;
+        if (legacy) u.range = getEffectiveRange(u);
+      } else {
+        u.garrisoned = null;
+      }
+    }
+    // Re-link builder projects so mid-construction sites aren't abandoned after load.
+    for (const us of snap.units || []) {
+      if (us.type !== 'builder' && us.combatType !== 'builder') continue;
+      const builder = GS.units.find((u) => u.id === us.id);
+      if (!builder) continue;
+      builder.building = null;
+      builder.buildQueue = [];
+      if (us.buildTargetId) {
+        const site = GS.buildings.find((b) => b.id === us.buildTargetId);
+        if (site && !site.complete) builder.building = site;
+      }
+      if (Array.isArray(us.buildQueueIds)) {
+        for (const item of us.buildQueueIds) {
+          if (!item) continue;
+          if (item.id) {
+            const site = GS.buildings.find((b) => b.id === item.id);
+            if (site && !site.complete) builder.buildQueue.push(site);
+          } else if (item.pending && item.type) {
+            builder.buildQueue.push({
+              type: item.type,
+              x: item.x,
+              y: item.y,
+              pending: true,
+              facing: item.facing || undefined,
+            });
           }
         }
-        if (u.spawnWave == null) u.spawnWave = GS.wave;
-        if (u.tenureApplied == null) u.tenureApplied = 0;
-        u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
-        u.hp = Math.min(u.maxHp, Math.max(1, us.hp || u.hp));
-        if (u.isGeneral == null) u.isGeneral = u.type === 'general';
-        // Siege / expansion roster combat fields can vanish on older snaps.
-        if (u.type === 'ballista') {
-          if (!u.projectile) u.projectile = 'arrow';
-          if (!(u.siegeMult > 1)) u.siegeMult = 2.2;
-          if (u.combatType !== 'ranged' && u.combatType !== 'siege') u.combatType = 'ranged';
-        }
-        if ((u.combatType === 'ranged' || u.combatType === 'siege') && !u.projectile) {
-          u.projectile = 'arrow';
-        }
-        if (typeof repairHonorName === 'function') repairHonorName(u);
-        if (typeof ensureHealerStats === 'function') ensureHealerStats(u);
-        if (svc('GameDepth') && u.team === 'player' && svc('GameDepth').isIpOperative(u)) {
-          svc('GameDepth').applyIpWaveScaling(u, GS.wave);
-        }
-        if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
+      }
+    }
+    for (const u of GS.units) {
+      delete u.buildTargetId;
+      delete u.buildQueueIds;
+    }
+    GS.spawnQueue = JSON.parse(JSON.stringify(snap.spawnQueue || []));
+    GS.waveEnemyTotal = snap.waveEnemyTotal || GS.spawnQueue.length;
+    GS.spawnTimer = snap.spawnTimer || 0;
+    GS.currentHordeWave = snap.currentHordeWave
+      ? { ...snap.currentHordeWave, queue: [...(snap.currentHordeWave.queue || [])] }
+      : null;
+    GS.currentWaveConfig = snap.currentWaveConfig
+      ? { ...snap.currentWaveConfig, pool: [...(snap.currentWaveConfig.pool || [])] }
+      : getWaveConfig(GS.wave);
+    sanitizeTactical();
+    invalidateObstacles();
+    GS.spatialStaticDirty = true;
+    normalizeEnemyEconomyBuildings();
+    GS.enemyEconomyEverSpawned = false;
+    GS.northernHoldEverSpawned = false;
+    for (const b of GS.buildings) noteEnemyEconomyPresence(b);
+    refreshUnitCounts();
+    resetCamera();
+    GS.spatialFrame = -1;
+    if (svc('ContentExpansion')?.setLoadout && snap.loadout) {
+      svc('ContentExpansion').setLoadout(snap.loadout, { silent: true });
+    }
+    // Every registered module section (siege loop, research, economy, factions, ...).
+    const loaded = SaveRegistry.loadAll(snap.modules, siegeCtx);
+    if (!loaded.ok) {
+      const first = loaded.errors[0];
+      throw new Error(`${first.name}: ${first.message}`);
+    }
+    // Soldiers who were away on an expedition go back to their party, off the field.
+    const awaySnaps = Array.isArray(snap.expeditionAway) ? snap.expeditionAway : [];
+    if (awaySnaps.length) {
+      const awayUnits = [];
+      for (const us of awaySnaps) {
+        const u = restoreUnitFromSnap(us, legacy);
+        if (u) awayUnits.push(u);
+        else droppedUnits++;
+      }
+      const stray = svc('PlayerCounterEvolution')?.attachAway
+        ? svc('PlayerCounterEvolution').attachAway(awayUnits)
+        : awayUnits;
+      // No party to rejoin (module missing, or the party is gone): they stand at the muster.
+      stray.forEach((u, i) => {
+        u.x = GS.worldW / 2 + (i - (stray.length - 1) / 2) * 18;
+        u.y = GS.deployY;
         GS.units.push(u);
-      }
-      // Re-link wall slots: walls are rebuilt with empty slots, so a saved wall garrison
-      // would otherwise stand frozen while other footmen marched to the same slot.
-      for (const u of GS.units) {
-        if (!u.wallGarrisoned || u.team !== 'player') continue;
-        const wall = GS.buildings.find((b) => b.id === u.wallGarrisoned);
-        const slot = wall && wall.hp > 0 ? wall.wallSlots?.[u.wallSlotIndex] : null;
-        if (slot && !slot.unitId) slot.unitId = u.id;
-        else {
-          u.wallGarrisoned = null;
-          u.wallSlotIndex = null;
-        }
-      }
-      // Re-link outpost garrisons from unit.garrisoned (building.garrisonUnitId may be stale).
-      for (const u of GS.units) {
-        if (!u.garrisoned || u.team !== 'player') continue;
-        const op = GS.buildings.find((b) => b.id === u.garrisoned);
-        if (op && op.hp > 0) {
-          op.garrisonUnitId = u.id;
-          u.range = getEffectiveRange(u);
-        } else {
-          u.garrisoned = null;
-        }
-      }
-      // Re-link builder projects so mid-construction sites aren't abandoned after load.
-      for (const us of snap.units || []) {
-        if (us.type !== 'builder' && us.combatType !== 'builder') continue;
-        const builder = GS.units.find((u) => u.id === us.id);
-        if (!builder) continue;
-        builder.building = null;
-        builder.buildQueue = [];
-        if (us.buildTargetId) {
-          const site = GS.buildings.find((b) => b.id === us.buildTargetId);
-          if (site && !site.complete) builder.building = site;
-        }
-        if (Array.isArray(us.buildQueueIds)) {
-          for (const item of us.buildQueueIds) {
-            if (!item) continue;
-            if (item.id) {
-              const site = GS.buildings.find((b) => b.id === item.id);
-              if (site && !site.complete) builder.buildQueue.push(site);
-            } else if (item.pending && item.type) {
-              builder.buildQueue.push({
-                type: item.type,
-                x: item.x,
-                y: item.y,
-                pending: true,
-                facing: item.facing || undefined,
-              });
-            }
-          }
-        }
-        delete builder.buildTargetId;
-        delete builder.buildQueueIds;
-      }
-      GS.spawnQueue = [...(snap.spawnQueue || [])];
-      GS.waveEnemyTotal = snap.waveEnemyTotal || GS.spawnQueue.length;
-      GS.spawnTimer = snap.spawnTimer || 0;
-      GS.currentHordeWave = snap.currentHordeWave
-        ? { ...snap.currentHordeWave, queue: [...(snap.currentHordeWave.queue || [])] }
-        : null;
-      GS.currentWaveConfig = snap.currentWaveConfig
-        ? { ...snap.currentWaveConfig, pool: [...(snap.currentWaveConfig.pool || [])] }
-        : getWaveConfig(GS.wave);
-      sanitizeTactical();
-      invalidateObstacles();
-      normalizeEnemyEconomyBuildings();
-      GS.enemyEconomyEverSpawned = false;
-      GS.northernHoldEverSpawned = false;
-      for (const b of GS.buildings) noteEnemyEconomyPresence(b);
-      refreshUnitCounts();
-      resetCamera();
-      GS.spatialFrame = -1;
-      if (svc('Research') && snap.research) svc('Research').restoreSnapshot(snap.research);
-      SiegeLoop.importState(snap.siegeLoop || null, siegeCtx);
-      if (typeof ProgressionRestarts !== 'undefined') {
-        if (snap.progressionRestarts) {
-          ProgressionRestarts.restoreSnapshot(snap.progressionRestarts);
-        } else {
-          ProgressionRestarts.syncFiredThroughWave(GS.wave);
-        }
-      }
-      if (svc('ContentExpansion')?.setLoadout && snap.loadout) {
-        svc('ContentExpansion').setLoadout(snap.loadout, { silent: true });
-      }
-      // Restore in-flight projectiles after units exist so target/source ids resolve.
-      GS.projectiles = Array.isArray(snap.projectiles)
-        ? snap.projectiles.map((p) => ({
-            x: p.x,
-            y: p.y,
-            tx: p.tx,
-            ty: p.ty,
-            type: p.type || 'arrow',
-            damage: p.damage || 10,
-            team: p.team || 'player',
-            speed: p.speed || 6,
-            accuracy: p.accuracy ?? 40,
-            targetId: p.targetId || null,
-            sourceId: p.sourceId || null,
-            sourceType: p.sourceType || null,
-            splash: !!p.splash,
-            angle: p.angle || 0,
-          }))
-        : [];
-      wireGameContext();
-      // Tomorrow's host: the saved plan, or for an older save made at night a fresh roll,
-      // so the field-edge markers still tell the truth.
-      GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
-      if (GS.cheatsUsed) SiegeLoop.voidRun();
-      if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
-      if (svc('UX')) svc('UX').onPauseChanged(true);
-      syncInteractionState({ refreshCounts: true });
-      return true;
-    } catch (_) {
+      });
+      if (stray.length) refreshUnitCounts();
+    }
+    // Restore in-flight projectiles after units exist so target/source ids resolve.
+    GS.projectiles = Array.isArray(snap.projectiles)
+      ? snap.projectiles.map((p) => ({
+          ...p,
+          type: p.type || 'arrow',
+          damage: p.damage || 10,
+          team: p.team || 'player',
+          speed: p.speed || 6,
+          accuracy: p.accuracy ?? 40,
+          targetId: p.targetId || null,
+          sourceId: p.sourceId || null,
+          sourceType: p.sourceType || null,
+          splash: !!p.splash,
+          angle: p.angle || 0,
+        }))
+      : [];
+    wireGameContext();
+    // Tomorrow's host: the saved plan, or for an older save made at night a fresh roll,
+    // so the field-edge markers still tell the truth.
+    GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
+    if (GS.cheatsUsed) SiegeLoop.voidRun();
+    if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
+    if (svc('UX')) svc('UX').onPauseChanged(true);
+    syncInteractionState({ refreshCounts: true });
+    if (droppedUnits) {
+      warnings.push(
+        `${droppedUnits} soldier${droppedUnits === 1 ? '' : 's'} in this save belong${droppedUnits === 1 ? 's' : ''} to content that is not loaded (a mod that is off?) and ${droppedUnits === 1 ? 'was' : 'were'} left out.`
+      );
+    }
+    if (droppedBuildings) {
+      warnings.push(
+        `${droppedBuildings} building${droppedBuildings === 1 ? '' : 's'} in this save belong${droppedBuildings === 1 ? 's' : ''} to content that is not loaded and ${droppedBuildings === 1 ? 'was' : 'were'} left out.`
+      );
+    }
+    return warnings;
+  }
+
+  let lastLoadReport = { ok: true, error: null, warnings: [], fromVersion: null };
+
+  /** What the last importGameState() did: { ok, error, warnings, fromVersion }. */
+  function getLastLoadReport() {
+    return { ...lastLoadReport, warnings: [...lastLoadReport.warnings] };
+  }
+
+  /**
+   * Load a save. It is checked first (version, checksum, migration to the current format,
+   * shape) and refused with a reason before anything is touched. If applying it still
+   * fails, the game that was running is put back. Returns true or false; the reason is in
+   * getLastLoadReport().error.
+   */
+  function importGameState(raw) {
+    const prep = SaveFormat.prepare(raw);
+    if (!prep.ok) {
+      lastLoadReport = { ok: false, error: prep.error, warnings: [], fromVersion: null };
       return false;
     }
+    const before = { state: GS.state, paused: GS.paused };
+    let backup = null;
+    if (GS.state === 'playing') {
+      try {
+        backup = exportGameState();
+      } catch (_) {
+        backup = null;
+      }
+    }
+    try {
+      const warnings = applySnapshot(prep.snap);
+      lastLoadReport = { ok: true, error: null, warnings, fromVersion: prep.fromVersion };
+      for (const w of warnings) showMessage(w, 360);
+      return true;
+    } catch (e) {
+      let restored = false;
+      if (backup) {
+        try {
+          const back = SaveFormat.prepare(backup);
+          if (back.ok) {
+            applySnapshot(back.snap);
+            restored = true;
+          }
+        } catch (_) {
+          restored = false;
+        }
+      }
+      GS.state = before.state;
+      GS.paused = before.paused;
+      if (!restored && before.state === 'playing') {
+        // Nothing to go back to: leave an empty, consistent field, not half of a save.
+        releaseAllUnits();
+        releaseAllBuildings();
+        GS.projectiles = [];
+        GS.spawnQueue = [];
+        refreshUnitCounts();
+      }
+      const why = e && e.message ? e.message : 'unknown error';
+      lastLoadReport = {
+        ok: false,
+        error: `This save could not be loaded (${why}).${restored ? ' Your game was put back as it was.' : ''}`,
+        warnings: [],
+        fromVersion: prep.fromVersion,
+      };
+      console.warn('Save load failed:', e);
+      return false;
+    }
+  }
+
+  /** Why this run may not be saved right now, in words for the player; null when it may. */
+  function getSaveBlockReason() {
+    if (GS.state !== 'playing') return 'There is no game in progress to save.';
+    if (GS.creativeMode) return 'Saving is off in Creative Mode.';
+    if (svc('GameModes') && !svc('GameModes').canQuickSave()) {
+      return 'Saving is off in Ironman and challenge runs.';
+    }
+    return null;
   }
 
   function quickSave() {
@@ -17276,7 +17554,7 @@ const Game = (() => {
       }
       const snap = JSON.parse(raw);
       if (!importGameState(snap)) {
-        showMessage('Quick load failed.', 160);
+        showMessage(lastLoadReport.error || 'Quick load failed.', 360);
         return false;
       }
       showMessage(`Quick load: wave ${GS.wave}.`, 240);
@@ -17885,6 +18163,8 @@ const Game = (() => {
     SAVE_VERSION,
     isSupportedSaveVersion,
     importGameState,
+    getLastLoadReport,
+    getSaveBlockReason,
     setDifficulty,
     recruitWweSuperstar,
     recruitCrossoverOperative,

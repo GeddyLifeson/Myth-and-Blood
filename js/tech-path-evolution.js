@@ -637,6 +637,18 @@ const TechPathEvolution = (() => {
     }
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('TechPathEvolution', {
+      save: () => ({ state }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+      },
+    });
+  }
+
   return {
     KINGDOM_WAVE,
     GALACTIC_WAVE,

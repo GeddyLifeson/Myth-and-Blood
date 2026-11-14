@@ -1425,7 +1425,22 @@ const SiegeLoop = (() => {
   }
 
   // ------------------------------------------------------------ save and load
+  // Tick stamps are saved as an offset from "now", because the tick counter of the game
+  // that loads the save is not the one that wrote it. null means "not set".
+  const TICK_STAMPS = [
+    'warCryReady',
+    'holdLineReady',
+    'lastCombatTick',
+    'lastBloodTick',
+    'stormedAt',
+    'stepNextTick',
+  ];
+  const saveNow = () => (typeof SaveRegistry !== 'undefined' ? SaveRegistry.tick() : 0);
+
   function exportState() {
+    const now = saveNow();
+    const stamps = {};
+    for (const k of TICK_STAMPS) stamps[k] = run[k] ? run[k] - now : null;
     return {
       breaches: run.breaches,
       edicts: [...run.edicts],
@@ -1437,6 +1452,15 @@ const SiegeLoop = (() => {
       voided: !!run.voided,
       fallen: run.fallen.slice(),
       stepsShown: [...run.stepsShown],
+      // Added with save format 3: crates on the field, the crate timer, forged maps,
+      // the run tallies behind the score, ability cooldowns and the night's preview.
+      crates: run.crates.filter((c) => !c.spent).map((c) => ({ ...c })),
+      crateTimer: run.crateTimer,
+      forgedMaps: !!run.forgedMaps,
+      tally: JSON.parse(JSON.stringify(run.tally)),
+      nextId: run.nextId,
+      preview: run.preview ? JSON.parse(JSON.stringify(run.preview)) : null,
+      stamps,
       sapperKit: typeof SapperKit !== 'undefined' ? SapperKit.exportState() : null,
     };
   }
@@ -1460,10 +1484,31 @@ const SiegeLoop = (() => {
       run.cleanStreak = snap.cleanStreak || 0;
       run.flawless = snap.flawless || 0;
       run.fallen = Array.isArray(snap.fallen) ? snap.fallen : [];
+      if (Array.isArray(snap.crates)) {
+        run.crates = snap.crates
+          .filter((c) => c && Number.isFinite(c.x) && Number.isFinite(c.y))
+          .map((c) => ({ ...c, spent: false }));
+      }
+      if (Number.isFinite(snap.crateTimer)) run.crateTimer = snap.crateTimer;
+      run.forgedMaps = !!snap.forgedMaps;
+      if (snap.tally && typeof snap.tally === 'object') {
+        run.tally = { ...run.tally, ...JSON.parse(JSON.stringify(snap.tally)) };
+        if (!Array.isArray(run.tally.ribbons)) run.tally.ribbons = [];
+      }
+      if (Number.isFinite(snap.nextId)) run.nextId = Math.max(1, snap.nextId);
+      if (snap.stamps && typeof snap.stamps === 'object') {
+        const now = saveNow();
+        for (const k of TICK_STAMPS) {
+          run[k] = Number.isFinite(snap.stamps[k]) ? now + snap.stamps[k] : 0;
+        }
+      }
     }
     fx = computeFx();
     if (typeof SapperKit !== 'undefined') SapperKit.importState(snap ? snap.sapperKit : null);
-    if (ctx.isNight) run.preview = buildPreview(ctx);
+    // The night's preview is part of the save; older saves build it again.
+    if (snap && snap.preview && typeof snap.preview === 'object' && ctx.isNight) {
+      run.preview = JSON.parse(JSON.stringify(snap.preview));
+    } else if (ctx.isNight) run.preview = buildPreview(ctx);
     renderSpoils(ctx);
     syncHud(ctx);
   }

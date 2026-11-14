@@ -457,6 +457,52 @@ const PlayerCounterEvolution = (() => {
     };
   }
 
+  /**
+   * After a load: hand the soldiers who were away back to their expeditions (matched by
+   * unit id). Returns the ones no expedition claims, for the game to stand at the muster.
+   */
+  function attachAway(units) {
+    const stray = [];
+    for (const u of units || []) {
+      const exp = activeExpeditions.find((e) => (e.unitIds || []).includes(u.id));
+      if (exp) {
+        u.onExpedition = exp.id;
+        exp.away.push(u);
+      } else stray.push(u);
+    }
+    return stray;
+  }
+
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('PlayerCounterEvolution', {
+      // The soldiers themselves are saved by the game (expeditionAway) and come back
+      // through attachAway(); here only the expedition records.
+      save: () => ({
+        factionDebuffs,
+        activeExpeditions: activeExpeditions.map((e) => ({ ...e, away: [] })),
+        counterAnnounced,
+        totalExpeditions,
+        totalDoctrines,
+      }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.factionDebuffs && typeof data.factionDebuffs === 'object') {
+          factionDebuffs = data.factionDebuffs;
+        }
+        if (Array.isArray(data.activeExpeditions)) {
+          activeExpeditions = data.activeExpeditions
+            .filter((e) => e && Array.isArray(e.unitIds))
+            .map((e) => ({ ...e, away: [] }));
+        }
+        counterAnnounced = !!data.counterAnnounced;
+        if (Number.isFinite(data.totalExpeditions)) totalExpeditions = data.totalExpeditions;
+        if (Number.isFinite(data.totalDoctrines)) totalDoctrines = data.totalDoctrines;
+      },
+    });
+  }
+
   return {
     COUNTER_WAVE_MIN,
     EXPEDITION_WAVE_MIN,
@@ -474,6 +520,7 @@ const PlayerCounterEvolution = (() => {
     getExpeditionSurvivalRate,
     getAwayUnits,
     recallAll,
+    attachAway,
     resolveExpeditions,
     computeExpeditionLoot,
     getExpeditionLootScale,

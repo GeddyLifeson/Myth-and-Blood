@@ -1081,6 +1081,18 @@ const EnemyFactions = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('EnemyFactions', {
+      save: () => ({ announcedTiers }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.announcedTiers instanceof Set) announcedTiers = data.announcedTiers;
+      },
+    });
+  }
+
   return {
     FACTIONS,
     EVOLUTION_STAGES,

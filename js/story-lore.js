@@ -434,6 +434,24 @@ const StoryLore = (() => {
 
   load();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('StoryLore', {
+      // This run's story choices and branch scores.
+      save: () => ({ session }),
+      load(data) {
+        if (!data || !data.session || typeof data.session !== 'object') return;
+        const s = data.session;
+        session = {
+          ...s,
+          choices: Array.isArray(s.choices) ? s.choices : [],
+          flags: s.flags && typeof s.flags === 'object' ? s.flags : {},
+          beatsShown: s.beatsShown instanceof Set ? s.beatsShown : new Set(),
+        };
+      },
+    });
+  }
+
   return {
     init,
     load,

@@ -300,6 +300,19 @@ const StrategyCounterplay = (() => {
     return activeStrategies.slice();
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('StrategyCounterplay', {
+      save: () => ({ activeStrategies, lastIntelKey }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Array.isArray(data.activeStrategies)) activeStrategies = data.activeStrategies;
+        if (typeof data.lastIntelKey === 'string') lastIntelKey = data.lastIntelKey;
+      },
+    });
+  }
+
   return {
     resetRun,
     detect,
