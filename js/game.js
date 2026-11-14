@@ -5987,13 +5987,7 @@ const Game = (() => {
     const runnerSeek = isLeashed(unit) && unit.huntMode && !sweeping ? maxSeek + 110 : maxSeek;
     let foeList;
     if (useSpatialQueries()) {
-      svc('Spatial').queryRadiusInto(
-        unit.x,
-        unit.y,
-        runnerSeek,
-        (e) => e.kind === 'unit' && e.ref?.team !== unit.team && e.ref?.hp > 0 && !e.ref?.fleeing,
-        svc('Spatial')._scratch
-      );
+      svc('Spatial').queryFoesInto(unit.x, unit.y, runnerSeek, unit.team, svc('Spatial')._scratch);
       foeList = trimFoeListToNearest(unit, svc('Spatial')._scratch);
     } else {
       foeList = GS.units.filter((u) => u.team !== unit.team && u.hp > 0 && !u.fleeing);
@@ -6114,17 +6108,7 @@ const Game = (() => {
 
   function findNearestPlayer(unit) {
     if (useSpatialQueries()) {
-      return svc('Spatial').queryNearest(
-        unit.x,
-        unit.y,
-        520,
-        (e) =>
-          e.kind === 'unit' &&
-          e.ref?.team === 'player' &&
-          e.ref?.hp > 0 &&
-          !e.ref?.fleeing &&
-          !e.ref?.demoralized
-      );
+      return svc('Spatial').queryNearestFighter(unit.x, unit.y, 520, 'player');
     }
     let best = null,
       bestD = Infinity;
@@ -7134,12 +7118,7 @@ const Game = (() => {
   function isTerrainBlockedAt(x, y, unit, clearance) {
     const scanRadius = clearance + 56;
     if (useSpatialQueries()) {
-      const near = spatialScratchQuery(
-        x,
-        y,
-        scanRadius,
-        (e) => e.kind === 'building' || e.kind === 'deco'
-      );
+      const near = svc('Spatial').queryStaticInto(x, y, scanRadius, svc('Spatial')._scratch);
       for (let ni = 0; ni < near.length; ni++) {
         const d = near[ni];
         if (!obstacleBlocksForUnit(d, unit)) continue;
@@ -7224,7 +7203,7 @@ const Game = (() => {
       return false;
     }
     let blocked = false;
-    svc('Spatial').forCellsInRadius(x, y, r + 8, (entry) => {
+    svc('Spatial').forUnitsInRadius(x, y, r + 8, (entry) => {
       if (blocked || entry.kind !== 'unit') return;
       const u = entry.ref;
       if (u === unit || !unitBlocksMovement(u)) return;
@@ -7300,11 +7279,12 @@ const Game = (() => {
     let sy = 0;
     let allies;
     if (useSpatialQueries()) {
-      svc('Spatial').queryRadiusInto(
+      svc('Spatial').queryTeamInto(
         unit.x,
         unit.y,
         UNIT_COLLISION * 4,
-        (e) => e.kind === 'unit' && e.ref?.team === unit.team && e.ref !== unit,
+        unit.team,
+        unit,
         svc('Spatial')._scratch
       );
       allies = svc('Spatial')._scratch;
@@ -13302,13 +13282,7 @@ const Game = (() => {
     let bestD = Infinity;
     let foes;
     if (useSpatialQueries()) {
-      svc('Spatial').queryRadiusInto(
-        unit.x,
-        unit.y,
-        maxR,
-        (e) => e.kind === 'unit' && e.ref?.team !== unit.team && e.ref?.hp > 0 && !e.ref?.fleeing,
-        svc('Spatial')._scratch
-      );
+      svc('Spatial').queryFoesInto(unit.x, unit.y, maxR, unit.team, svc('Spatial')._scratch);
       foes = svc('Spatial')._scratch;
     } else {
       foes = GS.units;

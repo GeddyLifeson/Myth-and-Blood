@@ -6,60 +6,80 @@ const PathfindingCore = (() => {
   let gridW = 0;
   let gridH = 0;
 
-  class MinHeap {
-    constructor() {
-      this.data = [];
+  // Open list: a binary min-heap on f, held in two parallel typed arrays (cell key, f) so a
+  // search allocates no node objects. Same sift rules as the object heap it replaced, so
+  // ties pop in the same order and paths are unchanged.
+  let heapK = new Int32Array(1024);
+  let heapF = new Float64Array(1024);
+  let heapN = 0;
+
+  function heapPush(k, f) {
+    if (heapN === heapK.length) {
+      const nk = new Int32Array(heapN * 2);
+      const nf = new Float64Array(heapN * 2);
+      nk.set(heapK);
+      nf.set(heapF);
+      heapK = nk;
+      heapF = nf;
     }
-    clear() {
-      this.data.length = 0;
+    let i = heapN++;
+    while (i > 0) {
+      const p = (i - 1) >> 1;
+      if (heapF[p] <= f) break;
+      heapK[i] = heapK[p];
+      heapF[i] = heapF[p];
+      i = p;
     }
-    push(n) {
-      const a = this.data;
-      a.push(n);
-      let i = a.length - 1;
-      while (i > 0) {
-        const p = (i - 1) >> 1;
-        if (a[p].f <= a[i].f) break;
-        const tmp = a[p];
-        a[p] = a[i];
-        a[i] = tmp;
-        i = p;
-      }
-    }
-    pop() {
-      const a = this.data;
-      if (!a.length) return null;
-      const top = a[0];
-      const last = a.pop();
-      if (a.length) {
-        a[0] = last;
-        let i = 0;
-        for (;;) {
-          const l = i * 2 + 1;
-          const r = l + 1;
-          let s = i;
-          if (l < a.length && a[l].f < a[s].f) s = l;
-          if (r < a.length && a[r].f < a[s].f) s = r;
-          if (s === i) break;
-          const tmp = a[s];
-          a[s] = a[i];
-          a[i] = tmp;
-          i = s;
-        }
-      }
-      return top;
-    }
-    get length() {
-      return this.data.length;
-    }
+    heapK[i] = k;
+    heapF[i] = f;
   }
 
-  const openHeap = new MinHeap();
+  /** Removes the smallest entry and returns its cell key (heap must not be empty). */
+  function heapPop() {
+    const top = heapK[0];
+    const n = --heapN;
+    if (n > 0) {
+      const k = heapK[n];
+      const f = heapF[n];
+      let i = 0;
+      for (;;) {
+        const l = i * 2 + 1;
+        const r = l + 1;
+        let s = i;
+        let sf = f;
+        if (l < n && heapF[l] < sf) {
+          s = l;
+          sf = heapF[l];
+        }
+        if (r < n && heapF[r] < sf) s = r;
+        if (s === i) break;
+        heapK[i] = heapK[s];
+        heapF[i] = heapF[s];
+        i = s;
+      }
+      heapK[i] = k;
+      heapF[i] = f;
+    }
+    return top;
+  }
+
   let gScore = null;
   let cameFromParent = null;
   let closedGen = null;
   let openGen = null;
   let searchGen = 1;
+  // Scratch for findNearestWalkableCell: a visit stamp per cell and a fixed BFS queue.
+  let visitGen = null;
+  let visitStamp = 1;
+  const NEAR_QUEUE = 41 * 41;
+  const queueCx = new Int16Array(NEAR_QUEUE);
+  const queueCy = new Int16Array(NEAR_QUEUE);
+  const queueDist = new Int16Array(NEAR_QUEUE);
+  // Result of the last findNearestWalkableCell() that returned true.
+  let nearCx = 0;
+  let nearCy = 0;
+  // Cells closed by the last search, for the stats in Pathfinding.getStats().
+  let lastClosed = 0;
 
   // 8-connected neighbor deltas (cardinal then diagonal).
   const DIRS = [
@@ -81,6 +101,8 @@ const PathfindingCore = (() => {
       cameFromParent = new Int32Array(size);
       closedGen = new Uint16Array(size);
       openGen = new Uint16Array(size);
+      visitGen = new Uint16Array(size);
+      visitStamp = 1;
     }
   }
 
@@ -131,23 +153,36 @@ const PathfindingCore = (() => {
     return grid[cy * gridW + cx] !== 0;
   }
 
+  /**
+   * Nearest walkable cell to (cx, cy) by ring search. True when found; the cell is left in
+   * nearCx / nearCy (no object is returned, so a search allocates nothing).
+   */
   function findNearestWalkableCell(grid, cx, cy, maxRadius = 20) {
-    if (!grid || !inBounds(cx, cy)) return null;
-    if (!isBlocked(grid, cx, cy)) return { cx, cy };
+    if (!grid || !inBounds(cx, cy)) return false;
+    if (!isBlocked(grid, cx, cy)) {
+      nearCx = cx;
+      nearCy = cy;
+      return true;
+    }
 
     // BFS ring search. Cap visits so a fully-blocked map cannot explode.
-    const maxVisit = Math.min(gridW * gridH, (maxRadius * 2 + 1) * (maxRadius * 2 + 1));
-    const visited = new Uint8Array(gridW * gridH);
-    const queueCx = new Int16Array(maxVisit);
-    const queueCy = new Int16Array(maxVisit);
-    const queueDist = new Int16Array(maxVisit);
+    const maxVisit = Math.min(
+      gridW * gridH,
+      (maxRadius * 2 + 1) * (maxRadius * 2 + 1),
+      NEAR_QUEUE
+    );
+    ensureSearchBuffers();
+    if (++visitStamp >= 65500) {
+      visitGen.fill(0);
+      visitStamp = 1;
+    }
     let head = 0;
     let tail = 0;
     queueCx[tail] = cx;
     queueCy[tail] = cy;
     queueDist[tail] = 0;
     tail++;
-    visited[key(cx, cy)] = 1;
+    visitGen[key(cx, cy)] = visitStamp;
 
     while (head < tail) {
       const curCx = queueCx[head];
@@ -155,22 +190,26 @@ const PathfindingCore = (() => {
       const curDist = queueDist[head];
       head++;
       if (curDist > maxRadius) break;
-      if (!isBlocked(grid, curCx, curCy)) return { cx: curCx, cy: curCy };
+      if (!isBlocked(grid, curCx, curCy)) {
+        nearCx = curCx;
+        nearCy = curCy;
+        return true;
+      }
       for (let d = 0; d < DIRS.length; d++) {
         const nx = curCx + DIRS[d][0];
         const ny = curCy + DIRS[d][1];
         if (!inBounds(nx, ny)) continue;
         const k = key(nx, ny);
-        if (visited[k]) continue;
+        if (visitGen[k] === visitStamp) continue;
         if (tail >= maxVisit) break;
-        visited[k] = 1;
+        visitGen[k] = visitStamp;
         queueCx[tail] = nx;
         queueCy[tail] = ny;
         queueDist[tail] = curDist + 1;
         tail++;
       }
     }
-    return null;
+    return false;
   }
 
   function reconstructPath(cameFrom, endCx, endCy, endX, endY) {
@@ -224,6 +263,7 @@ const PathfindingCore = (() => {
   }
 
   function findPathOnGrid(grid, startX, startY, endX, endY, maxNodes) {
+    lastClosed = 0;
     if (!grid || !gridW || !gridH) return [];
 
     const sx = Number(startX);
@@ -239,87 +279,92 @@ const PathfindingCore = (() => {
       return [];
     }
 
-    const rawStart = toCell(sx, sy);
-    const startCell = findNearestWalkableCell(grid, rawStart.cx, rawStart.cy, 8);
-    if (!startCell) return [];
+    // Clamped cell of a finite world position (toCell without the object).
+    const rawSx = Math.max(0, Math.min(gridW - 1, Math.floor(sx / CELL)));
+    const rawSy = Math.max(0, Math.min(gridH - 1, Math.floor(sy / CELL)));
+    if (!findNearestWalkableCell(grid, rawSx, rawSy, 8)) return [];
+    const startCx = nearCx;
+    const startCy = nearCy;
 
-    const rawEnd = toCell(ex, ey);
-    const endCell = findNearestWalkableCell(grid, rawEnd.cx, rawEnd.cy, 20);
-    const goal = endCell
-      ? { cx: endCell.cx, cy: endCell.cy, ...toWorld(endCell.cx, endCell.cy), valid: true }
-      : { cx: rawEnd.cx, cy: rawEnd.cy, ...toWorld(rawEnd.cx, rawEnd.cy), valid: false };
+    const rawEx = Math.max(0, Math.min(gridW - 1, Math.floor(ex / CELL)));
+    const rawEy = Math.max(0, Math.min(gridH - 1, Math.floor(ey / CELL)));
+    const goalValid = findNearestWalkableCell(grid, rawEx, rawEy, 20);
+    const goalCx = goalValid ? nearCx : rawEx;
+    const goalCy = goalValid ? nearCy : rawEy;
     // Only use exact endX/endY when that cell is walkable; otherwise aim at snapped goal center
     // (sending into a blocked tile made units repath-thrash against walls/trees).
-    const exactEnd = !!endCell && endCell.cx === rawEnd.cx && endCell.cy === rawEnd.cy;
-    const destX = exactEnd ? ex : goal.x;
-    const destY = exactEnd ? ey : goal.y;
+    const exactEnd = goalValid && goalCx === rawEx && goalCy === rawEy;
+    const destX = exactEnd ? ex : goalCx * CELL + CELL / 2;
+    const destY = exactEnd ? ey : goalCy * CELL + CELL / 2;
 
     // No walkable goal and already on that cell — nowhere to go.
-    if (!goal.valid && startCell.cx === goal.cx && startCell.cy === goal.cy) return [];
+    if (!goalValid && startCx === goalCx && startCy === goalCy) return [];
 
     // Same walkable cell: go straight to the real world destination (not cell center).
     // Previously returned cell center, so short same-tile move orders stalled at mid-cell.
-    if (startCell.cx === goal.cx && startCell.cy === goal.cy) {
+    if (startCx === goalCx && startCy === goalCy) {
       return [{ x: destX, y: destY }];
     }
 
     ensureSearchBuffers();
     if (!gScore) return [];
     bumpSearchGen();
-    openHeap.clear();
+    heapN = 0;
 
     // Squared distance heuristic (fast; paths are valid, not always optimal).
-    const h = (cx, cy) => {
-      const dx = cx - goal.cx;
-      const dy = cy - goal.cy;
-      return dx * dx + dy * dy;
-    };
-    const startK = key(startCell.cx, startCell.cy);
-    openHeap.push({ cx: startCell.cx, cy: startCell.cy, f: h(startCell.cx, startCell.cy) });
+    const startK = key(startCx, startCy);
+    const sdx = startCx - goalCx;
+    const sdy = startCy - goalCy;
+    heapPush(startK, sdx * sdx + sdy * sdy);
     openGen[startK] = searchGen;
     gScore[startK] = 0;
     cameFromParent[startK] = -1;
 
-    let bestSeen = { cx: startCell.cx, cy: startCell.cy, g: 0 };
+    let bestCx = startCx;
+    let bestCy = startCy;
+    let bestG = 0;
     const nodeCap = maxNodes > 0 ? maxNodes : defaultNodeLimit();
     let closedCount = 0;
 
-    while (openHeap.length > 0) {
-      const cur = openHeap.pop();
-      const curK = key(cur.cx, cur.cy);
+    while (heapN > 0) {
+      const curK = heapPop();
       if (closedGen[curK] === searchGen) continue;
       closedGen[curK] = searchGen;
       closedCount++;
+      const curCx = curK % gridW;
+      const curCy = (curK / gridW) | 0;
 
       const curG = gScore[curK];
-      const gdx = cur.cx - goal.cx;
-      const gdy = cur.cy - goal.cy;
+      const gdx = curCx - goalCx;
+      const gdy = curCy - goalCy;
       const distToGoal = gdx * gdx + gdy * gdy;
-      const bdx = bestSeen.cx - goal.cx;
-      const bdy = bestSeen.cy - goal.cy;
+      const bdx = bestCx - goalCx;
+      const bdy = bestCy - goalCy;
       const bestDist = bdx * bdx + bdy * bdy;
-      if (distToGoal < bestDist || (distToGoal === bestDist && curG < bestSeen.g)) {
-        bestSeen = { cx: cur.cx, cy: cur.cy, g: curG };
+      if (distToGoal < bestDist || (distToGoal === bestDist && curG < bestG)) {
+        bestCx = curCx;
+        bestCy = curCy;
+        bestG = curG;
       }
 
-      if (cur.cx === goal.cx && cur.cy === goal.cy) {
-        return reconstructPath(cameFromParent, goal.cx, goal.cy, destX, destY);
+      if (curCx === goalCx && curCy === goalCy) {
+        lastClosed = closedCount;
+        return reconstructPath(cameFromParent, goalCx, goalCy, destX, destY);
       }
 
-      for (let d = 0; d < DIRS.length; d++) {
+      for (let d = 0; d < 8; d++) {
         const dx = DIRS[d][0];
         const dy = DIRS[d][1];
-        const nx = cur.cx + dx;
-        const ny = cur.cy + dy;
-        if (!inBounds(nx, ny)) continue;
+        const nx = curCx + dx;
+        const ny = curCy + dy;
+        if (nx < 0 || ny < 0 || nx >= gridW || ny >= gridH) continue;
         // No corner-cutting through blocked cardinal neighbors.
         if (dx && dy) {
-          if (isBlocked(grid, cur.cx + dx, cur.cy) || isBlocked(grid, cur.cx, cur.cy + dy))
-            continue;
+          if (grid[curCy * gridW + nx] !== 0 || grid[ny * gridW + curCx] !== 0) continue;
         }
-        if (isBlocked(grid, nx, ny)) continue;
+        const nk = ny * gridW + nx;
+        if (grid[nk] !== 0) continue;
 
-        const nk = key(nx, ny);
         if (closedGen[nk] === searchGen) continue;
         const stepCost = dx && dy ? 1.41 : 1;
         const tentG = curG + stepCost;
@@ -328,16 +373,24 @@ const PathfindingCore = (() => {
         cameFromParent[nk] = curK;
         gScore[nk] = tentG;
         openGen[nk] = searchGen;
-        openHeap.push({ cx: nx, cy: ny, f: tentG + h(nx, ny) });
+        const hx = nx - goalCx;
+        const hy = ny - goalCy;
+        heapPush(nk, tentG + hx * hx + hy * hy);
       }
 
       if (closedCount > nodeCap) break;
     }
+    lastClosed = closedCount;
 
     // Partial path toward the closest explored cell when the goal was unreachable / cap hit.
-    if (bestSeen.cx !== startCell.cx || bestSeen.cy !== startCell.cy) {
-      const w = toWorld(bestSeen.cx, bestSeen.cy);
-      return reconstructPath(cameFromParent, bestSeen.cx, bestSeen.cy, w.x, w.y);
+    if (bestCx !== startCx || bestCy !== startCy) {
+      return reconstructPath(
+        cameFromParent,
+        bestCx,
+        bestCy,
+        bestCx * CELL + CELL / 2,
+        bestCy * CELL + CELL / 2
+      );
     }
     return [];
   }
@@ -350,6 +403,10 @@ const PathfindingCore = (() => {
     },
     get gridH() {
       return gridH;
+    },
+    /** Cells closed by the most recent findPathOnGrid call. */
+    get lastClosed() {
+      return lastClosed;
     },
     findPathOnGrid,
     toCell,
