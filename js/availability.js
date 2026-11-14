@@ -67,8 +67,13 @@ const Availability = (() => {
     const total = deployCost(type, gs);
     const warband = !!gs?.siegeLoop?.warband && !freeTp(gs);
     const mode = warband ? 2 : 1;
-    const mult =
-      typeof SiegeLoop !== 'undefined' && !freeTp(gs) ? SiegeLoop.deployCostMult(gs?.army || 0) : 1;
+    const mult = freeTp(gs)
+      ? 1
+      : typeof Game !== 'undefined' && Game.getDeployCostMult
+        ? Game.getDeployCostMult()
+        : typeof SiegeLoop !== 'undefined'
+          ? SiegeLoop.deployCostMult(gs?.army || 0)
+          : 1;
     const upkeepPct = Math.max(0, Math.round((mult / mode - 1) * 100));
     return { base, upkeepPct, warband, total, raised: total > base };
   }

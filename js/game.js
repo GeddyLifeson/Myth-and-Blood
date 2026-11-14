@@ -6662,6 +6662,9 @@ const Game = (() => {
       // Keep livePlayerByType accurate for subsequent builder/courier academies this dawn.
       unitCounts.livePlayerByType[unitType] = (unitCounts.livePlayerByType[unitType] || 0) + 1;
       unitCounts.player++;
+      // Keep the upkeep count in step at once, so the next recruit in the same tick is priced right.
+      if (type !== 'builder' && type !== 'courier' && unitCounts.upkeepArmy != null)
+        unitCounts.upkeepArmy++;
     }
     if (trained > 0) {
       refreshUnitCounts();
@@ -17165,6 +17168,7 @@ const Game = (() => {
     isPlaying,
     selectDeploy,
     getDeployCost,
+    getDeployCostMult,
     getTactical: () => GS.tactical,
     selectAbility,
     useAbility,

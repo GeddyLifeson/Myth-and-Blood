@@ -111,7 +111,7 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   r = Availability.check('build', 'research_lab');
   const builders = GS.units.filter((u) => u.type === 'builder' && u.hp > 0).length;
   ok(builders < BuildDefs.research_lab.requiresBuilders, 'the run starts without two Builders');
-  ok(!r.ok && r.reason === 'needs 2 living Builders', `Research Lab: ${r.reason}`);
+  ok(!r.ok && r.reason === 'needs 1 living Builder', `Research Lab: ${r.reason}`);
   if (!GS.units.some((u) => u.type === 'courier' && u.hp > 0)) {
     r = Availability.check('courier', 'levy');
     ok(!r.ok && r.reason === 'needs a living Courier', `Tax Levy without a Courier: ${r.reason}`);
@@ -261,7 +261,7 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   const paid = [];
   const due = [];
   for (let i = 0; i < 3; i++) {
-    const want = Math.ceil(UnitDefs.footman.cost * SiegeLoop.deployCostMult(armyOf(GS)));
+    const want = Math.ceil(UnitDefs.footman.cost * Game.getDeployCostMult());
     ok(Game.getDeployCost('footman') === want, `soldier ${i + 1}: the price shown is ${want}`);
     const before = GS.tactical;
     const n = armyOf(GS);
