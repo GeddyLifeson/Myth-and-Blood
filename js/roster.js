@@ -823,7 +823,10 @@ const Roster = (() => {
       attacker.lastPounceId = target.id;
       mult *= p.pounceEach;
     }
-    if (p.execute && target.hp < target.maxHp * p.execute.below) mult *= p.execute.mult;
+    if (p.execute && target.hp < target.maxHp * p.execute.below) {
+      mult *= p.execute.mult;
+      attacker.executeAt = tick;
+    }
     if (p.ramp) {
       if (attacker.rampId === target.id) attacker.rampN++;
       else {
@@ -850,7 +853,10 @@ const Roster = (() => {
         ctx.burst('strikeFire', target.x, target.y, 0.5);
       }
     }
-    if (p.lifesteal) heal(attacker, out * p.lifesteal);
+    if (p.lifesteal) {
+      heal(attacker, out * p.lifesteal);
+      attacker.leechAt = tick;
+    }
     if (p.expose) {
       target.exposeUntil = tick + p.expose.ticks;
       target.exposePct = p.expose.pct;
@@ -1191,8 +1197,23 @@ const Roster = (() => {
   const SICK = '#8cc048';
   const FROST = '#cfe6f0';
   const STEEL = '#7f9fc4';
-  const MARK_GAP = 10;
-  const MARK_MAX = 6;
+  // A mark is a glyph on a black plate, about 15px across in the world: big enough to
+  // name at the field's own zoom. Harm sits on a diamond plate, help on a round one.
+  const MARK_SCALE = 1.25;
+  const MARK_GAP = 16;
+  const MARK_ROW = 4;
+  const MARK_MAX = 8;
+  const HARM_MARKS = {
+    pin: 1,
+    burn: 1,
+    hex: 1,
+    plague: 1,
+    frost: 1,
+    expose: 1,
+    prey: 1,
+    rout: 1,
+    yield: 1,
+  };
   /** Every mark the overlay can draw, in the order they are shown. */
   const STATUS_MARKS = [
     'pin',
@@ -1212,6 +1233,13 @@ const Roster = (() => {
     'prey',
     'ramp',
     'omen',
+    'burrow',
+    'duty',
+    'laststand',
+    'execute',
+    'lifesteal',
+    'rout',
+    'yield',
   ];
   const markBuf = [];
   const markArg = [];
@@ -1225,6 +1253,9 @@ const Roster = (() => {
       markArg[n] = arg || 0;
       n++;
     };
+    // Broken men first: these replace the old "ROUT" and "GAVE UP" labels.
+    if (u.fleeing) add('rout');
+    else if (u.demoralized) add('yield');
     if (u.pinned && (u.pinTimer || 0) > 0) add('pin');
     if ((u.burnUntil || 0) > tick) add('burn');
     if ((u.hexUntil || 0) > tick) add('hex');
@@ -1242,6 +1273,12 @@ const Roster = (() => {
     if ((u.preyUntil || 0) > tick && u.preyId) add('prey');
     if ((u.rampN || 0) > 0) add('ramp', Math.min(3, u.rampN));
     if ((u.prophecyTimer || 0) > 0) add('omen');
+    if (u.burrowed) add('burrow');
+    if ((u.dutyStacks || 0) > 0) add('duty', Math.min(4, Math.ceil(u.dutyStacks / 2)));
+    const p = profileOf(u);
+    if (p && p.lastStand && u.hp < u.maxHp * p.lastStand.below) add('laststand');
+    if (u.executeAt !== undefined && tick - u.executeAt < 50 && tick >= u.executeAt) add('execute');
+    if (u.leechAt !== undefined && tick - u.leechAt < 50 && tick >= u.leechAt) add('lifesteal');
     return n;
   }
 
@@ -1271,16 +1308,35 @@ const Roster = (() => {
   }
 
   /**
-   * One status badge, about 9px across, centred on (x, y).
+   * One status badge, about 15px across with its plate, centred on (x, y).
    * pin: bone nail · burn: ember flame · hex: violet diamond · plague: green drop ·
    * frost: pale star · expose: split blood shield · enrage: blood spiked burst ·
    * guard: steel shield · bulwark: bone battlement · ward: green ring · banner: blood flag ·
    * might: blood blade · iron: bone plate · haste: double chevron · prey: reticle ·
-   * ramp: tally strokes · omen: eye.
+   * ramp: tally strokes · omen: eye · burrow: mound and down arrow · duty: stacked bars ·
+   * laststand: skull · execute: headsman's axe · lifesteal: blood heart ·
+   * rout: drooping bone flag on a snapped pole · yield: snapped blade.
    */
   function drawStatusMark(c, kind, x, y, tick = 0, arg = 0) {
     c.save();
     c.translate(x, y);
+    // The plate: black, with a thin edge in bone (help) or blood (harm).
+    const harm = !!HARM_MARKS[kind];
+    c.beginPath();
+    if (harm) {
+      c.moveTo(0, -9.4);
+      c.lineTo(9.4, 0);
+      c.lineTo(0, 9.4);
+      c.lineTo(-9.4, 0);
+      c.closePath();
+    } else c.arc(0, 0, 7.8, 0, Math.PI * 2);
+    c.fillStyle = 'rgba(7,5,10,0.86)';
+    c.fill();
+    c.lineJoin = 'round';
+    c.lineWidth = 1.1;
+    c.strokeStyle = harm ? BLOOD : BONE;
+    c.stroke();
+    c.scale(harm ? MARK_SCALE * 0.92 : MARK_SCALE, harm ? MARK_SCALE * 0.92 : MARK_SCALE);
     switch (kind) {
       case 'pin': {
         // A nail driven down through him.
@@ -1473,6 +1529,97 @@ const Roster = (() => {
         c.fill();
         break;
       }
+      case 'burrow': {
+        // A mound of thrown earth and an arrow going under it.
+        c.beginPath();
+        c.moveTo(-5, 4.2);
+        c.quadraticCurveTo(0, -1.6, 5, 4.2);
+        c.closePath();
+        markFill(c, '#b08a58');
+        c.beginPath();
+        c.moveTo(0, -5.4);
+        c.lineTo(0, 0.4);
+        c.moveTo(-2.4, -1.8);
+        c.lineTo(0, 0.8);
+        c.lineTo(2.4, -1.8);
+        markLine(c, BONE, 1.3);
+        break;
+      }
+      case 'duty': {
+        // One bar per two stacks, piled from the bottom.
+        const count = Math.max(1, Math.min(4, arg || 1));
+        for (let k = 0; k < count; k++) {
+          const w = 4.6 - k * 0.5;
+          markPath(c, [-w, 4.6 - k * 2.9, w, 4.6 - k * 2.9, w, 2.8 - k * 2.9, -w, 2.8 - k * 2.9]);
+          markFill(c, k === count - 1 ? '#f0c040' : BONE);
+        }
+        break;
+      }
+      case 'laststand': {
+        // A skull: he fights on past the point he should have fallen.
+        c.beginPath();
+        c.arc(0, -1, 4.3, Math.PI * 0.9, Math.PI * 0.1);
+        c.lineTo(2.6, 4.6);
+        c.lineTo(-2.6, 4.6);
+        c.closePath();
+        markFill(c, BONE);
+        c.fillStyle = INK;
+        c.fillRect(-2.9, -1.8, 2.1, 2.3);
+        c.fillRect(0.8, -1.8, 2.1, 2.3);
+        c.fillRect(-0.5, 1.6, 1, 1.5);
+        break;
+      }
+      case 'execute': {
+        // A headsman's axe, edge down.
+        c.beginPath();
+        c.moveTo(3.4, -5.2);
+        c.lineTo(-3.2, 5);
+        markLine(c, '#b08a58', 1.3);
+        c.beginPath();
+        c.moveTo(1.6, -3.6);
+        c.quadraticCurveTo(-5.6, -5.4, -5.2, 1.6);
+        c.quadraticCurveTo(-2.4, -0.6, 0, -0.9);
+        c.closePath();
+        markFill(c, BONE);
+        break;
+      }
+      case 'lifesteal': {
+        // A heart, filling.
+        const b = 1 + Math.abs(Math.sin(tick / 7)) * 0.12;
+        c.scale(b, b);
+        c.beginPath();
+        c.moveTo(0, 4.8);
+        c.bezierCurveTo(-7.4, -0.4, -3.4, -6.2, 0, -2.4);
+        c.bezierCurveTo(3.4, -6.2, 7.4, -0.4, 0, 4.8);
+        c.closePath();
+        markFill(c, BLOOD);
+        c.fillStyle = '#ff8a80';
+        c.fillRect(-2.6, -2.4, 1.4, 1.4);
+        break;
+      }
+      case 'rout': {
+        // A bone flag hanging from a snapped pole.
+        c.beginPath();
+        c.moveTo(-3.4, 5);
+        c.lineTo(-3.4, -1);
+        c.lineTo(-1, -4.8);
+        markLine(c, '#b08a58', 1.2);
+        markPath(c, [-1, -4.8, 4.8, -2.6, 3.4, 0.2, 4.6, 3.4, 1.2, 2.2, -0.2, -1.4]);
+        markFill(c, BONE);
+        break;
+      }
+      case 'yield': {
+        // A blade snapped in two, point in the dirt.
+        markPath(c, [-2.6, -5.2, 0.6, -5.2, 1.2, -1.2, -1.4, -0.2]);
+        markFill(c, VIOLET);
+        markPath(c, [0.4, 0.8, 3, 0, 4.2, 3.2, 2.6, 5.2]);
+        markFill(c, VIOLET);
+        c.beginPath();
+        c.moveTo(-4.6, -5.4);
+        c.lineTo(2.6, -5.4);
+        markLine(c, BONE, 1.2);
+        break;
+      }
       default:
         break;
     }
@@ -1487,6 +1634,33 @@ const Roster = (() => {
     c.arc(u.x, u.y, radius, 0, Math.PI * 2);
     c.stroke();
     if (dashed) c.setLineDash([]);
+  }
+
+  /**
+   * Status marks: a row of ink badges above the head. Each status has its own shape as
+   * well as its own colour, so it reads without colour too. Drawn after the night and
+   * weather layers (the game calls this last in the world pass) so the dark never hides
+   * what is wrong with a unit.
+   */
+  function drawMarks(c, units, tick) {
+    c.save();
+    for (let i = 0; i < units.length; i++) {
+      const u = units[i];
+      if (u.hp <= 0) continue;
+      const n = collectMarks(u, tick);
+      if (n > 0) {
+        const big = (u.spriteScale || 1) - 1;
+        const my = u.y - 40 - big * 14 - (u.isNamedBoss ? 16 : 0);
+        // Rows of four, the second stacked above the first.
+        for (let k = 0; k < n; k++) {
+          const row = Math.floor(k / MARK_ROW);
+          const inRow = Math.min(MARK_ROW, n - row * MARK_ROW);
+          const mx = u.x + (k - row * MARK_ROW - (inRow - 1) / 2) * MARK_GAP;
+          drawStatusMark(c, markBuf[k], mx, my - row * MARK_GAP, tick + i * 7, markArg[k]);
+        }
+      }
+    }
+    c.restore();
   }
 
   /** Everything a trait does is drawn here, so the player can see why a fight is going the way it is. */
@@ -1564,18 +1738,6 @@ const Roster = (() => {
         c.arc(u.x, u.y, 13, 0, Math.PI * 2);
         c.stroke();
       }
-      // Status marks: one row of small ink badges above the head. Each status has its
-      // own shape as well as its own colour, so it reads without colour too.
-      const n = collectMarks(u, tick);
-      if (n > 0) {
-        const big = (u.spriteScale || 1) - 1;
-        const my = u.y - 38 - big * 14 - (u.isNamedBoss ? 14 : 0);
-        let mx = u.x - ((n - 1) * MARK_GAP) / 2;
-        for (let k = 0; k < n; k++) {
-          drawStatusMark(c, markBuf[k], mx, my, tick + i * 7, markArg[k]);
-          mx += MARK_GAP;
-        }
-      }
       // A guarded soldier is tied to his guardian by a dashed bone thread.
       const g = u.guardBy;
       if (g && g.hp > 0 && (u.guardUntil || 0) > tick) {
@@ -1632,6 +1794,7 @@ const Roster = (() => {
     deathCause,
     drawOverlays,
     drawStatusMark,
+    drawMarks,
     STATUS_MARKS,
     onDeath,
     update,

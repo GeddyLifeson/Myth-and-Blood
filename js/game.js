@@ -15842,17 +15842,6 @@ const Game = (() => {
           GS.ctx.arc(u.x, u.y, 17 + u.vetTier * 2, 0, Math.PI * 2);
           GS.ctx.stroke();
         }
-        if (u.type === 'siege_tower') {
-          GS.ctx.fillStyle = 'rgba(160,80,40,0.35)';
-          GS.ctx.fillRect(u.x - 14, u.y - 20, 28, 32);
-          GS.ctx.strokeStyle = '#c06030';
-          GS.ctx.lineWidth = 2;
-          GS.ctx.strokeRect(u.x - 14, u.y - 20, 28, 32);
-          GS.ctx.fillStyle = '#e0a060';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('SIEGE', u.x, u.y - 24);
-        }
         if (
           drawOverlays &&
           gfxQ?.chargeGlow !== false &&
@@ -15913,7 +15902,9 @@ const Game = (() => {
           GS.ctx.globalAlpha = Math.min(0.75, flashT * 0.7);
           GS.ctx.fillStyle = flashT > 0.55 ? '#ffffff' : u.team === 'enemy' ? '#ff5050' : '#ffc080';
           GS.ctx.beginPath();
-          GS.ctx.arc(drawX, drawY, drawSz * 0.32, 0, Math.PI * 2);
+          // Sized to the body, not to the sprite canvas (which is mostly empty margin).
+          const bodyR = svc('SpriteGen').bodyRadius(u.spriteType || u.type, u.team) * sprScale;
+          GS.ctx.arc(drawX, drawY, bodyR, 0, Math.PI * 2);
           GS.ctx.fill();
           // Brief outline punch
           if (flashT > 0.4) {
@@ -15921,7 +15912,7 @@ const Game = (() => {
             GS.ctx.lineWidth = 2;
             GS.ctx.globalAlpha = flashT * 0.55;
             GS.ctx.beginPath();
-            GS.ctx.arc(drawX, drawY, drawSz * 0.38, 0, Math.PI * 2);
+            GS.ctx.arc(drawX, drawY, bodyR * 1.18, 0, Math.PI * 2);
             GS.ctx.stroke();
           }
           GS.ctx.restore();
@@ -15959,18 +15950,6 @@ const Game = (() => {
         ) {
           svc('SpriteGen').drawMoraleBar(GS.ctx, u.x, u.y - 27, 20, u.morale / u.maxMorale);
         }
-        if (u.demoralized && u.hp > 0) {
-          GS.ctx.fillStyle = '#a080c0';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('GAVE UP', u.x, u.y - 32);
-        }
-        if (u.fleeing && u.hp > 0) {
-          GS.ctx.fillStyle = '#c06040';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('ROUT', u.x, u.y - 32);
-        }
         if (
           u.team === 'enemy' &&
           u.isNamedBoss &&
@@ -16007,14 +15986,8 @@ const Game = (() => {
         if (svc('VisualPolish')) {
           if (gfxOverlayFor(u, gfxQ?.drawAccent ?? true))
             svc('VisualPolish').drawFactionAccent(GS.ctx, u);
-          if (gfxQ?.drawAccessibility !== false) {
-            // Hunting is the default and shows nothing. The cue still draws a red "H"
-            // on every hunter, so it is asked about a soldier who is not hunting.
-            const hunting = u.huntMode;
-            if (u.team === 'player') u.huntMode = false;
+          if (gfxQ?.drawAccessibility !== false)
             svc('VisualPolish').drawAccessibilityCue(GS.ctx, u);
-            u.huntMode = hunting;
-          }
         } else if (u.isWwe && u.wweColor) {
           GS.ctx.strokeStyle = u.wweColor;
           GS.ctx.lineWidth = 2;
@@ -16160,6 +16133,9 @@ const Game = (() => {
         GS.ctx.fillStyle = `rgba(24,14,48,${dusk * 0.42})`;
         GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
       }
+
+      // Status marks go over the night and weather layers so they read in the dark.
+      Roster.drawMarks(GS.ctx, GS.units, GS.updateTick);
 
       GS.ctx.globalAlpha = 1;
       GS.ctx.setLineDash([]);

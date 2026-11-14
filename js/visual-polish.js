@@ -901,33 +901,7 @@ const VisualPolish = (() => {
       ctx.closePath();
       ctx.stroke();
     }
-    if (u.demoralized) {
-      ctx.strokeStyle = '#a080c0';
-      ctx.lineWidth = 1;
-      for (let i = -8; i <= 8; i += 4) {
-        ctx.beginPath();
-        ctx.moveTo(u.x + i - 2, y + 8);
-        ctx.lineTo(u.x + i + 2, y + 12);
-        ctx.stroke();
-      }
-    }
-    if (u.fleeing) {
-      ctx.fillStyle = '#c06040';
-      ctx.font = 'bold 8px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('▼', u.x, y + 10);
-    }
-    if (u.team === 'player' && u.huntMode) {
-      ctx.strokeStyle = '#ff6060';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(u.x + 12, u.y - 14, 5, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.fillStyle = '#ff4040';
-      ctx.font = '7px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.fillText('H', u.x + 12, u.y - 11);
-    }
+    // Rout and surrender are shown by the pose and a status mark (Roster.drawOverlays).
     if (u.retreatingToMed) {
       ctx.fillStyle = '#4080c0';
       ctx.font = '8px sans-serif';

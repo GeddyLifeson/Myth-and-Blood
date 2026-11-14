@@ -232,37 +232,314 @@ const SpriteGen = (() => {
     drawInkMonster(ctx, type, team, frame, animState);
   }
 
+  /**
+   * The siege tower: a timber frame on four wheels, hide nailed over its front, a
+   * fighting deck with a blood banner on top and a spiked ramp at the foot. Drawn facing
+   * down the canvas like the monsters. Dying, it shudders, breaks at the waist, and ends
+   * as a heap of beams with the deck thrown off beside it.
+   */
   function drawSiegeTowerUnit(ctx, style, team, frame, animState, lod = 0) {
     if (lod >= 3) {
       drawMinimalMarker(ctx, style, team, style.size * 0.75);
       return;
     }
-    const r = style.size;
-    const dying = animState.startsWith('die');
-    // Rolling: the tower rocks on its wheels.
-    const cyc = Math.floor(frame) % 4;
-    const walkBob = animState === 'walk' ? [0, 1.2, 0, -1.2][cyc] : 0;
-    if (!dying) {
-      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+    const dieCause = animState.startsWith('die_') ? animState.slice(4) : '';
+    const dying = !!dieCause;
+    const fi = Math.max(0, Math.floor(frame));
+    const dieF = dying ? Math.min(DEATH_FRAMES - 1, fi) : -1;
+    const cyc = fi % 4;
+    const walk = animState === 'walk';
+    const atk = animState === 'attack';
+    const sway = walk ? [0, 1.1, 0, -1.1][cyc] : 0;
+    const timber = '#8a6a48';
+    const dark = '#5a4a38';
+    const hideCol = '#6e4a40';
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    const wheel = (x, y, turn, rad = 6.5) => {
+      inkDot(ctx, x, y, rad, '#3a2e28', 1.6);
+      ctx.strokeStyle = timber;
+      ctx.lineWidth = 1.3;
       ctx.beginPath();
-      ctx.ellipse(0, 4, r * 1.1, r * 0.45, 0, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.fillStyle = bodyGradientV(ctx, 0, -r * 0.55 + walkBob, r * 1.1, style.body);
-    ctx.fillRect(-r * 0.75, -r * 0.55 + walkBob, r * 1.5, r * 1.1);
-    ctx.fillStyle = style.accent;
-    ctx.fillRect(-r * 0.65, -r * 0.45 + walkBob, r * 1.3, r * 0.25);
-    for (const side of [-1, 1]) {
-      ctx.fillStyle = '#3a2818';
+      for (let k = 0; k < 4; k++) {
+        const a = turn + (k * Math.PI) / 4;
+        ctx.moveTo(x + Math.cos(a) * rad * 0.8, y + Math.sin(a) * rad * 0.8);
+        ctx.lineTo(x - Math.cos(a) * rad * 0.8, y - Math.sin(a) * rad * 0.8);
+      }
+      ctx.stroke();
+      inkDot(ctx, x, y, 1.6, BONE, 0.8);
+    };
+    const beam = (x0, y0, x1, y1, color = timber, lw = 3) => {
       ctx.beginPath();
-      ctx.arc(side * r * 0.85, r * 0.45 + walkBob, 4, 0, Math.PI * 2);
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(x1, y1);
+      inkStroke(ctx, color, lw, 2);
+    };
+    const banner = (x, y, flap, fallen) => {
+      if (!fallen) beam(x, y, x, y - 12, dark, 1.4);
+      inkPoly(
+        ctx,
+        fallen
+          ? [
+              [x, y],
+              [x + 9, y + 2],
+              [x + 6, y + 5],
+              [x + 10, y + 8],
+              [x + 1, y + 7],
+            ]
+          : [
+              [x, y - 12],
+              [x + 9, y - 10.5 + flap],
+              [x + 6, y - 8],
+              [x + 9.5, y - 5.5 - flap],
+              [x, y - 5],
+            ],
+        BLOOD,
+        1
+      );
+    };
+    // The fighting deck, drawn on its own so it can be thrown clear in the collapse.
+    const deck = () => {
+      inkPoly(
+        ctx,
+        [
+          [-17, -31],
+          [17, -31],
+          [17, -15],
+          [-17, -15],
+        ],
+        shadeHex(timber, 0.12),
+        1.6
+      );
+      ctx.strokeStyle = INK;
+      ctx.lineWidth = 0.9;
+      for (const x of [-9, 0, 9]) {
+        ctx.beginPath();
+        ctx.moveTo(x, -31);
+        ctx.lineTo(x, -15);
+        ctx.stroke();
+      }
+      // Merlons along the front edge.
+      for (const x of [-14.5, -5, 5, 14.5])
+        inkPoly(
+          ctx,
+          [
+            [x - 2.6, -17.5],
+            [x + 2.6, -17.5],
+            [x + 2.6, -12.5],
+            [x - 2.6, -12.5],
+          ],
+          dark,
+          1.1
+        );
+    };
+    const crew = () => {
+      // Two of the crew look out over the parapet.
+      for (const x of [-7, 8]) {
+        inkDot(ctx, x, -22, 3.3, '#7e8a62', 1.1);
+        ctx.fillStyle = '#ff3a1c';
+        ctx.fillRect(x - 1.9, -21.4, 1.3, 1.3);
+        ctx.fillRect(x + 0.6, -21.4, 1.3, 1.3);
+      }
+    };
+
+    if (dying && dieF >= 5) {
+      // The wreck: the base still on two wheels, beams heaped across it, the deck and
+      // a wheel thrown clear. It is timber, and it still looks like timber.
+      const settle = dieF - 5;
+      ctx.fillStyle = 'rgba(0,0,0,0.3)';
+      ctx.beginPath();
+      ctx.ellipse(1, 6, 25, 20, 0, 0, Math.PI * 2);
       ctx.fill();
+      wheel(-17, 15, 0.4);
+      wheel(26 + settle, 18 + settle * 0.5, 1.1, 6);
+      inkPoly(
+        ctx,
+        [
+          [-15, -6],
+          [14, -9],
+          [16, 20],
+          [-14, 22],
+        ],
+        shadeHex(timber, -0.22),
+        1.6
+      );
+      ctx.save();
+      ctx.translate(15 + settle, -18 - settle * 0.5);
+      ctx.rotate(0.55);
+      ctx.translate(0, 23);
+      ctx.scale(0.9, 0.9);
+      deck();
+      ctx.restore();
+      for (const [x0, y0, x1, y1, c, w] of [
+        [-20, -14, 10, 14, timber, 3.2],
+        [-12, 18, 16, -6, dark, 3],
+        [-22, 6, 4, 2, timber, 2.6],
+        [-4, -18, 2, 24, dark, 2.8],
+        [6, 16, 22, 4, timber, 2.4],
+        [-16, 26, -2, 30, timber, 2.2],
+      ])
+        beam(x0, y0, x1, y1, c, w);
+      // Splintered ends and the torn hide.
+      inkPoly(
+        ctx,
+        [
+          [-10, 4],
+          [-1, 0],
+          [4, 9],
+          [-3, 16],
+          [-11, 12],
+        ],
+        hideCol,
+        1
+      );
+      ctx.fillStyle = BONE;
+      for (const [x, y] of [
+        [-20, -14],
+        [16, -6],
+        [2, 24],
+        [22, 4],
+      ]) {
+        ctx.beginPath();
+        ctx.moveTo(x - 1.6, y + 1.2);
+        ctx.lineTo(x, y - 2);
+        ctx.lineTo(x + 1.6, y + 1.2);
+        ctx.fill();
+      }
+      banner(-24, 22, 0, true);
+      if (dieCause === 'burn' || dieCause === 'blast') {
+        scorchMark(ctx, 15, 0.5);
+        if (dieF <= 6) {
+          flameLick(ctx, -8, 4, 5, 12 - settle * 3, false);
+          flameLick(ctx, 8, -2, 4, 9 - settle * 2, true);
+        }
+      }
+      return;
     }
-    ctx.strokeStyle = dying ? INK : teamStrokeAlt(team);
-    ctx.lineWidth = 2;
-    ctx.strokeRect(-r * 0.75, -r * 0.55 + walkBob, r * 1.5, r * 1.1);
-    ctx.fillStyle = style.mark;
-    ctx.fillRect(-3, -r * 0.2 + walkBob, 6, r * 0.5);
+
+    ctx.fillStyle = 'rgba(0,0,0,0.38)';
+    ctx.beginPath();
+    ctx.ellipse(2, 5, 22, 28, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.save();
+    ctx.translate(sway, 0);
+    // The break: from frame 3 the top half leans away and starts to slide off.
+    const brk = dying ? [0, 0, 0, 0.45, 1][Math.min(4, dieF)] : 0;
+    if (dying && dieF <= 2) {
+      ctx.translate([-1.8, 2, -1.2][dieF], 0);
+      ctx.rotate([-0.05, 0.06, -0.04][dieF]);
+    }
+    const turn = walk ? cyc * 0.39 : 0;
+    for (const [x, y] of [
+      [-18, -12],
+      [18, -12],
+      [-18, 17],
+      [18, 17],
+    ])
+      wheel(x, y, turn);
+    // The frame.
+    inkPoly(
+      ctx,
+      [
+        [-14, -20],
+        [14, -20],
+        [15, 24],
+        [-15, 24],
+      ],
+      bodyGradientV(ctx, 0, -20, 44, timber),
+      1.8
+    );
+    ctx.strokeStyle = INK;
+    ctx.lineWidth = 0.9;
+    for (let y = -13; y < 22; y += 7) {
+      ctx.beginPath();
+      ctx.moveTo(-14.4, y);
+      ctx.lineTo(14.4, y);
+      ctx.stroke();
+    }
+    beam(-12, -12, 12, 6, dark, 1.8);
+    beam(12, -12, -12, 6, dark, 1.8);
+    // Raw hide nailed over the lower front against fire.
+    inkPoly(
+      ctx,
+      [
+        [-12, 6],
+        [12, 6],
+        [13, 21],
+        [6, 23],
+        [0, 20],
+        [-7, 23],
+        [-13, 20],
+      ],
+      hideCol,
+      1.2
+    );
+    ctx.fillStyle = BONE;
+    for (const x of [-10, -3.5, 3.5, 10]) ctx.fillRect(x - 0.8, 7.2, 1.6, 1.6);
+    // An arrow slit, lit from within.
+    ctx.fillStyle = INK;
+    ctx.fillRect(-2.2, 10, 4.4, 8);
+    ctx.fillStyle = dying ? '#3a2e28' : atk && cyc === 2 ? '#ffd040' : '#e0701c';
+    ctx.fillRect(-1, 11.2, 2, 5.6);
+    // The ramp: held up on the march, dropped onto the wall to attack.
+    const drop = atk ? [0.3, 0.7, 1, 1][Math.min(3, fi)] : 0;
+    inkPoly(
+      ctx,
+      [
+        [-11, 24],
+        [11, 24],
+        [9 + drop, 29 + drop * 6],
+        [-9 - drop, 29 + drop * 6],
+      ],
+      dark,
+      1.4
+    );
+    for (const x of [-6, 0, 6])
+      inkPoly(
+        ctx,
+        [
+          [x - 1.7, 29 + drop * 6],
+          [x, 33 + drop * 6],
+          [x + 1.7, 29 + drop * 6],
+        ],
+        BONE,
+        0.9
+      );
+    // The top half: deck, crew and banner.
+    ctx.save();
+    if (brk > 0) {
+      ctx.translate(brk * 6, -brk * 2);
+      ctx.rotate(brk * 0.3);
+    }
+    deck();
+    if (!dying || dieF <= 2) crew();
+    banner(13, -22, walk ? [0, 1.4, 0, -1.4][cyc] : atk ? 1 : 0, false);
+    ctx.restore();
+    if (dying) {
+      // Splits open across the waist, and planks fly.
+      const n = 2 + dieF;
+      for (let i = 0; i < n; i++) {
+        const x = -13 + ((i * 53) % 26);
+        beam(x, -14 + (i % 3) * 2, x + 3 - (i % 2) * 6, -6 + (i % 2) * 5, INK, 0.8);
+      }
+      for (const [x, y, a] of [
+        [-22, -24, 0.6],
+        [24, 2, -0.9],
+        [-24, 10, 1.9],
+        [20, -30, 0.2],
+      ].slice(0, 1 + dieF)) {
+        const d = 1 + Math.min(dieF, 2) * 0.12;
+        beam(x * d, y * d, x * d + Math.cos(a) * 6, y * d + Math.sin(a) * 6, timber, 1.8);
+      }
+      if (dieCause === 'burn') {
+        flameLick(ctx, -6, -2, 5, 13, false);
+        flameLick(ctx, 7, 8, 4, 10, true);
+      } else if (dieCause === 'blast' && dieF <= 1) {
+        drawDeathStrike(ctx, 'blast', 12, dieF ? 1 : 0);
+      }
+    }
+    ctx.restore();
   }
 
   // ── Ink style ────────────────────────────────────────────────────────────
@@ -627,22 +904,22 @@ const SpriteGen = (() => {
    */
   const GAIT = {
     // Soldiers: an even march.
-    human: { period: 6, stride: 0.72, twist: 0.13, bob: 0.04, feet: 0.4 },
+    human: { period: 6, stride: 1.05, twist: 0.13, bob: 0.04, feet: 0.4 },
     // Goblins scuttle: low, fast, zig-zagging, arms wide.
-    goblin: { period: 3, stride: 0.5, twist: 0.22, bob: 0.015, feet: 0.62, lean: 0.24, zig: 0.16 },
+    goblin: { period: 3, stride: 0.95, twist: 0.22, bob: 0.015, feet: 0.62, lean: 0.24, zig: 0.16 },
     // Orcs stomp: wide, heavy, the shoulders rolling, dust at each footfall.
-    orc: { period: 8, stride: 0.6, twist: 0.26, bob: 0.075, feet: 0.62, stomp: 1 },
+    orc: { period: 8, stride: 0.95, twist: 0.26, bob: 0.075, feet: 0.62, stomp: 1 },
     // The dead lurch: one good leg steps, the other is dragged after it.
-    undead: { period: 10, stride: 0.62, twist: 0.2, bob: 0.02, feet: 0.42, lurch: 1 },
+    undead: { period: 10, stride: 0.9, twist: 0.2, bob: 0.02, feet: 0.42, lurch: 1 },
     // Wraiths have no legs: they drift and their rags trail.
     wraith: { period: 9, stride: 0, twist: 0.06, bob: 0, feet: 0, drift: 1 },
     // Mounts and beasts lope: gathered, then stretched.
     beast: { period: 4, stride: 0.5, twist: 0.05, bob: 0.03, feet: 0.4, lope: 1 },
     rat: { period: 3, stride: 0.4, twist: 0.1, bob: 0, feet: 0.5, lope: 1 },
     flyer: { period: 5, stride: 0, twist: 0.04, bob: 0.03, feet: 0, wings: 1 },
-    dark: { period: 6, stride: 0.74, twist: 0.1, bob: 0.03, feet: 0.4 },
-    hell: { period: 7, stride: 0.66, twist: 0.18, bob: 0.055, feet: 0.5 },
-    void: { period: 5, stride: 0.6, twist: 0.08, bob: 0.01, feet: 0.36 },
+    dark: { period: 6, stride: 1.05, twist: 0.1, bob: 0.03, feet: 0.4 },
+    hell: { period: 7, stride: 0.98, twist: 0.18, bob: 0.055, feet: 0.5 },
+    void: { period: 5, stride: 0.98, twist: 0.08, bob: 0.01, feet: 0.36 },
   };
 
   function familyOf(type, team) {
@@ -672,7 +949,7 @@ const SpriteGen = (() => {
     bard: { w: 'lute', h: 'cap' },
     ballista: { w: 'none', h: 'helm', engine: 'ballista' },
     pikeman: { w: 'pike', h: 'helm' },
-    sapper: { w: 'bomb', h: 'helm' },
+    sapper: { w: 'spade', h: 'helm', sapper: 1 },
     knight: { w: 'greatsword', h: 'greathelm' },
     general: { w: 'sword', h: 'crown' },
     doomslayer_hero: { w: 'greatsword', h: 'greathelm' },
@@ -1060,6 +1337,50 @@ const SpriteGen = (() => {
             );
           }
         }
+        break;
+      }
+      case 'spade': {
+        // A short digging spade: wooden haft, bone-bright blade.
+        const y0 = reach(0.8);
+        const y1 = reach(1.3);
+        line(0, r * 0.35, 0, y0, pal.haft, 1.6);
+        line(-r * 0.2, r * 0.35, r * 0.2, r * 0.35, pal.haft, 1.4);
+        inkPoly(
+          ctx,
+          [
+            [-r * 0.3, y0],
+            [r * 0.3, y0],
+            [r * 0.3, y0 + (y1 - y0) * 0.55],
+            [0, y1],
+            [-r * 0.3, y0 + (y1 - y0) * 0.55],
+          ],
+          pal.blade
+        );
+        break;
+      }
+      case 'knife': {
+        blade(0.78, r * 0.12, 0.25);
+        break;
+      }
+      case 'satchel': {
+        // The charge in the hand, fuse lit.
+        inkPoly(
+          ctx,
+          [
+            [-r * 0.36, -r * 0.1],
+            [r * 0.36, -r * 0.1],
+            [r * 0.36, -r * 0.66],
+            [-r * 0.36, -r * 0.66],
+          ],
+          '#8a6a48'
+        );
+        line(-r * 0.36, -r * 0.38, r * 0.36, -r * 0.38, '#3a2e28', 1);
+        ctx.beginPath();
+        ctx.moveTo(0, -r * 0.66);
+        ctx.quadraticCurveTo(r * 0.3, -r * 0.85, r * 0.16, -r * 1.05);
+        inkStroke(ctx, BONE, 0.9, 1.2);
+        ctx.fillStyle = f % 2 ? '#ffd040' : '#ff8a30';
+        ctx.fillRect(r * 0.16 - 1.3, -r * 1.05 - 2.4, 2.6, 2.6);
         break;
       }
       case 'bomb': {
@@ -1584,9 +1905,20 @@ const SpriteGen = (() => {
     const healing = animState === 'heal';
     const building = animState === 'build';
     const idle = animState === 'idle';
-    const swingFrame = attacking || building ? Math.min(3, fi) : 0;
+    // Poses another module asks for (SpriteGen.requestAnim): an overarm throw, and
+    // kneeling to bury a charge. 'yield' is a man who has given up.
+    const throwing = animState === 'throw';
+    const laying = animState === 'lay';
+    const yielding = animState === 'yield';
+    const swingFrame = attacking || building || throwing ? Math.min(3, fi) : 0;
     // Step back on the wind-up, then drive forward as the blow lands.
-    const lunge = attacking ? [-3, -1, 5, 3][swingFrame] : building ? [-1, 0, 2, 1][swingFrame] : 0;
+    const lunge = attacking
+      ? [-3, -1, 5, 3][swingFrame]
+      : throwing
+        ? [-3, -3, 4, 2][swingFrame]
+        : building
+          ? [-1, 0, 2, 1][swingFrame]
+          : 0;
     const undead = fam === 'undead' || fam === 'wraith';
     const wraith = fam === 'wraith';
     const flyer = fam === 'flyer';
@@ -1637,14 +1969,24 @@ const SpriteGen = (() => {
     let lean = (gait.lean || 0) + (rout ? 0.18 : 0);
     let breath = 0;
     let shift = 0;
+    // Idle beats big enough to read at the field's own zoom: the whole body moves,
+    // not a pixel of it. 6 grounds the weapon and leans on it; 7 is a stretch.
+    const rest = idle && fi === 6;
+    const stretch = idle && fi === 7;
+    let headSide = 0;
     if (idle) {
       // 0 rest, 1 breath in, 2/3 weight on the left/right foot, 4/5 a look to either side.
-      breath = fi === 1 ? 1 : 0;
+      breath = fi === 1 ? 1 : stretch ? 1.4 : 0;
       shift = fi === 2 ? -1 : fi === 3 ? 1 : 0;
-      headTurn = fi === 4 ? -0.6 : fi === 5 ? 0.6 : 0;
-      grow = 1 + breath * 0.035;
-      dx = shift * r * 0.09;
-      twist = shift * 0.07;
+      headTurn = fi === 4 ? -0.95 : fi === 5 ? 0.95 : shift * 0.3;
+      headSide = fi === 4 ? -1 : fi === 5 ? 1 : 0;
+      grow = 1 + breath * 0.07;
+      dx = shift * r * 0.24;
+      twist = shift * 0.2 + headSide * 0.16;
+      if (rest) {
+        lean += 0.12;
+        twist = 0.12;
+      }
     }
     if (moving && gait.lurch) {
       // The good leg steps and the body is hauled over it; then the dead leg follows.
@@ -1667,6 +2009,18 @@ const SpriteGen = (() => {
       grow = 0.95;
       lean = 0.22;
     }
+    if (laying) {
+      // Down on one knee over the hole.
+      dy = -r * 0.12;
+      grow = 0.9;
+      lean = 0.34;
+    }
+    if (yielding) {
+      // Shoulders dropped, head bowed.
+      grow = 0.94;
+      lean = 0.3;
+    }
+    if (throwing) twist = [0.5, 0.62, -0.45, -0.25][swingFrame];
 
     // Ground shadow and team mark stay unrotated so facing never hides them.
     if (!dying) {
@@ -1829,16 +2183,24 @@ const SpriteGen = (() => {
     // Feet
     if (!mounted && gait.feet > 0) {
       // Light enough to read against dark ground by day and by night.
-      const boot = enemy ? '#6a5f58' : '#9a8a6c';
+      const boot = enemy ? '#8a7c70' : '#b4a27c';
+      const legCol = enemy ? shadeHex(style.body, 0.12) : shadeHex(style.body, -0.3);
       const fw = r * gait.feet;
       const foot = (x, y, k = 1) => {
         ctx.beginPath();
-        ctx.ellipse(x, y, r * 0.2 * k, r * 0.34 * k, 0, 0, Math.PI * 2);
-        inkFill(ctx, boot, 1);
+        ctx.ellipse(x, y, r * 0.26 * k, r * 0.42 * k, 0, 0, Math.PI * 2);
+        inkFill(ctx, boot, 1.2);
+      };
+      // A leg from the hip to the boot, so a stride reads as a limb and not a dot.
+      const leg = (x, y) => {
+        ctx.beginPath();
+        ctx.moveTo(x * 0.8, 0);
+        ctx.lineTo(x, y);
+        inkStroke(ctx, legCol, r * 0.3, 1.8);
       };
       if (moving && gait.lurch) {
         // Right leg steps; the left is dragged, scoring the ground behind it.
-        const lead = [-0.85, -0.45, -0.2, -0.5][cyc] * r;
+        const lead = [-1.15, -0.6, -0.2, -0.6][cyc] * r;
         const drag = [0.95, 1.05, 0.8, 0.55][cyc] * r;
         ctx.strokeStyle = INK;
         ctx.lineWidth = 1.2;
@@ -1848,6 +2210,8 @@ const SpriteGen = (() => {
         ctx.moveTo(-fw + 1.5, drag + r * 0.3);
         ctx.lineTo(-fw + 1.2, drag + r * 0.7);
         ctx.stroke();
+        leg(-fw, drag);
+        leg(fw, lead);
         foot(-fw, drag);
         foot(fw, lead);
       } else if (moving) {
@@ -1865,11 +2229,30 @@ const SpriteGen = (() => {
             ctx.stroke();
           }
         }
+        leg(-fw, -s * st);
+        leg(fw, s * st);
         foot(-fw, -s * st, big);
         foot(fw, s * st, big);
       } else if (shift) {
-        // Weight on one foot: the other shows at the side.
-        foot(-shift * fw * 1.5, r * 0.3);
+        // Weight on one foot: the other is planted wide at the side.
+        leg(-shift * fw * 2.1, r * 0.42);
+        foot(-shift * fw * 2.1, r * 0.42, 1.1);
+      } else if (laying) {
+        // One knee down: the front boot planted ahead, the other trailing.
+        leg(fw, -r * 0.95);
+        foot(fw, -r * 0.95, 1.05);
+        leg(-fw, r * 1.0);
+        foot(-fw, r * 1.0);
+      } else if (throwing) {
+        const st = [0.5, 0.7, -0.9, -0.6][swingFrame] * r;
+        leg(-fw, -st);
+        leg(fw, st);
+        foot(-fw, -st);
+        foot(fw, st);
+      } else if (stretch) {
+        // Up on the toes, feet apart.
+        foot(-fw * 1.5, r * 0.5);
+        foot(fw * 1.5, r * 0.5);
       }
     }
 
@@ -1881,10 +2264,26 @@ const SpriteGen = (() => {
     const armSwing = moving ? s * r * 0.42 * strideK : 0;
     let gx = mounted ? r * 0.72 : r * 0.82;
     let gy = -r * 0.32 + armSwing;
-    let wrot = moving && !mounted ? s * 0.16 : shift * 0.06 + breath * 0.03;
+    let wrot = moving && !mounted ? s * 0.16 : shift * 0.3 - breath * 0.16 + headSide * 0.12;
     let ox = -r * 0.92;
     let oy = -r * 0.25 - armSwing;
     if (hurt) wrot = 0.55;
+    if (rest) {
+      // Weapon grounded point-down at the side, both hands folded over it.
+      wrot = 2.75;
+      gx = r * 0.95;
+      gy = -r * 0.1;
+      ox = r * 0.55;
+      oy = -r * 0.35;
+    }
+    if (stretch) {
+      // Arms thrown wide and up, the weapon swung out.
+      wrot = 0.9;
+      gx = r * 1.25;
+      gy = -r * 0.75;
+      ox = -r * 1.3;
+      oy = -r * 0.7;
+    }
     if (attacking && fightKind === 'melee') {
       // A melee swing winds up behind the shoulder and follows through across the body.
       wrot = [-1.0, -0.25, 0.75, 1.05][swingFrame];
@@ -1929,7 +2328,35 @@ const SpriteGen = (() => {
       ox = -r * 0.26;
       oy = -r * (1.0 + (cyc % 2) * 0.1);
     }
-    const twoHand = kit.w === 'orb' || fam === 'wraith' || (moving && gait.lurch);
+    if (throwing) {
+      // Overarm: the hand goes back behind the shoulder, then over and out ahead.
+      wrot = [2.6, 2.9, 0.2, 0.5][swingFrame];
+      gx = r * [1.0, 0.9, 0.6, 0.25][swingFrame];
+      gy = r * [0.85, 1.05, -1.25, -0.85][swingFrame];
+      ox = -r * [0.5, 0.4, 1.05, 1.0][swingFrame];
+      oy = r * [-1.05, -1.15, 0.35, 0.2][swingFrame];
+    }
+    if (laying) {
+      // Both hands down in the dirt ahead, working in turn.
+      wrot = 0;
+      gx = r * 0.36;
+      gy = -r * (1.2 + (cyc % 2) * 0.16);
+      ox = -r * 0.36;
+      oy = -r * (1.36 - (cyc % 2) * 0.16);
+    }
+    if (yielding) {
+      // Open hands held out from the sides.
+      wrot = 0;
+      gx = r * 1.3;
+      gy = -r * 0.42;
+      ox = -r * 1.3;
+      oy = -r * 0.42;
+    }
+    const twoHand =
+      !throwing &&
+      !laying &&
+      !yielding &&
+      (kit.w === 'orb' || fam === 'wraith' || (moving && gait.lurch));
     if (twoHand && !attacking) {
       // Both hands held out ahead: an orb between them, or the reach of the dead.
       gx = r * 0.3;
@@ -1938,7 +2365,59 @@ const SpriteGen = (() => {
       oy = gy + (gait.lurch ? r * 0.18 : 0);
       wrot = 0;
     }
-    const showWeapon = !(attacking && fightKind === 'bow') && kit.w !== 'none';
+    // A Sapper carries the spade, draws the knife to fight and the charge to throw.
+    const held = kit.sapper
+      ? attacking
+        ? 'knife'
+        : throwing
+          ? swingFrame <= 1
+            ? 'satchel'
+            : 'none'
+          : 'spade'
+      : throwing && swingFrame >= 2
+        ? 'none'
+        : kit.w;
+    const showWeapon =
+      !(attacking && fightKind === 'bow') && held !== 'none' && !laying && !yielding;
+    if (yielding && kit.w !== 'none' && !kit.engine && kit.w !== 'fists' && kit.w !== 'orb') {
+      // His weapon lies in the dirt in front of him.
+      ctx.save();
+      ctx.translate(-r * 0.75, -r * 1.25);
+      ctx.rotate(1.25);
+      drawInkWeapon(ctx, kit.sapper ? 'spade' : kit.w, r, pal, 0, false, r * 1.5);
+      ctx.restore();
+    }
+    if (laying) {
+      // The spade stands in the spoil beside him; the charge goes into the hole.
+      ctx.save();
+      ctx.translate(r * 1.3, -r * 0.2);
+      ctx.rotate(0.35);
+      drawInkWeapon(ctx, 'spade', r, pal, 0, false, r * 1.3);
+      ctx.restore();
+      ctx.beginPath();
+      ctx.ellipse(0, -r * 1.75, r * 0.62, r * 0.42, 0, 0, Math.PI * 2);
+      inkFill(ctx, '#2a2018', 1.2);
+      inkDot(ctx, 0, -r * 1.75, r * 0.26, cyc >= 2 ? '#57534e' : '#8a6a48', 1);
+      ctx.fillStyle = BONE;
+      ctx.fillRect(-0.9, -r * 1.75 - 0.9, 1.8, 1.8);
+      // Earth thrown up either side.
+      ctx.fillStyle = '#8a6a48';
+      for (const [x, y] of cyc % 2
+        ? [
+            [-0.95, -1.9],
+            [0.85, -2.05],
+            [1.05, -1.6],
+          ]
+        : [
+            [-1.1, -1.65],
+            [-0.8, -2.1],
+            [0.95, -1.85],
+          ]) {
+        ctx.beginPath();
+        ctx.arc(x * r, y * r, r * 0.11, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
     const handR = r * 0.2;
     const arm = (x, y, sx) => {
       // A sleeve from the shoulder to the hand, only when the hand is well clear.
@@ -1970,7 +2449,7 @@ const SpriteGen = (() => {
       // How far the weapon may reach before it would leave the sprite canvas.
       const room =
         UNIT_CANVAS_UNITS / 2 - 3.5 - r * 0.42 - Math.hypot(gx + dx, gy + dy - lunge * 0.5);
-      drawInkWeapon(ctx, kit.w, r, pal, fi, attacking && gun && swingFrame === 2, room);
+      drawInkWeapon(ctx, held, r, pal, fi, attacking && gun && swingFrame === 2, room);
       ctx.restore();
       if (kit.w === 'daggers' || kit.w === 'twinblades' || kit.w === 'fists') {
         // The off hand carries its twin.
@@ -2110,6 +2589,68 @@ const SpriteGen = (() => {
       for (const side of [-1, 1]) inkDot(ctx, side * r * 0.9, 0, r * 0.3, style.body, 1.2);
     }
 
+    if (kit.sapper) {
+      // Field engineer's load, worn on the back where it shows from above: a strap
+      // across the shoulders to a satchel on the left hip, a coil of fuse on the right,
+      // a knife at the belt, and the spade slung whenever his hands are busy.
+      ctx.beginPath();
+      ctx.moveTo(r * 0.72, -r * 0.42);
+      ctx.lineTo(-r * 0.6, r * 0.5);
+      inkStroke(ctx, '#5a4a38', r * 0.16, 1.4);
+      if (held !== 'spade' && !laying) {
+        ctx.save();
+        ctx.translate(r * 0.15, r * 0.95);
+        ctx.rotate(-0.75);
+        drawInkWeapon(ctx, 'spade', r * 0.85, pal, 0, false, r * 1.4);
+        ctx.restore();
+      }
+      if (!(throwing && swingFrame <= 1)) {
+        inkPoly(
+          ctx,
+          [
+            [-r * 1.12, r * 0.22],
+            [-r * 0.3, r * 0.22],
+            [-r * 0.3, r * 0.92],
+            [-r * 1.12, r * 0.92],
+          ],
+          '#8a6a48'
+        );
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(-r * 1.12, r * 0.5);
+        ctx.lineTo(-r * 0.3, r * 0.5);
+        ctx.stroke();
+        ctx.fillStyle = BONE;
+        ctx.fillRect(-r * 0.78, r * 0.44, r * 0.16, r * 0.2);
+      }
+      // Fuse: two turns of ochre cord, the free end glowing.
+      for (const [rad, lw] of [
+        [0.34, 1.5],
+        [0.16, 1.2],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(r * 0.62, r * 0.56, r * rad, 0, Math.PI * 2);
+        inkStroke(ctx, '#c79a2e', lw, 1.5);
+      }
+      ctx.fillStyle = '#ff8a30';
+      ctx.fillRect(r * 0.96 - 1, r * 0.3 - 1, 2.2, 2.2);
+      if (held !== 'knife') {
+        // Knife sheathed across the small of the back.
+        inkPoly(
+          ctx,
+          [
+            [-r * 0.2, r * 0.98],
+            [r * 0.34, r * 0.92],
+            [r * 0.42, r * 1.04],
+            [-r * 0.2, r * 1.14],
+          ],
+          BONE,
+          0.9
+        );
+      }
+    }
+
     // Shield on the off hand
     if (SHIELD_TYPES.has(type) || kit.shield) {
       // Raised across the body on the wind-up, dropped back as the blow goes in;
@@ -2137,7 +2678,15 @@ const SpriteGen = (() => {
 
     // Hands sit over the weapon grips.
     if (!mounted || showWeapon) inkDot(ctx, gx, gy, handR, kit.w === 'fists' ? BONE : skin, 1);
-    if (!(SHIELD_TYPES.has(type) || kit.shield) || rout || healing || building)
+    if (
+      !(SHIELD_TYPES.has(type) || kit.shield) ||
+      rout ||
+      healing ||
+      building ||
+      throwing ||
+      laying ||
+      yielding
+    )
       inkDot(ctx, ox, oy, handR, kit.w === 'fists' ? BONE : skin, 1);
     if (healing) {
       inkDot(ctx, -ox, oy + r * 0.06, handR, skin, 1);
@@ -2189,7 +2738,7 @@ const SpriteGen = (() => {
     const hy = -r * (0.12 + lean) + (mounted ? 0 : 0);
     const hr = r * (brute ? 0.56 : 0.5);
     ctx.save();
-    ctx.translate(0, hy);
+    ctx.translate(headSide * r * 0.2, hy);
     ctx.rotate(headTurn + twist * 0.4);
     ctx.scale(grow, grow);
     ctx.translate(0, -hy);
@@ -3021,6 +3570,13 @@ const SpriteGen = (() => {
     void_stalker: [-2, -3, 2, 1],
     elder_wyrm: [-2, -3, -3, -2],
     abomination: [-2, -3, 2, 1],
+    juggernaut: [-2, -4, 5, 2],
+  };
+  /** Pale edge drawn round the black-bodied monsters so they do not sink into night ground. */
+  const MONSTER_RIM = {
+    void_stalker: '#b4d6dc',
+    boss_vexis: '#e8c4bc',
+    boss_grimm: '#d8d0b8',
   };
 
   /**
@@ -3032,7 +3588,7 @@ const SpriteGen = (() => {
     const shape = boss
       ? BOSS_ARCHETYPE[type] || 'behemoth'
       : type === 'cinderbound_juggernaut'
-        ? 'iron_colossus'
+        ? 'juggernaut'
         : type;
     const style = resolveUnitStyle(type, team, shape in UNIT_STYLE ? shape : 'behemoth');
     // Capped so the tallest marks (banner, standard, horn crown, halo), which reach
@@ -3091,16 +3647,40 @@ const SpriteGen = (() => {
 
     ctx.save();
     ctx.translate(0, bob + shift);
+    // How far the body has gone down: 0 while it reels (frames 0-2), 1 once it lies.
+    const dk = dying ? [0, 0, 0.1, 0.4, 0.75, 1, 1, 1][dieF] : 0;
     if (dying) {
-      // Reels (0-2), goes over (3-4), lies slumped and spread (5-7).
-      const k = [0, 0, 0.1, 0.4, 0.75, 1, 1, 1][dieF];
-      ctx.translate(dieF <= 2 ? [-1.6, 1.8, -1][dieF] : 0, r * 0.08 * k);
-      ctx.rotate(dieF <= 2 ? [-0.05, 0.07, -0.03][dieF] : 0.3 * k);
-      ctx.scale(1 + 0.07 * k, 1 - 0.2 * k);
+      // Reels (0-2), goes over (3-4), then lies the way its shape falls (5-7): the
+      // behemoth pitches onto its face with its arms thrown wide, the abomination
+      // bursts and spreads, the stalker folds over on its side, the wyrm twists with
+      // one wing under it, the colossus splits down the middle and the juggernaut
+      // sags as its fire goes out.
+      if (dieF <= 2) {
+        ctx.translate([-1.6, 1.8, -1][dieF], 0);
+        ctx.rotate([-0.05, 0.07, -0.03][dieF]);
+      }
+      if (shape === 'behemoth') {
+        ctx.translate(0, r * 0.2 * dk);
+        ctx.scale(1 + 0.08 * dk, 1 - 0.14 * dk);
+      } else if (shape === 'abomination') {
+        ctx.scale(1 + 0.12 * dk, 1 - 0.26 * dk);
+      } else if (shape === 'void_stalker') {
+        ctx.translate(-r * 0.2 * dk, r * 0.1 * dk);
+        ctx.rotate(1.2 * dk);
+        ctx.scale(1 - 0.12 * dk, 1 - 0.1 * dk);
+      } else if (shape === 'elder_wyrm') {
+        ctx.translate(r * 0.1 * dk, 0);
+        ctx.rotate(-0.5 * dk);
+        ctx.scale(1, 1 - 0.08 * dk);
+      } else if (shape === 'juggernaut') {
+        ctx.translate(0, r * 0.1 * dk);
+        ctx.scale(1 + 0.1 * dk, 1 - 0.12 * dk);
+      }
     } else if (walk) {
       // Gait by shape. The behemoth rolls its shoulders over planted fists; the
       // colossus rocks stiffly from foot to foot; the abomination heaves itself along.
       if (shape === 'behemoth') ctx.rotate(s * 0.07);
+      else if (shape === 'juggernaut') ctx.rotate(s * 0.045);
       else if (shape === 'iron_colossus') ctx.translate(s * r * 0.06, 0);
       else if (shape === 'void_stalker') ctx.translate(s * r * 0.08, 0);
       else if (shape === 'abomination') {
@@ -3117,6 +3697,7 @@ const SpriteGen = (() => {
     } else if (
       atk &&
       shape !== 'iron_colossus' &&
+      shape !== 'juggernaut' &&
       shape !== 'void_stalker' &&
       shape !== 'elder_wyrm'
     ) {
@@ -3146,11 +3727,21 @@ const SpriteGen = (() => {
       ctx.strokeStyle = INK;
       ctx.lineWidth = 2.6;
     };
-    const blob = (pts, fill) => {
+    const rim = MONSTER_RIM[type] || MONSTER_RIM[shape];
+    const blob = (pts, fill, lit = false) => {
       ctx.beginPath();
       ctx.moveTo(pts[0][0] * r, pts[0][1] * r);
       for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0] * r, pts[i][1] * r);
       ctx.closePath();
+      if (lit && rim) {
+        // Rim light: a pale line just outside the ink, all the way round.
+        const lw = ctx.lineWidth;
+        ctx.strokeStyle = rim;
+        ctx.lineWidth = lw + 2.8;
+        ctx.stroke();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = lw;
+      }
       ctx.fillStyle = fill;
       ctx.fill();
       ctx.stroke();
@@ -3173,179 +3764,955 @@ const SpriteGen = (() => {
       ctx.fillRect(x * r - 0.6, y * r - 0.6, 1.2, 1.2);
     };
 
-    if (shape === 'behemoth') {
-      if (walk) {
-        // Knuckle-walk: the fists plant ahead in turn and the bulk is hauled over them.
-        for (const sd of [-1, 1]) {
-          const reach = 0.42 + sd * s * 0.4;
-          inkLine(
-            [
-              [sd * 0.85, 0.0],
-              [sd * 1.02, reach],
-            ],
-            hide,
-            0.2 * r
-          );
-          ctx.beginPath();
-          ctx.arc(sd * 1.02 * r, reach * r, 0.22 * r, 0, Math.PI * 2);
-          ctx.fillStyle = trim;
-          ctx.fill();
-          ctx.stroke();
-          if (sd * s > 0) {
-            // Ground cracks under the fist that has just come down.
-            ctx.lineWidth = 1.2;
-            for (const a of [0.2, 0.9, 1.6]) {
-              ctx.beginPath();
-              ctx.moveTo(
-                (sd * 1.02 + Math.cos(a) * sd * 0.26) * r,
-                (reach + Math.sin(a) * 0.26) * r
-              );
-              ctx.lineTo(
-                (sd * 1.02 + Math.cos(a) * sd * 0.42) * r,
-                (reach + Math.sin(a) * 0.42) * r
-              );
-              ctx.stroke();
-            }
-            ctx.lineWidth = 2.6;
-          }
-        }
-      }
-      // Horned bulk: hunched shoulders, tusks, a skull plate.
-      blob(
-        [
-          [-1.05, 0.1],
-          [-0.95, -0.55],
-          [-0.45, -0.9],
-          [0.45, -0.9],
-          [0.95, -0.55],
-          [1.05, 0.1],
-          [0.7, 0.75],
-          [0, 0.95],
-          [-0.7, 0.75],
-        ],
-        hide
-      );
+    // The cinderbound juggernaut: a horned mass of cracked basalt with a fire inside,
+    // dragging the chains it was bound in. It walks on its fists and gores with its horns.
+    const paintJuggernaut = () => {
+      const cool = dk; // the fire dies as it falls
+      const hot = atk ? [0.5, 1, 0.8, 0.4][f] : 0;
+      const ember = dead ? '#5a4a44' : hot > 0.7 ? '#ffd860' : '#ff7a20';
+      // Slabs of cinder-grey rock; ash-pale once the fire is out.
+      const basalt = dead ? '#8a8078' : '#6e5e56';
+      // Chains trail behind, swinging against the stride; the links show dark along them.
       for (const sd of [-1, 1]) {
-        blob(
-          [
-            [sd * 0.55, 0.25],
-            [sd * 1.25, 0.75],
-            [sd * 1.05, 0.15],
-          ],
-          BONE
-        );
-        blob(
-          [
-            [sd * 0.3, 0.75],
-            [sd * 0.42, 1.2],
-            [sd * 0.12, 0.85],
-          ],
-          BONE
-        );
+        const sway = sd * s * 0.14 + (dk > 0 ? sd * 0.25 * dk : 0);
+        const pts = [
+          [sd * 0.8, -0.55],
+          [sd * 1.2 + sway * 0.5, -1.0],
+          [sd * 1.0 + sway, -1.5 + cool * 0.2],
+        ];
+        inkLine(pts, '#a8a29c', 2);
+        ctx.fillStyle = INK;
+        for (let i = 0; i < 5; i++) {
+          const t = i / 4;
+          const a = pts[t < 0.5 ? 0 : 1];
+          const b = pts[t < 0.5 ? 1 : 2];
+          const u2 = t < 0.5 ? t * 2 : t * 2 - 1;
+          ctx.fillRect(
+            (a[0] + (b[0] - a[0]) * u2) * r - 0.7,
+            (a[1] + (b[1] - a[1]) * u2) * r - 0.7,
+            1.4,
+            1.4
+          );
+        }
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
       }
-      blob(
-        [
-          [-0.42, 0.25],
-          [0, 0.05],
-          [0.42, 0.25],
-          [0.3, 0.8],
-          [0, 0.95],
-          [-0.3, 0.8],
-        ],
-        BONE
-      );
-      eye(-0.2, 0.42);
-      eye(0.2, 0.42);
-      ctx.fillStyle = INK;
-      ctx.fillRect(-0.05 * r, 0.6 * r, 0.1 * r, 0.22 * r);
-      if (atk) {
-        // Overhead slam: both fists go up and out, then come down together in front.
-        const [fx, fy, fs] = [
-          [1.0, 0.3, 0.25],
-          [0.74, -0.38, 0.34],
-          [0.5, 1.1, 0.23],
-          [0.58, 1.0, 0.2],
-        ][f];
-        if (f >= 2) {
-          // Shockwave and thrown dust where the fists land.
-          const grow = f === 2 ? 1 : 1.12;
-          ctx.globalAlpha *= f === 2 ? 1 : 0.5;
-          for (const [c, w] of [
-            [INK, 4.6],
-            [BONE, 2.2],
-          ]) {
-            ctx.strokeStyle = c;
-            ctx.lineWidth = w;
+      // Fists: shackled, planted ahead in turn on the march, thrown wide in death.
+      for (const sd of [-1, 1]) {
+        const fy = atk ? [0.2, -0.1, 0.55, 0.4][f] : 0.3 + sd * s * 0.38 - cool * 0.2;
+        const fx = sd * (1.2 + (atk ? [0, 0.1, -0.05, 0][f] : 0) + cool * 0.3);
+        inkLine(
+          [
+            [sd * 0.9, -0.1],
+            [fx, fy],
+          ],
+          hide,
+          0.24 * r
+        );
+        ctx.beginPath();
+        ctx.arc(fx * r, fy * r, 0.26 * r, 0, Math.PI * 2);
+        ctx.fillStyle = basalt;
+        ctx.fill();
+        ctx.stroke();
+        // The shackle band.
+        inkLine(
+          [
+            [fx - sd * 0.24, fy - 0.2],
+            [fx + sd * 0.1, fy - 0.3],
+          ],
+          '#8f8a86',
+          1.6
+        );
+        if (walk && sd * s > 0) {
+          ctx.strokeStyle = BONE;
+          ctx.lineWidth = 1.3;
+          for (const a of [0.3, 1.1, 1.9]) {
             ctx.beginPath();
-            ctx.ellipse(
-              0,
-              0.8 * r,
-              1.22 * r * grow,
-              0.52 * r * grow,
-              0,
-              Math.PI * 0.06,
-              Math.PI * 0.94
-            );
+            ctx.moveTo((fx + Math.cos(a) * sd * 0.32) * r, (fy + Math.sin(a) * 0.32) * r);
+            ctx.lineTo((fx + Math.cos(a) * sd * 0.5) * r, (fy + Math.sin(a) * 0.5) * r);
             ctx.stroke();
           }
-          if (f === 2) {
-            ctx.strokeStyle = BONE;
-            ctx.lineWidth = 1.5;
-            for (let i = 0; i < 7; i++) {
-              const a = Math.PI * (0.1 + i * 0.1333);
-              ctx.beginPath();
-              ctx.moveTo(Math.cos(a) * 1.3 * r, (0.8 + Math.sin(a) * 0.56) * r);
-              ctx.lineTo(Math.cos(a) * 1.5 * r, (0.8 + Math.sin(a) * 0.64) * r);
-              ctx.stroke();
-            }
-          }
-          ctx.globalAlpha /= f === 2 ? 1 : 0.5;
           ctx.strokeStyle = INK;
           ctx.lineWidth = 2.6;
         }
-        for (const sd of [-1, 1]) {
-          inkLine(
-            [
-              [sd * 0.9, 0.05],
-              [sd * fx, fy],
-            ],
-            hide,
-            0.2 * r
-          );
-          ctx.beginPath();
-          ctx.arc(sd * fx * r, fy * r, fs * r, 0, Math.PI * 2);
-          ctx.fillStyle = trim;
-          ctx.fill();
-          ctx.stroke();
-          ctx.fillStyle = BONE;
-          for (const k of [-1, 0, 1]) {
+      }
+      // The body: a broad dome, widest at the shoulders.
+      blob(
+        [
+          [-1.12, -0.05],
+          [-0.98, -0.62],
+          [-0.45, -0.98],
+          [0.45, -0.98],
+          [0.98, -0.62],
+          [1.12, -0.05],
+          [0.86, 0.5],
+          [0.3, 0.72],
+          [-0.3, 0.72],
+          [-0.86, 0.5],
+        ],
+        hide
+      );
+      // The fire shows through the gaps between three slabs of basalt; the gaps widen
+      // when it dies and the slabs slide apart.
+      ctx.fillStyle = ember;
+      ctx.beginPath();
+      ctx.ellipse(0, -0.2 * r, 0.82 * r, 0.62 * r, 0, 0, Math.PI * 2);
+      ctx.fill();
+      if (hot > 0 && !dead) {
+        ctx.fillStyle = `rgba(255,216,96,${0.55 * hot})`;
+        ctx.beginPath();
+        ctx.ellipse(0, -0.2 * r, 0.5 * r, 0.36 * r, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      const gap = 0.05 + cool * 0.12;
+      for (const [ox, oy, pts] of [
+        [
+          -1,
+          -0.3,
+          [
+            [-0.9, -0.1],
+            [-0.8, -0.58],
+            [-0.4, -0.84],
+            [-0.08, -0.8],
+            [-0.14, -0.3],
+            [-0.3, 0.1],
+            [-0.72, 0.28],
+          ],
+        ],
+        [
+          1,
+          -0.3,
+          [
+            [0.9, -0.1],
+            [0.8, -0.58],
+            [0.4, -0.84],
+            [0.08, -0.8],
+            [0.16, -0.36],
+            [0.36, 0.06],
+            [0.72, 0.28],
+          ],
+        ],
+        [
+          0,
+          1,
+          [
+            [-0.22, 0.14],
+            [0, -0.24],
+            [0.26, 0.1],
+            [0.5, 0.36],
+            [0.2, 0.52],
+            [-0.2, 0.52],
+            [-0.52, 0.38],
+          ],
+        ],
+      ])
+        blob(
+          pts.map(([x, y]) => [x + ox * gap, y + oy * gap]),
+          basalt
+        );
+      // Vents on the shoulders: smoke on the march, a jet on the wind-up.
+      for (const sd of [-1, 1]) {
+        ctx.beginPath();
+        ctx.arc(sd * 0.62 * r, -0.62 * r, 0.13 * r, 0, Math.PI * 2);
+        ctx.fillStyle = dead ? INK : ember;
+        ctx.fill();
+        ctx.stroke();
+        if (!dead && (walk || atk)) {
+          const puff = walk ? cyc : f;
+          ctx.fillStyle = 'rgba(200,190,180,0.5)';
+          for (let i = 0; i < 2; i++) {
             ctx.beginPath();
-            ctx.arc((sd * fx + k * fs * 0.5) * r, (fy + fs * 0.45) * r, 1.1, 0, Math.PI * 2);
+            ctx.arc(
+              (sd * 0.62 + sd * 0.1 * i + ((puff + i) % 2) * 0.06) * r,
+              (-0.86 - i * 0.24 - (puff % 2) * 0.08) * r,
+              (0.1 + i * 0.05) * r,
+              0,
+              Math.PI * 2
+            );
             ctx.fill();
           }
         }
       }
-    } else if (shape === 'iron_colossus') {
-      if (walk) {
-        // Stiff stomp: square feet show ahead of the slab in turn, with a jolt line each.
-        for (const sd of [-1, 1]) {
-          const fy = 0.82 + sd * s * 0.2;
+      // Horns: a great forward-curving yoke. Dead, the left one is snapped off short.
+      for (const sd of [-1, 1]) {
+        const snapped = dead && sd < 0;
+        blob(
+          snapped
+            ? [
+                [sd * 0.42, 0.42],
+                [sd * 0.8, 0.5],
+                [sd * 1.0, 0.82],
+                [sd * 0.74, 0.74],
+              ]
+            : [
+                [sd * 0.42, 0.42],
+                [sd * 0.8, 0.5],
+                [sd * 1.08, 0.95],
+                [sd * 0.92, 1.42],
+                [sd * 0.5, 1.6],
+                [sd * 0.74, 1.24],
+                [sd * 0.72, 0.9],
+              ],
+          BONE
+        );
+        if (snapped)
           blob(
             [
-              [sd * 0.2, fy],
-              [sd * 0.66, fy],
-              [sd * 0.66, fy + 0.3],
-              [sd * 0.2, fy + 0.3],
+              [-1.5, 1.05],
+              [-1.2, 1.3],
+              [-1.32, 1.62],
+              [-1.44, 1.36],
+            ],
+            BONE
+          );
+      }
+      // Head: a low wedge with a grated jaw.
+      blob(
+        [
+          [-0.4, 0.3],
+          [0, 0.16],
+          [0.4, 0.3],
+          [0.34, 0.86],
+          [0, 1.04],
+          [-0.34, 0.86],
+        ],
+        basalt
+      );
+      eye(-0.18, 0.5, 0.11);
+      eye(0.18, 0.5, 0.11);
+      ctx.fillStyle = dead ? INK : ember;
+      for (const x of [-0.18, -0.06, 0.06, 0.18]) ctx.fillRect(x * r - 0.8, 0.72 * r, 1.6, 0.2 * r);
+      if (atk && f >= 2) {
+        // The gore: a burst of cinders thrown off the horns.
+        ctx.globalAlpha *= f === 2 ? 1 : 0.5;
+        for (const [c, w] of [
+          [INK, 4.4],
+          ['#ff7a20', 2],
+        ]) {
+          ctx.strokeStyle = c;
+          ctx.lineWidth = w;
+          ctx.beginPath();
+          ctx.ellipse(0, 1.3 * r, 1.05 * r, 0.42 * r, 0, Math.PI * 0.1, Math.PI * 0.9);
+          ctx.stroke();
+        }
+        ctx.fillStyle = '#ffd040';
+        for (const [x, y] of [
+          [-0.9, 1.6],
+          [-0.4, 1.72],
+          [0.1, 1.76],
+          [0.6, 1.7],
+          [1.0, 1.56],
+        ])
+          ctx.fillRect(x * r - 1, y * r - 1, 2.2, 2.2);
+        ctx.globalAlpha /= f === 2 ? 1 : 0.5;
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
+      }
+    };
+    const paintBody = () => {
+      if (shape === 'juggernaut') {
+        paintJuggernaut();
+      } else if (shape === 'behemoth') {
+        if (dk > 0) {
+          // Arms thrown out wide as it pitches forward, hands open in the dirt.
+          for (const sd of [-1, 1]) {
+            const ex = sd * (1.0 + 0.32 * dk);
+            const ey = 0.3 - 0.35 * dk * (sd > 0 ? 1 : 0.4);
+            inkLine(
+              [
+                [sd * 0.85, 0.0],
+                [ex, ey],
+              ],
+              hide,
+              0.22 * r
+            );
+            ctx.beginPath();
+            ctx.arc(ex * r, ey * r, 0.2 * r, 0, Math.PI * 2);
+            ctx.fillStyle = trim;
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
+        if (walk) {
+          // Knuckle-walk: the fists plant ahead in turn and the bulk is hauled over them.
+          for (const sd of [-1, 1]) {
+            const reach = 0.42 + sd * s * 0.4;
+            inkLine(
+              [
+                [sd * 0.85, 0.0],
+                [sd * 1.02, reach],
+              ],
+              hide,
+              0.2 * r
+            );
+            ctx.beginPath();
+            ctx.arc(sd * 1.02 * r, reach * r, 0.22 * r, 0, Math.PI * 2);
+            ctx.fillStyle = trim;
+            ctx.fill();
+            ctx.stroke();
+            if (sd * s > 0) {
+              // Ground cracks under the fist that has just come down.
+              ctx.lineWidth = 1.2;
+              for (const a of [0.2, 0.9, 1.6]) {
+                ctx.beginPath();
+                ctx.moveTo(
+                  (sd * 1.02 + Math.cos(a) * sd * 0.26) * r,
+                  (reach + Math.sin(a) * 0.26) * r
+                );
+                ctx.lineTo(
+                  (sd * 1.02 + Math.cos(a) * sd * 0.42) * r,
+                  (reach + Math.sin(a) * 0.42) * r
+                );
+                ctx.stroke();
+              }
+              ctx.lineWidth = 2.6;
+            }
+          }
+        }
+        // Horned bulk: hunched shoulders, tusks, a skull plate.
+        blob(
+          [
+            [-1.05, 0.1],
+            [-0.95, -0.55],
+            [-0.45, -0.9],
+            [0.45, -0.9],
+            [0.95, -0.55],
+            [1.05, 0.1],
+            [0.7, 0.75],
+            [0, 0.95],
+            [-0.7, 0.75],
+          ],
+          hide
+        );
+        for (const sd of [-1, 1]) {
+          blob(
+            [
+              [sd * 0.55, 0.25],
+              [sd * 1.25, 0.75],
+              [sd * 1.05, 0.15],
+            ],
+            BONE
+          );
+          blob(
+            [
+              [sd * 0.3, 0.75],
+              [sd * 0.42, 1.2],
+              [sd * 0.12, 0.85],
+            ],
+            BONE
+          );
+        }
+        blob(
+          [
+            [-0.42, 0.25],
+            [0, 0.05],
+            [0.42, 0.25],
+            [0.3, 0.8],
+            [0, 0.95],
+            [-0.3, 0.8],
+          ],
+          BONE
+        );
+        eye(-0.2, 0.42);
+        eye(0.2, 0.42);
+        ctx.fillStyle = INK;
+        ctx.fillRect(-0.05 * r, 0.6 * r, 0.1 * r, 0.22 * r);
+        if (atk) {
+          // Overhead slam: both fists go up and out, then come down together in front.
+          const [fx, fy, fs] = [
+            [1.0, 0.3, 0.25],
+            [0.74, -0.38, 0.34],
+            [0.5, 1.1, 0.23],
+            [0.58, 1.0, 0.2],
+          ][f];
+          if (f >= 2) {
+            // Shockwave and thrown dust where the fists land.
+            const grow = f === 2 ? 1 : 1.12;
+            ctx.globalAlpha *= f === 2 ? 1 : 0.5;
+            for (const [c, w] of [
+              [INK, 4.6],
+              [BONE, 2.2],
+            ]) {
+              ctx.strokeStyle = c;
+              ctx.lineWidth = w;
+              ctx.beginPath();
+              ctx.ellipse(
+                0,
+                0.8 * r,
+                1.22 * r * grow,
+                0.52 * r * grow,
+                0,
+                Math.PI * 0.06,
+                Math.PI * 0.94
+              );
+              ctx.stroke();
+            }
+            if (f === 2) {
+              ctx.strokeStyle = BONE;
+              ctx.lineWidth = 1.5;
+              for (let i = 0; i < 7; i++) {
+                const a = Math.PI * (0.1 + i * 0.1333);
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * 1.3 * r, (0.8 + Math.sin(a) * 0.56) * r);
+                ctx.lineTo(Math.cos(a) * 1.5 * r, (0.8 + Math.sin(a) * 0.64) * r);
+                ctx.stroke();
+              }
+            }
+            ctx.globalAlpha /= f === 2 ? 1 : 0.5;
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.6;
+          }
+          for (const sd of [-1, 1]) {
+            inkLine(
+              [
+                [sd * 0.9, 0.05],
+                [sd * fx, fy],
+              ],
+              hide,
+              0.2 * r
+            );
+            ctx.beginPath();
+            ctx.arc(sd * fx * r, fy * r, fs * r, 0, Math.PI * 2);
+            ctx.fillStyle = trim;
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = BONE;
+            for (const k of [-1, 0, 1]) {
+              ctx.beginPath();
+              ctx.arc((sd * fx + k * fs * 0.5) * r, (fy + fs * 0.45) * r, 1.1, 0, Math.PI * 2);
+              ctx.fill();
+            }
+          }
+        }
+      } else if (shape === 'iron_colossus') {
+        if (walk) {
+          // Stiff stomp: square feet show ahead of the slab in turn, with a jolt line each.
+          for (const sd of [-1, 1]) {
+            const fy = 0.82 + sd * s * 0.2;
+            blob(
+              [
+                [sd * 0.2, fy],
+                [sd * 0.66, fy],
+                [sd * 0.66, fy + 0.3],
+                [sd * 0.2, fy + 0.3],
+              ],
+              INK
+            );
+            if (sd * s > 0) {
+              ctx.strokeStyle = BONE;
+              ctx.lineWidth = 1.4;
+              for (const x of [0.12, 0.74]) {
+                ctx.beginPath();
+                ctx.moveTo(sd * x * r, (fy + 0.36) * r);
+                ctx.lineTo(sd * (x + (x < 0.4 ? -0.1 : 0.1)) * r, (fy + 0.52) * r);
+                ctx.stroke();
+              }
+              ctx.strokeStyle = INK;
+              ctx.lineWidth = 2.6;
+            }
+          }
+        }
+        // Riveted slab: square plates, a slit visor, furnace glow.
+        blob(
+          [
+            [-0.95, -0.8],
+            [0.95, -0.8],
+            [1.1, 0.3],
+            [0.7, 0.9],
+            [-0.7, 0.9],
+            [-1.1, 0.3],
+          ],
+          hide
+        );
+        blob(
+          [
+            [-1.3, -0.5 - s * 0.14],
+            [-0.9, -0.7 - s * 0.14],
+            [-0.85, 0.35 - s * 0.14],
+            [-1.25, 0.25 - s * 0.14],
+          ],
+          trim
+        );
+        // Piston punch: the right plate arm draws back, then drives out on its rod.
+        // On the march the two arm plates pump against each other.
+        const arm = atk ? [-0.2, -0.36, 0.72, 0.34][f] : s * 0.14;
+        if (atk && arm > 0) {
+          blob(
+            [
+              [0.98, -0.55],
+              [1.2, -0.55],
+              [1.2, -0.62 + arm],
+              [0.98, -0.62 + arm],
+            ],
+            BONE
+          );
+        }
+        blob(
+          [
+            [1.3, -0.5 + arm],
+            [0.9, -0.7 + arm],
+            [0.85, 0.35 + arm],
+            [1.25, 0.25 + arm],
+          ],
+          trim
+        );
+        if (atk) {
+          // A knuckle plate caps the punching arm.
+          blob(
+            [
+              [0.8, 0.3 + arm],
+              [1.33, 0.18 + arm],
+              [1.33, 0.5 + arm],
+              [0.84, 0.58 + arm],
             ],
             INK
           );
-          if (sd * s > 0) {
+          ctx.fillStyle = BONE;
+          for (const x of [0.92, 1.07, 1.22]) {
+            ctx.beginPath();
+            ctx.arc(x * r, (0.44 + arm - (x - 0.92) * 0.25) * r, 1.1, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          if (f === 2) {
+            ctx.strokeStyle = BONE;
+            ctx.lineWidth = 1.6;
+            for (const a of [0.08, 0.3, 0.7, 0.92]) {
+              const ca = Math.cos(Math.PI * a);
+              const sa = Math.sin(Math.PI * a);
+              ctx.beginPath();
+              ctx.moveTo((1.07 + ca * 0.1) * r, (1.33 + sa * 0.05) * r);
+              ctx.lineTo((1.07 + ca * 0.3) * r, (1.33 + sa * 0.16) * r);
+              ctx.stroke();
+            }
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.6;
+          }
+        }
+        blob(
+          [
+            [-0.5, 0.1],
+            [0.5, 0.1],
+            [0.42, 0.75],
+            [-0.42, 0.75],
+          ],
+          INK
+        );
+        // The furnace slit burns hotter as the punch builds.
+        const heat = atk ? [0.45, 0.85, 1, 0.5][f] : 0;
+        if (heat > 0) {
+          ctx.fillStyle = `rgba(255,120,40,${0.4 * heat})`;
+          ctx.beginPath();
+          ctx.ellipse(0, 0.38 * r, 0.62 * r, (0.2 + heat * 0.16) * r, 0, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        // The furnace is out once it is down.
+        ctx.fillStyle = dead
+          ? '#3a302c'
+          : heat > 0.7
+            ? '#ffd860'
+            : heat > 0
+              ? '#ff8a30'
+              : '#ff5a20';
+        ctx.fillRect(-0.36 * r, (0.3 - heat * 0.05) * r, 0.72 * r, (0.1 + heat * 0.14) * r);
+        ctx.fillStyle = BONE;
+        for (const [x, y] of [
+          [-0.7, -0.55],
+          [0.7, -0.55],
+          [-0.75, 0],
+          [0.75, 0],
+          [0, -0.6],
+        ]) {
+          ctx.beginPath();
+          ctx.arc(x * r, y * r, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.strokeStyle = BLOOD;
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(-0.3 * r, -0.75 * r);
+        ctx.lineTo(-0.1 * r, -0.2 * r);
+        ctx.lineTo(-0.35 * r, 0.05 * r);
+        ctx.stroke();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
+      } else if (shape === 'void_stalker') {
+        // Lean shadow: hooded wedge, two long blades.
+        // Scissor slash: the blades open wide and back, then snap across each other.
+        // Gliding, the blades trail and sway and rags of shadow stream out behind.
+        // Dead, the blades fall open and its shadow runs out of it in rags.
+        const ang = atk
+          ? [0.12, -0.3, 1.78, 1.95][f]
+          : 0.68 + (walk ? -0.3 + s * 0.12 : 0) - dk * 1.25;
+        if (walk || dk > 0) {
+          for (const [x, len] of [
+            [-0.42, 0.75],
+            [0, 1.0],
+            [0.42, 0.7],
+          ]) {
+            blob(
+              [
+                [x - 0.16, -0.75],
+                [x + 0.16, -0.75],
+                [
+                  x + s * 0.22 + (cyc % 2 ? 0.1 : -0.06) + dk * x * 0.9,
+                  -0.85 - len * (1 - dk * 0.3),
+                ],
+              ],
+              INK,
+              true
+            );
+          }
+        }
+        const ca = Math.cos(ang);
+        const sa = Math.sin(ang);
+        // Held wide the blades are foreshortened so the tips stay on the canvas.
+        const bl = atk && f <= 1 ? 1.02 : 1.2;
+        for (const sd of [-1, 1]) {
+          blob(
+            [
+              [0, -0.17],
+              [bl, -0.07],
+              [bl + 0.06, 0.07],
+              [0, 0.17],
+            ].map(([x, y]) => [sd * (0.4 + x * ca - y * sa), 0.25 + x * sa + y * ca]),
+            BONE
+          );
+        }
+        if (atk && f >= 2) {
+          // Two crossing cuts hang in the air ahead of it.
+          ctx.globalAlpha *= f === 2 ? 1 : 0.45;
+          for (const sd of [-1, 1]) {
+            for (const [c, w] of [
+              [INK, 4.4],
+              ['#ff5040', 2],
+            ]) {
+              ctx.strokeStyle = c;
+              ctx.lineWidth = w;
+              ctx.beginPath();
+              ctx.moveTo(sd * 1.3 * r, 0.45 * r);
+              ctx.quadraticCurveTo(sd * 0.75 * r, 1.4 * r, -sd * 0.55 * r, 1.42 * r);
+              ctx.stroke();
+            }
+          }
+          ctx.globalAlpha /= f === 2 ? 1 : 0.45;
+          ctx.strokeStyle = INK;
+          ctx.lineWidth = 2.6;
+        }
+        blob(
+          [
+            [0, -1.1],
+            [0.6, -0.5],
+            [0.7, 0.3],
+            [0.3, 0.9],
+            [0, 1.05],
+            [-0.3, 0.9],
+            [-0.7, 0.3],
+            [-0.6, -0.5],
+          ],
+          INK,
+          true
+        );
+        blob(
+          [
+            [-0.34, 0.2],
+            [0, 0.05],
+            [0.34, 0.2],
+            [0.2, 0.75],
+            [0, 0.85],
+            [-0.2, 0.75],
+          ],
+          hide
+        );
+        eye(-0.15, 0.42, 0.1);
+        eye(0.15, 0.42, 0.1);
+        ctx.strokeStyle = BLOOD;
+        ctx.lineWidth = 1.3;
+        ctx.beginPath();
+        ctx.moveTo(0, -1.0 * r);
+        ctx.lineTo(0, -0.3 * r);
+        ctx.stroke();
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
+      } else if (shape === 'elder_wyrm') {
+        // Winged serpent seen from above: torn wings, a horned head, a spined tail.
+        const flap = atk ? [0.1, 0.22, -0.1, -0.04][f] : walk ? [0.2, 0.02, -0.18, 0.02][cyc] : 0;
+        // The neck coils back on the wind-up, then snaps out behind the flame.
+        const neck = atk ? [-0.18, -0.34, 0.05, 0.02][f] : -0.22 * dk;
+        for (const sd of [-1, 1]) {
+          // Dead: the near wing is folded under the body, the far one lies torn and flat.
+          const fold = sd < 0 ? 1 - 0.55 * dk : 1 + 0.08 * dk;
+          const drop = sd < 0 ? 0.35 * dk : -0.2 * dk;
+          blob(
+            [
+              [sd * 0.25, -0.2],
+              [sd * 1.45 * fold, -0.75 - flap + drop],
+              [sd * 1.3 * fold, -0.25 + drop * 0.5],
+              [sd * 1.5 * fold, 0.1 + flap + drop],
+              [sd * 1.05 * fold, 0.05 + drop * 0.5],
+              [sd * 1.0 * fold, 0.45],
+              [sd * 0.6, 0.2],
+              [sd * 0.3, 0.35],
+            ],
+            hide
+          );
+        }
+        blob(
+          [
+            [-0.3, -1.2],
+            [0.3, -1.2],
+            [0.4, 0.2],
+            [0, 0.45],
+            [-0.4, 0.2],
+          ],
+          trim
+        );
+        if (atk && f >= 2) {
+          // A cone of fire, kept short enough to stay on the sprite canvas.
+          const y0 = 1.0 + neck;
+          const y1 = Math.min(y0 + 0.85, (33 - shift) / r);
+          const len = y1 - y0;
+          const w = f === 2 ? 1.0 : 1.2;
+          const flame = (k, kl, fill) =>
+            blob(
+              [
+                [-0.12, y0],
+                [-w * k * 0.6, y0 + len * kl * 0.45],
+                [-w * k, y0 + len * kl * 0.86],
+                [-w * k * 0.58, y0 + len * kl * 0.76],
+                [-w * k * 0.3, y0 + len * kl],
+                [0, y0 + len * kl * 0.8],
+                [w * k * 0.3, y0 + len * kl],
+                [w * k * 0.58, y0 + len * kl * 0.76],
+                [w * k, y0 + len * kl * 0.86],
+                [w * k * 0.6, y0 + len * kl * 0.45],
+                [0.12, y0],
+              ],
+              fill
+            );
+          ctx.globalAlpha *= f === 2 ? 1 : 0.7;
+          flame(1, 1, f === 2 ? '#ff6a1c' : BLOOD);
+          ctx.lineWidth = 1;
+          flame(0.55, 0.8, f === 2 ? '#ffd040' : '#ff7a20');
+          ctx.lineWidth = 2.6;
+          ctx.globalAlpha /= f === 2 ? 1 : 0.7;
+        }
+        ctx.save();
+        ctx.translate(0, neck * r);
+        // The head rolls over to one side.
+        ctx.rotate(0.75 * dk);
+        blob(
+          [
+            [-0.35, 0.2],
+            [0, 0.05],
+            [0.35, 0.2],
+            [0.26, 0.85],
+            [0, 1.1],
+            [-0.26, 0.85],
+          ],
+          hide
+        );
+        for (const sd of [-1, 1])
+          blob(
+            [
+              [sd * 0.25, 0.25],
+              [sd * 0.6, -0.05],
+              [sd * 0.38, 0.4],
+            ],
+            BONE
+          );
+        eye(-0.16, 0.55, 0.1);
+        eye(0.16, 0.55, 0.1);
+        if (atk) {
+          // Fire gathering in the throat, brightest just before it is loosed.
+          const glow = [0.1, 0.17, 0.14, 0.08][f];
+          ctx.fillStyle = INK;
+          ctx.beginPath();
+          ctx.arc(0, 0.95 * r, glow * r + 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = f === 1 ? '#ffd040' : '#ff7a20';
+          ctx.beginPath();
+          ctx.arc(0, 0.95 * r, glow * r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.fillStyle = BONE;
+        for (let i = 0; i < 4; i++) {
+          // The spine snakes from side to side in flight, most at the tail.
+          const sx = walk
+            ? [1, 0.3, -1, -0.3][(cyc + i) % 4] * (0.14 - i * 0.03) * r
+            : dk * (3 - i) * (3 - i) * 0.05 * r;
+          ctx.beginPath();
+          ctx.moveTo(sx - 0.08 * r, (-1.05 + i * 0.28) * r);
+          ctx.lineTo(sx, (-1.2 + i * 0.28) * r);
+          ctx.lineTo(sx + 0.08 * r, (-1.05 + i * 0.28) * r);
+          ctx.fill();
+        }
+      } else {
+        if (walk) {
+          // It drags itself: stub limbs reach and pull in turn, and it leaves a smear.
+          ctx.fillStyle = 'rgba(110,10,18,0.55)';
+          ctx.beginPath();
+          ctx.ellipse(-0.1 * r, -1.05 * r, 0.5 * r, 0.22 * r, 0, 0, Math.PI * 2);
+          ctx.fill();
+          for (const sd of [-1, 1]) {
+            const reach = 0.55 + sd * s * 0.4;
+            inkLine(
+              [
+                [sd * 0.8, 0.1],
+                [sd * 1.12, reach],
+              ],
+              hide,
+              0.17 * r
+            );
+            for (const k of [-1, 0, 1]) {
+              ctx.beginPath();
+              ctx.moveTo((sd * 1.12 + k * 0.08) * r, reach * r);
+              ctx.lineTo((sd * 1.12 + k * 0.14) * r, (reach + 0.2) * r);
+              ctx.strokeStyle = BONE;
+              ctx.lineWidth = 1.3;
+              ctx.stroke();
+            }
+            ctx.strokeStyle = INK;
+            ctx.lineWidth = 2.6;
+          }
+        }
+        if (dk > 0) {
+          // The stitches give: what was inside spills out ahead and to one side.
+          for (const [x, y, w] of [
+            [0.75, 0.95, 0.34],
+            [1.05, 0.6, 0.24],
+            [0.35, 1.2, 0.24],
+            [-0.9, 0.85, 0.22],
+          ]) {
+            ctx.beginPath();
+            ctx.ellipse(x * r, y * r, w * r * (0.5 + dk * 0.6), w * r * 0.7, 0.4, 0, Math.PI * 2);
+            ctx.fillStyle = BLOOD;
+            ctx.fill();
+            ctx.stroke();
+          }
+          // Ribs sprung outward past the hide.
+          for (const [x0, y0, x1, y1] of [
+            [0.6, -0.5, 1.22, -0.75],
+            [0.7, -0.2, 1.3, -0.3],
+            [0.7, 0.1, 1.26, 0.15],
+            [-0.75, -0.3, -1.3, -0.55],
+          ])
+            inkLine(
+              [
+                [x0, y0],
+                [x0 + (x1 - x0) * dk, y0 + (y1 - y0) * dk],
+              ],
+              BONE,
+              1.6
+            );
+        }
+        // Abomination: a stitched, swollen mass with too many eyes and exposed ribs.
+        blob(
+          [
+            [-0.9, -0.35],
+            [-0.55, -0.9],
+            [0.1, -1.0],
+            [0.75, -0.7],
+            [1.05, -0.05],
+            [0.85, 0.65],
+            [0.2, 1.0],
+            [-0.55, 0.85],
+            [-1.05, 0.3],
+          ],
+          hide
+        );
+        ctx.strokeStyle = BONE;
+        ctx.lineWidth = 1.6;
+        for (let i = 0; i < 4; i++) {
+          ctx.beginPath();
+          ctx.arc(0.25 * r, (-0.45 + i * 0.22) * r, 0.42 * r, Math.PI * 0.15, Math.PI * 0.85);
+          ctx.stroke();
+        }
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 1.2;
+        for (let i = 0; i < 5; i++) {
+          const y = (-0.6 + i * 0.3) * r;
+          ctx.beginPath();
+          ctx.moveTo(-0.62 * r, y);
+          ctx.lineTo(-0.38 * r, y + 0.08 * r);
+          ctx.stroke();
+        }
+        ctx.lineWidth = 2.6;
+        eye(-0.45, 0.35, 0.14);
+        eye(0.1, 0.55, 0.1);
+        eye(0.5, 0.2, 0.08);
+        if (!atk) {
+          blob(
+            [
+              [-0.2, 0.7],
+              [0.35, 0.72],
+              [0.25, 0.95],
+              [-0.1, 0.95],
+            ],
+            INK
+          );
+          ctx.fillStyle = BONE;
+          for (let i = 0; i < 4; i++)
+            ctx.fillRect((-0.14 + i * 0.12) * r, 0.72 * r, 0.06 * r, 0.1 * r);
+        } else {
+          // Lunging maw: the mouth gapes wider each frame until the bite lands.
+          const g = [0.3, 0.5, 1, 0.6][f];
+          const mx = 0.07;
+          const hw = 0.28 + g * 0.3;
+          const top = 0.7 - g * 0.24;
+          const bot = 0.95 + g * 0.17;
+          blob(
+            [
+              [mx - hw, top + 0.04],
+              [mx, top - 0.03],
+              [mx + hw, top + 0.06],
+              [mx + hw * 0.92, bot - 0.1],
+              [mx + hw * 0.4, bot],
+              [mx - hw * 0.4, bot],
+              [mx - hw * 0.92, bot - 0.12],
+            ],
+            INK
+          );
+          ctx.fillStyle = BLOOD;
+          ctx.beginPath();
+          ctx.ellipse(
+            mx * r,
+            ((top + bot) / 2 + 0.02) * r,
+            hw * 0.55 * r,
+            (bot - top) * 0.26 * r,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          // Fangs, upper row pointing forward and lower row pointing back.
+          const n = 5;
+          const th = 0.07 + g * 0.13;
+          ctx.fillStyle = BONE;
+          for (let i = 0; i < n; i++) {
+            const x = mx + (i / (n - 1) - 0.5) * hw * 1.5;
+            const tw = (hw * 0.75) / n;
+            ctx.beginPath();
+            ctx.moveTo((x - tw) * r, (top + 0.04) * r);
+            ctx.lineTo(x * r, (top + 0.04 + th) * r);
+            ctx.lineTo((x + tw) * r, (top + 0.04) * r);
+            ctx.closePath();
+            ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo((x * 0.8 - tw) * r, (bot - 0.05) * r);
+            ctx.lineTo(x * 0.8 * r, (bot - 0.05 - th * 0.8) * r);
+            ctx.lineTo((x * 0.8 + tw) * r, (bot - 0.05) * r);
+            ctx.closePath();
+            ctx.fill();
+          }
+          if (f === 2) {
+            // Spittle thrown off the snap.
             ctx.strokeStyle = BONE;
             ctx.lineWidth = 1.4;
-            for (const x of [0.12, 0.74]) {
+            for (const sd of [-1, 1]) {
               ctx.beginPath();
-              ctx.moveTo(sd * x * r, (fy + 0.36) * r);
-              ctx.lineTo(sd * (x + (x < 0.4 ? -0.1 : 0.1)) * r, (fy + 0.52) * r);
+              ctx.moveTo((mx + sd * (hw + 0.06)) * r, (bot - 0.05) * r);
+              ctx.lineTo((mx + sd * (hw + 0.24)) * r, (bot + 0.06) * r);
               ctx.stroke();
             }
             ctx.strokeStyle = INK;
@@ -3353,933 +4720,519 @@ const SpriteGen = (() => {
           }
         }
       }
-      // Riveted slab: square plates, a slit visor, furnace glow.
-      blob(
-        [
-          [-0.95, -0.8],
-          [0.95, -0.8],
-          [1.1, 0.3],
-          [0.7, 0.9],
-          [-0.7, 0.9],
-          [-1.1, 0.3],
-        ],
-        hide
-      );
-      blob(
-        [
-          [-1.3, -0.5 - s * 0.14],
-          [-0.9, -0.7 - s * 0.14],
-          [-0.85, 0.35 - s * 0.14],
-          [-1.25, 0.25 - s * 0.14],
-        ],
-        trim
-      );
-      // Piston punch: the right plate arm draws back, then drives out on its rod.
-      // On the march the two arm plates pump against each other.
-      const arm = atk ? [-0.2, -0.36, 0.72, 0.34][f] : s * 0.14;
-      if (atk && arm > 0) {
-        blob(
-          [
-            [0.98, -0.55],
-            [1.2, -0.55],
-            [1.2, -0.62 + arm],
-            [0.98, -0.62 + arm],
-          ],
-          BONE
-        );
-      }
-      blob(
-        [
-          [1.3, -0.5 + arm],
-          [0.9, -0.7 + arm],
-          [0.85, 0.35 + arm],
-          [1.25, 0.25 + arm],
-        ],
-        trim
-      );
-      if (atk) {
-        // A knuckle plate caps the punching arm.
-        blob(
-          [
-            [0.8, 0.3 + arm],
-            [1.33, 0.18 + arm],
-            [1.33, 0.5 + arm],
-            [0.84, 0.58 + arm],
-          ],
-          INK
-        );
-        ctx.fillStyle = BONE;
-        for (const x of [0.92, 1.07, 1.22]) {
+
+      if (boss) {
+        // Each warlord carries a mark of their own on top of the shared body.
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = INK;
+        if (type === 'boss_gorath') {
+          // War banner on a pole at his back, and a broken tusk.
           ctx.beginPath();
-          ctx.arc(x * r, (0.44 + arm - (x - 0.92) * 0.25) * r, 1.1, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        if (f === 2) {
-          ctx.strokeStyle = BONE;
-          ctx.lineWidth = 1.6;
-          for (const a of [0.08, 0.3, 0.7, 0.92]) {
-            const ca = Math.cos(Math.PI * a);
-            const sa = Math.sin(Math.PI * a);
-            ctx.beginPath();
-            ctx.moveTo((1.07 + ca * 0.1) * r, (1.33 + sa * 0.05) * r);
-            ctx.lineTo((1.07 + ca * 0.3) * r, (1.33 + sa * 0.16) * r);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = INK;
-          ctx.lineWidth = 2.6;
-        }
-      }
-      blob(
-        [
-          [-0.5, 0.1],
-          [0.5, 0.1],
-          [0.42, 0.75],
-          [-0.42, 0.75],
-        ],
-        INK
-      );
-      // The furnace slit burns hotter as the punch builds.
-      const heat = atk ? [0.45, 0.85, 1, 0.5][f] : 0;
-      if (heat > 0) {
-        ctx.fillStyle = `rgba(255,120,40,${0.4 * heat})`;
-        ctx.beginPath();
-        ctx.ellipse(0, 0.38 * r, 0.62 * r, (0.2 + heat * 0.16) * r, 0, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.fillStyle = heat > 0.7 ? '#ffd860' : heat > 0 ? '#ff8a30' : '#ff5a20';
-      ctx.fillRect(-0.36 * r, (0.3 - heat * 0.05) * r, 0.72 * r, (0.1 + heat * 0.14) * r);
-      ctx.fillStyle = BONE;
-      for (const [x, y] of [
-        [-0.7, -0.55],
-        [0.7, -0.55],
-        [-0.75, 0],
-        [0.75, 0],
-        [0, -0.6],
-      ]) {
-        ctx.beginPath();
-        ctx.arc(x * r, y * r, 1.3, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.strokeStyle = BLOOD;
-      ctx.lineWidth = 1.4;
-      ctx.beginPath();
-      ctx.moveTo(-0.3 * r, -0.75 * r);
-      ctx.lineTo(-0.1 * r, -0.2 * r);
-      ctx.lineTo(-0.35 * r, 0.05 * r);
-      ctx.stroke();
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2.6;
-    } else if (shape === 'void_stalker') {
-      // Lean shadow: hooded wedge, two long blades.
-      // Scissor slash: the blades open wide and back, then snap across each other.
-      // Gliding, the blades trail and sway and rags of shadow stream out behind.
-      const ang = atk ? [0.12, -0.3, 1.78, 1.95][f] : 0.68 + (walk ? -0.3 + s * 0.12 : 0);
-      if (walk) {
-        for (const [x, len] of [
-          [-0.42, 0.75],
-          [0, 1.0],
-          [0.42, 0.7],
-        ]) {
+          ctx.moveTo(-0.75 * r, -0.2 * r);
+          ctx.lineTo(-0.75 * r, -1.48 * r);
+          ctx.stroke();
           blob(
             [
-              [x - 0.16, -0.75],
-              [x + 0.16, -0.75],
-              [x + s * 0.22 + (cyc % 2 ? 0.1 : -0.06), -0.85 - len],
+              [-0.75, -1.44],
+              [-0.05, -1.3],
+              [-0.3, -1.12],
+              [-0.05, -0.93],
+              [-0.75, -0.98],
+            ],
+            BLOOD
+          );
+          blob(
+            [
+              [0.55, 0.25],
+              [0.95, 0.5],
+              [0.8, 0.2],
             ],
             INK
           );
-        }
-      }
-      const ca = Math.cos(ang);
-      const sa = Math.sin(ang);
-      // Held wide the blades are foreshortened so the tips stay on the canvas.
-      const bl = atk && f <= 1 ? 1.02 : 1.2;
-      for (const sd of [-1, 1]) {
-        blob(
-          [
-            [0, -0.17],
-            [bl, -0.07],
-            [bl + 0.06, 0.07],
-            [0, 0.17],
-          ].map(([x, y]) => [sd * (0.4 + x * ca - y * sa), 0.25 + x * sa + y * ca]),
-          BONE
-        );
-      }
-      if (atk && f >= 2) {
-        // Two crossing cuts hang in the air ahead of it.
-        ctx.globalAlpha *= f === 2 ? 1 : 0.45;
-        for (const sd of [-1, 1]) {
-          for (const [c, w] of [
-            [INK, 4.4],
-            ['#ff5040', 2],
+          // A great maul carried over the right shoulder.
+          inkLine(
+            [
+              [0.8, 0.55],
+              [1.22, -0.72],
+            ],
+            '#5a4a38',
+            0.11 * r
+          );
+          blob(
+            [
+              [0.92, -0.98],
+              [1.5, -0.8],
+              [1.4, -0.42],
+              [0.82, -0.6],
+            ],
+            '#57534e'
+          );
+          ctx.fillStyle = BONE;
+          for (const [x, y] of [
+            [1.02, -0.8],
+            [1.3, -0.7],
           ]) {
-            ctx.strokeStyle = c;
-            ctx.lineWidth = w;
             ctx.beginPath();
-            ctx.moveTo(sd * 1.3 * r, 0.45 * r);
-            ctx.quadraticCurveTo(sd * 0.75 * r, 1.4 * r, -sd * 0.55 * r, 1.42 * r);
-            ctx.stroke();
+            ctx.arc(x * r, y * r, 1.4, 0, Math.PI * 2);
+            ctx.fill();
           }
-        }
-        ctx.globalAlpha /= f === 2 ? 1 : 0.45;
-        ctx.strokeStyle = INK;
-        ctx.lineWidth = 2.6;
-      }
-      blob(
-        [
-          [0, -1.1],
-          [0.6, -0.5],
-          [0.7, 0.3],
-          [0.3, 0.9],
-          [0, 1.05],
-          [-0.3, 0.9],
-          [-0.7, 0.3],
-          [-0.6, -0.5],
-        ],
-        INK
-      );
-      blob(
-        [
-          [-0.34, 0.2],
-          [0, 0.05],
-          [0.34, 0.2],
-          [0.2, 0.75],
-          [0, 0.85],
-          [-0.2, 0.75],
-        ],
-        hide
-      );
-      eye(-0.15, 0.42, 0.1);
-      eye(0.15, 0.42, 0.1);
-      ctx.strokeStyle = BLOOD;
-      ctx.lineWidth = 1.3;
-      ctx.beginPath();
-      ctx.moveTo(0, -1.0 * r);
-      ctx.lineTo(0, -0.3 * r);
-      ctx.stroke();
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2.6;
-    } else if (shape === 'elder_wyrm') {
-      // Winged serpent seen from above: torn wings, a horned head, a spined tail.
-      const flap = atk ? [0.1, 0.22, -0.1, -0.04][f] : walk ? [0.2, 0.02, -0.18, 0.02][cyc] : 0;
-      // The neck coils back on the wind-up, then snaps out behind the flame.
-      const neck = atk ? [-0.18, -0.34, 0.05, 0.02][f] : 0;
-      for (const sd of [-1, 1]) {
-        blob(
-          [
-            [sd * 0.25, -0.2],
-            [sd * 1.45, -0.75 - flap],
-            [sd * 1.3, -0.25],
-            [sd * 1.5, 0.1 + flap],
-            [sd * 1.05, 0.05],
-            [sd * 1.0, 0.45],
-            [sd * 0.6, 0.2],
-            [sd * 0.3, 0.35],
-          ],
-          hide
-        );
-      }
-      blob(
-        [
-          [-0.3, -1.2],
-          [0.3, -1.2],
-          [0.4, 0.2],
-          [0, 0.45],
-          [-0.4, 0.2],
-        ],
-        trim
-      );
-      if (atk && f >= 2) {
-        // A cone of fire, kept short enough to stay on the sprite canvas.
-        const y0 = 1.0 + neck;
-        const y1 = Math.min(y0 + 0.85, (33 - shift) / r);
-        const len = y1 - y0;
-        const w = f === 2 ? 1.0 : 1.2;
-        const flame = (k, kl, fill) =>
-          blob(
-            [
-              [-0.12, y0],
-              [-w * k * 0.6, y0 + len * kl * 0.45],
-              [-w * k, y0 + len * kl * 0.86],
-              [-w * k * 0.58, y0 + len * kl * 0.76],
-              [-w * k * 0.3, y0 + len * kl],
-              [0, y0 + len * kl * 0.8],
-              [w * k * 0.3, y0 + len * kl],
-              [w * k * 0.58, y0 + len * kl * 0.76],
-              [w * k, y0 + len * kl * 0.86],
-              [w * k * 0.6, y0 + len * kl * 0.45],
-              [0.12, y0],
-            ],
-            fill
-          );
-        ctx.globalAlpha *= f === 2 ? 1 : 0.7;
-        flame(1, 1, f === 2 ? '#ff6a1c' : BLOOD);
-        ctx.lineWidth = 1;
-        flame(0.55, 0.8, f === 2 ? '#ffd040' : '#ff7a20');
-        ctx.lineWidth = 2.6;
-        ctx.globalAlpha /= f === 2 ? 1 : 0.7;
-      }
-      ctx.save();
-      ctx.translate(0, neck * r);
-      blob(
-        [
-          [-0.35, 0.2],
-          [0, 0.05],
-          [0.35, 0.2],
-          [0.26, 0.85],
-          [0, 1.1],
-          [-0.26, 0.85],
-        ],
-        hide
-      );
-      for (const sd of [-1, 1])
-        blob(
-          [
-            [sd * 0.25, 0.25],
-            [sd * 0.6, -0.05],
-            [sd * 0.38, 0.4],
-          ],
-          BONE
-        );
-      eye(-0.16, 0.55, 0.1);
-      eye(0.16, 0.55, 0.1);
-      if (atk) {
-        // Fire gathering in the throat, brightest just before it is loosed.
-        const glow = [0.1, 0.17, 0.14, 0.08][f];
-        ctx.fillStyle = INK;
-        ctx.beginPath();
-        ctx.arc(0, 0.95 * r, glow * r + 1.2, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = f === 1 ? '#ffd040' : '#ff7a20';
-        ctx.beginPath();
-        ctx.arc(0, 0.95 * r, glow * r, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.restore();
-      ctx.fillStyle = BONE;
-      for (let i = 0; i < 4; i++) {
-        // The spine snakes from side to side in flight, most at the tail.
-        const sx = walk ? [1, 0.3, -1, -0.3][(cyc + i) % 4] * (0.14 - i * 0.03) * r : 0;
-        ctx.beginPath();
-        ctx.moveTo(sx - 0.08 * r, (-1.05 + i * 0.28) * r);
-        ctx.lineTo(sx, (-1.2 + i * 0.28) * r);
-        ctx.lineTo(sx + 0.08 * r, (-1.05 + i * 0.28) * r);
-        ctx.fill();
-      }
-    } else {
-      if (walk) {
-        // It drags itself: stub limbs reach and pull in turn, and it leaves a smear.
-        ctx.fillStyle = 'rgba(110,10,18,0.55)';
-        ctx.beginPath();
-        ctx.ellipse(-0.1 * r, -1.05 * r, 0.5 * r, 0.22 * r, 0, 0, Math.PI * 2);
-        ctx.fill();
-        for (const sd of [-1, 1]) {
-          const reach = 0.55 + sd * s * 0.4;
-          inkLine(
-            [
-              [sd * 0.8, 0.1],
-              [sd * 1.12, reach],
-            ],
-            hide,
-            0.17 * r
-          );
-          for (const k of [-1, 0, 1]) {
-            ctx.beginPath();
-            ctx.moveTo((sd * 1.12 + k * 0.08) * r, reach * r);
-            ctx.lineTo((sd * 1.12 + k * 0.14) * r, (reach + 0.2) * r);
-            ctx.strokeStyle = BONE;
-            ctx.lineWidth = 1.3;
-            ctx.stroke();
-          }
-          ctx.strokeStyle = INK;
-          ctx.lineWidth = 2.6;
-        }
-      }
-      // Abomination: a stitched, swollen mass with too many eyes and exposed ribs.
-      blob(
-        [
-          [-0.9, -0.35],
-          [-0.55, -0.9],
-          [0.1, -1.0],
-          [0.75, -0.7],
-          [1.05, -0.05],
-          [0.85, 0.65],
-          [0.2, 1.0],
-          [-0.55, 0.85],
-          [-1.05, 0.3],
-        ],
-        hide
-      );
-      ctx.strokeStyle = BONE;
-      ctx.lineWidth = 1.6;
-      for (let i = 0; i < 4; i++) {
-        ctx.beginPath();
-        ctx.arc(0.25 * r, (-0.45 + i * 0.22) * r, 0.42 * r, Math.PI * 0.15, Math.PI * 0.85);
-        ctx.stroke();
-      }
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 1.2;
-      for (let i = 0; i < 5; i++) {
-        const y = (-0.6 + i * 0.3) * r;
-        ctx.beginPath();
-        ctx.moveTo(-0.62 * r, y);
-        ctx.lineTo(-0.38 * r, y + 0.08 * r);
-        ctx.stroke();
-      }
-      ctx.lineWidth = 2.6;
-      eye(-0.45, 0.35, 0.14);
-      eye(0.1, 0.55, 0.1);
-      eye(0.5, 0.2, 0.08);
-      if (!atk) {
-        blob(
-          [
-            [-0.2, 0.7],
-            [0.35, 0.72],
-            [0.25, 0.95],
-            [-0.1, 0.95],
-          ],
-          INK
-        );
-        ctx.fillStyle = BONE;
-        for (let i = 0; i < 4; i++)
-          ctx.fillRect((-0.14 + i * 0.12) * r, 0.72 * r, 0.06 * r, 0.1 * r);
-      } else {
-        // Lunging maw: the mouth gapes wider each frame until the bite lands.
-        const g = [0.3, 0.5, 1, 0.6][f];
-        const mx = 0.07;
-        const hw = 0.28 + g * 0.3;
-        const top = 0.7 - g * 0.24;
-        const bot = 0.95 + g * 0.17;
-        blob(
-          [
-            [mx - hw, top + 0.04],
-            [mx, top - 0.03],
-            [mx + hw, top + 0.06],
-            [mx + hw * 0.92, bot - 0.1],
-            [mx + hw * 0.4, bot],
-            [mx - hw * 0.4, bot],
-            [mx - hw * 0.92, bot - 0.12],
-          ],
-          INK
-        );
-        ctx.fillStyle = BLOOD;
-        ctx.beginPath();
-        ctx.ellipse(
-          mx * r,
-          ((top + bot) / 2 + 0.02) * r,
-          hw * 0.55 * r,
-          (bot - top) * 0.26 * r,
-          0,
-          0,
-          Math.PI * 2
-        );
-        ctx.fill();
-        // Fangs, upper row pointing forward and lower row pointing back.
-        const n = 5;
-        const th = 0.07 + g * 0.13;
-        ctx.fillStyle = BONE;
-        for (let i = 0; i < n; i++) {
-          const x = mx + (i / (n - 1) - 0.5) * hw * 1.5;
-          const tw = (hw * 0.75) / n;
-          ctx.beginPath();
-          ctx.moveTo((x - tw) * r, (top + 0.04) * r);
-          ctx.lineTo(x * r, (top + 0.04 + th) * r);
-          ctx.lineTo((x + tw) * r, (top + 0.04) * r);
-          ctx.closePath();
-          ctx.fill();
-          ctx.beginPath();
-          ctx.moveTo((x * 0.8 - tw) * r, (bot - 0.05) * r);
-          ctx.lineTo(x * 0.8 * r, (bot - 0.05 - th * 0.8) * r);
-          ctx.lineTo((x * 0.8 + tw) * r, (bot - 0.05) * r);
-          ctx.closePath();
-          ctx.fill();
-        }
-        if (f === 2) {
-          // Spittle thrown off the snap.
-          ctx.strokeStyle = BONE;
-          ctx.lineWidth = 1.4;
+        } else if (type === 'boss_thokk') {
+          // Boulder fists, and a ridge of standing stones down the back in place of horns.
           for (const sd of [-1, 1]) {
-            ctx.beginPath();
-            ctx.moveTo((mx + sd * (hw + 0.06)) * r, (bot - 0.05) * r);
-            ctx.lineTo((mx + sd * (hw + 0.24)) * r, (bot + 0.06) * r);
-            ctx.stroke();
-          }
-          ctx.strokeStyle = INK;
-          ctx.lineWidth = 2.6;
-        }
-      }
-    }
-
-    if (boss) {
-      // Each warlord carries a mark of their own on top of the shared body.
-      ctx.lineWidth = 2;
-      ctx.strokeStyle = INK;
-      if (type === 'boss_gorath') {
-        // War banner on a pole at his back, and a broken tusk.
-        ctx.beginPath();
-        ctx.moveTo(-0.75 * r, -0.2 * r);
-        ctx.lineTo(-0.75 * r, -1.48 * r);
-        ctx.stroke();
-        blob(
-          [
-            [-0.75, -1.44],
-            [-0.05, -1.3],
-            [-0.3, -1.12],
-            [-0.05, -0.93],
-            [-0.75, -0.98],
-          ],
-          BLOOD
-        );
-        blob(
-          [
-            [0.55, 0.25],
-            [0.95, 0.5],
-            [0.8, 0.2],
-          ],
-          INK
-        );
-        // A great maul carried over the right shoulder.
-        inkLine(
-          [
-            [0.8, 0.55],
-            [1.22, -0.72],
-          ],
-          '#5a4a38',
-          0.11 * r
-        );
-        blob(
-          [
-            [0.92, -0.98],
-            [1.5, -0.8],
-            [1.4, -0.42],
-            [0.82, -0.6],
-          ],
-          '#57534e'
-        );
-        ctx.fillStyle = BONE;
-        for (const [x, y] of [
-          [1.02, -0.8],
-          [1.3, -0.7],
-        ]) {
-          ctx.beginPath();
-          ctx.arc(x * r, y * r, 1.4, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      } else if (type === 'boss_thokk') {
-        // Boulder fists, and a ridge of standing stones down the back in place of horns.
-        for (const sd of [-1, 1]) {
-          blob(
-            [
-              [sd * 0.98, 0.2],
-              [sd * 1.3, 0.12],
-              [sd * 1.42, 0.5],
-              [sd * 1.2, 0.78],
-              [sd * 0.95, 0.6],
-            ],
-            '#8a8478'
-          );
-        }
-        for (const [x, h] of [
-          [-0.55, 0.3],
-          [-0.2, 0.52],
-          [0.15, 0.4],
-          [0.5, 0.26],
-        ])
-          blob(
-            [
-              [x - 0.14, -0.86],
-              [x - 0.04, -0.9 - h],
-              [x + 0.12, -0.9 - h * 0.8],
-              [x + 0.16, -0.86],
-            ],
-            '#8a8478'
-          );
-        // Slabs of mountain stone across the shoulders.
-        for (const [x, y, w] of [
-          [-0.75, -0.55, 0.5],
-          [0.25, -0.6, 0.55],
-          [-0.2, -0.82, 0.4],
-        ]) {
-          blob(
-            [
-              [x, y],
-              [x + w, y - 0.08],
-              [x + w - 0.06, y + 0.3],
-              [x + 0.05, y + 0.34],
-            ],
-            '#8a8478'
-          );
-        }
-      } else if (type === 'boss_malachar') {
-        // A third eye, and a tattered cloak trailing behind.
-        blob(
-          [
-            [-0.95, -0.5],
-            [-1.25, -1.3],
-            [-0.6, -1.05],
-            [0, -1.45],
-            [0.6, -1.05],
-            [1.25, -1.3],
-            [0.95, -0.5],
-          ],
-          INK
-        );
-        eye(0, 0.22, 0.13);
-        // Antlers, branching wide of the skull.
-        for (const sd of [-1, 1]) {
-          inkLine(
-            [
-              [sd * 0.35, 0.12],
-              [sd * 0.85, -0.12],
-              [sd * 1.28, 0.1],
-            ],
-            BONE,
-            0.07 * r
-          );
-          inkLine(
-            [
-              [sd * 0.85, -0.12],
-              [sd * 1.1, -0.5],
-            ],
-            BONE,
-            0.06 * r
-          );
-          inkLine(
-            [
-              [sd * 0.62, 0],
-              [sd * 0.7, -0.42],
-            ],
-            BONE,
-            0.05 * r
-          );
-        }
-        ctx.strokeStyle = BLOOD;
-        ctx.lineWidth = 1.2;
-        for (const x of [-0.8, -0.3, 0.3, 0.8]) {
-          ctx.beginPath();
-          ctx.moveTo(x * r, -0.7 * r);
-          ctx.lineTo(x * r * 1.15, -1.2 * r);
-          ctx.stroke();
-        }
-      } else if (type === 'boss_morwen') {
-        // A black veil with a long ragged train, and a bone staff.
-        blob(
-          [
-            [-0.55, -0.6],
-            [0.6, -0.7],
-            [0.85, -1.5],
-            [0.4, -1.2],
-            [0.1, -1.62],
-            [-0.25, -1.22],
-            [-0.7, -1.5],
-          ],
-          INK
-        );
-        blob(
-          [
-            [-0.6, -0.5],
-            [0.3, -0.95],
-            [0.85, -0.3],
-            [0.5, 0.15],
-            [-0.2, 0.2],
-            [-0.75, 0.0],
-          ],
-          INK
-        );
-        ctx.strokeStyle = BONE;
-        ctx.lineWidth = 2.2;
-        ctx.beginPath();
-        ctx.moveTo(1.2 * r, 0.9 * r);
-        ctx.lineTo(1.2 * r, -1.1 * r);
-        ctx.stroke();
-        ctx.fillStyle = BLOOD;
-        ctx.beginPath();
-        ctx.arc(1.2 * r, -1.2 * r, 0.16 * r, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (type === 'boss_rotfather') {
-        // A split gut dragging behind, boils, and a cloud of flies.
-        blob(
-          [
-            [-0.5, -0.8],
-            [0.45, -0.85],
-            [0.6, -1.25],
-            [0.1, -1.48],
-            [-0.45, -1.3],
-          ],
-          '#7a6a48'
-        );
-        ctx.fillStyle = BLOOD;
-        ctx.beginPath();
-        ctx.ellipse(0.05 * r, -1.15 * r, 0.26 * r, 0.14 * r, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#8a9a3a';
-        for (const [x, y, w] of [
-          [-0.6, -0.4, 0.16],
-          [0.55, -0.35, 0.13],
-          [0.7, 0.35, 0.11],
-          [-0.1, -0.7, 0.14],
-          [-0.75, 0.4, 0.1],
-        ]) {
-          ctx.beginPath();
-          ctx.arc(x * r, y * r, w * r, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-        ctx.fillStyle = INK;
-        for (let i = 0; i < 9; i++) {
-          const a = i * 0.7 + frame * 0.25;
-          ctx.fillRect(Math.cos(a) * r * 1.45, Math.sin(a * 1.3) * r * 1.3, 1.6, 1.6);
-        }
-      } else if (type === 'boss_grimm') {
-        // A reaper's scythe across the back, and cinder flames licking off the shoulders.
-        inkLine(
-          [
-            [-1.25, 0.85],
-            [1.05, -1.0],
-          ],
-          '#5a4a38',
-          0.09 * r
-        );
-        ctx.beginPath();
-        ctx.moveTo(1.05 * r, -1.0 * r);
-        ctx.quadraticCurveTo(1.75 * r, -0.75 * r, 1.6 * r, 0.25 * r);
-        ctx.quadraticCurveTo(1.45 * r, -0.5 * r, 0.95 * r, -0.8 * r);
-        ctx.closePath();
-        ctx.fillStyle = BONE;
-        ctx.fill();
-        ctx.stroke();
-        for (const sd of [-1, 1]) {
-          for (let i = 0; i < 3; i++) {
-            const x = sd * (0.35 + i * 0.22);
-            const h = 0.5 + ((i + Math.floor(frame)) % 3) * 0.14;
             blob(
               [
-                [x - 0.1, -0.45],
-                [x, -0.45 - h],
-                [x + 0.1, -0.45],
+                [sd * 0.98, 0.2],
+                [sd * 1.3, 0.12],
+                [sd * 1.42, 0.5],
+                [sd * 1.2, 0.78],
+                [sd * 0.95, 0.6],
               ],
-              i % 2 ? '#ff7a20' : BLOOD
+              '#8a8478'
             );
           }
-        }
-      } else if (type === 'boss_vexis') {
-        // Four jointed limbs arched out of the back, twin hooked daggers, slit eyes.
-        for (const sd of [-1, 1]) {
-          for (const [ky, ty] of [
-            [-0.75, -0.25],
-            [-0.3, 0.55],
+          for (const [x, h] of [
+            [-0.55, 0.3],
+            [-0.2, 0.52],
+            [0.15, 0.4],
+            [0.5, 0.26],
+          ])
+            blob(
+              [
+                [x - 0.14, -0.86],
+                [x - 0.04, -0.9 - h],
+                [x + 0.12, -0.9 - h * 0.8],
+                [x + 0.16, -0.86],
+              ],
+              '#8a8478'
+            );
+          // Slabs of mountain stone across the shoulders.
+          for (const [x, y, w] of [
+            [-0.75, -0.55, 0.5],
+            [0.25, -0.6, 0.55],
+            [-0.2, -0.82, 0.4],
           ]) {
+            blob(
+              [
+                [x, y],
+                [x + w, y - 0.08],
+                [x + w - 0.06, y + 0.3],
+                [x + 0.05, y + 0.34],
+              ],
+              '#8a8478'
+            );
+          }
+        } else if (type === 'boss_malachar') {
+          // A third eye, and a tattered cloak trailing behind.
+          blob(
+            [
+              [-0.95, -0.5],
+              [-1.25, -1.3],
+              [-0.6, -1.05],
+              [0, -1.45],
+              [0.6, -1.05],
+              [1.25, -1.3],
+              [0.95, -0.5],
+            ],
+            INK
+          );
+          eye(0, 0.22, 0.13);
+          // Antlers, branching wide of the skull.
+          for (const sd of [-1, 1]) {
             inkLine(
               [
-                [sd * 0.5, ky + 0.25],
-                [sd * 1.25, ky],
-                [sd * 1.55, ty],
+                [sd * 0.35, 0.12],
+                [sd * 0.85, -0.12],
+                [sd * 1.28, 0.1],
               ],
-              '#2c2830',
+              BONE,
+              0.07 * r
+            );
+            inkLine(
+              [
+                [sd * 0.85, -0.12],
+                [sd * 1.1, -0.5],
+              ],
+              BONE,
               0.06 * r
             );
+            inkLine(
+              [
+                [sd * 0.62, 0],
+                [sd * 0.7, -0.42],
+              ],
+              BONE,
+              0.05 * r
+            );
+          }
+          ctx.strokeStyle = BLOOD;
+          ctx.lineWidth = 1.2;
+          for (const x of [-0.8, -0.3, 0.3, 0.8]) {
+            ctx.beginPath();
+            ctx.moveTo(x * r, -0.7 * r);
+            ctx.lineTo(x * r * 1.15, -1.2 * r);
+            ctx.stroke();
+          }
+        } else if (type === 'boss_morwen') {
+          // A black veil with a long ragged train, and a bone staff.
+          blob(
+            [
+              [-0.55, -0.6],
+              [0.6, -0.7],
+              [0.85, -1.5],
+              [0.4, -1.2],
+              [0.1, -1.62],
+              [-0.25, -1.22],
+              [-0.7, -1.5],
+            ],
+            INK
+          );
+          blob(
+            [
+              [-0.6, -0.5],
+              [0.3, -0.95],
+              [0.85, -0.3],
+              [0.5, 0.15],
+              [-0.2, 0.2],
+              [-0.75, 0.0],
+            ],
+            INK
+          );
+          ctx.strokeStyle = BONE;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.moveTo(1.2 * r, 0.9 * r);
+          ctx.lineTo(1.2 * r, -1.1 * r);
+          ctx.stroke();
+          ctx.fillStyle = BLOOD;
+          ctx.beginPath();
+          ctx.arc(1.2 * r, -1.2 * r, 0.16 * r, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (type === 'boss_rotfather') {
+          // A split gut dragging behind, boils, and a cloud of flies.
+          blob(
+            [
+              [-0.5, -0.8],
+              [0.45, -0.85],
+              [0.6, -1.25],
+              [0.1, -1.48],
+              [-0.45, -1.3],
+            ],
+            '#7a6a48'
+          );
+          ctx.fillStyle = BLOOD;
+          ctx.beginPath();
+          ctx.ellipse(0.05 * r, -1.15 * r, 0.26 * r, 0.14 * r, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#8a9a3a';
+          for (const [x, y, w] of [
+            [-0.6, -0.4, 0.16],
+            [0.55, -0.35, 0.13],
+            [0.7, 0.35, 0.11],
+            [-0.1, -0.7, 0.14],
+            [-0.75, 0.4, 0.1],
+          ]) {
+            ctx.beginPath();
+            ctx.arc(x * r, y * r, w * r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.fillStyle = INK;
+          for (let i = 0; i < 9; i++) {
+            const a = i * 0.7 + frame * 0.25;
+            ctx.fillRect(Math.cos(a) * r * 1.45, Math.sin(a * 1.3) * r * 1.3, 1.6, 1.6);
+          }
+        } else if (type === 'boss_grimm') {
+          // A reaper's scythe across the back, and cinder flames licking off the shoulders.
+          inkLine(
+            [
+              [-1.25, 0.85],
+              [1.05, -1.0],
+            ],
+            '#5a4a38',
+            0.09 * r
+          );
+          ctx.beginPath();
+          ctx.moveTo(1.05 * r, -1.0 * r);
+          ctx.quadraticCurveTo(1.75 * r, -0.75 * r, 1.6 * r, 0.25 * r);
+          ctx.quadraticCurveTo(1.45 * r, -0.5 * r, 0.95 * r, -0.8 * r);
+          ctx.closePath();
+          ctx.fillStyle = BONE;
+          ctx.fill();
+          ctx.stroke();
+          for (const sd of [-1, 1]) {
+            for (let i = 0; i < 3; i++) {
+              const x = sd * (0.35 + i * 0.22);
+              const h = 0.5 + ((i + Math.floor(frame)) % 3) * 0.14;
+              blob(
+                [
+                  [x - 0.1, -0.45],
+                  [x, -0.45 - h],
+                  [x + 0.1, -0.45],
+                ],
+                i % 2 ? '#ff7a20' : BLOOD
+              );
+            }
+          }
+        } else if (type === 'boss_vexis') {
+          // Four jointed limbs arched out of the back, twin hooked daggers, slit eyes.
+          for (const sd of [-1, 1]) {
+            for (const [ky, ty] of [
+              [-0.75, -0.25],
+              [-0.3, 0.55],
+            ]) {
+              inkLine(
+                [
+                  [sd * 0.5, ky + 0.25],
+                  [sd * 1.25, ky],
+                  [sd * 1.55, ty],
+                ],
+                '#2c2830',
+                0.06 * r
+              );
+              blob(
+                [
+                  [sd * 1.47, ty - 0.05],
+                  [sd * 1.63, ty - 0.05],
+                  [sd * 1.58, ty + 0.26],
+                ],
+                BONE
+              );
+            }
+          }
+          for (const sd of [-1, 1]) {
             blob(
               [
-                [sd * 1.47, ty - 0.05],
-                [sd * 1.63, ty - 0.05],
-                [sd * 1.58, ty + 0.26],
+                [sd * 1.15, 0.2],
+                [sd * 1.75, 0.05],
+                [sd * 1.7, 0.4],
+                [sd * 1.35, 0.5],
+              ],
+              BLOOD
+            );
+          }
+          ctx.fillStyle = '#ffd040';
+          ctx.fillRect(-0.24 * r, 0.4 * r, 0.16 * r, 0.04 * r);
+          ctx.fillRect(0.08 * r, 0.4 * r, 0.16 * r, 0.04 * r);
+        } else if (type === 'boss_karg') {
+          // Forge stacks on the back, smoking.
+          for (const x of [-0.55, 0.3]) {
+            blob(
+              [
+                [x, -0.75],
+                [x + 0.28, -0.75],
+                [x + 0.24, -1.2],
+                [x + 0.04, -1.2],
+              ],
+              INK
+            );
+            ctx.fillStyle = 'rgba(120,112,108,0.7)';
+            ctx.beginPath();
+            ctx.arc((x + 0.14) * r, (-1.28 - (frame % 3) * 0.04) * r, 0.15 * r, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.fillStyle = '#ff5a20';
+          ctx.fillRect(-0.2 * r, 0.52 * r, 0.4 * r, 0.14 * r);
+          // The left arm ends in a forge hammer.
+          blob(
+            [
+              [-1.6, 0.3],
+              [-0.95, 0.3],
+              [-0.95, 0.95],
+              [-1.6, 0.95],
+            ],
+            INK
+          );
+          blob(
+            [
+              [-1.52, 0.95],
+              [-1.03, 0.95],
+              [-1.03, 1.1],
+              [-1.52, 1.1],
+            ],
+            '#ffa040'
+          );
+        } else if (type === 'boss_volk') {
+          // A marshal's standard and spiked pauldrons.
+          ctx.beginPath();
+          ctx.moveTo(0.85 * r, -0.2 * r);
+          ctx.lineTo(0.85 * r, -1.48 * r);
+          ctx.stroke();
+          blob(
+            [
+              [0.85, -1.44],
+              [1.45, -1.34],
+              [1.45, -0.92],
+              [0.85, -1.02],
+            ],
+            INK
+          );
+          blob(
+            [
+              [1.0, -1.28],
+              [1.32, -1.22],
+              [1.32, -1.04],
+              [1.0, -1.1],
+            ],
+            BLOOD
+          );
+          for (const sd of [-1, 1])
+            blob(
+              [
+                [sd * 1.05, -0.6],
+                [sd * 1.55, -0.95],
+                [sd * 1.2, -0.35],
               ],
               BONE
             );
-          }
-        }
-        for (const sd of [-1, 1]) {
+          // A tower shield on the left arm, and a blood plume down the helm.
           blob(
             [
-              [sd * 1.15, 0.2],
-              [sd * 1.75, 0.05],
-              [sd * 1.7, 0.4],
-              [sd * 1.35, 0.5],
-            ],
-            BLOOD
-          );
-        }
-        ctx.fillStyle = '#ffd040';
-        ctx.fillRect(-0.24 * r, 0.4 * r, 0.16 * r, 0.04 * r);
-        ctx.fillRect(0.08 * r, 0.4 * r, 0.16 * r, 0.04 * r);
-      } else if (type === 'boss_karg') {
-        // Forge stacks on the back, smoking.
-        for (const x of [-0.55, 0.3]) {
-          blob(
-            [
-              [x, -0.75],
-              [x + 0.28, -0.75],
-              [x + 0.24, -1.2],
-              [x + 0.04, -1.2],
-            ],
-            INK
-          );
-          ctx.fillStyle = 'rgba(120,112,108,0.7)';
-          ctx.beginPath();
-          ctx.arc((x + 0.14) * r, (-1.28 - (frame % 3) * 0.04) * r, 0.15 * r, 0, Math.PI * 2);
-          ctx.fill();
-        }
-        ctx.fillStyle = '#ff5a20';
-        ctx.fillRect(-0.2 * r, 0.52 * r, 0.4 * r, 0.14 * r);
-        // The left arm ends in a forge hammer.
-        blob(
-          [
-            [-1.6, 0.3],
-            [-0.95, 0.3],
-            [-0.95, 0.95],
-            [-1.6, 0.95],
-          ],
-          INK
-        );
-        blob(
-          [
-            [-1.52, 0.95],
-            [-1.03, 0.95],
-            [-1.03, 1.1],
-            [-1.52, 1.1],
-          ],
-          '#ffa040'
-        );
-      } else if (type === 'boss_volk') {
-        // A marshal's standard and spiked pauldrons.
-        ctx.beginPath();
-        ctx.moveTo(0.85 * r, -0.2 * r);
-        ctx.lineTo(0.85 * r, -1.48 * r);
-        ctx.stroke();
-        blob(
-          [
-            [0.85, -1.44],
-            [1.45, -1.34],
-            [1.45, -0.92],
-            [0.85, -1.02],
-          ],
-          INK
-        );
-        blob(
-          [
-            [1.0, -1.28],
-            [1.32, -1.22],
-            [1.32, -1.04],
-            [1.0, -1.1],
-          ],
-          BLOOD
-        );
-        for (const sd of [-1, 1])
-          blob(
-            [
-              [sd * 1.05, -0.6],
-              [sd * 1.55, -0.95],
-              [sd * 1.2, -0.35],
-            ],
-            BONE
-          );
-        // A tower shield on the left arm, and a blood plume down the helm.
-        blob(
-          [
-            [-1.5, 0.05],
-            [-0.82, 0.05],
-            [-0.82, 0.95],
-            [-1.16, 1.12],
-            [-1.5, 0.95],
-          ],
-          trim
-        );
-        blob(
-          [
-            [-1.32, 0.3],
-            [-1.16, 0.5],
-            [-1.0, 0.3],
-            [-1.0, 0.55],
-            [-1.16, 0.75],
-            [-1.32, 0.55],
-          ],
-          BLOOD
-        );
-        blob(
-          [
-            [-0.1, -0.85],
-            [0.1, -0.85],
-            [0.07, 0.0],
-            [-0.07, 0.0],
-          ],
-          BLOOD
-        );
-      } else if (type === 'boss_sylvara') {
-        // Blood-red wing membranes and a crest of spines.
-        for (const sd of [-1, 1]) {
-          blob(
-            [
-              [sd * 0.5, -0.15],
-              [sd * 1.25, -0.5],
-              [sd * 1.15, 0.0],
-              [sd * 0.75, 0.1],
-            ],
-            BLOOD
-          );
-        }
-        for (const x of [-0.2, 0, 0.2])
-          blob(
-            [
-              [x - 0.06, 0.15],
-              [x, -0.25],
-              [x + 0.06, 0.15],
-            ],
-            BONE
-          );
-        // A forked tail, and swept bone frills beside the jaw.
-        for (const sd of [-1, 1]) {
-          blob(
-            [
-              [sd * 0.05, -1.15],
-              [sd * 0.28, -1.2],
-              [sd * 0.5, -1.72],
-              [sd * 0.12, -1.42],
+              [-1.5, 0.05],
+              [-0.82, 0.05],
+              [-0.82, 0.95],
+              [-1.16, 1.12],
+              [-1.5, 0.95],
             ],
             trim
           );
           blob(
             [
-              [sd * 0.3, 0.6],
-              [sd * 0.92, 0.42],
-              [sd * 0.7, 0.72],
-              [sd * 0.98, 0.9],
-              [sd * 0.34, 0.86],
+              [-1.32, 0.3],
+              [-1.16, 0.5],
+              [-1.0, 0.3],
+              [-1.0, 0.55],
+              [-1.16, 0.75],
+              [-1.32, 0.55],
+            ],
+            BLOOD
+          );
+          blob(
+            [
+              [-0.1, -0.85],
+              [0.1, -0.85],
+              [0.07, 0.0],
+              [-0.07, 0.0],
+            ],
+            BLOOD
+          );
+        } else if (type === 'boss_sylvara') {
+          // Blood-red wing membranes and a crest of spines.
+          for (const sd of [-1, 1]) {
+            blob(
+              [
+                [sd * 0.5, -0.15],
+                [sd * 1.25, -0.5],
+                [sd * 1.15, 0.0],
+                [sd * 0.75, 0.1],
+              ],
+              BLOOD
+            );
+          }
+          for (const x of [-0.2, 0, 0.2])
+            blob(
+              [
+                [x - 0.06, 0.15],
+                [x, -0.25],
+                [x + 0.06, 0.15],
+              ],
+              BONE
+            );
+          // A forked tail, and swept bone frills beside the jaw.
+          for (const sd of [-1, 1]) {
+            blob(
+              [
+                [sd * 0.05, -1.15],
+                [sd * 0.28, -1.2],
+                [sd * 0.5, -1.72],
+                [sd * 0.12, -1.42],
+              ],
+              trim
+            );
+            blob(
+              [
+                [sd * 0.3, 0.6],
+                [sd * 0.92, 0.42],
+                [sd * 0.7, 0.72],
+                [sd * 0.98, 0.9],
+                [sd * 0.34, 0.86],
+              ],
+              BONE
+            );
+          }
+        }
+        ctx.strokeStyle = INK;
+        // Crown of horns and a blood halo mark every named warlord.
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2;
+        const crownN = BOSS_CROWN[type] ?? 5;
+        for (const x of [-0.5, -0.25, 0, 0.25, 0.5]) {
+          if (crownN === 0 || (crownN === 1 && x !== 0) || (crownN === 3 && Math.abs(x) === 0.25))
+            continue;
+          const h = x === 0 ? 0.55 : 0.36;
+          blob(
+            [
+              [x - 0.1, -0.88],
+              [x, -0.88 - h],
+              [x + 0.1, -0.88],
             ],
             BONE
           );
         }
+        if (!dying) {
+          ctx.strokeStyle = BLOOD;
+          ctx.lineWidth = 1.6;
+          ctx.globalAlpha *= 0.85;
+          ctx.beginPath();
+          ctx.arc(0, 0, r * 1.38, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.globalAlpha /= 0.85;
+        }
       }
-      ctx.strokeStyle = INK;
-      // Crown of horns and a blood halo mark every named warlord.
-      ctx.strokeStyle = INK;
-      ctx.lineWidth = 2;
-      const crownN = BOSS_CROWN[type] ?? 5;
-      for (const x of [-0.5, -0.25, 0, 0.25, 0.5]) {
-        if (crownN === 0 || (crownN === 1 && x !== 0) || (crownN === 3 && Math.abs(x) === 0.25))
-          continue;
-        const h = x === 0 ? 0.55 : 0.36;
-        blob(
-          [
-            [x - 0.1, -0.88],
-            [x, -0.88 - h],
-            [x + 0.1, -0.88],
-          ],
-          BONE
-        );
-      }
-      if (!dying) {
-        ctx.strokeStyle = BLOOD;
-        ctx.lineWidth = 1.6;
-        ctx.globalAlpha *= 0.85;
+    };
+    if (shape === 'iron_colossus' && dk > 0) {
+      // The slab breaks down the middle and the halves fall apart.
+      const zig = [0.1, -0.12, 0.14, -0.08, 0.12, -0.1, 0.08];
+      for (const sd of [-1, 1]) {
+        ctx.save();
+        ctx.translate(sd * r * 0.27 * dk, (sd > 0 ? -0.1 : 0.14) * r * dk);
+        ctx.rotate(sd * (sd > 0 ? 0.24 : 0.15) * dk);
         ctx.beginPath();
-        ctx.arc(0, 0, r * 1.38, 0, Math.PI * 2);
+        ctx.moveTo(sd * r * 2.4, -r * 2.4);
+        for (let i = 0; i < zig.length; i++) ctx.lineTo(zig[i] * r, (-2.4 + i * 0.8) * r);
+        ctx.lineTo(sd * r * 2.4, r * 2.4);
+        ctx.closePath();
+        ctx.clip();
+        paintBody();
+        // The broken edge.
+        ctx.strokeStyle = INK;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        for (let i = 2; i < 5; i++) {
+          const y = (-2.4 + i * 0.8) * r;
+          if (i === 2) ctx.moveTo(zig[i] * r, y);
+          else ctx.lineTo(zig[i] * r, y);
+        }
         ctx.stroke();
-        ctx.globalAlpha /= 0.85;
+        ctx.restore();
       }
-    }
+      // Sheared rivets and a plate thrown clear.
+      ctx.fillStyle = BONE;
+      for (const [x, y] of [
+        [0.05, -0.2],
+        [-0.12, 0.5],
+        [0.14, 1.05],
+        [0.02, -0.75],
+      ]) {
+        ctx.beginPath();
+        ctx.arc(x * r, y * r, 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.lineWidth = 2.6;
+    } else paintBody();
     if (dying) {
       // The hide splits: jagged cracks spread from the wound; on a warlord they glow.
-      const n = Math.min(7, 2 + dieF);
+      const n = Math.min(4, 2 + dieF);
       for (let i = 0; i < n; i++) {
         const a = i * 2.4 + 0.5;
         const len = 0.45 + ((i * 37) % 10) * 0.045 + Math.min(dieF, 4) * 0.07;
@@ -4313,9 +5266,9 @@ const SpriteGen = (() => {
     if (dying) {
       const k = [0, 0, 0.1, 0.4, 0.75, 1, 1, 1][dieF];
       // The carcass darkens as it settles; fire chars it and a hex withers it.
-      if (dieCause === 'burn') tintDrawn(ctx, '#120e0c', 0.3 + k * 0.5);
-      else if (dieCause === 'hex') tintDrawn(ctx, '#3c2a54', 0.2 + k * 0.4);
-      else tintDrawn(ctx, '#0a0608', k * 0.4);
+      if (dieCause === 'burn') tintDrawn(ctx, '#120e0c', 0.25 + k * 0.3);
+      else if (dieCause === 'hex') tintDrawn(ctx, '#3c2a54', 0.2 + k * 0.25);
+      else tintDrawn(ctx, '#0a0608', k * 0.2);
       ctx.lineCap = 'round';
       if (dieCause === 'shot') {
         stuckArrow(ctx, -r * 0.3, -r * 0.2, -Math.PI * 0.35, r * 0.6);
@@ -4338,7 +5291,10 @@ const SpriteGen = (() => {
       }
       if (dieCause === 'burn' || dieCause === 'blast') scorchMark(ctx, r * 0.72, 0.5 + k * 0.5);
       else if (dieCause === 'hex') scorchMark(ctx, r * 0.7, 0.4 + k * 0.5, '#2a1c3a');
-      bloodPool(ctx, r * 0.78, [0, 0.1, 0.25, 0.45, 0.65, 0.82, 0.93, 1][dieF], 0, 0.1);
+      // Iron and cinder do not bleed: they leave soot.
+      if (shape === 'iron_colossus' || shape === 'juggernaut')
+        scorchMark(ctx, r * 0.8, 0.35 + dk * 0.45);
+      else bloodPool(ctx, r * 0.78, [0, 0.1, 0.25, 0.45, 0.65, 0.82, 0.93, 1][dieF], 0, 0.1);
     }
   }
 
@@ -4361,12 +5317,7 @@ const SpriteGen = (() => {
     }
     const dieCause = animState.startsWith('die_') ? animState.slice(4) : '';
     if (type === 'siege_tower') {
-      drawSiegeTowerUnit(inkCtx(ctx), resolveUnitStyle(type, 'enemy'), team, frame, animState, lod);
-      if (dieCause) {
-        const f = Math.max(0, Math.min(DEATH_FRAMES - 1, Math.floor(frame)));
-        tintDrawn(ctx, '#120e0c', 0.15 + f * 0.09);
-        scorchMark(ctx, UNIT_STYLE.siege_tower.size, 0.5 + f * 0.1);
-      }
+      drawSiegeTowerUnit(ctx, resolveUnitStyle(type, 'enemy'), team, frame, animState, lod);
       return;
     }
     if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_')) {
@@ -4458,12 +5409,13 @@ const SpriteGen = (() => {
   let cheerFrom = -1;
   let cheerUntil = -1;
   // Idle scripts: eight beats each. 0 rest, 1 breath, 2/3 weight shift, 4/5 a look round.
+  // 6 leans on the grounded weapon, 7 stretches.
   const IDLE_SCRIPTS = [
-    [0, 1, 0, 1, 0, 4, 0, 1],
-    [0, 1, 2, 2, 0, 1, 0, 5],
-    [0, 0, 1, 3, 3, 0, 1, 0],
-    [1, 0, 5, 0, 1, 0, 4, 4],
-    [0, 1, 0, 0, 3, 1, 0, 2],
+    [0, 1, 0, 4, 4, 0, 6, 6],
+    [0, 1, 2, 2, 0, 5, 5, 0],
+    [0, 3, 3, 0, 1, 7, 0, 4],
+    [1, 0, 5, 5, 0, 6, 6, 0],
+    [0, 4, 0, 2, 2, 1, 0, 3],
   ];
   const IDLE_BEAT = 26;
 
@@ -4485,14 +5437,69 @@ const SpriteGen = (() => {
     cheerUntil = tick + ticks;
   }
 
+  const REQUEST_STATES = new Set(['throw', 'lay']);
+  /**
+   * Ask for a pose on a unit for `ticks` game ticks: 'throw' (an overarm throw, played
+   * once) or 'lay' (kneeling to bury a charge, looping). Any figure can take either;
+   * a rout still overrides it. Returns false for a state that is not on offer.
+   */
+  function requestAnim(unit, state, ticks = 16) {
+    if (!unit || !REQUEST_STATES.has(state)) return false;
+    unit.animReq = state;
+    unit.animReqTicks = Math.max(4, ticks | 0);
+    unit.animReqFrom = undefined;
+    return true;
+  }
+
+  /** A Sapper who has just thrown a charge or buried a mine takes the pose for it. */
+  function watchSapper(u) {
+    const ready = u.satchelReadyAt || 0;
+    if (u._satchelSeen !== undefined && ready > u._satchelSeen) requestAnim(u, 'throw', 14);
+    u._satchelSeen = ready;
+    if (typeof SapperKit === 'undefined' || !SapperKit.getMines) return;
+    const mines = SapperKit.getMines();
+    let own = 0;
+    for (let i = 0; i < mines.length; i++) if (mines[i].o === u.id) own++;
+    if (u._minesSeen !== undefined && own > u._minesSeen) requestAnim(u, 'lay', 56);
+    u._minesSeen = own;
+  }
+
+  /** Radius of the drawn body in world units, for effects that should cover it. */
+  function bodyRadius(type, team) {
+    if (typeof type !== 'string') type = 'footman';
+    const style = resolveUnitStyle(type, team, 'footman');
+    if (type === 'siege_tower') return 20;
+    if (MONSTER_SPRITES.includes(type) || type.startsWith('boss_'))
+      return Math.min(21, style.size * 1.2) * 0.95;
+    return style.size * 1.3 * 1.1;
+  }
+
   function animFor(u, tick = 0) {
     const type = u.spriteType || u.type;
     const seed = animSeed(u);
     let state = u.animState || 'idle';
     let frame = 0;
+    // A Sapper's work is read off what he has just done, so the kit need not say so.
+    if (type === 'sapper' && u.hp > 0) watchSapper(u);
+    const req = u.animReq;
+    if (req && u.animReqFrom === undefined) u.animReqFrom = tick;
+    const reqAge = req ? tick - u.animReqFrom : 0;
+    if (req && (reqAge < 0 || reqAge >= (u.animReqTicks || 16))) {
+      u.animReq = undefined;
+      u.animReqFrom = undefined;
+    }
     if (u.fleeing && u.hp > 0) {
       state = 'rout';
       frame = Math.floor((tick + seed) / 3) % 4;
+    } else if (u.animReq && u.hp > 0) {
+      state = u.animReq;
+      // A throw plays once across its length; laying loops while the work lasts.
+      frame =
+        state === 'lay'
+          ? Math.floor(reqAge / 7) % 4
+          : Math.min(3, Math.floor((reqAge * 4) / (u.animReqTicks || 16)));
+    } else if (u.demoralized && u.hp > 0) {
+      state = 'yield';
     } else if ((u.hitFlash || 0) > 0 && state !== 'attack') {
       state = 'hurt';
     } else if (type === 'builder' && state === 'attack') {
@@ -5837,6 +6844,8 @@ const SpriteGen = (() => {
       INK_PALETTE[type] = { ...style };
     },
     animFor,
+    requestAnim,
+    bodyRadius,
     celebrate,
     gaitOf,
     DEATH_CAUSES,
