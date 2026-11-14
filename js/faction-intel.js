@@ -177,7 +177,9 @@ const FactionIntel = (() => {
     const night = gs.timeOfDay === 'night';
     const preview = typeof SiegeLoop !== 'undefined' ? SiegeLoop.getPreview?.() : null;
     if (night && preview) return SiegeLoop.previewText(preview);
-    return night ? `Wave ${(gs.wave || 0) + 1} is gathering.` : `Wave ${gs.wave || 0} is on the field.`;
+    return night
+      ? `Wave ${(gs.wave || 0) + 1} is gathering.`
+      : `Wave ${gs.wave || 0} is on the field.`;
   }
 
   function sectorLine(gs) {
@@ -313,14 +315,16 @@ const FactionIntel = (() => {
     if (rosterEl) {
       const how =
         'A camp is attacked only on your order: select soldiers and move them onto it (cavalry get there first, Sappers hit hardest), land a strike on it, or send the spy’s raid. Burn it before dawn and its bonus is gone.';
-      const live = camps && camps.active.length
-        ? ` In force this wave: ${camps.active.map((a) => `${a.name} — ${a.line}`).join('; ')}.`
-        : '';
-      const raid = camps && camps.raid
-        ? camps.raid.waiting
-          ? ' A raid rides at nightfall.'
-          : ' Raiders are on their way.'
-        : '';
+      const live =
+        camps && camps.active.length
+          ? ` In force this wave: ${camps.active.map((a) => `${a.name} — ${a.line}`).join('; ')}.`
+          : '';
+      const raid =
+        camps && camps.raid
+          ? camps.raid.waiting
+            ? ' A raid rides at nightfall.'
+            : ' Raiders are on their way.'
+          : '';
       const names = (gs.enemyFactions?.activeFactions || []).map((f) => f.shortName || f.name);
       rosterEl.textContent = `${how}${live}${raid}${names.length ? ` Hosts in the field: ${names.join(', ')}.` : ''}`;
     }

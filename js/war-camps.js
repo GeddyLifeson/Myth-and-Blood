@@ -282,7 +282,8 @@ const WarCamps = (() => {
       if (!pool.length) pool = SECTORS;
       sector = pool[Math.floor(ctx.rng() * pool.length)];
     }
-    const site = opts.x != null && opts.y != null ? { x: opts.x, y: opts.y } : pickSite(sector, ctx);
+    const site =
+      opts.x != null && opts.y != null ? { x: opts.x, y: opts.y } : pickSite(sector, ctx);
     if (!site) return null;
     // The camp's health follows the wave it was raised for.
     BuildDefs[KINDS[kind].type] = campDef(kind, nextWave);
@@ -377,7 +378,9 @@ const WarCamps = (() => {
       }
       if (k.runnerType && queue) {
         const type =
-          typeof EnemyDefs !== 'undefined' && EnemyDefs[k.runnerType] ? k.runnerType : k.runnerFallback;
+          typeof EnemyDefs !== 'undefined' && EnemyDefs[k.runnerType]
+            ? k.runnerType
+            : k.runnerFallback;
         const n = runnerCount(ctx.wave);
         for (let i = 0; i < n; i++) queue.splice(Math.min(queue.length, 3 + i * 2), 0, type);
         state.runnersLeft += n;

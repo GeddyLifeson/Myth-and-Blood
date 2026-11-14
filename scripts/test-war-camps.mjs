@@ -88,9 +88,15 @@ function toNight(api, wave) {
     if (i % 3 === 2) for (const b of list) Game.warCampHooks.hit(b, 1e6);
     GS.buildings = GS.buildings.filter((b) => b.hp > 0);
   }
-  ok(seen > 0 && most >= 1, `camps are raised from wave 6 (${seen} camp-nights in ${nights} nights)`);
+  ok(
+    seen > 0 && most >= 1,
+    `camps are raised from wave 6 (${seen} camp-nights in ${nights} nights)`
+  );
   ok(most <= W.MAX_CAMPS, `never more than ${W.MAX_CAMPS} camps at once (most seen: ${most})`);
-  ok(badSpot === 0, 'every camp sits just inside the top edge, far from the deploy zone, and blocks nothing');
+  ok(
+    badSpot === 0,
+    'every camp sits just inside the top edge, far from the deploy zone, and blocks nothing'
+  );
   ok(kinds.size >= 3, `several kinds of camp appear (${[...kinds].join(', ')})`);
   ok(sectors.size >= 2, `camps use more than one top sector (${[...sectors].join(', ')})`);
 
@@ -107,7 +113,10 @@ function toNight(api, wave) {
   ok(right === 6, "a camp rises in one of the next wave's sectors when the plan names them");
   Game.warCampHooks.ctx().refreshPreview();
   const line = SiegeLoop.previewText(SiegeLoop.getPreview());
-  ok(/War camps — .+\(right\): /.test(line), `the night preview names the camp and its bonus (${line})`);
+  ok(
+    /War camps — .+\(right\): /.test(line),
+    `the night preview names the camp and its bonus (${line})`
+  );
 }
 
 // --- 2. bonus applied, and removed when the camp burns ----------------------------------
@@ -125,7 +134,10 @@ function toNight(api, wave) {
   ok(W.pendingBonuses({ buildings: GS.buildings }).length === 2, 'both bonuses are pending');
   Game.beginDayPhase(true);
   ok(W.activeBonuses().length === 2, 'at dawn both bonuses are locked in');
-  ok(GS.spawnQueue.slice(0, 4).includes('siege_tower'), 'Siege yard: a siege engine joins the queue');
+  ok(
+    GS.spawnQueue.slice(0, 4).includes('siege_tower'),
+    'Siege yard: a siege engine joins the queue'
+  );
   const foe = { team: 'enemy', hp: 100, maxHp: 100, speed: 1, type: 'orc' };
   W.onEnemySpawn(foe);
   ok(foe.maxHp === 115 && foe.hp === 115, 'Forge: an enemy enters 15% tougher');
@@ -137,13 +149,22 @@ function toNight(api, wave) {
   ok(!!fb, 'the forge still stands the next night');
   Game.warCampHooks.hit(fb, fb.hp + 5);
   ok(!GS.buildings.includes(fb), 'the forge is destroyed');
-  ok(GS.tactical - tpBefore === W.bounty(forge) && W.bounty(forge) >= 3, `it pays a small bounty (+${GS.tactical - tpBefore} TP)`);
-  ok(W.pendingBonuses({ buildings: GS.buildings }).every((b) => b.kind !== 'forge'), 'its bonus is gone from the preview');
+  ok(
+    GS.tactical - tpBefore === W.bounty(forge) && W.bounty(forge) >= 3,
+    `it pays a small bounty (+${GS.tactical - tpBefore} TP)`
+  );
+  ok(
+    W.pendingBonuses({ buildings: GS.buildings }).every((b) => b.kind !== 'forge'),
+    'its bonus is gone from the preview'
+  );
   Game.beginDayPhase(true);
   const foe2 = { team: 'enemy', hp: 100, maxHp: 100, speed: 1, type: 'orc' };
   W.onEnemySpawn(foe2);
   ok(foe2.maxHp === 100, 'the next wave is not tougher');
-  ok(W.activeBonuses().some((a) => a.kind === 'siege'), 'the camp left standing still counts');
+  ok(
+    W.activeBonuses().some((a) => a.kind === 'siege'),
+    'the camp left standing still counts'
+  );
 
   // Each kind does what its line says.
   toNight(api);
@@ -165,7 +186,10 @@ function toNight(api, wave) {
   const pack = GS.spawnQueue.filter((t) => t === 'warg_rider').length;
   ok(pack >= 2, `Kennels: runners join the queue (${pack} warg riders, queue was ${qBefore})`);
   const runner = { team: 'enemy', hp: 50, maxHp: 50, speed: 1, type: 'warg_rider' };
-  ok(W.onEnemySpawn(runner) === 'KENNEL PACK' && runner.lineBreaker === true, 'and they run for the line');
+  ok(
+    W.onEnemySpawn(runner) === 'KENNEL PACK' && runner.lineBreaker === true,
+    'and they run for the line'
+  );
 
   // A camp left alone packs up.
   toNight(api);
@@ -179,7 +203,10 @@ function toNight(api, wave) {
     toNight(api);
     for (const b of camps(GS, W)) if (W.kindOf(b) !== 'forge') b.hp = 0;
   }
-  ok(stood === W.LIFE_WAVES, `a camp left alone strengthens ${W.LIFE_WAVES} waves, then moves on (${stood})`);
+  ok(
+    stood === W.LIFE_WAVES,
+    `a camp left alone strengthens ${W.LIFE_WAVES} waves, then moves on (${stood})`
+  );
 }
 
 // --- 3. soldiers do not walk off; an order onto the camp attacks it ---------------------
@@ -191,7 +218,8 @@ function toNight(api, wave) {
   GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
   W.resetRun();
   const men = [];
-  for (let i = 0; i < 6; i++) men.push(deploy(api, i % 2 ? 'archer' : 'footman', 470 + i * 26, 540));
+  for (let i = 0; i < 6; i++)
+    men.push(deploy(api, i % 2 ? 'archer' : 'footman', 470 + i * 26, 540));
   ok(men.every(Boolean), 'six soldiers are fielded');
   const camp = Game.warCampHooks.raise({ kind: 'forge', sector: 'centre' });
   const b = GS.buildings.find((x) => x.id === camp.id);
@@ -200,13 +228,22 @@ function toNight(api, wave) {
   GS.nightTimer = -100000; // hold the night open
   run(Game, 900);
   const moved = men.filter((u, i) => Math.abs(u.y - y0[i]) > 60).length;
-  ok(moved === 0 && b.hp === hp0, 'left to themselves for 15 seconds, nobody walks to the camp and it is untouched');
-  ok(men.every((u) => !u.structureTargetId && !u.campOrderId), 'no soldier has the camp as a target');
+  ok(
+    moved === 0 && b.hp === hp0,
+    'left to themselves for 15 seconds, nobody walks to the camp and it is untouched'
+  );
+  ok(
+    men.every((u) => !u.structureTargetId && !u.campOrderId),
+    'no soldier has the camp as a target'
+  );
 
   // Order them onto it.
   GS.selectedUnitIds = men.map((u) => u.id);
   Game.moveSelectionToWorld(b.x, b.y);
-  ok(men.every((u) => u.campOrderId === b.id), 'a move order onto the camp is an attack order');
+  ok(
+    men.every((u) => u.campOrderId === b.id),
+    'a move order onto the camp is an attack order'
+  );
   let hurt = false;
   for (let i = 0; i < 4000 && GS.buildings.includes(b); i++) {
     Game.update();
@@ -214,7 +251,10 @@ function toNight(api, wave) {
   }
   ok(!GS.buildings.includes(b), 'the ordered soldiers tear the camp down');
   ok(hurt, 'its garrison wounded some of them');
-  ok(men.every((u) => !u.campOrderId), 'the order ends with the camp');
+  ok(
+    men.every((u) => !u.campOrderId),
+    'the order ends with the camp'
+  );
 
   // A plain move cancels the order.
   const camp2 = Game.warCampHooks.raise({ kind: 'drums', sector: 'left' });
@@ -223,10 +263,20 @@ function toNight(api, wave) {
   GS.selectedUnitIds = live.map((u) => u.id);
   Game.moveSelectionToWorld(b2.x, b2.y);
   Game.moveSelectionToWorld(GS.worldW / 2, GS.deployY - 40);
-  ok(live.every((u) => !u.campOrderId), 'a move elsewhere cancels the attack order');
+  ok(
+    live.every((u) => !u.campOrderId),
+    'a move elsewhere cancels the attack order'
+  );
 
   // Sapper: siege damage applies. A strike lands on it too.
-  const sap = { type: 'sapper', team: 'player', hp: 50, damage: 20, siegeMult: 3, combatType: 'melee' };
+  const sap = {
+    type: 'sapper',
+    team: 'player',
+    hp: 50,
+    damage: 20,
+    siegeMult: 3,
+    combatType: 'melee',
+  };
   const foot = { type: 'footman', team: 'player', hp: 50, damage: 20, combatType: 'melee' };
   let s = 0;
   let f = 0;
@@ -234,7 +284,10 @@ function toNight(api, wave) {
     s += Game.warCampHooks.damageOf(sap, b2);
     f += Game.warCampHooks.damageOf(foot, b2);
   }
-  ok(s > f * 2.5, `a Sapper hits a camp far harder than a footman (${Math.round(s / 40)} vs ${Math.round(f / 40)} a blow)`);
+  ok(
+    s > f * 2.5,
+    `a Sapper hits a camp far harder than a footman (${Math.round(s / 40)} vs ${Math.round(f / 40)} a blow)`
+  );
   const hpA = b2.hp;
   W.onBlast(b2.x + 10, b2.y, 50, 40, Game.warCampHooks.ctx());
   ok(hpA - b2.hp === 80, 'a strike landing on a camp does double damage to it');
@@ -256,17 +309,28 @@ function toNight(api, wave) {
   Game.warCampHooks.hit(b, 100);
   const hp = b.hp;
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
-  ok(snap.warCamps.camps.length === 1 && snap.warCamps.camps[0].kind === 'shrine', 'the camp is in the save');
-  ok(!snap.buildings.some((x) => /^war_camp/.test(x.type)), 'and not duplicated in the building list');
+  ok(
+    snap.warCamps.camps.length === 1 && snap.warCamps.camps[0].kind === 'shrine',
+    'the camp is in the save'
+  );
+  ok(
+    !snap.buildings.some((x) => /^war_camp/.test(x.type)),
+    'and not duplicated in the building list'
+  );
   GS.buildings = GS.buildings.filter((x) => !W.isCamp(x));
   W.resetRun();
   ok(Game.importGameState(snap) !== false, 'the save loads');
   const back = camps(GS, W);
   ok(back.length === 1 && W.kindOf(back[0]) === 'shrine', 'the camp is back after loading');
   ok(Math.abs(back[0].hp - hp) < 1 && Math.abs(back[0].x - c.x) < 1, 'with its health and place');
-  ok(W.pendingBonuses({ buildings: GS.buildings })[0]?.kind === 'shrine', 'and its bonus still pending');
-  ok(Game.importGameState({ ...snap, warCamps: undefined }) !== false && camps(GS, W).length === 0,
-    'an older save without camps loads with none');
+  ok(
+    W.pendingBonuses({ buildings: GS.buildings })[0]?.kind === 'shrine',
+    'and its bonus still pending'
+  );
+  ok(
+    Game.importGameState({ ...snap, warCamps: undefined }) !== false && camps(GS, W).length === 0,
+    'an older save without camps loads with none'
+  );
 }
 
 // --- 5. the spy raid --------------------------------------------------------------------
@@ -279,10 +343,14 @@ function toNight(api, wave) {
   W.resetRun();
   GS.tactical = 40;
   GS.spyUsedThisWave = false;
-  ok(Game.executeSpyAction('settlement_raid') === false && GS.tactical === 40 && !GS.spyUsedThisWave,
-    'with no camp the raid is refused, costs nothing and does not use up the spy');
-  ok(!SpyActions.settlement_raid.kingdomStage && SpyActions.settlement_raid.waveMin <= 6,
-    'the raid is no longer locked behind a kingdom stage or wave 150');
+  ok(
+    Game.executeSpyAction('settlement_raid') === false && GS.tactical === 40 && !GS.spyUsedThisWave,
+    'with no camp the raid is refused, costs nothing and does not use up the spy'
+  );
+  ok(
+    !SpyActions.settlement_raid.kingdomStage && SpyActions.settlement_raid.waveMin <= 6,
+    'the raid is no longer locked behind a kingdom stage or wave 150'
+  );
   const outcomes = {};
   let paid = 0;
   let reprisals = 0;
@@ -299,9 +367,15 @@ function toNight(api, wave) {
     if (!Game.executeSpyAction('settlement_raid')) continue;
     if (i === 0) {
       ok(GS.tactical === 40 - cost && cost >= 6, `the raid costs TP (${cost})`);
-      ok(!!W.pendingRaid() && b.hp === b.maxHp, 'the raiders are on their way; nothing has landed yet');
+      ok(
+        !!W.pendingRaid() && b.hp === b.maxHp,
+        'the raiders are on their way; nothing has landed yet'
+      );
       GS.spyUsedThisWave = false;
-      ok(Game.executeSpyAction('settlement_raid') === false, 'a second raid cannot be ordered at once');
+      ok(
+        Game.executeSpyAction('settlement_raid') === false,
+        'a second raid cannot be ordered at once'
+      );
     }
     const tp = GS.tactical;
     run(Game, 300);
@@ -311,7 +385,10 @@ function toNight(api, wave) {
     if (gone && GS.tactical > tp) paid++;
     if (W.getSnapshot({ buildings: GS.buildings }).reprisal > 0) reprisals++;
   }
-  ok(outcomes.burned >= 12 && outcomes.damaged >= 5, `raids burn or damage the camp (${JSON.stringify(outcomes)})`);
+  ok(
+    outcomes.burned >= 12 && outcomes.damaged >= 5,
+    `raids burn or damage the camp (${JSON.stringify(outcomes)})`
+  );
   ok(paid === outcomes.burned, 'a camp burned by raiders pays its bounty');
   ok(reprisals >= 1, `the risk is real: ${reprisals} of 40 raids were followed home`);
 
@@ -331,8 +408,10 @@ function toNight(api, wave) {
     Game.beginDayPhase(true);
     return GS.spawnQueue.length;
   })();
-  ok(owed >= 2 && W.getSnapshot({ buildings: GS.buildings }).reprisal === 0 && base > 0,
-    `a raid that was followed adds ${owed} foes to the next wave, once`);
+  ok(
+    owed >= 2 && W.getSnapshot({ buildings: GS.buildings }).reprisal === 0 && base > 0,
+    `a raid that was followed adds ${owed} foes to the next wave, once`
+  );
   void c;
 
   // Sabotage spikes a camp.
@@ -344,9 +423,15 @@ function toNight(api, wave) {
   GS.tactical = 40;
   GS.spyUsedThisWave = false;
   ok(Game.executeSpyAction('sabotage') === true, 'Sabotage is bought');
-  ok(W.pendingBonuses({ buildings: GS.buildings }).length === 0, 'the Siege yard gives no bonus that wave');
+  ok(
+    W.pendingBonuses({ buildings: GS.buildings }).length === 0,
+    'the Siege yard gives no bonus that wave'
+  );
   Game.beginDayPhase(true);
-  ok(!GS.spawnQueue.includes('siege_tower') && W.activeBonuses().length === 0, 'and no siege engine comes');
+  ok(
+    !GS.spawnQueue.includes('siege_tower') && W.activeBonuses().length === 0,
+    'and no siege engine comes'
+  );
 }
 
 // --- 6. Disrupt -------------------------------------------------------------------------
@@ -355,7 +440,10 @@ function toNight(api, wave) {
   const { Game, GameState: GS, EconomyRules: R, WarCamps: W } = api;
   const q = Array.from({ length: 30 }, (_, i) => (i % 3 ? 'goblin' : 'orc'));
   const added = R.rejoinSquad(q, 0.75);
-  ok(added === 5 && q.length === 35, 'of 10 foes cut from a host of 40, 5 catch up as a late squad');
+  ok(
+    added === 5 && q.length === 35,
+    'of 10 foes cut from a host of 40, 5 catch up as a late squad'
+  );
   ok(R.rejoinSquad(['orc'], 1) === 0, 'an undisrupted host has no stragglers');
   run(Game, 10);
   toNight(api, 12);
@@ -378,7 +466,10 @@ function toNight(api, wave) {
   }
   const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
   const ratio = avg(sizes.disrupt) / avg(sizes.plain);
-  ok(ratio > 0.8 && ratio < 0.95, `a disrupted wave fields about 87% of the bodies, not 75% (${ratio.toFixed(2)})`);
+  ok(
+    ratio > 0.8 && ratio < 0.95,
+    `a disrupted wave fields about 87% of the bodies, not 75% (${ratio.toFixed(2)})`
+  );
 }
 
 process.exit(failures() ? 1 : 0);

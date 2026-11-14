@@ -8305,7 +8305,8 @@ const Game = (() => {
     }
     if ((mods.speedMult || 1) > 1) {
       // Disrupt: the foes cut off on the road are late, not gone.
-      const late = (mods.countMult || 1) < 1 ? EconomyRules.rejoinSquad(GS.spawnQueue, mods.countMult) : 0;
+      const late =
+        (mods.countMult || 1) < 1 ? EconomyRules.rejoinSquad(GS.spawnQueue, mods.countMult) : 0;
       showMessage(
         late > 0
           ? `Disrupted host: fewer of them, tougher and on a forced march. ${late} stragglers will catch up late in the wave.`
@@ -9655,7 +9656,10 @@ const Game = (() => {
       GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
       const spiked = typeof WarCamps !== 'undefined' ? WarCamps.sabotage(warCampCtx) : null;
       if (spiked) {
-        showMessage(`Saboteurs spike the ${WarCamps.KINDS[spiked.kind].name}: no bonus from it this wave.`, 260);
+        showMessage(
+          `Saboteurs spike the ${WarCamps.KINDS[spiked.kind].name}: no bonus from it this wave.`,
+          260
+        );
       }
       showMessage(
         `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
@@ -17013,43 +17017,43 @@ const Game = (() => {
       buildings: GS.buildings
         .filter((b) => typeof WarCamps === 'undefined' || !WarCamps.isCamp(b))
         .map((b) => ({
-        id: b.id,
-        type: b.type,
-        x: b.x,
-        y: b.y,
-        hp: b.hp,
-        maxHp: b.maxHp,
-        complete: b.complete,
-        owner: b.owner,
-        buildProgress: b.buildProgress,
-        waveBuildRequired: b.waveBuildRequired || 0,
-        waveBuildProgress: b.waveBuildProgress || 0,
-        facing: b.facing || null,
-        isHamlet: !!b.isHamlet,
-        isMerchantGuild: !!b.isMerchantGuild,
-        isAcademy: !!b.isAcademy,
-        isResearchLab: !!b.isResearchLab,
-        isEnemySettlement: !!b.isEnemySettlement,
-        isResourceGen: !!b.isResourceGen,
-        isSettlement: !!b.isSettlement,
-        isWatchtower: !!b.isWatchtower,
-        isKeep: !!b.isKeep,
-        isMedical: !!b.isMedical,
-        isMessHall: !!b.isMessHall,
-        isWweAcademy: !!b.isWweAcademy,
-        isCrossoverBarracks: !!b.isCrossoverBarracks,
-        isPerkMachine: !!b.isPerkMachine,
-        academyUnit: b.academyUnit || null,
-        crossoverFaction: b.crossoverFaction || null,
-        fortressTier: b.fortressTier || 0,
-        upgrade: b.upgrade || null,
-        upgradeName: b.upgradeName || null,
-        garrisonUnitId: b.garrisonUnitId || null,
-        slotX: b.slotX,
-        slotY: b.slotY,
-        castleGroup: b.castleGroup || null,
-        enemyFaction: b.enemyFaction || null,
-      })),
+          id: b.id,
+          type: b.type,
+          x: b.x,
+          y: b.y,
+          hp: b.hp,
+          maxHp: b.maxHp,
+          complete: b.complete,
+          owner: b.owner,
+          buildProgress: b.buildProgress,
+          waveBuildRequired: b.waveBuildRequired || 0,
+          waveBuildProgress: b.waveBuildProgress || 0,
+          facing: b.facing || null,
+          isHamlet: !!b.isHamlet,
+          isMerchantGuild: !!b.isMerchantGuild,
+          isAcademy: !!b.isAcademy,
+          isResearchLab: !!b.isResearchLab,
+          isEnemySettlement: !!b.isEnemySettlement,
+          isResourceGen: !!b.isResourceGen,
+          isSettlement: !!b.isSettlement,
+          isWatchtower: !!b.isWatchtower,
+          isKeep: !!b.isKeep,
+          isMedical: !!b.isMedical,
+          isMessHall: !!b.isMessHall,
+          isWweAcademy: !!b.isWweAcademy,
+          isCrossoverBarracks: !!b.isCrossoverBarracks,
+          isPerkMachine: !!b.isPerkMachine,
+          academyUnit: b.academyUnit || null,
+          crossoverFaction: b.crossoverFaction || null,
+          fortressTier: b.fortressTier || 0,
+          upgrade: b.upgrade || null,
+          upgradeName: b.upgradeName || null,
+          garrisonUnitId: b.garrisonUnitId || null,
+          slotX: b.slotX,
+          slotY: b.slotY,
+          castleGroup: b.castleGroup || null,
+          enemyFaction: b.enemyFaction || null,
+        })),
       sessionHighlights: [...GS.sessionHighlights],
       campaignVictoryDeclared: !!GS.campaignVictoryDeclared,
       research: svc('Research') ? svc('Research').getSnapshot() : null,
@@ -17961,7 +17965,8 @@ const Game = (() => {
     /** War camps: test and creative hooks (raise one, hit one, read the damage a soldier does). */
     warCampHooks: {
       ctx: () => warCampCtx,
-      raise: (opts) => (typeof WarCamps !== 'undefined' ? WarCamps.raiseCamp(warCampCtx, opts) : null),
+      raise: (opts) =>
+        typeof WarCamps !== 'undefined' ? WarCamps.raiseCamp(warCampCtx, opts) : null,
       hit: (b, amount) => damageBuilding(b, amount, null),
       damageOf: (unit, b) => calcBuildingDamage(unit, b),
     },
