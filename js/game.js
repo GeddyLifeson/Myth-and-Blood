@@ -2251,6 +2251,8 @@ const Game = (() => {
   function triggerMoraleBreak(unit, reason) {
     if (!isMoraleCombatUnit(unit) || unit.fleeing || unit.demoralized || unit.retreatingToMed)
       return;
+    if (unit.team === 'enemy' && (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilOperative(unit)))
+      return;
     if (unit.team === 'player') {
       GS.moraleCascadeState =
         GameDepth?.recordMoraleCascade({ ...GS.moraleCascadeState, tick: GS.updateTick }, true) ||
@@ -2563,12 +2565,18 @@ const Game = (() => {
       const closeWitness =
         unitDistSq(observer, deadUnit) < MORALE_WITNESS_CLOSE * MORALE_WITNESS_CLOSE;
       observer.witnessDeaths = (observer.witnessDeaths || 0) + 1;
+      const enemyWitness = observer.team === 'enemy';
       let moraleLoss = closeWitness ? 3 : 2;
+      if (enemyWitness) {
+        moraleLoss = closeWitness
+          ? DIFFICULTY_TUNING.enemyWitnessLossClose
+          : DIFFICULTY_TUNING.enemyWitnessLossFar;
+      }
       if (isGeneralDeath) moraleLoss += 3;
       if (isEliteDeath && observer.team === 'enemy') moraleLoss += 1;
       observer.morale = Math.max(0, observer.morale - moraleLoss);
       if (
-        observer.witnessDeaths >= MORALE_WITNESS_BREAK_COUNT ||
+        (!enemyWitness && observer.witnessDeaths >= MORALE_WITNESS_BREAK_COUNT) ||
         observer.morale <= moraleBreakThreshold(observer)
       ) {
         triggerMoraleBreak(observer, 'witness');
@@ -3637,8 +3645,8 @@ const Game = (() => {
 
   function calcDamage(unit, target, baseRand = 10) {
     let dmg = unit.damage + Math.floor(Math.random() * baseRand);
-    dmg += Math.floor((unit.experience || 0) / 3) * 2;
-    dmg += (unit.vetTier || 0) * 5;
+    dmg += getExperienceDamageBonus(unit.experience);
+    dmg += (unit.vetTier || 0) * DIFFICULTY_TUNING.tierFlatDamage;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
       const aura = getGeneralAura();
       const typeMult =
@@ -13497,6 +13505,7 @@ const Game = (() => {
     if (
       !nonCombat &&
       !Roster.blocksPin(unit) &&
+      !unit.isNamedBoss &&
       !(unit.team === 'enemy' && (unit.pinImmuneUntil || 0) > GS.updateTick) &&
       Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
     ) {
@@ -13569,7 +13578,8 @@ const Game = (() => {
         SiegeLoop.onUnitDeath(unit, killer, siegeCtx);
         Roster.onDeath(unit, killer, siegeCtx);
         if (killer) {
-          killer.experience = (killer.experience || 0) + 2 + SiegeLoop.killXpBonus();
+          killer.experience =
+            (killer.experience || 0) + DIFFICULTY_TUNING.xpPerKill + SiegeLoop.killXpBonus();
           if (svc('Legacy')) svc('Legacy').recordKill(killer.type, unit.type);
           if (typeof FoundationalMedievalLayer !== 'undefined') {
             FoundationalMedievalLayer.recordKill(killer.type, GS.wave);
@@ -14419,7 +14429,7 @@ const Game = (() => {
         unit.actionTimer = (unit.actionTimer || 0) - 1;
         if (unit.actionTimer <= 0 && unit.attackAnimTimer <= 0) {
           fireWeapon(unit, foe);
-          const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
+          const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
           unit.actionTimer = Math.max(
             12,
             Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -14451,7 +14461,7 @@ const Game = (() => {
       unit.actionTimer--;
       if (unit.actionTimer <= 0) {
         fireWeapon(unit, target);
-        const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
+        const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
         unit.actionTimer = Math.max(
           12,
           Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -15358,11 +15368,8 @@ const Game = (() => {
         if (dist < p.speed) {
           const hit = getUnitById(p.targetId);
           const shooter = p.sourceId ? getUnitById(p.sourceId) : null;
-          const projHit =
-            p.team === 'enemy' && shooter
-              ? Math.max(4, p.accuracy - getSightPenaltyForUnit(shooter))
-              : p.accuracy;
-          if (hit?.hp > 0 && Math.random() * 100 <= projHit) {
+          // p.accuracy already paid the enemy sight penalty when the shot was fired.
+          if (hit?.hp > 0 && Math.random() * 100 <= p.accuracy) {
             // Prefer live shooter so vet/aura/crossover/WWE modifiers apply (not a bare damage stub).
             const src =
               shooter && shooter.hp > 0

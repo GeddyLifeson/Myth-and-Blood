@@ -25,6 +25,45 @@ const ATTACK_SIDE_INTERVAL = 25;
 const ATTACK_SIDES = ['north', 'east', 'west', 'south'];
 /** Highest veteran rank index (Immortal / Saint of the Realm). */
 const MAX_VETERAN_TIER = 6;
+/** Veteran, enemy morale and boss numbers in one place; every veteran term is capped. */
+const DIFFICULTY_TUNING = {
+  // Attack interval = attackBase - attackPerXp * min(attackXpCap, experience), plus 0-19.
+  attackBase: 90,
+  attackPerXp: 3,
+  attackXpCap: 14,
+  // Experience adds floor(min(xpDamageCap, experience) / xpDamageDivisor) damage.
+  xpDamageDivisor: 3,
+  xpDamageCap: 30,
+  xpPerKill: 1,
+  // Star bumps stop after two gold stars; they keep fractions and add no range.
+  starBumpCap: 18,
+  // Per promotion tier.
+  tierHp: 1.12,
+  tierDamage: 1.1,
+  tierAccuracy: 3,
+  tierFlatDamage: 2,
+  // A healer, builder or courier ranks up every Nth working wave.
+  specialistWavesPerRank: 3,
+  healTierBase: 1.12,
+  healTierStep: 0.02,
+  healRangeBase: 1.04,
+  healRangeStep: 0.01,
+  // Morale an enemy loses per death it sees, close and far. Only soldiers break on three.
+  enemyWitnessLossClose: 2,
+  enemyWitnessLossFar: 1,
+  // Health multiplier for a named boss, on top of the wave scale.
+  namedBossHpMult: 3,
+};
+
+function getAttackBaseTicks(experience) {
+  const t = DIFFICULTY_TUNING;
+  return t.attackBase - t.attackPerXp * Math.min(t.attackXpCap, experience || 0);
+}
+
+function getExperienceDamageBonus(experience) {
+  const t = DIFFICULTY_TUNING;
+  return Math.floor(Math.min(t.xpDamageCap, experience || 0) / t.xpDamageDivisor);
+}
 /** Extra specialist abilities unlock after this many lifetime gold stars. */
 const SPECIALIST_LATE_ABILITY_GOLD_STARS = 3;
 /**
@@ -1007,16 +1046,9 @@ function scaleUnitHp(unit, mult) {
   unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
 }
 
-function bumpScaledStat(current, mult, minGain = 1) {
+function bumpScaledStat(current, mult) {
   if (!current || current <= 0) return current;
-  const next = Math.floor(current * mult);
-  return Math.max(current + minGain, next);
-}
-
-function bumpUnitRange(unit, mult) {
-  if (!unit.baseRange && !unit.range) return;
-  if (unit.baseRange) unit.baseRange = Math.floor(unit.baseRange * mult);
-  if (!unit.garrisoned) unit.range = Math.floor((unit.baseRange || unit.range) * mult);
+  return Math.round(current * mult * 10) / 10;
 }
 
 function bumpUnitMorale(unit, amount) {
@@ -1028,6 +1060,8 @@ function bumpUnitMorale(unit, amount) {
 /** Incremental buff per bronze/silver/gold — all roles, scaled to specialty. */
 function applyVeteranStarBump(unit, starTier) {
   if (!unit || unit.team !== 'player' || unit.isDoomslayer) return;
+  unit.starBumps = (unit.starBumps || 0) + 1;
+  if (unit.starBumps > DIFFICULTY_TUNING.starBumpCap) return;
   ensureHealerStats(unit);
   const role = getUnitVeteranRole(unit);
   const s = veteranStarScale(starTier);
@@ -1036,7 +1070,6 @@ function applyVeteranStarBump(unit, starTier) {
   switch (role) {
     case 'healer':
       unit.healAmount = bumpScaledStat(unit.healAmount || 20, s.primary);
-      if (unit.range) unit.range = Math.floor(unit.range * s.secondary);
       bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
       break;
     case 'builder':
@@ -1072,8 +1105,7 @@ function applyVeteranStarBump(unit, starTier) {
     case 'siege':
       unit.siegeMult = (unit.siegeMult || 1) * s.primary;
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.secondary);
-      if (unit.meleeRange)
-        unit.meleeRange = Math.max(unit.meleeRange + 1, Math.floor(unit.meleeRange * s.secondary));
+      if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * s.secondary);
       break;
     case 'ranged':
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.primary);
@@ -1081,7 +1113,6 @@ function applyVeteranStarBump(unit, starTier) {
         68,
         unit.accuracy + (starTier === 'gold' ? 2 : starTier === 'silver' ? 1 : 0)
       );
-      bumpUnitRange(unit, s.secondary);
       break;
     default:
       if (unit.damage > 0) unit.damage = bumpScaledStat(unit.damage, s.primary);
@@ -1161,6 +1192,14 @@ function ensureHealerStats(unit) {
   }
 }
 
+function applyFighterTierStats(unit, hpRatio) {
+  const t = DIFFICULTY_TUNING;
+  unit.maxHp = Math.floor(unit.maxHp * t.tierHp);
+  unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
+  unit.damage = bumpScaledStat(unit.damage, t.tierDamage);
+  unit.accuracy = Math.min(68, unit.accuracy + t.tierAccuracy);
+}
+
 function applyVeteranTierStep(unit, tier) {
   const t = tier;
   ensureHealerStats(unit);
@@ -1171,8 +1210,13 @@ function applyVeteranTierStep(unit, tier) {
     case 'healer':
       unit.maxHp = Math.floor(unit.maxHp * (1.18 + t * 0.05));
       unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-      unit.healAmount = Math.floor((unit.healAmount || 20) * (1.28 + t * 0.06));
-      unit.range = Math.floor(unit.range * (1.1 + t * 0.03));
+      unit.healAmount = Math.floor(
+        (unit.healAmount || 20) *
+          (DIFFICULTY_TUNING.healTierBase + t * DIFFICULTY_TUNING.healTierStep)
+      );
+      unit.range = Math.floor(
+        unit.range * (DIFFICULTY_TUNING.healRangeBase + t * DIFFICULTY_TUNING.healRangeStep)
+      );
       unit.speed = Math.round(unit.speed * (1.06 + t * 0.02) * 100) / 100;
       bumpUnitMorale(unit, 5);
       break;
@@ -1201,40 +1245,22 @@ function applyVeteranTierStep(unit, tier) {
       bumpUnitMorale(unit, 5 + t);
       break;
     case 'cavalry':
-      unit.maxHp = Math.floor(unit.maxHp * (1.2 + t * 0.038));
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-      unit.damage = Math.floor(unit.damage * (1.22 + t * 0.035));
+      applyFighterTierStats(unit, hpRatio);
       unit.speed = Math.round(unit.speed * (1.14 + t * 0.03) * 100) / 100;
-      unit.accuracy = Math.min(68, unit.accuracy + 4 + t * 2);
-      if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * (1.06 + t * 0.012));
       bumpUnitMorale(unit, 4);
       break;
     case 'siege':
-      unit.maxHp = Math.floor(unit.maxHp * (1.22 + t * 0.04));
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-      unit.damage = Math.floor(unit.damage * (1.22 + t * 0.032));
+      applyFighterTierStats(unit, hpRatio);
       unit.siegeMult = (unit.siegeMult || 1) * (1.18 + t * 0.04);
-      if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * (1.05 + t * 0.01));
       bumpUnitMorale(unit, 3);
       break;
     case 'ranged':
-      unit.maxHp = Math.floor(unit.maxHp * (1.18 + t * 0.035));
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-      unit.damage = Math.floor(unit.damage * (1.22 + t * 0.032));
-      unit.accuracy = Math.min(68, unit.accuracy + 6 + t * 2);
-      if (unit.baseRange) {
-        unit.baseRange = Math.floor(unit.baseRange * (1.06 + t * 0.012));
-        if (!unit.garrisoned) unit.range = unit.baseRange;
-      }
+      applyFighterTierStats(unit, hpRatio);
       bumpUnitMorale(unit, 3);
       break;
     default:
-      unit.maxHp = Math.floor(unit.maxHp * (1.24 + t * 0.04));
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-      unit.damage = Math.floor(unit.damage * (1.2 + t * 0.03));
+      applyFighterTierStats(unit, hpRatio);
       unit.speed = Math.round(unit.speed * (1.1 + t * 0.02) * 100) / 100;
-      unit.accuracy = Math.min(68, unit.accuracy + 5 + t * 2);
-      if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * (1.05 + t * 0.01));
       bumpUnitMorale(unit, 4);
       break;
   }
@@ -1253,10 +1279,12 @@ function syncVeteranStatsToTier(unit) {
   return unit;
 }
 
-/** Specialists earn one full rank (V-tier + stats) per wave when they heal, build, or dispatch. */
+/** Specialists earn a full rank (V-tier + stats) every third wave they heal, build, or dispatch. */
 function trySpecialistRank(unit) {
   if (!isSpecialistUnit(unit) || unit.specialistRankedThisWave) return null;
   unit.specialistRankedThisWave = true;
+  unit.specialistWaves = (unit.specialistWaves || 0) + 1;
+  if (unit.specialistWaves % DIFFICULTY_TUNING.specialistWavesPerRank) return null;
   if ((unit.vetTier || 0) >= MAX_VETERAN_TIER) {
     applyVeteranStarBump(unit, 'gold');
     // Still credit a gold star toward late abilities at max rank.
@@ -1452,6 +1480,20 @@ const MID_PRESSURE_UNTIL = 20;
 const MID_PRESSURE_EXTRA = 2;
 const EARLY_HP_EXTRA = 0.02;
 const EARLY_DMG_EXTRA = 0.015;
+const EARLY_HP_PER_WAVE = 0.03;
+const EARLY_DMG_PER_WAVE = 0.025;
+
+/** Health and damage scale every enemy type gets at this wave; getWaveConfig and spawning share it. */
+function getEnemyWaveScale(waveNum) {
+  const eased = academyEase(waveNum);
+  const post = postAcademyEase(waveNum);
+  const early = Math.min(40, Math.max(0, waveNum - 2));
+  const surge = Math.min(MID_PRESSURE_UNTIL, early);
+  return {
+    hp: 1 + eased * 3.15 + post * 1.85 + early * EARLY_HP_PER_WAVE + surge * EARLY_HP_EXTRA,
+    dmg: 1 + eased * 1.95 + post * 1.15 + early * EARLY_DMG_PER_WAVE + surge * EARLY_DMG_EXTRA,
+  };
+}
 
 function getWaveConfig(waveNum) {
   const idx = Math.min(Math.max(0, waveNum - 1), Waves.length - 1);
@@ -1483,10 +1525,7 @@ function getWaveConfig(waveNum) {
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
   // Early pressure: enemies used to stay at wave-1 strength for the first twenty waves.
-  const early = Math.min(40, Math.max(0, waveNum - 2));
-  const surge = Math.min(MID_PRESSURE_UNTIL, early);
-  const hpScale = 1 + eased * 3.15 + post * 1.85 + early * 0.03 + surge * EARLY_HP_EXTRA;
-  const dmgScale = 1 + eased * 1.95 + post * 1.15 + early * 0.025 + surge * EARLY_DMG_EXTRA;
+  const { hp: hpScale, dmg: dmgScale } = getEnemyWaveScale(waveNum);
   const boss = waveNum % 10 === 0;
 
   return { count, pool, interval, boss, hpScale, dmgScale };
