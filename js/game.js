@@ -6265,10 +6265,7 @@ const Game = (() => {
     if (tw === ACADEMY_ERA_WAVE) {
       announceAcademyEra();
     } else {
-      showMessage(
-        `Academy Era — wave ${tw}. Train via academies and hold the one field.`,
-        380
-      );
+      showMessage(`Academy Era — wave ${tw}. Train via academies and hold the one field.`, 380);
       svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2, 'ACADEMY ERA', '#c0a040');
     }
     refreshUnitCounts();
