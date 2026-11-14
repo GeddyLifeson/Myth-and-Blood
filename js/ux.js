@@ -830,14 +830,23 @@ const UX = (() => {
     AudioEngine?.SFX?.click?.();
   }
 
+  let pauseSlotsDrawn = false;
+
   function updatePauseMenu(gs) {
     const screen = document.getElementById('pause-screen');
     if (!screen) return;
     const shouldShow = gs.state === 'playing' && gs.paused && pauseOpen && !pauseOverlayHidden;
     screen.classList.toggle('active', shouldShow);
-    if (!shouldShow) return;
+    if (!shouldShow) {
+      pauseSlotsDrawn = false;
+      return;
+    }
 
-    if (typeof SaveManager !== 'undefined') SaveManager.renderPauseSlots();
+    // Drawn once per opening: redrawing every tick drops the focus from a slot button.
+    if (!pauseSlotsDrawn && typeof SaveManager !== 'undefined') {
+      SaveManager.renderPauseSlots();
+      pauseSlotsDrawn = true;
+    }
 
     const stats = document.getElementById('pause-stats');
     if (stats) {

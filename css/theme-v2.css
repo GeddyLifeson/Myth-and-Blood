@@ -3430,14 +3430,13 @@ body.ui-v2 #result-title,
   letter-spacing: 0.04em;
   line-height: 1.1;
   text-align: left;
-  text-transform: none;
+  text-transform: uppercase;
   color: var(--blood);
   text-shadow: 2px 2px 0 #000;
   animation: none;
 }
-.spoils-title,
 .spoils-sub {
-  text-align: center;
+  text-align: left;
 }
 /* Sub-lines under a title */
 body.ui-v2 .ency-subtitle,

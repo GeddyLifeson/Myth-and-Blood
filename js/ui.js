@@ -297,6 +297,78 @@ const UI = (() => {
     });
   }
 
+  /**
+   * Whichever modal is showing owns the keyboard: focus moves into it when it opens, Tab stays
+   * inside it, and focus goes back to where it was when it closes.
+   */
+  function initModalFocus() {
+    const SELECTOR =
+      '.screen, #spoils-panel, #key-sheet, .menu-sheet, .research-panel, .faction-intel-panel';
+    const FOCUSABLE =
+      'button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
+    const shown = (el) =>
+      el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) &&
+      getComputedStyle(el).pointerEvents !== 'none';
+    const topModal = () => [...document.querySelectorAll(SELECTOR)].filter(shown).pop() || null;
+    const stops = (modal) =>
+      [...modal.querySelectorAll(FOCUSABLE)].filter(
+        (el) => !el.disabled && el.tabIndex >= 0 && shown(el)
+      );
+    let current = null;
+    let returnTo = null;
+    let queued = false;
+
+    function sync() {
+      queued = false;
+      const modal = topModal();
+      if (modal === current) return;
+      if (modal) {
+        if (!current) returnTo = document.activeElement;
+        const list = stops(modal);
+        (modal.querySelector('.menu-btn.primary') || list[0])?.focus({ preventScroll: true });
+      } else if (returnTo?.isConnected && shown(returnTo)) {
+        returnTo.focus({ preventScroll: true });
+        returnTo = null;
+      } else {
+        document.activeElement?.blur?.();
+        returnTo = null;
+      }
+      current = modal;
+    }
+
+    new MutationObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(sync);
+    }).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'hidden', 'style'],
+    });
+
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (
+          e.key !== 'Tab' ||
+          !current ||
+          (typeof InPageDialog !== 'undefined' && InPageDialog.isOpen())
+        )
+          return;
+        const list = stops(current);
+        if (!list.length) return;
+        const at = list.indexOf(document.activeElement);
+        const step = e.shiftKey ? -1 : 1;
+        const to =
+          at < 0 ? (e.shiftKey ? list.length - 1 : 0) : (at + step + list.length) % list.length;
+        e.preventDefault();
+        e.stopPropagation();
+        list[to].focus();
+      },
+      true
+    );
+  }
+
   // ---- open list and "Locked" group of each pane ------------------------------------------
   /** Every panel button the model places: { btn, kind, id, marker, reasonEl, at, want }. */
   const panelItems = [];
@@ -433,6 +505,12 @@ const UI = (() => {
   /** The key bound to a spell or building while nothing is selected, or null. */
   function keyFor(action, id) {
     return typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', action, id) : null;
+  }
+
+  /** Text cut at n characters with an ellipsis, never mid-word silently. */
+  function clip(text, n) {
+    const t = String(text);
+    return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t;
   }
 
   function shortKey(key) {
@@ -784,6 +862,7 @@ const UI = (() => {
     document.body.classList.add('ui-v2');
     initSidePanelTabs();
     initKeyboardReach();
+    initModalFocus();
     MetaProgress.load();
     if (typeof Achievements !== 'undefined') Achievements.init();
     if (typeof Encyclopedia !== 'undefined') Encyclopedia.init();
@@ -2226,19 +2305,19 @@ const UI = (() => {
       // Prefer short structured brief over nextWaveIntel (which piles meta notes).
       const briefParts = [];
       if (gs.namedBoss) briefParts.push(String(gs.namedBoss));
-      else if (bossPack) briefParts.push(String(bossPack).slice(0, 28));
-      if (mfNote) briefParts.push(String(mfNote).slice(0, 28));
-      else if (mapNote) briefParts.push(String(mapNote).slice(0, 28));
-      else if (repNote) briefParts.push(String(repNote).slice(0, 28));
+      else if (bossPack) briefParts.push(clip(bossPack, 60));
+      if (mfNote) briefParts.push(clip(mfNote, 60));
+      else if (mapNote) briefParts.push(clip(mapNote, 60));
+      else if (repNote) briefParts.push(clip(repNote, 60));
       else if (pactNote || biomeNote || hazNote || wildNote) {
-        briefParts.push(String(pactNote || biomeNote || hazNote || wildNote).slice(0, 28));
+        briefParts.push(clip(pactNote || biomeNote || hazNote || wildNote, 60));
       }
       if (!briefParts.length && gs.nextWaveIntel) {
         // Fallback: first clause only (before meta · soup)
-        briefParts.push(String(gs.nextWaveIntel).split(' · ')[0].slice(0, 40));
+        briefParts.push(clip(String(gs.nextWaveIntel).split(' · ')[0], 60));
       }
       const intel = briefParts.filter(Boolean).join(' · ');
-      intelEl.textContent = intel ? intel.slice(0, 48) + (intel.length > 48 ? '…' : '') : '-';
+      intelEl.textContent = intel ? clip(intel, 140) : '-';
       intelEl.title = intel || '';
       if (mf?.mode) {
         intelEl.className =
