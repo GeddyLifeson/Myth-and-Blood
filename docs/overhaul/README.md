@@ -28,6 +28,22 @@ The reports describe the code as it was on that date. Line numbers drift as the 
 
 Sound and music passes run alongside each step.
 
+## Hotkeys and keybinds
+
+Added by the owner after the audit. Every action gets a key, and keys depend on the state the
+game is in:
+
+- A key map per state: main menu, night (deploy and build), day (battle), a unit selected, a
+  building selected, placement armed, pause, spoils choice, game over, creative mode.
+- No key does two things in the same state. The audit found `U` and `P` doubled, `V`
+  unreachable and a dead speed binding ([screens-ui.md](screens-ui.md)).
+- Deploy and build keys follow what is unlocked, so new troops such as the Crossbowman are not
+  left without one.
+- Rebinding in settings, saved per browser, with a reset to defaults.
+- The current key for each action shown on its button and tooltip, and a key sheet on `?` that
+  lists only the keys that work in the current state.
+- Controller and touch equivalents where they fit.
+
 ## Decisions waiting on the owner
 
 - Whether the game past wave 100 (era resets) stays.
