@@ -15539,6 +15539,7 @@ const Game = (() => {
     const light = getDayLightLevel();
     const fieldArt = typeof FieldArt !== 'undefined' ? FieldArt : null;
     const buildingArt = typeof BuildingArt !== 'undefined' ? BuildingArt : null;
+    const propArt = typeof PropArt !== 'undefined' ? PropArt : null;
     sanitizeCameraState();
     syncCameraTransform();
     if (!isMapOverlappingViewport()) clampCameraToBounds();
@@ -15622,6 +15623,7 @@ const Game = (() => {
       if (gfxQ?.drawHazards !== false) {
         for (const h of GS.hazards) {
           if (!isInView(h.x, h.y, h.radius || 30)) continue;
+          if (propArt && propArt.drawHazard(GS.ctx, h, GS.updateTick)) continue;
           svc('SpriteGen').drawHazard?.(GS.ctx, h);
         }
       }
@@ -15646,9 +15648,11 @@ const Game = (() => {
       }
 
       if (gfxQ?.drawDecor !== false) {
+        if (propArt) propArt.drawWrecks(GS.ctx, GS.updateTick, isInView);
         for (const d of GS.decorations) {
           if (!isInView(d.x, d.y, d.size || 16)) continue;
           if (fieldArt && fieldArt.drawDecor(GS.ctx, d)) continue;
+          if (propArt && propArt.drawDecor(GS.ctx, d, GS.updateTick)) continue;
           if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);

@@ -49,8 +49,8 @@ const FieldArt = (() => {
     plains: { base: '#4d3e2f', lo: '#3a2d22', hi: '#66543d', tuft: '#5f6a3c' },
     forest: { base: '#35392a', lo: '#23271c', hi: '#4a5234', tuft: '#56683a' },
     mountains: { base: '#57544d', lo: '#3d3b37', hi: '#77736a', tuft: '#6a6a55' },
-    corrupted: { base: '#2c2230', lo: '#17111a', hi: '#463449', tuft: '#4a3a52' },
-    hellscape: { base: '#2a1614', lo: '#120a0a', hi: '#4a211b', tuft: '#5a2a20' },
+    corrupted: { base: '#372b3c', lo: '#1e1622', hi: '#524058', tuft: '#5a4862' },
+    hellscape: { base: '#3b1e19', lo: '#1c0f0d', hi: '#5c2a21', tuft: '#6a3226' },
   };
   const BIOME_RANK = { plains: 0, forest: 1, mountains: 2, corrupted: 3, hellscape: 4 };
 
@@ -383,16 +383,18 @@ const FieldArt = (() => {
       mottle(g, w, h, pal, rnd, 1.4);
       hatchPatches(g, w, h, rnd, Math.round((w * h) / 380), 0.75);
       // cracks: black with an ember line down the middle
-      for (let i = 0, n = Math.round((w * h) / 1500); i < n; i++) {
+      for (let i = 0, n = Math.round((w * h) / 2600); i < n; i++) {
         const x = rnd() * w;
         const y = rnd() * h;
         const a = rnd() * TAU;
         const len = 22 + rnd() * 44;
         const seed = Math.floor(rnd() * 1e9);
         crack(g, x, y, a, len, mulberry(seed), 2, 3, INK);
-        crack(g, x, y, a, len, mulberry(seed), 2, 1.1, '#c2371c');
-        g.globalAlpha = 0.8;
-        crack(g, x, y, a, len * 0.6, mulberry(seed), 0, 0.5, '#f0b060');
+        // kept dull and thin: the cracks are ground, and must sit behind the red rope,
+        // fire pits and blood on top of them
+        crack(g, x, y, a, len, mulberry(seed), 2, 0.9, '#8f2814');
+        g.globalAlpha = 0.6;
+        crack(g, x, y, a, len * 0.5, mulberry(seed), 0, 0.4, '#d88a48');
         g.globalAlpha = 1;
       }
       // cinders
@@ -534,27 +536,66 @@ const FieldArt = (() => {
       lg.fillStyle = BIOME[b.biome].base;
       lg.fillRect(0, 0, w, h);
       PAINT[b.biome](lg, w, h, mulberry(97 + (BIOME_RANK[b.biome] ?? 0) * 131 + w));
-      // mask: the band with a ragged, feathered edge
       const mask = makeCanvas(w * S, h * S);
       const mg = mask.getContext('2d');
       mg.setTransform(S, 0, 0, S, 0, 0);
+      // mask: the band with a ragged, hard edge, like a torn sheet laid on the one below
       const rnd = mulberry(Math.round(y0 * 7 + y1 * 3 + x0) + 5);
-      mg.filter = 'blur(7px)';
+      const edge = [];
+      let drift = 0;
+      const jit = () => {
+        drift = drift * 0.6 + (rnd() - 0.5) * 9;
+        return drift + (rnd() - 0.5) * 3;
+      };
+      for (let x = x0; x <= x1; x += 5) edge.push(x, y0 + jit());
+      for (let y = y0; y <= y1; y += 5) edge.push(x1 + jit(), y);
+      for (let x = x1; x >= x0; x -= 5) edge.push(x, y1 + jit());
+      for (let y = y1; y >= y0; y -= 5) edge.push(x0 + jit(), y);
+      const tracePath = (c) => {
+        c.beginPath();
+        c.moveTo(edge[0], edge[1]);
+        for (let k = 2; k < edge.length; k += 2) c.lineTo(edge[k], edge[k + 1]);
+        c.closePath();
+      };
       mg.fillStyle = '#fff';
-      mg.beginPath();
-      mg.moveTo(x0, y0);
-      for (let x = x0; x <= x1; x += 9) mg.lineTo(x, y0 + (rnd() - 0.5) * 16);
-      for (let y = y0; y <= y1; y += 9) mg.lineTo(x1 + (rnd() - 0.5) * 16, y);
-      for (let x = x1; x >= x0; x -= 9) mg.lineTo(x, y1 + (rnd() - 0.5) * 16);
-      for (let y = y1; y >= y0; y -= 9) mg.lineTo(x0 + (rnd() - 0.5) * 16, y);
-      mg.closePath();
+      tracePath(mg);
       mg.fill();
-      mg.filter = 'none';
       lg.setTransform(1, 0, 0, 1, 0, 0);
       lg.globalCompositeOperation = 'destination-in';
       lg.drawImage(mask, 0, 0);
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.drawImage(layer, 0, 0);
+      g.setTransform(S, 0, 0, S, 0, 0);
+      // the seam: a broken ink line with a thinner echo inside it, and short ticks across
+      g.save();
+      g.lineJoin = 'round';
+      g.lineCap = 'round';
+      g.strokeStyle = INK;
+      g.globalAlpha = 0.78;
+      g.lineWidth = 1.5;
+      g.setLineDash([17, 4, 6, 5]);
+      tracePath(g);
+      g.stroke();
+      g.setLineDash([]);
+      g.globalAlpha = 0.5;
+      g.lineWidth = 0.7;
+      g.beginPath();
+      for (let k = 0; k + 3 < edge.length; k += 2) {
+        if (rnd() > 0.45) continue;
+        const ax = edge[k];
+        const ay = edge[k + 1];
+        const dx = edge[k + 2] - ax;
+        const dy = edge[k + 3] - ay;
+        const len = Math.hypot(dx, dy) || 1;
+        // normal pointing into the band (the outline runs clockwise)
+        const nx = -dy / len;
+        const ny = dx / len;
+        const t = 2.5 + rnd() * 3.5;
+        g.moveTo(ax + nx * 1.2, ay + ny * 1.2);
+        g.lineTo(ax + nx * t + dx * 0.3, ay + ny * t + dy * 0.3);
+      }
+      g.stroke();
+      g.restore();
       g.setTransform(S, 0, 0, S, 0, 0);
     }
 
@@ -922,8 +963,13 @@ const FieldArt = (() => {
     g.setTransform(LINE_SCALE, 0, 0, LINE_SCALE, 0, LINE_UP * LINE_SCALE);
     const rnd = mulberry(w * 13 + 3);
     // trodden strip with hatching under the stakes
-    g.globalAlpha = 0.5;
+    // a dark bed behind the whole fence, so the rope reads on red, violet or pale ground
     g.fillStyle = INK;
+    g.globalAlpha = 0.16;
+    g.fillRect(0, -17, w, 25);
+    g.globalAlpha = 0.3;
+    g.fillRect(0, -13.5, w, 12);
+    g.globalAlpha = 0.5;
     g.fillRect(0, -1.5, w, 5.5);
     g.globalAlpha = 0.6;
     g.strokeStyle = INK;
@@ -957,11 +1003,20 @@ const FieldArt = (() => {
         }
         g.lineTo(x1, -11.5);
       }
-      g.strokeStyle = pass === 0 ? INK : '#c0141e';
-      g.lineWidth = pass === 0 ? 3.2 : 1.7;
+      g.strokeStyle = pass === 0 ? INK : '#d01822';
+      g.lineWidth = pass === 0 ? 3.8 : 2;
       g.lineJoin = 'round';
       g.lineCap = 'round';
       g.stroke();
+      if (pass === 1) {
+        // bone flecks along the rope: the binding, and a light edge against dark ground
+        g.setLineDash([1.2, 5.2]);
+        g.strokeStyle = BONE;
+        g.lineWidth = 2;
+        g.lineCap = 'butt';
+        g.stroke();
+        g.setLineDash([]);
+      }
     }
     // posts: stout, bone-capped, bound in red
     for (const p of linePosts) {
@@ -1118,7 +1173,7 @@ const FieldArt = (() => {
   }
 
   // ------------------------------------------------------------------- light
-  const LIGHT_MAX = 110;
+  const LIGHT_MAX = 170;
   const lights = new Float32Array(LIGHT_MAX * 4);
   let lightN = 0;
   let mapCv = null;
@@ -1264,6 +1319,24 @@ const FieldArt = (() => {
       const worldH = mapH - 50;
       const ly = lineY(worldH);
       for (let i = 1; i < linePosts.length; i += 2) addLight(linePosts[i], ly - 20, 44, 1);
+      // Your own soldiers come first and are lit in every quality mode: a moonlit pool under
+      // each one, wherever it stands, so the army never drops out of sight in the dark.
+      if (env.units) {
+        const units = env.units;
+        for (let i = 0; i < units.length && lightN < LIGHT_MAX - 60; i++) {
+          const u = units[i];
+          if (u.hp <= 0 || u.team !== 'player') continue;
+          const burning = u.burnUntil && u.burnUntil > tick;
+          if (u.isGeneral) addLight(u.x, u.y, 48, 1);
+          else if (isCaster(u.type)) addLight(u.x, u.y, 38, 3);
+          else addLight(u.x, u.y, burning ? 36 : 30, burning ? 1 : 4);
+        }
+      }
+      // Buried mines keep a faint pool too, so the Sapper's work can be found at night.
+      if (typeof SapperKit !== 'undefined' && SapperKit.getMines) {
+        const mines = SapperKit.getMines();
+        for (let i = 0; i < mines.length && i < 24; i++) addLight(mines[i].x, mines[i].y, 17, 4);
+      }
       if (typeof BuildingArt !== 'undefined' && env.buildings) {
         for (const b of env.buildings) {
           if (b.hp > 0) BuildingArt.lightsFor(b, out);
@@ -1282,11 +1355,8 @@ const FieldArt = (() => {
           const u = units[i];
           if (u.hp <= 0) continue;
           const burning = u.burnUntil && u.burnUntil > tick;
-          if (u.team === 'player') {
-            if (u.isGeneral) addLight(u.x, u.y, 46, 1);
-            else if (isCaster(u.type)) addLight(u.x, u.y, 36, 3);
-            else addLight(u.x, u.y, burning ? 34 : 22, burning ? 1 : 4);
-          } else if (burning) addLight(u.x, u.y, 30, 1);
+          if (u.team === 'player') continue;
+          if (burning) addLight(u.x, u.y, 30, 1);
           else if (u.isBoss) addLight(u.x, u.y, 40, 2);
           else if (isCaster(u.type)) addLight(u.x, u.y, 24, 3);
         }
@@ -1327,7 +1397,7 @@ const FieldArt = (() => {
             ? 1
             : 1 + Math.sin(tick * 0.21 + lights[j] * 0.37 + lights[j + 1] * 0.11) * 0.05;
         const r = lights[j + 2] * wob * ms;
-        g.globalAlpha = (kind === 4 ? 0.62 : kind === 2 ? 0.7 : 0.92) * Math.min(1, flick * 1.4);
+        g.globalAlpha = (kind === 4 ? 0.84 : kind === 2 ? 0.7 : 0.92) * Math.min(1, flick * 1.4);
         g.drawImage(holeCv, lights[j] * ms - r, lights[j + 1] * ms - r, r * 2, r * 2);
       }
       g.globalCompositeOperation = 'source-over';
@@ -1429,35 +1499,42 @@ const FieldArt = (() => {
       const storm = type === 'storm';
       ctx.fillStyle = storm ? 'rgba(10,12,22,0.26)' : 'rgba(14,16,26,0.15)';
       ctx.fillRect(0, 0, w, h);
-      const n = Math.round(((w * h) / (storm ? 1500 : 2400)) * dense);
-      const len = storm ? 15 : 11;
+      const n = Math.round(((w * h) / (storm ? 900 : 1300)) * dense);
+      const len = storm ? 19 : 15;
       const slant = storm ? -0.42 : -0.22;
       const speed = storm ? 11 : 8;
       ctx.lineCap = 'round';
-      for (let pass = 0; pass < 2; pass++) {
+      // Each streak is an ink stroke with a bone one laid over it, so it shows on pale
+      // ground as well as dark; a third of them are nearer and heavier.
+      const path = (from, step) => {
         ctx.beginPath();
-        for (let i = pass; i < n; i += 2) {
+        for (let i = from; i < n; i += step) {
+          const near = i % 3 === 0 ? 1.35 : 1;
           const sx = frac(i * 0.6180339 + 0.13) * (w + 80);
           const ph = frac(i * 0.7548776);
-          const y = frac(ph + (tick * speed * (0.8 + ph * 0.4)) / (h + 40)) * (h + 40) - 20;
+          const y = frac(ph + (tick * speed * near * (0.8 + ph * 0.4)) / (h + 40)) * (h + 40) - 20;
           const x = sx + (y - h) * slant - 20;
-          seg(ctx, x, y, x + len * slant, y + len);
+          seg(ctx, x, y, x + len * near * slant, y + len * near);
         }
-        ctx.strokeStyle = pass === 0 ? 'rgba(228,220,196,0.72)' : 'rgba(160,170,190,0.55)';
-        ctx.lineWidth = pass === 0 ? 1 : 0.7;
-        ctx.stroke();
-      }
+      };
+      path(0, 1);
+      ctx.strokeStyle = 'rgba(7,5,10,0.5)';
+      ctx.lineWidth = 2.2;
+      ctx.stroke();
+      ctx.strokeStyle = 'rgba(236,232,216,0.9)';
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
       // splash rings where drops land
-      ctx.strokeStyle = 'rgba(228,220,196,0.4)';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = 'rgba(236,232,216,0.7)';
+      ctx.lineWidth = 0.8;
       ctx.beginPath();
-      const rings = Math.round(n * 0.18);
+      const rings = Math.round(n * 0.16);
       for (let i = 0; i < rings; i++) {
         const life = frac(i * 0.37 + tick / 22);
         const gen = Math.floor(i * 0.37 + tick / 22);
         const x = frac(Math.sin(i * 12.9898 + gen * 78.233) * 43758.5453) * w;
         const y = frac(Math.sin(i * 39.346 + gen * 11.135) * 24634.6345) * h;
-        const r = 0.6 + life * 3.2;
+        const r = 0.8 + life * 4;
         ctx.moveTo(x + r, y);
         ctx.ellipse(x, y, r, r * 0.45, 0, 0, TAU);
       }
@@ -1500,19 +1577,21 @@ const FieldArt = (() => {
     if (type === 'ash') {
       ctx.fillStyle = 'rgba(60,20,16,0.16)';
       ctx.fillRect(0, 0, w, h);
-      const n = Math.round(((w * h) / 1500) * dense);
-      for (let i = 0; i < n; i++) {
-        const ph = frac(i * 0.7548776);
-        const y = frac(ph + (tick * (0.35 + ph * 0.5)) / (h + 20)) * (h + 20) - 10;
-        const x = frac(i * 0.6180339) * w + Math.sin(tick * 0.02 + i * 1.3) * 10;
-        const s = 1 + frac(i * 0.37) * 1.5;
-        ctx.fillStyle =
-          i % 4 === 0
-            ? 'rgba(224,96,36,0.9)'
-            : i % 2
-              ? 'rgba(20,16,18,0.8)'
-              : 'rgba(150,140,130,0.7)';
-        ctx.fillRect(x, y, s, s * 0.8);
+      // Pale flakes with an ink shadow under each, embers among them; batched by colour.
+      const n = Math.round(((w * h) / 1000) * dense);
+      const cols = ['rgba(7,5,10,0.6)', 'rgba(214,206,192,0.95)', 'rgba(240,120,44,0.95)'];
+      for (let pass = 0; pass < 3; pass++) {
+        ctx.fillStyle = cols[pass];
+        for (let i = 0; i < n; i++) {
+          const ember = i % 5 === 0;
+          if (pass === 1 ? ember : pass === 2 ? !ember : false) continue;
+          const ph = frac(i * 0.7548776);
+          const y = frac(ph + (tick * (0.35 + ph * 0.5)) / (h + 20)) * (h + 20) - 10;
+          const x = frac(i * 0.6180339) * w + Math.sin(tick * 0.02 + i * 1.3) * 10;
+          const s = 1.5 + frac(i * 0.37) * 2;
+          if (pass === 0) ctx.fillRect(x - 0.5, y - 0.3, s + 1.2, s * 0.7 + 1.2);
+          else ctx.fillRect(x, y, s, s * 0.7);
+        }
       }
     }
   }

@@ -30,6 +30,7 @@ export const GAME_SCRIPTS = [
   'building-art.js',
   'building-art-types.js',
   'field-art.js',
+  'prop-art.js',
   'audio.js',
   'particles.js',
   'effects.js',

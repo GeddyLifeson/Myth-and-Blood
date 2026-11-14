@@ -2360,8 +2360,269 @@
     },
   };
 
+  /** A plinth that has been broken: a wedge out of the rim and a crack across the top. */
+  function brokenPlinth(g) {
+    ell(g, 0, 6, 12, 5.4, C.stoneDD);
+    ell(g, 0, 4.4, 9.6, 4.2, C.stoneD);
+    poly(g, [5, 9.4, 7.4, 5.4, 11.4, 6.4, 10, 10.4], C.dirtD, 0.9);
+    stroke(g, [-8, 3, -3, 5, -1, 3.4, 4, 5.6], 0.9);
+    ell(g, 13, 9.4, 1.8, 1.2, C.stoneD, 0.7);
+    ell(g, -12.4, 8.6, 1.4, 1, C.stone, 0.7);
+  }
+
+  function spill(g, x, y, rx, ry, col) {
+    g.globalAlpha = 0.85;
+    poly(
+      g,
+      [x - rx, y, x - rx * 0.5, y - ry, x + rx * 0.4, y - ry * 0.8, x + rx, y - ry * 0.1, x + rx * 0.6, y + ry, x - rx * 0.3, y + ry * 0.8],
+      col,
+      0.7
+    );
+    g.globalAlpha = 1;
+  }
+
+  /** What each stand looks like once it is wrecked: the same object, broken its own way. */
+  const PERK_RUINS = {
+    // the keg stove in, staves splayed, its brew run out red
+    jugger_nog(g) {
+      spill(g, 2, 7, 11, 3.4, BLOOD);
+      beam(g, -7, 5, -5, -1, 1.3);
+      for (const [a, len] of [[-2.5, 9], [-2.0, 11], [-1.5, 10], [-1.0, 11], [-0.5, 8]]) {
+        beam(g, 0, 2, Math.cos(a) * len, 2 + Math.sin(a) * len, 1.5, C.wood);
+      }
+      g.beginPath();
+      g.ellipse(4, 4, 6.4, 2.6, 0.2, 0, TAU);
+      g.lineWidth = 1.6;
+      g.strokeStyle = INK;
+      g.stroke();
+      g.lineWidth = 0.7;
+      g.strokeStyle = C.iron;
+      g.stroke();
+      rect(g, -11, 4, 3.6, 3, C.stoneL, 0.8);
+    },
+    // the brazier tipped over, one wing snapped off and lying in the ash
+    quick_revive(g, A) {
+      block(g, -3, 1, 6, 4, 4, { tex: null });
+      spill(g, 6, 6, 6, 2.4, '#141012');
+      g.save();
+      g.translate(5, 3);
+      g.rotate(1.2);
+      ell(g, 0, -4, 4.6, 2, C.ironD, 0.9);
+      g.restore();
+      poly(g, [-3, -3, -12, -13, -10.4, -7, -12.4, -5, -8, -2, -9, 1, -4, 0], BONE);
+      stroke(g, [-4, -2, -10, -10], 0.6);
+      g.save();
+      g.translate(9, 9);
+      g.rotate(1.9);
+      poly(g, [0, 0, 8, -9, 7, -3, 9, -1, 5, 2], '#b8ae91');
+      g.restore();
+      A('smoke', 6, 2, { s: 0.7, dark: 1 });
+    },
+    // the post snapped, the winged boot fallen at its foot
+    speed_cola(g) {
+      beam(g, 0, 4, 0.6, -3, 1.6);
+      poly(g, [-1.4, -3, -0.2, -6, 0.6, -3.6, 1.8, -5.4, 2, -2.6], C.woodL, 0.8);
+      beam(g, 3, 6, 11, 2, 1.6);
+      g.save();
+      g.translate(-7, 5);
+      g.rotate(-1.3);
+      emblem(g, 'boot', 0, 0, 1.6, C.greenD);
+      g.restore();
+      stroke(g, [-11, 2, -13, -1, -10, -1.4], 0.7, BONE);
+    },
+    // the pump bent double, the trough split and drained
+    stamin_up(g) {
+      spill(g, -4, 7, 9, 2.6, '#3d5560');
+      poly(g, [-10, 0, -3.4, 0, -4.4, 4.4, -10, 4.4], C.wood, 1);
+      poly(g, [-1.6, 1, 3, 2.4, 3, 5.6, -2.4, 5], C.wood, 1);
+      beam(g, 6, 5, 6, -5, 2);
+      stroke(g, [6, -5, 9, -9, 13, -6, 14, 2], 2.4);
+      stroke(g, [6, -5, 9, -9, 13, -6, 14, 2], 1.1, C.ironD);
+      ell(g, 14, 3.4, 1.6, 1.6, C.gold, 0.8);
+    },
+    // the butt knocked flat, shot full of arrows
+    deadshot_daiquiri(g) {
+      ell(g, 0, 3, 9.4, 4.2, C.thatchD, 1.2);
+      ell(g, 0, 3, 6.4, 2.8, BONE, 0.7);
+      ell(g, 0, 3, 3.4, 1.5, BLOOD, 0.6);
+      for (const [x, y, dx] of [[-5, 2, -2], [2, 1, 1.4], [5, 4.4, 2.4], [-1, 4.6, -0.6]]) {
+        line(g, x, y, x + dx, y - 8, 0.9);
+        line(g, x + dx - 1.1, y - 7.6, x + dx + 1.1, y - 8.6, 1.1, BONE);
+      }
+      beam(g, -11, 6, -7, -4, 1.3);
+      rect(g, 9, 3, 3, 3.4, C.purpleD, 0.8);
+    },
+    // the rune stone split down the middle, the halves fallen apart
+    elemental_pop(g) {
+      g.save();
+      g.translate(-3.4, 4);
+      g.rotate(-0.42);
+      poly(g, [-3, 0, -3, -13, -0.4, -17, 1.6, -12, 0, -8, 1.4, -4, 0, 0], C.stone, 1.3);
+      ell(g, -1, -9.6, 1.3, 1.3, '#6f9fb8', 0.6);
+      g.restore();
+      g.save();
+      g.translate(4, 4);
+      g.rotate(0.6);
+      poly(g, [0, 0, 1.4, -4, 0, -8, 1.6, -12, 3.4, -15, 5.4, -10, 5.4, 0], C.stoneD, 1.3);
+      hatch(g, [1.6, -12, 3.4, -15, 5.4, -10, 5.4, 0, 2, 0], 1.6, 0.5, 0.7);
+      g.restore();
+      ell(g, 0, 5, 1.6, 1.1, C.stoneL, 0.7);
+      stroke(g, [-1, 3, 0.4, 0, -0.6, -3], 0.8, '#d8a0e0');
+    },
+    // the tower shield split and thrown on its face in the cratered ground
+    phd_flopper(g) {
+      spill(g, 0, 6, 12, 4, C.dirtD);
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * TAU + 0.3;
+        line(g, Math.cos(a) * 5, 6 + Math.sin(a) * 2, Math.cos(a) * 12, 6 + Math.sin(a) * 4.4, 0.8);
+      }
+      g.save();
+      g.translate(-3, 4);
+      g.rotate(-1.25);
+      poly(g, [-6.4, -9, -0.6, -9, 0.8, -3, -1, 2, -6.4, 4], C.iron, 1.3);
+      g.restore();
+      g.save();
+      g.translate(5, 5);
+      g.rotate(-0.9);
+      poly(g, [0.6, -9, 6.4, -9, 6.4, 4, 0, 9, -1, 2, 0.8, -3], C.ironD, 1.3);
+      g.restore();
+      ell(g, 1, 0.6, 2.2, 1.6, C.stoneL, 0.8);
+    },
+    // the striking post snapped at the waist, the fist on the ground
+    melee_macchiato(g) {
+      beam(g, 0, 5, 0, -1.6, 2.6, C.woodL);
+      poly(g, [-1.8, -1.6, -0.8, -4.4, 0.2, -2.4, 1.4, -5, 1.8, -1.6], C.woodL, 0.8);
+      g.save();
+      g.translate(4, 6);
+      g.rotate(1.35);
+      beam(g, 0, 0, 0, -9, 2.4, C.woodL);
+      line(g, -5, -6, 5, -6, 2.4);
+      line(g, -5, -6, 5, -6, 1.2, C.woodL);
+      g.restore();
+      g.save();
+      g.translate(-8, 6);
+      g.rotate(-1.9);
+      emblem(g, 'fist', 0, 0, 1.4, C.hideD);
+      g.restore();
+    },
+    // the bough down, the bird gone, feathers and a torn sack
+    vulture_aid(g) {
+      stroke(g, [-3, 5, -2.4, -2], 2.6);
+      stroke(g, [-3, 5, -2.4, -2], 1.2, C.woodD);
+      poly(g, [-3.8, -2, -2.8, -5, -2, -2.8, -1, -4.4, -1, -2], C.woodD, 0.7);
+      stroke(g, [1, 7, 7, 4, 12, 6], 2.2);
+      stroke(g, [1, 7, 7, 4, 12, 6], 1, C.woodD);
+      for (const [x, y, a] of [[-9, 4, 0.4], [5, 0, -0.8], [9, 9, 0.2], [-6, 9, 1.2]]) {
+        g.save();
+        g.translate(x, y);
+        g.rotate(a);
+        poly(g, [0, 0, 1.2, -3.6, 0, -5.4, -1.2, -3.6], C.dark, 0.6);
+        g.restore();
+      }
+      poly(g, [-12, 6, -10, 2.6, -6.4, 3.4, -7, 6.4], C.canvasD, 0.9);
+      spill(g, -5, 7.4, 3.4, 1.2, C.thatch);
+    },
+    // the headstone broken across and fallen, the sword snapped
+    tombstone(g) {
+      poly(g, [-7, 3, -7, -3, -3, -4.6, 0, -2.4, 4, -4.4, 7, -3, 7, 3], C.stoneD, 1.4);
+      hatch(g, [1, -3, 7, -3, 7, 3, 2, 3], 1.8, 0.5, 0.6);
+      g.save();
+      g.translate(9, 7);
+      g.rotate(1.2);
+      g.beginPath();
+      g.moveTo(-6, 2);
+      g.lineTo(-6, -3);
+      g.quadraticCurveTo(0, -12, 6, -3);
+      g.lineTo(6, 2);
+      g.lineTo(2, 0);
+      g.lineTo(-2, 2.4);
+      g.closePath();
+      g.fillStyle = C.stoneDD;
+      g.fill();
+      K.ink(g, 1.3);
+      g.restore();
+      line(g, -10, 8, -10, 3, 1.6);
+      line(g, -10, 8, -10, 3, 0.8, C.stoneL);
+      line(g, -12, 5.4, -8, 5.4, 1.2);
+      line(g, -6, 9, -2, 8, 1.6);
+      line(g, -6, 9, -2, 8, 0.8, C.stoneL);
+      skull(g, 1, 8, 0.9);
+    },
+    // both bows broken, strings hanging, the cask smashed
+    double_tap(g) {
+      poly(g, [-4, 5, -4, 1, -1.6, -0.6, 0, 1.6, 2, 0, 4, 1.6, 4, 5], C.wood, 1.1);
+      line(g, 0, 1.6, 0, -7, 1.6);
+      poly(g, [-1, -7, 0, -9.6, 1, -7], C.woodD, 0.6);
+      stroke(g, [-10, 6, -8, 0, -5, -3], 2);
+      stroke(g, [-10, 6, -8, 0, -5, -3], 1, C.woodL);
+      stroke(g, [-5, -3, -6.4, 2, -9, 4], 0.5, BONE);
+      stroke(g, [6, 7, 10, 3, 12, -2], 2);
+      stroke(g, [6, 7, 10, 3, 12, -2], 1, C.woodL);
+      stroke(g, [12, -2, 9.4, 1, 10, 5], 0.5, BONE);
+      beam(g, 3, 8, 8, 9.4, 1.1, C.woodD);
+    },
+    // the trestle legs kicked out, the pack saddle in the dirt
+    mule_kick(g) {
+      beam(g, -11, 8, -3, 3, 1.3);
+      beam(g, 12, 7, 4, 4, 1.3);
+      beam(g, -9, 5, 9, 2, 1.6);
+      g.save();
+      g.translate(0, 3);
+      g.rotate(0.22);
+      poly(g, [-9, 2, -7, -4, -2, -5, 0, -2, 2, -5, 7, -4, 9, 2], C.hideD, 1.2);
+      hatch(g, [0, -2, 2, -5, 7, -4, 9, 2, 0, 2], 1.7, 0.6, 0.65);
+      g.restore();
+      poly(g, [-13, 5, -10, 3, -8, 6.4, -11.4, 8], C.canvasD, 0.9);
+      g.save();
+      g.translate(9, 9);
+      g.rotate(0.8);
+      emblem(g, 'horseshoe', 0, 0, 0.9, C.stoneL);
+      g.restore();
+    },
+    // the whetstone cracked in two and off its cradle
+    sleight(g) {
+      beam(g, -6, 5, -3, -3, 1.3);
+      beam(g, 6, 5, 4, 0, 1.3);
+      g.save();
+      g.translate(-4, 3);
+      g.rotate(-0.5);
+      g.beginPath();
+      g.arc(0, 0, 6.4, Math.PI * 0.55, Math.PI * 1.6);
+      g.closePath();
+      g.fillStyle = C.stone;
+      g.fill();
+      K.ink(g, 1.3);
+      g.restore();
+      g.save();
+      g.translate(6, 7);
+      g.rotate(0.5);
+      g.beginPath();
+      g.arc(0, 0, 6.4, -Math.PI * 0.45, Math.PI * 0.6);
+      g.closePath();
+      g.fillStyle = C.stoneD;
+      g.fill();
+      K.ink(g, 1.3);
+      g.restore();
+      line(g, -10, 9, -3, 7.6, 1.6);
+      line(g, -10, 9, -3, 7.6, 0.8, BONE);
+    },
+  };
+
   function perkDrawer(id) {
     return at(16, (g, o, A) => {
+      if (o.state === 'ruin') {
+        brokenPlinth(g);
+        const rf = PERK_RUINS[id];
+        if (rf) rf(g, A);
+        else {
+          g.save();
+          g.translate(3, 6);
+          g.rotate(1.3);
+          rect(g, -3, -8, 6, 11, C.purpleD, 1.2);
+          g.restore();
+        }
+        return { shadow: [0, 6, 13, 5], ownRuin: true };
+      }
       plinth(g);
       const fn = PERKS[id];
       if (fn) fn(g, A);

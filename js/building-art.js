@@ -1195,36 +1195,58 @@ const BuildingArt = (() => {
     }
   }
 
+  /**
+   * Poles, ledgers and a ladder round a building going up. Everything is sized from the
+   * building's own drawn height and width, so a wall or a perk stand gets a light frame of
+   * two poles and a hall gets a full one.
+   */
   function drawScaffold(g, sc2, cutY, side, seed) {
     const rnd = mulberry(seed + 77);
-    const x0 = sc2.x0 - 2.5;
-    const x1 = side === 'left' ? sc2.x0 + (sc2.x1 - sc2.x0) * 0.45 : sc2.x1 + 2.5;
+    const wide = sc2.x1 - sc2.x0;
+    const tall = sc2.y1 - sc2.y0;
+    const k = Math.max(0.38, Math.min(1, Math.min(wide, tall * 1.3) / 40));
+    const pad = 2.5 * k;
+    const x0 = sc2.x0 - pad;
+    const x1 = side === 'left' ? sc2.x0 + wide * 0.45 : sc2.x1 + pad;
     const base = sc2.y1 + 0.5;
-    const top = Math.min(base - 8, cutY - 5);
+    // never taller than the finished building
+    const top = Math.max(sc2.y0 - 1.5 * k, Math.min(base - 8 * k, cutY - 5 * k));
     const span = x1 - x0;
-    const nPoles = Math.max(2, Math.round(span / 9));
-    const two = (a, b, c, d, lw) => {
-      line(g, a, b, c, d, lw + 1.1, INK);
-      line(g, a, b, c, d, lw, C.woodL);
+    const lw = 0.55 + 0.45 * k;
+    const two = (a, b, c, d, w) => {
+      line(g, a, b, c, d, w * lw + 0.5 + 0.6 * k, INK);
+      line(g, a, b, c, d, w * lw, C.woodL);
     };
-    for (let y = base - 7; y > top; y -= 7.5) {
-      two(x0 - 1, y, x1 + 1, y + (rnd() - 0.5), 0.9);
+    if (k < 0.8) {
+      // A small job: a pole at each end and one plank between them at the working height,
+      // so the thing being built stays in plain view.
+      const ty = Math.max(sc2.y0, Math.min(base - 5 * k, cutY - 2 * k));
+      two(x0, base, x0, ty - 2 * k, 0.9);
+      if (side !== 'left') two(x1, base, x1, ty - 2 * k, 0.9);
+      two(x0 - k, ty + 1.5 * k, x1 + k, ty + 1.5 * k, 0.8);
+      return;
+    }
+    const nPoles = Math.max(2, Math.round(span / 9));
+    const step = 7.5 * k;
+    for (let y = base - step * 0.93; y > top; y -= step) {
+      two(x0 - k, y, x1 + k, y + (rnd() - 0.5) * k, 0.9);
     }
     for (let i = 0; i <= nPoles; i++) {
       const px = x0 + (span * i) / nPoles;
-      two(px, base, px + (rnd() - 0.5) * 1.2, top - rnd() * 3, 1);
+      two(px, base, px + (rnd() - 0.5) * 1.2 * k, top - rnd() * 3 * k, 1);
       if (i < nPoles && rnd() < 0.7) {
         const nx = x0 + (span * (i + 1)) / nPoles;
-        two(px, base - 1, nx, Math.max(top, base - 14), 0.6);
+        two(px, base - 1, nx, Math.max(top, base - 14 * k), 0.6);
       }
     }
-    // ladder
-    const lx = side === 'left' ? x1 + 3 : x0 + span * 0.72;
-    two(lx, base, lx + 3, top + 2, 0.7);
-    two(lx + 2.6, base, lx + 5.6, top + 2, 0.7);
+    // ladder, once there is room for one
+    if (base - top < 9) return;
+    const lx = side === 'left' ? x1 + 3 * k : x0 + span * 0.72;
+    two(lx, base, lx + 3 * k, top + 2, 0.7);
+    two(lx + 2.6 * k, base, lx + 5.6 * k, top + 2, 0.7);
     for (let y = base - 3; y > top + 3; y -= 3) {
       const t = (base - y) / Math.max(1, base - top - 2);
-      line(g, lx + 3 * t, y, lx + 2.6 + 3 * t, y, 0.7, INK);
+      line(g, lx + 3 * k * t, y, lx + 2.6 * k + 3 * k * t, y, 0.7, INK);
     }
   }
 
@@ -1251,12 +1273,15 @@ const BuildingArt = (() => {
     for (let i = 0; i < 4; i++) {
       const [ax, ay] = corners[i];
       const [bx, by] = corners[(i + 1) % 4];
-      line(g, ax, ay - 3.4, bx, by - 3.4, 0.5, BONE);
+      line(g, ax, ay - 3.4 * Math.max(0.42, Math.min(1, r / 22)), bx, by - 3.4 * Math.max(0.42, Math.min(1, r / 22)), 0.5, BONE);
     }
-    for (const [sx, sy] of corners) stake(g, sx, sy, 5, C.woodL, 1);
-    logPile(g, -rx * 0.42 + rnd() * 3, cy + ry * 0.2, Math.min(1.5, 0.8 + r / 60));
-    stoneBlocks(g, rx * 0.34, cy + ry * 0.36, Math.min(1.5, 0.8 + r / 60));
-    line(g, rx * 0.05, cy + ry * 0.1, rx * 0.05 + 1.6, cy - 7, 1.2);
+    // stakes, stores and the spade shrink with the plot
+    const ps = Math.max(0.42, Math.min(1, r / 22));
+    for (const [sx, sy] of corners) stake(g, sx, sy, 5 * ps, C.woodL, 0.6 + 0.4 * ps);
+    const stock = Math.min(1.5, (0.8 + r / 60) * ps);
+    logPile(g, -rx * 0.42 + rnd() * 3 * ps, cy + ry * 0.2, stock);
+    stoneBlocks(g, rx * 0.34, cy + ry * 0.36, stock);
+    line(g, rx * 0.05, cy + ry * 0.1, rx * 0.05 + 1.6 * ps, cy + ry * 0.1 - 7 * ps, 1.2 * ps);
     poly(
       g,
       [
@@ -1312,6 +1337,7 @@ const BuildingArt = (() => {
       sprung: b.isTrap && (b.trapCooldown || 0) > 0,
       fortTier: b.fortressTier || 0,
       def: b,
+      state,
     };
     const fn = drawerFor(b);
     let info = null;
@@ -1344,6 +1370,10 @@ const BuildingArt = (() => {
 
     let liveFx = fx;
     if (state === 'ok') {
+      drawShadow();
+      blit(1);
+    } else if (state === 'ruin' && info.ownRuin) {
+      // The drawer has drawn its own wreck; no generic bites and soot over it.
       drawShadow();
       blit(1);
     } else if (state === 'hurt' || state === 'ruin') {
