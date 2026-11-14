@@ -302,8 +302,9 @@ const UI = (() => {
    * inside it, and focus goes back to where it was when it closes.
    */
   function initModalFocus() {
+    // aria-modal catches modals other modules build later, such as How to Play.
     const SELECTOR =
-      '.screen, #spoils-panel, #key-sheet, .menu-sheet, .research-panel, .faction-intel-panel';
+      '.screen, #spoils-panel, #key-sheet, .menu-sheet, .research-panel, .faction-intel-panel, [aria-modal="true"]';
     const FOCUSABLE =
       'button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
     const shown = (el) =>

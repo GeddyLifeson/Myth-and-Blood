@@ -328,7 +328,7 @@ const Availability = (() => {
     const res = isArmed ? { ...OK } : check(kind, id, gs);
     if (!res.ok) {
       // The answer to a click must not wait behind other messages.
-      Game.showMessage?.(`${nameOf(kind, id)} — ${res.reason}.`, 200, {
+      Game.showMessage?.(`${nameOf(kind, id)}: ${res.reason}.`, 200, {
         priority: 'critical',
         bypassQueue: true,
       });
@@ -353,7 +353,7 @@ const Availability = (() => {
     const res = check(now.kind, now.id, gs);
     if (res.ok) return '';
     Game.clearPlacementMode?.();
-    Game.showMessage?.(`${nameOf(now.kind, now.id)} put away — ${res.reason}.`, 200, {
+    Game.showMessage?.(`${nameOf(now.kind, now.id)} put away: ${res.reason}.`, 200, {
       priority: 'critical',
       bypassQueue: true,
     });
