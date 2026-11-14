@@ -129,6 +129,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "MAP_EXPAND_H",
   "MAP_EXPAND_W",
   "MAX_VETERAN_TIER",
+  "MID_COUNT_PER_WAVE",
   "MID_PRESSURE_EXTRA",
   "MID_PRESSURE_FROM",
   "MID_PRESSURE_UNTIL",

@@ -264,15 +264,21 @@ const enemy = (api, type, x, y, set = {}) => {
     }
     let fled = false;
     let pinned = false;
+    let storms = false;
     f.step(900, () => {
       if (target.fleeing) fled = true;
       if (target.pinned) pinned = true;
+      if (target.stormLine) storms = true;
     });
-    return { fled, pinned };
+    return { fled, pinned, storms };
   };
   ok(probe('orc', true).fled, 'control: a grunt at zero morale routs when its mates die');
   ok(probe('orc', false).pinned, 'control: a grunt at zero morale is pinned when hit');
-  ok(!probe('dark_knight', true).fled, 'an operative does not rout');
+  const melee = probe('dark_knight', true);
+  ok(!melee.fled, 'an operative does not rout');
+  ok(!melee.storms, 'a broken melee operative keeps fighting');
+  const sniper = probe('grim_revenant', true);
+  ok(!sniper.fled && sniper.storms, 'a broken ranged operative runs for the line');
   ok(!probe(bossType, true).fled, 'a named boss does not rout');
   ok(!probe(bossType, false).pinned, 'a named boss cannot be pinned');
 }

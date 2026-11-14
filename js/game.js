@@ -2250,8 +2250,20 @@ const Game = (() => {
   function triggerMoraleBreak(unit, reason) {
     if (!isMoraleCombatUnit(unit) || unit.fleeing || unit.demoralized || unit.retreatingToMed)
       return;
-    if (unit.team === 'enemy' && (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilOperative(unit)))
+    if (
+      unit.team === 'enemy' &&
+      (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilOperative(unit))
+    ) {
+      // A broken operative that fights at range would hang back for good: it runs for the line.
+      if (!unit.isNamedBoss && unit.combatType !== 'melee' && !unit.stormLine) {
+        unit.lineBreaker = true;
+        unit.stormLine = true;
+        unit.path = [];
+        unit.pathIndex = 0;
+        unit.combatTargetId = null;
+      }
       return;
+    }
     if (unit.team === 'player') {
       GS.moraleCascadeState =
         GameDepth?.recordMoraleCascade({ ...GS.moraleCascadeState, tick: GS.updateTick }, true) ||
@@ -2584,7 +2596,10 @@ const Game = (() => {
       for (const ally of GS.units) {
         if (ally.team !== 'player' || ally.hp <= 0 || ally.id === deadUnit.id) continue;
         if (!isMoraleCombatUnit(ally)) continue;
-        ally.morale = Math.max(0, ally.morale - (isGeneralDeath ? 4 : 1));
+        ally.morale = Math.max(
+          0,
+          ally.morale - (isGeneralDeath ? 4 : DIFFICULTY_TUNING.armyLossPerDeath)
+        );
         if (ally.morale <= moraleBreakThreshold(ally) && !ally.demoralized && !ally.fleeing) {
           triggerMoraleBreak(ally, 'casualty');
         }

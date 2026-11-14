@@ -55,6 +55,8 @@ const DIFFICULTY_TUNING = {
   enemyWitnessLossFar: 1,
   soldierWitnessLossClose: 2,
   soldierWitnessLossFar: 1,
+  // Morale every soldier on the field loses when one dies, seen or not.
+  armyLossPerDeath: 0,
   // Health multiplier for a named boss, on top of the wave scale.
   namedBossHpMult: 3,
 };
@@ -680,12 +682,12 @@ const DIFFICULTIES = {
     id: 'chad',
     label: 'Chad',
     tagline: 'Harder, faster, hungrier hordes.',
-    enemyHpMult: 1.3,
-    enemyDmgMult: 1.22,
+    enemyHpMult: 1.25,
+    enemyDmgMult: 1.15,
     enemyCountMult: 1.22,
     spawnIntervalMult: 0.82,
-    waveHpScaleMult: 1.14,
-    waveDmgScaleMult: 1.1,
+    waveHpScaleMult: 1,
+    waveDmgScaleMult: 1,
     siegeTowerMult: 1.25,
     startingTp: 5,
     tpPerRoundBonus: -1,
@@ -697,14 +699,14 @@ const DIFFICULTIES = {
     id: 'doomslayer',
     label: 'Hellbane',
     tagline: 'Hell marches. No mercy.',
-    enemyHpMult: 1.7,
-    enemyDmgMult: 1.48,
+    enemyHpMult: 1.5,
+    enemyDmgMult: 1.35,
     enemyCountMult: 1.5,
     spawnIntervalMult: 0.62,
-    waveHpScaleMult: 1.38,
-    waveDmgScaleMult: 1.32,
+    waveHpScaleMult: 1,
+    waveDmgScaleMult: 1,
     siegeTowerMult: 1.6,
-    startingTp: 4,
+    startingTp: 7,
     tpPerRoundBonus: -2,
     missLimit: 6,
     playerMoraleBonus: -2,
@@ -1479,10 +1481,10 @@ const Waves = [
  * EARLY_* terms add health and damage per wave on top of the academy curve; they are zero
  * while veterans are capped, and are the dials to raise if the middle of a run gets easy.
  */
-const MID_COUNT_PER_WAVE = 1.5;
+const MID_COUNT_PER_WAVE = 1.25;
 const MID_PRESSURE_FROM = 10;
 const MID_PRESSURE_UNTIL = 20;
-const MID_PRESSURE_EXTRA = 1;
+const MID_PRESSURE_EXTRA = 1.5;
 const EARLY_HP_EXTRA = 0;
 const EARLY_DMG_EXTRA = 0;
 const EARLY_HP_PER_WAVE = 0;
