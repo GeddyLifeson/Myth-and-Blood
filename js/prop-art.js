@@ -143,7 +143,12 @@ const PropArt = (() => {
         const x = Math.cos(a) * r * d;
         const y = Math.sin(a) * ry * d;
         const w = 2.5 + rnd() * r * 0.14;
-        stroke(g, [x - w, y, x - w * 0.3, y - 1, x + w * 0.4, y + 0.4, x + w, y - 0.4], 0.7, '#7fae5a');
+        stroke(
+          g,
+          [x - w, y, x - w * 0.3, y - 1, x + w * 0.4, y + 0.4, x + w, y - 0.4],
+          0.7,
+          '#7fae5a'
+        );
       }
       for (let i = 0; i < 7; i++) {
         const a = rnd() * TAU;
@@ -182,7 +187,15 @@ const PropArt = (() => {
       ell(g, -pr * 0.15, 0, pr * 0.3, pr * 0.18, C.flame, 0);
       for (let i = 0; i < 9; i++) {
         const a = (i / 9) * TAU;
-        ell(g, Math.cos(a) * pr, Math.sin(a) * pr * 0.62, 1.9, 1.5, i % 3 ? C.stoneD : C.stone, 0.8);
+        ell(
+          g,
+          Math.cos(a) * pr,
+          Math.sin(a) * pr * 0.62,
+          1.9,
+          1.5,
+          i % 3 ? C.stoneD : C.stone,
+          0.8
+        );
       }
       reach(g, r, ry, '#f08030');
     },
@@ -200,16 +213,27 @@ const PropArt = (() => {
       const n = 9;
       for (let i = 0; i <= n; i++) {
         const t = i / n;
-        tear.push(-r * 0.62 + t * r * 1.24, (rnd() - 0.5) * ry * 0.16 - Math.sin(t * Math.PI) * ry * 0.22);
+        tear.push(
+          -r * 0.62 + t * r * 1.24,
+          (rnd() - 0.5) * ry * 0.16 - Math.sin(t * Math.PI) * ry * 0.22
+        );
       }
       for (let i = n; i >= 0; i--) {
         const t = i / n;
-        tear.push(-r * 0.62 + t * r * 1.24, (rnd() - 0.5) * ry * 0.16 + Math.sin(t * Math.PI) * ry * 0.24);
+        tear.push(
+          -r * 0.62 + t * r * 1.24,
+          (rnd() - 0.5) * ry * 0.16 + Math.sin(t * Math.PI) * ry * 0.24
+        );
       }
       poly(g, tear, '#3c1a66', 1.5);
       const inner = tear.map((v, i) => (i % 2 ? v * 0.5 : v * 0.8));
       poly(g, inner, '#9a5ae0', 0);
-      poly(g, inner.map((v, i) => (i % 2 ? v * 0.4 : v * 0.6)), '#e4c8ff', 0);
+      poly(
+        g,
+        inner.map((v, i) => (i % 2 ? v * 0.4 : v * 0.6)),
+        '#e4c8ff',
+        0
+      );
       for (let i = 0; i < 6; i++) {
         const a = rnd() * TAU;
         const d = 0.5 + rnd() * 0.3;
@@ -234,7 +258,18 @@ const PropArt = (() => {
         const lean = (rnd() - 0.5) * 2.4;
         poly(
           g,
-          [x - 2.4, y + 2, x - 2.4 + lean, y - 4, x + lean, y - 6.4, x + 2.4 + lean, y - 4, x + 2.4, y + 2],
+          [
+            x - 2.4,
+            y + 2,
+            x - 2.4 + lean,
+            y - 4,
+            x + lean,
+            y - 6.4,
+            x + 2.4 + lean,
+            y - 4,
+            x + 2.4,
+            y + 2,
+          ],
           C.stoneD,
           1
         );
@@ -260,7 +295,14 @@ const PropArt = (() => {
         const a = rnd() * TAU;
         stroke(
           g,
-          [0, 0, Math.cos(a) * r * 0.3, Math.sin(a) * ry * 0.3 + rnd() * 2, Math.cos(a + 0.2) * r * 0.8, Math.sin(a + 0.2) * ry * 0.8],
+          [
+            0,
+            0,
+            Math.cos(a) * r * 0.3,
+            Math.sin(a) * ry * 0.3 + rnd() * 2,
+            Math.cos(a + 0.2) * r * 0.8,
+            Math.sin(a + 0.2) * ry * 0.8,
+          ],
           0.8
         );
       }
@@ -440,7 +482,14 @@ const PropArt = (() => {
         for (let i = 0; i < 5; i++) {
           const x = -14 + i * 7 + rnd() * 3;
           const a = rnd() * Math.PI;
-          spar(g, x, 4 + rnd() * 3, x + Math.cos(a) * 7, 4 + rnd() * 3 - Math.abs(Math.sin(a)) * 2.4, 1);
+          spar(
+            g,
+            x,
+            4 + rnd() * 3,
+            x + Math.cos(a) * 7,
+            4 + rnd() * 3 - Math.abs(Math.sin(a)) * 2.4,
+            1
+          );
         }
         poly(g, [-3, 2, 0, -2.4, 1.4, 2.4], C.woodL, 0.8);
         return;
@@ -492,7 +541,12 @@ const PropArt = (() => {
         const mouth = [-8, 7, -7.4, 0.4, -3.4, -3.6, 2.6, -3.8, 6.6, 0, 7.6, 7];
         poly(g, mouth, '#0a0708', 1.4);
         // teeth of stone round the mouth
-        for (const [x, y] of [[-6.6, 1.4], [-2.8, -2.6], [2.4, -2.8], [6, 1]]) {
+        for (const [x, y] of [
+          [-6.6, 1.4],
+          [-2.8, -2.6],
+          [2.4, -2.8],
+          [6, 1],
+        ]) {
           poly(g, [x - 1.2, y, x, y + 3, x + 1.2, y], C.stoneL, 0.7);
         }
       } else {

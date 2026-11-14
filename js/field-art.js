@@ -1401,7 +1401,8 @@ const FieldArt = (() => {
         g.drawImage(holeCv, lights[j] * ms - r, lights[j + 1] * ms - r, r * 2, r * 2);
       }
       g.globalCompositeOperation = 'source-over';
-      g.globalAlpha = Math.min(1, dark * 1.2);
+      // the warm wash stays under the cut so a torch lights ground without painting it orange
+      g.globalAlpha = Math.min(1, dark * 1.2) * 0.68;
       for (let i = 0; i < lightN; i++) {
         const j = i * 4;
         const kind = lights[j + 3];

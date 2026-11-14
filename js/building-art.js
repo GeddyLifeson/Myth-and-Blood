@@ -1273,7 +1273,15 @@ const BuildingArt = (() => {
     for (let i = 0; i < 4; i++) {
       const [ax, ay] = corners[i];
       const [bx, by] = corners[(i + 1) % 4];
-      line(g, ax, ay - 3.4 * Math.max(0.42, Math.min(1, r / 22)), bx, by - 3.4 * Math.max(0.42, Math.min(1, r / 22)), 0.5, BONE);
+      line(
+        g,
+        ax,
+        ay - 3.4 * Math.max(0.42, Math.min(1, r / 22)),
+        bx,
+        by - 3.4 * Math.max(0.42, Math.min(1, r / 22)),
+        0.5,
+        BONE
+      );
     }
     // stakes, stores and the spade shrink with the plot
     const ps = Math.max(0.42, Math.min(1, r / 22));

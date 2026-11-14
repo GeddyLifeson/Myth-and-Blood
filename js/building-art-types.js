@@ -30,7 +30,6 @@
     hip,
     tent,
     hideTent,
-    palisade,
     palisadeRing,
     fence,
     barrel,
@@ -2374,7 +2373,20 @@
     g.globalAlpha = 0.85;
     poly(
       g,
-      [x - rx, y, x - rx * 0.5, y - ry, x + rx * 0.4, y - ry * 0.8, x + rx, y - ry * 0.1, x + rx * 0.6, y + ry, x - rx * 0.3, y + ry * 0.8],
+      [
+        x - rx,
+        y,
+        x - rx * 0.5,
+        y - ry,
+        x + rx * 0.4,
+        y - ry * 0.8,
+        x + rx,
+        y - ry * 0.1,
+        x + rx * 0.6,
+        y + ry,
+        x - rx * 0.3,
+        y + ry * 0.8,
+      ],
       col,
       0.7
     );
@@ -2387,7 +2399,13 @@
     jugger_nog(g) {
       spill(g, 2, 7, 11, 3.4, BLOOD);
       beam(g, -7, 5, -5, -1, 1.3);
-      for (const [a, len] of [[-2.5, 9], [-2.0, 11], [-1.5, 10], [-1.0, 11], [-0.5, 8]]) {
+      for (const [a, len] of [
+        [-2.5, 9],
+        [-2.0, 11],
+        [-1.5, 10],
+        [-1.0, 11],
+        [-0.5, 8],
+      ]) {
         beam(g, 0, 2, Math.cos(a) * len, 2 + Math.sin(a) * len, 1.5, C.wood);
       }
       g.beginPath();
@@ -2445,7 +2463,12 @@
       ell(g, 0, 3, 9.4, 4.2, C.thatchD, 1.2);
       ell(g, 0, 3, 6.4, 2.8, BONE, 0.7);
       ell(g, 0, 3, 3.4, 1.5, BLOOD, 0.6);
-      for (const [x, y, dx] of [[-5, 2, -2], [2, 1, 1.4], [5, 4.4, 2.4], [-1, 4.6, -0.6]]) {
+      for (const [x, y, dx] of [
+        [-5, 2, -2],
+        [2, 1, 1.4],
+        [5, 4.4, 2.4],
+        [-1, 4.6, -0.6],
+      ]) {
         line(g, x, y, x + dx, y - 8, 0.9);
         line(g, x + dx - 1.1, y - 7.6, x + dx + 1.1, y - 8.6, 1.1, BONE);
       }
@@ -2512,7 +2535,12 @@
       poly(g, [-3.8, -2, -2.8, -5, -2, -2.8, -1, -4.4, -1, -2], C.woodD, 0.7);
       stroke(g, [1, 7, 7, 4, 12, 6], 2.2);
       stroke(g, [1, 7, 7, 4, 12, 6], 1, C.woodD);
-      for (const [x, y, a] of [[-9, 4, 0.4], [5, 0, -0.8], [9, 9, 0.2], [-6, 9, 1.2]]) {
+      for (const [x, y, a] of [
+        [-9, 4, 0.4],
+        [5, 0, -0.8],
+        [9, 9, 0.2],
+        [-6, 9, 1.2],
+      ]) {
         g.save();
         g.translate(x, y);
         g.rotate(a);
