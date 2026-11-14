@@ -1,19 +1,12 @@
 /**
- * Save slots: three manual slots and one autosave, with checksum validation.
- *
- * The Save / Load screen is built here (open()): each slot shows wave, difficulty, mode,
- * play time, date and a thumbnail. Overwrite and delete ask first (js/dialog.js). A save
- * can be exported as text and imported again; nothing is downloaded.
- * The autosave is written at each nightfall. Runs that forbid quick saves (Ironman, the
- * daily and weekly challenges) and Creative mode are not saved here either.
+ * Save slots with checksum validation, and the Save / Load screen (open()): slot details,
+ * confirmations before overwrite, load and delete, and export / import as text.
  */
 const SaveManager = (() => {
   // Shared helper — see js/html-util.js (loaded first).
   const escapeHtml = HtmlUtil.escapeHtml;
   const STORAGE_KEY = 'myth-and-blood-saves-v1';
   const SLOT_COUNT = 3;
-  /** The index of the autosave wherever a slot index is taken. */
-  const AUTO = 'auto';
   const LEGACY_QUICK_KEY = 'myth-and-blood-quicksave';
 
   function hash(str) {
@@ -71,8 +64,6 @@ const SaveManager = (() => {
       savedAt: Date.now(),
       wave: snap.wave ?? 0,
       difficulty: snap.difficultyId ?? 'normal',
-      mode: modeLabel(snap.modeSession),
-      playMs: Math.round(playMs),
       thumbnail: thumbnail || snap.thumbnail || null,
       checksum: hash(body),
       data: snap,
@@ -102,84 +93,35 @@ const SaveManager = (() => {
     return { ok: true };
   }
 
-  const pretty = (id) =>
-    String(id || '')
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (c) => c.toUpperCase());
-
-  function modeLabel(session) {
-    if (!session) return 'Campaign';
-    const id = session.displayModeId || session.modeId || 'campaign';
-    let label = session.challengeLabel || pretty(id);
-    if (session.ironman) label += ' · Ironman';
-    return label;
-  }
-
-  /** "1 h 04 min", "12 min", "under a minute". */
-  function formatPlayTime(ms) {
-    const min = Math.floor((ms || 0) / 60000);
-    if (min < 1) return 'under a minute';
-    const hrs = Math.floor(min / 60);
-    return hrs ? `${hrs} h ${String(min % 60).padStart(2, '0')} min` : `${min} min`;
-  }
-
-  function describe(s, index) {
-    return {
-      index,
-      label: s.label,
-      wave: s.wave,
-      difficulty: s.difficulty,
-      mode: s.mode || modeLabel(s.data?.modeSession),
-      playMs: s.playMs || 0,
-      savedAt: s.savedAt,
-      thumbnail: s.thumbnail || null,
-    };
-  }
-
   function listSlots() {
     const store = loadStore();
     migrateLegacyQuickSave(store);
     while (store.slots.length < SLOT_COUNT) store.slots.push(null);
-    return store.slots
-      .slice(0, SLOT_COUNT)
-      .map((s, i) => (s ? describe(s, i) : { index: i, empty: true }));
-  }
-
-  /** The autosave, described like a slot (index "auto"), or { empty: true }. */
-  function getAutosave() {
-    const s = loadStore().auto;
-    return s ? describe(s, AUTO) : { index: AUTO, empty: true };
-  }
-
-  /** Why this run cannot be saved to a slot, or '' when it can. */
-  function whyNoSave() {
-    if (typeof Game === 'undefined' || !Game.isPlaying?.()) return 'No battle in progress';
-    if (Game.isCreativeMode?.()) return 'Creative mode is not saved';
-    if (typeof GameModes !== 'undefined' && GameModes.canQuickSave && !GameModes.canQuickSave()) {
-      return 'Ironman and challenge runs cannot be saved';
-    }
-    return '';
-  }
-
-  function snapshotNow() {
-    if (!Game.exportGameState) return { error: 'Export unavailable' };
-    const snap = Game.exportGameState();
-    if (!snap) return { error: 'Could not export game state' };
-    let thumbnail = snap.thumbnail || null;
-    if (!thumbnail && typeof SaveThumbnail !== 'undefined') {
-      thumbnail = SaveThumbnail.capture();
-      if (thumbnail) snap.thumbnail = thumbnail;
-    }
-    return { snap, thumbnail };
+    return store.slots.map((s, i) =>
+      s
+        ? {
+            index: i,
+            label: s.label,
+            wave: s.wave,
+            difficulty: s.difficulty,
+            savedAt: s.savedAt,
+            thumbnail: s.thumbnail || null,
+          }
+        : { index: i, empty: true }
+    );
   }
 
   function saveToSlot(index, label) {
     const idx = index | 0;
     if (idx < 0 || idx >= SLOT_COUNT) return { ok: false, error: 'Invalid slot' };
-    const why = whyNoSave();
-    if (why) return { ok: false, error: why };
-    const { snap, thumbnail, error } = snapshotNow();
-    if (error) return { ok: false, error };
+    if (!Game.exportGameState) return { ok: false, error: 'Export unavailable' };
+    const snap = Game.exportGameState();
+    if (!snap) return { ok: false, error: 'Could not export game state' };
+    let thumbnail = snap.thumbnail || null;
+    if (!thumbnail && typeof SaveThumbnail !== 'undefined') {
+      thumbnail = SaveThumbnail.capture();
+      if (thumbnail) snap.thumbnail = thumbnail;
+    }
     const store = loadStore();
     while (store.slots.length < SLOT_COUNT) store.slots.push(null);
     store.slots[idx] = wrapSnapshot(snap, label || `Wave ${snap.wave}`, thumbnail);
@@ -187,46 +129,17 @@ const SaveManager = (() => {
     return { ok: true, slot: idx };
   }
 
-  /** Written at nightfall. Quietly skipped when the run may not be saved. */
-  function autosave() {
-    if (whyNoSave()) return false;
-    const { snap, thumbnail, error } = snapshotNow();
-    if (error) return false;
-    const store = loadStore();
-    store.auto = wrapSnapshot(snap, 'Autosave', thumbnail);
-    if (writeStore(store)) return true;
-    // Out of room: an autosave without its picture is still an autosave.
-    delete snap.thumbnail;
-    store.auto = wrapSnapshot(snap, 'Autosave', null);
-    store.auto.thumbnail = null;
-    return writeStore(store);
-  }
-
-  function slotAt(store, index) {
-    if (index === AUTO) return store.auto || null;
-    const idx = index | 0;
-    return idx >= 0 && idx < SLOT_COUNT ? store.slots?.[idx] || null : null;
-  }
-
   function loadFromSlot(index) {
-    if (index !== AUTO && ((index | 0) < 0 || (index | 0) >= SLOT_COUNT)) {
-      return { ok: false, error: 'Invalid slot' };
-    }
-    if (typeof Game !== 'undefined' && Game.isPlaying?.()) {
-      if (typeof GameModes !== 'undefined' && GameModes.canQuickSave && !GameModes.canQuickSave()) {
-        return { ok: false, error: 'Ironman and challenge runs cannot load a save' };
-      }
-    }
-    const slot = slotAt(loadStore(), index);
+    const idx = index | 0;
+    if (idx < 0 || idx >= SLOT_COUNT) return { ok: false, error: 'Invalid slot' };
+    const store = loadStore();
+    const slot = store.slots?.[idx];
     const v = validateSlot(slot);
     if (!v.ok) return v;
     try {
       if (!Game.importGameState?.(slot.data)) {
         return { ok: false, error: 'Import failed — state rejected' };
       }
-      playMs = slot.playMs || 0;
-      wasPlaying = true;
-      lastPhase = slot.data.timeOfDay || null;
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e.message || 'Import crashed' };
@@ -234,133 +147,83 @@ const SaveManager = (() => {
   }
 
   function deleteSlot(index) {
-    const store = loadStore();
-    if (index === AUTO) {
-      if (!store.auto) return false;
-      delete store.auto;
-      writeStore(store);
-      return true;
-    }
     const idx = index | 0;
     if (idx < 0 || idx >= SLOT_COUNT) return false;
+    const store = loadStore();
     if (!store.slots?.[idx]) return false;
     store.slots[idx] = null;
     writeStore(store);
     return true;
   }
 
-  // ---- export / import as text ------------------------------------------------------------
+  // ponytail: stand-ins with the names and return shapes of claude/p3-saves (saveBlockReason,
+  // exportSlot, importString). That branch owns the data layer; on merge take its versions.
   const TEXT_PREFIX = 'MYTHBLOOD1:';
 
-  function toBase64(str) {
-    const bytes = new TextEncoder().encode(str);
+  function saveBlockReason() {
+    if (typeof Game === 'undefined' || !Game.exportGameState) return 'Saving is not available.';
+    if (Game.getSaveBlockReason) return Game.getSaveBlockReason();
+    if (!Game.isPlaying?.()) return 'There is no battle to save.';
+    if (Game.isCreativeMode?.()) return 'Creative mode is not saved.';
+    if (typeof GameModes !== 'undefined' && GameModes.canQuickSave && !GameModes.canQuickSave()) {
+      return 'Ironman and challenge runs cannot be saved.';
+    }
+    return null;
+  }
+
+  function exportSlot(index) {
+    const slot = loadStore().slots?.[index | 0];
+    const v = validateSlot(slot);
+    if (!v.ok) return v;
+    const data = { ...slot.data };
+    // The preview picture would double the length of the text.
+    delete data.thumbnail;
+    const bytes = new TextEncoder().encode(JSON.stringify(data));
     let bin = '';
     for (let i = 0; i < bytes.length; i += 0x8000) {
       bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
     }
-    return btoa(bin);
+    return { ok: true, text: TEXT_PREFIX + btoa(bin) };
   }
 
-  function fromBase64(b64) {
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return new TextDecoder().decode(bytes);
-  }
-
-  /** A slot as one line of text, or null when it is empty. The picture is left out. */
-  function exportSlotText(index) {
-    const slot = slotAt(loadStore(), index);
-    if (!slot?.data) return null;
-    const data = { ...slot.data };
-    delete data.thumbnail;
-    const lean = { ...slot, thumbnail: null, data, checksum: hash(JSON.stringify(data)) };
-    return TEXT_PREFIX + toBase64(JSON.stringify(lean));
-  }
-
-  /** Check exported text. @returns {{ ok: boolean, error?: string, slot?: any }} */
-  function parseSaveText(text) {
+  function importString(text, opts = {}) {
     const clean = String(text || '').replace(/\s+/g, '');
-    if (!clean) return { ok: false, error: 'Paste the save text first' };
     if (!clean.startsWith(TEXT_PREFIX)) {
-      return { ok: false, error: 'That is not a Myth and Blood save' };
+      return { ok: false, error: 'That is not a Myth and Blood save.' };
     }
-    const damaged = { ok: false, error: 'The save text is damaged or cut short' };
-    let slot;
+    let snap;
     try {
-      slot = JSON.parse(fromBase64(clean.slice(TEXT_PREFIX.length)));
+      const bin = atob(clean.slice(TEXT_PREFIX.length));
+      snap = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
     } catch (_) {
-      return damaged;
+      return { ok: false, error: 'The save text is damaged or cut short.' };
     }
-    if (!slot || typeof slot !== 'object' || !slot.data || typeof slot.data !== 'object') {
-      return damaged;
+    if (!snap || typeof snap !== 'object') {
+      return { ok: false, error: 'The save text is damaged or cut short.' };
     }
-    if (!slot.checksum) return damaged;
-    const v = validateSlot(slot);
-    return v.ok ? { ok: true, slot } : v;
-  }
-
-  /** Read exported text into a slot (0-2). The text is checked before anything is written. */
-  function importSlotText(index, text) {
-    const idx = index | 0;
-    if (index === AUTO || idx < 0 || idx >= SLOT_COUNT) {
-      return { ok: false, error: 'Pick slot 1, 2 or 3' };
-    }
-    const parsed = parseSaveText(text);
-    if (!parsed.ok) return parsed;
-    const slot = parsed.slot;
+    const entry = wrapSnapshot(snap, opts.label || `Imported, wave ${snap.wave ?? '?'}`, null);
+    const v = validateSlot(entry);
+    if (!v.ok) return v;
+    const idx = opts.slot | 0;
+    if (idx < 0 || idx >= SLOT_COUNT) return { ok: false, error: 'There is no such save slot.' };
     const store = loadStore();
     while (store.slots.length < SLOT_COUNT) store.slots.push(null);
-    store.slots[idx] = {
-      label: String(slot.label || `Wave ${slot.data.wave ?? '?'}`).slice(0, 60),
-      savedAt: Number(slot.savedAt) || Date.now(),
-      wave: Number(slot.data.wave) || 0,
-      difficulty: String(slot.data.difficultyId || 'normal'),
-      mode: modeLabel(slot.data.modeSession),
-      playMs: Math.max(0, Number(slot.playMs) || 0),
-      thumbnail: null,
-      checksum: slot.checksum,
-      data: slot.data,
-    };
-    if (!writeStore(store)) return { ok: false, error: 'Storage full or blocked' };
-    return { ok: true, slot: idx };
-  }
-
-  // ---- play time and the autosave ---------------------------------------------------------
-  let playMs = 0;
-  let wasPlaying = false;
-  let lastPhase = null;
-  let lastTick = 0;
-
-  /** Once a second: count play time, and autosave when night falls. */
-  function tick() {
-    const now = Date.now();
-    const dt = Math.min(2000, Math.max(0, now - (lastTick || now)));
-    lastTick = now;
-    if (typeof Game === 'undefined' || !Game.isPlaying?.()) {
-      wasPlaying = false;
-      lastPhase = null;
-      return;
-    }
-    const gs = Game.getState();
-    if (!wasPlaying) {
-      wasPlaying = true;
-      playMs = 0;
-      lastPhase = gs.timeOfDay;
-      return;
-    }
-    if (!gs.paused) playMs += dt;
-    if (gs.timeOfDay !== lastPhase) {
-      const fell = gs.timeOfDay === 'night' && lastPhase === 'day';
-      lastPhase = gs.timeOfDay;
-      if (fell) autosave();
-    }
+    store.slots[idx] = entry;
+    if (!writeStore(store)) return { ok: false, error: 'Storage is full or blocked.' };
+    return { ok: true, slot: idx, wave: snap.wave };
   }
 
   // ---- the Save / Load screen ---------------------------------------------------------------
+  // Autosave rows appear once claude/p3-saves adds listAutosaves and its partners.
+  const hasAutosaves = () => typeof listAutosaves === 'function';
+  const pretty = (id) =>
+    String(id ?? '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
   let screenOpen = false;
   let returnToPause = false;
-  /** Which slot the text box belongs to, and what it is for: { mode: 'export'|'import', index }. */
+  /** { mode: 'export'|'import', kind: 'slot'|'auto', index, text? } */
   let textBox = null;
   let statusNote = { text: '', kind: '' };
 
@@ -374,50 +237,61 @@ const SaveManager = (() => {
       : Promise.resolve(true);
   }
 
-  function slotTitle(index) {
-    return index === AUTO ? 'Autosave' : `Slot ${index + 1}`;
+  function titleOf(kind, index) {
+    return kind === 'auto' ? `Autosave ${index + 1}` : `Slot ${index + 1}`;
   }
 
-  function cardHtml(s) {
-    const auto = s.index === AUTO;
-    const title = slotTitle(s.index);
-    const noSave = whyNoSave();
-    const btn = (action, text, extra = '', disabled = '') =>
-      `<button type="button" class="save-btn${extra}" data-save-act="${action}" data-slot="${s.index}"${
-        disabled ? ` disabled title="${escapeHtml(disabled)}"` : ''
+  function whenOf(s) {
+    return typeof SaveThumbnail !== 'undefined'
+      ? SaveThumbnail.formatSavedAt(s.savedAt)
+      : new Date(s.savedAt).toLocaleString();
+  }
+
+  function cardHtml(s, kind) {
+    const auto = kind === 'auto';
+    const title = titleOf(kind, s.index);
+    const blocked = saveBlockReason();
+    const btn = (action, text, extra = '', disabledWhy = '') =>
+      `<button type="button" class="save-btn${extra}" data-save-act="${action}" data-kind="${kind}" data-slot="${s.index}"${
+        disabledWhy ? ` disabled title="${escapeHtml(disabledWhy)}"` : ''
       }>${text}</button>`;
+    const facts = (rows) =>
+      '<dl class="save-card-facts">' +
+      rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('') +
+      '</dl>';
     if (s.empty) {
       return (
-        `<div class="save-card empty" data-slot="${s.index}">` +
-        `<div class="save-card-thumb none"><span>${auto ? 'Written at each nightfall' : 'Empty'}</span></div>` +
+        `<div class="save-card empty">` +
+        '<div class="save-card-thumb none"><span>Empty</span></div>' +
         `<div class="save-card-title">${title}</div>` +
-        `<dl class="save-card-facts"><dt>Wave</dt><dd>—</dd><dt>Difficulty</dt><dd>—</dd><dt>Mode</dt><dd>—</dd><dt>Played</dt><dd>—</dd><dt>Saved</dt><dd>—</dd></dl>` +
+        facts([
+          ['Wave', '-'],
+          ['Difficulty', '-'],
+          ['Saved', '-'],
+        ]) +
         '<div class="save-card-btns">' +
-        (auto ? '' : btn('save', 'Save here', ' primary', noSave) + btn('import', 'Import')) +
+        btn('save', 'Save here', ' primary', blocked) +
+        btn('import', 'Import') +
         '</div></div>'
       );
     }
-    const when =
-      typeof SaveThumbnail !== 'undefined'
-        ? SaveThumbnail.formatSavedAt(s.savedAt)
-        : new Date(s.savedAt).toLocaleString();
     const thumb = s.thumbnail
       ? `<div class="save-card-thumb"><img src="${escapeHtml(s.thumbnail)}" alt="${title}: the field when it was saved" /></div>`
       : '<div class="save-card-thumb none"><span>No picture</span></div>';
+    const rows = [
+      ['Wave', s.wave],
+      ['Difficulty', pretty(s.difficulty)],
+    ];
+    if (s.timeOfDay) rows.push(['Time', pretty(s.timeOfDay)]);
+    rows.push(['Saved', whenOf(s)]);
     return (
-      `<div class="save-card" data-slot="${s.index}">` +
+      `<div class="save-card">` +
       thumb +
-      `<div class="save-card-title">${title}</div>` +
-      '<dl class="save-card-facts">' +
-      `<dt>Wave</dt><dd>${escapeHtml(s.wave)}</dd>` +
-      `<dt>Difficulty</dt><dd>${escapeHtml(pretty(s.difficulty))}</dd>` +
-      `<dt>Mode</dt><dd>${escapeHtml(s.mode)}</dd>` +
-      `<dt>Played</dt><dd>${escapeHtml(formatPlayTime(s.playMs))}</dd>` +
-      `<dt>Saved</dt><dd>${escapeHtml(when)}</dd>` +
-      '</dl>' +
+      `<div class="save-card-title">${title}<span class="save-card-label">${escapeHtml(s.label || '')}</span></div>` +
+      facts(rows) +
       '<div class="save-card-btns">' +
       btn('load', 'Load', ' primary') +
-      (auto ? '' : btn('save', 'Overwrite', '', noSave)) +
+      (auto ? '' : btn('save', 'Overwrite', '', blocked)) +
       btn('export', 'Export') +
       (auto ? '' : btn('import', 'Import')) +
       btn('delete', 'Delete', ' danger') +
@@ -427,7 +301,7 @@ const SaveManager = (() => {
 
   function textBoxHtml() {
     if (!textBox) return '';
-    const title = slotTitle(textBox.index);
+    const title = titleOf(textBox.kind, textBox.index);
     if (textBox.mode === 'export') {
       return (
         '<div class="save-text">' +
@@ -442,7 +316,7 @@ const SaveManager = (() => {
     return (
       '<div class="save-text">' +
       `<div class="save-text-head">Paste a save exported from this game, then import it into ${title}.</div>` +
-      `<textarea id="save-text-area" class="save-text-area" spellcheck="false" placeholder="MYTHBLOOD1:…" aria-label="Save text to import"></textarea>` +
+      `<textarea id="save-text-area" class="save-text-area" spellcheck="false" placeholder="${TEXT_PREFIX}..." aria-label="Save text to import"></textarea>` +
       '<div class="save-text-btns">' +
       `<button type="button" class="save-btn primary" data-save-act="import-go">Import into ${title}</button>` +
       '<button type="button" class="save-btn" data-save-act="text-close">Cancel</button>' +
@@ -466,18 +340,16 @@ const SaveManager = (() => {
 
   function renderScreen() {
     const root = ensureScreen();
-    const cards = [getAutosave(), ...listSlots()].map(cardHtml).join('');
-    const why = whyNoSave();
+    const blocked = saveBlockReason();
+    const autos = hasAutosaves() ? listAutosaves() : [];
     const keep = textBox?.mode === 'import' ? root.querySelector('#save-text-area')?.value : null;
     root.innerHTML =
       '<div class="save-panel">' +
       '<h2 class="save-title">SAVE AND LOAD</h2>' +
-      `<p class="save-sub">${
-        why && why !== 'No battle in progress'
-          ? `${escapeHtml(why)}.`
-          : 'Three slots are yours. The autosave is written each time night falls.'
-      }</p>` +
-      `<div class="save-cards">${cards}</div>` +
+      `<p class="save-sub">${blocked ? escapeHtml(blocked) : 'Three slots are yours. Export a save to keep it as text.'}</p>` +
+      `<div class="save-cards">${listSlots()
+        .map((s) => cardHtml(s, 'slot'))
+        .join('')}${autos.map((s) => cardHtml(s, 'auto')).join('')}</div>` +
       `<div class="save-status ${escapeHtml(statusNote.kind)}" role="status" aria-live="polite">${escapeHtml(statusNote.text)}</div>` +
       textBoxHtml() +
       '<div class="save-actions"><button type="button" class="save-btn close" data-save-act="close">Close</button></div>' +
@@ -490,16 +362,16 @@ const SaveManager = (() => {
     const el = e.target.closest('[data-save-act]');
     if (!el) return;
     const act = el.dataset.saveAct;
-    const raw = el.dataset.slot;
-    const index = raw === AUTO ? AUTO : parseInt(raw, 10);
-    const title = raw != null ? slotTitle(index) : '';
+    const kind = el.dataset.kind || 'slot';
+    const index = parseInt(el.dataset.slot, 10);
+    const title = titleOf(kind, index);
+    const auto = kind === 'auto';
     AudioEngine?.SFX?.click?.();
     if (act === 'close') return close();
     if (act === 'text-close') {
       textBox = null;
     } else if (act === 'save') {
-      const taken = !listSlots()[index]?.empty;
-      if (taken) {
+      if (!listSlots()[index]?.empty) {
         const yes = await ask(`Overwrite ${title}? The save in it now is lost.`, {
           title: `Overwrite ${title}`,
           okLabel: 'Overwrite',
@@ -511,13 +383,13 @@ const SaveManager = (() => {
       say(r.ok ? `Saved to ${title}.` : r.error, r.ok ? 'ok' : 'bad');
     } else if (act === 'load') {
       if (typeof Game !== 'undefined' && Game.isPlaying?.()) {
-        const yes = await ask(`Load ${title}? The battle you are in now is left as it is.`, {
+        const yes = await ask(`Load ${title}? The battle you are in now ends unsaved.`, {
           title: `Load ${title}`,
           okLabel: 'Load',
         });
         if (!yes) return;
       }
-      const r = loadFromSlot(index);
+      const r = auto ? loadAutosave(index) : loadFromSlot(index);
       if (r.ok) {
         say('');
         close({ loaded: true });
@@ -531,15 +403,16 @@ const SaveManager = (() => {
         danger: true,
       });
       if (!yes) return;
-      deleteSlot(index);
-      if (textBox?.index === index) textBox = null;
+      if (auto) deleteAutosave(index);
+      else deleteSlot(index);
+      if (textBox?.kind === kind && textBox.index === index) textBox = null;
       say(`${title} deleted.`, 'ok');
     } else if (act === 'export') {
-      const text = exportSlotText(index);
-      textBox = text ? { mode: 'export', index, text } : null;
-      say(text ? '' : 'Nothing to export.', text ? '' : 'bad');
+      const r = auto ? exportAutosave(index) : exportSlot(index);
+      textBox = r.ok ? { mode: 'export', kind, index, text: r.text } : null;
+      say(r.ok ? '' : r.error, r.ok ? '' : 'bad');
     } else if (act === 'import') {
-      textBox = { mode: 'import', index };
+      textBox = { mode: 'import', kind: 'slot', index };
       say('');
     } else if (act === 'copy') {
       const area = document.getElementById('save-text-area');
@@ -550,11 +423,7 @@ const SaveManager = (() => {
         await navigator.clipboard.writeText(area?.value || '');
         copied = true;
       } catch (_) {
-        try {
-          copied = document.execCommand('copy');
-        } catch (_e) {
-          copied = false;
-        }
+        copied = false;
       }
       say(copied ? 'Copied.' : 'Select the text and copy it by hand (Ctrl+C).', copied ? 'ok' : '');
       const note = document.querySelector('#save-screen .save-status');
@@ -566,24 +435,21 @@ const SaveManager = (() => {
     } else if (act === 'import-go') {
       const target = textBox?.index;
       const text = document.getElementById('save-text-area')?.value || '';
-      // Check the text before asking about the slot it would replace.
-      const checked = parseSaveText(text);
-      if (!checked.ok) {
-        say(checked.error, 'bad');
+      if (!text.trim()) {
+        say('Paste the save text first.', 'bad');
         renderScreen();
         return;
       }
       if (!listSlots()[target]?.empty) {
-        const yes = await ask(`Import over ${slotTitle(target)}? The save in it now is lost.`, {
-          title: `Overwrite ${slotTitle(target)}`,
-          okLabel: 'Import',
-          danger: true,
-        });
+        const yes = await ask(
+          `Import over ${titleOf('slot', target)}? The save in it now is lost.`,
+          { title: `Overwrite ${titleOf('slot', target)}`, okLabel: 'Import', danger: true }
+        );
         if (!yes) return;
       }
-      const r = importSlotText(target, text);
+      const r = importString(text, { slot: target });
       if (r.ok) textBox = null;
-      say(r.ok ? `Imported into ${slotTitle(target)}.` : r.error, r.ok ? 'ok' : 'bad');
+      say(r.ok ? `Imported into ${titleOf('slot', target)}.` : r.error, r.ok ? 'ok' : 'bad');
     }
     renderScreen();
     const area = document.getElementById('save-text-area');
@@ -615,7 +481,6 @@ const SaveManager = (() => {
     if (opts.loaded) {
       if (typeof UX !== 'undefined') UX.closePauseMenu?.(false);
       if (typeof UI !== 'undefined') UI.updateHUD?.(true);
-      Game.showMessage?.('Loaded. The battle is paused — Space to go on.', 200);
     } else if (returnToPause && playing && Game.getState().paused) {
       if (typeof UX !== 'undefined') UX.openPauseMenu?.();
     }
@@ -631,17 +496,13 @@ const SaveManager = (() => {
     const host = document.getElementById('save-slots');
     if (!host) return;
     const line = (s) => {
-      const name = slotTitle(s.index);
+      const name = titleOf('slot', s.index);
       if (s.empty)
         return `<div class="save-line empty"><strong>${name}</strong><span>Empty</span></div>`;
-      const when =
-        typeof SaveThumbnail !== 'undefined'
-          ? SaveThumbnail.formatSavedAt(s.savedAt)
-          : new Date(s.savedAt).toLocaleString();
-      return `<div class="save-line"><strong>${name}</strong><span>Wave ${escapeHtml(s.wave)} · ${escapeHtml(pretty(s.difficulty))} · ${escapeHtml(when)}</span></div>`;
+      return `<div class="save-line"><strong>${name}</strong><span>Wave ${escapeHtml(s.wave)} · ${escapeHtml(pretty(s.difficulty))} · ${escapeHtml(whenOf(s))}</span></div>`;
     };
     host.innerHTML =
-      `<div class="save-lines">${[getAutosave(), ...listSlots()].map(line).join('')}</div>` +
+      `<div class="save-lines">${listSlots().map(line).join('')}</div>` +
       '<button type="button" class="save-btn primary save-open-btn" data-save-open>SAVE / LOAD</button>';
     host.querySelector('[data-save-open]').addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
@@ -651,7 +512,6 @@ const SaveManager = (() => {
 
   function init() {
     migrateLegacyQuickSave(loadStore());
-    if (typeof setInterval === 'function') setInterval(tick, 1000);
   }
 
   return {
@@ -661,17 +521,13 @@ const SaveManager = (() => {
     isOpen,
     renderPauseSlots,
     listSlots,
-    getAutosave,
     saveToSlot,
-    autosave,
     loadFromSlot,
     deleteSlot,
-    exportSlotText,
-    importSlotText,
-    formatPlayTime,
-    getPlayMs: () => playMs,
-    AUTO,
     validateSlot,
+    saveBlockReason,
+    exportSlot,
+    importString,
   };
 })();
 

@@ -441,6 +441,17 @@ body #save-screen.save-screen {
   letter-spacing: 1px;
   color: #f2e8d0;
 }
+#save-screen .save-card-label {
+  display: block;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: #b8aca0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 #save-screen .save-card-facts {
   display: grid;
   grid-template-columns: 78px minmax(0, 1fr);
