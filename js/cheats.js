@@ -114,7 +114,7 @@ const Cheats = (() => {
     'void residue': {
       id: 'cod115',
       message:
-        'VOID RESIDUE — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
+        'POWDERHORN COMPANY — Dunmar Fusewick, Aldous Verdigris, Otmar Caskwright & Isen Quillon unlocked! Build Void Residue Barracks.',
       apply() {
         MetaProgress.unlock115();
         Achievements?.tryUnlock('cheat_used');
