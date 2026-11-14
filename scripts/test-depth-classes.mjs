@@ -58,7 +58,7 @@ ok(colony.total >= 0 && colony.tier?.label, 'ColonyValue.computeKingdomStrength'
 const pressure = ColonyValue.deriveWavePressure(colony, 10);
 ok(pressure.countMult > 0, 'ColonyValue.deriveWavePressure');
 
-ok(FactionDepth.PROFILES?.halo?.label?.includes('Orbital'), 'FactionDepth.PROFILES');
+ok(FactionDepth.PROFILES?.halo?.label === 'The Greywatch', 'FactionDepth.PROFILES');
 ok(typeof FactionDepth.getProfile === 'function', 'FactionDepth.getProfile');
 ok(
   FactionDepth.getProfile('halo')?.building === 'spartan_academy',

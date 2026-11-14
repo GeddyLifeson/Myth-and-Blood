@@ -6,37 +6,42 @@ const Encyclopedia = (() => {
   let returnToPause = false;
   const COLISEUM_TEASE = {
     stone_cold:
-      'The Stonebreaker — court records say elites fall to a sudden stunner and the crowd goes silent.',
-    the_rock: 'The Mountain King lays down the law; kill streaks get louder when he headlines.',
-    ric_flair: 'The Gilded Lord — allies near him fight with extra swagger. Woooo!',
-    hulk_hogan: 'The Titan — below half health he powers up and refuses to stay down.',
-    macho_man: 'Sky Elbow Ace drops elbows from the high ground. Snap into it.',
-    sting: 'The Crow Sentinel strikes from the shadows. Wounded prey rarely escape the deathlock.',
-    john_cena: 'The Patriot never gives up — damage seems to bounce off when the fight turns ugly.',
-    bautista: 'The Wild Lord — his bomb shakes everyone standing too close.',
-    roman_reigns: 'The Island Sovereign — the spear ends arguments and several orcs at once.',
+      'The Wall-Splitter: old bailiff rolls say elites fall to one keystone blow, and the yard goes quiet.',
+    the_rock: 'The Cairn-Maker raises a stone over every foe he drops; his kill streaks ring loud.',
+    ric_flair: 'The Gilded Bastard: allies near him fight with a boasting nerve.',
+    hulk_hogan:
+      'The Unfelled: below half health his stubborn blood surges and he will not stay down.',
+    macho_man:
+      'The Javelin of Spite hurls from the high ground, and the crit lands before the cheer.',
+    sting: 'The Gaoler drags the wounded back by the chain. Few slip his hold.',
+    john_cena: 'The Oathkeeper never yields: blows seem to glance off when the fight turns ugly.',
+    bautista: 'The Bull of Marrowgate: his goring sweep scatters everyone standing too close.',
+    roman_reigns: 'The Fen Warden: his shoulder ram ends arguments and several orcs at once.',
     shawn_michaels:
-      'Heartland Ace — a chin check rings out when the moment is right, usually a crit.',
-    bret_hart: 'The Technician — sharpshooter locks a single foe in misery.',
-    undertaker: 'The Grave Walker — tombstones spread dread; enemy morale withers nearby.',
-    kane: 'The Inferno Brother — chokeslams hit harder the bigger the target.',
-    andre_giant: 'The Colossus — footsteps cause splash damage; walls fear him.',
-    razor_ramon: 'The Bladed Duke — steady, stylish, inevitable edge damage.',
-    kevin_nash: 'The Freight Tower — power bombs echo through the ranks.',
-    roddy_piper: 'The Bagpipe Brawler — hot tag energy; when he scores, allies feel it.',
-    hacksaw_duggan: 'The Timber Patriot — rally pulses on wave start when he is signed.',
-    junkyard_dog: 'The Scrapyard Bruiser — headbutts stun on impact.',
-    rey_mysterio: 'The Luchador Phantom — too fast to pin, too clever to catch.',
-    eddie_guerrero: 'The Border Liege — lie, cheat, steal; maybe pick an elite pocket for TP.',
-    chris_benoit: 'The Submission Ace — surgical, cruel, single-target devastation.',
-    oba_femi: 'The Rising Champion — surrounded is when he hits hardest.',
-    brock_lesnar: 'The Beast Unchained — if you are wounded, you are gone.',
-    cm_punk: 'The Clean-Living Rebel — lights-out knee finishes anyone already hurting.',
-    seth_rollins: 'The Schemer — boot stomps from range at wounded targets.',
-    sheamus: 'The Gaelic Brawler — running boot leaves a line of bodies.',
+      'The Tourney Darling: a spinning heel rings out when the moment is right, usually a crit.',
+    bret_hart: 'The Lockwright: one hold, one foe, no way out.',
+    undertaker:
+      'The Bell of Low Hallow: a passing bell spreads dread; enemy morale withers nearby.',
+    kane: 'The Troll-Flayer: his barbed hide bites harder the bigger the target.',
+    andre_giant: 'The Walking Keep: footsteps splash damage; walls fear him.',
+    razor_ramon: 'The Patient Blade: steady, stylish, inevitable edge damage.',
+    kevin_nash: 'The Lintel: every fourth blow brings the roof down on the ranks.',
+    roddy_piper: 'The Heckler: when he scores, allies feel it.',
+    hacksaw_duggan:
+      'The Colour-Serjeant: raises the colours and rallies the line at the start of each wave.',
+    junkyard_dog: "The Ram of Tanner's Row: his brow stuns on a crit.",
+    rey_mysterio: 'The Rope-Dancer: too quick to pin, too clever to catch.',
+    eddie_guerrero:
+      'The Light-Fingered: lie, cheat, steal; maybe lift a purse from an elite for TP.',
+    chris_benoit: 'The Vise: surgical, cruel, single-target devastation.',
+    oba_femi: 'The Unbeaten Novice: surrounded is when he hits hardest.',
+    brock_lesnar: 'The Butcher of the Bloodsand: if you are wounded, you are gone.',
+    cm_punk: 'The Hedge-Preacher: the last word finishes anyone already hurting.',
+    seth_rollins: 'The Poacher: a long cast at wounded targets.',
+    sheamus: 'The Peat-Cutter: his sweep leaves a line of bodies.',
     bray_wyatt:
-      'The Lantern Prophet — his lantern dims enemy accuracy when dusk falls on the field.',
-    randy_orton: 'The Ambush Hunter — outta nowhere on anyone already hurting.',
+      'The Bog Oracle: her corpse-candle dims enemy accuracy when dusk falls on the field.',
+    randy_orton: 'The Still Hand: a sudden fall on anyone already hurting.',
   };
 
   const CATEGORIES = [

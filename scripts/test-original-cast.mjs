@@ -847,6 +847,20 @@ ok(
   `no old name or source term in a string the cast modules print ${literalHits.slice(0, 12).join(' | ')}`
 );
 
+// The encyclopedia rumours about each champion are written against their ids; they must use the new titles.
+const teaseSrc = readFileSync(join(JS, 'encyclopedia.js'), 'utf8');
+const teaseBlock = teaseSrc.slice(
+  teaseSrc.indexOf('const COLISEUM_TEASE = {'),
+  teaseSrc.indexOf('};', teaseSrc.indexOf('const COLISEUM_TEASE = {'))
+);
+const teaseHits = (teaseBlock.match(/'[^'\n]*'|"[^"\n]*"/g) || [])
+  .map((l) => blocked(l))
+  .filter(Boolean);
+ok(
+  teaseBlock.length > 500 && teaseHits.length === 0,
+  `no old name or source term in the encyclopedia champion rumours ${teaseHits.join(',')}`
+);
+
 // The northern-war table names real heroes and their real abilities.
 const byAbility = Object.fromEntries(Object.values(operatives).map((d) => [d.ability, d]));
 const stale = Object.entries(FactionDepth.PLANET_WARFARE_OPERATIVES).filter(([ability, o]) => {
