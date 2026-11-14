@@ -284,9 +284,9 @@ const SiegeLoop = (() => {
       text: 'Enemies with a red pennant are line-breakers: they run past your troops. Each one that gets through is a breach, counted at the top.',
     },
     {
-      id: 'orders',
+      id: 'build',
       wave: 4,
-      text: "The General's orders: with a General on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
+      text: 'Builders raise works: deploy a Builder (7), open the Build tab and place a Wall to hold line-breakers, a Medical Tent, or a Research Lab. A lab earns science each dawn; Iron Weapons opens knights, sappers and crossbowmen.',
     },
     {
       id: 'spoils',
@@ -302,6 +302,13 @@ const SiegeLoop = (() => {
       id: 'intel',
       wave: 8,
       text: 'Spy and courier are open: the right panel scouts the next wave and sends one royal message per wave.',
+    },
+    {
+      // Shown only once a General can be recruited (Command Theory researched), never before.
+      id: 'orders',
+      wave: 6,
+      needs: 'general',
+      text: "The General's orders: a General can now be recruited (0). With him on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
     },
   ];
 
@@ -341,6 +348,8 @@ const SiegeLoop = (() => {
   }
 
   function stepReached(step, ctx) {
+    // A step that explains a unit waits until the player can actually recruit it.
+    if (step.needs === 'general' && !(ctx && ctx.canRecruitGeneral)) return false;
     return upcomingWave(ctx) >= step.wave;
   }
 
@@ -473,10 +482,11 @@ const SiegeLoop = (() => {
   }
 
   /** Warband: half as many soldiers, each worth far more. */
-  function deployCostMult(army = 0) {
+  function deployCostMult(army = 0, freeBonus = 0) {
     // A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head.
-    const upkeep =
-      run.active && !run.creativeRun ? 1 + Math.max(0, army - ARMY_FREE) * ARMY_UPKEEP : 1;
+    // Granaries (an Outpost upgrade) feed a few more before the surcharge starts.
+    const free = ARMY_FREE + Math.max(0, freeBonus || 0);
+    const upkeep = run.active && !run.creativeRun ? 1 + Math.max(0, army - free) * ARMY_UPKEEP : 1;
     return (run.warband ? 2 : 1) * upkeep;
   }
 
@@ -713,6 +723,20 @@ const SiegeLoop = (() => {
     let kind = '';
     if (cfg.boss) kind = 'Boss wave';
     else if (typeof GameDepth !== 'undefined' && GameDepth.isHordeWave?.(next)) kind = 'Horde';
+    // A standing Watchtower (or a Scout Report) turns the rough preview into a head count
+    // by type: the pool's shares of the expected host, largest first.
+    let makeup = null;
+    if (ctx.watchtowers > 0 || ctx.scoutedNext) {
+      const total = Object.values(weights).reduce((a, n) => a + n, 0) || 1;
+      makeup = Object.keys(weights)
+        .map((t) => ({
+          name: (typeof EnemyDefs !== 'undefined' && EnemyDefs[t]?.name) || t,
+          n: Math.round((weights[t] / total) * count),
+        }))
+        .filter((m) => m.n > 0)
+        .sort((a, b) => b.n - a.n)
+        .slice(0, 8);
+    }
     return {
       wave: next,
       count,
@@ -720,6 +744,8 @@ const SiegeLoop = (() => {
       kind,
       boss: !!cfg.boss,
       runners: next >= RUNNER_FROM_WAVE,
+      makeup,
+      makeupSource: makeup ? (ctx.watchtowers > 0 ? 'Watchtower' : 'Scout') : '',
     };
   }
 
@@ -749,7 +775,9 @@ const SiegeLoop = (() => {
     if (!p) return '';
     const parts = [`Wave ${p.wave}: about ${p.count} foes`];
     if (p.kind) parts.push(p.kind);
-    if (p.names.length) parts.push(p.names.join(', '));
+    if (p.makeup && p.makeup.length) {
+      parts.push(`${p.makeupSource} report: ${p.makeup.map((m) => `${m.n} ${m.name}`).join(', ')}`);
+    } else if (p.names.length) parts.push(p.names.join(', '));
     if (p.runners) parts.push('line-breakers likely');
     return parts.join(' · ');
   }
@@ -792,6 +820,21 @@ const SiegeLoop = (() => {
     syncHud(ctx);
   }
 
+  /** Spy: Forge Maps. A marked, safe crate lands at the start of the next day. */
+  function forgeMaps() {
+    if (!run.active) return false;
+    run.forgedMaps = true;
+    return true;
+  }
+
+  /** Rebuild the night preview (a watchtower finished, or a scout reported in). */
+  function refreshPreview(ctx) {
+    if (!run.active || !ctx || !ctx.isNight) return null;
+    run.preview = buildPreview(ctx);
+    syncHud(ctx);
+    return run.preview;
+  }
+
   /** TP for sounding the horn before the night runs out. */
   function earlyCallBonus(secondsLeft, ctx) {
     if (!run.active || ctx.creative || ctx.wave < 1) return 0;
@@ -830,8 +873,10 @@ const SiegeLoop = (() => {
     const x = 60 + ctx.rng() * (ctx.worldW - 120);
     const top = Math.max(120, ctx.worldH * 0.3);
     const y = top + ctx.rng() * Math.max(40, ctx.deployY - 30 - top);
-    run.crates.push({ id: run.nextId++, x, y, age: 0, spent: false });
-    ctx.float(x, y - 14, 'SUPPLIES', '#e8dcc0');
+    const forged = !!run.forgedMaps;
+    run.forgedMaps = false;
+    run.crates.push({ id: run.nextId++, x, y, age: 0, spent: false, forged });
+    ctx.float(x, y - 14, forged ? 'MARKED SUPPLIES' : 'SUPPLIES', forged ? '#ffe080' : '#e8dcc0');
     ctx.burst('dust', x, y);
     ctx.playSfx('whoosh');
   }
@@ -844,7 +889,8 @@ const SiegeLoop = (() => {
       checkRibbons(ctx);
       saveStore();
     }
-    const roll = ctx.rng();
+    // A crate found with forged maps (spy) is never bait and always holds TP.
+    const roll = crate.forged ? 0.3 : ctx.rng();
     if (roll < 0.14 && !fx.safeCrates && ctx.wave >= 3) {
       ctx.float(crate.x, crate.y - 14, 'AMBUSH!', '#ff4040');
       ctx.showMessage('The crate was bait — goblins spring the ambush!', 200);
@@ -887,6 +933,7 @@ const SiegeLoop = (() => {
     const tick = ctx.tick;
 
     if (!ctx.isNight && !ctx.creative) {
+      if (run.forgedMaps) dropCrate(ctx);
       if (ctx.wave >= CRATE_FROM_WAVE && run.crates.length < 3) {
         run.crateTimer -= 1 + fx.crateRate;
         if (run.crateTimer <= 0) {
@@ -911,6 +958,16 @@ const SiegeLoop = (() => {
             // The approach lasts until the squad crosses into your half, or 25 seconds at most.
             u.musterAge = (u.musterAge || 0) + 6;
             if (u.musterAge >= 1500 || !inMusterZone(u, ctx)) u.mustered = true;
+          }
+          if (u.lineBreaker && !u.heldByWall && typeof EconomyRules !== 'undefined') {
+            // A wall holds runners: one that comes within reach stops and has to fight.
+            const wall = EconomyRules.tryHoldRunner(u, ctx.walls, ctx.wave);
+            if (wall) {
+              u.speed /= 1.3;
+              u.path = [];
+              u.pathIndex = 0;
+              ctx.float(u.x, u.y - 16, 'HELD', '#c8d8f0');
+            }
           }
           if (u.lineBreaker && hasBreached(u, ctx)) recordBreach(u, ctx);
           else unstickFromEdge(u, ctx);
@@ -1533,7 +1590,12 @@ const SiegeLoop = (() => {
     }
     const up = el('siege-upkeep');
     if (up) {
-      const pct = Math.round((deployCostMult(ctx.army || 0) / (run.warband ? 2 : 1) - 1) * 100);
+      const pct = Math.round(
+        (deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0) /
+          (run.warband ? 2 : 1) -
+          1) *
+          100
+      );
       up.hidden = pct <= 0;
       up.textContent = `Recruit cost +${pct}%`;
     }
@@ -1824,6 +1886,10 @@ const SiegeLoop = (() => {
     drawWorld,
     getHudState,
     FIRST_STEPS,
+    forgeMaps,
+    refreshPreview,
+    previewText,
+    getPreview: () => run.preview,
     spawnMarkers,
     computeScore,
     getBestScores,

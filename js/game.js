@@ -2513,6 +2513,33 @@ const Game = (() => {
     get army() {
       return unitCounts.player;
     },
+    get upkeepArmy() {
+      return unitCounts.upkeepArmy ?? unitCounts.player;
+    },
+    get freeArmyBonus() {
+      return unitCounts.freeArmyBonus || 0;
+    },
+    /** Complete player walls: each holds a few line-breakers per wave. */
+    get walls() {
+      return GS.buildings;
+    },
+    /** Standing watchtowers turn the night preview into a head count by type. */
+    get watchtowers() {
+      let n = 0;
+      for (const b of GS.buildings) {
+        if (b.isWatchtower && b.owner === 'player' && b.complete && b.hp > 0) n++;
+      }
+      return n;
+    },
+    /** A Scout Report bought tonight does the same for one wave. */
+    get scoutedNext() {
+      return GS.scoutedWave === GS.wave + 1;
+    },
+    /** The General can be recruited (Command Theory researched, or everything unlocked). */
+    get canRecruitGeneral() {
+      if (GS.units.some((u) => u.isGeneral && u.team === 'player' && u.hp > 0)) return true;
+      return !svc('Research') || svc('Research').isDeployUnlocked('general', getResearchOpts());
+    },
     get enemiesLeft() {
       return countActiveEnemies();
     },
@@ -2721,6 +2748,9 @@ const Game = (() => {
     unitCounts.crossoverOnField.length = 0;
     unitCounts.garrisonedPlayer = 0;
     unitCounts.mageCount = 0;
+    unitCounts.upkeepArmy = 0;
+    unitCounts.freeArmyBonus =
+      typeof EconomyRules !== 'undefined' ? EconomyRules.freeArmyBonus(GS.buildings) : 0;
     const byType = unitCounts.livePlayerByType;
     for (const k in byType) delete byType[k];
     for (let i = 0; i < GS.units.length; i++) {
@@ -2728,6 +2758,8 @@ const Game = (() => {
       if (u.hp <= 0) continue;
       if (u.team === 'player') {
         unitCounts.player++;
+        // Specialists do not raise the recruit surcharge.
+        if (u.type !== 'builder' && u.type !== 'courier') unitCounts.upkeepArmy++;
         byType[u.type] = (byType[u.type] || 0) + 1;
         if (u.garrisoned) unitCounts.garrisonedPlayer++;
         if (u.type === 'builder') unitCounts.liveBuilders++;
@@ -2937,6 +2969,7 @@ const Game = (() => {
     GS.nightTimer = 0;
     refreshUnitCounts();
     awardRoundTP();
+    syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
     GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
     SiegeLoop.onNightBegin(siegeCtx);
@@ -4051,10 +4084,7 @@ const Game = (() => {
       ) {
         u.morale = Math.min(u.maxMorale, u.morale + fx.mythicMorale);
       }
-      if (fx.hpMult > 1) {
-        u.maxHp = Math.floor(u.maxHp * fx.hpMult);
-        u.hp = Math.min(u.hp, u.maxHp);
-      }
+      // fx.hpMult is applied once, above; it used to be applied here a second time.
       if (fx.buildSpeedMult > 1 && u.type === 'builder') {
         u.buildSpeedMult = (u.buildSpeedMult || 1) * fx.buildSpeedMult;
       }
@@ -4214,7 +4244,7 @@ const Game = (() => {
     const exclude = excludeBuildingIds
       ? new Set(Array.isArray(excludeBuildingIds) ? excludeBuildingIds : [excludeBuildingIds])
       : null;
-    const snapOnHamlet = bdef?.isFortressUpgrade && exclude?.size;
+    const snapOnHamlet = (bdef?.isFortressUpgrade || bdef?.isOutpostUpgrade) && exclude?.size;
     if (!snapOnHamlet && isBlocked(wx, wy, null, margin)) return true;
     for (const b of GS.buildings) {
       if (exclude?.has(b.id)) continue;
@@ -4243,6 +4273,94 @@ const Game = (() => {
     }
     if (!best) return null;
     return { x: best.x, y: best.y, hamlet: best };
+  }
+
+  /**
+   * Outpost upgrades (Barracks or Granary) are placed on a finished Outpost that has not
+   * been upgraded yet. Each Outpost takes one, once: that is the either/or.
+   */
+  function resolveOutpostUpgradeSite(wx, wy, def) {
+    let best = null;
+    let bestD = Infinity;
+    const maxDist = def.requiresOutpostNearby || 44;
+    for (const b of GS.buildings) {
+      if (b.type !== 'outpost' || b.owner !== 'player' || !b.complete || b.hp <= 0) continue;
+      if (b.upgrade || b.upgradePending) continue;
+      const d2 = posDistSq(b.x, b.y, wx, wy);
+      if (d2 < maxDist * maxDist && d2 < bestD) {
+        bestD = d2;
+        best = b;
+      }
+    }
+    return best ? { x: best.x, y: best.y, outpost: best } : null;
+  }
+
+  /** The upgrade's scaffolding is done: turn its Outpost into a Barracks or a Granary. */
+  function completeOutpostUpgrade(b) {
+    const def = BuildDefs[b.type] || {};
+    const info = typeof EconomyRules !== 'undefined' ? EconomyRules.OUTPOST_UPGRADES[b.type] : null;
+    let host = null;
+    let bestD = Infinity;
+    for (const o of GS.buildings) {
+      if (o.type !== 'outpost' || o.owner !== 'player' || !o.complete || o.hp <= 0) continue;
+      if (o.upgrade) continue;
+      const d2 = posDistSq(o.x, o.y, b.x, b.y);
+      if (d2 < 60 * 60 && d2 < bestD) {
+        bestD = d2;
+        host = o;
+      }
+    }
+    const idx = GS.buildings.indexOf(b);
+    if (idx >= 0) {
+      GS.buildings.splice(idx, 1);
+      releaseBuildingRecord(b);
+    }
+    invalidateObstacles();
+    if (!host || !info) {
+      // The Outpost fell while the work was under way: the price comes back.
+      GS.tactical += def.cost || 0;
+      sanitizeTactical();
+      showMessage('The Outpost was lost before its upgrade finished — TP refunded.', 240);
+      return;
+    }
+    host.upgrade = info.id;
+    host.upgradeName = info.label;
+    host.upgradePending = false;
+    host.maxHp = Math.floor(host.maxHp + (def.hpBonus || 0));
+    host.hp = Math.min(host.maxHp, host.hp + (def.hpBonus || 0));
+    svc('FloatingText')?.status?.(host.x, host.y - 24, info.label.toUpperCase(), '#ffe080');
+    showMessage(`Outpost upgraded to ${info.label}. ${info.note}`, 320);
+    refreshUnitCounts();
+  }
+
+  /**
+   * Stretcher bearers: once per wave, a soldier struck down near a Medical Tent is carried
+   * in alive instead of dying.
+   */
+  function tryStretcherSave(unit) {
+    if (typeof EconomyRules === 'undefined' || !unit || unit.team !== 'player') return false;
+    if (unit.isDoomslayer || unit.isGeneral || !isDayPhase() || GS.creativeMode) return false;
+    const tent = EconomyRules.claimStretcher(unit.x, unit.y, GS.buildings, GS.wave);
+    if (!tent) return false;
+    const r = EconomyRules.BUILDINGS.medical_tent;
+    releaseFromGarrison(unit);
+    unit.hp = Math.max(1, Math.ceil(unit.maxHp * r.saveHp));
+    const slot = getMedicalTentSlot(tent);
+    unit.x = slot.x;
+    unit.y = slot.y;
+    unit.path = [];
+    unit.pathIndex = 0;
+    unit.combatTargetId = null;
+    unit.structureTargetId = null;
+    unit.fleeing = false;
+    unit.pinned = false;
+    unit.fightToDeath = false;
+    unit.stretcherSaves = (unit.stretcherSaves || 0) + 1;
+    tryMedicalRetreat(unit, { silent: true });
+    const name = typeof getUnitDisplayName === 'function' ? getUnitDisplayName(unit) : unit.type;
+    svc('FloatingText')?.status?.(tent.x, tent.y - 24, 'SAVED', '#80ffa0');
+    showMessage(`${name} was carried to the medical tent alive.`, 220);
+    return true;
   }
 
   function ach(type, data = {}) {
@@ -4371,6 +4489,18 @@ const Game = (() => {
       buildX = site.x;
       buildY = site.y;
       excludeBuildId = site.hamlet.id;
+    }
+    let upgradeHost = null;
+    if (def.isOutpostUpgrade) {
+      const site = resolveOutpostUpgradeSite(wx, wy, def);
+      if (!site) {
+        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        return false;
+      }
+      buildX = site.x;
+      buildY = site.y;
+      excludeBuildId = site.outpost.id;
+      upgradeHost = site.outpost;
     }
     if (isBuildSiteBlocked(buildX, buildY, def, excludeBuildId)) {
       // Creative / tests: nudge off trees and rocks instead of hard-failing the spawn.
@@ -6187,6 +6317,14 @@ const Game = (() => {
           units: GS.units,
           spawnUnit,
           applyPlayerMods: applyPlayerStatMods,
+          rng: gameRandom,
+          unitName: (u) =>
+            typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type,
+          // A soldier lost on the march is a real loss: counted, and his record released.
+          loseUnit: (u) => {
+            GS.runPlayerDeaths++;
+            releaseUnitRecord(u);
+          },
           globalHunt: GS.globalHunt,
           deployX: GS.worldW / 2,
           deployY: GS.deployY,
@@ -6996,6 +7134,66 @@ const Game = (() => {
     }
   }
 
+  /**
+   * Dawn pay-out of the starter works. The TP itself is part of getTpPerRound(); this shows
+   * where it came from as a number over each building, pays the labs' science, and musters
+   * the Barracks' free footman.
+   * @returns {{tp: number, science: number, mustered: number}}
+   */
+  function payDawnWorks() {
+    const out = { tp: 0, science: 0, mustered: 0 };
+    if (GS.creativeMode && GS.creativeSettings.freeResources) return out;
+    const ft = svc('FloatingText');
+    const gens = GS.buildings
+      .filter((b) => b.owner === 'player' && b.complete && b.hp > 0 && b.isResourceGen)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      .slice(0, 6);
+    for (const b of gens) {
+      const tp = BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0;
+      if (tp <= 0) continue;
+      out.tp += tp;
+      ft?.status?.(b.x, b.y - 22, `+${tp} TP`, '#80ffa0');
+    }
+    if (svc('Research') && svc('Research').onWaveCleared) {
+      out.science = svc('Research').onWaveCleared({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        showMessage,
+      });
+      if (out.science > 0) {
+        for (const b of GS.buildings) {
+          if (b.isResearchLab && b.owner === 'player' && b.complete && b.hp > 0) {
+            ft?.status?.(
+              b.x,
+              b.y - 22,
+              `+${EconomyRules.BUILDINGS.research_lab.dawnScience} SP`,
+              '#80c0ff'
+            );
+          }
+        }
+      }
+    }
+    if (typeof EconomyRules !== 'undefined' && GS.wave < ACADEMY_ERA_WAVE) {
+      for (const b of EconomyRules.barracksMuster(GS.buildings, GS.wave)) {
+        const u = spawnUnit('footman', b.x, b.y + 26, 'player');
+        if (!u) continue;
+        u.targetY = GS.rallyY;
+        u.huntMode = GS.globalHunt;
+        GS.units.push(u);
+        out.mustered++;
+        ft?.status?.(b.x, b.y - 22, 'MUSTER', '#ffe080');
+      }
+      if (out.mustered > 0) {
+        showMessage(
+          `Barracks muster: ${out.mustered} footm${out.mustered === 1 ? 'an' : 'en'} report for duty.`,
+          220
+        );
+        refreshUnitCounts();
+      }
+    }
+    return out;
+  }
+
   function awardRoundTP() {
     if (GS.tpAwardedForWave === GS.wave) return;
     GS.tpAwardedForWave = GS.wave;
@@ -7008,9 +7206,15 @@ const Game = (() => {
         : 1;
     const gained = Math.max(0, Math.floor(getTpPerRound() * techTpMult + GS.pendingLevy));
     GS.tactical += gained;
+    const levyPaid = GS.pendingLevy;
     GS.pendingLevy = 0;
     sanitizeTactical();
-    const ecoNote = eco > 0 ? ` (+${eco} from settlements)` : '';
+    const works = payDawnWorks();
+    const ecoParts = [];
+    if (eco > 0) ecoParts.push(`+${eco} from settlements`);
+    if (works.tp > 0) ecoParts.push(`+${works.tp} from works`);
+    if (levyPaid > 0) ecoParts.push(`+${levyPaid} levy`);
+    const ecoNote = ecoParts.length ? ` (${ecoParts.join(', ')})` : '';
     // Wave summary banner (kills / TP / casualties) — richer than a single toast
     if (typeof GameFeedback !== 'undefined') {
       const fbStats = GameFeedback.getWaveStats?.() || {};
@@ -7051,6 +7255,9 @@ const Game = (() => {
       // Scout / Infiltrate / Bribe set this for the coming wave; dropping it here
       // meant the promised roster report never appeared at dawn.
       revealed: GS.pendingWaveMods.revealed,
+      speedMult: GS.pendingWaveMods.speedMult,
+      noSiege: GS.pendingWaveMods.noSiege,
+      softenShare: GS.pendingWaveMods.softenShare,
     });
     GS.pendingWaveMods = { ...GameRuntime.DEFAULT_PENDING_WAVE_MODS };
   }
@@ -7077,7 +7284,15 @@ const Game = (() => {
     releaseAllBuildings();
     refreshUnitCounts();
     GS.moveMarkers = [];
-    GS.tactical = diff.startingTp + SiegeLoop.startRun(siegeCtx);
+    // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
+    // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
+    if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
+    const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
+    GS.tactical =
+      diff.startingTp +
+      (typeof EconomyRules !== 'undefined'
+        ? EconomyRules.grantStartTp(ribbonStartTp)
+        : ribbonStartTp);
     GS.wave = 0;
     GS.kills = 0;
     GS.misses = 0;
@@ -7184,6 +7399,7 @@ const Game = (() => {
     if (svc('MultiFrontSiege')) svc('MultiFrontSiege').resetRun();
     if (svc('MonsterBosses')) svc('MonsterBosses').resetRun();
     if (svc('PlayerCounterEvolution')) svc('PlayerCounterEvolution').resetRun();
+    GS.scoutedWave = -1;
     if (svc('LivingPlanet')) svc('LivingPlanet').resetRun();
     if (svc('FactionHazards')) svc('FactionHazards').resetRun();
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
@@ -7282,6 +7498,7 @@ const Game = (() => {
         rallyY: GS.rallyY,
         units: GS.units,
         grantTp: (n) => {
+          if (typeof EconomyRules !== 'undefined') n = EconomyRules.grantStartTp(n);
           if (n > 0) {
             GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
             sanitizeTactical();
@@ -7297,6 +7514,7 @@ const Game = (() => {
         creative: false,
         units: GS.units,
         grantTp: (n) => {
+          if (typeof EconomyRules !== 'undefined') n = EconomyRules.grantStartTp(n);
           if (n > 0) {
             GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
             sanitizeTactical();
@@ -7637,6 +7855,48 @@ const Game = (() => {
       floatingText: floatStatus,
       worldW: GS.worldW,
     });
+  }
+
+  /** What the priced actions need to know about the run right now. */
+  function econCtx() {
+    return {
+      wave: GS.wave,
+      upkeepMult: getDeployCostMult(),
+      isDeployUnlocked: (type) =>
+        !svc('Research') || svc('Research').isDeployUnlocked(type, getResearchOpts()),
+    };
+  }
+
+  /** Refresh action prices and cooldown labels (night start, after a use, after a load). */
+  function syncEconomyActions() {
+    if (typeof EconomyRules !== 'undefined') EconomyRules.syncActionDefs(econCtx());
+  }
+
+  /**
+   * Spy trade-offs that shape the queue once it is built: Sabotage removes siege engines,
+   * Deep Infiltration weakens the first arrivals. Disrupt's forced march is applied per
+   * enemy as it spawns.
+   */
+  function applyEconomyWaveMods() {
+    if (typeof EconomyRules === 'undefined') return;
+    const mods = GS.waveModifiers || {};
+    if (mods.noSiege) {
+      const cut = EconomyRules.stripSiege(GS.spawnQueue);
+      showMessage(
+        cut > 0
+          ? `Sabotage: ${cut} siege engine${cut === 1 ? '' : 's'} never left camp.`
+          : 'Sabotage: the host brought no siege engines today.',
+        260
+      );
+    }
+    if (mods.softenShare > 0) {
+      mods.softenCount = EconomyRules.softenCountFor(GS.spawnQueue.length);
+      showMessage(`Ambush on the road: the first ${mods.softenCount} foes arrive wounded.`, 260);
+    }
+    if ((mods.speedMult || 1) > 1) {
+      showMessage('Disrupted host: fewer of them, but tougher and on a forced march.', 260);
+    }
+    EconomyRules.onWaveStart(mods);
   }
 
   function buildSpawnQueue() {
@@ -8322,6 +8582,7 @@ const Game = (() => {
       });
     }
     buildSpawnQueue();
+    applyEconomyWaveMods();
     if (GS.namedBossWave && svc('MonsterBosses')) {
       svc('MonsterBosses').spawnPackStructures(
         GS.namedBossWave.type,
@@ -8705,11 +8966,11 @@ const Game = (() => {
       if (researchLocked) {
         const need =
           type === 'ballista'
-            ? 'Locked: Research Lab → Iron Weapons → Siege Engineering (wave 12+, 55 SP).'
+            ? 'Locked: Research Lab → Iron Weapons → Siege Engineering (wave 9+, 34 SP).'
             : type === 'bard'
-              ? 'Locked: Research Lab → Morale Arts (wave 5+, 32 SP).'
+              ? 'Locked: Research Lab → Morale Arts (wave 4+, 18 SP).'
               : type === 'scout' || type === 'pikeman'
-                ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 10+).'
+                ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 7+, 26 SP).'
                 : type === 'sapper' || type === 'knight' || type === 'crossbowman'
                   ? 'Locked: Research Lab → Iron Weapons first.'
                   : type === 'general'
@@ -8826,11 +9087,19 @@ const Game = (() => {
 
   function executeSpyAction(action) {
     const def = SpyActions[action];
+    const ruleKey = `spy:${action}`;
+    const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
-      ? svc('ContentExpansion').getSpyCost(action, def?.cost ?? 99)
-      : (def?.cost ?? 99);
+      ? svc('ContentExpansion').getSpyCost(action, baseCost)
+      : baseCost;
     if (!def || GS.tactical < cost) {
       showMessage('Not enough TP or invalid action!');
+      return false;
+    }
+    const gate = rules?.canUse(ruleKey, econCtx());
+    if (gate && !gate.ok) {
+      showMessage(`${def.name}: ${gate.reason}`);
       return false;
     }
     if (!isKingdomActionUnlocked(def)) {
@@ -8851,6 +9120,8 @@ const Game = (() => {
       if (ok) {
         GS.tactical -= cost;
         GS.spyUsedThisWave = true;
+        rules?.markUsed(ruleKey, GS.wave);
+        syncEconomyActions();
         playSfx('magicCast');
         ach('spy', { action });
         syncInteractionState();
@@ -8876,12 +9147,28 @@ const Game = (() => {
       GS.pendingWaveMods.stealReduction += 2;
       showMessage('Spy stole enemy war chest! +4 TP');
     } else if (action === 'disrupt') {
-      GS.pendingWaveMods.countMult = 0.65;
-      showMessage('Supply lines disrupted! Next wave weakened.');
+      // A trade, not a discount: fewer come, but the ones who do are fed first and pushed hard.
+      const r = rules?.rule(ruleKey) || { countMult: 0.75, hpMult: 1.12, speedMult: 1.15 };
+      GS.pendingWaveMods.countMult = r.countMult;
+      GS.pendingWaveMods.hpMult = (GS.pendingWaveMods.hpMult || 1) * r.hpMult;
+      GS.pendingWaveMods.speedMult = r.speedMult;
+      showMessage(
+        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes, but ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster.`,
+        300
+      );
     } else if (action === 'assassin') {
       GS.pendingWaveMods.noElites = true;
       showMessage('Enemy captain assassinated! No elites next wave.');
-    } else if (action === 'scout' || action === 'infiltrate') {
+    } else if (action === 'infiltrate') {
+      // Used to run the same code as Scout Report. Now it is an ambush on the road.
+      const r = rules?.rule(ruleKey) || { softenShare: 0.3, softenHp: 0.6 };
+      GS.pendingWaveMods.softenShare = r.softenShare;
+      showMessage(
+        `Infiltrators lie in wait: the first ${Math.round(r.softenShare * 100)}% of the next wave will arrive at ${Math.round(r.softenHp * 100)}% health.`,
+        300
+      );
+    } else if (action === 'scout') {
+      GS.scoutedWave = GS.wave + 1;
       GS.pendingWaveMods.revealed = true;
       GS.waveModifiers.revealed = true;
       const sides = getUnlockedAttackSides(GS.wave + 1);
@@ -8891,7 +9178,12 @@ const Game = (() => {
       let extra = '';
       if (boss) extra = ' Named BOSS expected.';
       else if (horde) extra = ' HORDE expected.';
-      GS.nextWaveIntel = `Scout intel locked — exact roster at dawn.${sides.length > 1 ? ` Possible flanks: ${sides.join(', ')}` : ''}${extra}`;
+      // The head count by type goes into the night preview now, not at dawn when it is too late.
+      const preview = SiegeLoop.refreshPreview?.(siegeCtx);
+      const report = preview
+        ? SiegeLoop.previewText(preview)
+        : 'Scout intel locked — roster at dawn.';
+      GS.nextWaveIntel = `${report}${sides.length > 1 ? ` · Possible flanks: ${sides.join(', ')}` : ''}${extra}`;
       showMessage(GS.nextWaveIntel, 340);
     } else if (action === 'bribery') {
       GS.pendingWaveMods.revealed = true;
@@ -8908,8 +9200,13 @@ const Game = (() => {
       GS.pendingWaveMods.hpMult = 0.8;
       showMessage('Enemy caches poisoned! Next wave -20% HP.');
     } else if (action === 'sabotage') {
-      GS.spawnDelayBonus = 120;
-      showMessage('Siege equipment sabotaged! Enemy spawns delayed.');
+      const r = rules?.rule(ruleKey) || { delayTicks: 600 };
+      GS.pendingWaveMods.noSiege = true;
+      GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
+      showMessage(
+        `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
+        300
+      );
     } else {
       // Unknown action after expansion miss — refund.
       GS.tactical += cost;
@@ -8923,6 +9220,8 @@ const Game = (() => {
     ) {
       svc('FactionReputation').onSpyAggression(GS.wave, { hooks: { showMessage } });
     }
+    rules?.markUsed(ruleKey, GS.wave);
+    syncEconomyActions();
     playSfx('magicCast');
     ach('spy', { action });
     syncInteractionState();
@@ -9113,12 +9412,18 @@ const Game = (() => {
       }
       return false;
     }
+    // The soldiers leave the field but stay themselves: their records are kept by the
+    // expedition and put back when it returns, with name, rank and kills intact.
     for (const uid of result.expedition.unitIds) {
       const idx = GS.units.findIndex((u) => u.id === uid);
-      if (idx >= 0) {
-        const [u] = GS.units.splice(idx, 1);
-        releaseUnitRecord(u);
-      }
+      if (idx < 0) continue;
+      const [u] = GS.units.splice(idx, 1);
+      if (GS.selectedUnitId === uid) GS.selectedUnitId = null;
+      GS.selectedUnitIds = GS.selectedUnitIds.filter((id) => id !== uid);
+      u.path = [];
+      u.pathIndex = 0;
+      u.combatTargetId = null;
+      u.structureTargetId = null;
     }
     if (svc('FactionReputation')) {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
@@ -9271,11 +9576,19 @@ const Game = (() => {
 
   function sendCourierMessage(msg) {
     const def = CourierMessages[msg];
+    const ruleKey = `courier:${msg}`;
+    const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
-      ? svc('ContentExpansion').getCourierCost(msg, def?.cost ?? 99)
-      : (def?.cost ?? 99);
+      ? svc('ContentExpansion').getCourierCost(msg, baseCost)
+      : baseCost;
     if (!def || GS.tactical < cost) {
       showMessage('Not enough TP!');
+      return false;
+    }
+    const gate = rules?.canUse(ruleKey, econCtx());
+    if (gate && !gate.ok) {
+      showMessage(`${def.name}: ${gate.reason}`);
       return false;
     }
     if (!isKingdomActionUnlocked(def)) {
@@ -9305,6 +9618,7 @@ const Game = (() => {
     }
     GS.tactical -= cost;
     GS.courierMessagesUsedThisWave++;
+    rules?.markUsed(ruleKey, GS.wave);
     const courier = GS.units.find((u) => u.type === 'courier' && u.hp > 0);
     let cdMult = courier?.courierCooldownMult || 1;
     // Twin Dispatch rides 20% cooler (faster) between messages.
@@ -9336,6 +9650,7 @@ const Game = (() => {
       playSfx('deploy');
       ach('courier', { message: msg });
       syncInteractionState({ refreshCounts: true });
+      syncEconomyActions();
       return true;
     }
 
@@ -9348,8 +9663,21 @@ const Game = (() => {
           u.demoralized = false;
           u.witnessDeaths = 0;
         });
-    else if (msg === 'levy') GS.pendingLevy = 6;
-    else if (msg === 'banner') {
+    else if (msg === 'levy') {
+      // The levy is paid by the soldiers' families: it costs morale as well as a fee.
+      const r = rules?.rule(ruleKey) || { pay: 5, morale: 2 };
+      GS.pendingLevy += r.pay;
+      for (const u of GS.units) {
+        if (u.team !== 'player' || u.hp <= 0 || !(u.maxMorale > 0)) continue;
+        u.morale = Math.max(0, u.morale - r.morale);
+      }
+      svc('FloatingText')?.status?.(
+        GS.worldW / 2,
+        GS.rallyY - 40,
+        `LEVY -${r.morale} MORALE`,
+        '#ffb060'
+      );
+    } else if (msg === 'banner') {
       const u = spawnUnit('knight', 200, GS.deployY, 'player');
       u.targetY = GS.rallyY;
       GS.units.push(u);
@@ -9398,6 +9726,7 @@ const Game = (() => {
     playSfx('deploy');
     ach('courier', { message: msg });
     syncInteractionState({ refreshCounts: msg === 'banner' });
+    syncEconomyActions();
     return true;
   }
 
@@ -10297,6 +10626,18 @@ const Game = (() => {
       buildY = site.y;
       excludeBuildId = site.hamlet.id;
     }
+    let upgradeHost = null;
+    if (def.isOutpostUpgrade) {
+      const site = resolveOutpostUpgradeSite(wx, wy, def);
+      if (!site) {
+        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        return false;
+      }
+      buildX = site.x;
+      buildY = site.y;
+      excludeBuildId = site.outpost.id;
+      upgradeHost = site.outpost;
+    }
     if (isBuildSiteBlocked(buildX, buildY, def, excludeBuildId)) {
       showMessage('Not enough space — settlements need wide ground!');
       return false;
@@ -10326,6 +10667,12 @@ const Game = (() => {
       );
     }
 
+    if (def.isResourceGen && svc('ContentExpansion')?.economySitesFull?.()) {
+      // Checked before the TP is spent: a seventh site used to take the money and pay nothing.
+      showMessage('All 6 income sites are in use — another one would pay nothing.', 260);
+      return false;
+    }
+    if (upgradeHost) upgradeHost.upgradePending = true;
     if (!(GS.creativeMode && GS.creativeSettings.freeResources)) GS.tactical -= def.cost;
     // Pending-march completion must not wipe a different build tool the player just armed.
     if (!buildOpts.keepSelection) GS.selectedBuild = null;
@@ -11109,6 +11456,9 @@ const Game = (() => {
       svc('FloatingText').status(b.x, b.y - 20, 'SCIENCE', '#80c0ff');
     }
     if (svc('ContentExpansion')) svc('ContentExpansion').onBuildingComplete(b);
+    if (b.isOutpostUpgrade || BuildDefs[b.type]?.isOutpostUpgrade) completeOutpostUpgrade(b);
+    // A watchtower finished at night reports on the coming wave straight away.
+    if (b.isWatchtower && isNightPhase()) SiegeLoop.refreshPreview?.(siegeCtx);
     ach('building_complete', {
       buildType: b.type,
       wallCount: countPlayerWalls(),
@@ -12444,6 +12794,7 @@ const Game = (() => {
       // A volley can stop an enemy once; massed archers can no longer hold it in place forever.
       if (unit.team === 'enemy') unit.pinImmuneUntil = GS.updateTick + 290;
     }
+    if (unit.hp <= 0 && unit.team === 'player' && tryStretcherSave(unit)) return actual;
     if (unit.hp <= 0) {
       unit.hp = 0;
       let quickRevived = false;
@@ -13299,10 +13650,13 @@ const Game = (() => {
     b.buildProgress += getBuilderBuildTicks(unit);
     if (b.buildProgress >= b.buildTime) {
       b.complete = true;
+      // An upgrade's scaffolding is consumed (and its record recycled) inside the hook.
+      const doneName = BuildDefs[b.type]?.name || 'Building';
+      const consumed = !!b.isOutpostUpgrade;
       onBuildingComplete(b);
       invalidateObstacles();
       unit.building = null;
-      showMessage(`${BuildDefs[b.type].name} complete!`);
+      if (!consumed) showMessage(`${doneName} complete!`);
       svc('Particles').dust(b.x, b.y);
     }
   }
@@ -13678,6 +14032,10 @@ const Game = (() => {
             namedBossScale: u.isNamedBoss ? GS.namedBossWave?.scale : null,
           });
         }
+        if (typeof EconomyRules !== 'undefined') {
+          const label = EconomyRules.onEnemySpawn(u, GS.waveModifiers);
+          if (label) svc('FloatingText')?.status?.(u.x, u.y - 14, label, '#ffb060');
+        }
         if (u.isNamedBoss) {
           const title = u.bossTitle || EnemyDefs[type]?.bossTitle || '';
           svc('FloatingText').status(
@@ -13750,7 +14108,15 @@ const Game = (() => {
   }
 
   function updatePerkCollectionLocal() {
-    if (!isNightPhase() || !svc('Perks') || !svc('Perks').perkMachinesUnlocked()) return;
+    // Tonics open either between runs (MetaProgress) or by researching Tonic Stations
+    // Science. The research path could build stations nobody was allowed to drink from.
+    if (!isNightPhase() || !svc('Perks')) return;
+    if (
+      !svc('Perks').perkMachinesUnlocked() &&
+      !(svc('Research') && svc('Research').isResearched?.('perk_science')) &&
+      !(GS.creativeMode && GS.creativeSettings.unlockAll)
+    )
+      return;
     for (const unit of GS.units) {
       if (!svc('Perks').isEligibleForPerks(unit) || unit.hp <= 0) continue;
       if (
@@ -15555,6 +15921,7 @@ const Game = (() => {
     GS.spawnQueue = [];
     GS.spawnTimer = 0;
     buildSpawnQueue();
+    applyEconomyWaveMods();
     GS.waveProgress = 0;
     addHighlight('wave', `Wave ${GS.wave} restarted`);
     showMessage(`Wave ${GS.wave} restarted.`, 200);
@@ -15659,6 +16026,17 @@ const Game = (() => {
       const u = GS.units[i];
       if (u.hp > 0) out.push(serializeUnitSnap(u));
     }
+    // Soldiers away on an expedition are saved as standing at the muster line, so a save
+    // can never lose a veteran. (Loading calls the expedition off; see importGameState.)
+    const away = svc('PlayerCounterEvolution')?.getAwayUnits?.() || [];
+    for (let i = 0; i < away.length; i++) {
+      const u = away[i];
+      if (!(u.hp > 0)) continue;
+      const snapU = serializeUnitSnap(u);
+      snapU.x = GS.worldW / 2 + (i - (away.length - 1) / 2) * 18;
+      snapU.y = GS.deployY;
+      out.push(snapU);
+    }
     return out;
   }
 
@@ -15693,6 +16071,8 @@ const Game = (() => {
         : null,
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
+      economyRules: typeof EconomyRules !== 'undefined' ? EconomyRules.exportState() : null,
+      scoutedWave: GS.scoutedWave ?? -1,
       pendingReinforce: [...GS.pendingReinforce],
       spawnDelayBonus: GS.spawnDelayBonus,
       courierCooldown: GS.courierCooldown,
@@ -15757,6 +16137,8 @@ const Game = (() => {
         academyUnit: b.academyUnit || null,
         crossoverFaction: b.crossoverFaction || null,
         fortressTier: b.fortressTier || 0,
+        upgrade: b.upgrade || null,
+        upgradeName: b.upgradeName || null,
         garrisonUnitId: b.garrisonUnitId || null,
         slotX: b.slotX,
         slotY: b.slotY,
@@ -15799,6 +16181,13 @@ const Game = (() => {
       GS.tpAwardedForWave = snap.tpAwardedForWave ?? -1;
       GS.runPlayerDeaths = snap.runPlayerDeaths ?? snap.misses ?? 0;
       GS.pendingLevy = snap.pendingLevy ?? 0;
+      if (typeof EconomyRules !== 'undefined') {
+        EconomyRules.importState(snap.economyRules);
+        // A loaded run has already had its starting bonus.
+        if (!snap.economyRules) EconomyRules.grantStartTp(EconomyRules.START_TP_BONUS_CAP);
+      }
+      GS.scoutedWave = snap.scoutedWave ?? -1;
+      svc('PlayerCounterEvolution')?.recallAll?.();
       GS.pendingReinforce = Array.isArray(snap.pendingReinforce) ? [...snap.pendingReinforce] : [];
       GS.spawnDelayBonus = snap.spawnDelayBonus ?? 0;
       GS.courierCooldown = Math.max(0, snap.courierCooldown | 0);

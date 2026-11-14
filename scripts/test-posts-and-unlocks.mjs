@@ -167,11 +167,32 @@ const clearFoes = (GS) => {
     GS.messages.some((m) => /Hunt mode/.test(m.text)),
     'wave 1 prompt: deploying and Hunt mode'
   );
-  const wantAt = { crates: 2, breach: 3, orders: 4, spoils: 5, strikes: 6, intel: 8 };
+  const wantAt = { crates: 2, breach: 3, build: 4, spoils: 5, strikes: 6, intel: 8 };
   for (const id in wantAt) {
     const step = SiegeLoop.FIRST_STEPS.find((s) => s.id === id);
     ok(step && step.wave === wantAt[id], `${id} is introduced for wave ${wantAt[id]}`);
   }
+  // The wave-4 line used to explain the General's orders, which nobody can have on wave 4
+  // (a General needs Command Theory). It now explains builders, and the orders line waits
+  // until a General can really be recruited.
+  const w4 = SiegeLoop.FIRST_STEPS.find((s) => s.wave === 4);
+  ok(!/General/.test(w4.text), 'the wave 4 prompt does not describe a General');
+  const orders = SiegeLoop.FIRST_STEPS.find((s) => s.id === 'orders');
+  ok(orders && orders.needs === 'general' && orders.wave >= 6, 'orders wait for a General');
+  const hud = (extra) =>
+    SiegeLoop.getHudState({ wave: 7, isNight: true, missLimit: 10, ...extra }).firstSteps;
+  ok(
+    !hud({ canRecruitGeneral: false }).unlocked.orders,
+    'no General yet: orders stay unintroduced'
+  );
+  ok(
+    hud({ canRecruitGeneral: true }).unlocked.orders,
+    'General recruitable: orders are introduced'
+  );
+  ok(
+    !Game.getState().siegeLoop.firstSteps.unlocked.orders,
+    'a fresh run cannot recruit a General, so the game does not introduce his orders'
+  );
   // Nothing is blocked: a strike can still be picked while its tab is dimmed.
   const tpBefore = GS.tactical;
   GS.tactical = 50;

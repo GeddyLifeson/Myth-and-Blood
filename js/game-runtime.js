@@ -109,6 +109,11 @@ const GameRuntime = (() => {
       stealReduction: mods.stealReduction ?? 0,
       revealed: !!mods.revealed,
       nextPreview: mods.nextPreview ?? '',
+      // Spy trade-offs (EconomyRules): Disrupt's forced march, Sabotage, Deep Infiltration.
+      speedMult: mods.speedMult ?? 1,
+      noSiege: !!mods.noSiege,
+      softenShare: mods.softenShare ?? 0,
+      softenCount: mods.softenCount ?? 0,
     };
   }
 
@@ -125,6 +130,9 @@ const GameRuntime = (() => {
     hpMult: 1,
     noElites: false,
     stealReduction: 0,
+    speedMult: 1,
+    noSiege: false,
+    softenShare: 0,
   });
 
   return {

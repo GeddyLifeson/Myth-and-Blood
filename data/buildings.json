@@ -12,9 +12,35 @@
     "garrisonSlot": 1,
     "facing": "north"
   },
+  "outpost_barracks": {
+    "name": "Barracks",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "isOutpostUpgrade": true,
+    "requiresOutpostNearby": 44,
+    "hpBonus": 100
+  },
+  "outpost_granary": {
+    "name": "Granary",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "isOutpostUpgrade": true,
+    "requiresOutpostNearby": 44,
+    "hpBonus": 40
+  },
   "wall": {
     "name": "Wall",
-    "cost": 6,
+    "cost": 5,
     "hp": 350,
     "cover": 0.6,
     "radius": 28,
@@ -74,19 +100,19 @@
   },
   "research_lab": {
     "name": "Research Lab",
-    "cost": 45,
+    "cost": 18,
     "hp": 180,
     "cover": 0.35,
     "radius": 22,
     "blocksMove": false,
     "blocksLOS": true,
     "buildTime": 200,
-    "requiresBuilders": 2,
+    "requiresBuilders": 1,
     "isResearchLab": true
   },
   "watchtower": {
     "name": "Watchtower",
-    "cost": 5,
+    "cost": 4,
     "hp": 160,
     "cover": 0.35,
     "radius": 18,
@@ -119,22 +145,22 @@
     "blocksMove": true,
     "blocksLOS": false,
     "buildTime": 160,
-    "requiresBuilders": 2,
+    "requiresBuilders": 1,
     "isResourceGen": true,
-    "tpPerRound": 1
+    "tpPerRound": 3
   },
   "trade_outpost": {
     "name": "Trade Outpost",
-    "cost": 16,
+    "cost": 10,
     "hp": 140,
     "cover": 0.3,
     "radius": 20,
     "blocksMove": false,
     "blocksLOS": false,
     "buildTime": 170,
-    "requiresBuilders": 2,
+    "requiresBuilders": 1,
     "isResourceGen": true,
-    "tpPerRound": 1,
+    "tpPerRound": 2,
     "moraleAura": 2
   },
   "academy_footman": {

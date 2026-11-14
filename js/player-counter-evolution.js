@@ -9,10 +9,11 @@ const PlayerCounterEvolution = (() => {
   const MAX_EXPEDITION_FORCE = 4;
 
   const EXPEDITION_LOOT = {
-    baseTp: 6,
+    // Was 6 / 3 / 4: four footmen brought home about three waves of base income.
+    baseTp: 4,
     baseScience: 1,
-    perSurvivorTp: 3,
-    perStageTp: 4,
+    perSurvivorTp: 2,
+    perStageTp: 3,
     perStageScience: 1,
     fullPartyScience: 1,
   };
@@ -252,6 +253,29 @@ const PlayerCounterEvolution = (() => {
     return { ok: true, doctrine: def, target, debuff };
   }
 
+  /** Chance that each soldier sent comes home: 77% alone, 92% in a party of four. */
+  function getExpeditionSurvivalRate(partySize) {
+    return 0.72 + Math.min(0.2, Math.max(0, partySize || 0) * 0.05);
+  }
+
+  /** Soldiers currently off the field on an expedition (the live unit records). */
+  function getAwayUnits() {
+    const out = [];
+    for (const e of activeExpeditions) for (const u of e.away || []) out.push(u);
+    return out;
+  }
+
+  /**
+   * Call every expedition off (used when a save is loaded: a save writes the soldiers who
+   * are away as standing at the muster line, so nobody is lost to a save and nobody is
+   * returned twice). Returns the units that were away.
+   */
+  function recallAll() {
+    const out = getAwayUnits();
+    activeExpeditions = [];
+    return out;
+  }
+
   function dispatchExpedition(factionId, unitIds, wave, ctx = {}) {
     if (!canExpedition(wave)) return { ok: false, reason: 'locked' };
     const target = getActiveFactions(wave).find((f) => f.id === factionId);
@@ -283,6 +307,9 @@ const PlayerCounterEvolution = (() => {
       targetStage: stage,
       unitIds: fighters.map((u) => u.id),
       unitTypes: fighters.map((u) => u.type),
+      // The soldiers themselves. They leave the field for a wave and come back as who
+      // they were: name, rank, stars, kills. (They used to be deleted and replaced.)
+      away: fighters,
       stagePenalty: stage >= 4 ? 2 : stage >= 3 ? 1 : 1,
       spawnMult: stage >= 4 ? 0.78 : 0.85,
       buildingSkipWaves: stage >= 3 ? 2 : 1,
@@ -299,7 +326,7 @@ const PlayerCounterEvolution = (() => {
 
     const hooks = ctx.hooks || {};
     hooks.showMessage?.(
-      `Expedition dispatched — ${fighters.length} troops march off-map against ${target.shortName}. Returns wave ${returnWave} with ~${lootPreview.tp} TP / ${lootPreview.science} SP loot.`,
+      `Expedition dispatched — ${fighters.length} troops march off-map against ${target.shortName}. Each has a ${Math.round(getExpeditionSurvivalRate(fighters.length) * 100)}% chance to come home on wave ${returnWave}, with ~${lootPreview.tp} TP / ${lootPreview.science} SP loot.`,
       400
     );
     hooks.floatingText?.(ctx.worldW / 2, 92, 'EXPEDITION', '#5080d0');
@@ -326,18 +353,37 @@ const PlayerCounterEvolution = (() => {
         label: 'Expedition',
       });
 
-      const survivalRate = 0.72 + Math.min(0.2, exp.unitIds.length * 0.05);
+      const survivalRate = getExpeditionSurvivalRate(exp.unitIds.length);
+      // Seeded generator when the game supplies one, so Seed Run stays reproducible.
+      const roll = typeof ctx.rng === 'function' ? ctx.rng : Math.random;
       let survivors = 0;
-      for (const type of exp.unitTypes) {
-        if (Math.random() > survivalRate) continue;
-        const u = ctx.spawnUnit?.(type, ctx.deployX, ctx.deployY, 'player');
-        if (!u) continue;
-        ctx.applyPlayerMods?.(u);
+      const fallen = [];
+      const away = Array.isArray(exp.away) ? exp.away : [];
+      for (let i = 0; i < away.length; i++) {
+        const u = away[i];
+        u.onExpedition = null;
+        u.expeditionTarget = null;
+        if (roll() > survivalRate) {
+          fallen.push(ctx.unitName?.(u) || u.honorName || u.type);
+          ctx.loseUnit?.(u);
+          continue;
+        }
+        // Home again, the same soldier: only his place on the field is reset.
+        u.x = ctx.deployX + (i - (away.length - 1) / 2) * 18;
+        u.y = ctx.deployY;
+        u.targetX = null;
         u.targetY = ctx.rallyY;
+        u.path = [];
+        u.pathIndex = 0;
+        u.combatTargetId = null;
+        u.manualOrder = false;
+        u.fleeing = false;
         u.huntMode = ctx.globalHunt ?? true;
+        u.expeditions = (u.expeditions || 0) + 1;
         ctx.units?.push(u);
         survivors++;
       }
+      exp.away = null;
 
       const baseStage =
         typeof EnemyFactions !== 'undefined'
@@ -348,8 +394,9 @@ const PlayerCounterEvolution = (() => {
       if (loot.science > 0) ctx.grantScience?.(loot.science);
 
       const effStage = getEffectiveStage(exp.factionId, wave, baseStage);
+      const lostNote = fallen.length ? ` Lost on the march: ${fallen.join(', ')}.` : '';
       hooks.showMessage?.(
-        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} survivors, +${loot.tp} TP, +${loot.science} SP. ${exp.factionName} set back to S${effStage}.`,
+        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} came home, +${loot.tp} TP, +${loot.science} SP.${lostNote} ${exp.factionName} set back to S${effStage}.`,
         400
       );
       hooks.floatingText?.(ctx.worldW / 2, 108, 'EXPEDITION HOME', '#80c0ff');
@@ -361,7 +408,7 @@ const PlayerCounterEvolution = (() => {
         AsymmetricWarfare.addThreatXp(-4 - exp.stagePenalty * 2, 'expedition_return');
       }
 
-      resolved.push({ expedition: exp, debuff, survivors, loot });
+      resolved.push({ expedition: exp, debuff, survivors, loot, fallen });
     }
 
     activeExpeditions = remaining;
@@ -423,6 +470,9 @@ const PlayerCounterEvolution = (() => {
     getEffectiveStage,
     executeCounterDoctrine,
     dispatchExpedition,
+    getExpeditionSurvivalRate,
+    getAwayUnits,
+    recallAll,
     resolveExpeditions,
     computeExpeditionLoot,
     getExpeditionLootScale,
