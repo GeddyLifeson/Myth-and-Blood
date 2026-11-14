@@ -631,7 +631,8 @@ const EnemyFactions = (() => {
    * What a faction fields when it leads. `from` is the first wave a type can appear (no type
    * comes earlier than it did before factions led waves). `core` types are always in the
    * host; `key` types carry the tactic; `heavy` types are the expensive ones the composer
-   * leans on to hit the wave's threat; `aux` types may march in support of another faction.
+   * leans on to hit the wave's threat; `aux` types may march in support of another faction;
+   * `max` is the largest share of the lead's bodies one type may take, so a host keeps its shape.
    */
   const HOSTS = {
     goblin_hordes: {
@@ -639,9 +640,9 @@ const EnemyFactions = (() => {
       band: (w) => (w < 10 ? 4 : w < 25 ? 2 : 1.2),
       roster: [
         { type: 'goblin', from: 1, w: 6, core: true, aux: true },
-        { type: 'goblin_sapper', from: 4, w: 2.2, key: true, aux: true },
-        { type: 'goblin_firebrand', from: 5, w: 1.5 },
-        { type: 'goblin_burrower', from: 9, w: 1.5 },
+        { type: 'goblin_sapper', from: 4, w: 2.2, key: true, aux: true, max: 0.3 },
+        { type: 'goblin_firebrand', from: 5, w: 1.5, max: 0.15 },
+        { type: 'goblin_burrower', from: 9, w: 1.5, max: 0.2 },
         { type: 'goblin_engineer', from: 12, w: 0.5 },
         { type: 'siege_tower', from: 7, w: 0.6, heavy: true, rear: true, cap: 4 },
         { type: 'iron_colossus', from: 40, w: 0.5, heavy: true, rear: true, cap: 3 },
@@ -656,8 +657,8 @@ const EnemyFactions = (() => {
       roster: [
         { type: 'orc', from: 1, w: 5, core: true, aux: true },
         { type: 'orc_archer', from: 2, w: 2.2, aux: true },
-        { type: 'orc_shieldbearer', from: 7, w: 2.6, key: true, front: true },
-        { type: 'berserker', from: 7, w: 1.3, heavy: true },
+        { type: 'orc_shieldbearer', from: 7, w: 2.6, key: true, front: true, max: 0.3 },
+        { type: 'berserker', from: 7, w: 1.3, heavy: true, max: 0.25 },
         { type: 'shaman', from: 9, w: 0.5, cap: 3 },
         { type: 'war_chief', from: 10, w: 0.3, key: true, heavy: true, cap: 2 },
       ],
@@ -671,7 +672,7 @@ const EnemyFactions = (() => {
       roster: [
         { type: 'warg_rider', from: 3, w: 3, core: true, aux: true },
         { type: 'plague_rat', from: 6, w: 4, core: true, aux: true },
-        { type: 'troll', from: 6, w: 0.9, heavy: true, cap: 6 },
+        { type: 'troll', from: 6, w: 0.9, heavy: true, cap: 6, max: 0.2 },
         { type: 'behemoth', from: 25, w: 0.5, heavy: true, cap: 4 },
       ],
       bosses: ['boss_thokk'],
@@ -682,12 +683,12 @@ const EnemyFactions = (() => {
       tactic: 'risen',
       band: (w) => (w < 20 ? 2 : 2.5),
       roster: [
-        { type: 'dark_knight', from: 8, w: 2.4, core: true },
-        { type: 'necromancer', from: 8, w: 1.4, key: true, aux: true },
-        { type: 'bone_summoner', from: 11, w: 1.1, aux: true },
+        { type: 'dark_knight', from: 8, w: 3, core: true },
+        { type: 'necromancer', from: 8, w: 1.4, key: true, aux: true, max: 0.28 },
+        { type: 'bone_summoner', from: 11, w: 1.1, aux: true, max: 0.22 },
         { type: 'abomination', from: 20, w: 0.6, heavy: true, cap: 5 },
         { type: 'dreadborn_champion', from: 35, w: 0.4, heavy: true, cap: 3 },
-        { type: 'grim_revenant', from: 45, w: 0.8 },
+        { type: 'grim_revenant', from: 45, w: 0.8, max: 0.2 },
       ],
       bosses: ['boss_morwen', 'boss_rotfather', 'boss_malachar'],
       champions: ['dreadborn_champion', 'abomination', 'dark_knight'],
@@ -698,11 +699,11 @@ const EnemyFactions = (() => {
       band: (w) => (w < 32 ? 1.3 : 2.2),
       roster: [
         { type: 'dark_mage', from: 5, w: 2.6, core: true, aux: true },
-        { type: 'assassin', from: 8, w: 2, core: true, key: true },
-        { type: 'nightmare_strider', from: 30, w: 1, heavy: true },
-        { type: 'void_stalker', from: 32, w: 1, heavy: true },
-        { type: 'warp_prophet', from: 40, w: 0.8, aux: true },
-        { type: 'umbral_stalker', from: 50, w: 0.8, heavy: true },
+        { type: 'assassin', from: 8, w: 2, core: true, key: true, max: 0.35 },
+        { type: 'nightmare_strider', from: 30, w: 1, heavy: true, max: 0.3 },
+        { type: 'void_stalker', from: 32, w: 1, heavy: true, max: 0.3 },
+        { type: 'warp_prophet', from: 40, w: 0.8, aux: true, max: 0.2 },
+        { type: 'umbral_stalker', from: 50, w: 0.8, heavy: true, max: 0.25 },
       ],
       bosses: ['boss_vexis'],
       champions: ['void_stalker', 'umbral_stalker', 'assassin'],
@@ -713,9 +714,9 @@ const EnemyFactions = (() => {
       band: (w) => (w < 25 ? 1.5 : 2),
       roster: [
         { type: 'harpy', from: 6, w: 4, core: true, aux: true },
-        { type: 'wailing_wraith', from: 12, w: 1.4 },
-        { type: 'sky_drake', from: 14, w: 1.5, key: true, heavy: true },
-        { type: 'hellbound_legionnaire', from: 25, w: 1.4, aux: true },
+        { type: 'wailing_wraith', from: 12, w: 1.4, max: 0.2 },
+        { type: 'sky_drake', from: 14, w: 1.5, key: true, heavy: true, max: 0.3 },
+        { type: 'hellbound_legionnaire', from: 25, w: 1.4, aux: true, max: 0.3 },
         { type: 'elder_wyrm', from: 50, w: 0.5, heavy: true, cap: 4 },
         { type: 'cinderbound_juggernaut', from: 55, w: 0.4, heavy: true, cap: 3 },
         { type: 'hellmortar_pack', from: 60, w: 0.6, rear: true },
@@ -781,8 +782,8 @@ const EnemyFactions = (() => {
       needs: ['plague_rat'],
       from: 6,
       mix: [
-        { type: 'plague_rat', w: 8 },
-        { type: 'goblin', w: 2 },
+        { type: 'plague_rat', w: 9 },
+        { type: 'warg_rider', w: 1 },
       ],
       tactic: {
         squad: { size: 6 },
@@ -799,8 +800,8 @@ const EnemyFactions = (() => {
       from: 6,
       mix: [
         { type: 'warg_rider', w: 5 },
-        { type: 'goblin', w: 4 },
-        { type: 'plague_rat', w: 2, from: 6 },
+        { type: 'plague_rat', w: 5, from: 6 },
+        { type: 'goblin', w: 2 },
       ],
       tactic: {
         squad: { size: 5 },
@@ -1401,16 +1402,15 @@ const EnemyFactions = (() => {
     let countMult = 1;
     if (target > 0) {
       const mult = tactic.threat || 1;
-      for (let i = 0; i < 4; i++) {
+      for (let i = 0; plan.kind !== 'horde' && i < 3; i++) {
         const raw = weightedMean(lead);
         const mean = (raw * (1 - allyShare) + weightedMean(ally) * allyShare) * mult;
         const low = mean < target * 0.92;
         if (!low && mean <= target * 1.08) break;
         let moved = false;
         for (const e of lead) {
-          const t = unitThreat(e.type);
-          if (low ? t > raw * 1.05 : t < raw * 0.95) {
-            e.w *= 1.5;
+          if (low ? e.heavy : e.core && !e.heavy) {
+            e.w *= 1.3;
             moved = true;
           }
         }
@@ -1420,6 +1420,14 @@ const EnemyFactions = (() => {
       countMult = Math.max(COUNT_MIN, Math.min(COUNT_MAX, target / Math.max(0.2, mean)));
     }
     const count = Math.max(1, Math.round(baseCount * countMult));
+    // No type swamps the host: its share of the lead's bodies is capped.
+    const leadBodies = Math.max(1, Math.round((count - head.length) * (1 - allyShare)));
+    for (const e of lead) {
+      if (e.max > 0 && lead.length > 1) {
+        const byShare = Math.max(1, Math.ceil(leadBodies * e.max));
+        e.cap = e.cap > 0 ? Math.min(e.cap, byShare) : byShare;
+      }
+    }
     const front = lead.filter((e) => e.front).map((e) => e.type);
     const rear = lead.filter((e) => e.rear).map((e) => e.type);
     const built = WaveCompositionCore.composeHost({
