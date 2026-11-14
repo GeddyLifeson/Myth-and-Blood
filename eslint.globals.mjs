@@ -161,6 +161,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "PlayerCounterEvolution",
   "ProcGenObstacles",
   "ProgressionRestarts",
+  "PropArt",
   "RETREAT_HP_RATIO",
   "RTS_ERA_WAVE",
   "RTS_MAP_EXPAND_H",
