@@ -3,12 +3,14 @@
  *  - unavailable troops, buildings, spells and messages cannot be selected, and say why;
  *  - the TP number on the HUD is the TP owned, after every way of gaining or spending it;
  *  - Shift-click keeps a troop armed and charges each soldier the right (rising) price;
- *  - the spoils choice holds the game until a reward is taken.
+ *  - the spoils choice holds the game until a reward is taken;
+ *  - the side-panel tabs switch (one pane open at a time), locked items sit in a "Locked"
+ *    group with their reason, and spy/courier buttons show the real price and waves left.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
 import vm from 'vm';
-import { JS, HEADLESS_FILES } from './headless-manifest.mjs';
+import { JS, ROOT, HEADLESS_FILES } from './headless-manifest.mjs';
 import { ok, failures, boot } from './lib/harness.mjs';
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
@@ -16,7 +18,7 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 function start(seed) {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, SiegeLoop, GameState, UnitDefs, BuildDefs, Abilities, Cheats, Availability, Hotkeys, Research })`,
+    `${code}\n({ Game, SpriteGen, SiegeLoop, GameState, UnitDefs, BuildDefs, Abilities, Cheats, Availability, Hotkeys, Research, PanelModel, EconomyRules, SpyActions })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -390,6 +392,181 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
     'a caller stepping the game itself gets a reward picked and is not stalled'
   );
   SiegeLoop.setSpoilsModalForTest(null);
+}
+
+// --- 21. the side-panel tabs switch -------------------------------------------------------------
+{
+  const { PanelModel } = start(23);
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const css = readFileSync(join(ROOT, 'css', 'theme-v2.css'), 'utf8');
+  const ui = readFileSync(join(JS, 'ui.js'), 'utf8');
+  for (const [name, ids] of [
+    ['left', PanelModel.LEFT_TABS],
+    ['right', PanelModel.RIGHT_TABS],
+  ]) {
+    const tabs = PanelModel.createTabs(ids, ids[0]);
+    const open = () => Object.entries(tabs.panes()).filter(([, on]) => on);
+    ok(open().length === 1 && open()[0][0] === ids[0], `${name}: only the first pane starts open`);
+    for (const id of ids.slice(1)) {
+      ok(tabs.select(id), `${name}: selecting ${id} changes the tab`);
+      ok(
+        open().length === 1 && open()[0][0] === id && tabs.isOpen(id),
+        `${name}: ${id} is the one pane shown`
+      );
+    }
+    ok(!tabs.select(ids[ids.length - 1]), `${name}: selecting the open tab changes nothing`);
+    ok(!tabs.select('nonsense') && tabs.active === ids[ids.length - 1], `${name}: unknown tab`);
+    ok(tabs.step(1) === ids[0] && tabs.step(-1) === ids[ids.length - 2], `${name}: arrows wrap`);
+    for (const id of ids) {
+      ok(
+        html.includes(`data-side-tab="${id}"`) && html.includes(`data-side-pane="${id}"`),
+        `${name}: tab ${id} has a button and a pane in index.html`
+      );
+      ok(PanelModel.TAB_LABELS[id], `${name}: tab ${id} has a label`);
+    }
+  }
+  // Every pane but the first of each panel is hidden in the markup, and no rule un-hides it.
+  const panes = [...html.matchAll(/<div\s+class="side-tab-pane( active)?"[^>]*>/g)];
+  ok(panes.length === 7, `seven panes in the markup (${panes.length})`);
+  ok(
+    panes.every((m) => !!m[1] !== /\shidden[\s>]/.test(m[0])),
+    'a pane is either the open one or carries the hidden attribute'
+  );
+  ok(!/side-tab-pane\[hidden\]/.test(css), 'no style rule shows a hidden pane');
+  ok(!/scrollToPane|IntersectionObserver/.test(ui), 'the tabs no longer scroll one long list');
+}
+
+// --- 22. locked items sit in the Locked group, with the reason -----------------------------------
+{
+  const { Game, GameState: GS, PanelModel, Research } = start(29);
+  ok(toNight(Game, GS), 'reached the first night');
+  GS.tactical = 500;
+  const html = readFileSync(join(ROOT, 'index.html'), 'utf8');
+  const items = [];
+  const add = (kind, re) => {
+    for (const m of html.matchAll(re)) {
+      if (!items.some((it) => it.kind === kind && it.id === m[1])) items.push({ kind, id: m[1] });
+    }
+  };
+  add('deploy', /data-unit="([a-z_]+)"/g);
+  add('build', /data-build="([a-z_]+)"/g);
+  add('ability', /data-ability="([a-z_]+)"/g);
+  add('doctrine', /data-doctrine="([a-z_]+)"/g);
+  add('counterDoctrine', /data-counter-doctrine="([a-z_]+)"/g);
+  add('spy', /data-spy="([a-z_]+)"/g);
+  add('courier', /data-courier="([a-z_]+)"/g);
+  let lay = PanelModel.layout(items, Game.getState());
+  const has = (list, id) => list.some((r) => r.id === id);
+  const find = (list, id) => list.find((r) => r.id === id);
+  ok(has(lay.troops.open, 'footman') && has(lay.troops.open, 'archer'), 'starting troops are open');
+  ok(
+    find(lay.troops.locked, 'knight')?.reason === 'needs Iron Weapons',
+    `Knight is in the Troops locked group: ${find(lay.troops.locked, 'knight')?.reason}`
+  );
+  ok(!has(lay.troops.open, 'knight'), 'and not in the open list');
+  ok(has(lay.build.open, 'wall') && has(lay.build.open, 'outpost'), 'starting buildings are open');
+  ok(
+    find(lay.build.locked, 'castle')?.reason === 'needs Fortification',
+    'Castle is in the Build locked group with its research'
+  );
+  const late = items.filter((it) => PanelModel.isLate(it.kind, it.id));
+  ok(
+    late.length >= 20,
+    `academies, settlements and tonic stations are late items (${late.length})`
+  );
+  ok(
+    late.every((it) => has(lay.cmd.locked, it.id) && !has(lay.build.open, it.id)),
+    'every late item still locked waits under More, not in Build'
+  );
+  ok(
+    /^needs an Immortal /.test(find(lay.cmd.locked, 'academy_footman')?.reason || ''),
+    'a locked academy names the veteran it needs'
+  );
+  const lockedRows = Object.values(lay).flatMap((g) => g.locked);
+  ok(lockedRows.length > 20, `locked rows exist (${lockedRows.length})`);
+  ok(
+    lockedRows.every((r) => r.reason && r.reason !== 'not available'),
+    'every locked row states its reason'
+  );
+  const placed = Object.values(lay).flatMap((g) => [...g.open, ...g.locked]);
+  ok(placed.length === items.length, 'every button has exactly one place');
+  ok(
+    PanelModel.lockedLabel(lay.troops.locked.length) === `Locked · ${lay.troops.locked.length}`,
+    'label'
+  );
+  // An item that is unlocked but not affordable stays in the open list, greyed.
+  GS.tactical = 0;
+  lay = PanelModel.layout(items, Game.getState());
+  ok(
+    find(lay.troops.open, 'footman') && !find(lay.troops.open, 'footman').ok,
+    'a troop that is only too dear stays in the open list'
+  );
+  GS.tactical = 500;
+  // Research moves an item out of the Locked group.
+  const node = Research.ALL_NODES.find((n) => n.name === 'Iron Weapons');
+  Research.completeResearch(node.id, () => {});
+  lay = PanelModel.layout(items, Game.getState());
+  ok(
+    has(lay.troops.open, 'knight') && !has(lay.troops.locked, 'knight'),
+    'researching Iron Weapons moves the Knight to the open list'
+  );
+  // A late item joins its own tab once it is usable.
+  ok(
+    PanelModel.place('build', 'hamlet', { ok: true }).tab === 'build' &&
+      PanelModel.place('build', 'hamlet', { ok: false, locked: false }).tab === 'build' &&
+      PanelModel.place('build', 'hamlet', { ok: false, locked: true }).tab === 'cmd',
+    'a settlement appears in Build when it is unlocked'
+  );
+}
+
+// --- 23. spy and courier buttons: real price, waves left ----------------------------------------
+{
+  const { Game, GameState: GS, PanelModel, Availability, EconomyRules } = start(31);
+  ok(toNight(Game, GS), 'reached the first night');
+  GS.tactical = 500;
+  let a = PanelModel.action('spy', 'disrupt', Game.getState());
+  ok(a.ok && a.state === 'ready' && a.wait === 0 && a.waitText === '', 'Disrupt Lines is ready');
+  ok(
+    a.cost === EconomyRules.getCost('spy:disrupt', { wave: GS.wave }) &&
+      a.costText === `${a.cost} TP`,
+    `its button shows the price the rules charge (${a.costText})`
+  );
+  const before = GS.tactical;
+  ok(Availability.trySelect('spy', 'disrupt').ok, 'it is used');
+  ok(before - GS.tactical === a.cost, `and ${a.cost} TP is what was charged`);
+  a = PanelModel.action('spy', 'disrupt', Game.getState());
+  const cd = EconomyRules.ACTIONS['spy:disrupt'].cooldown;
+  ok(
+    !a.ok && a.state === 'cooldown' && a.wait === cd && a.waitText === `${cd} waves left`,
+    `on cooldown: ${a.waitText}`
+  );
+  ok(a.reason === `ready again in ${cd} waves`, `and the reason says so: ${a.reason}`);
+  ok(a.costText === `${a.cost} TP`, 'the price stays on the button while it waits');
+  let other = PanelModel.action('spy', 'steal', Game.getState());
+  ok(
+    !other.ok && other.state === 'cooldown' && other.waitText === '1 wave left',
+    `the rest of the spy network waits for the next wave: ${other.waitText}`
+  );
+  ok(PanelModel.usesLeft('spy', Game.getState()) === 0, 'no spy action left this wave');
+  ok(!Availability.trySelect('spy', 'disrupt').ok, 'an action on cooldown is refused');
+  ok(toNight(Game, GS), 'next night');
+  GS.tactical = 500;
+  a = PanelModel.action('spy', 'disrupt', Game.getState());
+  ok(a.wait === cd - 1 && a.waitText === `${cd - 1} waves left`, `a wave later: ${a.waitText}`);
+  other = PanelModel.action('spy', 'steal', Game.getState());
+  ok(
+    other.ok && other.wait === 0 && PanelModel.usesLeft('spy', Game.getState()) === 1,
+    'the others are ready again'
+  );
+  // A message needs a Courier; the button still shows what it would cost.
+  const m = PanelModel.action('courier', 'banner', Game.getState());
+  ok(
+    m.cost >= EconomyRules.ACTIONS['courier:banner'].cost && /TP$/.test(m.costText),
+    `Call Banner: ${m.costText}`
+  );
+  const d = PanelModel.check('doctrine', 'royal_muster', Game.getState());
+  ok(!d.ok && d.locked && /^opens in /.test(d.reason), `a later doctrine is locked: ${d.reason}`);
+  ok(PanelModel.waitLabel(0) === '' && PanelModel.waitLabel(1) === '1 wave left', 'wait labels');
 }
 
 if (failures()) {

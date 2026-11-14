@@ -115,6 +115,7 @@ export const GAME_SCRIPTS = [
   'analytics.js',
   'settings.js',
   'availability.js',
+  'panels.js',
   'tooltips.js',
   'ux.js',
   'ui.js',

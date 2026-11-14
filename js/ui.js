@@ -66,7 +66,7 @@ const UI = (() => {
     for (const id of OVERLAY_SCREEN_IDS) {
       document.getElementById(id)?.classList.remove('active');
     }
-    document.getElementById('howto-panel')?.classList.add('hidden');
+    closeMenuSheets();
     try {
       if (typeof Settings !== 'undefined' && Settings.isOpen?.()) Settings.close?.();
       if (typeof Encyclopedia !== 'undefined' && Encyclopedia.isOpen?.()) Encyclopedia.close?.();
@@ -151,6 +151,8 @@ const UI = (() => {
     build: [],
     spy: [],
     courier: [],
+    doctrine: [],
+    counterDoctrine: [],
     loadout: [],
     formation: [],
   };
@@ -164,6 +166,7 @@ const UI = (() => {
     const tagline = document.getElementById('diff-tagline');
     if (tagline && def) tagline.textContent = def.tagline;
     Game.setDifficulty(id);
+    refreshSetupSummary();
     if (typeof AdvancedDifficulty !== 'undefined') {
       const pct = AdvancedDifficulty.getDifficultyPercent(id);
       const advPct = document.getElementById('advanced-diff-pct');
@@ -175,69 +178,65 @@ const UI = (() => {
   let lastHudEarly = null;
 
   /**
-   * Side-panel section nav (UI v2).
-   * All sections stay visible and scrollable — tabs jump to a section (nothing is hidden).
+   * Side-panel tabs. One pane of a panel is shown at a time; the others carry `hidden`.
+   * Left/Right arrows move between tabs, Home/End jump to the first and last.
    */
   function initSidePanelTabs() {
     document.querySelectorAll('.side-panel').forEach((panel) => {
-      const tabs = panel.querySelectorAll('.side-tab[data-side-tab]');
-      const panes = panel.querySelectorAll('.side-tab-pane[data-side-pane]');
+      const tabEls = [...panel.querySelectorAll('.side-tab[data-side-tab]')];
+      const panes = [...panel.querySelectorAll('.side-tab-pane[data-side-pane]')];
       const scroller = panel.querySelector('.side-panel-scroll');
-      if (!tabs.length || !panes.length) return;
+      if (!tabEls.length || !panes.length) return;
+      const ids = tabEls.map((t) => t.dataset.sideTab);
+      const tabs = PanelModel.createTabs(ids, ids[0]);
 
-      // Always show every section — the hide-by-tab model buried Build/Spells/Academies.
-      panes.forEach((pane) => {
-        pane.removeAttribute('hidden');
-        pane.classList.add('active');
-      });
-
-      function setActiveTab(id) {
-        tabs.forEach((tab) => {
-          const on = tab.dataset.sideTab === id;
+      function render() {
+        const shown = tabs.panes();
+        tabEls.forEach((tab) => {
+          const on = !!shown[tab.dataset.sideTab];
           tab.classList.toggle('active', on);
           tab.setAttribute('aria-selected', on ? 'true' : 'false');
+          tab.tabIndex = on ? 0 : -1;
+        });
+        panes.forEach((pane) => {
+          const on = !!shown[pane.dataset.sidePane];
+          pane.hidden = !on;
+          pane.classList.toggle('active', on);
         });
       }
 
-      function scrollToPane(id) {
-        const pane = panel.querySelector(`.side-tab-pane[data-side-pane="${id}"]`);
-        if (!pane || !scroller) return;
-        setActiveTab(id);
-        const top = pane.offsetTop - scroller.offsetTop - 4;
-        scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      function showTab(id, opts = {}) {
+        const changed = tabs.select(id);
+        render();
+        if (changed && scroller) scroller.scrollTop = 0;
+        if (opts.focus) tabEls.find((t) => t.dataset.sideTab === tabs.active)?.focus();
+        return changed;
       }
 
-      tabs.forEach((tab) => {
+      tabEls.forEach((tab) => {
         tab.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const id = tab.dataset.sideTab;
-          if (!id) return;
-          scrollToPane(id);
-          if (typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+          if (showTab(tab.dataset.sideTab) && typeof AudioEngine !== 'undefined') {
+            AudioEngine.SFX?.click?.();
+          }
+        });
+        tab.addEventListener('keydown', (e) => {
+          let to = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = tabs.step(1);
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = tabs.step(-1);
+          else if (e.key === 'Home') to = ids[0];
+          else if (e.key === 'End') to = ids[ids.length - 1];
+          if (!to) return;
+          e.preventDefault();
+          e.stopPropagation();
+          showTab(to, { focus: true });
         });
       });
 
-      // Highlight the nav chip for whichever section is most visible while scrolling.
-      if (scroller && typeof IntersectionObserver !== 'undefined') {
-        const io = new IntersectionObserver(
-          (entries) => {
-            let best = null;
-            let bestRatio = 0;
-            for (const ent of entries) {
-              if (ent.isIntersecting && ent.intersectionRatio > bestRatio) {
-                bestRatio = ent.intersectionRatio;
-                best = ent.target;
-              }
-            }
-            if (best?.dataset?.sidePane) setActiveTab(best.dataset.sidePane);
-          },
-          { root: scroller, threshold: [0.15, 0.35, 0.55] }
-        );
-        panes.forEach((pane) => io.observe(pane));
-      }
-
-      panel._scrollToSidePane = scrollToPane;
+      render();
+      panel._showTab = showTab;
+      panel._activeTab = () => tabs.active;
 
       // Remember when the player is scrolling, so nothing scrolls the panel under them.
       if (scroller) {
@@ -265,6 +264,135 @@ const UI = (() => {
     });
   }
 
+  // ---- open list and "Locked" group of each pane ------------------------------------------
+  /** Every panel button the model places: { btn, kind, id, marker, reasonEl, at, want }. */
+  const panelItems = [];
+  /** tab id -> { root, toggle, list, title, next, sig } */
+  const lockedGroups = {};
+  const LOCKED_TABS = ['troops', 'build', 'strike', 'cmd', 'spy', 'courier'];
+  /** Sections whose heading goes when every button under it is in a Locked group. */
+  const managedSections = new Set();
+
+  function makeLockedGroup(tab) {
+    const pane = document.getElementById(`pane-${tab}`);
+    if (!pane) return;
+    const root = document.createElement('div');
+    root.className = 'locked-group';
+    root.hidden = true;
+    root.innerHTML =
+      `<button type="button" class="locked-toggle" aria-expanded="false" aria-controls="locked-${tab}">` +
+      '<span class="locked-caret" aria-hidden="true">+</span>' +
+      '<span class="locked-title">Locked</span>' +
+      '<span class="locked-next"></span></button>' +
+      `<div class="locked-list" id="locked-${tab}" hidden></div>`;
+    pane.appendChild(root);
+    const group = {
+      root,
+      toggle: root.querySelector('.locked-toggle'),
+      list: root.querySelector('.locked-list'),
+      title: root.querySelector('.locked-title'),
+      next: root.querySelector('.locked-next'),
+      caret: root.querySelector('.locked-caret'),
+      sig: '',
+    };
+    group.toggle.addEventListener('click', () => {
+      const open = group.list.hidden;
+      group.list.hidden = !open;
+      group.toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      group.caret.textContent = open ? '−' : '+';
+      if (typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+    });
+    lockedGroups[tab] = group;
+  }
+
+  function indexPanelItems() {
+    const add = (selector, kind, attr) => {
+      document.querySelectorAll(selector).forEach((btn) => {
+        const id = btn.dataset[attr];
+        if (!id || btn._item) return;
+        const marker = document.createComment(`${kind}:${id}`);
+        btn.before(marker);
+        const reasonEl = document.createElement('span');
+        reasonEl.className = 'lock-reason';
+        btn.appendChild(reasonEl);
+        const item = {
+          btn,
+          kind,
+          id,
+          marker,
+          reasonEl,
+          section: btn.closest('.pane-section'),
+          name: btn.querySelector('span:not(.cost)')?.textContent?.trim() || id,
+          at: null,
+          want: null,
+        };
+        if (item.section?.dataset.section) managedSections.add(item.section);
+        btn._item = item;
+        panelItems.push(item);
+      });
+    };
+    add('#left-panel .deploy-btn', 'deploy', 'unit');
+    add('#left-panel .build-btn', 'build', 'build');
+    add('#left-panel .ability-btn', 'ability', 'ability');
+    add('#left-panel .doctrine-btn', 'doctrine', 'doctrine');
+    add('#left-panel .counter-doctrine-btn', 'counterDoctrine', 'counterDoctrine');
+    add('#right-panel .spy-btn', 'spy', 'spy');
+    add('#right-panel .courier-btn', 'courier', 'courier');
+    LOCKED_TABS.forEach(makeLockedGroup);
+  }
+
+  /** Note where a button belongs after its availability was worked out. */
+  function notePlace(btn, avail) {
+    const item = btn._item;
+    if (!item) return;
+    const reason = avail.ok ? '' : avail.reason || '';
+    if (item.reasonEl.textContent !== reason) item.reasonEl.textContent = reason;
+    // A button the game keeps out of sight (a secret troop, a section not yet open) stays put.
+    const outOfSight =
+      btn.style.display === 'none' || (item.section && item.section.style.display === 'none');
+    const at = PanelModel.place(item.kind, item.id, avail);
+    item.want = at.locked && !outOfSight ? at.tab : null;
+  }
+
+  /** Move buttons between their own place and the Locked group of a pane. */
+  function syncLockedGroups() {
+    const byTab = {};
+    for (const item of panelItems) {
+      if (item.want) (byTab[item.want] = byTab[item.want] || []).push(item);
+      if (item.at && item.at !== item.want && !item.want) {
+        item.marker.after(item.btn);
+        item.btn.classList.remove('in-locked');
+        item.at = null;
+      }
+    }
+    for (const tab of LOCKED_TABS) {
+      const group = lockedGroups[tab];
+      if (!group) continue;
+      const rows = byTab[tab] || [];
+      const sig = rows.map((it) => `${it.kind}:${it.id}`).join(',');
+      if (sig !== group.sig) {
+        group.sig = sig;
+        for (const it of rows) {
+          group.list.appendChild(it.btn);
+          it.btn.classList.add('in-locked');
+          it.at = tab;
+        }
+        group.root.hidden = rows.length === 0;
+        group.title.textContent = PanelModel.lockedLabel(rows.length);
+      }
+      const first = rows[0];
+      const next = first ? `Next: ${first.name}, ${first.reasonEl.textContent}` : '';
+      if (group.next.textContent !== next) group.next.textContent = next;
+    }
+    // A heading with nothing left under it is not shown.
+    for (const sec of managedSections) {
+      const any = [...sec.children].some(
+        (n) => n.tagName === 'BUTTON' && n.style.display !== 'none' && !n.hidden
+      );
+      if (sec.hidden === any) sec.hidden = !any;
+    }
+  }
+
   /** Largest price on offer: what a full TP bar stands for (set by updateButtonStates). */
   let tpBarMax = 24;
   let lastTpSeen = null;
@@ -288,6 +416,9 @@ const UI = (() => {
     btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
     btn.setAttribute('aria-disabled', !avail.ok && !selected ? 'true' : 'false');
     btn.dataset.reason = avail.ok ? '' : avail.reason || '';
+    // Too dear is said in words on the price ("need 5 TP"), not by dimming alone.
+    btn.classList.toggle('cant-afford', !avail.ok && !!avail.tp && !selected);
+    notePlace(btn, avail);
     const label = shortKey(key);
     let k = btn._keyEl;
     if (!k && label) {
@@ -301,6 +432,16 @@ const UI = (() => {
       if (k.textContent !== label) k.textContent = label;
       k.hidden = !label;
     }
+  }
+
+  /**
+   * The spoken name of a panel button: what it is, then its price or why it cannot be used.
+   * The rich hover tooltip carries the same text, so no `title` is set (it used to show a
+   * second, browser-drawn tooltip on top of ours).
+   */
+  function setLabel(btn, text) {
+    if (btn.getAttribute('aria-label') !== text) btn.setAttribute('aria-label', text);
+    if (btn.title) btn.removeAttribute('title');
   }
 
   const USER_SCROLL_QUIET_MS = 1500;
@@ -322,7 +463,10 @@ const UI = (() => {
     const panel = el.closest?.('.side-panel');
     const scroller = el.closest?.('.side-panel-scroll');
     if (!panel || !scroller) return false;
-    if (userIsScrolling(panel)) return false;
+    // The button may be on a tab that is not open: open it.
+    const pane = el.closest('.side-tab-pane');
+    const switched = !!(pane && pane.hidden && panel._showTab?.(pane.dataset.sidePane));
+    if (userIsScrolling(panel) && !switched) return false;
     const box = scroller.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     if (r.top >= box.top + 2 && r.bottom <= box.bottom - 2) return false;
@@ -491,10 +635,120 @@ const UI = (() => {
     cursorTag.style.transform = `translate(${Math.round(cursorPos.x + 16)}px, ${Math.round(cursorPos.y + 18)}px)`;
   }
 
+  // ---- main-menu sheets (New siege, Records, How to play) ---------------------------------
+  let openSheetEl = null;
+  let sheetOpener = null;
+
+  function closeMenuSheets() {
+    document.querySelectorAll('.menu-sheet').forEach((sh) => {
+      sh.hidden = true;
+    });
+    document.getElementById('howto-panel')?.classList.add('hidden');
+    if (openSheetEl) {
+      openSheetEl = null;
+      try {
+        sheetOpener?.focus?.();
+      } catch (_) {
+        /* the opener may be gone */
+      }
+      sheetOpener = null;
+    }
+    refreshSetupSummary();
+  }
+
+  function openMenuSheet(id, opener) {
+    const sheet = document.getElementById(id);
+    if (!sheet) return;
+    closeMenuSheets();
+    sheet.hidden = false;
+    openSheetEl = sheet;
+    sheetOpener = opener || document.activeElement;
+    if (id === 'menu-howto-sheet')
+      document.getElementById('howto-panel')?.classList.remove('hidden');
+    (sheet.querySelector('.modal-close') || sheet).focus?.();
+  }
+
+  /** "Normal · Campaign": what BEGIN DEFENSE will start. */
+  function refreshSetupSummary() {
+    const el = document.getElementById('menu-setup-summary');
+    if (!el) return;
+    const diff = getDifficultyDef(selectedDifficulty);
+    const parts = [diff?.label || diff?.name || selectedDifficulty];
+    if (typeof GameModes !== 'undefined') {
+      const m = GameModes.getMenu();
+      if (m.challengeType) {
+        parts.push(m.challengeType === 'weekly' ? 'Weekly challenge' : 'Daily challenge');
+      } else {
+        parts.push(GameModes.MODES.find((x) => x.id === m.modeId)?.label || m.modeId);
+      }
+      if (m.ironman) parts.push('Ironman');
+    }
+    const text = parts.filter(Boolean).join(' · ');
+    if (el.textContent !== text) el.textContent = text;
+  }
+
+  function bindMenuSheets() {
+    const openers = {
+      'menu-setup-btn': 'menu-setup-sheet',
+      'menu-records-btn': 'menu-records-sheet',
+      'howto-btn': 'menu-howto-sheet',
+    };
+    for (const [btnId, sheetId] of Object.entries(openers)) {
+      document.getElementById(btnId)?.addEventListener('click', (e) => {
+        AudioEngine?.SFX?.click?.();
+        openMenuSheet(sheetId, e.currentTarget);
+      });
+    }
+    document.querySelectorAll('.menu-sheet').forEach((sheet) => {
+      sheet.addEventListener('click', (e) => {
+        // The backdrop and any Close / Done button put the sheet away.
+        if (e.target === sheet || e.target.closest?.('[data-sheet-close]')) closeMenuSheets();
+        else if (sheet.id === 'menu-setup-sheet') setTimeout(refreshSetupSummary, 0);
+      });
+      sheet.addEventListener('change', () => setTimeout(refreshSetupSummary, 0));
+    });
+    document.getElementById('menu-setup-start')?.addEventListener('click', () => {
+      closeMenuSheets();
+      document.getElementById('start-btn')?.click();
+    });
+    // Escape closes the open sheet and goes no further.
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (!openSheetEl || e.key !== 'Escape') return;
+        // A screen opened from the sheet (Advanced Difficulty, Cheats) is on top: it goes first.
+        if (document.querySelector('.screen.active:not(#menu-screen)')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenuSheets();
+      },
+      true
+    );
+    refreshSetupSummary();
+  }
+
+  // ---- the sound button -------------------------------------------------------------------
+  /** Other modules write a speaker glyph into the button; the look and the name follow it. */
+  function syncSoundButton() {
+    const btn = document.getElementById('sound-toggle');
+    if (!btn) return;
+    const muted = btn.textContent.includes('🔇');
+    btn.classList.toggle('is-muted', muted);
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    btn.setAttribute('aria-label', muted ? 'Sound is off. Turn sound on' : 'Sound is on. Mute');
+  }
+
+  function watchSoundButton() {
+    const btn = document.getElementById('sound-toggle');
+    if (!btn) return;
+    syncSoundButton();
+    if (typeof MutationObserver !== 'undefined') {
+      new MutationObserver(syncSoundButton).observe(btn, { childList: true, characterData: true });
+    }
+  }
+
   function init() {
     document.body.classList.add('ui-v2');
-    // Ensure no pane stays HTML-hidden before wiring nav (legacy tab markup).
-    document.querySelectorAll('.side-tab-pane[hidden]').forEach((p) => p.removeAttribute('hidden'));
     initSidePanelTabs();
     MetaProgress.load();
     if (typeof Achievements !== 'undefined') Achievements.init();
@@ -672,6 +926,7 @@ const UI = (() => {
         AudioEngine.resume();
         const muted = AudioEngine.toggleMute();
         soundBtn.textContent = muted ? '🔇' : '🔊';
+        syncSoundButton();
         if (typeof Settings !== 'undefined') Settings.set('muted', muted);
         if (!muted) {
           AudioEngine.SFX.click();
@@ -681,9 +936,8 @@ const UI = (() => {
       });
     }
 
-    document.getElementById('howto-btn').addEventListener('click', () => {
-      document.getElementById('howto-panel').classList.toggle('hidden');
-    });
+    bindMenuSheets();
+    watchSoundButton();
 
     document.getElementById('begin-day-btn')?.addEventListener('click', () => {
       AudioEngine.SFX.click();
@@ -721,6 +975,13 @@ const UI = (() => {
         updateHUD(true);
         Game.draw?.();
       });
+    });
+
+    document.getElementById('gameover-menu-btn')?.addEventListener('click', () => {
+      if (restartInFlight) return;
+      AudioEngine.SFX.click?.();
+      hideGameOverScreen();
+      Game.quitToMenu?.();
     });
 
     // Every panel button goes through Availability.trySelect: an item that cannot be used
@@ -1118,7 +1379,6 @@ const UI = (() => {
     const summary = document.getElementById('counter-summary-text');
     const list = document.getElementById('expedition-list');
     const wave = gs.wave || 0;
-    const kingdomStage = gs.kingdomStage || 1;
     const counterDoctrines =
       typeof PlayerCounterEvolution !== 'undefined' ? PlayerCounterEvolution.COUNTER_DOCTRINES : {};
 
@@ -1126,25 +1386,16 @@ const UI = (() => {
       const showDoctrine = !!(ce?.active || wave >= (ce?.waveMin || 15) - 2);
       doctrineSection.style.display = showDoctrine ? '' : 'none';
       if (showDoctrine) {
-        document.querySelectorAll('.counter-doctrine-btn').forEach((btn) => {
+        hudBtns.counterDoctrine.forEach((btn) => {
           const id = btn.dataset.counterDoctrine;
           const def = counterDoctrines[id];
-          const cost = def?.cost ?? 99;
-          const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-          const waveReq = def?.waveMin || 0;
-          const stageLocked = stageReq > 0 && kingdomStage < stageReq;
-          const waveLocked = waveReq > 0 && wave < waveReq;
-          const locked = stageLocked || waveLocked;
-          const costEl = btn.querySelector('.cost');
-          if (costEl) costEl.textContent = String(cost);
-          btn.classList.toggle(
-            'disabled',
-            gs.tactical < cost || gs.counterDoctrineUsedThisWave || locked
-          );
-          btn.classList.toggle('kingdom-locked', locked);
-          btn.title = locked
-            ? `${def?.name || id} — wave ${waveReq}+, stage ${stageReq}+`
-            : def?.desc || '';
+          const avail = PanelModel.counterDoctrine(id, gs);
+          const costEl = btn._costEl;
+          if (costEl && Number.isFinite(avail.cost)) costEl.textContent = String(avail.cost);
+          markButton(btn, avail, false, null);
+          btn.classList.toggle('kingdom-locked', !!avail.locked);
+          const name = def?.name || id;
+          setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
         });
       }
     }
@@ -1222,7 +1473,7 @@ const UI = (() => {
         : parseFloat(speed) || 1;
     const speedBtn = document.getElementById('speed-toggle');
     if (speedBtn) {
-      speedBtn.textContent = `SPEED: ${n}×`;
+      speedBtn.textContent = `Speed ${n}×`;
       speedBtn.classList.toggle('speed-active', n > 1);
     }
     document.querySelectorAll('.settings-speed-control .speed-btn').forEach((btn) => {
@@ -1276,9 +1527,12 @@ const UI = (() => {
       markButton(btn, avail, selected, Hotkeys.deployKey(type));
       btn.classList.toggle('research-locked', !!avail.research);
       if (def?.name) {
-        btn.title = avail.ok
-          ? `${def.name} — ${Availability.deployPriceText(type, gs)} · click, then click the field (hold Shift to place more)`
-          : `${def.name} — ${avail.reason}`;
+        setLabel(
+          btn,
+          avail.ok
+            ? `${def.name}, ${Availability.deployPriceText(type, gs)}`
+            : `${def.name}, ${avail.reason}`
+        );
       }
     });
 
@@ -1316,9 +1570,7 @@ const UI = (() => {
       if (!avail.locked && Number.isFinite(avail.cost)) prices.push(avail.cost);
       markButton(btn, avail, id === gs.selectedAbility, keyFor('ability', id));
       const name = Abilities[id]?.name || id;
-      btn.title = avail.ok
-        ? `${name} — ${avail.cost} TP · click, then click the field`
-        : `${name} — ${avail.reason}`;
+      setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
     });
     hudBtns.build.forEach((btn) => {
       const buildType = btn.dataset.build;
@@ -1335,9 +1587,7 @@ const UI = (() => {
       btn.classList.toggle('research-locked', !!avail.research && !avail.mentor);
       btn.classList.toggle('mentor-ready', !!avail.mentorReady);
       if (def?.name) {
-        btn.title = avail.ok
-          ? `${def.name} — ${avail.cost} TP · click, then click the field (hold Shift to place more)`
-          : `${def.name} — ${avail.reason}`;
+        setLabel(btn, avail.ok ? `${def.name}, ${avail.cost} TP` : `${def.name}, ${avail.reason}`);
       }
     });
     // The "Recruit cost +N%" chip reads the same price function as the buttons.
@@ -1350,20 +1600,39 @@ const UI = (() => {
     }
     // A full bar: enough for the dearest troop or strike on offer.
     tpBarMax = Availability.tpBarMax(prices);
-    hudBtns.spy.forEach((btn) => {
-      const def = SpyActions[btn.dataset.spy];
-      const avail = Availability.spy(btn.dataset.spy, gs);
-      markButton(btn, avail, false, null);
-      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
-      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Spy action'} — ${avail.reason}`;
-    });
-    hudBtns.courier.forEach((btn) => {
-      const def = CourierMessages[btn.dataset.courier];
-      const avail = Availability.courier(btn.dataset.courier, gs);
-      markButton(btn, avail, btn.dataset.courier === gs.selectedCourierMsg, null);
-      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
-      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Message'} — ${avail.reason}`;
-    });
+    // Spy actions and messages: the price the game will charge, and waves left to wait.
+    const markAction = (btn, kind, id, selected) => {
+      const def = kind === 'spy' ? SpyActions[id] : CourierMessages[id];
+      const act = PanelModel.action(kind, id, gs);
+      markButton(btn, act, selected, null);
+      btn.classList.toggle('kingdom-locked', act.locked);
+      btn.classList.toggle('on-cooldown', act.state === 'cooldown');
+      const costEl = btn._costEl;
+      if (costEl && costEl.textContent !== String(act.cost)) costEl.textContent = String(act.cost);
+      let wait = btn._waitEl;
+      if (!wait) {
+        wait = document.createElement('span');
+        wait.className = 'wait';
+        btn.appendChild(wait);
+        btn._waitEl = wait;
+      }
+      if (wait.textContent !== act.waitText) wait.textContent = act.waitText;
+      wait.hidden = !act.waitText;
+      const name = def?.name || id;
+      setLabel(btn, act.ok ? `${name}, ${act.costText}` : `${name}, ${act.reason}`);
+    };
+    hudBtns.spy.forEach((btn) => markAction(btn, 'spy', btn.dataset.spy, false));
+    hudBtns.courier.forEach((btn) =>
+      markAction(btn, 'courier', btn.dataset.courier, btn.dataset.courier === gs.selectedCourierMsg)
+    );
+    for (const kind of ['spy', 'courier']) {
+      const badge = document.getElementById(`${kind}-uses`);
+      if (!badge) continue;
+      const left = PanelModel.usesLeft(kind, gs);
+      const text = left > 0 ? `${left} left this wave` : 'used this wave';
+      if (badge.textContent !== text) badge.textContent = text;
+      badge.classList.toggle('spent', left <= 0);
+    }
 
     const loadoutSection = hudEls['loadout-section'];
     if (loadoutSection) {
@@ -1722,24 +1991,19 @@ const UI = (() => {
       }
     }
 
-    document.querySelectorAll('.doctrine-btn').forEach((btn) => {
+    hudBtns.doctrine.forEach((btn) => {
       const id = btn.dataset.doctrine;
       const def = gs.kingdomDoctrines?.[id];
-      const cost = def?.cost ?? 99;
-      const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-      const stageLocked = stageReq > 0 && (gs.kingdomStage || 1) < stageReq;
-      const costEl = btn.querySelector('.cost');
-      if (costEl) costEl.textContent = String(cost);
-      btn.classList.toggle(
-        'disabled',
-        gs.tactical < cost || gs.doctrineUsedThisWave || stageLocked
-      );
-      btn.classList.toggle('kingdom-locked', stageLocked);
-      btn.title =
-        stageLocked && typeof KINGDOM_EVOLUTION_STAGES !== 'undefined'
-          ? `Unlocks in ${KINGDOM_EVOLUTION_STAGES[stageReq]?.name || 'later stage'} — ${def?.desc || ''}`
-          : def?.desc || '';
+      const avail = PanelModel.doctrine(id, gs);
+      const costEl = btn._costEl;
+      if (costEl && Number.isFinite(avail.cost)) costEl.textContent = String(avail.cost);
+      markButton(btn, avail, false, null);
+      btn.classList.toggle('kingdom-locked', !!avail.locked);
+      const name = def?.name || id;
+      setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
     });
+    // Every button now knows its place: fill the Locked groups.
+    syncLockedGroups();
 
     const strengthWrap = document.getElementById('strength-meter-wrap');
     const strengthStage = document.getElementById('strength-stage-text');
@@ -2084,6 +2348,10 @@ const UI = (() => {
       'tp-text',
       'tp-round-text',
       'army-text',
+      'upkeep-text',
+      'breach-hud',
+      'breach-text',
+      'breach-pips',
       'wave-text',
       'wave-fill',
       'cycle-text',
@@ -2123,8 +2391,11 @@ const UI = (() => {
     hudBtns.deploy = bindCost('.deploy-btn');
     hudBtns.ability = bindCost('.ability-btn');
     hudBtns.build = bindCost('.build-btn');
-    hudBtns.spy = [...document.querySelectorAll('.spy-btn')];
-    hudBtns.courier = [...document.querySelectorAll('.courier-btn')];
+    hudBtns.spy = bindCost('.spy-btn');
+    hudBtns.courier = bindCost('.courier-btn');
+    hudBtns.doctrine = bindCost('.doctrine-btn');
+    hudBtns.counterDoctrine = bindCost('.counter-doctrine-btn');
+    indexPanelItems();
     const loadoutSection = hudEls['loadout-section'];
     hudBtns.loadout = loadoutSection ? [...loadoutSection.querySelectorAll('.loadout-btn')] : [];
     const formSection = hudEls['formation-section'];
@@ -2148,7 +2419,11 @@ const UI = (() => {
       gs.moveBuildingTarget,
       gs.paused,
       gs.heldCount,
+      gs.siegeLoop?.breaches,
+      gs.siegeLoop?.breachLimit,
       gs.courierUsedThisWave,
+      gs.courierMessagesUsedThisWave,
+      gs.hasCourier,
       gs.spyUsedThisWave,
       gs.doctrineUsedThisWave,
       gs.counterDoctrineUsedThisWave,
@@ -2393,42 +2668,96 @@ const UI = (() => {
         const sec = gs.nightSecondsLeft ?? 0;
         const m = Math.floor(sec / 60);
         const s = String(sec % 60).padStart(2, '0');
-        cycleText.textContent = `NIGHT ${m}:${s}`;
+        cycleText.textContent = `Night ${m}:${s}`;
         cycleText.className = 'stat-value cycle-night' + (sec <= 15 ? ' cycle-urgent' : '');
         cycleText.title =
           'Night prep — no enemy spawns, +35% build speed. Press D to begin day early.';
       } else {
         const light = gs.dayLight ?? 1;
-        cycleText.textContent = light < 0.72 ? 'DUSK' : 'DAY';
+        cycleText.textContent = light < 0.72 ? 'Dusk' : 'Day';
         cycleText.className = light < 0.72 ? 'stat-value cycle-dusk' : 'stat-value cycle-day';
       }
     }
     if (beginDayBtn) {
-      beginDayBtn.style.display = gs.timeOfDay === 'night' ? '' : 'none';
-      if (gs.timeOfDay === 'night') {
+      const night = gs.timeOfDay === 'night';
+      beginDayBtn.style.display = night ? '' : 'none';
+      if (night) {
         const sec = gs.nightSecondsLeft ?? 0;
         const m = Math.floor(sec / 60);
-        const s = String(sec % 60).padStart(2, '0');
-        beginDayBtn.textContent = `BEGIN DAY (${m}:${s})`;
-        beginDayBtn.title = 'Start the assault now (D)';
+        const t = `${m}:${String(sec % 60).padStart(2, '0')}`;
+        if (!beginDayBtn._timeEl) {
+          beginDayBtn.innerHTML =
+            '<span class="bd-label">Begin Day</span><span class="bd-time"></span>' +
+            '<kbd class="bd-key" aria-hidden="true"></kbd>' +
+            '<span class="night-prep-bar" aria-hidden="true"></span>';
+          beginDayBtn._timeEl = beginDayBtn.querySelector('.bd-time');
+          beginDayBtn._keyEl = beginDayBtn.querySelector('.bd-key');
+          beginDayBtn._barEl = beginDayBtn.querySelector('.night-prep-bar');
+        }
+        if (beginDayBtn._timeEl.textContent !== t) beginDayBtn._timeEl.textContent = t;
+        const key = shortKey(
+          typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', 'beginDay') : 'd'
+        );
+        if (beginDayBtn._keyEl.textContent !== key) beginDayBtn._keyEl.textContent = key;
+        beginDayBtn.setAttribute('aria-label', `Begin the day now. The night ends in ${t}`);
         beginDayBtn.classList.toggle('begin-day-urgent', sec <= 15);
         beginDayBtn.classList.toggle('begin-day-ready', sec > 15);
-        // Night prep progress (how much of the night remains)
-        let bar = beginDayBtn.querySelector('.night-prep-bar');
-        if (!bar) {
-          bar = document.createElement('span');
-          bar.className = 'night-prep-bar';
-          bar.setAttribute('aria-hidden', 'true');
-          beginDayBtn.appendChild(bar);
-        }
         const maxSec = Math.max(
           1,
           gs.nightPrepSeconds || Math.ceil((gs.nightPrepTicks || 3600) / 60) || 60
         );
         const pct = Math.max(0, Math.min(100, (sec / maxSec) * 100));
-        bar.style.width = `${pct}%`;
+        beginDayBtn._barEl.style.width = `${pct}%`;
       } else {
         beginDayBtn.classList.remove('begin-day-urgent', 'begin-day-ready');
+      }
+    }
+
+    // Army upkeep and breaches: the two numbers that decide what a recruit costs and
+    // whether the realm falls.
+    const upkeepEl = hudEls['upkeep-text'];
+    if (upkeepEl) {
+      const pct = Availability.deployPrice('footman', gs).upkeepPct;
+      const text = pct > 0 ? `recruits +${pct}%` : 'no upkeep';
+      if (upkeepEl.textContent !== text) upkeepEl.textContent = text;
+      upkeepEl.classList.toggle('raised', pct > 0);
+    }
+    const breachHud = hudEls['breach-hud'];
+    if (breachHud) {
+      const sl = gs.siegeLoop || {};
+      const n = sl.breaches || 0;
+      const limit = Math.max(1, sl.breachLimit || 10);
+      const chip = document.getElementById('siege-breaches');
+      const show = chip ? !chip.hidden : !gs.creativeMode && (gs.wave || 0) >= 2;
+      breachHud.hidden = !show || gs.state !== 'playing';
+      const key = `${n}/${limit}`;
+      if (breachHud.dataset.key !== key) {
+        const changed = breachHud.dataset.key != null && n > (breachHud._n || 0);
+        breachHud.dataset.key = key;
+        breachHud._n = n;
+        hudEls['breach-text'].textContent = key;
+        const pips = hudEls['breach-pips'];
+        if (limit <= 14) {
+          let html = '';
+          for (let i = 0; i < limit; i++) {
+            html += `<span class="pip${i < n ? ' on' : ''}"></span>`;
+          }
+          pips.innerHTML = html;
+          pips.hidden = false;
+        } else {
+          pips.hidden = true;
+        }
+        const left = limit - n;
+        breachHud.classList.toggle('danger', n > 0 && left <= 1);
+        breachHud.setAttribute(
+          'aria-label',
+          `Breaches ${n} of ${limit}. ${left <= 0 ? 'The realm has fallen.' : `${left} more and the realm falls.`}`
+        );
+        if (changed) {
+          breachHud.classList.remove('hit');
+          void breachHud.offsetWidth;
+          breachHud.classList.add('hit');
+        }
       }
     }
 

@@ -103,15 +103,38 @@ const Availability = (() => {
     return def && Number.isFinite(def.cost) ? def.cost : 0;
   }
 
-  function spyCost(id) {
-    const base = SpyActions[id]?.cost ?? 0;
+  /**
+   * Price of a priced off-field action, read from the same rule the game charges by
+   * (wave growth, repeat-use growth, army upkeep). Falls back to the action's listed cost.
+   */
+  function ruleCost(kind, id, listed, gs) {
+    if (typeof EconomyRules === 'undefined') return listed;
+    const s = gs || state();
+    const upkeepMult =
+      typeof Game !== 'undefined' && Game.getDeployCostMult ? Game.getDeployCostMult() : 1;
+    const cost = EconomyRules.getCost(`${kind}:${id}`, { wave: s.wave || 0, upkeepMult });
+    return cost == null ? listed : cost;
+  }
+
+  /** Waves left before a spy action or courier message with a cooldown is ready again. */
+  function cooldownLeft(kind, id, gs) {
+    if (typeof EconomyRules === 'undefined') return 0;
+    return EconomyRules.cooldownLeft(`${kind}:${id}`, (gs || state()).wave || 0);
+  }
+
+  function waitReason(n) {
+    return `ready again in ${n} wave${n === 1 ? '' : 's'}`;
+  }
+
+  function spyCost(id, gs) {
+    const base = ruleCost('spy', id, SpyActions[id]?.cost ?? 0, gs);
     return typeof ContentExpansion !== 'undefined' && ContentExpansion.getSpyCost
       ? ContentExpansion.getSpyCost(id, base)
       : base;
   }
 
-  function courierCost(id) {
-    const base = CourierMessages[id]?.cost ?? 0;
+  function courierCost(id, gs) {
+    const base = ruleCost('courier', id, CourierMessages[id]?.cost ?? 0, gs);
     return typeof ContentExpansion !== 'undefined' && ContentExpansion.getCourierCost
       ? ContentExpansion.getCourierCost(id, base)
       : base;
@@ -226,7 +249,7 @@ const Availability = (() => {
   function spy(id, gs = state()) {
     const def = SpyActions[id];
     if (!def) return blocked('not available', true);
-    const cost = spyCost(id);
+    const cost = spyCost(id, gs);
     const waveMin = def.waveMin || 0;
     if (waveMin > 0 && (gs.wave || 0) < waveMin) {
       return blocked(`opens at wave ${waveMin}`, true, { cost, kingdom: true });
@@ -235,7 +258,11 @@ const Availability = (() => {
     if (stage > 0 && (gs.kingdomStage || 1) < stage) {
       return blocked(`opens in ${stageName(stage)}`, true, { cost, kingdom: true });
     }
-    if (gs.spyUsedThisWave) return blocked('the spy network was already used this wave', false);
+    const wait = cooldownLeft('spy', id, gs);
+    if (wait > 0) return blocked(waitReason(wait), false, { cost, wait });
+    if (gs.spyUsedThisWave) {
+      return blocked('the spy network was already used this wave', false, { cost, wait: 1 });
+    }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }
@@ -243,15 +270,17 @@ const Availability = (() => {
   function courier(id, gs = state()) {
     const def = CourierMessages[id];
     if (!def) return blocked('not available', true);
-    const cost = courierCost(id);
+    const cost = courierCost(id, gs);
     const stage = def.kingdomStage || 0;
     if (stage > 0 && (gs.kingdomStage || 1) < stage) {
       return blocked(`opens in ${stageName(stage)}`, true, { cost, kingdom: true });
     }
+    const wait = cooldownLeft('courier', id, gs);
+    if (wait > 0) return blocked(waitReason(wait), false, { cost, wait });
     if (!gs.hasCourier) return blocked('needs a living Courier', false, { cost });
     const cap = Math.max(1, gs.courierMessagesPerWave || 1);
     if ((gs.courierMessagesUsedThisWave || 0) >= cap) {
-      return blocked('the Courier has already ridden this wave', false, { cost });
+      return blocked('the Courier has already ridden this wave', false, { cost, wait: 1 });
     }
     if (gs.courierCooldown > 0) return blocked('the Courier is still riding', false, { cost });
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });

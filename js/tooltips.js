@@ -257,9 +257,7 @@ const Tooltips = (() => {
   function getSpyTip(id, gs) {
     const def = SpyActions[id];
     if (!def) return null;
-    const base = def.cost ?? 0;
-    const cost =
-      typeof ContentExpansion !== 'undefined' ? ContentExpansion.getSpyCost(id, base) : base;
+    const cost = Availability.spyCost(id, gs || undefined);
     let footer = `${cost} TP · One action per wave`;
     footer += whyNot('spy', id, gs);
     return { title: def.name, body: def.desc, footer };
@@ -268,9 +266,7 @@ const Tooltips = (() => {
   function getCourierTip(id, gs) {
     const def = CourierMessages[id];
     if (!def) return null;
-    const base = def.cost ?? 0;
-    const cost =
-      typeof ContentExpansion !== 'undefined' ? ContentExpansion.getCourierCost(id, base) : base;
+    const cost = Availability.courierCost(id, gs || undefined);
     const perWave = Math.max(1, gs?.courierMessagesPerWave || 1);
     const used = gs?.courierMessagesUsedThisWave || 0;
     let footer =
@@ -298,6 +294,20 @@ const Tooltips = (() => {
     if (gs?.doctrineUsedThisWave) footer += ' · Used this wave';
     if (gs?.tactical < def.cost) footer += ' · Not enough TP';
     return { title: def.name, body: def.desc, footer };
+  }
+
+  function getCounterDoctrineTip(id, gs) {
+    const def =
+      typeof PlayerCounterEvolution !== 'undefined'
+        ? PlayerCounterEvolution.COUNTER_DOCTRINES?.[id]
+        : null;
+    if (!def) return null;
+    const res = typeof PanelModel !== 'undefined' ? PanelModel.counterDoctrine(id, gs || {}) : null;
+    let footer = `${def.cost} TP · One offensive doctrine per wave`;
+    if (res && !res.ok && res.reason) {
+      footer += ` · ${res.reason.charAt(0).toUpperCase()}${res.reason.slice(1)}`;
+    }
+    return { title: def.name, body: def.desc || '', footer };
   }
 
   function getLoadoutTip(id) {
@@ -373,6 +383,50 @@ const Tooltips = (() => {
   function getTopBarTip(target, gs) {
     const group = target.closest?.('.stat-group');
     if (!group) return null;
+    const tipKey = group.dataset.tip;
+    if (tipKey === 'tp') {
+      const total = gs?.tpPerRound ?? 0;
+      const eco = gs?.settlementTpBonus ?? 0;
+      return {
+        title: 'Tactical Points',
+        body: 'TP pays for troops, buildings, spells, spies and messages. You are paid when a wave is cleared.',
+        footer:
+          `You have ${Math.floor(gs?.tactical ?? 0)} TP · +${total} a wave` +
+          (eco > 0 ? ` (${eco} from settlements)` : ''),
+      };
+    }
+    if (tipKey === 'wave') {
+      const night = gs?.timeOfDay === 'night';
+      return {
+        title: night ? `Night before wave ${(gs?.wave ?? 0) + 1}` : `Wave ${gs?.wave ?? 0}`,
+        body: 'Night: recruit, build and reposition; no enemy comes. Day: the host attacks from the north. The bar shows how far the night or the wave has run.',
+        footer: night
+          ? `${gs?.nightSecondsLeft ?? 0}s of night left · Begin Day starts the wave now`
+          : `${gs?.enemyCount ?? 0} foes on the field`,
+      };
+    }
+    if (tipKey === 'army') {
+      const pct =
+        typeof Availability !== 'undefined' && gs
+          ? Availability.deployPrice('footman', gs).upkeepPct
+          : 0;
+      return {
+        title: 'Army and upkeep',
+        body: 'Soldiers on the field. A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head. A Granary feeds 3 more before that starts.',
+        footer:
+          `${gs?.army ?? 0} soldiers · ` +
+          (pct > 0 ? `recruits cost +${pct}%` : 'no upkeep surcharge yet'),
+      };
+    }
+    if (tipKey === 'breach') {
+      const sl = gs?.siegeLoop || {};
+      const left = Math.max(0, (sl.breachLimit ?? 10) - (sl.breaches ?? 0));
+      return {
+        title: 'Breaches',
+        body: 'Each enemy that gets past your line at the bottom of the field is a breach. Reach the limit and the realm falls.',
+        footer: `${sl.breaches ?? 0} of ${sl.breachLimit ?? 10} · ${left} more and the siege is lost`,
+      };
+    }
     const label = group.querySelector('.stat-label')?.textContent?.trim();
     if (label === 'TACTICAL PTS') {
       return {
@@ -704,7 +758,7 @@ const Tooltips = (() => {
       bindHover(btn, () => getLoadoutTip(btn.dataset.loadout));
     });
     document.querySelectorAll('.doctrine-btn').forEach((btn) => {
-      bindHover(btn, (gs) => getDoctrineTip(btn.dataset.doctrine, gs), { placement: 'panel-left' });
+      bindHover(btn, (gs) => getDoctrineTip(btn.dataset.doctrine, gs));
     });
     document.querySelectorAll('.formation-btn').forEach((btn) => {
       const fid = btn.dataset.formation;
@@ -724,6 +778,7 @@ const Tooltips = (() => {
       'move-building-btn',
       'rotate-wall-btn',
       'hunt-toggle',
+      'hold-here',
       'clear-selection-btn',
       'formation-reform-btn',
       'builder-repair-toggle',
@@ -745,6 +800,17 @@ const Tooltips = (() => {
           bindHover(node, (gs) => getTopBarTip(node, gs));
         });
     }
+    // The war room (Ops tab) and the menu buttons above the right-hand tabs.
+    document
+      .querySelectorAll(
+        '#war-room .stat-group, #right-panel .panel-util button, #begin-day-btn, #perf-toggle, #faction-intel-btn'
+      )
+      .forEach((node) => {
+        bindHover(node, (gs) => getTopBarTip(node, gs), { placement: 'panel-left' });
+      });
+    document.querySelectorAll('.counter-doctrine-btn').forEach((btn) => {
+      bindHover(btn, (gs) => getCounterDoctrineTip(btn.dataset.counterDoctrine, gs));
+    });
     const hintBtn = document.getElementById('hint-log-btn');
     if (hintBtn) bindHover(hintBtn, (gs) => getTopBarTip(hintBtn, gs));
 
