@@ -700,6 +700,7 @@ const SiegeLoop = (() => {
     unit.hp = 0;
     unit.breachedLine = true;
     run.breaches++;
+    run.lastBreachAt = { x: unit.x, y: unit.y };
     run.cleanStreak = 0;
     const limit = breachLimit(ctx);
     const left = limit - run.breaches;
@@ -1970,6 +1971,7 @@ const SiegeLoop = (() => {
   function getHudState(ctx) {
     return {
       breaches: run.breaches,
+      lastBreachAt: run.lastBreachAt || null,
       breachLimit: breachLimit(ctx),
       edicts: run.edicts.map((id) => EDICTS[id]?.name || id),
       pendingSpoils: run.drafts.length,

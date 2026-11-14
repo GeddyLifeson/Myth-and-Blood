@@ -1,0 +1,653 @@
+/*
+ * Settings (sections, keys) and the Save / Load screen.
+ * Markup for both is built by js/settings.js and js/save.js. Sizes are in px with a 13 px
+ * floor so the text stays readable whatever --ui-scale is. Same frame as the in-page
+ * dialogs: black box, bone border, hard shadow, blood-red titles.
+ */
+
+/* ── Settings frame ───────────────────────────────────────────────────────── */
+body #settings-screen.set-v3 {
+  align-items: center;
+  overflow: hidden;
+  background: rgba(5, 4, 5, 0.86);
+}
+body #settings-screen.set-v3 .settings-panel.menu-content {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1080px, calc(100vw - 32px));
+  max-width: none;
+  height: min(700px, calc(100vh - 32px));
+  height: min(700px, calc(100dvh - 32px));
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
+  background: #0d0b0b;
+  border: 2px solid #d8cdb4;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  color: #e8dcc0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  font-size: 14px;
+}
+body #settings-screen.set-v3 .settings-title {
+  margin: 0;
+  padding: 12px 20px 10px;
+  border-bottom: 2px solid #2a2024;
+  font-family: 'Pirata One', Cinzel, serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  text-align: left;
+  color: #c0241c;
+  text-shadow: 2px 2px 0 #000;
+}
+#settings-screen.set-v3 .set-body {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* Section list, pinned on the left */
+#settings-screen.set-v3 .set-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0;
+  overflow-y: auto;
+  border-right: 2px solid #2a2024;
+  background: #080607;
+}
+body #settings-screen.set-v3 .set-nav-btn {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  padding: 8px 18px;
+  border: 0;
+  border-left: 4px solid transparent;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: #b0a490;
+  font-family: Cinzel, serif;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-align: left;
+  text-transform: none;
+  cursor: pointer;
+}
+body #settings-screen.set-v3 .set-nav-btn.minor {
+  font-size: 13px;
+  font-weight: 400;
+  min-height: 36px;
+}
+body #settings-screen.set-v3 .set-nav-btn.minor:first-of-type,
+#settings-screen.set-v3 .set-nav-btn:not(.minor) + .set-nav-btn.minor {
+  margin-top: 10px;
+  border-top: 1px solid #2a2024;
+}
+body #settings-screen.set-v3 .set-nav-btn:hover {
+  color: #f2e8d0;
+  background: #161113;
+}
+body #settings-screen.set-v3 .set-nav-btn.active {
+  color: #f2e8d0;
+  background: #1c1215;
+  border-left-color: #c0241c;
+}
+#settings-screen.set-v3 .set-nav-btn:focus-visible,
+#settings-screen.set-v3 .set-key-btn:focus-visible,
+#settings-screen.set-v3 .set-state-pill:focus-visible,
+#settings-screen.set-v3 .set-key-act:focus-visible,
+#save-screen .save-btn:focus-visible {
+  outline: 2px solid #f2e8d0;
+  outline-offset: 2px;
+}
+
+/* Section body: the only thing that scrolls */
+#settings-screen.set-v3 .set-content {
+  min-height: 0;
+  padding: 14px 20px 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+body #settings-screen.set-v3 .settings-group {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  background: #110e0f;
+  border: 1px solid #3c2a2e;
+  border-radius: 0;
+}
+body #settings-screen.set-v3 .settings-group-head {
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid #2a2024;
+  font-family: Cinzel, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #c8b890;
+}
+body #settings-screen.set-v3 .settings-row {
+  gap: 12px;
+  min-height: 32px;
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #e8dcc0;
+}
+body #settings-screen.set-v3 .settings-row.check {
+  cursor: pointer;
+}
+body #settings-screen.set-v3 .settings-row > span:first-child {
+  flex: 0 0 200px;
+}
+body #settings-screen.set-v3 .settings-hint,
+body #settings-screen.set-v3 .mod-settings-intro,
+body #settings-screen.set-v3 .analytics-intro {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #a89c88;
+}
+#settings-screen.set-v3 input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  margin: 0 8px 0 0;
+  accent-color: #c0241c;
+}
+#settings-screen.set-v3 input[type='range'] {
+  accent-color: #c0241c;
+}
+#settings-screen.set-v3 select {
+  min-height: 32px;
+  padding: 4px 8px;
+  background: #050405;
+  border: 1px solid #6a5a50;
+  border-radius: 0;
+  color: #f2e8d0;
+  font: inherit;
+  font-size: 14px;
+}
+#settings-screen.set-v3 .set-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin: 0 4px 0 10px;
+  border: 1px solid #000;
+  outline: 1px solid #d8cdb4;
+  vertical-align: -2px;
+}
+#settings-screen.set-v3 .set-swatch:first-child {
+  margin-left: 0;
+}
+
+/* Reset / Close, pinned at the bottom */
+body #settings-screen.set-v3 .settings-actions {
+  justify-content: flex-end;
+  gap: 10px;
+  margin: 0;
+  padding: 10px 20px;
+  border-top: 2px solid #2a2024;
+  background: #080607;
+}
+body #settings-screen.set-v3 .settings-actions .menu-btn {
+  width: auto;
+  min-width: 150px;
+  min-height: 40px;
+  margin: 0;
+  padding: 6px 16px;
+  font-size: 14px;
+}
+
+/* ── Keys ─────────────────────────────────────────────────────────────────── */
+/* The screen picker and the message line stay in view while the list scrolls under them. */
+#settings-screen.set-v3 .set-key-head {
+  position: sticky;
+  top: -14px;
+  z-index: 2;
+  margin: 0 -14px;
+  padding: 8px 14px 0;
+  background: #110e0f;
+  border-bottom: 1px solid #3c2a2e;
+}
+#settings-screen.set-v3 .set-state-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+#settings-screen.set-v3 .set-state-pill,
+#settings-screen.set-v3 .set-key-act,
+#settings-screen.set-v3 .set-key-btn {
+  margin: 0;
+  border-radius: 0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  cursor: pointer;
+}
+#settings-screen.set-v3 .set-state-pill {
+  min-height: 32px;
+  padding: 4px 10px;
+  background: #050405;
+  border: 1px solid #5a4a44;
+  color: #b0a490;
+  font-size: 13px;
+}
+#settings-screen.set-v3 .set-state-pill:hover {
+  color: #f2e8d0;
+  border-color: #d8cdb4;
+}
+#settings-screen.set-v3 .set-state-pill.active {
+  background: #8a1014;
+  border-color: #d8cdb4;
+  color: #fff4dc;
+  font-weight: 700;
+}
+/* A screen with a moved key is marked with a dot, not by colour alone. */
+#settings-screen.set-v3 .set-state-pill.custom::after {
+  content: ' ●';
+  color: #e8dcc0;
+}
+#settings-screen.set-v3 .set-key-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 36px;
+  margin-bottom: 8px;
+}
+#settings-screen.set-v3 .set-key-note {
+  flex: 1 1 auto;
+  min-height: 20px;
+  font-size: 14px;
+  color: #b0a490;
+}
+#settings-screen.set-v3 .set-key-note.ok {
+  color: #e8dcc0;
+}
+#settings-screen.set-v3 .set-key-note.bad {
+  color: #ff6a58;
+  font-weight: 700;
+}
+#settings-screen.set-v3 .set-key-note.bad::before {
+  content: '✕ ';
+}
+#settings-screen.set-v3 .set-key-act {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 4px 12px;
+  background: #1a1518;
+  border: 1px solid #d8cdb4;
+  color: #f2e8d0;
+  font-size: 13px;
+}
+#settings-screen.set-v3 .set-key-act:hover:not(:disabled) {
+  background: #8a1014;
+}
+#settings-screen.set-v3 .set-key-act:disabled {
+  border-color: #3c2a2e;
+  color: #6a5e58;
+  cursor: default;
+}
+#settings-screen.set-v3 .set-key-group-head {
+  margin: 12px 0 6px;
+  font-family: Cinzel, serif;
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: #c0241c;
+}
+#settings-screen.set-v3 .set-key-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 4px 18px;
+}
+#settings-screen.set-v3 .set-key-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 34px;
+  padding: 1px 0;
+  border-bottom: 1px dotted #2a2024;
+}
+#settings-screen.set-v3 .set-key-label {
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.2;
+  color: #e8dcc0;
+}
+#settings-screen.set-v3 .set-key-label em {
+  font-style: normal;
+  color: #a89c88;
+}
+#settings-screen.set-v3 .set-key-btn {
+  flex: 0 0 auto;
+  min-width: 84px;
+  min-height: 30px;
+  padding: 3px 8px;
+  background: #050405;
+  border: 1px solid #8a7c6c;
+  border-bottom-width: 3px;
+  color: #f2e8d0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+#settings-screen.set-v3 .set-key-btn:hover:not(:disabled) {
+  border-color: #f2e8d0;
+  background: #1a1518;
+}
+#settings-screen.set-v3 .set-key-btn.custom {
+  border-color: #c0241c;
+}
+#settings-screen.set-v3 .set-key-btn.custom::before {
+  content: '● ';
+  color: #c0241c;
+}
+#settings-screen.set-v3 .set-key-btn.unbound {
+  color: #7a6e68;
+  font-weight: 400;
+}
+#settings-screen.set-v3 .set-key-btn.fixed {
+  border-style: dashed;
+  border-bottom-width: 1px;
+  color: #a89c88;
+  cursor: default;
+}
+#settings-screen.set-v3 .set-key-btn.listening {
+  background: #8a1014;
+  border-color: #fff4dc;
+  color: #fff4dc;
+}
+
+/* ── Save / Load ──────────────────────────────────────────────────────────── */
+body #save-screen.save-screen {
+  z-index: 115;
+  align-items: center;
+  background: rgba(5, 4, 5, 0.86);
+}
+#save-screen .save-panel {
+  width: min(1120px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 14px 20px 14px;
+  overflow-y: auto;
+  background: #0d0b0b;
+  border: 2px solid #d8cdb4;
+  box-shadow: 6px 6px 0 #000;
+  color: #e8dcc0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  text-align: left;
+}
+#save-screen .save-title {
+  margin: 0;
+  font-family: 'Pirata One', Cinzel, serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 2px;
+  color: #c0241c;
+  text-shadow: 2px 2px 0 #000;
+}
+#save-screen .save-sub {
+  margin: 2px 0 12px;
+  font-size: 14px;
+  color: #a89c88;
+}
+#save-screen .save-cards {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+#save-screen .save-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 10px;
+  background: #110e0f;
+  border: 1px solid #5a4a44;
+}
+#save-screen .save-card[data-slot='auto'] {
+  border-style: dashed;
+}
+#save-screen .save-card-thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  background: #050405;
+  border: 1px solid #2a2024;
+}
+#save-screen .save-card-thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+#save-screen .save-card-thumb.none span {
+  padding: 0 8px;
+  font-size: 13px;
+  text-align: center;
+  color: #7a6e68;
+}
+#save-screen .save-card-title {
+  margin: 8px 0 4px;
+  font-family: Cinzel, serif;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #f2e8d0;
+}
+#save-screen .save-card-facts {
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  gap: 2px 8px;
+  margin: 0 0 10px;
+  font-size: 14px;
+}
+#save-screen .save-card-facts dt {
+  color: #a89c88;
+}
+#save-screen .save-card-facts dd {
+  margin: 0;
+  overflow: hidden;
+  color: #f2e8d0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+#save-screen .save-card.empty .save-card-facts dd {
+  color: #6a5e58;
+}
+#save-screen .save-card-btns {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: auto;
+}
+.save-btn {
+  flex: 1 1 auto;
+  min-width: 72px;
+  min-height: 36px;
+  margin: 0;
+  padding: 5px 10px;
+  background: #1a1518;
+  border: 1px solid #d8cdb4;
+  border-radius: 0;
+  color: #f2e8d0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  font-size: 14px;
+  cursor: pointer;
+}
+.save-btn:hover:not(:disabled) {
+  background: #2a2024;
+}
+.save-btn.primary {
+  background: #8a1014;
+  font-weight: 700;
+}
+.save-btn.primary:hover:not(:disabled) {
+  background: #c0241c;
+}
+.save-btn.danger {
+  flex: 0 0 auto;
+  border-color: #c0241c;
+  color: #ff8a78;
+}
+.save-btn.danger:hover:not(:disabled) {
+  background: #c0241c;
+  color: #fff4dc;
+}
+.save-btn:disabled {
+  background: #0d0b0b;
+  border-color: #3c2a2e;
+  color: #6a5e58;
+  cursor: default;
+}
+#save-screen .save-status {
+  min-height: 22px;
+  margin: 10px 0 0;
+  font-size: 14px;
+  color: #e8dcc0;
+}
+#save-screen .save-status.bad {
+  color: #ff6a58;
+  font-weight: 700;
+}
+#save-screen .save-status.bad:not(:empty)::before {
+  content: '✕ ';
+}
+#save-screen .save-text {
+  margin-top: 6px;
+  padding: 10px;
+  background: #110e0f;
+  border: 1px solid #5a4a44;
+}
+#save-screen .save-text-head {
+  margin-bottom: 6px;
+  font-size: 14px;
+  color: #e8dcc0;
+}
+#save-screen .save-text-area {
+  display: block;
+  width: 100%;
+  height: 84px;
+  padding: 6px 8px;
+  resize: vertical;
+  background: #050405;
+  border: 1px solid #8a7c6c;
+  color: #f2e8d0;
+  font-family: Consolas, 'Courier New', monospace;
+  font-size: 13px;
+  line-height: 1.3;
+  word-break: break-all;
+}
+#save-screen .save-text-btns,
+#save-screen .save-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 8px;
+}
+#save-screen .save-text-btns .save-btn,
+#save-screen .save-actions .save-btn {
+  flex: 0 0 auto;
+  min-width: 120px;
+}
+
+/* The pause menu's save area */
+.save-lines {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  text-align: left;
+}
+.save-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 3px 0;
+  border-bottom: 1px dotted #2a2024;
+  color: #e8dcc0;
+}
+.save-line.empty span {
+  color: #7a6e68;
+}
+.save-open-btn {
+  width: 100%;
+  min-height: 40px;
+}
+
+/* ── Narrow screens ───────────────────────────────────────────────────────── */
+@media (max-width: 760px) {
+  #settings-screen.set-v3 .set-body {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+  #settings-screen.set-v3 .set-nav {
+    flex-direction: row;
+    padding: 0;
+    overflow-x: auto;
+    border-right: 0;
+    border-bottom: 2px solid #2a2024;
+  }
+  body #settings-screen.set-v3 .set-nav-btn,
+  body #settings-screen.set-v3 .set-nav-btn.minor {
+    width: auto;
+    min-height: 44px;
+    margin: 0;
+    padding: 8px 14px;
+    border-top: 0;
+    border-left: 0;
+    border-bottom: 4px solid transparent;
+    white-space: nowrap;
+  }
+  body #settings-screen.set-v3 .set-nav-btn.active {
+    border-bottom-color: #c0241c;
+  }
+  #settings-screen.set-v3 .set-content {
+    padding: 10px 12px 4px;
+  }
+  body #settings-screen.set-v3 .settings-row > span:first-child {
+    flex-basis: 100%;
+  }
+  #settings-screen.set-v3 .set-key-toolbar {
+    flex-wrap: wrap;
+  }
+  #settings-screen.set-v3 .set-key-btn {
+    min-height: 44px;
+  }
+  #save-screen .save-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  #save-screen .save-card {
+    display: grid;
+    grid-template-columns: 120px minmax(0, 1fr);
+    gap: 0 10px;
+  }
+  #save-screen .save-card-thumb {
+    grid-row: span 2;
+    align-self: start;
+  }
+  #save-screen .save-card-btns {
+    grid-column: 1 / -1;
+    margin-top: 6px;
+  }
+  .save-btn {
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #settings-screen.set-v3,
+  #save-screen {
+    transition: none;
+  }
+}
+html.reduced-motion #settings-screen.set-v3,
+html.reduced-motion #save-screen {
+  transition: none;
+}
