@@ -82,6 +82,7 @@ function buildIndexHtml(bundleName, cssName) {
   out = out.replace(/\s*<link rel="stylesheet" href="css\/theme-v2\.css" \/>/, '');
   out = out.replace(/\s*<link rel="stylesheet" href="css\/settings\.css" \/>/, '');
   out = out.replace(/\s*<link rel="stylesheet" href="css\/teach\.css" \/>/, '');
+  out = out.replace(/\s*<link rel="stylesheet" href="css\/achievements\.css" \/>/, '');
   // So is mobile.css (phone layout, all inside one media query), last as in index.html.
   out = out.replace(/\s*<link rel="stylesheet" href="css\/mobile\.css" \/>/, '');
   if (/href="css\/(?!style\.)[^"]+\.css"/.test(out)) {
@@ -126,7 +127,14 @@ async function main() {
   writeFileSync(join(DIST, workerFile), workerOut);
 
   // Order matters: theme-v2 overrides style.css, exactly as index.html links them.
-  const cssRaw = ['style.css', 'theme-v2.css', 'settings.css', 'teach.css', 'mobile.css']
+  const cssRaw = [
+    'style.css',
+    'theme-v2.css',
+    'settings.css',
+    'teach.css',
+    'achievements.css',
+    'mobile.css',
+  ]
     .map((f) => readFileSync(join(ROOT, 'css', f), 'utf8'))
     .join('\n');
   const cssOut = await minifyCss(cssRaw);

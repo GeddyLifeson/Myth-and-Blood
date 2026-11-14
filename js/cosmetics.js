@@ -62,6 +62,22 @@ const Cosmetics = (() => {
       accent: '#60a070',
       mark: '#c0e080',
     },
+    ash_and_bone: {
+      label: 'Ash and Bone',
+      unlock: 'ach_skin_ash_and_bone',
+      desc: 'Earned by the Wall That Walks achievement.',
+      body: '#2a2622',
+      accent: '#e8dcc0',
+      mark: '#a01818',
+    },
+    veteran_grey: {
+      label: 'Veteran Grey',
+      unlock: 'ach_skin_veteran_grey',
+      desc: 'Earned by the Thirty Dawns achievement.',
+      body: '#585450',
+      accent: '#c8c0b4',
+      mark: '#801010',
+    },
     ring_champion: {
       label: 'Ring Champion',
       unlock: 'creative_skin_wwe',
@@ -215,9 +231,17 @@ const Cosmetics = (() => {
 
   function isUnlockMet(unlock) {
     if (!unlock || unlock === 'default') return true;
+    const achSkin = (id) =>
+      !!id && typeof Achievements !== 'undefined' && !!Achievements.skinEarned?.(id);
+    if (unlock.startsWith('ach_skin_')) return achSkin(unlock.slice('ach_skin_'.length));
     if (unlock.startsWith('creative_skin_')) {
       const fid = unlock.slice('creative_skin_'.length);
-      return typeof MetaProgress !== 'undefined' && MetaProgress.hasCreativeSkin?.(fid);
+      const mastery =
+        typeof ACHIEVEMENT_MASTERY_SKINS !== 'undefined' && ACHIEVEMENT_MASTERY_SKINS[fid];
+      return (
+        (typeof MetaProgress !== 'undefined' && !!MetaProgress.hasCreativeSkin?.(fid)) ||
+        achSkin(mastery)
+      );
     }
     return true;
   }

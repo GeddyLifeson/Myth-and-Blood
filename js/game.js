@@ -2751,6 +2751,7 @@ const Game = (() => {
 
   /** Live view of the battle for the SiegeLoop module. */
   const siegeCtx = {
+    ach,
     get wave() {
       return GS.wave;
     },
@@ -3368,6 +3369,8 @@ const Game = (() => {
       advancedMods: svc('AdvancedDifficulty') ? svc('AdvancedDifficulty').getActiveModCount() : 0,
       garrisonCount,
       namedBossWave: !!GS.namedBossWave,
+      modeId: getRunModeId(),
+      ironman: !!svc('GameModes')?.getSession?.()?.ironman,
     });
     ach('state_check', {
       wave: GS.wave,
@@ -4693,6 +4696,7 @@ const Game = (() => {
     unit.stretcherSaves = (unit.stretcherSaves || 0) + 1;
     tryMedicalRetreat(unit, { silent: true });
     const name = typeof getUnitDisplayName === 'function' ? getUnitDisplayName(unit) : unit.type;
+    ach('tally', { k: 'medSaves' });
     svc('FloatingText')?.status?.(tent.x, tent.y - 24, 'SAVED', '#80ffa0');
     showMessage(`${name} was carried to the medical tent alive.`, 220);
     return true;
@@ -13589,9 +13593,22 @@ const Game = (() => {
             killerType: killer.type,
             siege: unit.type === 'siege_tower' || unit.siegeDeployed,
             charging: killer.combatType === 'cavalry' && (killer.chargeTimer || 0) > 20,
+            runner: !!unit.lineBreaker,
+            boss: !!unit.isNamedBoss,
+            cause: unit.deathCause,
+            held: Number.isFinite(killer.holdX),
+            hunting: !!killer.huntMode,
+            killerKills: killer.kills || 0,
+            killerHonored: !!killer.honorName,
+            killerGeneral: !!killer.isGeneral,
           });
         } else {
-          ach('kill', { enemyType: unit.type, elite: isEliteEnemy(unit) });
+          ach('kill', {
+            enemyType: unit.type,
+            elite: isEliteEnemy(unit),
+            runner: !!unit.lineBreaker,
+            cause: unit.deathCause,
+          });
         }
         if (unit.isNamedBoss && GS.wave >= CAMPAIGN_VICTORY_WAVE) {
           const playerAlive = GS.units.filter(
@@ -17722,7 +17739,7 @@ const Game = (() => {
         svc('FactionDepth') ? svc('FactionDepth').getSeasonalEvent()?.name : null
       ),
       achievements: cachedSnap('achievements', () =>
-        svc('Achievements') ? svc('Achievements').getCount() : { unlocked: 0, total: 1450 }
+        svc('Achievements') ? svc('Achievements').getCount() : { unlocked: 0, total: 0 }
       ),
       factionMasteryTitles: cachedSnap('factionMasteryTitles', () =>
         svc('MetaProgress') ? svc('MetaProgress').getFactionMasteryTitles() : {}

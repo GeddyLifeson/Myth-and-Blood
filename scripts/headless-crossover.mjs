@@ -306,22 +306,16 @@ function testCrossoverHubUI(MP, Hub, doc) {
   const grid = doc.getElementById('crossover-roster-grid');
   const tabs = doc.getElementById('crossover-faction-tabs');
   assert(
-    tabs.innerHTML.includes('Void Residue') ||
-      tabs.innerHTML.includes('Ultimis') ||
-      tabs.innerHTML.includes('Element 115') ||
-      tabs.innerHTML.includes('ultimis'),
+    tabs.innerHTML.includes('Powderhorn Company'),
     'faction tabs should render unlocked factions'
   );
-  // IP-scrubbed roster names (was Tank Splinter Vale → Splinter Vale).
+  // The cast is original: cards show the hero's own name and title, never the save-file id.
   assert(
-    grid.innerHTML.includes('Splinter Vale') ||
-      grid.innerHTML.includes('Tank Splinter Vale') ||
-      grid.innerHTML.includes('tank_dempsey') ||
-      grid.innerHTML.includes('Need barracks'),
-    'roster grid should list ultimis operatives'
+    grid.innerHTML.includes('Dunmar Fusewick') && grid.innerHTML.includes('Powder Serjeant'),
+    'roster grid should list the company heroes by name and title'
   );
   assert(
-    grid.innerHTML.includes('Need barracks on field'),
+    grid.innerHTML.includes('Needs its hall on the field'),
     'cards should show barracks prerequisite'
   );
 
@@ -1768,20 +1762,20 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
     return;
   }
   const entries = FactionDepth.getEncyclopediaEntries();
-  const lead = entries.find((e) => e.name === 'Evolved Allies — Design Philosophy');
+  const lead = entries.find((e) => e.name === 'Free Companies — How They Fit');
   assert(
-    lead?.body?.includes('evolved allies'),
-    'lead entry should frame crossovers as evolved allies'
+    lead?.body?.includes('free companies'),
+    'lead entry should frame the hired heroes as free companies'
   );
   const early = entries.find((e) => e.name === 'Early Game — Rare Power Spikes');
   assert(early?.body?.includes('mini-bosses'), 'early game entry should describe rare spikes');
-  const planet = entries.find((e) => e.name === 'Northern War Operatives (Wave 200+)');
-  assert(planet?.body?.includes('Gearwright'), 'planet ops should list Tech Head / Gearwright');
-  assert(planet?.body?.includes('Kael Skyburst'), 'planet ops should list Skyburst Wave');
+  const planet = entries.find((e) => e.name === 'Northern War Heroes (Wave 200+)');
+  assert(planet?.body?.includes('Pell Rivetson'), 'northern ops should list Pry and Spike');
+  assert(planet?.body?.includes('Tavish Coalheart'), 'northern ops should list Ember Burst');
   const secret = entries.find((e) => e.name === 'Secret Content & Meta Unlocks');
   assert(
-    secret?.body?.includes('Grand Coliseum'),
-    'secret content should mention the Grand Coliseum'
+    secret?.body?.includes('Champions’ Hall'),
+    'secret content should mention the Champions’ Hall'
   );
   assert(
     FactionDepth.PLANET_WARFARE_OPERATIVES?.tech_head?.siegeMult >= 2,
