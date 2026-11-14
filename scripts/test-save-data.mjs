@@ -112,6 +112,20 @@ const ok = (cond, msg) => {
   );
 }
 
+// --- The event deck seed comes back, so a loaded run meets the same events -----------------
+{
+  const g = bootGame(5);
+  g.Game.start();
+  const snap = JSON.parse(JSON.stringify(g.Game.exportGameState()));
+  const sec = snap.modules?.DynamicMapEvents?.data;
+  ok(Number.isInteger(sec?.deckSeed), 'the save carries the event deck seed');
+  sec.deckSeed = 123456789;
+  g.SaveFormat.seal(snap);
+  ok(g.Game.importGameState(snap), 'a save with a set deck seed loads');
+  const again = g.Game.exportGameState().modules?.DynamicMapEvents?.data;
+  ok(again?.deckSeed === 123456789, 'the deck seed is the saved one after load');
+}
+
 if (failed) {
   console.error(`\n${failed} save data check(s) failed.`);
   process.exit(1);

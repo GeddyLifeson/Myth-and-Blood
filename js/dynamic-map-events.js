@@ -162,6 +162,7 @@ const DynamicMapEvents = (() => {
   let eventSite = null;
   let announced = false;
   let lastEruptionTick = 0;
+  let deckSeed = 1;
 
   function resetRun() {
     pending = null;
@@ -550,6 +551,7 @@ const DynamicMapEvents = (() => {
         activeEvent,
         eventSite,
         announced,
+        deckSeed,
         // A tick stamp, saved as an offset from now (the tick counter is not restored).
         eruptionAgo: lastEruptionTick ? SaveRegistry.tick() - lastEruptionTick : null,
       }),
@@ -562,6 +564,8 @@ const DynamicMapEvents = (() => {
         activeEvent = data.activeEvent ?? null;
         eventSite = data.eventSite ?? null;
         announced = !!data.announced;
+        // Older saves have no deck seed: keep the one resetRun picked.
+        if (Number.isInteger(data.deckSeed)) deckSeed = data.deckSeed >>> 0;
         lastEruptionTick = Number.isFinite(data.eruptionAgo)
           ? SaveRegistry.tick() - data.eruptionAgo
           : 0;

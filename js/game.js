@@ -17121,8 +17121,10 @@ const Game = (() => {
         u.medPrevHp = u.hp;
       }
       u.holding = !!u.canHunt && !!us.holding;
-      // A march in progress keeps hunt off until it ends, as it was when saved.
-      u.huntMode = !!u.canHunt && !u.holding && !(u.manualOrder && us.huntMode === false);
+      // Format 3 saves hunt as it was (a rout or a med-tent walk turns it off); older saves derive it.
+      if (legacy)
+        u.huntMode = !!u.canHunt && !u.holding && !(u.manualOrder && us.huntMode === false);
+      else u.huntMode = !!u.canHunt && !!us.huntMode;
       if (
         u.holding &&
         !u.garrisoned &&
@@ -17372,6 +17374,8 @@ const Game = (() => {
     if (svc('ContentExpansion')?.setLoadout && snap.loadout) {
       svc('ContentExpansion').setLoadout(snap.loadout, { silent: true });
     }
+    // Modules keep tick stamps with 0 meaning "never", so a stamp restored at tick 0 would be lost.
+    GS.updateTick = Math.max(1, GS.updateTick | 0);
     // Every registered module section (siege loop, research, economy, factions, ...).
     const loaded = SaveRegistry.loadAll(snap.modules, siegeCtx);
     if (!loaded.ok) {

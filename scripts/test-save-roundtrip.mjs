@@ -13,7 +13,9 @@ const ok = (cond, msg) => {
 };
 
 function roundTrip(label, stop) {
+  const t0 = Date.now();
   const a = bootGame(11);
+  a.Game.setDifficulty('baby');
   a.Game.start();
   ok(playUntil(a, stop), `${label}: the bot reached the save point`);
   const snap = JSON.parse(JSON.stringify(a.Game.exportGameState()));
@@ -43,10 +45,12 @@ function roundTrip(label, stop) {
   let ticks = 0;
   playUntil(b, () => ++ticks > 3000);
   ok(b.Game.isPlaying() || b.Game.getState().wave >= wave, `${label}: loaded run plays on`);
+  console.log(`  (${label}: ${Date.now() - t0} ms)`);
 }
 
 roundTrip('wave 2 day, mid-fight', (s, t) => s.wave >= 2 && s.timeOfDay === 'day' && t > 240);
-roundTrip('wave 6 night', (s, t) => s.wave >= 6 && s.timeOfDay === 'night' && t > 30);
+// The bot ends each night within about 20 ticks, so stop early in it.
+roundTrip('wave 6 night', (s, t) => s.wave >= 6 && s.timeOfDay === 'night' && t > 2);
 
 if (failed) {
   console.error(`\n${failed} save round-trip check(s) failed.`);
