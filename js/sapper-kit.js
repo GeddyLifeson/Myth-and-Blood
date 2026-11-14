@@ -241,6 +241,7 @@ const SapperKit = (() => {
   function addMine(x, y, owner, ctx) {
     const m = { id: state.nextId++, x, y, o: owner.id, w: ctx.wave, placed: false };
     state.mines.push(m);
+    ctx.ach?.('tally', { k: 'minesLaid' });
     if (state.mines.length > MAX_MINES) state.mines.shift();
     return m;
   }

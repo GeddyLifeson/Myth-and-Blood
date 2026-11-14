@@ -1,0 +1,163 @@
+/* Grouped achievement panel: one collapsible section per family, one card per ladder. */
+.achievements-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 58vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.ach2-group {
+  border: 1px solid var(--border-soft, rgba(180, 150, 90, 0.28));
+  border-radius: var(--radius-md, 5px);
+  background: rgba(10, 8, 6, 0.6);
+}
+
+.ach2-head {
+  display: grid;
+  grid-template-columns: 1fr auto 120px;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  background: none;
+  color: var(--text-primary, #efe6d4);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ach2-head:hover,
+.ach2-head:focus-visible {
+  background: rgba(140, 20, 20, 0.18);
+}
+
+.ach2-gname {
+  font-weight: bold;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.ach2-group.open .ach2-gname::before {
+  content: '\25BE  ';
+}
+
+.ach2-group:not(.open) .ach2-gname::before {
+  content: '\25B8  ';
+}
+
+.ach2-gcount {
+  color: var(--text-secondary, #b8a890);
+  font-variant-numeric: tabular-nums;
+}
+
+.ach2-gbar,
+.ach2-bar {
+  display: block;
+  height: 5px;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(220, 200, 170, 0.18);
+  overflow: hidden;
+}
+
+.ach2-gfill,
+.ach2-fill {
+  display: block;
+  height: 100%;
+  background: #a01818;
+}
+
+.ach2-blurb,
+.ach2-cards {
+  display: none;
+}
+
+.ach2-group.open .ach2-blurb {
+  display: block;
+  margin: 0 10px 6px;
+  color: var(--text-secondary, #b8a890);
+  font-size: 14px;
+}
+
+.ach2-group.open .ach2-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px;
+  padding: 0 10px 10px;
+}
+
+.ach2-card {
+  padding: 7px 9px;
+  border: 1px solid rgba(220, 200, 170, 0.16);
+  border-left: 3px solid #4a4038;
+  background: rgba(0, 0, 0, 0.45);
+  color: var(--text-secondary, #b8a890);
+  font-size: 14px;
+}
+
+.ach2-card.part {
+  border-left-color: #8a2020;
+}
+
+.ach2-card.done {
+  border-left-color: #e8dcc0;
+  color: var(--text-primary, #efe6d4);
+  background: rgba(60, 10, 10, 0.4);
+}
+
+.ach2-card.todo {
+  opacity: 0.8;
+}
+
+.ach2-name {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--text-primary, #efe6d4);
+  font-weight: bold;
+}
+
+.ach2-desc {
+  margin: 2px 0 5px;
+}
+
+.ach2-val {
+  margin-top: 2px;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ach2-pips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+
+.ach2-pip {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #6a5a48;
+  transform: rotate(45deg);
+}
+
+.ach2-pip.on.tier-bronze {
+  background: #a0603a;
+}
+
+.ach2-pip.on.tier-silver {
+  background: #c8c0b4;
+}
+
+.ach2-pip.on.tier-gold,
+.ach2-pip.on.tier-none {
+  background: #e0b850;
+}
+
+.ach2-titles {
+  margin: 4px 0 0;
+  color: var(--text-secondary, #b8a890);
+  font-size: 14px;
+}

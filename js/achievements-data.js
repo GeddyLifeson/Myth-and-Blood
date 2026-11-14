@@ -22,7 +22,7 @@ const ACHIEVEMENT_FAMILIES = [
   { id: 'runners', name: 'Line-Breakers', blurb: 'The ones who run past your troops.' },
   { id: 'veterans', name: 'Veterans', blurb: 'Soldiers kept alive, and what they did with it.' },
   { id: 'troops', name: 'Troops', blurb: 'Each kind of soldier, used for what it is good at.' },
-  { id: 'orders', name: 'Orders', blurb: 'Hold, the General, the early horn, spies and strikes.' },
+  { id: 'orders', name: 'Orders', blurb: 'Hold, the General, the early horn, strikes and spies.' },
   { id: 'works', name: 'Works and Research', blurb: 'What you built and what you learned.' },
   { id: 'medic', name: 'Medical Tent', blurb: 'The wounded carried off the field alive.' },
   { id: 'spoils', name: 'Spoils of War', blurb: 'Rewards claimed every fifth wave.' },
@@ -79,7 +79,6 @@ const ACHIEVEMENT_ENEMY_FACTIONS = [
   'orc_warbands',
   'dark_legions',
   'void_abyssal',
-  'mirror_empires',
 ];
 
 const ACHIEVEMENT_BOSSES = [
@@ -654,7 +653,7 @@ function buildAchievementList() {
     'orders',
     'ord_strikes',
     'Every Arrow in the Quiver',
-    'Use each of the six strikes at least once, across all runs.',
+    'Cast each of the six strikes (fireball, lightning, heal, reinforce, rally, dispel) at least once, across all runs.',
     'l',
     'strikes',
     6,
@@ -877,14 +876,14 @@ function buildAchievementList() {
     orc_warbands: ['Broke a Warband', 'Orc Bane', 'The Drums Go Quiet'],
     dark_legions: ['Stood Against the Legion', 'Legion Bane', 'The Black Banners Fall'],
     void_abyssal: ['Looked Into It', 'Void Bane', 'The Deep Closes'],
-    mirror_empires: ['Broke a Mirror', 'Mirror Bane', 'No Reflection Left'],
   };
   for (const f of ACHIEVEMENT_ENEMY_FACTIONS) {
     steps(
       'foes',
       `foe_${f}`,
       foeNames[f],
-      (n) => `Clear ${n} waves led by the {faction:${f}}, across all runs.`,
+      (n) =>
+        `Clear ${n} waves in which you cut down 5 or more of the {faction:${f}}, across all runs.`,
       'l',
       `faction.${f}`,
       [5, 30, 100]
@@ -1103,7 +1102,7 @@ function buildAchievementList() {
     'doom_hero_unlock',
     'Trial of the {order:doom}',
     'Clear wave 200 on {diff:doomslayer}. Opens the {order:doom}.',
-    'unlock:doom_hero'
+    'run_doom_trial'
   );
   trial(
     'ultimis_horde_150',
@@ -1193,14 +1192,6 @@ function buildAchievementList() {
   const secret = (id, name, desc, s, k, n, opts = {}) =>
     one('secret', id, name, desc, s, k, n, { hidden: true, ...opts });
   secret(
-    'cheat_used',
-    'The Scribe Looks Away',
-    'Use a cheat code. Nothing else from that run is written down.',
-    'l',
-    'cheated',
-    1
-  );
-  secret(
     'sec_first_breach',
     'It Got Past Me',
     'Let your first enemy through the line.',
@@ -1279,12 +1270,6 @@ function buildAchievementList() {
 const ACHIEVEMENT_LIST = buildAchievementList();
 const ACHIEVEMENT_TARGET = ACHIEVEMENT_LIST.length;
 
-// Old ids kept so older builds and tests that name them still load.
-const ACHIEVEMENT_META_316_ID = 'bottom_line';
-const ACHIEVEMENT_CLUB_316_ID = 'club_316';
-const ACHIEVEMENT_MILLENNIUM_ID = 'millennium';
-const ACHIEVEMENT_META_ID = ACHIEVEMENT_META_316_ID;
-
 /**
  * Old achievement id -> the ids in this list that it proves.
  *
@@ -1298,7 +1283,7 @@ const ACHIEVEMENT_META_ID = ACHIEVEMENT_META_316_ID;
  */
 function mapLegacyAchievementId(id) {
   const ids = new Set(ACHIEVEMENT_LIST.map((a) => a.id));
-  // Same id, same meaning: the order trials and the cheat joke.
+  // Same id, same meaning: the order trials.
   if (ids.has(id)) return [id];
   const out = [];
   const upTo = (pairs, value) => {
@@ -1388,8 +1373,6 @@ function mapLegacyAchievementId(id) {
       last_stand: ['sec_last_one'],
       primis_sanctum_wave_50: ['wrk_keep'],
       deploy_all: ['trp_roster'],
-      cheat_austin: ['cheat_used'],
-      one_piece_real: ['cheat_used'],
     };
     if (direct[id]) out.push(...direct[id]);
   }
