@@ -747,7 +747,7 @@ const UI = (() => {
     cursorTag.style.transform = `translate(${Math.round(cursorPos.x + 16)}px, ${Math.round(cursorPos.y + 18)}px)`;
   }
 
-  // ---- main-menu sheets (New siege, Records, How to play) ---------------------------------
+  // ---- main-menu sheets (New siege, Records) ---------------------------------
   let openSheetEl = null;
   let sheetOpener = null;
 
@@ -755,7 +755,6 @@ const UI = (() => {
     document.querySelectorAll('.menu-sheet').forEach((sh) => {
       sh.hidden = true;
     });
-    document.getElementById('howto-panel')?.classList.add('hidden');
     if (openSheetEl) {
       openSheetEl = null;
       try {
@@ -775,8 +774,6 @@ const UI = (() => {
     sheet.hidden = false;
     openSheetEl = sheet;
     sheetOpener = opener || document.activeElement;
-    if (id === 'menu-howto-sheet')
-      document.getElementById('howto-panel')?.classList.remove('hidden');
     (sheet.querySelector('.modal-close') || sheet).focus?.();
   }
 
@@ -803,7 +800,6 @@ const UI = (() => {
     const openers = {
       'menu-setup-btn': 'menu-setup-sheet',
       'menu-records-btn': 'menu-records-sheet',
-      'howto-btn': 'menu-howto-sheet',
     };
     for (const [btnId, sheetId] of Object.entries(openers)) {
       document.getElementById(btnId)?.addEventListener('click', (e) => {
