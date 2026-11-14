@@ -1,5 +1,15 @@
 /**
- * Game settings — display scaling, window mode, audio, accessibility, gameplay.
+ * Game settings — display scaling, window mode, audio, accessibility, gameplay, keys.
+ *
+ * The screen is laid out here (buildLayout): the groups in index.html are moved into
+ * sections (Sound, Graphics, Controls, Gameplay, Accessibility, then System and
+ * Cosmetics), with the section list and the Reset / Close row pinned. The Keys section
+ * (Controls) is rendered from js/hotkeys.js and is where keys are rebound.
+ *
+ * Flags other modules read:
+ *   Settings.get('reduceMotion')  boolean — skip shakes, flashes and decorative motion
+ *   Settings.get('teamPalette')   'standard' | 'safe' — 'safe' is a colour-blind-safe pair
+ *   Settings.getTeamColours()     { player, enemy, neutral } hex for the current palette
  */
 const Settings = (() => {
   const SETTINGS_KEY = 'myth-and-blood-settings-v1';
@@ -22,6 +32,7 @@ const Settings = (() => {
     highContrast: false,
     fontScale: 1,
     reducedMotion: false,
+    teamPalette: 'standard',
     screenReader: false,
     largerHitboxes: false,
     showMinimap: true,
@@ -52,7 +63,20 @@ const Settings = (() => {
   let settings = { ...DEFAULT_SETTINGS };
   let settingsOpen = false;
   let returnToPause = false;
-  let activeTab = 'display';
+  let pausedByUs = false;
+  let activeTab = 'sound';
+
+  /** Asked-for names that map onto a stored key. */
+  const ALIASES = { reduceMotion: 'reducedMotion' };
+
+  /**
+   * Team colours. 'safe' is blue against orange (told apart with every common form of
+   * colour blindness); 'standard' is the game's own blue against red.
+   */
+  const TEAM_PALETTES = {
+    standard: { player: '#60a0ff', enemy: '#ff5050', neutral: '#c0a040' },
+    safe: { player: '#56b4e9', enemy: '#e69f00', neutral: '#f0f0f0' },
+  };
   let removeModeListener = null;
   let windowModeSyncPromise = null;
 
@@ -85,10 +109,19 @@ const Settings = (() => {
   }
 
   function get(key) {
-    return key ? settings[key] : { ...settings };
+    if (!key) return { ...settings, reduceMotion: !!settings.reducedMotion };
+    key = ALIASES[key] || key;
+    if (key === 'teamPalette')
+      return TEAM_PALETTES[settings.teamPalette] ? settings.teamPalette : 'standard';
+    return settings[key];
+  }
+
+  function getTeamColours() {
+    return { ...TEAM_PALETTES[get('teamPalette')] };
   }
 
   function set(key, value) {
+    key = ALIASES[key] || key;
     if (!(key in DEFAULT_SETTINGS)) return;
     if (settings[key] === value) return;
     settings[key] = value;
@@ -136,6 +169,11 @@ const Settings = (() => {
     root.classList.toggle('large-hitboxes', !!settings.largerHitboxes);
     root.classList.toggle('hide-hint-bar', !settings.showHintBar);
     root.dataset.colorBlind = settings.colorBlind;
+    root.dataset.teamPalette = get('teamPalette');
+    const team = getTeamColours();
+    root.style.setProperty('--team-player', team.player);
+    root.style.setProperty('--team-enemy', team.enemy);
+    root.style.setProperty('--team-neutral', team.neutral);
     root.dataset.uiScaleMode = settings.uiScaleMode;
 
     const palette = COLOR_BLIND_PALETTES[settings.colorBlind] || {};
@@ -259,6 +297,7 @@ const Settings = (() => {
     setCheck('set-muted', settings.muted);
 
     setVal('set-colorblind', settings.colorBlind);
+    setVal('set-team-palette', get('teamPalette'));
     setVal('set-font-scale', settings.fontScale);
     setText('set-font-scale-val', `${Math.round(settings.fontScale * 100)}%`);
     setCheck('set-high-contrast', settings.highContrast);
@@ -293,12 +332,18 @@ const Settings = (() => {
     });
     setCheck('set-analytics-optin', settings.analyticsOptIn);
     setCheck('set-error-reporting-optin', settings.errorReportingOptIn);
-    if (activeTab === 'mods' && typeof ModLoader !== 'undefined') ModLoader.renderSettingsList();
+    if (!settingsOpen) return;
+    // 'mods' and 'privacy' are the tab names of the markup before buildLayout() merges them.
+    const system = activeTab === 'system';
+    if ((system || activeTab === 'mods') && typeof ModLoader !== 'undefined') {
+      ModLoader.renderSettingsList();
+    }
     if (activeTab === 'cosmetics' && typeof Cosmetics !== 'undefined') Cosmetics.renderSettings();
-    if (activeTab === 'privacy') {
+    if (system || activeTab === 'privacy') {
       if (typeof Analytics !== 'undefined') Analytics.renderSettings();
       if (typeof ErrorReporting !== 'undefined') ErrorReporting.renderSettings();
     }
+    if (activeTab === 'controls') renderKeys();
   }
 
   function bind() {
@@ -445,21 +490,36 @@ const Settings = (() => {
       save();
     });
 
+    document
+      .getElementById('set-team-palette')
+      ?.addEventListener('change', (e) => set('teamPalette', e.target.value));
+
     document.querySelectorAll('.settings-tab').forEach((tab) => {
       tab.addEventListener('click', () => {
+        cancelCapture();
         activeTab = tab.dataset.tab;
         syncForm();
+        const body = document.querySelector('#settings-screen .set-content');
+        if (body) body.scrollTop = 0;
         AudioEngine?.SFX?.click?.();
       });
     });
 
     document.getElementById('settings-close')?.addEventListener('click', () => close());
-    document.getElementById('settings-reset')?.addEventListener('click', () => {
+    document.getElementById('settings-reset')?.addEventListener('click', async () => {
+      AudioEngine?.SFX?.click?.();
+      const yes =
+        typeof InPageDialog === 'undefined' ||
+        (await InPageDialog.confirm(
+          'Put every setting back to its default? Your keys are kept (reset those under Controls).',
+          { title: 'Reset settings', okLabel: 'Reset', danger: true }
+        ));
+      if (!yes) return;
       settings = { ...DEFAULT_SETTINGS };
       save();
       queueElectronWindowMode(true);
-      AudioEngine?.SFX?.click?.();
     });
+    bindKeys();
 
     const openFromMenu = () => open();
     document.getElementById('menu-settings-btn')?.addEventListener('click', openFromMenu);
@@ -493,6 +553,405 @@ const Settings = (() => {
     if (manualWrap) manualWrap.style.display = settings.uiScaleMode === 'manual' ? '' : 'none';
   }
 
+  // ---- layout ---------------------------------------------------------------------------
+  const SECTIONS = [
+    { id: 'sound', label: 'Sound', from: ['audio'] },
+    { id: 'graphics', label: 'Graphics', from: ['display'] },
+    { id: 'controls', label: 'Controls', from: [] },
+    { id: 'gameplay', label: 'Gameplay', from: ['gameplay'] },
+    { id: 'accessibility', label: 'Accessibility', from: ['accessibility'] },
+    { id: 'system', label: 'System', from: ['privacy', 'mods'], minor: true },
+    { id: 'cosmetics', label: 'Cosmetics', from: ['cosmetics'], minor: true },
+  ];
+
+  function h(tag, cls, html) {
+    const node = document.createElement(tag);
+    if (cls) node.className = cls;
+    if (html != null) node.innerHTML = html;
+    return node;
+  }
+
+  const esc = (t) =>
+    String(t ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+
+  /**
+   * Rearrange the settings markup into sections with a pinned section list and footer.
+   * Existing groups are moved, not rebuilt, so their ids and the modules bound to them
+   * (mods, cosmetics, analytics) keep working. Runs once; does nothing without the panel.
+   */
+  function buildLayout() {
+    const screen = document.getElementById('settings-screen');
+    const panel = screen?.querySelector('.settings-panel');
+    if (!screen || !panel || screen.classList.contains('set-v3')) return;
+    screen.classList.add('set-v3');
+
+    const old = {};
+    panel.querySelectorAll('.settings-tab-panel').forEach((p) => {
+      old[p.dataset.tab] = p;
+    });
+    const nav = h('div', 'set-nav');
+    nav.setAttribute('role', 'tablist');
+    nav.setAttribute('aria-label', 'Settings sections');
+    const content = h('div', 'set-content');
+
+    for (const sec of SECTIONS) {
+      const tab = h(
+        'button',
+        `settings-tab set-nav-btn${sec.minor ? ' minor' : ''}`,
+        esc(sec.label)
+      );
+      tab.type = 'button';
+      tab.dataset.tab = sec.id;
+      tab.setAttribute('role', 'tab');
+      nav.appendChild(tab);
+      const pane = h('div', 'settings-tab-panel set-section');
+      pane.dataset.tab = sec.id;
+      for (const from of sec.from) {
+        const src = old[from];
+        if (!src) continue;
+        while (src.firstChild) pane.appendChild(src.firstChild);
+      }
+      content.appendChild(pane);
+    }
+    Object.values(old).forEach((p) => p.remove());
+    panel.querySelector('.settings-tabs')?.remove();
+
+    const pane = (id) => content.querySelector(`.set-section[data-tab="${id}"]`);
+    const groupOf = (id) => document.getElementById(id)?.closest('.settings-group') || null;
+
+    // Camera speed is a control, not a rule of play.
+    const camera = content.querySelector('#set-camera-zoom')?.closest('.settings-group');
+    const keys = h(
+      'div',
+      'settings-group set-keys',
+      '<div class="settings-group-head">KEYS</div><div id="set-keys" class="set-keys-body"></div>'
+    );
+    pane('controls').appendChild(keys);
+    if (camera) pane('controls').appendChild(camera);
+    pane('controls').appendChild(
+      h(
+        'div',
+        'settings-group',
+        '<div class="settings-group-head">CONTROLLER</div>' +
+          '<p class="settings-hint">A controller works with no set-up: the d-pad or left stick pans the map, ' +
+          'A confirms, B cancels, the bumpers walk through your soldiers and Start pauses. ' +
+          'Placing a troop or building still needs the mouse or a finger. ' +
+          'Its buttons are listed under each screen in Keys and can be changed the same way.</p>'
+      )
+    );
+
+    // Accessibility: reduce motion and the team colours, first.
+    const motion = content.querySelector('#set-reduced-motion')?.closest('label');
+    if (motion) {
+      motion.lastChild.textContent = ' Reduce motion (no shake, flashes or sliding panels)';
+    }
+    const visual = groupOf('set-colorblind') || pane('accessibility').firstElementChild;
+    if (visual) {
+      const row = h(
+        'label',
+        'settings-row',
+        '<span>Team colours</span>' +
+          '<select id="set-team-palette">' +
+          '<option value="standard">Standard (blue against red)</option>' +
+          '<option value="safe">Colour-blind safe (blue against orange)</option>' +
+          '</select>'
+      );
+      const swatch = h(
+        'p',
+        'settings-hint set-team-swatches',
+        '<span class="set-swatch" style="background:var(--team-player)"></span> Yours ' +
+          '<span class="set-swatch" style="background:var(--team-enemy)"></span> Enemy'
+      );
+      const head = visual.querySelector('.settings-group-head');
+      const anchor = head ? head.nextSibling : visual.firstChild;
+      visual.insertBefore(swatch, anchor);
+      visual.insertBefore(row, swatch);
+      if (motion) visual.insertBefore(motion, row);
+    }
+
+    const title = panel.querySelector('.settings-title') || h('h2', 'settings-title', 'SETTINGS');
+    const actions = panel.querySelector('.settings-actions');
+    const body = h('div', 'set-body');
+    body.appendChild(nav);
+    body.appendChild(content);
+    panel.textContent = '';
+    panel.appendChild(title);
+    panel.appendChild(body);
+    if (actions) panel.appendChild(actions);
+  }
+
+  // ---- keys -----------------------------------------------------------------------------
+  let keysState = 'night';
+  /** The binding waiting for a key press: { state, id }. */
+  let capture = null;
+  /** A refused rebind that can be swapped: { state, id, key }. */
+  let pendingSwap = null;
+  let keysNote = { text: '', kind: '' };
+
+  const KEY_GROUPS = [
+    [
+      'General',
+      [
+        'keySheet',
+        'mute',
+        'achievements',
+        'encyclopedia',
+        'cheats',
+        'perf',
+        'bugReport',
+        'messageLog',
+        'quickSave',
+        'quickLoad',
+        'startRun',
+        'restart',
+        'resume',
+        'closePanel',
+        'pauseMenu',
+        'cancel',
+        'creativePanel',
+      ],
+    ],
+    ['Time', ['pause', 'beginDay', 'speedUp', 'speedDown']],
+    [
+      'Camera and selection',
+      [
+        'pan',
+        'cycleSoldier',
+        'cycleSoldierBack',
+        'selectAll',
+        'selectAllType',
+        'centreGeneral',
+        'centreBreach',
+        'focusSelection',
+        'clearSelection',
+      ],
+    ],
+    [
+      'Orders',
+      ['hunt', 'holdHere', 'backToPosts', 'reform', 'promote', 'formation', 'order', 'loadout'],
+    ],
+    ['Spoils', ['spoilPick', 'spoilMove', 'spoilConfirm']],
+    ['Strikes and spells', ['ability']],
+    ['Recruit (keys go to troops as they unlock)', ['deploySlot']],
+    ['Build', ['build', 'rotateWall', 'demolish', 'moveBuilding']],
+    ['More buildings (as they unlock)', ['buildSlot']],
+    ['Spy actions (as they unlock)', ['spySlot']],
+    ['Courier messages (as they unlock)', ['courierSlot']],
+    ['Control groups', ['saveGroup']],
+  ];
+
+  function hk() {
+    return typeof Hotkeys !== 'undefined' ? Hotkeys : null;
+  }
+
+  /** What sits on a slot right now, for the row label ("Recruit slot 3 · Mage"). */
+  function slotOccupant(b) {
+    const H = hk();
+    const kind = {
+      deploySlot: 'deploy',
+      buildSlot: 'build',
+      spySlot: 'spy',
+      courierSlot: 'courier',
+    }[b.action];
+    if (!kind || !H.slotItemAt) return '';
+    const id = H.slotItemAt(kind, b.arg);
+    if (!id) return '';
+    return typeof Availability !== 'undefined' ? Availability.nameOf(kind, id) : id;
+  }
+
+  function keyRow(b) {
+    const H = hk();
+    const listening = capture && capture.state === keysState && capture.id === b.id;
+    const occ = slotOccupant(b);
+    const label = esc(b.label) + (occ ? ` <em>· ${esc(occ)}</em>` : '');
+    const keyText = listening ? 'Press a key…' : b.key ? esc(H.keyLabel(b.key)) : 'None';
+    const cls = [
+      'set-key-btn',
+      listening ? 'listening' : '',
+      b.custom ? 'custom' : '',
+      b.key ? '' : 'unbound',
+      b.fixed ? 'fixed' : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    const title = b.fixed
+      ? 'Fixed: this key means the same thing everywhere'
+      : b.custom
+        ? `Changed. Default: ${b.defaultKey ? H.keyLabel(b.defaultKey) : 'none'}`
+        : 'Click, then press a key';
+    return (
+      `<div class="set-key-row${b.custom ? ' custom' : ''}">` +
+      `<span class="set-key-label">${label}</span>` +
+      `<button type="button" class="${cls}" data-key-id="${esc(b.id)}" title="${esc(title)}"${b.fixed ? ' disabled' : ''}>${keyText}</button>` +
+      '</div>'
+    );
+  }
+
+  function renderKeys() {
+    const host = document.getElementById('set-keys');
+    const H = hk();
+    if (!host || !H) return;
+    const rows = H.bindingsOf(keysState);
+    const keyboard = rows.filter((b) => !b.pad);
+    const pad = rows.filter((b) => b.pad);
+    const used = new Set();
+    let groups = '';
+    for (const [name, actions] of KEY_GROUPS) {
+      const list = keyboard.filter((b) => actions.includes(b.action));
+      if (!list.length) continue;
+      list.forEach((b) => used.add(b.id));
+      groups += `<div class="set-key-group"><div class="set-key-group-head">${esc(name)}</div><div class="set-key-grid">${list.map(keyRow).join('')}</div></div>`;
+    }
+    const rest = keyboard.filter((b) => !used.has(b.id));
+    if (rest.length) {
+      groups += `<div class="set-key-group"><div class="set-key-group-head">Other</div><div class="set-key-grid">${rest.map(keyRow).join('')}</div></div>`;
+    }
+    if (pad.length) {
+      groups += `<div class="set-key-group"><div class="set-key-group-head">Controller</div><div class="set-key-grid">${pad.map(keyRow).join('')}</div></div>`;
+    }
+    const pills = H.STATES.map(
+      (s) =>
+        `<button type="button" class="set-state-pill${s === keysState ? ' active' : ''}${H.isCustom(s) ? ' custom' : ''}" data-key-state="${s}" role="tab" aria-selected="${s === keysState}">${esc(H.STATE_LABELS[s])}</button>`
+    ).join('');
+    const swap = pendingSwap
+      ? ' <button type="button" class="set-key-act" data-key-act="swap">Swap them</button>' +
+        ' <button type="button" class="set-key-act" data-key-act="dismiss">Leave it</button>'
+      : '';
+    host.innerHTML =
+      '<p class="settings-hint">Keys depend on what you are doing. Pick a screen, click an action, then press the new key ' +
+      '(Shift, Alt and Ctrl count). Backspace leaves it with no key; Esc cancels. ' +
+      'A change follows the action onto every screen where it had the same key.</p>' +
+      '<div class="set-key-head">' +
+      `<div class="set-state-pills" role="tablist" aria-label="Screens">${pills}</div>` +
+      '<div class="set-key-toolbar">' +
+      `<div class="set-key-note ${esc(keysNote.kind)}" role="status" aria-live="polite">${esc(keysNote.text)}${swap}</div>` +
+      `<button type="button" class="set-key-act" data-key-act="reset-state"${H.isCustom(keysState) ? '' : ' disabled'}>Reset “${esc(H.STATE_LABELS[keysState])}”</button>` +
+      `<button type="button" class="set-key-act" data-key-act="reset-all"${H.isCustom() ? '' : ' disabled'}>Reset all keys</button>` +
+      '</div></div>' +
+      `<div class="set-key-list">${groups}</div>`;
+  }
+
+  function note(text, kind = '') {
+    keysNote = { text, kind };
+  }
+
+  function cancelCapture() {
+    if (!capture && !pendingSwap) return;
+    capture = null;
+    pendingSwap = null;
+    renderKeys();
+  }
+
+  /** Try a key for the action being rebound, and say what happened. */
+  function applyCapturedKey(key, swap = false) {
+    const H = hk();
+    const target = swap ? pendingSwap : capture;
+    if (!H || !target) return;
+    const b = H.bindingsOf(target.state).find((x) => x.id === target.id);
+    const res = H.rebind(target.state, target.id, key, { swap });
+    capture = null;
+    pendingSwap = null;
+    if (res.ok) {
+      const others = (res.states || []).length - 1;
+      note(
+        key == null
+          ? `“${b?.label}” now has no key.`
+          : `“${b?.label}” is now ${H.keyLabel(key)}${res.swapped ? ' (swapped)' : ''}${others > 0 ? `, on ${others + 1} screens` : ''}.`,
+        'ok'
+      );
+      AudioEngine?.SFX?.click?.();
+    } else {
+      if (res.reason === 'conflict' && res.canSwap) {
+        pendingSwap = { state: target.state, id: target.id, key };
+      }
+      note(res.message || 'That key cannot be used.', 'bad');
+      AudioEngine?.SFX?.error?.();
+    }
+    renderKeys();
+  }
+
+  /** A controller button pressed while an action waits for a key (called by js/main.js). */
+  function capturePadKey(key) {
+    if (capture) applyCapturedKey(key);
+  }
+
+  function bindKeys() {
+    const host = document.getElementById('set-keys');
+    const H = hk();
+    if (!host || !H) return;
+    host.addEventListener('click', async (e) => {
+      const el = e.target.closest('button');
+      if (!el || !host.contains(el)) return;
+      if (el.dataset.keyState) {
+        keysState = el.dataset.keyState;
+        capture = null;
+        pendingSwap = null;
+        note('');
+        renderKeys();
+      } else if (el.dataset.keyId) {
+        const same = capture && capture.id === el.dataset.keyId && capture.state === keysState;
+        capture = same ? null : { state: keysState, id: el.dataset.keyId };
+        pendingSwap = null;
+        note(capture ? 'Press the new key. Esc cancels, Backspace clears.' : '');
+        renderKeys();
+        el.blur();
+      } else if (el.dataset.keyAct === 'swap') {
+        if (pendingSwap) applyCapturedKey(pendingSwap.key, true);
+      } else if (el.dataset.keyAct === 'dismiss') {
+        pendingSwap = null;
+        note('');
+        renderKeys();
+      } else if (el.dataset.keyAct === 'reset-state') {
+        H.resetState(keysState);
+        note(`“${H.STATE_LABELS[keysState]}” keys are back to their defaults.`, 'ok');
+        renderKeys();
+      } else if (el.dataset.keyAct === 'reset-all') {
+        const yes =
+          typeof InPageDialog === 'undefined' ||
+          (await InPageDialog.confirm('Put every key on every screen back to its default?', {
+            title: 'Reset all keys',
+            okLabel: 'Reset keys',
+            danger: true,
+          }));
+        if (!yes) return;
+        H.resetAll();
+        note('All keys are back to their defaults.', 'ok');
+        renderKeys();
+      }
+    });
+    // Capture phase, so the game's own key handler never sees a key meant for a rebind.
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (!capture) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.key === 'Escape') {
+          capture = null;
+          note('');
+          renderKeys();
+          return;
+        }
+        if (e.key === 'Backspace') {
+          applyCapturedKey(null);
+          return;
+        }
+        const key = H.keyOfEvent(e);
+        if (key) applyCapturedKey(key);
+        else if (e.metaKey) {
+          capture = null;
+          note('The Windows / Command key belongs to the system and cannot be bound.', 'bad');
+          renderKeys();
+        }
+      },
+      true
+    );
+  }
+
   async function requestBrowserFullscreen() {
     try {
       if (document.fullscreenElement) {
@@ -507,29 +966,37 @@ const Settings = (() => {
     }
   }
 
+  /** @param {{ fromPause?: boolean, tab?: string }} [opts] */
   function open(opts = {}) {
     returnToPause = !!opts.fromPause;
+    pausedByUs = false;
+    // Opened in the middle of play: hold the battle, and give it back on close.
     if (Game.isPlaying?.() && !Game.getState().paused) {
       Game.setPaused?.(true);
-      returnToPause = true;
+      pausedByUs = true;
     }
-    if (returnToPause && typeof UX !== 'undefined') UX.suppressPauseForOverlay();
+    if ((returnToPause || pausedByUs) && typeof UX !== 'undefined') UX.suppressPauseForOverlay();
+    if (opts.tab && SECTIONS.some((x) => x.id === opts.tab)) activeTab = opts.tab;
     settingsOpen = true;
     document.getElementById('settings-screen')?.classList.add('active');
     syncForm();
     AudioEngine?.SFX?.click?.();
   }
 
+  /** Closing goes back to wherever Settings was opened from: the pause menu, or the battle. */
   function close() {
+    cancelCapture();
     settingsOpen = false;
     document.getElementById('settings-screen')?.classList.remove('active');
     AudioEngine?.SFX?.click?.();
-    if (returnToPause && Game.isPlaying?.() && Game.getState().paused) {
-      returnToPause = false;
+    const paused = Game.isPlaying?.() && Game.getState().paused;
+    if (pausedByUs && paused) {
+      Game.setPaused?.(false);
+    } else if (returnToPause && paused) {
       if (typeof UX !== 'undefined') UX.openPauseMenu();
-    } else {
-      returnToPause = false;
     }
+    returnToPause = false;
+    pausedByUs = false;
   }
 
   function isOpen() {
@@ -537,6 +1004,7 @@ const Settings = (() => {
   }
 
   function init() {
+    buildLayout();
     load();
     bind();
     if (typeof ModLoader !== 'undefined') ModLoader.bindSettings();
@@ -558,6 +1026,9 @@ const Settings = (() => {
     close,
     isOpen,
     getPanelInsets,
+    getTeamColours,
+    isCapturingKey: () => !!capture,
+    capturePadKey,
     getCameraZoomSpeed: () => settings.cameraZoomSpeed,
     getHitboxBonus: () => (settings.largerHitboxes ? 8 : 0),
     announce(text) {
