@@ -146,7 +146,7 @@ ok(
 const roleNames = new Set(roleEntries.map((e) => e.name));
 const unlisted = everyone.filter((t) => {
   const def = CrossoverDefs[t] || WweDefs[t];
-  return !roleNames.has(`${def.name} — ${own(t).role}`);
+  return !roleNames.has(`${def.name}: ${own(t).role}`);
 });
 ok(
   unlisted.length === 0,
