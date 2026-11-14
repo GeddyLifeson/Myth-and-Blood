@@ -114,7 +114,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Mythic Alliance Seed',
       hint: 'Crystallize Mythic path — evolved heroes (waves 1–150)',
-      desc: 'Foundational DNA — Splinter Vale, Kael Skyburst, and mythic champions echo forever.',
+      desc: 'Foundational DNA — Dunmar Fusewick, Tavish Coalheart, and mythic champions echo forever.',
       cost: 1,
       prereq: ['crown_age_mark'],
       foundationPath: 'mythic_alliance',

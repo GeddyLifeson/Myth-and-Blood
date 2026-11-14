@@ -34,215 +34,240 @@ class FactionDepthSystem {
 
   static PROFILES = {
     wwe: {
-      label: 'Grand Coliseum Champions',
+      label: 'Bloodsand Champions',
       building: 'wwe_academy',
       palette: ['#c04040', '#ffd700'],
-      identity: 'Showmanship morale bombs, elite finishers, and tag-team aura.',
-      weakness: 'High TP cost; vulnerable to sustained ranged pressure before power-up finishers.',
+      identity:
+        'Pit champions: morale for the line, finishing blows for elites, and strength in pairs.',
+      weakness: 'High TP cost; exposed to sustained ranged fire before their finishing blows land.',
       weaknessMods: { vsFlying: 0.9, damageTakenRanged: 1.12 },
-      playstyle: 'Deploy 2–4 for morale spikes; save finishers for elite waves.',
-      lore: 'Beyond the arena gates march champions who trade steel for glory — every siege is a main event and the crowd roars through every clash.',
+      playstyle: 'Deploy 2–4 for morale; save finishing blows for elite waves.',
+      lore: 'Every champion in the hall won freedom on the bloodsand and sold it again for a better price. They fight for the name carved on the wall, and the siege is one more bout.',
       sfx: 'wwe',
       requiresWave: 0,
       requiresBuilders: 10,
-      masteryTitle: ['Arena Fan', 'Crowd Favorite', 'Coliseum Legend', 'Grand Champion'],
+      masteryTitle: ['Pit Hand', 'Crowd Favourite', 'Name on the Wall', 'First of the Hall'],
     },
     doom: {
       label: 'Abyss Walker',
       building: null,
       palette: ['#40c040', '#1a3018'],
-      identity: 'Single-entity apocalypse — rip, heal, and endure on the Hellbreaker path.',
+      identity: 'One fighter worth an army: he kills, mends himself on the kill, and endures.',
       weakness: 'Extreme TP cost; hellscape (wave 1001+) normalizes his damage.',
       playstyle:
         'Unlock via Hellbreaker difficulty wave 200; let him anchor, not replace your army.',
       lore: 'They say he walked out of the deepest abyss, blade humming with the wrath of every soul left behind.',
       sfx: 'doom',
-      masteryTitle: ['Walker', 'Abyss Hunter', 'Hellbreaker', 'Icon of Wrath'],
+      masteryTitle: ['Walker', 'Abyss Hunter', 'Hellbreaker', 'Wrath Unburied'],
     },
     ultimis: {
-      label: 'Void Residue Crew',
+      label: 'Powderhorn Company',
       building: 'element_barracks',
       palette: ['#c06030', '#8040a0'],
-      identity: 'Mad science squad — frags, chain-lightning weapons, fortitude tanking.',
-      weakness: 'Arcane specialist is fragile; clustered undead overwhelm without walls.',
+      identity:
+        'Four powder-men: fused pots for crowds, bottled lightning for elites, and a cooper who will not fall.',
+      weakness: 'The storm-bottler is fragile; clustered undead overwhelm them without walls.',
       // vsSwarm is damage-taken mult — >1 means weaker vs swarms (not a buff).
       weaknessMods: { vsUndead: 0.88, vsSwarm: 1.12, damageTakenRanged: 1.08 },
-      playstyle: 'Brawler anchors front; scientist behind walls; scout hunts elites.',
-      lore: 'Four madmen bound by void residue and worse — the original crew that first cracked the multiverse.',
+      playstyle:
+        'The cooper anchors the front; the storm-bottler stays behind walls; the fencer hunts elites.',
+      lore: 'Four sellswords who learned black powder from a mine that killed everyone else in it. They hire out to any wall that can pay, and leave before the smoke clears.',
       sfx: 'ultimis',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Residue Recruit', 'Bunker Veteran', 'Ascension Runner', 'Moon Operator'],
+      masteryTitle: ['Powder Monkey', 'Fuse-Cutter', 'Mine Veteran', 'Master of the Horn'],
     },
     primis: {
-      label: 'First Circle',
+      label: 'The Pale Vigil',
       building: 'primis_shrine',
       palette: ['#d07040', '#9040c0'],
-      identity: 'Upgraded aether knights — slams, barrier curtains, summoning keys.',
-      weakness: 'Premium TP; needs shrine investment before spamming recruits.',
+      identity:
+        'Barrow knights: sweeping blows, a bulwark who hardens when hurt, and a leech who heals from the enemy.',
+      weakness: 'Costly; needs its shrine built before recruits can be called.',
       weaknessMods: { vsArcane: 0.9, vsUndead: 0.92 },
-      playstyle: 'Barrier tank anchors the line; elite drain specialist heals from fallen foes.',
-      lore: "The corrected timeline's warriors — same souls, sharper blades, heavier sins.",
+      playstyle: 'The bulwark anchors the line; the leech mends the others from what he drains.',
+      lore: 'An order of knights sworn to watch the old barrows so that nothing climbs out. When the dead began to march anyway, the Vigil came down to meet them.',
       sfx: 'primis',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       recommendedHamlets: 1,
-      masteryTitle: ['Circle Initiate', 'Keeper', 'Void Scholar', 'Cycle Breaker'],
+      masteryTitle: ['Vigil Novice', 'Barrow Keeper', 'Tomb Scholar', 'Warden of the Last Door'],
     },
     halo: {
-      label: 'Orbital Vanguard',
+      label: 'The Greywatch',
       building: 'spartan_academy',
       palette: ['#408040', '#80c0ff'],
-      identity: 'Shielded ranged core — battle fury, fireteam teamwork, tech debuffs.',
-      weakness: 'Melee-only operatives must be screened; expensive academy.',
+      identity: 'Armoured crossbow wardens: a shield line, called targets, and hobbling bolts.',
+      weakness: 'Its melee heroes must be screened; the citadel hall is expensive.',
       weaknessMods: { vsMeleeRush: 0.92, damageTakenMelee: 1.1 },
-      playstyle: 'Heavy gunner + sniper backline; commander buffs; sergeant rally on wave start.',
-      lore: 'Orbital fireteams dropped into medieval hell — powered armor against goblin steel.',
+      playstyle:
+        'Springald and marksman at the back; the lieutenant calls targets; the serjeant rallies at wave start.',
+      lore: 'The Greywatch has held one mountain citadel for three hundred years and has never opened its gate to an enemy. Its wardens come down only when a wall elsewhere is about to fail.',
       sfx: 'halo',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Recruit', 'Vanguard', 'Fireteam', 'Strike Commander'],
+      masteryTitle: ['Recruit', 'Warden', 'Watch-Serjeant', 'Warden-Captain'],
     },
     gears: {
-      label: 'Iron Trench Coalition',
+      label: 'Sawtooth Company',
       building: 'cog_academy',
       palette: ['#506080', '#c04040'],
-      identity: 'Trenchsaw discipline — chainsaw finishers, brotherhood bonds, siege busting.',
-      weakness: 'Light infantry are fragile; needs veteran anchor for brotherhood synergy.',
+      identity:
+        'Ditch-fighting crossbowmen: saw-edged finishers, shield-mates, and engine-breaking.',
+      weakness: 'The recruits are fragile; the company fights best around its captain.',
       weaknessMods: { vsFlying: 0.9, vsBerserker: 0.9, damageTakenRanged: 1.08 },
-      playstyle: 'Veteran + partner core; engineer for towers; bruiser flanks.',
-      lore: 'The coalition brought chainsaws to a sword fight. The tunnel horde was already here, wearing goblin faces.',
+      playstyle:
+        'Captain and shield-mate at the core; the artificer for towers; the battering man on the flank.',
+      lore: 'A mercenary company that has fought every war from the bottom of a ditch. Its saw-backed glaives were made for cutting stakes and turned out to cut goblins as well.',
       sfx: 'gears',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Trencher', 'Tunnel Killer', 'Siege Veteran', 'Last Bastion'],
+      masteryTitle: ['Ditcher', 'Tunnel Killer', 'Siege Veteran', 'Last in the Ditch'],
     },
     lotr: {
-      label: 'Ninefold March',
+      label: 'Thornroad Company',
       building: 'rivendell_camp',
       palette: ['#406050', '#c0a040'],
-      identity: 'March aura — wizard terror, archer range, king-slayer elite pressure.',
-      weakness: 'Scout is soft; expensive camp; slow to field full march.',
+      identity:
+        'Road-wardens: a priest who breaks nerve, a longbow for range, and a captain who kills elites.',
+      weakness: 'The runner is soft; the camp is expensive; slow to field the whole company.',
       weaknessMods: { vsAssassin: 0.88, damageTakenStealth: 1.12, vsFlying: 0.92 },
-      playstyle: 'Wizard mid; archer garrison; axe-fighter on siege waves.',
-      lore: 'From the last hidden camp march nine heroes who will not let the realm fall again.',
+      playstyle: 'Priest in the middle; longbow in the garrison; axeman on siege waves.',
+      lore: 'Seven guards-for-hire who keep the pilgrim road through the thorn country. The shrines they were paid to protect are burning, so they have come to the source.',
       sfx: 'lotr',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Marcher', 'Ninefold Bond', 'Relic Bearer', 'Crown Returned'],
+      masteryTitle: ['Wayfarer', 'Road-Sworn', 'Shrine Keeper', 'Warden of the Road'],
     },
     baki: {
-      label: 'Iron Pit Guild',
+      label: 'Knucklebone Lodge',
       building: 'hanma_dojo',
       palette: ['#c04040', '#606060'],
-      identity: 'Pure melee monsters — demon-back surge, titan deletes, iron bodies.',
-      weakness: 'No ranged; kited by harpies and mages; apex predator drains TP.',
+      identity:
+        'Bare-handed melee: stronger when hurt, bodies like iron, and a master who cannot be stopped.',
+      weakness: 'No ranged; kited by harpies and mages; the master is costly.',
       weaknessMods: { vsFlying: 0.8, vsRanged: 0.88, damageTakenRanged: 1.15 },
-      playstyle: 'Striker + mentor line; bruiser tanks; apex predator for boss waves only.',
-      lore: 'The iron pit guild treats your siege as another round of brutal conditioning.',
+      playstyle:
+        'Prodigy and instructor in the line; the Anvil soaks; keep the master for boss waves.',
+      lore: 'A fighting guild that settles rank by bouts and marks it in knucklebones worn at the belt. The lodge treats your siege as one more bout, and it does not forfeit.',
       sfx: 'baki',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Pit Novice', 'Fighter', 'Champion', 'Titan Slayer'],
+      masteryTitle: ['Pit Novice', 'Fighter', 'Knucklebone Holder', 'Ogre Breaker'],
     },
     jojo: {
-      label: 'Bound Spirit Court',
+      label: 'The Marrow Choir',
       building: 'stand_arrow_shrine',
       palette: ['#8040a0', '#e0c040'],
-      identity: 'Spirit-bound operatives across eras — ripple arts, rush finishers, cavalry duels.',
+      identity:
+        'Relic-singers of every trade: hymns that burn the dead, snares, finishers, and four outriders.',
       weakness:
-        'Cavalry operatives need space; ripple arts weak vs necromancer hordes without walls.',
+        'The outriders need space; the hymns falter against necromancer hordes without walls.',
       weaknessMods: { vsUndead: 0.85, vsNecromancer: 0.88, damageTakenRanged: 1.1 },
-      playstyle: 'Mix eras for tags; pin specialist locks elites; cavalry pair hunts on wide maps.',
-      lore: 'A spirit-binding shrine on your battlefield? Fate is bizarre, and the waves are stranger.',
+      playstyle: 'Mix their trades; the enforcer pins elites; the outriders hunt on open ground.',
+      lore: "A cult that carries its saints' bones into battle and sings over them. The hymns work, which is the only reason the church has not burned the choir.",
       sfx: 'jojo',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Spirit Bound', 'Court Acolyte', 'Bound Duelist', 'Grand Circuit'],
+      masteryTitle: ['Bone Carrier', 'Choir Acolyte', 'Cantor', 'Voice of the Reliquary'],
     },
     fotns: {
-      label: 'North Star Ascetics',
+      label: 'Order of the Quiet Hand',
       building: 'north_star_dojo',
       palette: ['#4080c0', '#c0c0e0'],
-      identity: 'Pressure-point arts — rapid finishers, healer sustain, warlord terror.',
-      weakness: 'Melee only; warlord is slow; needs healer support for sustain.',
+      identity:
+        'Monks who kill bare-handed: fast finishers, a healer, and an abbot who breaks nerve.',
+      weakness: 'Melee only; the abbot is slow; needs its healer to last.',
       weaknessMods: { vsFlying: 0.82, vsRanged: 0.9, damageTakenRanged: 1.12 },
-      playstyle: 'Successor on elites; healer aura; swift hunter chases fast foes.',
-      lore: 'The north star dojo teaches your foes the same lesson — fate was sealed three breaths ago.',
+      playstyle:
+        'The order’s Hand on elites; the infirmarian’s aura; the sweeping monk chases fast foes.',
+      lore: 'An ascetic order that gave up weapons and then found it did not need them. Its monks speak rarely and strike once.',
       sfx: 'fotns',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Ascetic Student', 'Successor', 'Master', 'Warlord'],
+      masteryTitle: ['Novice', 'Brother', 'Master', 'Abbot-Militant'],
     },
     dragonball: {
-      label: 'Skyburst Order',
+      label: 'Emberblood Warband',
       building: 'capsule_corp',
       palette: ['#e06040', '#4060c0'],
-      identity: 'Skyburst carries — beam finishers, pride spikes, perfect-form sustain.',
-      weakness: 'Burst specialists need TP runway; apex destroyer is god-tier cost.',
+      identity:
+        'Fire in the blood: burst finishers, fury when wounded, and a flame that feeds on kills.',
+      weakness: 'Its burst fighters need TP to field; the Pyre is the costliest of all.',
       weaknessMods: { vsArcane: 0.88, vsAssassin: 0.9, damageTakenStealth: 1.1 },
-      playstyle: 'Twin strikers core; support beams from the rear; save apex destroyer for bosses.',
-      lore: 'Skyburst logistics on a medieval map — because raw power demands supply lines.',
+      playstyle:
+        'Champion and rival at the core; seers throw from the rear; save the Pyre for bosses.',
+      lore: 'A hill warband whose blood runs hot enough to scorch. They follow whoever burns brightest, and they came south because the cold was leaving them.',
       sfx: 'dragonball',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Order Initiate', 'Ascendant', 'Skyburst Master', 'Void Eraser'],
+      masteryTitle: ['Kindling', 'Emberblood', 'Flame-Bearer', 'The Pyre'],
     },
     imperium: {
-      label: 'Crimson Legions',
+      label: 'Order of the Iron Psalm',
       building: 'astartes_chapel',
       palette: ['#4060a0', '#802030'],
-      identity: 'Volleygun legions — commissar executions, heavy-armor anchors, walker siege.',
-      weakness: 'Slow heavy armor; expensive chapel; weak to swarm flanks before walls set.',
+      identity:
+        'A militant church order: ordered volleys, a provost for the routed, tower shields, and a bombard.',
+      weakness:
+        'Slow heavy armour; an expensive chapel; weak to swarm flanks before walls are set.',
       weaknessMods: { vsSwarm: 1.12, vsAssassin: 0.9, damageTakenStealth: 1.1 },
-      playstyle: 'Captain + Archivist backline; heavy-armor anchors; Field Enforcer for morale.',
-      lore: 'Crimson chapels on your map — transhuman warriors who treat goblins as heretics.',
+      playstyle:
+        'Castellan and hex-finder at the back; tower shields in front; the provost for morale.',
+      lore: 'A church order that sings its psalms in armour and counts every enemy an unbeliever. It tithes its levies from villages that would rather not be asked.',
       sfx: 'imperium',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Initiate', 'Legionnaire', 'Captain', 'Chapter Master'],
+      masteryTitle: ['Initiate', 'Brother', 'Castellan', 'Master of the Order'],
     },
     crystal: {
-      label: 'Crystal Vanguard',
+      label: 'Saltglass Guild',
       building: 'crystal_sanctum',
       palette: ['#5080c0', '#c04060'],
-      identity: 'Classic party comp — black/white magic, dragoon jumps, limit bursts.',
-      weakness: 'Mages are fragile; dragoon needs space; limit striker must take damage first.',
+      identity:
+        'Glassmakers at war: kiln-fire, a physic, a vaulting lancer, and a blade that peaks when breaking.',
+      weakness:
+        'The casters are fragile; the lancer needs space; the Flawed Blade must be hurt first.',
       weaknessMods: { vsMeleeRush: 0.9, damageTakenMelee: 1.1, vsFlying: 0.95 },
-      playstyle: 'Soldier of Light front; White Mage mid; Black Mage + Summoner backline.',
-      lore: 'Crystal light answered your siege horn — aether heroes from another age of war.',
+      playstyle:
+        'Guild Blade in front; physic in the middle; Kiln-Witch and Lens-Caller at the back.',
+      lore: 'The glassmakers of the salt coast guard their furnace secrets with hired blades and their own burned hands. A lens that can light a ship at a mile lights a goblin just as well.',
       sfx: 'crystal',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Recruit', 'Warrior', 'Hero', 'Crystal Champion'],
+      masteryTitle: ['Apprentice', 'Journeyman', 'Guild Master', 'Master of the Furnace'],
     },
     warp: {
-      label: 'Rift Cult',
+      label: 'Cult of the Open Wound',
       building: 'warp_shrine',
       palette: ['#802040', '#6040c0'],
-      identity: 'Chaos warband — warp bolts, plague curses, possessed fire, blood pacts.',
-      weakness: 'Low morale baseline; cultists break fast; risky without imperium-style anchors.',
+      identity:
+        'A blood cult: forked curses, weeping sores, burning bolts, and healing on the kill.',
+      weakness: 'Low morale; cultists break fast; risky without a steadier company beside them.',
       weaknessMods: { vsArcane: 0.9, damageTakenRanged: 1.1, vsNecromancer: 0.88 },
-      playstyle: 'Champion + Daemon Knight front; Magus backline; Cultist debuff aura.',
-      lore: 'A warp shrine tears reality — heretics who would rather burn the map than lose it.',
+      playstyle:
+        'The Chosen and the Healed-Over in front; the Wound-Seer behind; the Pox-Sister for her aura.',
+      lore: 'The cult believes the world has a wound that must be kept open, and that it bleeds power for those who tend it. It fights beside you because the host would close the wound for good.',
       sfx: 'warp',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Cultist', 'Champion', 'Warlord', 'Dark Apostle'],
+      masteryTitle: ['Cultist', 'Wound-Tender', 'Chosen', 'Mouth of the Wound'],
     },
     tes: {
-      label: 'Voicebound Pact',
+      label: 'Rimehowl Warband',
       building: 'dragon_moot',
       palette: ['#4068a0', '#a06040'],
-      identity: 'Dragon-touched heroes, voice shouts, and prophecy-bound battlemages.',
-      weakness: 'Expensive roster; voice champion must be protected; shouts cost TP.',
+      identity:
+        'Northern raiders: a war-howl that breaks crowds, a cairn-chanter, and a storm-seer.',
+      weakness: 'An expensive roster; the Voice must be protected; howls cost TP.',
       weaknessMods: { vsAssassin: 0.9, damageTakenStealth: 1.12, vsSwarm: 1.1 },
-      playstyle: 'Voice champion + elder sage core; diversify Eternal Paths for the legacy trial.',
-      lore: 'A dragon moot hall answers your horn — voice-bound sages and chosen heroes walk between worlds.',
+      playstyle:
+        'The Voice and the cairn-chanter at the core; diversify Eternal Paths for the legacy trial.',
+      lore: 'A warband from the ice coast whose war-skalds howl before the charge. The howl carries a mile over snow, and what hears it tends not to wait.',
       sfx: 'tes',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
-      masteryTitle: ['Wanderer', 'Voice Adept', 'Dragon-Touched', 'Pact Champion'],
+      masteryTitle: ['Wanderer', 'Howl-Sworn', 'Skald', 'Voice of the Warband'],
     },
   };
 
@@ -250,69 +275,69 @@ class FactionDepthSystem {
 
   static PLANET_WARFARE_OPERATIVES = {
     tech_head: {
-      label: 'Tech Head',
-      operative: 'Gearwright',
+      label: 'Pry and Spike',
+      operative: 'Pell Rivetson',
       faction: 'gears',
       siegeMult: 2.25,
       settlementMult: 1.45,
-      desc: 'Coalition tech sabotage — bonus damage vs enemy settlements and siege engines.',
+      desc: 'Finds the weak joint — bonus damage vs enemy settlements and siege engines.',
     },
     axe_cleave: {
-      label: 'Axe Cleave',
-      operative: 'Stone Axe Lord',
+      label: 'Splitting Stroke',
+      operative: 'Dorn Quarrykin',
       faction: 'lotr',
       siegeMult: 2.15,
       settlementMult: 1.35,
       splashRadius: 55,
       splashMult: 0.28,
-      desc: 'Dwarven demolition — cleave splashes to nearby enemy holds.',
+      desc: "Quarryman's demolition — cleave splashes to nearby enemy holds.",
     },
     german_science: {
-      label: 'Iron Science',
-      operative: 'Stroheim',
+      label: "Ram's Canticle",
+      operative: 'Gaunt Ironrib',
       faction: 'jojo',
       siegeMult: 1.95,
       outpostMult: 1.55,
-      desc: 'Superior engineering — devastates trade posts, quarries, and siege towers.',
+      desc: 'Walks through walls — devastates trade posts, quarries, and siege towers.',
     },
     lancer_burst: {
-      label: 'Trenchsaw Burst',
-      operative: 'Marek Ironhart',
+      label: 'Sawback Glaive',
+      operative: 'Hale Brandreth',
       faction: 'gears',
       siegeMult: 2.05,
       finisherHp: 0.35,
       finisherMult: 2.15,
-      desc: 'Chainsaw raze — executes wounded enemy structures in the north.',
+      desc: 'Saws through the timbers — finishes wounded enemy structures in the north.',
     },
     hokuto_kaioh: {
-      label: 'Conqueror’s Terror',
-      operative: 'Rao',
+      label: 'Heavy Tread',
+      operative: 'Gorhame the Unbowed',
       faction: 'fotns',
       siegeMult: 1.88,
       hamletMult: 1.42,
-      desc: 'Imperial pressure — extra damage vs enemy hamlets and guilds.',
+      desc: 'Settlements empty ahead of him — extra damage vs enemy hamlets and guilds.',
     },
     kamehameha: {
-      label: 'Skyburst Wave',
-      operative: 'Kael Skyburst',
+      label: 'Ember Burst',
+      operative: 'Tavish Coalheart',
       faction: 'dragonball',
       siegeMult: 1.78,
       splashRadius: 72,
       splashMult: 0.34,
-      desc: 'Wave-clearing blast — AoE building damage when striking northern holds.',
+      desc: 'A burst of fire — area damage to buildings when striking northern holds.',
     },
     hakai: {
-      label: 'Cataclysm',
-      operative: 'Cataclysm Lord',
+      label: "Pyre's End",
+      operative: 'Mother Scoria',
       faction: 'dragonball',
       siegeMult: 1.65,
       deleteHp: 0.25,
       deleteMult: 2.6,
-      desc: 'Lord of Ruin — obliterates structures below 25% HP.',
+      desc: 'What she touches burns down — destroys structures below 25% HP.',
     },
     weather_stand: {
-      label: 'Storm Caller',
-      operative: 'Storm Caller',
+      label: 'Thunder Response',
+      operative: 'Harrow Cloudcall',
       faction: 'jojo',
       siegeMult: 1.72,
       splashRadius: 62,
@@ -320,65 +345,65 @@ class FactionDepthSystem {
       desc: 'Storm front — lightning arcs to adjacent enemy economy sites.',
     },
     grenadier: {
-      label: 'Grenadier',
-      operative: 'Heavy Gunner',
+      label: 'Springald Shot',
+      operative: 'Hulbrand Oxbow',
       faction: 'halo',
       siegeMult: 1.92,
       everyNth: 3,
       splashRadius: 52,
       splashMult: 0.32,
-      desc: 'Explosive ordnance — every third strike splashes clustered outposts.',
+      desc: 'A bolt the size of a fence post — every third strike splashes clustered outposts.',
     },
     special_beam: {
-      label: 'Spiral Lance Beam',
-      operative: 'Verdant Sage',
+      label: 'Lancing Ember',
+      operative: 'Varrow Cindersight',
       faction: 'dragonball',
       siegeMult: 1.88,
       heavyHp: 300,
       heavyMult: 1.48,
-      desc: 'Piercing beam — bonus vs high-HP enemy fortifications.',
+      desc: 'A coal thrown like a lance — bonus vs high-HP enemy fortifications.',
     },
     energy_sword: {
-      label: 'Plasma Blade',
-      operative: 'Ember Operative',
+      label: 'Scaling Knife',
+      operative: 'Rask Notchblade',
       faction: 'halo',
       siegeMult: 1.82,
       academyMult: 1.52,
-      desc: 'Academy breach — shredded damage vs shadow and war academies.',
+      desc: 'First over the wall — bonus damage vs shadow and war academies.',
     },
     cole_train: {
-      label: 'Iron Charge',
-      operative: 'Cole',
+      label: 'Downhill Charge',
+      operative: 'Jorram Brakeless',
       faction: 'gears',
       siegeMult: 1.76,
       chargeBonus: 0.28,
       desc: 'Run-through demolition — bonus while charging enemy lines in the north.',
     },
     autocannon: {
-      label: 'Autocannon',
-      operative: 'Dreadnought',
+      label: 'Bronze Bombard',
+      operative: 'Tobiah Bronzeback',
       faction: 'imperium',
       siegeMult: 2.1,
       settlementMult: 1.4,
-      desc: 'Walking tank — bonus damage vs enemy settlements and siege engines.',
+      desc: 'A church bell recast as a gun — bonus damage vs enemy settlements and siege engines.',
     },
     firaga: {
-      label: 'Greater Flame',
-      operative: 'Black Mage',
+      label: 'Kiln Burst',
+      operative: 'Obsidia Kiln',
       faction: 'crystal',
       siegeMult: 1.82,
       splashRadius: 58,
       splashMult: 0.3,
-      desc: 'Aether firestorm — AoE building damage when striking northern holds.',
+      desc: 'Furnace heat in a bottle — area damage to buildings when striking northern holds.',
     },
     warp_bolt: {
-      label: 'Warp Bolt',
-      operative: 'Warp Magus',
+      label: 'Forked Curse',
+      operative: 'Ezrin Splitveil',
       faction: 'warp',
       siegeMult: 1.7,
       splashRadius: 48,
       splashMult: 0.26,
-      desc: 'Chaos arc — secondary bolt splashes adjacent enemy economy sites.',
+      desc: 'The curse forks — a second bolt splashes adjacent enemy economy sites.',
     },
   };
 
@@ -386,7 +411,7 @@ class FactionDepthSystem {
     necromancer: {
       weakFactions: ['jojo', 'primis', 'ultimis'],
       mult: 1.22,
-      note: 'Undead resist sunbreath and aether — field walls!',
+      note: 'The dead resist hymns and powder — field walls!',
     },
     shaman: {
       weakFactions: ['fotns', 'baki'],
@@ -401,12 +426,12 @@ class FactionDepthSystem {
     sky_drake: {
       weakFactions: ['gears', 'lotr', 'baki', 'fotns'],
       mult: 1.14,
-      note: 'Anti-air evolved allies help (orbital, skyburst).',
+      note: 'Free companies that shoot help here (Greywatch, Emberblood).',
     },
     war_chief: {
       weakFactions: ['ultimis'],
       mult: 1.1,
-      note: 'Boss elites punish reckless void rushes.',
+      note: 'Boss elites punish a reckless rush.',
     },
     assassin: {
       weakFactions: ['halo', 'dragonball', 'lotr', 'tes'],
@@ -416,12 +441,12 @@ class FactionDepthSystem {
     dark_mage: {
       weakFactions: ['dragonball', 'primis', 'jojo'],
       mult: 1.12,
-      note: 'Arcane shields blunt skyburst and aether bursts.',
+      note: 'Arcane shields blunt ember and kiln bursts.',
     },
     troll: {
       weakFactions: ['ultimis', 'primis'],
       mult: 1.12,
-      note: 'Brute hordes overwhelm mad-science squads.',
+      note: 'Brute hordes overwhelm the powder-men.',
     },
     berserker: {
       weakFactions: ['gears', 'lotr', 'halo'],
@@ -431,7 +456,7 @@ class FactionDepthSystem {
     goblin_sapper: {
       weakFactions: ['halo', 'gears'],
       mult: 1.1,
-      note: 'Sappers target modern war machines.',
+      note: 'Sappers go for crossbow lines and engines.',
     },
     warg_rider: {
       weakFactions: ['baki', 'fotns', 'lotr', 'wwe'],
@@ -441,12 +466,12 @@ class FactionDepthSystem {
     bone_summoner: {
       weakFactions: ['crystal', 'imperium'],
       mult: 1.12,
-      note: 'Undead summoners resist aether smites and warp curses.',
+      note: 'Undead summoners resist psalms and curses alike.',
     },
     dark_knight: {
       weakFactions: ['warp', 'crystal', 'imperium'],
       mult: 1.1,
-      note: 'Elite armor tests transhuman and aether finishers.',
+      note: 'Elite armour tests every finishing blow.',
     },
   };
 
@@ -454,16 +479,16 @@ class FactionDepthSystem {
     {
       id: 'wwe_show',
       faction: 'wwe',
-      name: 'Grand Bout',
-      desc: 'Clear wave 30 with 4+ coliseum on field.',
+      name: 'Four on the Sand',
+      desc: 'Clear wave 30 with 4+ champions on the field.',
       wave: 30,
       minField: 4,
     },
     {
       id: 'halo_noble',
       faction: 'halo',
-      name: 'Wolf Pack',
-      desc: 'Clear wave 40 with 3+ orbital operatives, 0 ally losses.',
+      name: 'Unbroken Watch',
+      desc: 'Clear wave 40 with 3+ Greywatch heroes and no allies lost.',
       wave: 40,
       minField: 3,
       flawless: true,
@@ -471,87 +496,87 @@ class FactionDepthSystem {
     {
       id: 'lotr_fellowship',
       faction: 'lotr',
-      name: 'Nine Walkers',
-      desc: 'Field 5+ Ninefold operatives at once.',
+      name: 'Full Company',
+      desc: 'Field 5+ Thornroad heroes at once.',
       minField: 5,
     },
     {
       id: 'jojo_sbr',
       faction: 'jojo',
-      name: 'Gilded Derby',
-      desc: 'Field 2+ derby cavalry operatives.',
+      name: 'Outriders',
+      desc: 'Field 2+ Marrow Choir outriders.',
       flag: 'jojo_cavalry',
     },
     {
       id: 'db_zenkai',
       faction: 'dragonball',
-      name: 'Rebound Surge',
-      desc: 'Score 200 lifetime Skyburst kills.',
+      name: 'Burning Tally',
+      desc: 'Score 200 lifetime Emberblood kills.',
       kills: 200,
     },
     {
       id: '115_moon',
       faction: 'ultimis',
-      name: 'Moon Rounds',
-      desc: 'Trigger 50 Void Residue abilities (lifetime).',
+      name: 'Spent Powder',
+      desc: 'Trigger 50 Powderhorn abilities (lifetime).',
       abilities: 50,
     },
     {
       id: 'primis_cycle',
       faction: 'primis',
-      name: 'Cycle Breaker',
-      desc: 'Field 3+ First Circle operatives at once.',
+      name: 'Three at the Door',
+      desc: 'Field 3+ Pale Vigil heroes at once.',
       minField: 3,
     },
     {
       id: 'cog_last_stand',
       faction: 'gears',
-      name: 'Last Bastion',
-      desc: 'Clear wave 35 with 3+ Coalition on field.',
+      name: 'Last in the Ditch',
+      desc: 'Clear wave 35 with 3+ Sawtooth heroes on the field.',
       wave: 35,
       minField: 3,
     },
     {
       id: 'dojo_champion',
       faction: 'baki',
-      name: 'Iron Pit Champion',
-      desc: 'Score 150 lifetime Iron Pit kills.',
+      name: 'Knucklebones Won',
+      desc: 'Score 150 lifetime Knucklebone Lodge kills.',
       kills: 150,
     },
     {
       id: 'hokuto_successor',
       faction: 'fotns',
-      name: 'Seven Star Successor',
-      desc: 'Trigger 40 Seven Star abilities (lifetime).',
+      name: 'The Quiet Hand',
+      desc: 'Trigger 40 Quiet Hand abilities (lifetime).',
       abilities: 40,
     },
     {
       id: 'astartes_line',
       faction: 'imperium',
-      name: 'Legion Battle Line',
-      desc: 'Clear wave 45 with 3+ Crimson Legion operatives on field.',
+      name: 'Psalm Line',
+      desc: 'Clear wave 45 with 3+ Iron Psalm heroes on the field.',
       wave: 45,
       minField: 3,
     },
     {
       id: 'crystal_hero',
       faction: 'crystal',
-      name: 'Crystal Hero',
-      desc: 'Score 150 lifetime Crystal Vanguard kills.',
+      name: 'Guild Honours',
+      desc: 'Score 150 lifetime Saltglass Guild kills.',
       kills: 150,
     },
     {
       id: 'warp_ritual',
       faction: 'warp',
-      name: 'Warp Ritual',
-      desc: 'Trigger 35 Rift Cult abilities (lifetime).',
+      name: 'Tending the Wound',
+      desc: 'Trigger 35 Open Wound abilities (lifetime).',
       abilities: 35,
     },
     {
       id: 'tes_dragonborn',
       faction: 'tes',
-      name: 'Wyrmcaller Voice',
-      desc: 'Clear wave 38 with 2+ Voicebound operatives on field.',
+      name: 'Howl at the Gate',
+      desc: 'Clear wave 38 with 2+ Rimehowl heroes on the field.',
       wave: 38,
       minField: 2,
     },
@@ -561,90 +586,90 @@ class FactionDepthSystem {
     {
       id: 'moon_rounds',
       months: [1],
-      name: 'Moon Rounds',
+      name: 'Spent Powder',
       factions: ['ultimis'],
       bonus: { abilityDmg: 0.08 },
-      desc: 'Void Residue Crew abilities +8% in January.',
+      desc: 'Powderhorn Company abilities +8% in January.',
     },
     {
       id: 'primis_ascension',
       months: [2],
-      name: 'First Circle Ascension',
+      name: 'Barrow Vigil',
       factions: ['primis'],
       bonus: { dmg: 0.08 },
-      desc: 'First Circle damage +8% in February.',
+      desc: 'Pale Vigil damage +8% in February.',
     },
     {
       id: 'wrestlemania',
       months: [3, 4],
-      name: 'Grand Coliseum Season',
+      name: 'Bloodsand Season',
       factions: ['wwe'],
       bonus: { morale: 8 },
-      desc: 'Grand Coliseum Champions morale +8 on recruit.',
+      desc: 'Bloodsand Champions morale +8 on recruit.',
     },
     {
       id: 'cog_siegebreak',
       months: [5],
-      name: 'Trench Siegebreak',
+      name: 'Ditch Season',
       factions: ['gears'],
       bonus: { siegeDmg: 0.1 },
-      desc: 'Iron Trench Coalition siege damage +10% in May.',
+      desc: 'Sawtooth Company siege damage +10% in May.',
     },
     {
       id: 'stand_summer',
       months: [6, 7],
-      name: 'Spirit Court Summer',
+      name: 'High Summer Hymn',
       factions: ['jojo'],
       bonus: { abilityDmg: 0.1 },
-      desc: 'Bound Spirit Court abilities +10% Jun–Jul.',
+      desc: 'Marrow Choir abilities +10% Jun–Jul.',
     },
     {
       id: 'saiyan_saga',
       months: [8],
-      name: 'Skyburst Ascendance',
+      name: 'Dog-Day Fires',
       factions: ['dragonball', 'crystal'],
       bonus: { dmg: 0.1 },
-      desc: 'Skyburst Order and Crystal Vanguard damage +10% in August.',
+      desc: 'Emberblood Warband and Saltglass Guild damage +10% in August.',
     },
     {
       id: 'fellowship_march',
       months: [9],
-      name: 'Ninefold March',
+      name: 'Pilgrim Month',
       factions: ['lotr'],
       bonus: { moraleRegen: 3 },
-      desc: 'Ninefold March grants +3 morale/round in September.',
+      desc: 'Thornroad Company grants +3 morale/round in September.',
     },
     {
       id: 'hanma_open',
       months: [10],
-      name: 'Iron Pit Open',
+      name: 'Lodge Bouts',
       factions: ['baki'],
       bonus: { meleeDmg: 0.1 },
-      desc: 'Iron Pit Guild melee damage +10% in October.',
+      desc: 'Knucklebone Lodge melee damage +10% in October.',
     },
     {
       id: 'spartan_day',
       months: [11],
-      name: 'Vanguard Day',
+      name: 'Muster of the Walls',
       factions: ['halo', 'imperium'],
       bonus: { acc: 8 },
-      desc: 'Orbital Vanguard and Crimson Legions accuracy +8 during November.',
+      desc: 'Greywatch and Iron Psalm accuracy +8 during November.',
     },
     {
       id: 'hokuto_winter',
       months: [12],
-      name: 'North Star Winter',
+      name: 'Fasting Winter',
       factions: ['fotns', 'warp'],
       bonus: { abilityDmg: 0.08 },
-      desc: 'North Star Ascetics and Rift Cult abilities +8% in December.',
+      desc: 'Quiet Hand and Open Wound abilities +8% in December.',
     },
     {
       id: 'dragons_dawn',
       months: [7],
-      name: "Dragon's Dawn",
+      name: 'Thaw Raid',
       factions: ['tes', 'lotr'],
       bonus: { abilityDmg: 0.09 },
-      desc: 'Voicebound Pact and Ninefold March abilities +9% in July.',
+      desc: 'Rimehowl Warband and Thornroad Company abilities +9% in July.',
     },
   ];
 
@@ -1040,7 +1065,7 @@ class FactionDepthSystem {
       const cx = this.ctx?.worldW ? this.ctx.worldW / 2 : 400;
       FloatingText?.status(cx, 52, 'PROPHECY FULFILLED', '#e8b050');
       this.ctx?.showMessage?.(
-        'A Voicebound prophecy ignites — temporary power surges through your army!',
+        'The cairn-chanter’s chant comes true — your army surges for a short while!',
         320
       );
     }
@@ -1049,7 +1074,7 @@ class FactionDepthSystem {
       this.applyWarhammerDuty(u);
       if (u.faithFuryActive) {
         u.morale = Math.min(u.maxMorale, u.morale + 3);
-        FloatingText?.status(u.x, u.y - 12, 'FAITH & FURY', '#c04040');
+        FloatingText?.status(u.x, u.y - 12, 'PSALM AND IRON', '#c04040');
       }
       const ab = u.wweAbility;
       const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
@@ -1069,7 +1094,7 @@ class FactionDepthSystem {
         FloatingText?.status(
           u.x,
           u.y,
-          ab === 'oorah' ? 'OORAH!' : 'SHIELDS UP',
+          ab === 'oorah' ? 'ROAR!' : 'PAVISES UP',
           this.PROFILES.halo?.palette?.[0] || '#408040'
         );
         this.playFactionSfx('halo');
@@ -1304,7 +1329,7 @@ class FactionDepthSystem {
         if (splash >= (orbital ? 1 : 2)) {
           this.procAbilityVfx(
             unit,
-            orbital ? 'ORBITAL FRAG' : 'FRAG!',
+            orbital ? 'POT AND VOLLEY' : 'FUSED POT!',
             orbital ? '#ff8040' : '#c06030'
           );
         }
@@ -1323,7 +1348,7 @@ class FactionDepthSystem {
         if (unit.hp / unit.maxHp < 0.35 && (unit.ironCurtainCd || 0) <= 0) {
           unit.ironCurtainCd = 200;
           unit.rallyTimer = 90;
-          this.procAbilityVfx(unit, 'CURTAIN', '#5080a0');
+          this.procAbilityVfx(unit, 'SEALED', '#5080a0');
         }
       },
       energy_sword() {
@@ -1356,7 +1381,7 @@ class FactionDepthSystem {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 80) e.morale = Math.max(0, e.morale - 3);
         }
-        this.procAbilityVfx(unit, 'NONE SHALL PASS', '#c0c0e0');
+        this.procAbilityVfx(unit, 'WARDED', '#c0c0e0');
       },
       ring_bearer() {
         if (Math.random() < 0.2) return;
@@ -1524,7 +1549,7 @@ class FactionDepthSystem {
         ).length;
         if (foes >= 3) {
           this.ctx.damageInRadius(unit.x, unit.y, 60, Math.round(dmg * 0.8), 'player');
-          this.procAbilityVfx(unit, 'SKYBURST WAVE', '#e06040');
+          this.procAbilityVfx(unit, 'EMBER BURST', '#e06040');
         }
       },
       special_beam() {
@@ -1669,7 +1694,7 @@ class FactionDepthSystem {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 70) e.morale = Math.max(0, e.morale - terror);
         }
-        this.procAbilityVfx(unit, unit.faithFuryActive ? 'FAITH & FURY' : 'LITANY', '#303848');
+        this.procAbilityVfx(unit, unit.faithFuryActive ? 'PSALM AND IRON' : 'PSALM', '#303848');
       },
       smite() {
         if (
@@ -1711,7 +1736,7 @@ class FactionDepthSystem {
         ).length;
         if (foes >= 2) {
           this.ctx.damageInRadius(target.x, target.y, 50, Math.round(dmg * 0.45), 'player');
-          this.procAbilityVfx(unit, 'FIRAGA', '#802040');
+          this.procAbilityVfx(unit, 'KILN BURST', '#802040');
         }
       },
       curaga() {
@@ -1757,7 +1782,7 @@ class FactionDepthSystem {
         if (unit.hp / unit.maxHp < 0.4 && (unit.unholyArmorCd || 0) <= 0) {
           unit.unholyArmorCd = 200;
           unit.rallyTimer = 90;
-          this.procAbilityVfx(unit, 'UNHOLY', '#302030');
+          this.procAbilityVfx(unit, 'SCABBED', '#302030');
         }
       },
       blood_pact() {
@@ -1776,7 +1801,7 @@ class FactionDepthSystem {
             splash++;
           }
         }
-        if (splash >= 2) this.procAbilityVfx(unit, 'WORD OF FORCE', '#4068a0');
+        if (splash >= 2) this.procAbilityVfx(unit, 'BREAKING HOWL', '#4068a0');
       },
       thuum_echo() {
         this.ctx.units
@@ -1789,7 +1814,7 @@ class FactionDepthSystem {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 80) e.morale = Math.max(0, e.morale - 2);
         }
-        this.procAbilityVfx(unit, 'THE VOICE', '#708090');
+        this.procAbilityVfx(unit, 'THE CHANT', '#708090');
       },
       shield_wall() {
         if (unit.hp / unit.maxHp < 0.55 && (unit.shieldWallCd || 0) <= 0) {
@@ -1801,7 +1826,7 @@ class FactionDepthSystem {
       dragon_aspect() {
         if (isEliteEnemy?.(target) || target?.isNamedBoss || target?.type === 'war_chief') {
           this.ctx.takeDamage(target, Math.round(dmg * 0.45), { dragonStrike: true, crit: true });
-          this.procAbilityVfx(unit, 'DRAGON ASPECT', '#6040a8');
+          this.procAbilityVfx(unit, 'HAIL CALL', '#6040a8');
         }
       },
       shadow_strike() {
@@ -1837,7 +1862,7 @@ class FactionDepthSystem {
     const faction = b.crossoverFaction;
     const prof = this.PROFILES[faction];
     if (prof) {
-      this.ctx?.showMessage?.(`${prof.label} HQ operational — ${prof.identity}`, 340);
+      this.ctx?.showMessage?.(`${prof.label} hall raised — ${prof.identity}`, 340);
       FloatingText?.status(b.x, b.y - 18, prof.label.split('/')[0].trim(), prof.palette[0]);
       this.playFactionSfx(faction);
     }
@@ -2004,69 +2029,69 @@ class FactionDepthSystem {
     const entries = [
       {
         cat: 'crossover_meta',
-        name: 'Evolved Allies — Design Philosophy',
+        name: 'Free Companies — How They Fit',
         body: [
-          'Evolved operatives are your evolved allies — rare power spikes early, full faction armies mid-game, and planet-scale demolition experts late.',
+          'The free companies are hired heroes — rare power spikes early, whole companies mid-game, and hold-breakers late.',
           '',
-          'The host evolves its factions (Grunts → Kingdom). Your evolved allies mirror that curve: a single bound-spirit operative can flip a siege at wave 15; by wave 80 a mixed roster with synergies feels like fielding evolved monsters of your own; after wave 200, Northern war operatives raze northern holds and push the hostile front line back.',
+          'The host grows as the waves go on (Grunts → Kingdom). The free companies grow with it: a single Marrow Choir hero can turn a siege at wave 15; by wave 80 a mixed roster with synergies is an army of its own; after wave 200, northern-war heroes raze northern holds and push the hostile front line back.',
           '',
-          'Vanilla troops still anchor the line — evolved allies reward investment, not replacement. Secret rosters (Coliseum, Hellbane) and Tonic Stations machines unlock alongside evolved barracks.',
+          'Your own troops still anchor the line — the free companies reward investment, not replacement. Secret rosters (Champions’ Hall, Hellbane) and Tonic Stations machines unlock alongside company barracks.',
         ].join('\n'),
       },
       {
         cat: 'crossover_meta',
         name: 'Early Game — Rare Power Spikes',
         body: [
-          'Waves 1–30 (Outpost Realm): one or two evolved operatives are expensive but fight like mini-bosses.',
+          'Waves 1–30 (Outpost Realm): one or two hired heroes are expensive but fight like mini-bosses.',
           '',
-          '• Unlock a faction via secret roster code (or research), build its barracks (90 TP, 2 builders) from wave 1, recruit through Legion Archive.',
-          '• Deploy cost is steep vs footmen — treat each operative as a wave-saving spike, not a swarm.',
-          `• Field soft cap (${this.FIELD_SOFT_CAP}) rarely matters; mix 1–3 evolved allies with vanilla line-holders for the +5% support aura.`,
-          '• Enemy faction counters (necromancers vs bound spirits, harpies vs melee-heavy rosters) start appearing — diversify or accept host answers.',
-          '• Coliseum Guest Star and seasonal events can spike morale on wave start — strong opener before academies mature.',
+          '• Unlock a faction via secret roster code (or research), build its barracks (90 TP, 2 builders) from wave 1, recruit through the Free Companies screen.',
+          '• Deploy cost is steep vs footmen — treat each hero as a wave-saving spike, not a swarm.',
+          `• Field soft cap (${this.FIELD_SOFT_CAP}) rarely matters; mix 1–3 heroes with your own line-holders for the +5% support aura.`,
+          '• Enemy faction counters (necromancers against the Marrow Choir, harpies against melee-heavy rosters) start appearing — diversify or accept host answers.',
+          '• The Guest Champion synergy and seasonal events can spike morale on wave start — strong opener before academies mature.',
         ].join('\n'),
       },
       {
         cat: 'crossover_meta',
-        name: 'Late Game — Faction Armies & Synergies',
+        name: 'Late Game — Whole Companies & Synergies',
         body: [
-          'From wave 1 with a meta-unlocked faction: place barracks, recruit operatives (fair TP costs ~18–33). Later waves: more barracks, settlement TP, and veteran stars grow full faction armies.',
+          'From wave 1 with a meta-unlocked faction: place barracks, recruit heroes (fair TP costs ~18–33). Later waves: more barracks, settlement TP, and veteran stars grow whole companies.',
           '',
           '• Stack cross-faction synergies — each active pair buffs melee, ranged accuracy, ability damage, siege, or morale:',
           this.formatSynergyTable(),
           '',
-          `• Four Worlds (4+ factions): +5% all evolved ally damage — the "evolved monster horde" peak.`,
-          '• Mastery tiers (kills, ability procs, challenges) add morale ceiling and Legion Archive titles.',
-          '• Kingdom loadouts (wave 100+) and colony value steer enemy composition — tailor synergies to counter the host (March of War vs wall-heavy turtles, Skyburst Spirit for sustain).',
-          '• Hellbane (Hellbane difficulty, wave 200) and coliseum finishers anchor boss waves while synergies carry the line.',
+          '• Four Banners (4+ companies): +5% damage for every hired hero.',
+          '• Mastery tiers (kills, ability procs, challenges) add morale ceiling and titles on the Free Companies screen.',
+          '• Kingdom loadouts (wave 100+) and colony value steer enemy composition — tailor synergies to counter the host (pick the pairs that answer what the host is sending).',
+          '• Hellbane (Hellbane difficulty, wave 200) and the champions’ finishing blows anchor boss waves while synergies carry the line.',
         ].join('\n'),
       },
       {
         cat: 'crossover_meta',
-        name: 'Northern War Operatives (Wave 200+)',
+        name: 'Northern War Heroes (Wave 200+)',
         body: [
-          `After wave ${this.PLANET_WARFARE_WAVE}, the host presses south. Evolved operatives with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
+          `After wave ${this.PLANET_WARFARE_WAVE}, the host presses south. Heroes with settlement-siege abilities gain full siege treatment and bonus damage vs enemy holds:`,
           '',
           this.formatPlanetOpsTable(),
           '',
-          'Hunt mode in the northern war: operatives prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Stone Axe Lord, Kael Skyburst, Heavy Gunner, Storm Caller) clear clustered mirror economy. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
+          'Hunt mode in the northern war: heroes prioritize northern hamlets, guilds, trade posts, and academies. Splash abilities (Dorn Quarrykin, Tavish Coalheart, Hulbrand Oxbow, Harrow Cloudcall) clear clustered enemy holdings. Razing holds pushes map control back — pair with Settlement Raid strike forces and spy intel.',
           '',
-          'Past wave 500 the same logic holds — evolved armies must shatter the endless host while holding three+ unit types for ward break.',
+          'Past wave 500 the same logic holds — the companies must shatter the endless host while holding three+ unit types for ward break.',
         ].join('\n'),
       },
       {
         cat: 'crossover_meta',
         name: 'Secret Content & Meta Unlocks',
         body: [
-          'Secret rosters sit outside the standard evolved-allies tree:',
-          '• Grand Coliseum Champions (Iron Creed academy) — showmanship morale bombs and finishers (Guest Star synergy with any second faction).',
-          '• Hellbane — Hell anchor unlocked on Hellbane difficulty after wave 200; single-entity apocalypse (hellscape wave 1001+ normalizes his damage).',
+          'Secret rosters sit outside the free-company tree:',
+          '• Bloodsand Champions (Champions’ Hall) — morale for the line and finishing blows (Guest Champion synergy with any second company).',
+          '• Hellbane — Hell anchor unlocked on Hellbane difficulty after wave 200; one fighter worth an army (hellscape wave 1001+ normalizes his damage).',
           '',
           'Meta progression:',
-          '• Tonic Stations machines unlock after any secret roster (Coliseum, Hellbane, or evolved allies) is active — Ironbrew, Tombstone, Twinshot Brew, and hidden machines.',
-          '• Multiversal achievements track 3+ and 5+ factions fielded; synergy achievements fire when named pairs deploy.',
+          '• Tonic Stations machines unlock after any secret roster (Champions’ Hall, Hellbane, or a free company) is active.',
+          '• Many-banners achievements track 3+ and 5+ companies fielded; synergy achievements fire when named pairs deploy.',
           '• Mastery tier 3+ unlocks creative titles; tier 4 unlocks faction skins in Creative Lab.',
-          '• Crown Legacies and Honor Heirs carry evolved veterans across runs.',
+          '• Crown Legacies and Honor Heirs carry veteran heroes across runs.',
           '',
           'The Crown does not publish cheat codes in the encyclopedia — discover roster unlocks through play, achievements, and community lore.',
         ].join('\n'),
@@ -2074,17 +2099,17 @@ class FactionDepthSystem {
       {
         cat: 'crossover_meta',
         name: 'Faction Mastery',
-        body: 'Earn mastery points from evolved ally kills, ability procs, and wave clears. Tiers unlock titles shown in Legion Archive. Mastery never replaces vanilla troops — it rewards dedication. Mastery challenges (Grand Bout, Wolf Pack, Gilded Derby, etc.) grant +25 mastery when completed.',
+        body: 'Earn mastery points from hired-hero kills, ability procs, and wave clears. Tiers unlock titles shown on the Free Companies screen. Mastery never replaces your own troops — it rewards dedication. Mastery challenges (Four on the Sand, Unbroken Watch, Outriders, etc.) grant +25 mastery when completed.',
       },
       {
         cat: 'crossover_meta',
-        name: 'Cross-Faction Synergies',
+        name: 'Company Synergies',
         body: this.formatSynergyTable(),
       },
       {
         cat: 'crossover_meta',
         name: 'Balance Philosophy',
-        body: `Evolved operatives are powerful but not mandatory. Fielding more than ${this.FIELD_SOFT_CAP} evolved units incurs a soft damage penalty (~3% per operative over cap, floor 72%). Keeping vanilla troops ≥ evolved ally count grants a +5% support bonus when vanilla count ≥ 4. Barracks and recruits are available from wave 1 once unlocked.`,
+        body: `Hired heroes are powerful but not mandatory. Fielding more than ${this.FIELD_SOFT_CAP} of them incurs a soft damage penalty (~3% per hero over the cap, floor 72%). Keeping your own troops ≥ the hero count grants a +5% support bonus when you have 4 or more of your own. Barracks and recruits are available from wave 1 once unlocked.`,
       },
       {
         cat: 'crossover_meta',
@@ -2104,21 +2129,21 @@ class FactionDepthSystem {
         : '';
       entries.push({
         cat: `crossover_${id}`,
-        name: `${prof.label} — Faction Profile`,
+        name: `${prof.label} — Company Profile`,
         body: `${prof.lore}\n\nIdentity: ${prof.identity}\n\nWeakness: ${prof.weakness}\n\nPlaystyle: ${prof.playstyle}${planetNote}`,
       });
     }
     entries.push({
       cat: 'crossover_meta',
-      name: 'Coliseum & Hellbane — Secret Evolved Allies',
+      name: 'Champions’ Hall & Hellbane — Secret Rosters',
       body: [
-        `${this.PROFILES.wwe?.lore || 'Grand Coliseum Champions bring the grand arena to your siege.'}`,
+        `${this.PROFILES.wwe?.lore || 'The Bloodsand Champions bring the fighting pit to your siege.'}`,
         '',
-        `Coliseum — ${this.PROFILES.wwe?.identity || 'Showmanship morale bombs and finishers.'} ${this.PROFILES.wwe?.playstyle || ''}`,
+        `Champions’ Hall — ${this.PROFILES.wwe?.identity || 'Morale for the line and finishing blows.'} ${this.PROFILES.wwe?.playstyle || ''}`,
         '',
         `${this.PROFILES.doom?.lore || 'The Hellbane walks from Hell.'}`,
         '',
-        `Hellbane — ${this.PROFILES.doom?.identity || 'Single-entity apocalypse.'} ${this.PROFILES.doom?.playstyle || ''}`,
+        `Hellbane — ${this.PROFILES.doom?.identity || 'One fighter worth an army.'} ${this.PROFILES.doom?.playstyle || ''}`,
       ].join('\n'),
     });
     return entries;

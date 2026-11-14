@@ -54,8 +54,8 @@ const ThematicEraSynergies = (() => {
   const ECHO_DEFS = {
     goku: {
       id: 'goku',
-      label: 'Echo of the Skyburst Champion',
-      short: 'Kael Skyburst Echo',
+      label: 'Echo of the Coalheart Champion',
+      short: 'Coalheart Echo',
       role: 'fleet_commander',
       cost: 16,
       playerDmgMult: 1.06,

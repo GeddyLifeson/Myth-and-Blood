@@ -703,6 +703,7 @@ const SiegeLoop = (() => {
     run.cleanStreak = 0;
     const limit = breachLimit(ctx);
     const left = limit - run.breaches;
+    ctx.ach?.('breach', { total: run.breaches, left });
     ctx.float(unit.x, unit.y - 18, 'BREACH', '#ff3030');
     ctx.shake(7);
     ctx.playSfx('breachHorn');
@@ -752,6 +753,7 @@ const SiegeLoop = (() => {
     if (!def) return false;
     run.drafts.shift();
     run.edicts.push(id);
+    ctx.ach?.('edict', { id, stacks: run.edicts.filter((e) => e === id).length });
     fx = computeFx();
     if (def.instantTp) ctx.addTp(def.instantTp);
     if (isRecorded()) {
@@ -862,6 +864,12 @@ const SiegeLoop = (() => {
     }
     run.cleanStreak++;
     run.flawless = lost === 0 ? run.flawless + 1 : 0;
+    ctx.ach?.('siege_wave', {
+      cleanStreak: run.cleanStreak,
+      flawless: run.flawless,
+      breaches: run.breaches,
+      left: breachLimit(ctx) - run.breaches,
+    });
     if (fx.tpPerWave > 0) ctx.addTp(fx.tpPerWave);
     if (ctx.wave > 0 && ctx.wave % SPOILS_EVERY === 0 && !ctx.creative) {
       run.drafts.push(rollSpoils(ctx));
@@ -907,6 +915,7 @@ const SiegeLoop = (() => {
     if (base <= 0) return 0;
     const bonus = base * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
     run.tally.earlyCalls++;
+    ctx.ach?.('tally', { k: 'earlyCalls' });
     if (isRecorded()) {
       store.stats.earlyCalls++;
       checkRibbons(ctx);
@@ -949,6 +958,7 @@ const SiegeLoop = (() => {
   function openCrate(crate, opener, ctx) {
     crate.spent = true;
     run.tally.crates++;
+    ctx.ach?.('tally', { k: 'crates' });
     if (isRecorded()) {
       store.stats.crates++;
       checkRibbons(ctx);
@@ -959,6 +969,7 @@ const SiegeLoop = (() => {
     if (roll < 0.14 && !fx.safeCrates && ctx.wave >= 3) {
       ctx.float(crate.x, crate.y - 14, 'AMBUSH!', '#ff4040');
       ctx.showMessage('The crate was bait — goblins spring the ambush!', 200);
+      ctx.ach?.('tally', { k: 'ambushes' });
       ctx.playSfx('ambush');
       ctx.burst('dust', crate.x, crate.y);
       for (let i = 0; i < 2 + Math.min(2, Math.floor(ctx.wave / 12)); i++) {
@@ -1199,6 +1210,7 @@ const SiegeLoop = (() => {
       const name = veteranLabel(unit, ctx);
       run.fallen.push({ name, kills, waves, wave: ctx.wave });
       if (run.fallen.length > 12) run.fallen.shift();
+      ctx.ach?.('tally', { k: 'fallenVets' });
       ctx.playSfx('veteranFallen');
       ctx.showMessage(
         `${name} has fallen — ${kills} kill${kills === 1 ? '' : 's'} across ${waves} wave${waves === 1 ? '' : 's'}.`,
@@ -1235,6 +1247,7 @@ const SiegeLoop = (() => {
         u.holdLineUntil = tick + 7 * 60;
       }
     }
+    ctx.ach?.('tally', { k: kind === 'warCry' ? 'warCry' : 'holdLine' });
     if (kind === 'warCry') {
       run.warCryReady = tick + WAR_CRY_COOLDOWN;
       ctx.float(general.x, general.y - 30, 'WAR CRY', '#ffb060');
