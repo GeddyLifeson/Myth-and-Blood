@@ -982,6 +982,8 @@ const UI = (() => {
       if (defenseStartInFlight) return;
       defenseStartInFlight = true;
       gameOverShown = false;
+      // Every way in (Tutorial, online lobby, setup sheet) leaves no menu sheet open behind the run.
+      closeMenuSheets();
       if (typeof Onboarding !== 'undefined') Onboarding.prepareCampaignStart();
       Game.setDifficulty(selectedDifficulty);
       hideMenusForPlay({ showLaunch: true });

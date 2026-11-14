@@ -16200,7 +16200,7 @@ const Game = (() => {
       GS.ctx.fillStyle = 'rgba(140,160,220,0.92)';
       GS.ctx.font = '13px Cinzel';
       GS.ctx.textAlign = 'center';
-      GS.ctx.fillText('NIGHT — PREPARE DEFENSES', GS.canvas.width / 2, 52);
+      GS.ctx.fillText('NIGHT: PREPARE DEFENSES', GS.canvas.width / 2, 52);
       GS.ctx.font = '10px Cinzel';
       GS.ctx.fillStyle = 'rgba(180,190,230,0.75)';
       GS.ctx.fillText(

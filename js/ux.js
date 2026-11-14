@@ -1214,22 +1214,6 @@ const UX = (() => {
     if (typeof Onboarding !== 'undefined') Onboarding.onGuidedTutorialDismissed?.();
   }
 
-  function bindHowToInteractive() {
-    document.getElementById('howto-interactive-btn')?.addEventListener('click', () => {
-      resetTutorial();
-      Settings?.set('tutorialEnabled', true);
-      document.querySelectorAll('.menu-sheet').forEach((sh) => {
-        sh.hidden = true;
-      });
-      AudioEngine?.SFX?.click?.();
-      if (!Game.isPlaying?.()) {
-        document.getElementById('start-btn')?.click();
-      } else {
-        UI.updateHUD(true);
-      }
-    });
-  }
-
   const VICTORY_COPY = {
     economy: {
       title: 'CAMPAIGN WON!',
@@ -1379,7 +1363,6 @@ const UX = (() => {
     bindPauseMenu();
     bindMinimap();
     bindTutorial();
-    bindHowToInteractive();
     document.getElementById('message-log-close')?.addEventListener('click', () => {
       document.getElementById('message-log-panel')?.classList.remove('open');
     });
