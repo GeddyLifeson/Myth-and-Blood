@@ -263,56 +263,334 @@ const SiegeLoop = (() => {
   }
 
   // ------------------------------------------------------------ first steps
-  // A new commander meets one system per early wave. Nothing is locked: the parts of the
-  // HUD that belong to a later step are hidden or dimmed, and each step gets one line.
+  // The one in-run teacher. A new commander gets one short prompt at a time over the first
+  // waves. A prompt opens when its wave is next AND its subject is on the screen and can be
+  // used (the troop is unlocked and affordable, the crate has landed, the lab stands). It
+  // stays until the player does the thing or dismisses it, and it names the key that is
+  // bound right now, read from Hotkeys. Nothing is locked: the parts of the HUD that belong
+  // to a later step are dimmed until their step comes.
+  //
+  // This file decides WHICH prompt is open and what it says and points at. Drawing the
+  // card and the ring round a button is Onboarding.syncPrompt (js/onboarding.js); the ring
+  // round a spot on the field is drawn here, in drawWorld.
   const FIRST_STEPS_KEY = 'myth-and-blood-first-steps-v1';
   const FIRST_STEPS_DONE_WAVE = 10;
+  /** Ticks between one prompt closing and the next opening. */
+  const PROMPT_GAP = 90;
+  /** A prompt left alone lapses at the next nightfall, but never sooner than this. */
+  const PROMPT_MIN_TICKS = 900;
+
+  // ---- reading the bound keys --------------------------------------------------------
+  /** `[[Q]]` marks a key name in prompt text; the card draws it as a key cap. */
+  const cap = (name) => (name ? `[[${name}]]` : '');
+
+  /** The key bound to an action right now, as written on buttons, or '' if it has none. */
+  function keyName(action, arg = null, states = ['night', 'day', 'unit_selected']) {
+    if (typeof Hotkeys === 'undefined') return '';
+    for (const s of states) {
+      const k = Hotkeys.keyFor(s, action, arg);
+      if (k) return Hotkeys.keyLabel(k);
+    }
+    return '';
+  }
+
+  /** The recruit key of a troop: recruit keys follow what is unlocked, so ask Hotkeys. */
+  function recruitKeyName(type) {
+    if (typeof Hotkeys === 'undefined') return '';
+    let k = Hotkeys.deployKey(type);
+    if (!k && typeof Research !== 'undefined') {
+      // No panel has laid the slots out yet (a test, or the first frame): same rule, read-only.
+      const open = Hotkeys.DEPLOY_ORDER.filter((t) => Research.isDeployUnlocked(t));
+      const i = open.indexOf(type);
+      k = i >= 0 && i < Hotkeys.SLOT_KEYS.length ? Hotkeys.SLOT_KEYS[i] : null;
+    }
+    return k ? Hotkeys.keyLabel(k) : '';
+  }
+
+  /** "Press [[1]] or click" when the action has a key, "Click" when it has none. */
+  const pressOrClick = (key) => (key ? `Press ${cap(key)} or click` : 'Click');
+  /** " ([[L]])" after a name, or nothing. */
+  const inBrackets = (key) => (key ? ` (${cap(key)})` : '');
+
+  // ---- reading the field -------------------------------------------------------------
+  const alive = (u) => u && u.team === 'player' && u.hp > 0;
+  const troops = (ctx) => (ctx.units || []).filter(alive);
+  const countTroops = (ctx, type) => troops(ctx).filter((u) => !type || u.type === type).length;
+  const works = (ctx, type) =>
+    (ctx.buildings || []).filter((b) => b && b.owner === 'player' && b.hp > 0 && b.type === type);
+  const standing = (ctx, type) => works(ctx, type).filter((b) => b.complete).length;
+  const def = (table, type) => (typeof table !== 'undefined' && table ? table[type] : null);
+  const unitDef = (type) => (typeof UnitDefs !== 'undefined' ? def(UnitDefs, type) : null);
+  const buildDef = (type) => (typeof BuildDefs !== 'undefined' ? def(BuildDefs, type) : null);
+  const buildCost = (type) => buildDef(type)?.cost ?? 0;
+  /** What the next recruit of this type is charged, upkeep included. */
+  function recruitCost(ctx, type) {
+    const base = unitDef(type)?.cost ?? 0;
+    return Math.ceil(base * deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0));
+  }
+  /** Can the purse pay? A caller that does not report a purse (a test) is not held back. */
+  const canPay = (ctx, cost) => ctx.tp == null || ctx.tp >= cost;
+  const recruitOpen = (type) =>
+    typeof Research === 'undefined' || !!Research.isDeployUnlocked(type);
+  const researched = (id) => typeof Research !== 'undefined' && !!Research.isResearched(id);
+  const liveCrates = () => run.crates.filter((c) => !c.spent);
+  const firstHunter = (ctx) => troops(ctx).find((u) => u.canHunt && !u.isGeneral) || null;
+  const armyForUpkeep = (ctx) => ctx.upkeepArmy ?? ctx.army ?? 0;
+  const freeArmy = (ctx) => ARMY_FREE + Math.max(0, ctx.freeArmyBonus || 0);
+
+  const btnTroop = (type) => `.deploy-btn[data-unit="${type}"]`;
+  const btnBuild = (type) => `.build-btn[data-build="${type}"]`;
+  const TAB_BUILD = '#left-panel .side-tab[data-side-tab="build"]';
+  const TAB_SPELLS = '#left-panel .side-tab[data-side-tab="strike"]';
+
+  /**
+   * One entry per prompt, in the order they are offered.
+   *   wave   the wave it prepares for: it may open from the night before that wave
+   *   needs  a standing requirement of the HUD part it unlocks ('general')
+   *   ready  the subject is on screen and usable right now (else the prompt waits)
+   *   moot   the player has already done it: the prompt is passed over, never shown
+   *   text   what the card says; key names come from Hotkeys
+   *   target what to ring: { dom: [selectors, first visible wins] }, { unit: id } or { x, y }
+   *   base   a snapshot taken when the prompt opens, for done()
+   *   done   the player did it: the prompt closes itself
+   * A prompt with no done() is closed by "Got it" or lapses at the next nightfall.
+   */
   const FIRST_STEPS = [
     {
       id: 'deploy',
       wave: 1,
-      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. Soldiers hunt on their own and walk back to their posts. Select one and click to move him; Shift+click sends him there to hold.',
+      ready: (ctx) => canPay(ctx, recruitCost(ctx, 'footman')),
+      text: () =>
+        `${pressOrClick(recruitKeyName('footman'))} Footman on the left, then click the field. He stands where you put him. Hold Shift and keep clicking to hire several.`,
+      target: () => ({ dom: [btnTroop('footman')] }),
+      base: (ctx) => ({ n: countTroops(ctx) }),
+      done: (ctx, base) => countTroops(ctx) > base.n,
+    },
+    {
+      id: 'hunt',
+      wave: 2,
+      ready: (ctx) => !!firstHunter(ctx),
+      text: () => {
+        const h = keyName('hunt');
+        return `Your soldiers hunt on their own and walk back to their posts. Click one, then click the field to move his post. Shift+click sends him there to hold.${h ? ` ${cap(h)} lets him hunt again.` : ''}`;
+      },
+      target: (ctx, base) => {
+        const u = troops(ctx).find((x) => x.id === base.ring) || firstHunter(ctx);
+        return u ? { unit: u.id } : null;
+      },
+      base: (ctx) => {
+        const posts = {};
+        for (const u of troops(ctx)) posts[u.id] = [u.postX, u.postY, !!u.holding];
+        return { posts, ring: firstHunter(ctx)?.id ?? null };
+      },
+      done: (ctx, base) =>
+        troops(ctx).some((u) => {
+          const was = base.posts[u.id];
+          if (!was) return false;
+          if (!!u.holding !== was[2]) return true;
+          return Math.hypot((u.postX ?? 0) - (was[0] ?? 0), (u.postY ?? 0) - (was[1] ?? 0)) > 6;
+        }),
+    },
+    {
+      id: 'dawn',
+      wave: 2,
+      ready: (ctx) => !!ctx.isNight,
+      text: () =>
+        `It is night: the time to hire and build. ${pressOrClick(keyName('beginDay', null, ['night']))} BEGIN DAY when you are ready. Calling the day early pays bonus TP.`,
+      target: () => ({ dom: ['#begin-day-btn'] }),
+      done: (ctx) => !ctx.isNight,
     },
     {
       id: 'crates',
-      wave: 2,
-      text: 'Press D to call the next wave early for bonus TP. From wave 2, supply crates land by day: walk a soldier onto one.',
+      wave: CRATE_FROM_WAVE,
+      ready: () => liveCrates().length > 0,
+      text: () => 'A supply crate has landed. Walk a soldier onto it to open it.',
+      target: () => {
+        const c = liveCrates()[0];
+        return c ? { x: c.x, y: c.y } : null;
+      },
+      base: () => ({ opened: run.tally.crates }),
+      done: (ctx, base) => run.tally.crates > base.opened || liveCrates().length === 0,
     },
     {
       id: 'breach',
+      wave: RUNNER_FROM_WAVE,
+      text: (ctx) =>
+        `From the next wave, some enemies carry a red pennant. They run past your soldiers for the line at the bottom. Each one that crosses it is a breach. ${breachLimit(ctx)} breaches and the siege is lost.`,
+      target: () => ({ dom: ['#siege-breaches'] }),
+    },
+    {
+      id: 'posts',
       wave: 3,
-      text: 'Enemies with a red pennant are line-breakers: they run past your troops. Each one that gets through is a breach, counted at the top.',
+      ready: (ctx) => !!firstHunter(ctx),
+      text: () => {
+        const hold = keyName('holdHere');
+        const hunt = keyName('hunt');
+        const back = keyName('backToPosts', null, ['unit_selected']);
+        const keys = hold && hunt ? ` ${cap(hold)} and ${cap(hunt)} do the same.` : '';
+        const home = back ? ` ${cap(back)} sends selected soldiers back to their posts.` : '';
+        return `HOLD and HUNT at the top order the soldiers you have selected, or the whole army if none are.${keys}${home}`;
+      },
+      target: () => ({ dom: ['#hold-here', '#hunt-toggle'] }),
     },
     {
       id: 'build',
       wave: 4,
-      text: 'Builders raise works: deploy a Builder (7), open the Build tab and place a Wall to hold line-breakers, a Medical Tent, or a Research Lab. A lab earns science each dawn; Iron Weapons opens knights, sappers and crossbowmen.',
+      ready: (ctx) => recruitOpen('builder') && canPay(ctx, recruitCost(ctx, 'builder')),
+      moot: (ctx) => countTroops(ctx, 'builder') > 0,
+      text: () =>
+        `${pressOrClick(recruitKeyName('builder'))} Builder and place him behind your line. He raises walls, tents and labs.`,
+      target: () => ({ dom: [btnTroop('builder')] }),
+      done: (ctx) => countTroops(ctx, 'builder') > 0,
+    },
+    {
+      id: 'wall',
+      wave: 4,
+      ready: (ctx) => countTroops(ctx, 'builder') > 0 && canPay(ctx, buildCost('wall')),
+      moot: (ctx) => works(ctx, 'wall').length > 0,
+      text: () =>
+        `Pick Wall${inBrackets(keyName('build', 'wall'))} on the Build tab, then click in front of your line. A wall stops ${wallHolds()} line-breakers each wave.`,
+      target: () => ({ dom: [btnBuild('wall'), TAB_BUILD] }),
+      base: (ctx) => ({ n: works(ctx, 'wall').length }),
+      done: (ctx, base) => works(ctx, 'wall').length > base.n,
     },
     {
       id: 'spoils',
+      wave: SPOILS_EVERY,
+      text: () =>
+        `Every fifth wave pays spoils. Clear the next wave and you choose one of three rewards to keep. The siege waits until you choose.`,
+      target: () => null,
+    },
+    {
+      id: 'lab',
       wave: 5,
-      text: 'Every fifth wave pays spoils: after this wave, choose one of three rewards to keep for the rest of the siege.',
+      ready: (ctx) => countTroops(ctx, 'builder') > 0 && canPay(ctx, buildCost('research_lab')),
+      moot: (ctx) => works(ctx, 'research_lab').length > 0,
+      text: () =>
+        `Build a Research Lab (${buildCost('research_lab')} TP) from the Build tab. It earns science at every dawn. Science opens new troops.`,
+      target: () => ({ dom: [btnBuild('research_lab'), TAB_BUILD] }),
+      done: (ctx) => works(ctx, 'research_lab').length > 0,
+    },
+    {
+      id: 'research',
+      wave: 4,
+      ready: (ctx) =>
+        standing(ctx, 'research_lab') > 0 &&
+        typeof Research !== 'undefined' &&
+        !Research.getActiveInfo() &&
+        (ctx.wave || 0) >= 3,
+      moot: () => researched('iron_weapons'),
+      text: () =>
+        'Your lab stands. Open RESEARCH and start Iron Weapons. It opens the Knight, the Sapper and the Crossbowman.',
+      target: () => ({ dom: ['#research-open', TAB_BUILD] }),
+      done: () =>
+        researched('iron_weapons') || (typeof Research !== 'undefined' && !!Research.getActiveInfo()),
     },
     {
       id: 'strikes',
       wave: 6,
-      text: 'Spells and strikes are open: the Spells tab on the left (Q, W, E...) spends TP on fire, lightning and healing.',
+      text: () => {
+        const names = [
+          ['fireball', 'Fireball'],
+          ['lightning', 'Lightning'],
+          ['heal', 'Healing Rain'],
+        ]
+          .map(([id, label]) => {
+            const k = keyName('ability', id);
+            return k ? `${cap(k)} ${label}` : label;
+          })
+          .join(', ');
+        return `Spells are open on the Spells tab: ${names}. Pick one, then click the field. Each costs TP.`;
+      },
+      target: () => ({ dom: [TAB_SPELLS] }),
     },
     {
-      id: 'intel',
-      wave: 8,
-      text: 'Spy and courier are open: the right panel scouts the next wave and sends one royal message per wave.',
+      id: 'preview',
+      wave: 6,
+      ready: (ctx) => !!ctx.isNight && !!run.preview,
+      text: (ctx) => {
+        const tower =
+          ctx.watchtowers > 0
+            ? ' Your Watchtower makes it a head count.'
+            : ` A Watchtower${inBrackets(keyName('build', 'watchtower'))} makes it a head count.`;
+        return `The note at the top left says what the next wave brings. Hire what beats it: a soldier's card says what he is strong against.${tower}`;
+      },
+      target: () => ({ dom: ['#siege-preview'] }),
     },
     {
       // Shown only once a General can be recruited (Command Theory researched), never before.
       id: 'orders',
       wave: 6,
       needs: 'general',
-      text: "The General's orders: a General can now be recruited (0). With him on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
+      text: (ctx) => {
+        const cry = keyName('order', 'warCry');
+        const line = keyName('order', 'holdLine');
+        const has = !!ctx.general && ctx.general.hp > 0;
+        const lead = has
+          ? 'Your General gives two orders by day.'
+          : `A General can be hired now${inBrackets(recruitKeyName('general'))}. On the field he gives two orders by day.`;
+        return `${lead} War Cry${inBrackets(cry)}: soldiers near him strike harder. Hold the Line${inBrackets(line)}: they take less damage.`;
+      },
+      target: (ctx) =>
+        ctx.general && ctx.general.hp > 0
+          ? { dom: ['#siege-warcry'] }
+          : { dom: [btnTroop('general')] },
+    },
+    {
+      id: 'medtent',
+      wave: 7,
+      ready: (ctx) => countTroops(ctx, 'builder') > 0 && canPay(ctx, buildCost('medical_tent')),
+      moot: (ctx) => works(ctx, 'medical_tent').length > 0,
+      text: () =>
+        `Build a Medical Tent${inBrackets(keyName('build', 'medical_tent'))} behind your line. A wounded soldier walks to it before anything else and comes back healed.`,
+      target: () => ({ dom: [btnBuild('medical_tent'), TAB_BUILD] }),
+      done: (ctx) => works(ctx, 'medical_tent').length > 0,
+    },
+    {
+      id: 'upkeep',
+      wave: 2,
+      ready: (ctx) => armyForUpkeep(ctx) >= freeArmy(ctx) - 1,
+      text: (ctx) =>
+        `A big army is dear. Past ${freeArmy(ctx)} soldiers, every hire costs ${Math.round(ARMY_UPKEEP * 100)}% more for each soldier over. The prices on the buttons already include it.`,
+      target: () => ({ dom: ['#siege-upkeep', btnTroop('footman')] }),
+    },
+    {
+      id: 'sapper',
+      wave: 4,
+      ready: (ctx) =>
+        typeof Research !== 'undefined' &&
+        recruitOpen('sapper') &&
+        canPay(ctx, recruitCost(ctx, 'sapper')),
+      text: () =>
+        `The Sapper can be hired now${inBrackets(recruitKeyName('sapper'))}. At night he buries mines in front of his post. By day he throws satchel charges into packed enemies.`,
+      target: () => ({ dom: [btnTroop('sapper')] }),
+      done: (ctx) => countTroops(ctx, 'sapper') > 0,
+    },
+    {
+      id: 'intel',
+      wave: 8,
+      text: () =>
+        'The right panel is open. A spy action costs TP: one each wave. With a Courier on the field you can send one message each wave.',
+      target: () => ({ dom: ['#right-panel'] }),
+    },
+    {
+      id: 'score',
+      wave: 9,
+      text: () =>
+        'Soldiers who live grow into veterans. Every breach and every soldier lost costs score. Ribbons and your best score are kept between sieges. HOW TO PLAY, on the pause menu, has the rest.',
+      target: () => ({ dom: ['#top-pause-btn'] }),
     },
   ];
+  const STEP_BY_ID = {};
+  for (const s of FIRST_STEPS) STEP_BY_ID[s.id] = s;
+
+  function wallHolds() {
+    return typeof EconomyRules !== 'undefined' ? EconomyRules.BUILDINGS.wall.holdsPerWave : 3;
+  }
 
   let steps = { veteran: false, skipped: false };
+  /** The TUTORIAL button: the next run is staged even for a returning commander. */
+  let forceNext = false;
 
   function loadSteps() {
     try {
@@ -337,9 +615,25 @@ const SiegeLoop = (() => {
     }
   }
 
+  /** The "Introduction on the first waves" box in Settings (on unless it was unticked). */
+  function introSettingOn() {
+    try {
+      return typeof Settings === 'undefined' || Settings.get('tutorialEnabled') !== false;
+    } catch (_) {
+      return true;
+    }
+  }
+
+  /** Should a run that starts (or loads) now be staged? */
+  function wantsStaging(ctx, forced) {
+    if (ctx && ctx.creative) return false;
+    if (forced) return true;
+    return !steps.veteran && !steps.skipped && introSettingOn();
+  }
+
   /** True while this run is introducing systems one wave at a time. */
   function firstStepsActive(ctx) {
-    return !!(run.active && run.staged && !steps.skipped && !(ctx && ctx.creative));
+    return !!(run.active && run.staged && !(ctx && ctx.creative));
   }
 
   /** The wave the player is preparing for: at night that is the one about to arrive. */
@@ -347,10 +641,58 @@ const SiegeLoop = (() => {
     return Math.max(1, (ctx.wave || 0) + (ctx.isNight ? 1 : 0));
   }
 
+  /** Its wave has come (and a General can be had, for the step that needs one). */
   function stepReached(step, ctx) {
     // A step that explains a unit waits until the player can actually recruit it.
     if (step.needs === 'general' && !(ctx && ctx.canRecruitGeneral)) return false;
     return upcomingWave(ctx) >= step.wave;
+  }
+
+  /**
+   * Where a prompt stands for this state of the siege, whether or not it has been shown:
+   *   'early'    its wave has not come (or the HUD part it needs is not there)
+   *   'moot'     the player has already done it
+   *   'waiting'  its wave has come but its subject is not on screen or cannot be paid for
+   *   'ready'    it can open now
+   */
+  function stepStatus(id, ctx) {
+    const step = STEP_BY_ID[id];
+    if (!step || !stepReached(step, ctx)) return 'early';
+    try {
+      if (step.moot && step.moot(ctx)) return 'moot';
+      return !step.ready || step.ready(ctx) ? 'ready' : 'waiting';
+    } catch (_) {
+      return 'waiting';
+    }
+  }
+
+  /** The words of a prompt with the keys bound right now. `plain` drops the key marks. */
+  function promptText(id, ctx, plain = true) {
+    const step = STEP_BY_ID[id];
+    if (!step) return '';
+    const text = step.text(ctx || (hudCtx ? hudCtx() : {}));
+    return plain ? text.replace(/\[\[(.+?)\]\]/g, '$1') : text;
+  }
+
+  /** The open prompt for the card, or null. */
+  function currentPrompt(ctx) {
+    const open = run.prompt;
+    if (!open || !firstStepsActive(ctx)) return null;
+    const step = STEP_BY_ID[open.id];
+    if (!step) return null;
+    let target = null;
+    try {
+      target = step.target ? step.target(ctx, open.base || {}) : null;
+    } catch (_) {
+      target = null;
+    }
+    return {
+      id: step.id,
+      text: promptText(step.id, ctx, false),
+      target,
+      // An action prompt closes itself when the player does it; the rest need "Got it".
+      action: !!step.done,
+    };
   }
 
   /** Which systems the HUD shows. Everything is shown once the introduction is over. */
@@ -358,7 +700,29 @@ const SiegeLoop = (() => {
     const active = firstStepsActive(ctx);
     const unlocked = {};
     for (const step of FIRST_STEPS) unlocked[step.id] = !active || stepReached(step, ctx);
-    return { active, unlocked, shown: run.stepsShown ? [...run.stepsShown] : [] };
+    return {
+      active,
+      unlocked,
+      shown: run.stepsShown ? [...run.stepsShown] : [],
+      prompt: currentPrompt(ctx),
+    };
+  }
+
+  function openPrompt(step, ctx) {
+    run.stepsShown.push(step.id);
+    let base = {};
+    try {
+      base = step.base ? step.base(ctx) : {};
+    } catch (_) {
+      base = {};
+    }
+    run.prompt = { id: step.id, since: ctx.tick || 0, wave: upcomingWave(ctx), base };
+    ctx.playSfx?.('click');
+  }
+
+  function closePrompt(ctx) {
+    run.prompt = null;
+    run.stepNextTick = ((ctx && ctx.tick) || 0) + PROMPT_GAP;
   }
 
   function updateFirstSteps(ctx) {
@@ -367,35 +731,126 @@ const SiegeLoop = (() => {
       steps.veteran = true;
       saveSteps();
     }
-    if (!firstStepsActive(ctx)) return;
-    if (ctx.tick < (run.stepNextTick || 0)) return;
+    if (!firstStepsActive(ctx)) {
+      run.prompt = null;
+      return;
+    }
+    const open = run.prompt;
+    if (open) {
+      const step = STEP_BY_ID[open.id];
+      let done = !step;
+      try {
+        done = done || (!!step.done && !!step.done(ctx, open.base || {}));
+      } catch (_) {
+        done = true;
+      }
+      // Left alone, a prompt lapses at the nightfall after it opened.
+      const lapsed =
+        upcomingWave(ctx) > open.wave && (ctx.tick || 0) - open.since >= PROMPT_MIN_TICKS;
+      if (!done && !lapsed) return;
+      closePrompt(ctx);
+      return;
+    }
+    if ((ctx.tick || 0) < (run.stepNextTick || 0)) return;
+    // The spoils choice holds the whole screen: no prompt opens behind it.
+    if (run.drafts.length > 0) return;
     for (const step of FIRST_STEPS) {
-      if (run.stepsShown.includes(step.id) || !stepReached(step, ctx)) continue;
-      run.stepsShown.push(step.id);
-      // One line at a time, with room to read it before the next.
-      run.stepNextTick = ctx.tick + 420;
-      // Straight to the banner: a queued line could arrive a wave late or be dropped.
-      ctx.showMessage(step.text, 420, { priority: 'high', bypassQueue: true });
+      if (run.stepsShown.includes(step.id)) continue;
+      const status = stepStatus(step.id, ctx);
+      if (status === 'moot') {
+        // The player got there first. Nothing to teach.
+        run.stepsShown.push(step.id);
+        continue;
+      }
+      if (status !== 'ready') continue;
+      openPrompt(step, ctx);
       break;
     }
   }
 
-  /** Menu control: show the whole HUD now and stop the one-line prompts for good. */
+  /** "Got it" on the card. */
+  function dismissPrompt() {
+    if (!run.prompt) return false;
+    const ctx = hudCtx ? hudCtx() : null;
+    closePrompt(ctx);
+    if (ctx) syncHud(ctx);
+    return true;
+  }
+
+  /** Menu control: show the whole HUD now and stop the prompts for good. */
   function skipIntroduction() {
     steps.skipped = true;
     saveSteps();
+    run.staged = false;
+    run.prompt = null;
     if (hudCtx) syncHud(hudCtx());
+    return true;
+  }
+
+  /** The TUTORIAL button: the next run starts with the introduction on, whoever plays. */
+  function forceIntroduction() {
+    forceNext = true;
+    if (steps.skipped) {
+      steps.skipped = false;
+      saveSteps();
+    }
     return true;
   }
 
   /** For tests and the settings reset: start the introduction over. */
   function resetIntroduction() {
     steps = { veteran: false, skipped: false };
+    forceNext = false;
     saveSteps();
   }
 
   function introductionStatus() {
-    return { veteran: steps.veteran, skipped: steps.skipped, staged: !!run.staged };
+    return {
+      veteran: steps.veteran,
+      skipped: steps.skipped,
+      staged: !!run.staged,
+      forced: !!run.forced,
+      active: !!(run.active && run.staged),
+      prompt: run.prompt ? run.prompt.id : null,
+    };
+  }
+
+  /** The ring round a soldier or a spot on the field that the open prompt points at. */
+  function drawPromptRing(ctx2d, units, tick) {
+    if (!run.prompt || !run.staged || !hudCtx) return;
+    const view = currentPrompt(hudCtx());
+    const t = view && view.target;
+    if (!t) return;
+    let x = t.x;
+    let y = t.y;
+    if (t.unit != null) {
+      const u = (units || []).find((v) => v.id === t.unit && v.hp > 0);
+      if (!u) return;
+      x = u.x;
+      y = u.y;
+    }
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const pulse = (tick % 60) / 60;
+    ctx2d.save();
+    ctx2d.lineWidth = 3;
+    ctx2d.strokeStyle = '#07050a';
+    ctx2d.beginPath();
+    ctx2d.arc(x, y, 22, 0, Math.PI * 2);
+    ctx2d.stroke();
+    ctx2d.lineWidth = 1.5;
+    ctx2d.strokeStyle = '#ece4d0';
+    ctx2d.setLineDash([6, 4]);
+    ctx2d.lineDashOffset = -tick / 3;
+    ctx2d.beginPath();
+    ctx2d.arc(x, y, 22, 0, Math.PI * 2);
+    ctx2d.stroke();
+    ctx2d.setLineDash([]);
+    ctx2d.strokeStyle = `rgba(200,32,42,${0.9 * (1 - pulse)})`;
+    ctx2d.lineWidth = 2;
+    ctx2d.beginPath();
+    ctx2d.arc(x, y, 22 + pulse * 16, 0, Math.PI * 2);
+    ctx2d.stroke();
+    ctx2d.restore();
   }
 
   // ------------------------------------------------------------- run state
@@ -424,8 +879,11 @@ const SiegeLoop = (() => {
     lastEnemyCount: 0,
     nextId: 1,
     staged: false,
+    forced: false,
     stepsShown: [],
     stepNextTick: 0,
+    /** The open prompt: { id, since, wave, base }. */
+    prompt: null,
   });
 
   let run = freshRun();
@@ -483,9 +941,12 @@ const SiegeLoop = (() => {
     run.creativeRun = !!ctx.creative;
     run.warband = ctx.menuModeId === 'warband';
     // Returning commanders (wave 10 reached once) and creative runs see everything at once.
-    run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
-    // Let the opening announcements pass before the first line of the introduction.
-    run.stepNextTick = (ctx.tick || 0) + 240;
+    // The TUTORIAL button stages the run for anyone.
+    run.forced = forceNext && !ctx.creative;
+    forceNext = false;
+    run.staged = wantsStaging(ctx, run.forced);
+    // Let the opening announcements pass before the first prompt.
+    run.stepNextTick = (ctx.tick || 0) + 150;
     fx = computeFx();
     if (typeof SapperKit !== 'undefined') SapperKit.reset();
     hideSpoils();
@@ -1437,6 +1898,8 @@ const SiegeLoop = (() => {
       voided: !!run.voided,
       fallen: run.fallen.slice(),
       stepsShown: [...run.stepsShown],
+      introForced: !!run.forced,
+      openStep: run.prompt ? run.prompt.id : null,
       sapperKit: typeof SapperKit !== 'undefined' ? SapperKit.exportState() : null,
     };
   }
@@ -1446,11 +1909,18 @@ const SiegeLoop = (() => {
     run.active = true;
     run.counted = snap ? snap.counted !== false : !ctx.creative;
     run.voided = !!(snap && snap.voided) || !!ctx.cheatsUsed;
-    run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
+    run.forced = !!(snap && snap.introForced) && !ctx.creative;
+    run.staged = wantsStaging(ctx, run.forced);
     // A loaded siege does not repeat lines the player has already been through.
     run.stepsShown = Array.isArray(snap?.stepsShown)
       ? snap.stepsShown.filter((id) => FIRST_STEPS.some((st) => st.id === id))
       : FIRST_STEPS.filter((st) => st.wave <= (ctx.wave || 0)).map((st) => st.id);
+    // The prompt that was open when the siege was saved opens again.
+    const reopen = snap && STEP_BY_ID[snap.openStep];
+    if (reopen && run.staged) {
+      run.stepsShown = run.stepsShown.filter((id) => id !== reopen.id);
+      openPrompt(reopen, ctx);
+    }
     run.warband = snap ? !!snap.warband : ctx.modeId === 'warband';
     run.creativeRun = !!ctx.creative;
     if (snap) {
@@ -1543,6 +2013,12 @@ const SiegeLoop = (() => {
     }
     run.active = false;
     run.staged = false;
+    run.prompt = null;
+    try {
+      syncPromptCard(null);
+    } catch (_) {
+      /* partial DOM (headless harness) */
+    }
     hideSpoils();
     if (typeof document !== 'undefined' && document.body && document.body.classList) {
       document.body.classList.remove('first-steps');
@@ -1572,8 +2048,8 @@ const SiegeLoop = (() => {
     strip.innerHTML =
       '<span id="siege-breaches" class="siege-chip" title="Enemies that got through your line. Pass the limit and the realm falls."></span>' +
       '<span id="siege-preview" class="siege-chip siege-preview"></span>' +
-      '<button id="siege-warcry" class="siege-order" title="War Cry ([): soldiers near the General strike 20% harder for 8 seconds">War Cry</button>' +
-      '<button id="siege-holdline" class="siege-order" title="Hold the Line (]): soldiers near the General take 40% less damage for 7 seconds">Hold the Line</button>' +
+      '<button id="siege-warcry" class="siege-order">War Cry</button>' +
+      '<button id="siege-holdline" class="siege-order">Hold the Line</button>' +
       '<span id="siege-edicts" class="siege-chip siege-edicts"></span>' +
       '<span id="siege-upkeep" class="siege-chip" title="A big host is hard to feed. Past 14 soldiers, every recruit costs 7% more per head."></span>';
     document.body.appendChild(strip);
@@ -1610,6 +2086,11 @@ const SiegeLoop = (() => {
     hudCtx = getCtx;
   }
 
+  /** Hand the open prompt (or null) to the card in js/onboarding.js. */
+  function syncPromptCard(prompt) {
+    if (typeof Onboarding !== 'undefined' && Onboarding.syncPrompt) Onboarding.syncPrompt(prompt);
+  }
+
   function syncHud(ctx) {
     try {
       syncHudDom(ctx);
@@ -1622,7 +2103,10 @@ const SiegeLoop = (() => {
     const strip = ensureHud();
     if (!strip) return;
     strip.hidden = !run.active;
-    if (!run.active) return;
+    if (!run.active) {
+      syncPromptCard(null);
+      return;
+    }
     const intro = firstStepsState(ctx);
     const limit = breachLimit(ctx);
     const b = el('siege-breaches');
@@ -1638,6 +2122,7 @@ const SiegeLoop = (() => {
     }
     const skipBtn = el('pause-skip-intro');
     if (skipBtn) skipBtn.hidden = !intro.active;
+    syncPromptCard(intro.prompt);
     // One breach from defeat: the edges of the screen stay red.
     const flash = el('breach-flash');
     if (flash && flash.classList) {
@@ -1654,12 +2139,27 @@ const SiegeLoop = (() => {
     }
     const hasGeneral = !!ctx.general && ctx.general.hp > 0;
     const orders = [
-      ['siege-warcry', 'War Cry', run.warCryReady],
-      ['siege-holdline', 'Hold the Line', run.holdLineReady],
+      [
+        'siege-warcry',
+        'War Cry',
+        run.warCryReady,
+        'warCry',
+        'soldiers near the General strike 20% harder for 8 seconds',
+      ],
+      [
+        'siege-holdline',
+        'Hold the Line',
+        run.holdLineReady,
+        'holdLine',
+        'soldiers near the General take 40% less damage for 7 seconds',
+      ],
     ];
-    for (const [id, label, readyAt] of orders) {
+    for (const [id, label, readyAt, order, what] of orders) {
       const btn = el(id);
       if (!btn) continue;
+      // The tooltip names the key bound right now.
+      const key = keyName('order', order);
+      btn.title = `${label}${key ? ` (${key})` : ''}: ${what}`;
       btn.hidden = !hasGeneral || !intro.unlocked.orders;
       const wait = Math.ceil((readyAt - ctx.tick) / 60);
       btn.disabled = wait > 0 || ctx.isNight;
@@ -1914,6 +2414,7 @@ const SiegeLoop = (() => {
     if (!run.active) return;
     ctx2d.save();
     drawSpawnMarkers(ctx2d, tick);
+    drawPromptRing(ctx2d, units, tick);
     // Shockwave rings from the General's orders.
     for (let i = run.rings.length - 1; i >= 0; i--) {
       const ring = run.rings[i];
@@ -2045,6 +2546,10 @@ const SiegeLoop = (() => {
     renderBestScores,
     lastScore: () => run.score || null,
     skipIntroduction,
+    forceIntroduction,
+    dismissPrompt,
+    promptText,
+    stepStatus,
     resetIntroduction,
     introductionStatus,
   };

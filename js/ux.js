@@ -1097,7 +1097,10 @@ const UX = (() => {
   }
 
   function updateTutorial(gs) {
+    // Retired: the staged introduction (SiegeLoop first steps, drawn by Onboarding) is the
+    // one in-run teacher. The callout stays hidden.
     if (
+      typeof SiegeLoop !== 'undefined' ||
       !Settings?.get('tutorialEnabled') ||
       tutorialDismissed ||
       !Game.isPlaying?.() ||

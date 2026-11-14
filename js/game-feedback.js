@@ -207,6 +207,11 @@ const GameFeedback = (() => {
    * Short, actionable lines only — never dump raw intel blobs.
    */
   function buildNightTips(ctx = {}) {
+    // While the staged introduction is teaching, it is the only voice: no second coach.
+    if (typeof SiegeLoop !== 'undefined' && SiegeLoop.introductionStatus?.().active) {
+      nightTips = [];
+      return nightTips;
+    }
     const tips = [];
     const tp = Math.floor(ctx.tactical || 0);
     const army = ctx.army || 0;

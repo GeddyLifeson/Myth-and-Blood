@@ -2828,6 +2828,10 @@ const Game = (() => {
     get freeArmyBonus() {
       return unitCounts.freeArmyBonus || 0;
     },
+    /** The purse, for the introduction: a prompt waits until its subject can be paid for. */
+    get tp() {
+      return GS.tactical;
+    },
     /** Complete player walls: each holds a few line-breakers per wave. */
     get walls() {
       return GS.buildings;

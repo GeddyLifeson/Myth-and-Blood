@@ -110,6 +110,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "HONOR_NAME_POOL",
   "HONOR_PREFIX_BY_TYPE",
   "Hotkeys",
+  "HowToPlay",
   "HtmlUtil",
   "HybridPowerFantasy",
   "InPageDialog",
