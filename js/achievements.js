@@ -1,18 +1,33 @@
 /**
- * Myth and Blood — 1,450 achievements with tiered progression & lifetime tracking.
+ * Achievements: counters fed by game events, unlocks, the toast queue and the grouped panel.
+ * The list lives in js/achievements-data.js; every entry is a counter and a goal.
  */
 const Achievements = (() => {
   const STORAGE_KEY = 'myth-and-blood-achievements-v3';
+  const SAVE_VERSION = 4;
   const LIST = ACHIEVEMENT_LIST;
-  const META_316_ID = ACHIEVEMENT_META_316_ID;
-  const CLUB_316_ID = ACHIEVEMENT_CLUB_316_ID;
-  const MILLENNIUM_ID = ACHIEVEMENT_MILLENNIUM_ID;
-  const TARGET = ACHIEVEMENT_TARGET;
+  const BY_ID = new Map(LIST.map((a) => [a.id, a]));
+  const FAMILIES = ACHIEVEMENT_FAMILIES;
+  const STRIKES = ['fireball', 'lightning', 'heal', 'reinforce', 'rally', 'dispel'];
+  const CHAD_PLUS = new Set(['chad', 'doomslayer']);
+
+  // Entries by counter, so an event only re-checks the achievements it can change.
+  const BY_COUNTER = new Map();
+  const X_RULES = [];
+  for (const a of LIST) {
+    if (a.s === 'x') X_RULES.push(a);
+    else {
+      const key = `${a.s}:${a.k}`;
+      if (!BY_COUNTER.has(key)) BY_COUNTER.set(key, []);
+      BY_COUNTER.get(key).push(a);
+    }
+  }
 
   let unlocked = new Set();
+  let retired = new Set();
   let recentUnlocked = [];
-  let lifetimeSpy = new Set();
-  let lifetimeCourier = new Set();
+  let life = {};
+  let lifeSets = {};
   let lifetimeEnemyKills = {};
   let lifetimeKills = 0;
   let lifetimeWavesCleared = 0;
@@ -21,130 +36,150 @@ const Achievements = (() => {
   let crossoverAbilities = {};
   let crossoverMastery = {};
   let doomLifetimeKills = 0;
-  let doomAliveWaves = 0;
   let doomMaxAliveWaves = 0;
+  let doomAliveWaves = 0;
   let hiddenMilestones = 0;
-  let toastQueue = [];
-  let toastActive = null;
-  let activeCat = 'all';
-  let activeCrossover = 'wwe';
+  let quiet = false;
+  const touched = new Set();
+  const written = new Set();
+
+  let run = {};
+  let runSets = {};
+  let wave = {};
+  let session = {};
+  let lastSiege = null;
+
+  // Panel state.
   let searchQuery = '';
-  let tierFilter = 'all';
   let unlockedOnly = false;
+  let openGroups = null;
 
-  let session = {
-    kills: 0,
-    elitesKilled: 0,
-    vetUpgrades: 0,
-    maxWave: 0,
-    deployedTypes: new Set(),
-    abilitiesUsed: new Set(),
-    buildingsCompleted: new Set(),
-    enemyFirst: new Set(),
-    flags: new Set(),
-    currentDiff: 'normal',
-    currentMisses: 0,
-    doomKills: 0,
-    spyThisWave: 0,
-    academyTypes: new Set(),
-    crossoverFieldMax: {},
-    crossoverFieldNow: {},
-    garrisonCount: 0,
-    advancedMods: 0,
-    maxCrossoverFactions: 0,
-    maxSynergyCount: 0,
-    zombieBuildingLosses: 0,
-    footmanGeneralPipeline: new Set(),
-    footmanGeneralPromotions: 0,
-    enemyStructuresRazed: 0,
-    moraleSamplesTotal: 0,
-    moraleSamplesHigh: 0,
-    meleeSamplesTotal: 0,
-    meleeSamplesFocused: 0,
-    crossoverHeroRecruits: new Set(),
-    standAllianceSamplesTotal: 0,
-    standAllianceSamplesAllied: 0,
-    standAllianceMultiFactionSamples: 0,
-    planetBossKiRatio: 0,
-    showmanshipSamplesTotal: 0,
-    showmanshipSamplesHeavy: 0,
-    showmanshipAbilityUses: 0,
-    namedBossWavesRepelled: 0,
-    pathImmortals: new Set(),
-  };
-
-  const CROSSOVER_TABS = CROSSOVER_ACH_FACTIONS.map((f) => ({
-    id: f.key,
-    label: f.label,
-    cat: f.cat,
-  }));
-
-  const CATS = [
-    { id: 'all', label: 'All' },
-    { id: 'vanilla', label: 'Vanilla/Core', cats: ['vanilla'] },
-    { id: 'waves', label: 'Waves/Eras', cats: ['waves'] },
-    { id: 'combat', label: 'Combat/Kills', cats: ['combat'] },
-    { id: 'army', label: 'Army/Deploy', cats: ['army'] },
-    { id: 'build', label: 'Build/Settle', cats: ['build'] },
-    { id: 'specialists', label: 'Specialists', cats: ['specialists'] },
-    { id: 'difficulty', label: 'Difficulty', cats: ['difficulty'] },
-    { id: 'tactics', label: 'Tactics/Spy', cats: ['tactics'] },
-    { id: 'economy', label: 'Economy/TP', cats: ['economy'] },
-    { id: 'crossovers', label: 'Evolved Allies', crossover: true },
-    { id: 'secrets', label: 'Secrets/Meta', cats: ['secrets', 'meta'] },
-  ];
-
-  const VANILLA_CATS = new Set([
-    'waves',
-    'combat',
-    'army',
-    'build',
-    'specialists',
-    'difficulty',
-    'tactics',
-    'economy',
-    'vanilla',
-  ]);
-
-  function load() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) {
-        migrateFromV2();
-        return;
-      }
-      const data = JSON.parse(raw);
-      unlocked = new Set(data.unlocked || []);
-      recentUnlocked = data.recentUnlocked || [];
-      lifetimeSpy = new Set(data.lifetimeSpy || []);
-      lifetimeCourier = new Set(data.lifetimeCourier || []);
-      lifetimeEnemyKills = data.lifetimeEnemyKills || {};
-      lifetimeKills = data.lifetimeKills || 0;
-      lifetimeWavesCleared = data.lifetimeWavesCleared || 0;
-      lifetimeTrueVictories = data.lifetimeTrueVictories || 0;
-      crossoverKills = data.crossoverKills || {};
-      crossoverAbilities = data.crossoverAbilities || {};
-      crossoverMastery = data.crossoverMastery || {};
-      doomLifetimeKills = data.doomLifetimeKills || 0;
-      doomMaxAliveWaves = data.doomMaxAliveWaves || 0;
-      hiddenMilestones = data.hiddenMilestones || 0;
-    } catch (_) {
-      /* ignore */
+  // ------------------------------------------------------------------ counters
+  function touch(k) {
+    for (const key of [`r:${k}`, `l:${k}`]) {
+      touched.add(key);
+      written.add(key);
     }
   }
 
-  function migrateFromV2() {
-    try {
-      const raw = localStorage.getItem('myth-and-blood-achievements-v2');
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      unlocked = new Set(data.unlocked || []);
-      lifetimeSpy = new Set(data.lifetimeSpy || []);
-      lifetimeEnemyKills = data.lifetimeEnemyKills || {};
-      save();
-    } catch (_) {
-      /* ignore */
+  /** Add to a counter in this run and in the save. */
+  function add(k, n = 1) {
+    run[k] = (run[k] || 0) + n;
+    life[k] = (life[k] || 0) + n;
+    touch(k);
+  }
+
+  /** Keep the best value seen, per run and across runs. */
+  function best(k, v) {
+    if (v > (run[k] || 0)) run[k] = v;
+    if (v > (life[k] || 0)) life[k] = v;
+    touch(k);
+  }
+
+  /** Count distinct members of a set, per run and across runs. */
+  function member(k, id) {
+    (runSets[k] ||= new Set()).add(id);
+    (lifeSets[k] ||= new Set()).add(id);
+    run[k] = runSets[k].size;
+    life[k] = lifeSets[k].size;
+    touch(k);
+  }
+
+  function value(s, k) {
+    if (s === 'l') {
+      if (k === 'kills') return lifetimeKills;
+      if (k === 'waves') return lifetimeWavesCleared;
+      if (k === 'victories') return lifetimeTrueVictories;
+      if (k.startsWith('mastery.')) return crossoverMastery[k.slice(8)] || 0;
+      return life[k] || 0;
     }
+    return run[k] || 0;
+  }
+
+  function freshRun() {
+    run = {};
+    runSets = {};
+    wave = { breaches: 0, runnerKills: 0, blastKills: 0, medSaves: 0, orders: new Set() };
+    lastSiege = null;
+    session = {
+      kills: 0,
+      maxWave: 0,
+      deployedTypes: new Set(),
+      flags: new Set(),
+      currentDiff: 'normal',
+      currentMisses: 0,
+      footmanGeneralPipeline: new Set(),
+      enemyStructuresRazed: 0,
+      moraleSamplesTotal: 0,
+      moraleSamplesHigh: 0,
+      meleeSamplesTotal: 0,
+      meleeSamplesFocused: 0,
+      crossoverHeroRecruits: new Set(),
+      standAllianceSamplesTotal: 0,
+      standAllianceSamplesAllied: 0,
+      standAllianceMultiFactionSamples: 0,
+      showmanshipAbilityUses: 0,
+      showmanshipSamplesTotal: 0,
+      showmanshipSamplesHeavy: 0,
+      planetBossKiRatio: 0,
+      namedBossWavesRepelled: 0,
+      pathImmortals: new Set(),
+    };
+    doomAliveWaves = 0;
+  }
+
+  // --------------------------------------------------------------- save / load
+  function load() {
+    let data;
+    try {
+      data = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (!data) {
+        const v2 = JSON.parse(localStorage.getItem('myth-and-blood-achievements-v2') || 'null');
+        if (v2) data = { unlocked: v2.unlocked, lifetimeSpy: v2.lifetimeSpy, ...v2 };
+      }
+    } catch (_) {
+      data = null;
+    }
+    if (!data) return;
+    life = data.life || {};
+    lifeSets = {};
+    for (const [k, arr] of Object.entries(data.lifeSets || {})) lifeSets[k] = new Set(arr);
+    if (data.lifetimeSpy?.length && !lifeSets.spy) {
+      lifeSets.spy = new Set(data.lifetimeSpy);
+      life.spy = lifeSets.spy.size;
+    }
+    recentUnlocked = data.recentUnlocked || [];
+    lifetimeEnemyKills = data.lifetimeEnemyKills || {};
+    lifetimeKills = data.lifetimeKills || 0;
+    lifetimeWavesCleared = data.lifetimeWavesCleared || 0;
+    lifetimeTrueVictories = data.lifetimeTrueVictories || 0;
+    crossoverKills = data.crossoverKills || {};
+    crossoverAbilities = data.crossoverAbilities || {};
+    crossoverMastery = data.crossoverMastery || {};
+    doomLifetimeKills = data.doomLifetimeKills || 0;
+    doomMaxAliveWaves = data.doomMaxAliveWaves || 0;
+    hiddenMilestones = data.hiddenMilestones || 0;
+    retired = new Set(data.retired || []);
+    unlocked = new Set();
+    for (const id of data.unlocked || []) {
+      if (BY_ID.has(id) && (data.v || 0) >= SAVE_VERSION) unlocked.add(id);
+      else carryOver(id);
+    }
+    if ((data.v || 0) < SAVE_VERSION) {
+      // Old counters may already satisfy new lifetime goals; credit them without a toast.
+      quiet = true;
+      for (const a of LIST) if (a.s === 'l') touched.add(`l:${a.k}`);
+      checkTouched();
+      quiet = false;
+      save();
+    }
+  }
+
+  /** An id from the old 1,450 list: kept if it maps onto the new list, retired if not. */
+  function carryOver(id) {
+    const mapped = mapLegacyAchievementId(id);
+    if (mapped.length) for (const m of mapped) unlocked.add(m);
+    else retired.add(id);
   }
 
   function save() {
@@ -152,10 +187,12 @@ const Achievements = (() => {
       localStorage.setItem(
         STORAGE_KEY,
         JSON.stringify({
+          v: SAVE_VERSION,
           unlocked: [...unlocked],
+          retired: [...retired],
           recentUnlocked: recentUnlocked.slice(0, 12),
-          lifetimeSpy: [...lifetimeSpy],
-          lifetimeCourier: [...lifetimeCourier],
+          life,
+          lifeSets: Object.fromEntries(Object.entries(lifeSets).map(([k, s]) => [k, [...s]])),
           lifetimeEnemyKills,
           lifetimeKills,
           lifetimeWavesCleared,
@@ -169,18 +206,135 @@ const Achievements = (() => {
         })
       );
     } catch (_) {
-      /* ignore */
+      /* storage unavailable */
     }
   }
 
-  function effectiveUnlockCount() {
-    return unlocked.size;
+  // ----------------------------------------------------------------- unlocking
+  /** A run with a cheat or in the sandbox earns nothing, whoever asks. */
+  function isVoid() {
+    if (typeof Game === 'undefined') return false;
+    return !!(Game.cheatsUsed?.() || Game.isCreativeMode?.());
   }
 
+  function unlock(id) {
+    if (unlocked.has(id)) return null;
+    const ach = BY_ID.get(id);
+    if (!ach || isVoid()) return null;
+    unlocked.add(id);
+    recentUnlocked = [
+      { id, name: ach.name, tier: ach.tier, at: Date.now() },
+      ...recentUnlocked.filter((r) => r.id !== id),
+    ].slice(0, 12);
+    save();
+    if (!quiet) queueToast(ach);
+    return ach;
+  }
+
+  function tryUnlock(id) {
+    return unlock(id);
+  }
+
+  function checkTouched() {
+    for (const key of touched) {
+      for (const a of BY_COUNTER.get(key) || []) {
+        if (!unlocked.has(a.id) && value(a.s, a.k) >= a.n) unlock(a.id);
+      }
+    }
+    touched.clear();
+  }
+
+  function checkRules() {
+    for (const a of X_RULES) if (!unlocked.has(a.id) && evaluateRule(a.k)) unlock(a.id);
+  }
+
+  // --------------------------------------------------------------------- toasts
+  const toastQueue = [];
+  let toastBusy = false;
+  const TOAST_MS = 2600;
+  const TOAST_GAP_MS = 300;
+
+  function queueToast(ach) {
+    toastQueue.push(ach);
+    if (!toastBusy) showNextToast();
+  }
+
+  function showNextToast() {
+    const ach = toastQueue.shift();
+    const el =
+      typeof document !== 'undefined' ? document.getElementById('achievement-toast') : null;
+    if (!ach || !el) {
+      toastBusy = false;
+      toastQueue.length = 0;
+      return;
+    }
+    toastBusy = true;
+    const set = (sel, text) => {
+      const n = el.querySelector(sel);
+      if (n) n.textContent = text;
+    };
+    set('.ach-toast-label', 'ACHIEVEMENT');
+    set('.ach-toast-name', fill(ach.name));
+    set('.ach-toast-desc', fill(ach.desc));
+    const tierEl = el.querySelector('.ach-toast-tier');
+    if (tierEl) {
+      tierEl.textContent = ach.tier ? ACHIEVEMENT_TIERS[ach.tier] : '';
+      tierEl.className = `ach-toast-tier${ach.tier ? ` tier-${ach.tier}` : ''}`;
+      tierEl.style.display = ach.tier ? '' : 'none';
+    }
+    set('.ach-toast-reward', ach.reward ? `Reward: ${rewardText(ach.reward)}` : '');
+    const rewardEl = el.querySelector('.ach-toast-reward');
+    if (rewardEl) rewardEl.style.display = ach.reward ? '' : 'none';
+    const c = getCount();
+    set('.ach-toast-progress', `${c.unlocked} / ${c.total}`);
+    el.classList.toggle('toast-gold', ach.tier === 'gold');
+    el.classList.add('show');
+    setTimeout(() => {
+      el.classList.remove('show', 'toast-gold');
+      setTimeout(showNextToast, TOAST_GAP_MS);
+    }, TOAST_MS);
+  }
+
+  function rewardText(r) {
+    if (r.type === 'title') return `title "${r.label}"`;
+    if (r.type === 'skin') return 'a unit skin';
+    if (r.type === 'theme') return 'a victory theme';
+    return 'an order title';
+  }
+
+  // ------------------------------------------------------------- name filling
+  const NAMES = {
+    unit: (id) => globalThis.UnitDefs?.[id]?.name,
+    enemy: (id) => globalThis.EnemyDefs?.[id]?.name,
+    build: (id) => globalThis.BuildDefs?.[id]?.name,
+    boss: (id) => globalThis.MonsterBosses?.BOSS_ROSTER?.find((b) => b.type === id)?.name,
+    faction: (id) => globalThis.EnemyFactions?.getFactionDef?.(id)?.name,
+    diff: (id) => globalThis.DIFFICULTIES?.[id]?.label,
+    mode: (id) => globalThis.GameModes?.MODES?.find((m) => m.id === id)?.label,
+    order: (id) => globalThis.FactionDepth?.constructor?.PROFILES?.[id]?.label,
+    edict: (id) => globalThis.SiegeLoop?.EDICTS?.[id]?.name,
+  };
+
+  function nameOf(kind, id) {
+    let v;
+    try {
+      v = NAMES[kind]?.(id);
+    } catch (_) {
+      v = null;
+    }
+    return v || id.replace(/_/g, ' ');
+  }
+
+  /** Fill {kind:id} tokens from the game data so a rename shows up by itself. */
+  function fill(text) {
+    return String(text).replace(/\{([a-z]+):([a-z0-9_]+)\}/g, (_, kind, id) => nameOf(kind, id));
+  }
+
+  // ------------------------------------------------------------------- mastery
   function addMastery(faction, pts) {
     crossoverMastery[faction] = (crossoverMastery[faction] || 0) + pts;
     hiddenMilestones = Math.floor(Object.values(crossoverMastery).reduce((s, v) => s + v, 0) / 500);
-    save();
+    touch(`mastery.${faction}`);
   }
 
   function getUnitFaction(unitType) {
@@ -190,688 +344,323 @@ const Achievements = (() => {
     return def?.faction || null;
   }
 
-  function applyReward(ach) {
-    if (!ach?.reward) return;
-    const r = ach.reward;
-    if (r.type === 'tp' && typeof Game !== 'undefined' && Game.isPlaying?.()) {
-      Game.creativeAddTp?.(r.amount) ||
-        (Game.getState &&
-          (() => {
-            const gs = Game.getState();
-            if (gs?.creativeMode) Game.creativeAddTp(r.amount);
-          })());
-    }
-    if (r.type === 'unlock' && r.id === 'wwe_academy') MetaProgress.unlockWweAcademy();
-    if (r.type === 'creative_buff' && typeof Game !== 'undefined' && Game.isCreativeMode?.()) {
-      Game.creativeMaxMorale?.();
-    }
-  }
-
-  function pushRecent(ach) {
-    recentUnlocked = [
-      { id: ach.id, name: ach.name, tier: ach.tier, at: Date.now() },
-      ...recentUnlocked.filter((r) => r.id !== ach.id),
-    ].slice(0, 12);
-  }
-
-  function unlock(id) {
-    if (unlocked.has(id)) return null;
-    const ach = LIST.find((a) => a.id === id);
-    if (!ach) return null;
-    unlocked.add(id);
-    pushRecent(ach);
-    save();
-    applyReward(ach);
-    queueToast(ach);
-    checkMilestones();
-    if (id === META_316_ID) {
-      MetaProgress.unlockWweAcademy();
-      tryUnlock('wwe_unlock');
-    }
-    return ach;
-  }
-
-  function tryUnlock(id) {
-    return unlock(id);
-  }
-
-  function checkMilestones() {
-    const count = effectiveUnlockCount();
-    const preMeta = [...unlocked].filter(
-      (i) => i !== META_316_ID && i !== CLUB_316_ID && i !== MILLENNIUM_ID
-    ).length;
-    if (preMeta >= 316) {
-      tryUnlock(CLUB_316_ID);
-      tryUnlock(META_316_ID);
-    }
-    const nonMillennium = LIST.filter((a) => a.id !== MILLENNIUM_ID);
-    if (nonMillennium.every((a) => unlocked.has(a.id))) tryUnlock(MILLENNIUM_ID);
-  }
-
-  function queueToast(ach) {
-    toastQueue.push(ach);
-    if (!toastActive) showNextToast();
-  }
-
-  function tierLabel(tier, ach) {
-    if (ach?.meta) return 'Meta';
-    if (!tier) return '';
-    return ACHIEVEMENT_TIERS[tier] || tier;
-  }
-
-  function tierBadge(ach) {
-    if (ach?.meta) return { cls: 'meta', label: 'Meta' };
-    if (!ach?.tier) return null;
-    return { cls: ach.tier, label: tierLabel(ach.tier) };
-  }
-
-  function showNextToast() {
-    if (!toastQueue.length) {
-      toastActive = null;
-      return;
-    }
-    toastActive = toastQueue.shift();
-    const el = document.getElementById('achievement-toast');
-    if (!el) {
-      toastActive = null;
-      return;
-    }
-    const labelEl = el.querySelector('.ach-toast-label');
-    const nameEl = el.querySelector('.ach-toast-name');
-    const descEl = el.querySelector('.ach-toast-desc');
-    const tierEl = el.querySelector('.ach-toast-tier');
-    const rewardEl = el.querySelector('.ach-toast-reward');
-    const progEl = el.querySelector('.ach-toast-progress');
-    if (!nameEl || !descEl) {
-      toastActive = null;
-      return;
-    }
-    const c = getCount();
-    if (labelEl) labelEl.textContent = 'ACHIEVEMENT UNLOCKED';
-    nameEl.textContent = toastActive.name;
-    descEl.textContent = toastActive.desc;
-    if (tierEl) {
-      const badge = tierBadge(toastActive);
-      tierEl.textContent = badge?.label || '';
-      tierEl.className = 'ach-toast-tier' + (badge ? ` tier-${badge.cls}` : '');
-      tierEl.style.display = badge ? '' : 'none';
-    }
-    if (rewardEl) {
-      const rw = toastActive.reward;
-      rewardEl.textContent =
-        rw?.type === 'tp'
-          ? `Reward: +${rw.amount} TP (Creative)`
-          : rw?.type === 'badge'
-            ? 'Iron Creed badge earned!'
-            : '';
-      rewardEl.style.display = rewardEl.textContent ? '' : 'none';
-    }
-    if (progEl) progEl.textContent = `${c.unlocked} / ${c.total}`;
-    el.classList.add('show');
-    if (toastActive.meta || toastActive.tier === 'meta') el.classList.add('toast-meta');
-    else if (toastActive.tier === 'gold') el.classList.add('toast-gold');
-    else el.classList.remove('toast-gold');
-    setTimeout(() => {
-      el.classList.remove('show', 'toast-gold');
-      setTimeout(showNextToast, 400);
-    }, 3400);
-  }
-
-  function resetSession() {
-    session = {
-      kills: 0,
-      elitesKilled: 0,
-      vetUpgrades: 0,
-      maxWave: 0,
-      deployedTypes: new Set(),
-      abilitiesUsed: new Set(),
-      buildingsCompleted: new Set(),
-      enemyFirst: new Set(),
-      flags: new Set(),
-      currentDiff: 'normal',
-      currentMisses: 0,
-      doomKills: 0,
-      spyThisWave: 0,
-      academyTypes: new Set(),
-      crossoverFieldMax: {},
-      crossoverFieldNow: {},
-      garrisonCount: 0,
-      advancedMods: 0,
-      maxCrossoverFactions: 0,
-      maxSynergyCount: 0,
-      zombieBuildingLosses: 0,
-      footmanGeneralPipeline: new Set(),
-      footmanGeneralPromotions: 0,
-      enemyStructuresRazed: 0,
-      moraleSamplesTotal: 0,
-      moraleSamplesHigh: 0,
-      meleeSamplesTotal: 0,
-      meleeSamplesFocused: 0,
-      crossoverHeroRecruits: new Set(),
-      standAllianceSamplesTotal: 0,
-      standAllianceSamplesAllied: 0,
-      standAllianceMultiFactionSamples: 0,
-      planetBossKiRatio: 0,
-      showmanshipSamplesTotal: 0,
-      showmanshipSamplesHeavy: 0,
-      showmanshipAbilityUses: 0,
-      namedBossWavesRepelled: 0,
-      pathImmortals: new Set(),
-    };
-    doomAliveWaves = 0;
-  }
-
-  function isChadPlusDiff(diff) {
-    return diff === 'chad' || diff === 'doomslayer';
-  }
-
-  function countCrossoverField(units) {
-    const counts = {};
+  function countField(units) {
     const factions = new Set();
     for (const u of units || []) {
       if (u.team !== 'player' || u.hp <= 0) continue;
       const f = getUnitFaction(u.type);
-      if (!f) continue;
-      counts[f] = (counts[f] || 0) + 1;
-      factions.add(f);
+      if (f) factions.add(f);
     }
-    session.crossoverFieldNow = counts;
-    for (const [f, n] of Object.entries(counts)) {
-      session.crossoverFieldMax[f] = Math.max(session.crossoverFieldMax[f] || 0, n);
-    }
-    return { counts, factionCount: factions.size, factions: [...factions] };
+    return factions;
   }
 
-  function evaluateRule(rule, ctx = {}) {
-    if (!rule) return false;
-    const [kind, ...rest] = rule.split(':');
-
-    switch (kind) {
-      case 'wave':
-        return (ctx.wave ?? session.maxWave) >= parseInt(rest[0], 10);
-      case 'lifetime_waves':
-        return lifetimeWavesCleared >= parseInt(rest[0], 10);
-      case 'lifetime_kills':
-        return lifetimeKills >= parseInt(rest[0], 10);
-      case 'lifetime_enemy_kills':
-        return (lifetimeEnemyKills[rest[0]] || 0) >= parseInt(rest[1], 10);
-      case 'session_kills':
-        return session.kills >= parseInt(rest[0], 10);
-      case 'session_elites':
-        return session.elitesKilled >= parseInt(rest[0], 10);
-      case 'session_army':
-        return (ctx.armySize ?? 0) >= parseInt(rest[0], 10);
-      case 'session_vet':
-        return session.vetUpgrades >= parseInt(rest[0], 10);
-      case 'session_deploy_all': {
-        const all = [
-          'footman',
-          'archer',
-          'mage',
-          'cavalry',
-          'healer',
-          'knight',
-          'sapper',
-          'builder',
-          'courier',
-          'general',
-        ];
-        return all.every((t) => session.deployedTypes.has(t));
+  // -------------------------------------------------------------------- events
+  function onKill(d) {
+    session.kills++;
+    lifetimeKills++;
+    add('kills');
+    if (d.elite) add('elites');
+    if (d.enemyType) lifetimeEnemyKills[d.enemyType] = (lifetimeEnemyKills[d.enemyType] || 0) + 1;
+    wave.killedTypes ||= {};
+    if (d.enemyType) wave.killedTypes[d.enemyType] = (wave.killedTypes[d.enemyType] || 0) + 1;
+    const t = d.killerType;
+    if (d.boss) {
+      add('bossKills');
+      if (d.enemyType) {
+        add(`boss.${d.enemyType}`);
+        member('bossKinds', d.enemyType);
       }
-      case 'session_deploy_8':
-        return session.deployedTypes.size >= 8;
-      case 'enemy_first':
-        return session.enemyFirst.has(rest[0]);
-      case 'star':
-        return session.flags.has(`star_${rest[0]}`);
-      case 'honor':
-        return session.flags.has('honor');
-      case 'honor_max':
-        return session.flags.has('honor_max');
-      case 'general_stationed':
-        return session.flags.has('general_stationed');
-      case 'garrison':
-        return session.flags.has('garrison');
-      case 'garrison_count':
-        return (ctx.garrisonCount ?? session.garrisonCount) >= parseInt(rest[0], 10);
-      case 'courier':
-        return rest[0] ? session.flags.has(`courier_${rest[0]}`) : session.flags.has('courier');
-      case 'courier_all':
-        return lifetimeCourier.size >= parseInt(rest[0], 10);
-      case 'hunt_wave':
-        return session.flags.has('hunt_wave');
-      case 'last_stand':
-        return session.flags.has('last_stand');
-      case 'build':
-        return rest[0] === 'any'
-          ? session.buildingsCompleted.size > 0
-          : session.buildingsCompleted.has(rest[0]);
-      case 'walls':
-        return (ctx.wallCount ?? 0) >= parseInt(rest[0], 10);
-      case 'hamlets':
-        return (ctx.hamletCount ?? 0) >= parseInt(rest[0], 10);
-      case 'guilds':
-        return (ctx.guildCount ?? 0) >= parseInt(rest[0], 10);
-      case 'academies':
-        return (ctx.academyCount ?? session.academyTypes.size) >= parseInt(rest[0], 10);
-      case 'academy_types':
-        return session.academyTypes.size >= parseInt(rest[0], 10);
-      case 'settlement_chain':
-        return (
-          (ctx.hamletCount ?? 0) >= parseInt(rest[0], 10) &&
-          (ctx.guildCount ?? 0) >= parseInt(rest[1], 10)
-        );
-      case 'support_pair':
-        return (
-          session.buildingsCompleted.has('medical_tent') &&
-          session.buildingsCompleted.has('mess_hall')
-        );
-      case 'ability':
-        return session.abilitiesUsed.has(rest[0]);
-      case 'abilities_all':
-        return session.abilitiesUsed.size >= parseInt(rest[0], 10);
-      case 'spy':
-        return session.flags.has('spy');
-      case 'spy_all':
-        return lifetimeSpy.size >= parseInt(rest[0], 10);
-      case 'spy_wave':
-        return session.spyThisWave >= parseInt(rest[0], 10);
-      case 'siege_clear':
-        return session.flags.has('siege_clear');
-      case 'horde_clear':
-        return session.flags.has('horde_clear');
-      case 'boss_clear':
-        return session.flags.has('boss_clear');
-      case 'boss_flawless':
-        return session.flags.has('boss_clear') && session.currentMisses === 0;
-      case 'flawless':
-        return session.maxWave >= parseInt(rest[0], 10) && session.currentMisses === 0;
-      case 'mage_splash':
-        return session.flags.has('mage_splash');
-      case 'cavalry_charge':
-        return session.flags.has('cavalry_charge');
-      case 'sapper_siege':
-        return session.flags.has('sapper_siege');
-      case 'tp':
-        return (ctx.tactical ?? 0) >= parseInt(rest[0], 10);
-      case 'settle_tp':
-        return (ctx.settlementTp ?? 0) >= parseInt(rest[0], 10);
-      case 'builders':
-        return (ctx.liveBuilders ?? 0) >= parseInt(rest[0], 10);
-      case 'diff_wave':
-        return session.currentDiff === rest[0] && session.maxWave >= parseInt(rest[1], 10);
-      case 'diff_flawless':
-        return (
-          session.currentDiff === rest[0] &&
-          session.maxWave >= parseInt(rest[1], 10) &&
-          session.currentMisses === 0
-        );
-      case 'diff_zombie_fortress':
-        return (
-          session.currentDiff === rest[0] &&
-          session.maxWave >= parseInt(rest[1], 10) &&
-          !session.flags.has('zombie_building_lost')
-        );
-      case 'run_sanctum_victory':
-        return (
-          session.flags.has('run_victory') &&
-          session.flags.has('has_castle_compound') &&
-          !session.flags.has('castle_compound_breached')
-        );
-      case 'sanctum_intact':
-        return (
-          session.maxWave >= parseInt(rest[0], 10) &&
-          session.flags.has('has_castle_compound') &&
-          !session.flags.has('castle_compound_breached')
-        );
-      case 'run_spartan_command':
-        return (
-          session.flags.has('run_victory') &&
-          session.flags.has('had_general') &&
-          !session.flags.has('general_fell') &&
-          session.flags.has('footman_promoted_general') &&
-          session.footmanGeneralPipeline.size >= parseInt(rest[0] || '5', 10)
-        );
-      case 'footman_command_pipeline':
-        return session.footmanGeneralPipeline.size >= parseInt(rest[0], 10);
-      case 'run_siege_victory':
-        return (
-          session.flags.has('run_victory') &&
-          session.enemyStructuresRazed >= parseInt(rest[0] || '12', 10)
-        );
-      case 'enemy_structures_razed':
-        return session.enemyStructuresRazed >= parseInt(rest[0], 10);
-      case 'run_fellowship_morale': {
-        const minSamples = parseInt(rest[0] || '8', 10);
-        const needRatio = parseFloat(rest[1] || '0.55');
-        if (!session.flags.has('run_victory') || session.moraleSamplesTotal < minSamples)
-          return false;
-        return session.moraleSamplesHigh / session.moraleSamplesTotal >= needRatio;
-      }
-      case 'morale_high_waves':
-        return session.moraleSamplesHigh >= parseInt(rest[0], 10);
-      case 'run_martial_melee': {
-        const minSamples = parseInt(rest[0] || '8', 10);
-        const needRatio = parseFloat(rest[1] || '0.55');
-        if (!session.flags.has('run_victory') || !isChadPlusDiff(session.currentDiff)) return false;
-        if (session.meleeSamplesTotal < minSamples) return false;
-        return session.meleeSamplesFocused / session.meleeSamplesTotal >= needRatio;
-      }
-      case 'melee_focus_waves':
-        return session.meleeSamplesFocused >= parseInt(rest[0], 10);
-      case 'run_stand_alliance': {
-        const minSamples = parseInt(rest[0] || '8', 10);
-        const needRatio = parseFloat(rest[1] || '0.55');
-        const minRecruits = parseInt(rest[2] || '3', 10);
-        if (!session.flags.has('run_victory') || session.crossoverHeroRecruits.size < minRecruits)
-          return false;
-        if (session.standAllianceSamplesTotal < minSamples) return false;
-        return session.standAllianceSamplesAllied / session.standAllianceSamplesTotal >= needRatio;
-      }
-      case 'stand_alliance_waves':
-        return session.standAllianceSamplesAllied >= parseInt(rest[0], 10);
-      case 'stand_multi_faction_waves':
-        return session.standAllianceMultiFactionSamples >= parseInt(rest[0], 10);
-      case 'solo_hero_named_boss':
-        return session.flags.has('solo_hero_named_boss');
-      case 'run_hokuto_solo':
-        return session.flags.has('run_victory') && session.flags.has('solo_hero_named_boss');
-      case 'planet_boss_high_ki':
-        return session.flags.has('planet_boss_high_ki');
-      case 'run_dragonball_ki': {
-        const minWave = parseInt(rest[0] || '200', 10);
-        const needRatio = parseFloat(rest[1] || '0.55');
-        if (!session.flags.has('run_victory') || !session.flags.has('planet_boss_high_ki'))
-          return false;
-        if (session.maxWave < minWave) return false;
-        return (session.planetBossKiRatio ?? 1) >= needRatio;
-      }
-      case 'run_wwe_showmanship': {
-        const minSamples = parseInt(rest[0] || '8', 10);
-        const needRatio = parseFloat(rest[1] || '0.55');
-        if (!session.flags.has('run_victory')) return false;
-        if (session.showmanshipSamplesTotal < minSamples) return false;
-        return session.showmanshipSamplesHeavy / session.showmanshipSamplesTotal >= needRatio;
-      }
-      case 'showmanship_heavy_waves':
-        return session.showmanshipSamplesHeavy >= parseInt(rest[0], 10);
-      case 'showmanship_ability_uses':
-        return session.showmanshipAbilityUses >= parseInt(rest[0], 10);
-      case 'run_eternal_crusade': {
-        const minBossRepels = parseInt(rest[0] || '3', 10);
-        const minForts = parseInt(rest[1] || '8', 10);
-        if (!session.flags.has('run_victory') || !isChadPlusDiff(session.currentDiff)) return false;
-        if (!session.flags.has('fort_line_established') || session.flags.has('fort_line_breached'))
-          return false;
-        if (session.flags.has('general_fell') || !session.flags.has('had_general')) return false;
-        return (session.namedBossWavesRepelled || 0) >= minBossRepels;
-      }
-      case 'fort_line_intact':
-        return (
-          session.flags.has('fort_line_established') && !session.flags.has('fort_line_breached')
-        );
-      case 'named_boss_repels':
-        return (session.namedBossWavesRepelled || 0) >= parseInt(rest[0], 10);
-      case 'run_dragonborn_legacy': {
-        const minWave = parseInt(rest[0] || '100', 10);
-        if (!session.flags.has('run_victory') || session.maxWave < minWave) return false;
-        if (!session.flags.has('dragon_boss_slay')) return false;
-        return (
-          session.pathImmortals.has('martial') &&
-          session.pathImmortals.has('arcane') &&
-          session.pathImmortals.has('tech') &&
-          session.pathImmortals.has('mythic')
-        );
-      }
-      case 'path_immortal_all':
-        return (
-          session.pathImmortals.has('martial') &&
-          session.pathImmortals.has('arcane') &&
-          session.pathImmortals.has('tech') &&
-          session.pathImmortals.has('mythic')
-        );
-      case 'dragon_boss_slay':
-        return session.flags.has('dragon_boss_slay');
-      case 'advanced_mods':
-        return (ctx.advancedMods ?? session.advancedMods) >= parseInt(rest[0], 10);
-      case 'era':
-        if (rest[0] === 'academy') return session.maxWave >= 100;
-        if (rest[0] === 'rts') return session.maxWave >= 100 && (ctx.hamletCount ?? 0) >= 1;
-        if (rest[0] === 'enemy_rts') return session.maxWave >= 200;
-        if (rest[0] === 'hellscape') return session.maxWave >= 1001;
-        return false;
-      case 'roster_synergy':
-        return session.flags.has('roster_synergy');
-      case 'wwe':
-        return MetaProgress.getWweRecruited().includes(rest[0]);
-      case 'wwe_all':
-        return Object.keys(WweDefs).every((id) => MetaProgress.getWweRecruited().includes(id));
-      case 'cheat':
-        if (rest[0] === 'any') return MetaProgress.getCheatsUsed().length > 0;
-        if (rest[0] === 'austin') return MetaProgress.getCheatsUsed().includes('austin');
-        if (rest[0] === 'one_piece') return MetaProgress.getCheatsUsed().includes('onepiece');
-        return false;
-      case 'unlock':
-        if (rest[0] === 'wwe') return MetaProgress.isWweUnlocked();
-        if (rest[0] === 'doom_hero') return MetaProgress.isDoomslayerHeroUnlocked();
-        if (rest[0] === 'ultimis' || rest[0] === '115') return MetaProgress.is115Unlocked();
-        if (rest[0] === 'primis' || rest[0] === 'primus') return MetaProgress.isPrimusUnlocked();
-        if (rest[0] === 'halo') return MetaProgress.isHaloUnlocked();
-        if (rest[0] === 'gears') return MetaProgress.isGearsUnlocked();
-        if (rest[0] === 'lotr') return MetaProgress.isLotrUnlocked();
-        if (rest[0] === 'baki') return MetaProgress.isBakiUnlocked();
-        if (rest[0] === 'jojo') return MetaProgress.isJojoUnlocked();
-        if (rest[0] === 'fotns') return MetaProgress.isFotnsUnlocked();
-        if (rest[0] === 'dragonball') return MetaProgress.isDragonballUnlocked();
-        if (rest[0] === 'warhammer') return MetaProgress.isWarhammerUnlocked();
-        if (rest[0] === 'tes') return MetaProgress.isTesUnlocked();
-        return false;
-      case 'deploy':
-        return session.flags.has(`deploy_${rest[0]}`);
-      case 'spec_rank':
-        return session.flags.has(`rank_${rest[0]}_${rest[1]}`);
-      case 'unlocked_count': {
-        const need = parseInt(rest[0], 10);
-        const pre = [...unlocked].filter(
-          (i) => i !== META_316_ID && i !== CLUB_316_ID && i !== MILLENNIUM_ID
-        ).length;
-        return pre >= need;
-      }
-      case 'crossover_recruit':
-        if (rest[0] === 'wwe') return MetaProgress.getWweRecruited().includes(rest[1]);
-        return MetaProgress.getCrossoverRecruited().includes(rest[1]);
-      case 'crossover_all': {
-        const f = rest[0];
-        if (f === 'wwe')
-          return Object.keys(WweDefs).every((id) => MetaProgress.getWweRecruited().includes(id));
-        const ids = getFactionOperativeIds(f);
-        return (
-          ids.length > 0 && ids.every((id) => MetaProgress.getCrossoverRecruited().includes(id))
-        );
-      }
-      case 'crossover_field':
-        return (session.crossoverFieldMax[rest[0]] || 0) >= parseInt(rest[1], 10);
-      case 'crossover_wave': {
-        const need = parseInt(rest[1], 10);
-        const minField = rest[2] != null ? parseInt(rest[2], 10) : rest[0] === 'wwe' ? 3 : 2;
-        return session.maxWave >= need && (session.crossoverFieldMax[rest[0]] || 0) >= minField;
-      }
-      case 'crossover_kills':
-        return (crossoverKills[rest[0]] || 0) >= parseInt(rest[1], 10);
-      case 'crossover_abilities':
-        return (crossoverAbilities[rest[0]] || 0) >= parseInt(rest[1], 10);
-      case 'crossover_mastery':
-        return (crossoverMastery[rest[0]] || 0) >= parseInt(rest[1], 10);
-      case 'crossover_mastery_any': {
-        const need = parseInt(rest[0], 10);
-        return Object.values(crossoverMastery).some((v) => v >= need);
-      }
-      case 'synergy':
-        return session.flags.has(`synergy_${rest[0]}`);
-      case 'crossover_flag':
-        return session.flags.has(`crossover_${rest[0]}_${rest[1]}`);
-      case 'crossover_grand_slam_all':
-        return CROSSOVER_ACH_FACTIONS.every((f) => {
-          const ids = getFactionOperativeIds(f.key);
-          if (f.key === 'wwe')
-            return Object.keys(WweDefs).every((id) => MetaProgress.getWweRecruited().includes(id));
-          if (f.key === 'doom') return true;
-          return (
-            ids.length > 0 && ids.every((id) => MetaProgress.getCrossoverRecruited().includes(id))
-          );
-        });
-      case 'multiversal':
-        return (
-          Math.max(ctx.crossoverFactionCount ?? 0, session.maxCrossoverFactions) >=
-          parseInt(rest[0], 10)
-        );
-      case 'doom_alive':
-        return doomMaxAliveWaves >= parseInt(rest[0], 10);
-      case 'doom_session_kills':
-        return session.doomKills >= parseInt(rest[0], 10);
-      case 'doom_lifetime_kills':
-        return doomLifetimeKills >= parseInt(rest[0], 10);
-      case 'creative_start':
-        return session.flags.has('creative_start');
-      case 'perks':
-        return (ctx.perkCount ?? 0) >= parseInt(rest[0], 10);
-      case 'hidden_milestone':
-        return hiddenMilestones >= parseInt(rest[0], 10);
-      case 'true_victory':
-        return lifetimeTrueVictories >= parseInt(rest[0], 10);
-      case 'meta':
-        return LIST.filter((a) => !a.meta).every((a) => unlocked.has(a.id));
-      default:
-        return false;
+      if (t === 'sapper' && d.cause === 'blast') add('bossBlastKills');
     }
+    if (d.runner) {
+      add('runnerKills');
+      wave.runnerKills++;
+      best('waveRunnerKills', wave.runnerKills);
+      if (d.held) add('runnerHeldKills');
+      if (d.cause === 'blast') add('runnerBlastKills');
+      if (d.killerGeneral) add('generalRunnerKills');
+    }
+    if (d.held) add('heldKills');
+    if (d.hunting) add('huntKills');
+    if (d.killerHonored && d.killerKills) best('namedVetKills', d.killerKills);
+    if (t && d.killerKills && t !== 'doomslayer_hero') best('vetKills', d.killerKills);
+    if (t) {
+      add(`typeKills.${t}`);
+      const sig = ACHIEVEMENT_SIGNATURES[t];
+      if (sig) {
+        const hit =
+          (sig.types && sig.types.includes(d.enemyType)) ||
+          (sig.runner && d.runner) ||
+          (sig.charge && d.charging);
+        if (hit) add(`sig.${t}`);
+      }
+      if (t === 'sapper' && d.cause === 'blast') {
+        add('blastKills');
+        wave.blastKills++;
+        best('waveBlastKills', wave.blastKills);
+      }
+      if (
+        t === 'sapper' &&
+        (d.siege || d.enemyType === 'iron_colossus' || d.enemyType === 'hellmortar_pack')
+      ) {
+        add('sapperSiege');
+      }
+      if (t === 'cavalry' && d.charging) session.flags.add('cavalry_charge');
+    }
+    const kf = getUnitFaction(t);
+    if (kf) {
+      crossoverKills[kf] = (crossoverKills[kf] || 0) + 1;
+      addMastery(kf, 1);
+    }
+    if (t === 'doomslayer_hero') {
+      doomLifetimeKills++;
+      addMastery('doom', 2);
+    }
+    touch('kills');
   }
 
-  function checkAll(ctx = {}) {
-    for (const ach of LIST) {
-      if (unlocked.has(ach.id)) continue;
-      if (evaluateRule(ach.rule, ctx)) tryUnlock(ach.id);
+  function onWaveComplete(d) {
+    const w = d.wave || 0;
+    session.maxWave = Math.max(session.maxWave, w);
+    session.currentMisses = d.playerDeaths ?? d.misses ?? 0;
+    lifetimeWavesCleared++;
+    touch('waves');
+    best('wave', w);
+    const units = (d.units || []).filter((u) => u.team === 'player' && u.hp > 0);
+    const diff = d.difficulty || session.currentDiff;
+    best(`diff.${diff}`, w);
+    if (d.modeId) {
+      best(`mode.${d.modeId}`, w);
+      if (d.modeId === 'academy_era') add('modeCleared.academy_era');
+    }
+    if (d.ironman) best('ironmanWave', w);
+    if (w >= 15) best('modsAtWave15', d.advancedMods || 0);
+    if (d.bossWave) session.flags.add('boss_clear');
+    if (d.armySize === 1) {
+      session.flags.add('last_stand');
+      add('lastOneWaves');
+    }
+
+    // Line: breaches, brink and recovery.
+    const leaked = wave.breaches;
+    const siege = lastSiege;
+    if (siege) {
+      best('cleanStreak', siege.cleanStreak);
+      best('flawlessStreak', siege.flawless);
+      if (siege.left === 0) {
+        run.brinkStreak = (run.brinkStreak || 0) + 1;
+        add('brinkClears');
+      } else run.brinkStreak = 0;
+      best('brinkStreak', run.brinkStreak || 0);
+      if (run.hadBreach && leaked === 0) run.recover = (run.recover || 0) + 1;
+      else run.recover = 0;
+      best('recoverStreak', run.recover);
+      if (d.bossWave && leaked === 0) {
+        add('bossCleanWaves');
+        if (!(d.playerCasualtiesThisWave > 0)) add('bossFlawlessWaves');
+      }
+    }
+    if (leaked === 0) add('cleanWaves');
+    if (leaked >= 3) add('leakyWaves');
+    wave.breaches = 0;
+
+    // Veterans and the army as it stands at dawn.
+    let oldest = 0;
+    let topKills = 0;
+    let vets10 = 0;
+    let healerOldest = 0;
+    let held = 0;
+    let generalAlive = false;
+    const kinds = new Set();
+    for (const u of units) {
+      if (u.isDoomslayer) continue;
+      const ws = u.wavesSurvived || 0;
+      if (u.isGeneral) generalAlive = true;
+      else kinds.add(u.type);
+      if (!u.isGeneral) {
+        oldest = Math.max(oldest, ws);
+        topKills = Math.max(topKills, u.kills || 0);
+        if (ws >= 10) vets10++;
+        if (u.type === 'healer') healerOldest = Math.max(healerOldest, ws);
+        if (u.stretcherSaves > 0 && ws >= 10) life.secondWind = Math.max(life.secondWind || 0, 1);
+      }
+      if (Number.isFinite(u.holdX)) held++;
+    }
+    best('vetOldest', oldest);
+    best('vetKills', topKills);
+    best('vets10', vets10);
+    best('healerOldest', healerOldest);
+    touch('secondWind');
+    if (held >= 5) add('holdWaves');
+    if (generalAlive) add('generalWaves');
+    if (session.flags.has('general_fell')) add('wavesAfterGeneralFell');
+    if (w > 8 && units.length >= 8 && kinds.size === 1) add('oneKindWaves');
+    best('walls', d.wallCount || 0);
+    if (wave.orders.has('warCry') && wave.orders.has('holdLine')) add('bothOrders');
+    wave.orders = new Set();
+    wave.medSaves = 0;
+
+    // Enemy hosts met this wave.
+    const seenFactions = {};
+    for (const [type, n] of Object.entries(wave.killedTypes || {})) {
+      const f = globalThis.EnemyFactions?.getUnitFaction?.(type);
+      if (f) seenFactions[f] = (seenFactions[f] || 0) + n;
+    }
+    for (const [f, n] of Object.entries(seenFactions)) if (n >= 5) add(`faction.${f}`);
+    wave.killedTypes = {};
+
+    // Research is counted from the research tree at dawn.
+    try {
+      const done = globalThis.Research?.getSnapshot?.().completed || [];
+      best('research', done.length);
+      for (const id of done) member('researchKinds', id);
+    } catch (_) {
+      /* research optional */
+    }
+
+    // Allied orders: mastery for each order on the field, and the Doomslayer trial.
+    const field = countField(d.units);
+    session.maxCrossoverFactions = Math.max(session.maxCrossoverFactions || 0, field.size);
+    for (const f of field) addMastery(f, 10);
+    if (w >= 200 && diff === 'doomslayer') {
+      MetaProgress.unlockDoomslayerHero();
+      session.flags.add('doom_trial');
+    }
+    if (w >= 150 && diff === 'doomslayer' && !session.flags.has('zombie_building_lost')) {
+      MetaProgress.unlock115();
+    }
+    const doomOn = d.units?.some((u) => u.type === 'doomslayer_hero' && u.hp > 0);
+    if (doomOn) {
+      doomAliveWaves++;
+      doomMaxAliveWaves = Math.max(doomMaxAliveWaves, doomAliveWaves);
+    } else doomAliveWaves = 0;
+    showWaveSummary();
+  }
+
+  /** Open an order's building when its trial is won (unchanged from the old rules). */
+  function onVictory(data, type) {
+    session.flags.add('run_victory');
+    if (data.hasCastleCompound) session.flags.add('has_castle_compound');
+    const s = session;
+    const ratio = (a, b) => b >= 8 && a / b >= 0.55;
+    const castle = s.flags.has('has_castle_compound') && !s.flags.has('castle_compound_breached');
+    if (castle) MetaProgress.unlockPrimus();
+    if (
+      s.flags.has('had_general') &&
+      !s.flags.has('general_fell') &&
+      s.flags.has('footman_promoted_general') &&
+      s.footmanGeneralPipeline.size >= 5
+    ) {
+      MetaProgress.unlockHalo();
+    }
+    if (s.enemyStructuresRazed >= 12) MetaProgress.unlockGears();
+    if (ratio(s.moraleSamplesHigh, s.moraleSamplesTotal)) MetaProgress.unlockLotr();
+    if (CHAD_PLUS.has(s.currentDiff) && ratio(s.meleeSamplesFocused, s.meleeSamplesTotal)) {
+      MetaProgress.unlockBaki();
+    }
+    if (
+      s.crossoverHeroRecruits.size >= 3 &&
+      ratio(s.standAllianceSamplesAllied, s.standAllianceSamplesTotal)
+    ) {
+      MetaProgress.unlockJojo();
+    }
+    if (s.flags.has('solo_hero_named_boss')) MetaProgress.unlockFotns();
+    if (s.flags.has('planet_boss_high_ki')) MetaProgress.unlockDragonball();
+    if (ratio(s.showmanshipSamplesHeavy, s.showmanshipSamplesTotal))
+      MetaProgress.unlockWweAcademy();
+    if (
+      CHAD_PLUS.has(s.currentDiff) &&
+      s.flags.has('fort_line_established') &&
+      !s.flags.has('fort_line_breached') &&
+      s.flags.has('had_general') &&
+      !s.flags.has('general_fell') &&
+      s.namedBossWavesRepelled >= 3
+    ) {
+      MetaProgress.unlockWarhammer();
+    }
+    if (
+      s.maxWave >= 100 &&
+      ['martial', 'arcane', 'tech', 'mythic'].every((p) => s.pathImmortals.has(p)) &&
+      s.flags.has('dragon_boss_slay')
+    ) {
+      MetaProgress.unlockTes();
+    }
+    if (type === 'campaign_victory') {
+      lifetimeTrueVictories++;
+      touch('victories');
     }
   }
 
   function onEvent(type, data = {}) {
+    if (isVoid()) return;
     switch (type) {
       case 'game_start':
-        resetSession();
+        freshRun();
         session.currentDiff = data.difficulty || 'normal';
-        if (typeof AdvancedDifficulty !== 'undefined') {
-          session.advancedMods = AdvancedDifficulty.getActiveModCount?.() ?? 0;
-        }
-        if (data.creative) session.flags.add('creative_start');
         break;
 
-      case 'kill': {
-        session.kills++;
-        lifetimeKills++;
-        if (data.elite) session.elitesKilled++;
-        if (data.enemyType) {
-          session.enemyFirst.add(data.enemyType);
-          lifetimeEnemyKills[data.enemyType] = (lifetimeEnemyKills[data.enemyType] || 0) + 1;
-        }
-        const kf = getUnitFaction(data.killerType);
-        if (kf) {
-          crossoverKills[kf] = (crossoverKills[kf] || 0) + 1;
-          addMastery(kf, 1);
-        }
-        if (data.killerType === 'doomslayer_hero') {
-          session.doomKills++;
-          doomLifetimeKills++;
-          addMastery('doom', 2);
-        }
-        if (data.killerType === 'cavalry' && data.charging) session.flags.add('cavalry_charge');
-        if (
-          data.killerType === 'sapper' &&
-          (data.siege || data.enemyType === 'iron_colossus' || data.enemyType === 'hellmortar_pack')
-        ) {
-          session.flags.add('sapper_siege');
+      case 'kill':
+        if (data.namedBoss) break;
+        onKill(data);
+        break;
+
+      case 'breach':
+        wave.breaches++;
+        run.hadBreach = true;
+        add('breaches');
+        break;
+
+      case 'siege_wave':
+        lastSiege = data;
+        break;
+
+      case 'wave_complete':
+        onWaveComplete(data);
+        break;
+
+      case 'tally':
+        if (data.k) {
+          add(data.k, data.n || 1);
+          if (data.k === 'medSaves') {
+            wave.medSaves++;
+            best('waveMedSaves', wave.medSaves);
+          }
+          if (data.k === 'warCry' || data.k === 'holdLine') wave.orders.add(data.k);
         }
         break;
-      }
 
-      case 'wave_complete': {
-        const w = data.wave || 0;
-        session.maxWave = Math.max(session.maxWave, w);
-        session.currentMisses = data.playerDeaths ?? data.misses ?? 0;
-        lifetimeWavesCleared++;
-        if (data.siegeWave) session.flags.add('siege_clear');
-        if (data.hordeWave) session.flags.add('horde_clear');
-        if (data.bossWave) session.flags.add('boss_clear');
-        if (data.huntOn) session.flags.add('hunt_wave');
-        if (data.armySize === 1) session.flags.add('last_stand');
-        session.spyThisWave = 0;
-        if (typeof AdvancedDifficulty !== 'undefined') {
-          session.advancedMods = AdvancedDifficulty.getActiveModCount?.() ?? session.advancedMods;
+      case 'edict':
+        if (data.id) {
+          add('edicts');
+          member('edictKinds', data.id);
+          best('edictStack', data.stacks || 1);
+          add(`edict.${data.id}`);
         }
-        const field = countCrossoverField(data.units);
-        data.crossoverFactionCount = field.factionCount;
-        session.maxCrossoverFactions = Math.max(session.maxCrossoverFactions, field.factionCount);
-        if (w >= 200 && data.difficulty === 'doomslayer') {
-          MetaProgress.unlockDoomslayerHero();
-          tryUnlock('doom_hero_unlock');
-        }
-        if (
-          w >= 150 &&
-          data.difficulty === 'doomslayer' &&
-          !session.flags.has('zombie_building_lost')
-        ) {
-          MetaProgress.unlock115();
-          tryUnlock('ultimis_horde_150');
-          tryUnlock('ultimis_unlock');
-        }
-        const doomOnField = data.units?.some((u) => u.type === 'doomslayer_hero' && u.hp > 0);
-        if (doomOnField) {
-          doomAliveWaves++;
-          doomMaxAliveWaves = Math.max(doomMaxAliveWaves, doomAliveWaves);
-        } else {
-          doomAliveWaves = 0;
-        }
-        for (const f of field.factions) addMastery(f, 10);
-        showWaveSummary(data);
         break;
-      }
 
-      case 'deploy': {
+      case 'deploy':
         session.deployedTypes.add(data.unitType);
+        if (data.unitType) member('deployTypes', data.unitType);
         if (data.unitType === 'doomslayer_hero') session.flags.add('deploy_doomslayer_hero');
-        if (data.unitType?.startsWith('academy_')) session.academyTypes.add(data.unitType);
         break;
-      }
 
-      case 'vet_event': {
-        if (data.event === 'bronze') session.flags.add('star_bronze');
-        if (data.event === 'silver') session.flags.add('star_silver');
-        if (data.event === 'gold') session.flags.add('star_gold');
-        if (data.event === 'upgrade' || data.event === 'honored_upgrade') {
-          session.vetUpgrades++;
-          if (data.unitType && data.vetTier >= 3) session.flags.add(`rank_${data.unitType}_3`);
+      case 'building_complete':
+        if (data.buildType) {
+          member('buildTypes', data.buildType);
+          add(`build.${data.buildType}`);
         }
-        if (data.event === 'honored_upgrade' || data.event === 'honored_general_star') {
-          session.flags.add('honor');
-          session.flags.add('honor_max');
-        }
-        if (data.event === 'honored') session.flags.add('honor');
+        if (data.buildType === 'castle' || data.compound) session.flags.add('has_castle_compound');
+        break;
+
+      case 'vet_event':
+        if (data.event === 'honored' || data.event === 'honored_upgrade') add('honored');
         if (
           (data.vetTier || 0) >= (typeof MAX_VETERAN_TIER !== 'undefined' ? MAX_VETERAN_TIER : 6)
         ) {
-          const pathId =
-            typeof EternalPathFramework !== 'undefined'
-              ? EternalPathFramework.getPathForUnit?.(data.unitType, data)
-              : null;
-          if (pathId) {
-            session.pathImmortals.add(pathId);
-          }
+          add('immortals');
+          const pathId = globalThis.EternalPathFramework?.getPathForUnit?.(data.unitType, data);
+          if (pathId) session.pathImmortals.add(pathId);
         }
-        break;
-      }
-
-      case 'building_complete':
-        session.buildingsCompleted.add(data.buildType);
-        if (data.buildType?.startsWith('academy_')) session.academyTypes.add(data.buildType);
-        if (data.buildType === 'castle' || data.compound) session.flags.add('has_castle_compound');
         break;
 
       case 'castle_compound_breach':
@@ -883,7 +672,7 @@ const Achievements = (() => {
         break;
 
       case 'footman_promoted_general':
-        session.footmanGeneralPromotions++;
+        add('footmanGenerals');
         session.flags.add('footman_promoted_general');
         if (data.unitKey) session.footmanGeneralPipeline.add(data.unitKey);
         break;
@@ -896,12 +685,16 @@ const Achievements = (() => {
         session.flags.add('general_fell');
         break;
 
+      case 'general_stationed':
+        add('generalStationed');
+        break;
+
       case 'enemy_structure_razed':
         session.enemyStructuresRazed = Math.max(
-          session.enemyStructuresRazed || 0,
-          data.runTotal ?? (session.enemyStructuresRazed || 0) + 1
+          session.enemyStructuresRazed,
+          data.runTotal ?? session.enemyStructuresRazed + 1
         );
-        if (session.enemyStructuresRazed >= 1) session.flags.add('siege_active');
+        add('warCamps');
         break;
 
       case 'army_morale_sample':
@@ -920,164 +713,52 @@ const Achievements = (() => {
         if (data.multiFaction) session.standAllianceMultiFactionSamples++;
         break;
 
+      case 'army_showmanship_sample':
+        session.showmanshipSamplesTotal++;
+        if (data.heavy) session.showmanshipSamplesHeavy++;
+        break;
+
       case 'solo_hero_boss_kill':
-        if (data.solo) {
-          session.flags.add('solo_hero_named_boss');
-          if (data.bossType) session.flags.add(`solo_boss_${data.bossType}`);
-        }
+        if (data.solo) session.flags.add('solo_hero_named_boss');
         break;
 
       case 'planet_boss_ki_stand':
         if (data.high && (data.wave || 0) >= 200) {
           session.flags.add('planet_boss_high_ki');
-          session.planetBossKiRatio = Math.max(session.planetBossKiRatio || 0, data.ratio || 0);
+          session.planetBossKiRatio = Math.max(session.planetBossKiRatio, data.ratio || 0);
         }
-        break;
-
-      case 'army_showmanship_sample':
-        session.showmanshipSamplesTotal++;
-        if (data.heavy) session.showmanshipSamplesHeavy++;
         break;
 
       case 'fortification_line_sample': {
         const count = data.count ?? 0;
         const minForts = data.minForts ?? 8;
         if (count >= minForts) session.flags.add('fort_line_established');
-        if (session.flags.has('fort_line_established') && count < minForts)
+        if (session.flags.has('fort_line_established') && count < minForts) {
           session.flags.add('fort_line_breached');
+        }
         break;
       }
 
       case 'named_boss_repelled':
-        if (!session.flags.has('general_fell')) {
-          session.namedBossWavesRepelled = (session.namedBossWavesRepelled || 0) + 1;
-        }
+        if (!session.flags.has('general_fell')) session.namedBossWavesRepelled++;
         break;
 
-      case 'path_immortal_reached': {
-        const pathId = data.pathId;
-        const maxTier = typeof MAX_VETERAN_TIER !== 'undefined' ? MAX_VETERAN_TIER : 6;
-        if (pathId && (data.vetTier || 0) >= maxTier) session.pathImmortals.add(pathId);
+      case 'path_immortal_reached':
+        if (data.pathId && (data.vetTier || 0) >= (globalThis.MAX_VETERAN_TIER || 6)) {
+          session.pathImmortals.add(data.pathId);
+        }
         break;
-      }
 
       case 'dragon_boss_slay':
         session.flags.add('dragon_boss_slay');
-        if (data.bossType) session.flags.add(`dragon_boss_${data.bossType}`);
-        break;
-
-      // 'campaign_victory' fires when wave 100 is cleared: the run is won, and play continues.
-      case 'campaign_victory':
-      case 'game_end':
-        if (data.victory || type === 'campaign_victory') {
-          session.flags.add('run_victory');
-          if (data.hasCastleCompound) session.flags.add('has_castle_compound');
-          if (
-            session.flags.has('has_castle_compound') &&
-            !session.flags.has('castle_compound_breached')
-          ) {
-            MetaProgress.unlockPrimus();
-            tryUnlock('primis_sanctum_victory');
-            tryUnlock('primis_unlock');
-          }
-          if (
-            session.flags.has('had_general') &&
-            !session.flags.has('general_fell') &&
-            session.flags.has('footman_promoted_general') &&
-            session.footmanGeneralPipeline.size >= 5
-          ) {
-            MetaProgress.unlockHalo();
-            tryUnlock('halo_spartan_victory');
-            tryUnlock('halo_unlock');
-          }
-          if (session.enemyStructuresRazed >= 12) {
-            MetaProgress.unlockGears();
-            tryUnlock('gears_siege_victory');
-            tryUnlock('gears_unlock');
-          }
-          if (
-            session.moraleSamplesTotal >= 8 &&
-            session.moraleSamplesHigh / session.moraleSamplesTotal >= 0.55
-          ) {
-            MetaProgress.unlockLotr();
-            tryUnlock('lotr_fellowship_victory');
-            tryUnlock('lotr_unlock');
-          }
-          if (
-            isChadPlusDiff(session.currentDiff) &&
-            session.meleeSamplesTotal >= 8 &&
-            session.meleeSamplesFocused / session.meleeSamplesTotal >= 0.55
-          ) {
-            MetaProgress.unlockBaki();
-            tryUnlock('baki_martial_victory');
-            tryUnlock('baki_unlock');
-          }
-          if (
-            session.crossoverHeroRecruits.size >= 3 &&
-            session.standAllianceSamplesTotal >= 8 &&
-            session.standAllianceSamplesAllied / session.standAllianceSamplesTotal >= 0.55
-          ) {
-            MetaProgress.unlockJojo();
-            tryUnlock('jojo_stand_victory');
-            tryUnlock('jojo_unlock');
-          }
-          if (session.flags.has('solo_hero_named_boss')) {
-            MetaProgress.unlockFotns();
-            tryUnlock('fotns_hokuto_victory');
-            tryUnlock('fotns_unlock');
-          }
-          if (session.flags.has('planet_boss_high_ki')) {
-            MetaProgress.unlockDragonball();
-            tryUnlock('dragonball_planet_victory');
-            tryUnlock('dragonball_unlock');
-          }
-          if (
-            session.showmanshipSamplesTotal >= 8 &&
-            session.showmanshipSamplesHeavy / session.showmanshipSamplesTotal >= 0.55
-          ) {
-            MetaProgress.unlockWweAcademy();
-            tryUnlock('wwe_showmanship_victory');
-            tryUnlock('wwe_unlock');
-          }
-          if (
-            isChadPlusDiff(session.currentDiff) &&
-            session.flags.has('fort_line_established') &&
-            !session.flags.has('fort_line_breached') &&
-            session.flags.has('had_general') &&
-            !session.flags.has('general_fell') &&
-            (session.namedBossWavesRepelled || 0) >= 3
-          ) {
-            MetaProgress.unlockWarhammer();
-            tryUnlock('warhammer_eternal_crusade');
-            tryUnlock('warhammer_unlock');
-          }
-          if (
-            session.maxWave >= 100 &&
-            session.pathImmortals.has('martial') &&
-            session.pathImmortals.has('arcane') &&
-            session.pathImmortals.has('tech') &&
-            session.pathImmortals.has('mythic') &&
-            session.flags.has('dragon_boss_slay')
-          ) {
-            MetaProgress.unlockTes();
-            tryUnlock('tes_dragonborn_victory');
-            tryUnlock('tes_unlock');
-          }
-        }
         break;
 
       case 'zombie_building_lost':
         session.flags.add('zombie_building_lost');
-        session.zombieBuildingLosses = (session.zombieBuildingLosses || 0) + 1;
-        break;
-
-      case 'garrison':
-        session.flags.add('garrison');
-        session.garrisonCount = Math.max(session.garrisonCount, data.count ?? 1);
         break;
 
       case 'ability':
-        session.abilitiesUsed.add(data.ability);
+        if (STRIKES.includes(data.ability)) member('strikes', data.ability);
         break;
 
       case 'crossover_ability': {
@@ -1085,149 +766,177 @@ const Achievements = (() => {
         if (f) {
           crossoverAbilities[f] = (crossoverAbilities[f] || 0) + 1;
           addMastery(f, 3);
-          save();
         }
-        if (
-          data.ability &&
-          typeof isShowmanshipAbility === 'function' &&
-          isShowmanshipAbility(data.ability)
-        ) {
+        if (typeof isShowmanshipAbility === 'function' && isShowmanshipAbility(data.ability))
           session.showmanshipAbilityUses++;
-        }
         break;
       }
 
       case 'spy':
-        lifetimeSpy.add(data.action);
-        session.flags.add('spy');
-        session.spyThisWave++;
-        save();
-        break;
-
-      case 'courier':
-        session.flags.add('courier');
-        if (data.message) {
-          session.flags.add(`courier_${data.message}`);
-          lifetimeCourier.add(data.message);
-          save();
-        }
-        break;
-
-      case 'general_stationed':
-        session.flags.add('general_stationed');
+        if (data.action) member('spy', data.action);
         break;
 
       case 'mage_splash':
-        if ((data.hitCount ?? 0) >= 2) session.flags.add('mage_splash');
+        if ((data.hitCount ?? 0) >= 3) add('mageSplash3');
         break;
 
       case 'wwe_recruit':
         if (data.wweId) session.crossoverHeroRecruits.add(data.wweId);
         MetaProgress.recordWweRecruit(data.wweId);
         addMastery('wwe', 15);
-        tryUnlock(`wwe_recruit_${data.wweId}`);
-        if (Object.keys(WweDefs).every((id) => MetaProgress.getWweRecruited().includes(id)))
-          tryUnlock('wwe_grand_slam');
         break;
 
       case 'crossover_mastery_challenge':
-        if (data.challenge) session.flags.add(`mastery_${data.challenge}`);
         if (data.faction) addMastery(data.faction, 25);
         break;
 
-      case 'crossover_recruit':
+      case 'crossover_recruit': {
         if (data.crossoverId) session.crossoverHeroRecruits.add(data.crossoverId);
         MetaProgress.recordCrossoverRecruit(data.crossoverId);
-        {
-          const def = getCrossoverDef?.(data.crossoverId);
-          if (def?.faction) {
-            addMastery(def.faction, 15);
-            tryUnlock(`${def.faction}_recruit_${data.crossoverId}`);
-            const ids = getFactionOperativeIds(def.faction);
-            if (ids.every((id) => MetaProgress.getCrossoverRecruited().includes(id)))
-              tryUnlock(`${def.faction}_grand_slam`);
-          }
-        }
+        const def = getCrossoverDef?.(data.crossoverId);
+        if (def?.faction) addMastery(def.faction, 15);
         break;
-
-      case 'roster_synergy':
-        session.flags.add('roster_synergy');
-        break;
-
-      case 'faction_synergy':
-        if (data.synergy) session.flags.add(`synergy_${data.synergy}`);
-        break;
-
-      case 'faction_synergy_multi':
-        session.maxSynergyCount = Math.max(session.maxSynergyCount || 0, data.count || 0);
-        if ((data.count || 0) >= 2) session.flags.add('faction_synergy_multi');
-        break;
-
-      case 'multiversal_synergy':
-        session.maxCrossoverFactions = Math.max(session.maxCrossoverFactions, data.count || 0);
-        break;
-
-      case 'multiversal_check':
-        session.maxCrossoverFactions = Math.max(session.maxCrossoverFactions, data.count || 0);
-        data.crossoverFactionCount = Math.max(data.crossoverFactionCount || 0, data.count || 0);
-        break;
-
-      case 'jojo_cavalry':
-        session.flags.add('crossover_jojo_cavalry');
-        break;
+      }
 
       case 'true_victory':
-        if (data.bossSlain) {
-          lifetimeTrueVictories++;
-          save();
-        }
         break;
 
-      case 'tp_check':
-      case 'state_check': {
-        if (data.units) {
-          const field = countCrossoverField(data.units);
-          data.crossoverFactionCount = field.factionCount;
-        }
+      case 'campaign_victory':
+        onVictory(data, type);
+        break;
+
+      case 'game_end': {
+        const total = globalThis.SiegeLoop?.lastScore?.()?.total || 0;
+        if (total) best('score', total);
+        if (data.victory) onVictory(data, type);
+        else if ((data.wave || 0) < 2) add('fellEarly');
         break;
       }
     }
-    checkAll(data);
+    checkTouched();
+    if (type !== 'kill') checkRules();
+    if (type === 'wave_complete' || type === 'game_end' || type === 'campaign_victory') save();
   }
 
-  function showWaveSummary(data) {
-    const el = document.getElementById('wave-summary-ach');
-    if (!el) return;
-    const c = getCount();
-    const pct = Math.round((c.unlocked / c.total) * 100);
-    const newRecent = recentUnlocked.slice(0, 3);
-    el.innerHTML = `
-      <div class="wave-sum-progress">
-        <span>Achievements ${c.unlocked}/${c.total}</span>
-        <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div>
-      </div>
-      ${newRecent.length ? `<div class="wave-sum-recent">Recent: ${newRecent.map((r) => r.name).join(' · ')}</div>` : ''}
-    `;
-    el.classList.add('show');
-    setTimeout(() => el.classList.remove('show'), 4000);
-  }
+  // ----------------------------------------------------------------- order rules
+  const isChadPlus = (d) => CHAD_PLUS.has(d);
 
-  function matchesTab(ach, tabId) {
-    if (tabId === 'all') return true;
-    const tab = CATS.find((t) => t.id === tabId);
-    if (!tab) return false;
-    if (tab.crossover) {
-      if (activeCrossover) {
-        const ct = CROSSOVER_TABS.find((c) => c.id === activeCrossover);
-        return ct && ach.cat === ct.cat;
+  function evaluateRule(rule) {
+    if (!rule) return false;
+    const [kind, ...rest] = rule.split(':');
+    const s = session;
+    const num = (i, d) => parseFloat(rest[i] ?? d);
+    const ratio = (a, b, need) => b >= num(0, 8) && a / b >= need;
+    switch (kind) {
+      case 'run_doom_trial':
+        return s.flags?.has('doom_trial');
+      case 'diff_zombie_fortress':
+        return (
+          s.currentDiff === rest[0] && s.maxWave >= num(1) && !s.flags.has('zombie_building_lost')
+        );
+      case 'run_sanctum_victory':
+        return (
+          s.flags.has('run_victory') &&
+          s.flags.has('has_castle_compound') &&
+          !s.flags.has('castle_compound_breached')
+        );
+      case 'sanctum_intact':
+        return (
+          s.maxWave >= num(0) &&
+          s.flags.has('has_castle_compound') &&
+          !s.flags.has('castle_compound_breached')
+        );
+      case 'run_spartan_command':
+        return (
+          s.flags.has('run_victory') &&
+          s.flags.has('had_general') &&
+          !s.flags.has('general_fell') &&
+          s.flags.has('footman_promoted_general') &&
+          s.footmanGeneralPipeline.size >= num(0, 5)
+        );
+      case 'run_siege_victory':
+        return s.flags.has('run_victory') && s.enemyStructuresRazed >= num(0, 12);
+      case 'run_fellowship_morale':
+        return (
+          s.flags.has('run_victory') &&
+          ratio(s.moraleSamplesHigh, s.moraleSamplesTotal, num(1, 0.55))
+        );
+      case 'run_martial_melee':
+        return (
+          s.flags.has('run_victory') &&
+          isChadPlus(s.currentDiff) &&
+          ratio(s.meleeSamplesFocused, s.meleeSamplesTotal, num(1, 0.55))
+        );
+      case 'run_stand_alliance':
+        return (
+          s.flags.has('run_victory') &&
+          s.crossoverHeroRecruits.size >= num(2, 3) &&
+          ratio(s.standAllianceSamplesAllied, s.standAllianceSamplesTotal, num(1, 0.55))
+        );
+      case 'run_hokuto_solo':
+        return s.flags.has('run_victory') && s.flags.has('solo_hero_named_boss');
+      case 'run_dragonball_ki':
+        return (
+          s.flags.has('run_victory') &&
+          s.flags.has('planet_boss_high_ki') &&
+          s.maxWave >= num(0, 200) &&
+          s.planetBossKiRatio >= num(1, 0.55)
+        );
+      case 'run_wwe_showmanship':
+        return (
+          s.flags.has('run_victory') &&
+          ratio(s.showmanshipSamplesHeavy, s.showmanshipSamplesTotal, num(1, 0.55))
+        );
+      case 'run_eternal_crusade':
+        return (
+          s.flags.has('run_victory') &&
+          isChadPlus(s.currentDiff) &&
+          s.flags.has('fort_line_established') &&
+          !s.flags.has('fort_line_breached') &&
+          s.flags.has('had_general') &&
+          !s.flags.has('general_fell') &&
+          s.namedBossWavesRepelled >= num(0, 3)
+        );
+      case 'run_dragonborn_legacy':
+        return (
+          s.flags.has('run_victory') &&
+          s.maxWave >= num(0, 100) &&
+          s.flags.has('dragon_boss_slay') &&
+          ['martial', 'arcane', 'tech', 'mythic'].every((p) => s.pathImmortals.has(p))
+        );
+      // Hero-unlock milestones: no achievement uses them, the unlock tests read them.
+      case 'enemy_structures_razed':
+        return s.enemyStructuresRazed >= num(0);
+      case 'morale_high_waves':
+        return s.moraleSamplesHigh >= num(0);
+      case 'melee_focus_waves':
+        return s.meleeSamplesFocused >= num(0);
+      case 'stand_alliance_waves':
+        return s.standAllianceSamplesAllied >= num(0);
+      case 'stand_multi_faction_waves':
+        return s.standAllianceMultiFactionSamples >= num(0);
+      case 'showmanship_heavy_waves':
+        return s.showmanshipSamplesHeavy >= num(0);
+      case 'showmanship_ability_uses':
+        return s.showmanshipAbilityUses >= num(0);
+      case 'named_boss_repels':
+        return (s.namedBossWavesRepelled || 0) >= num(0);
+      case 'solo_hero_named_boss':
+      case 'planet_boss_high_ki':
+      case 'dragon_boss_slay':
+        return s.flags.has(kind);
+      case 'unlock': {
+        const name = { ultimis: '115', 115: '115', primis: 'Primus', primus: 'Primus' }[rest[0]];
+        const key = name || rest[0].replace(/(^|_)(\w)/g, (_, _u, c) => c.toUpperCase());
+        const fn = key === 'DoomHero' ? 'isDoomslayerHeroUnlocked' : `is${key}Unlocked`;
+        return !!MetaProgress[fn]?.();
       }
-      return ach.cat?.startsWith('crossover_');
+      default:
+        return false;
     }
-    if (tab.cats)
-      return tab.cats.includes(ach.cat) || (tabId === 'vanilla' && VANILLA_CATS.has(ach.cat));
-    return ach.cat === tabId;
   }
 
+  // ------------------------------------------------------------------- queries
   function getAll() {
     return LIST.map((a) => ({
       ...a,
@@ -1237,184 +946,204 @@ const Achievements = (() => {
   }
 
   function getCount() {
-    return { unlocked: unlocked.size, total: LIST.length, target: TARGET };
+    return { unlocked: unlocked.size, total: LIST.length, target: ACHIEVEMENT_TARGET };
   }
 
-  function hasClub316() {
-    return unlocked.has(CLUB_316_ID) || unlocked.has(META_316_ID);
+  /** Cosmetics asks this so a skin reward is really granted. */
+  function skinEarned(skinId) {
+    return LIST.some(
+      (a) => a.reward?.type === 'skin' && a.reward.id === skinId && unlocked.has(a.id)
+    );
+  }
+
+  function earnedTitles() {
+    return LIST.filter((a) => a.reward?.type === 'title' && unlocked.has(a.id)).map(
+      (a) => a.reward.label
+    );
+  }
+
+  function isUnlocked(id) {
+    return unlocked.has(id);
+  }
+
+  function progressOf(a) {
+    if (a.s === 'x') return unlocked.has(a.id) ? 1 : 0;
+    return Math.min(1, value(a.s, a.k) / a.n);
+  }
+
+  /** Bronze / silver / gold steps of one ladder share a card; a lone entry is its own. */
+  function cardsFor(familyId) {
+    const cards = [];
+    const byLadder = new Map();
+    for (const a of getAll()) {
+      if (a.family !== familyId) continue;
+      if (a.ladder) {
+        if (!byLadder.has(a.ladder)) {
+          const card = { id: a.ladder, steps: [] };
+          byLadder.set(a.ladder, card);
+          cards.push(card);
+        }
+        byLadder.get(a.ladder).steps.push(a);
+      } else cards.push({ id: a.id, steps: [a] });
+    }
+    return cards;
+  }
+
+  // --------------------------------------------------------------------- panel
+  const esc = (t) =>
+    String(t).replace(
+      /[&<>"]/g,
+      (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]
+    );
+
+  function cardHtml(card, q) {
+    const steps = card.steps;
+    const shown = steps.filter((a) => a.visible);
+    if (!shown.length) return '';
+    const next = steps.find((a) => !a.unlocked) || steps[steps.length - 1];
+    const doneCount = steps.filter((a) => a.unlocked).length;
+    const target = next.visible ? next : shown[shown.length - 1];
+    const text = `${fill(target.name)} ${fill(target.desc)}`.toLowerCase();
+    if (q && !text.includes(q)) return '';
+    if (unlockedOnly && !doneCount) return '';
+    const done = doneCount === steps.length;
+    const pct = Math.round(progressOf(target) * 100);
+    const val =
+      target.s === 'x'
+        ? ''
+        : `${Math.min(value(target.s, target.k), target.n).toLocaleString('en-US')} / ${target.n.toLocaleString('en-US')}`;
+    const pips =
+      steps.length > 1
+        ? `<div class="ach2-pips">${steps
+            .map(
+              (a) =>
+                `<span class="ach2-pip tier-${a.tier || 'none'}${a.unlocked ? ' on' : ''}" title="${esc(a.tier || '')}"></span>`
+            )
+            .join('')}</div>`
+        : '';
+    const hiddenLock = target.hidden && !target.unlocked;
+    return `<div class="ach2-card ${done ? 'done' : doneCount ? 'part' : 'todo'}${target.tier ? ` tier-${target.tier}` : ''}" data-id="${esc(card.id)}">
+      <div class="ach2-name">${hiddenLock ? 'Hidden' : esc(fill(target.name))}${pips}</div>
+      <div class="ach2-desc">${hiddenLock ? 'Shown once earned.' : esc(fill(target.desc))}</div>
+      ${done || hiddenLock ? '' : `<div class="ach2-bar"><div class="ach2-fill" style="width:${pct}%"></div></div><div class="ach2-val">${esc(val)}</div>`}
+    </div>`;
   }
 
   function renderPanel() {
-    const grid = document.getElementById('achievements-grid');
-    const countEl = document.getElementById('achievements-count');
-    const tabsEl = document.getElementById('achievements-tabs');
-    const subTabsEl = document.getElementById('achievements-crossover-tabs');
-    const progressEl = document.getElementById('achievements-progress-fill');
-    const recentEl = document.getElementById('achievements-recent');
-    if (!grid) return;
+    const host = document.getElementById('achievements-grid');
+    if (!host) return;
     const c = getCount();
     const pct = Math.round((c.unlocked / c.total) * 100);
-    if (countEl) {
-      countEl.textContent = `${c.unlocked} / ${c.total}`;
-      countEl.classList.toggle('club-316', hasClub316());
+    const set = (id, fn) => {
+      const el = document.getElementById(id);
+      if (el) fn(el);
+    };
+    set('achievements-count', (el) => (el.textContent = `${c.unlocked} / ${c.total}`));
+    set('achievements-progress-fill', (el) => (el.style.width = `${pct}%`));
+    set('achievements-progress-text', (el) => (el.textContent = `${pct}% complete`));
+    for (const id of [
+      'achievements-tabs',
+      'achievements-crossover-tabs',
+      'achievements-tier-filter',
+    ]) {
+      set(id, (el) => (el.style.display = 'none'));
     }
-    if (progressEl) progressEl.style.width = `${pct}%`;
-    const progText = document.getElementById('achievements-progress-text');
-    if (progText) progText.textContent = `${pct}% to Millennium`;
-
-    if (tabsEl) {
-      tabsEl.innerHTML = CATS.map(
-        (cat) => `
-        <button class="ach-tab ${activeCat === cat.id ? 'active' : ''}" data-cat="${cat.id}">${cat.label}</button>
-      `
-      ).join('');
-      tabsEl.querySelectorAll('.ach-tab').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          activeCat = btn.dataset.cat;
-          renderPanel();
-          AudioEngine?.SFX?.click?.();
-        });
-      });
-    }
-
-    if (subTabsEl) {
-      if (activeCat === 'crossovers') {
-        subTabsEl.style.display = '';
-        subTabsEl.innerHTML = CROSSOVER_TABS.map(
-          (ct) => `
-          <button class="ach-subtab ${activeCrossover === ct.id ? 'active' : ''}" data-crossover="${ct.id}">${ct.label}</button>
-        `
-        ).join('');
-        subTabsEl.querySelectorAll('.ach-subtab').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            activeCrossover = btn.dataset.crossover;
-            renderPanel();
-            AudioEngine?.SFX?.click?.();
-          });
-        });
-      } else {
-        subTabsEl.style.display = 'none';
-        subTabsEl.innerHTML = '';
-      }
-    }
-
-    if (recentEl) {
-      recentEl.innerHTML = recentUnlocked.length
+    set('achievements-recent', (el) => {
+      el.innerHTML = recentUnlocked.length
         ? recentUnlocked
-            .map((r) => {
-              const ach = LIST.find((a) => a.id === r.id);
-              const badge = ach ? tierBadge(ach) : null;
-              const tier = badge
-                ? `<span class="ach-recent-tier tier-${badge.cls}">${badge.label}</span>`
-                : '';
-              return `<div class="ach-recent-card ${ach?.unlocked !== false ? 'unlocked' : ''}">${tier}<strong>${r.name}</strong></div>`;
-            })
+            .slice(0, 4)
+            .map(
+              (r) =>
+                `<div class="ach-recent-card unlocked"><strong>${esc(fill(r.name))}</strong></div>`
+            )
             .join('')
-        : '<p class="ach-recent-empty">No recent unlocks yet — your legend begins here.</p>';
-    }
-
+        : '<p class="ach-recent-empty">Nothing earned yet.</p>';
+      const titles = earnedTitles();
+      if (titles.length)
+        el.innerHTML += `<p class="ach2-titles">Titles: ${titles.map(esc).join(', ')}</p>`;
+    });
     const q = searchQuery.trim().toLowerCase();
-    let filtered = getAll().filter((a) => a.visible && matchesTab(a, activeCat));
-    if (q) {
-      filtered = filtered.filter(
-        (a) =>
-          a.name.toLowerCase().includes(q) ||
-          a.desc.toLowerCase().includes(q) ||
-          a.cat.toLowerCase().includes(q)
-      );
+    if (!openGroups) openGroups = new Set(FAMILIES.slice(0, 2).map((f) => f.id));
+    const all = getAll();
+    let html = '';
+    let shownCards = 0;
+    for (const fam of FAMILIES) {
+      const members = all.filter((a) => a.family === fam.id);
+      const got = members.filter((a) => a.unlocked).length;
+      const visible = members.filter((a) => a.visible).length;
+      const famPct = members.length ? Math.round((got / members.length) * 100) : 0;
+      const cards = cardsFor(fam.id)
+        .map((card) => cardHtml(card, q))
+        .filter(Boolean);
+      if ((q || unlockedOnly) && !cards.length) continue;
+      shownCards += cards.length;
+      const open = openGroups.has(fam.id) || !!q;
+      html += `<section class="ach2-group${open ? ' open' : ''}" data-family="${fam.id}">
+        <button type="button" class="ach2-head" aria-expanded="${open}">
+          <span class="ach2-gname">${esc(fam.name)}</span>
+          <span class="ach2-gcount">${got} / ${members.length}</span>
+          <span class="ach2-gbar"><span class="ach2-gfill" style="width:${famPct}%"></span></span>
+        </button>
+        <p class="ach2-blurb">${esc(fam.blurb)}${visible < members.length ? ` ${members.length - visible} hidden.` : ''}</p>
+        <div class="ach2-cards">${cards.join('')}</div>
+      </section>`;
     }
-    if (tierFilter === 'meta') filtered = filtered.filter((a) => a.meta);
-    else if (tierFilter !== 'all')
-      filtered = filtered.filter((a) => a.tier === tierFilter || (tierFilter === 'meta' && a.meta));
-    if (unlockedOnly) filtered = filtered.filter((a) => a.unlocked);
-
-    const countNote = document.getElementById('ach-filter-count');
-    if (countNote) countNote.textContent = `Showing ${filtered.length} achievement(s)`;
-
-    grid.innerHTML = filtered
-      .map((a) => {
-        const badge = tierBadge(a);
-        const badgeHtml = badge
-          ? ` <span class="ach-tier-badge tier-${badge.cls}">${badge.label}</span>`
-          : '';
-        const tierCls = a.meta ? 'tier-meta' : a.tier ? `tier-${a.tier}` : '';
-        return `
-      <div class="ach-card ${a.unlocked ? 'unlocked' : 'locked'} ${a.meta ? 'meta-ach' : ''} ${tierCls}" data-id="${a.id}" title="${a.unlocked ? 'Click to copy share card' : ''}">
-        <div class="ach-card-icon">${a.unlocked ? (a.meta ? '👑' : a.tier === 'gold' ? '🥇' : a.tier === 'silver' ? '🥈' : a.tier === 'bronze' ? '🥉' : '🏆') : '🔒'}</div>
-        <div class="ach-card-body">
-          <div class="ach-card-name">${a.name}${badgeHtml}</div>
-          <div class="ach-card-desc">${a.desc}</div>
-          <div class="ach-card-cat">${a.cat}${a.track === 'lifetime' ? ' · lifetime' : ''}</div>
-        </div>
-      </div>`;
-      })
-      .join('');
-    grid.querySelectorAll('.ach-card.unlocked').forEach((card) => {
-      card.addEventListener('click', () => {
-        const ach = LIST.find((x) => x.id === card.dataset.id);
-        if (!ach) return;
-        const badge = tierBadge(ach);
-        const tier = badge ? ` [${badge.label}]` : '';
-        const text = `Myth and Blood — ${ach.name}${tier}: ${ach.desc}`;
-        if (navigator.clipboard?.writeText) {
-          navigator.clipboard
-            .writeText(text)
-            .then(() => showShareFlash(card))
-            .catch(() => {});
-        }
+    host.innerHTML = html || '<p class="ach-recent-empty">No achievement matches.</p>';
+    set('ach-filter-count', (el) => (el.textContent = `Showing ${shownCards} achievement(s)`));
+    host.querySelectorAll('.ach2-head').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const fam = btn.parentElement.dataset.family;
+        if (openGroups.has(fam)) openGroups.delete(fam);
+        else openGroups.add(fam);
+        renderPanel();
       });
     });
   }
 
-  function showShareFlash(card) {
-    card.classList.add('ach-shared');
-    setTimeout(() => card.classList.remove('ach-shared'), 900);
+  function showWaveSummary() {
+    const el = document.getElementById('wave-summary-ach');
+    if (!el) return;
+    const c = getCount();
+    const pct = Math.round((c.unlocked / c.total) * 100);
+    const recent = recentUnlocked.slice(0, 3);
+    el.innerHTML = `<div class="wave-sum-progress"><span>Achievements ${c.unlocked}/${c.total}</span>
+      <div class="ach-progress-bar"><div class="ach-progress-fill" style="width:${pct}%"></div></div></div>
+      ${recent.length ? `<div class="wave-sum-recent">Recent: ${recent.map((r) => esc(fill(r.name))).join(' · ')}</div>` : ''}`;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 4000);
   }
 
   function updateTopBar() {
     const c = getCount();
-    const achTop = document.getElementById('ach-top-count');
-    const achFill = document.getElementById('ach-top-progress-fill');
-    const achBtn = document.getElementById('achievements-btn');
-    if (achTop) {
-      achTop.textContent = `${c.unlocked}/${c.total}`;
-    }
-    if (achFill) achFill.style.width = `${Math.round((c.unlocked / c.total) * 100)}%`;
-    if (achBtn) achBtn.classList.toggle('club-316', hasClub316());
+    const top = document.getElementById('ach-top-count');
+    const fillEl = document.getElementById('ach-top-progress-fill');
+    if (top) top.textContent = `${c.unlocked}/${c.total}`;
+    if (fillEl) fillEl.style.width = `${Math.round((c.unlocked / c.total) * 100)}%`;
   }
 
   function togglePanel() {
     const panel = document.getElementById('achievements-screen');
     if (!panel) return;
-    const open = panel.classList.toggle('active');
-    if (open) renderPanel();
+    if (panel.classList.toggle('active')) renderPanel();
   }
 
   function init() {
     MetaProgress.load();
+    freshRun();
     load();
-    checkMilestones();
-    if (unlocked.has(META_316_ID)) MetaProgress.unlockWweAcademy();
     updateTopBar();
-
-    document.getElementById('achievements-btn')?.addEventListener('click', () => {
-      AudioEngine?.SFX?.click?.();
-      togglePanel();
-    });
+    const click = () => globalThis.AudioEngine?.SFX?.click?.();
+    for (const id of ['achievements-btn', 'menu-achievements-btn']) {
+      document.getElementById(id)?.addEventListener('click', () => {
+        click();
+        togglePanel();
+      });
+    }
     document.getElementById('achievements-close')?.addEventListener('click', () => {
       document.getElementById('achievements-screen')?.classList.remove('active');
     });
-    document.getElementById('menu-achievements-btn')?.addEventListener('click', () => {
-      AudioEngine?.SFX?.click?.();
-      togglePanel();
-    });
-
     document.getElementById('achievements-search')?.addEventListener('input', (e) => {
       searchQuery = e.target.value;
-      renderPanel();
-    });
-    document.getElementById('achievements-tier-filter')?.addEventListener('change', (e) => {
-      tierFilter = e.target.value;
       renderPanel();
     });
     document.getElementById('achievements-unlocked-only')?.addEventListener('change', (e) => {
@@ -1423,17 +1152,29 @@ const Achievements = (() => {
     });
   }
 
+  freshRun();
+
   return {
     init,
     onEvent,
     tryUnlock,
+    isUnlocked,
+    skinEarned,
+    earnedTitles,
     getAll,
     getCount,
     renderPanel,
     togglePanel,
-    resetSession,
+    resetSession: freshRun,
     evaluateRule,
     updateTopBar,
+    fill,
+    /** Counters the event handlers have written to, for the reachability test. */
+    writtenCounters: () => new Set(written),
+    /** Test hooks: the retired list and the toast queue length. */
+    retiredIds: () => [...retired],
+    pendingToasts: () => toastQueue.length,
+    reload: load,
   };
 })();
 
