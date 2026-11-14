@@ -8,11 +8,6 @@ const Cheats = (() => {
       message: 'THE IRON CREED HOLDS — Grand Coliseum unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
-        if (typeof Achievements !== 'undefined') {
-          Achievements.tryUnlock('cheat_austin');
-          Achievements.tryUnlock('cheat_used');
-          Achievements.tryUnlock('wwe_unlock');
-        }
       },
     },
     'kings ransom': {
@@ -67,7 +62,6 @@ const Cheats = (() => {
         MetaProgress.unlockDoomslayerHero();
         if (typeof Achievements !== 'undefined') {
           Achievements.tryUnlock('doom_hero_unlock');
-          Achievements.tryUnlock('cheat_used');
         }
       },
     },
@@ -78,7 +72,6 @@ const Cheats = (() => {
         MetaProgress.unlockDoomslayerHero();
         if (typeof Achievements !== 'undefined') {
           Achievements.tryUnlock('doom_hero_unlock');
-          Achievements.tryUnlock('cheat_used');
         }
       },
     },
@@ -87,10 +80,6 @@ const Cheats = (() => {
       message: 'THE ARENA CALLS — Grand Coliseum unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
-        if (typeof Achievements !== 'undefined') {
-          Achievements.tryUnlock('wwe_unlock');
-          Achievements.tryUnlock('cheat_used');
-        }
       },
     },
     'knights assemble': {
@@ -117,8 +106,6 @@ const Cheats = (() => {
         'POWDERHORN COMPANY — Dunmar Fusewick, Aldous Verdigris, Otmar Caskwright & Isen Quillon unlocked! Build Void Residue Barracks.',
       apply() {
         MetaProgress.unlock115();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('ultimis_unlock');
       },
     },
     'first circle': {
@@ -126,8 +113,6 @@ const Cheats = (() => {
       message: 'FIRST CIRCLE — crew unlocked! Build the First Circle Shrine.',
       apply() {
         MetaProgress.unlockPrimus();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('primis_unlock');
       },
     },
     'orbital vanguard': {
@@ -135,8 +120,6 @@ const Cheats = (() => {
       message: 'ORBITAL VANGUARD — Orbital heroes & Vanguard Academy unlocked!',
       apply() {
         MetaProgress.unlockHalo();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('halo_unlock');
       },
     },
     'iron trench': {
@@ -144,8 +127,6 @@ const Cheats = (() => {
       message: 'IRON TRENCH — Trench squad & Trenchsaw Academy unlocked!',
       apply() {
         MetaProgress.unlockGears();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('gears_unlock');
       },
     },
     'ninefold march': {
@@ -153,8 +134,6 @@ const Cheats = (() => {
       message: 'THE NINEFOLD MARCH — march company unlocked!',
       apply() {
         MetaProgress.unlockLotr();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('lotr_unlock');
       },
     },
     'iron pit': {
@@ -162,8 +141,6 @@ const Cheats = (() => {
       message: 'IRON PIT — pit fighters unlocked! Build the Iron Pit Guild.',
       apply() {
         MetaProgress.unlockBaki();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('baki_unlock');
       },
     },
     'bound spirit': {
@@ -172,8 +149,6 @@ const Cheats = (() => {
         'Spirit Court sigil — bound spirit heroes (Cohorts 1–7) unlocked! Cohort 7 = cavalry.',
       apply() {
         MetaProgress.unlockJojo();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('jojo_unlock');
       },
     },
     'spirit court': {
@@ -181,8 +156,6 @@ const Cheats = (() => {
       message: 'BOUND SPIRIT COURT — Cohorts 1–7 unlocked! Gilded Derby cavalry ready.',
       apply() {
         MetaProgress.unlockJojo();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('jojo_unlock');
       },
     },
     'north star': {
@@ -190,8 +163,6 @@ const Cheats = (() => {
       message: 'NORTH STAR — Seven Star Fist masters unlocked!',
       apply() {
         MetaProgress.unlockFotns();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('fotns_unlock');
       },
     },
     skyburst: {
@@ -199,8 +170,6 @@ const Cheats = (() => {
       message: 'SKYBURST SOUL — skyburst fighters unlocked! Build Skyburst Foundry.',
       apply() {
         MetaProgress.unlockDragonball();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('dragonball_unlock');
       },
     },
     'crimson legions': {
@@ -208,7 +177,6 @@ const Cheats = (() => {
       message: 'FOR THE CRIMSON THRONE — crimson legion unlocked! Build the Crimson Chapel.',
       apply() {
         MetaProgress.unlockImperium();
-        Achievements?.tryUnlock('cheat_used');
       },
     },
     'crystal light': {
@@ -216,7 +184,6 @@ const Cheats = (() => {
       message: 'CRYSTAL LIGHT — Crystal Vanguard unlocked! Build the Crystal Sanctum.',
       apply() {
         MetaProgress.unlockCrystal();
-        Achievements?.tryUnlock('cheat_used');
       },
     },
     'rift cult': {
@@ -224,7 +191,6 @@ const Cheats = (() => {
       message: 'RIFT CULT — unlocked! Build the Rift Cult Shrine.',
       apply() {
         MetaProgress.unlockWarp();
-        Achievements?.tryUnlock('cheat_used');
       },
     },
     'eternal crusade': {
@@ -233,8 +199,6 @@ const Cheats = (() => {
         'ETERNAL MARCH — Crimson Legions and Rift Cult unlocked! Faith & Rift. Build the Crimson Chapel and Warp Shrine.',
       apply() {
         MetaProgress.unlockWarhammer();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('warhammer_unlock');
       },
     },
     voicebound: {
@@ -243,8 +207,6 @@ const Cheats = (() => {
         'WYRM CALLER LEGACY — Voicebound Pact roster unlocked! Voice shouts await. Build the Wyrmcaller Moot Hall.',
       apply() {
         MetaProgress.unlockTes();
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('tes_unlock');
       },
     },
     'open every gate': {
@@ -253,10 +215,7 @@ const Cheats = (() => {
         'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Coliseum, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
-        Achievements?.tryUnlock('wwe_unlock');
         Achievements?.tryUnlock('doom_hero_unlock');
-        Achievements?.tryUnlock('cheat_used');
-        Achievements?.tryUnlock('one_piece_real');
       },
     },
   };
@@ -293,9 +252,6 @@ const Cheats = (() => {
       lastMessage = `${cheat.message} (Start a battle first — this code only works in-game.)`;
     } else {
       lastMessage = cheat.message;
-    }
-    if (typeof Achievements !== 'undefined' && cheat.id !== 'austin') {
-      Achievements.tryUnlock('cheat_used');
     }
     AudioEngine?.SFX?.reinforce?.();
     return true;
