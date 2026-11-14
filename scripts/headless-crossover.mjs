@@ -1551,9 +1551,15 @@ function testFactionIntel(exp) {
   const active = rows.filter((r) => r.status === 'active' || r.status === 'weakened');
   assert(active.length >= 2, 'wave 20 should have multiple active factions');
   const goblin = rows.find((r) => r.id === 'goblin_hordes');
-  assert(goblin && goblin.stage >= 1, 'goblin should have evolution stage');
+  assert(goblin && goblin.tacticName === 'Swarm and Sappers', 'goblin should name its tactic');
+  assert(goblin.counter.length > 10, 'goblin should give a counter');
   const summary = FactionIntel.formatSummary(gs);
-  assert(summary.includes('S'), 'summary should mention stages');
+  assert(summary.includes('Goblin'), 'summary should name the factions that are awake');
+  const night = { ...gs, nextHost: { factionName: 'Orc Warbands', countText: 'about 40' } };
+  assert(
+    FactionIntel.formatSummary(night).includes('Tomorrow: Orc Warbands lead'),
+    'summary should name tomorrow's lead'
+  );
   const snap = FactionIntel.getStateSnapshot(gs);
   assert(snap.activeCount >= 2, 'snapshot should count active factions');
 }

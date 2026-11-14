@@ -1908,6 +1908,15 @@ const EnemyFactions = (() => {
     return entries;
   }
 
+  /** The HUD chip: tomorrow's lead at night, today's by day. */
+  function leadLine(tomorrow, today) {
+    const plan = tomorrow || today;
+    const f = plan && FACTIONS[plan.leadId];
+    const t = plan && tacticForPlan(plan);
+    if (!f || !t) return '';
+    return `${f.shortName} ${tomorrow ? 'next' : 'lead'}: ${t.name}`;
+  }
+
   function getStateSnapshot(wave, buildings, spawnQueue) {
     const active = getActiveFactions(wave);
     const hostKingdom = computeHostKingdomMeter(buildings, wave);
@@ -1951,6 +1960,7 @@ const EnemyFactions = (() => {
       counterRaidFactions: raidingFactions,
       rosterIntel: formatFactionRoster(spawnQueue),
       activeSummary: formatActiveFactions(wave),
+      leadLine: leadLine(tomorrow, today),
       leadToday: today ? { ...today } : null,
       leadTomorrow: tomorrow ? { ...tomorrow } : null,
     };

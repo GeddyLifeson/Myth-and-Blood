@@ -801,15 +801,29 @@ const SiegeLoop = (() => {
         .sort((a, b) => b.n - a.n)
         .slice(0, 8);
     }
+    // Who leads tomorrow and how they fight (EnemyFactions): the real host, not the pool.
+    const host = ctx.nextHost || null;
+    if (host) {
+      if (host.kind === 'boss') kind = 'Boss wave';
+      else if (host.kind === 'horde') kind = host.horde || 'Horde';
+      if (host.scouted) {
+        makeup = host.makeup.slice(0, 8).map((m) => ({ name: m.name, n: m.n }));
+      }
+    }
     return {
       wave: next,
-      count,
-      names,
+      count: host
+        ? host.scouted || host.count < 10
+          ? host.count
+          : Math.round(host.count / 5) * 5
+        : count,
+      names: host ? [host.factionName] : names,
       kind,
       boss: !!cfg.boss,
       runners: next >= RUNNER_FROM_WAVE,
       makeup,
       makeupSource: makeup ? (ctx.watchtowers > 0 ? 'Watchtower' : 'Scout') : '',
+      host,
     };
   }
 
@@ -837,12 +851,21 @@ const SiegeLoop = (() => {
 
   function previewText(p) {
     if (!p) return '';
-    const parts = [`Wave ${p.wave}: about ${p.count} foes`];
-    if (p.kind) parts.push(p.kind);
+    const h = p.host;
+    const parts = [`Wave ${p.wave}: ${h && h.scouted ? p.count : `about ${p.count}`} foes`];
+    if (h) {
+      parts.push(
+        h.allyName ? `${h.factionName} lead, ${h.allyName} in support` : `${h.factionName} lead`
+      );
+      if (p.kind) parts.push(p.kind);
+      parts.push(h.scouted && h.tacticName ? h.tacticName : h.silhouette);
+      if (h.revenge) parts.push(`revenge under ${h.revenge.name}`);
+      if (h.counter) parts.push(`Counter: ${h.counter}`);
+    } else if (p.kind) parts.push(p.kind);
     if (p.makeup && p.makeup.length) {
       parts.push(`${p.makeupSource} report: ${p.makeup.map((m) => `${m.n} ${m.name}`).join(', ')}`);
-    } else if (p.names.length) parts.push(p.names.join(', '));
-    if (p.runners) parts.push('line-breakers likely');
+    } else if (!h && p.names.length) parts.push(p.names.join(', '));
+    if (p.runners && !h) parts.push('line-breakers likely');
     return parts.join(' · ');
   }
 

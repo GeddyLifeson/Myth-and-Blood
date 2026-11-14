@@ -2808,7 +2808,13 @@ const Game = (() => {
       for (const b of GS.buildings) {
         if (b.isWatchtower && b.owner === 'player' && b.complete && b.hp > 0) towers++;
       }
-      return hostPreviewFor(GS.wave + 1, towers > 0 || GS.scoutedWave === GS.wave + 1);
+      const scouted = towers > 0 || GS.scoutedWave === GS.wave + 1;
+      // The panel reads this every frame; the host only changes with the army, so once a second.
+      const key = `${GS.wave}:${scouted}:${Math.floor((GS.updateTick || 0) / 60)}`;
+      if (!hostPreviewCache || hostPreviewCache.key !== key) {
+        hostPreviewCache = { key, value: hostPreviewFor(GS.wave + 1, scouted) };
+      }
+      return hostPreviewCache.value;
     },
     get viewScale() {
       return GS.viewScale || 1;
@@ -8035,6 +8041,8 @@ const Game = (() => {
     if (!(mult > 1) || waveNum >= 3) return mult;
     return 1 + (mult - 1) * (waveNum <= 1 ? 1 / 3 : 2 / 3);
   }
+
+  let hostPreviewCache = null;
 
   /** True when this wave is a horde (every fifth wave, or every wave in a forced-horde mode). */
   function isHordeWaveFor(waveNum, isBoss) {
@@ -17331,6 +17339,7 @@ const Game = (() => {
       generalThreat: GS.generalThreatCount,
       lastStandActive: GS.lastStandActive,
       nextWaveIntel: GS.nextWaveIntel,
+      nextHost: GS.timeOfDay === 'night' ? siegeCtx.nextHost : null,
       colonyValue: displayColony?.total ?? 0,
       colonyBaseline: displayColony?.baseline ?? 0,
       colonyThreatRatio: displayColony?.threatRatio ?? 1,
