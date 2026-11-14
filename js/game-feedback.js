@@ -36,6 +36,12 @@ const GameFeedback = (() => {
     lastSummary = null;
     banner = null;
     dangerLevel = 0;
+    breachCount = 0;
+    breachLimit = 0;
+    breachPulse = 0;
+    rumble = 0;
+    rumbleRest = 0;
+    if (typeof BannerArt !== 'undefined') BannerArt.reset();
     multiKillLife = 0;
     multiKillCount = 0;
     bestStreak = 0;
@@ -92,14 +98,37 @@ const GameFeedback = (() => {
     return typeof Settings !== 'undefined' && !!Settings.get('reducedMotion');
   }
 
+  // Motion ration. Shake, hit-stop and slow motion each ask here before they act, so they
+  // cannot pile up: after about two thirds of a second of unbroken shaking the camera is
+  // held still for a while, and nothing shakes while a banner for the end of the run plays.
+  const RUMBLE_LIMIT = 40; // ticks of near-continuous shake before the rest
+  const RUMBLE_REST = 50; // ticks the camera is then held still
+  let rumble = 0;
+  let rumbleRest = 0;
+  let shookThisTick = false;
+
   function allowShake() {
     const s = settings();
-    return s.combatShake && !reducedMotion();
+    if (!s.combatShake || reducedMotion()) return false;
+    if (rumbleRest > 0) return false;
+    shookThisTick = true;
+    return true;
   }
 
   function allowHitStop() {
     const s = settings();
     return s.hitStop && !reducedMotion();
+  }
+
+  function updateMotionRation() {
+    if (rumbleRest > 0) rumbleRest--;
+    if (shookThisTick) rumble += 1;
+    else if (rumble > 0) rumble = Math.max(0, rumble - 2);
+    shookThisTick = false;
+    if (rumble >= RUMBLE_LIMIT) {
+      rumble = 0;
+      rumbleRest = RUMBLE_REST;
+    }
   }
 
   function allowDamageNumbers() {
@@ -110,7 +139,12 @@ const GameFeedback = (() => {
     return settings().gore;
   }
 
+  const BANNER_KIND = { streak: 'streak', perfect: 'perfect', clear: 'clear', wave: 'wave' };
+
   function showBanner(text, sub = '', color = '#ffd080', life = 90, kind = 'info') {
+    if (kind !== 'wave' && typeof BannerArt !== 'undefined') {
+      BannerArt.show(BANNER_KIND[kind] || 'info', { title: text, sub });
+    }
     banner = {
       text: String(text || ''),
       sub: String(sub || ''),
@@ -281,6 +315,28 @@ const GameFeedback = (() => {
           ? '#c08040'
           : '#e8d5b0';
     showBanner(label, opts.subtitle || 'Hold the line', color, 72, 'wave');
+    if (typeof BannerArt !== 'undefined') BannerArt.waveStart(wave, opts);
+  }
+
+  // ---------------------------------------------------------------- breaches
+  let breachCount = 0;
+  let breachLimit = 0;
+  let breachPulse = 0; // 1 at the moment of a breach, decaying
+
+  /** How many have got through, and how many the realm can bear. Drives the vignette. */
+  function setBreachState(count, limit) {
+    breachCount = Math.max(0, count | 0);
+    breachLimit = Math.max(0, limit | 0);
+  }
+
+  function onBreach() {
+    breachPulse = 1;
+  }
+
+  /** 0 with a clean line, 1 at the limit. */
+  function breachPressure() {
+    if (breachLimit <= 0 || breachCount <= 0) return 0;
+    return Math.min(1, breachCount / breachLimit);
   }
 
   function updateDanger(units, worldH, homeY) {
@@ -312,6 +368,8 @@ const GameFeedback = (() => {
       if (streakTimer <= 0) killStreak = 0;
     }
     if (multiKillLife > 0) multiKillLife--;
+    updateMotionRation();
+    if (breachPulse > 0) breachPulse = breachPulse < 0.02 ? 0 : breachPulse * 0.93;
     if (banner) {
       banner.life--;
       if (banner.life <= 0) banner = null;
@@ -319,69 +377,158 @@ const GameFeedback = (() => {
   }
 
   function drawBanner(ctx, canvasW, canvasH) {
-    if (!banner || !ctx) return;
-    const a = banner.maxLife > 0 ? Math.min(1, banner.life / Math.min(20, banner.maxLife)) : 0;
-    const intro = banner.maxLife > 0 ? 1 - banner.life / banner.maxLife : 0;
-    const pop = intro < 0.15 ? intro / 0.15 : 1;
-    const fade = banner.life < 18 ? banner.life / 18 : 1;
-    const alpha = Math.min(a, fade) * 0.95;
-    if (alpha <= 0.02) return;
-
+    if (!ctx) return;
+    // BannerArt owns every banner when it is loaded: one style, one queue.
+    if (typeof BannerArt !== 'undefined') {
+      BannerArt.draw(ctx, canvasW, canvasH);
+      return;
+    }
+    if (!banner) return;
+    const fade = Math.min(1, banner.life / 18, (banner.maxLife - banner.life + 1) / 8);
+    if (fade <= 0.02) return;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = fade;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-
-    const y = canvasH * 0.18 + (1 - pop) * 12;
-    const size =
-      (banner.kind === 'perfect' ? 28 : banner.kind === 'streak' ? 24 : 22) * (0.85 + pop * 0.2);
-
-    // Soft plate behind text
+    const y = canvasH * 0.2;
     const plateW = Math.min(canvasW * 0.7, 420);
-    ctx.fillStyle = 'rgba(12,8,6,0.55)';
-    ctx.fillRect(canvasW / 2 - plateW / 2, y - size * 0.85, plateW, size * 1.9);
-
-    ctx.font = `bold ${size}px Cinzel, serif`;
-    ctx.fillStyle = '#1a1008';
-    ctx.fillText(banner.text, canvasW / 2 + 1.5, y + 1.5);
-    ctx.fillStyle = banner.color;
-    if (banner.kind === 'perfect' || banner.kind === 'streak') {
-      ctx.shadowColor = banner.color;
-      ctx.shadowBlur = 12;
-    }
+    ctx.fillStyle = '#07050a';
+    ctx.fillRect(canvasW / 2 - plateW / 2, y - 22, plateW, 50);
+    ctx.font = 'bold 24px Cinzel, serif';
+    ctx.fillStyle = '#e4dcc4';
     ctx.fillText(banner.text, canvasW / 2, y);
-    ctx.shadowBlur = 0;
-
     if (banner.sub) {
       ctx.font = '12px Cinzel, serif';
-      ctx.fillStyle = 'rgba(232,213,176,0.9)';
-      ctx.fillText(banner.sub, canvasW / 2, y + size * 0.7);
+      ctx.fillText(banner.sub, canvasW / 2, y + 18);
     }
     ctx.restore();
   }
 
+  // ---------------------------------------------------------------- vignette
+  // A blood-red vignette inked round the edge of the screen: hatched brush strokes reaching
+  // in from every side. It reaches further in with every breach and lunges when one lands.
+  // It is painted once per size and reach onto a half-size canvas and then only blitted.
+  let vigCanvas = null;
+  let vigKey = '';
+  const VIG_LEVELS = 6;
+
+  function paintVignette(w, h, level) {
+    if (typeof document === 'undefined' || !document.createElement) return null;
+    const cw = Math.max(2, Math.round(w / 2));
+    const ch = Math.max(2, Math.round(h / 2));
+    const c = vigCanvas || document.createElement('canvas');
+    c.width = cw;
+    c.height = ch;
+    const g = c.getContext && c.getContext('2d');
+    if (!g) return null;
+    g.clearRect(0, 0, cw, ch);
+    const reach = Math.min(cw, ch) * (0.07 + 0.055 * level);
+    // Deterministic scatter, so the edge does not crawl between repaints.
+    let seed = 7 + level * 13;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    g.lineCap = 'round';
+    const edge = (n, place) => {
+      for (let i = 0; i < n; i++) {
+        const k = (i + rnd() * 0.8) / n;
+        const len = reach * (0.45 + rnd() * 0.9);
+        const [x, y, dx, dy] = place(k);
+        const skew = (rnd() - 0.5) * 0.5;
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + (dx + dy * skew) * len, y + (dy + dx * skew) * len);
+        g.stroke();
+      }
+    };
+    const strokes = (n, width, color, alpha) => {
+      g.strokeStyle = color;
+      g.globalAlpha = alpha;
+      g.lineWidth = width;
+      edge(Math.round((n * cw) / 400), (k) => [k * cw, 0, 0, 1]);
+      edge(Math.round((n * cw) / 400), (k) => [k * cw, ch, 0, -1]);
+      edge(Math.round((n * ch) / 400), (k) => [0, k * ch, 1, 0]);
+      edge(Math.round((n * ch) / 400), (k) => [cw, k * ch, -1, 0]);
+    };
+    // Blood first, long; then ink over the outer part, shorter; then a hard black rim.
+    strokes(46, Math.max(3, reach * 0.16), '#8a0c14', 0.75);
+    strokes(60, Math.max(2, reach * 0.09), '#c8141c', 0.6);
+    const hold = reach;
+    g.globalAlpha = 1;
+    g.save();
+    g.strokeStyle = '#07050a';
+    g.lineWidth = Math.max(2, hold * 0.1);
+    g.globalAlpha = 0.85;
+    const short = (n, place) => {
+      for (let i = 0; i < n; i++) {
+        const k = (i + rnd() * 0.8) / n;
+        const len = hold * (0.2 + rnd() * 0.45);
+        const [x, y, dx, dy] = place(k);
+        g.beginPath();
+        g.moveTo(x, y);
+        g.lineTo(x + dx * len, y + dy * len);
+        g.stroke();
+      }
+    };
+    short(Math.round(cw / 7), (k) => [k * cw, 0, 0, 1]);
+    short(Math.round(cw / 7), (k) => [k * cw, ch, 0, -1]);
+    short(Math.round(ch / 7), (k) => [0, k * ch, 1, 0]);
+    short(Math.round(ch / 7), (k) => [cw, k * ch, -1, 0]);
+    g.restore();
+    g.globalAlpha = 1;
+    return c;
+  }
+
   function drawDangerVignette(ctx, w, h) {
-    if (!settings().dangerVignette || dangerLevel < 0.08 || !ctx) return;
+    if (!settings().dangerVignette || !ctx) return;
+    const pressure = breachPressure();
     const d = dangerLevel;
+    // Shown for breaches taken, for enemies deep past the line, and for the moment of a breach.
+    const strength = Math.max(pressure, d * 0.6, breachPulse * 0.8);
+    if (strength < 0.06) return;
+    const level = Math.min(VIG_LEVELS - 1, Math.round(pressure * (VIG_LEVELS - 1)));
+    const key = `${w}x${h}:${level}`;
+    if (key !== vigKey || !vigCanvas) {
+      const painted = paintVignette(w, h, level);
+      if (!painted) return;
+      vigCanvas = painted;
+      vigKey = key;
+    }
+    const calm = reducedMotion();
+    // A breach makes the edge lunge inward and settle back; the last breach left makes it throb.
+    const lunge = calm ? 0 : breachPulse * 0.07;
+    const beat =
+      !calm && breachLimit > 0 && breachCount >= breachLimit - 1 && breachCount > 0
+        ? 0.012 * (1 + Math.sin(Date.now() / 260))
+        : 0;
+    const m = lunge + beat;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    const g = ctx.createRadialGradient(w / 2, h * 0.55, w * 0.2, w / 2, h / 2, w * 0.75);
-    g.addColorStop(0, 'rgba(0,0,0,0)');
-    g.addColorStop(0.55, `rgba(80,10,10,${0.05 * d})`);
-    g.addColorStop(1, `rgba(120,8,8,${0.22 + d * 0.35})`);
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, w, h);
-
+    ctx.globalAlpha = Math.min(0.92, 0.3 + strength * 0.5 + breachPulse * 0.25);
+    // Drawing the edge art a little smaller pushes it inward from all four sides; the strip
+    // it leaves at the border is filled with ink.
+    const mx = (w * m) / 2;
+    const my = (h * m) / 2;
+    if (m > 0.001) {
+      ctx.fillStyle = '#07050a';
+      ctx.fillRect(0, 0, w, my);
+      ctx.fillRect(0, h - my, w, my);
+      ctx.fillRect(0, my, mx, h - my * 2);
+      ctx.fillRect(w - mx, my, mx, h - my * 2);
+    }
+    ctx.drawImage(vigCanvas, mx, my, w - mx * 2, h - my * 2);
     if (d > 0.45) {
-      ctx.globalAlpha = (d - 0.45) * 1.4;
-      ctx.strokeStyle = `rgba(255,60,40,${0.25 + d * 0.35})`;
-      ctx.lineWidth = 3;
-      ctx.strokeRect(4, 4, w - 8, h - 8);
-      ctx.font = 'bold 11px Cinzel';
-      ctx.fillStyle = `rgba(255,120,90,${0.5 + d * 0.4})`;
+      ctx.globalAlpha = Math.min(1, (d - 0.45) * 1.8);
+      ctx.font = 'bold 12px Cinzel, serif';
       ctx.textAlign = 'center';
-      ctx.fillText('LINE BREACHED — RALLY!', w / 2, h - 36);
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#07050a';
+      ctx.lineWidth = 3.5;
+      if (ctx.strokeText) ctx.strokeText('THEY ARE THROUGH THE LINE', w / 2, h - 36);
+      ctx.fillStyle = '#e8564c';
+      ctx.fillText('THEY ARE THROUGH THE LINE', w / 2, h - 36);
     }
     ctx.restore();
   }
@@ -457,6 +604,10 @@ const GameFeedback = (() => {
     getKillStreak,
     getWaveStats,
     getDangerLevel,
+    setBreachState,
+    onBreach,
+    breachPressure,
+    showBanner,
     getMinimapDangerPulse,
     getBanner,
     getHighlights,

@@ -37,6 +37,8 @@ export const GAME_SCRIPTS = [
   'game-data-bundle.js',
   'game-data.js',
   'strike-fx.js',
+  'projectile-art.js',
+  'banner-art.js',
   'units.js',
   'content-expansion.js',
   'meta-progress.js',

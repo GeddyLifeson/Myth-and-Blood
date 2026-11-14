@@ -9024,6 +9024,10 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
+    globalThis.BannerArt?.show?.(victory ? 'victory' : 'defeat', {
+      title: victory ? 'The Line Held' : 'The Realm Falls',
+      sub: `Wave ${GS.wave}`,
+    });
     // getState() is cached per presented frame; the HUD must not read 'playing' from it.
     invalidateStateCache();
     SiegeLoop.endRun(siegeCtx);
@@ -11685,14 +11689,19 @@ const Game = (() => {
     ach('ability', { ability });
     if (ability === 'fireball') {
       playSfx('fireball');
-      StrikeFX?.play?.('fireball', wx, wy, ab.radius);
-      strikeImpactFx('fireball', wx, wy, ab.radius, coolFx);
-      damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      // The damage lands with the blast, when the wind-up ends.
+      const land = () => {
+        strikeImpactFx('fireball', wx, wy, ab.radius, coolFx);
+        damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      };
+      if (!StrikeFX?.cast?.('fireball', wx, wy, ab.radius, land)) land();
     } else if (ability === 'lightning') {
       playSfx('lightning');
-      StrikeFX?.play?.('lightning', wx, wy, ab.radius);
-      strikeImpactFx('lightning', wx, wy, ab.radius, coolFx);
-      damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      const land = () => {
+        strikeImpactFx('lightning', wx, wy, ab.radius, coolFx);
+        damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      };
+      if (!StrikeFX?.cast?.('lightning', wx, wy, ab.radius, land)) land();
     } else if (ability === 'heal') {
       playSfx('heal');
       StrikeFX?.play?.('heal', wx, wy, ab.radius);
@@ -13445,7 +13454,7 @@ const Game = (() => {
     const allowShake = !fb || fb.allowShake();
     const allowHitStop = !fb || fb.allowHitStop();
 
-    if (showNums) svc('FloatingText').damage(unit.x, unit.y, actual, crit);
+    if (showNums) svc('FloatingText').damage(unit.x, unit.y, actual, crit, unit, opts);
     const bloodMult = crit ? 1.6 : willDie ? 1.4 : Math.min(1.8, 0.7 + actual / 30);
     if (allowGore && svc('Particles')) {
       if (opts.attacker && svc('Particles').bloodSpray) {
@@ -14143,6 +14152,7 @@ const Game = (() => {
           unit.animState = 'attack';
           unit.attackAnimTimer = 12;
           playSfx('heal');
+          globalThis.ProjectileArt?.mote?.('heal', unit.x, unit.y, target.x, target.y);
           CombatFX.healPulse(target.x, target.y);
           if (healed > 0) {
             svc('FloatingText').heal(target.x, target.y, healed);
@@ -15341,6 +15351,7 @@ const Game = (() => {
     if (GS.buildings.length !== prevBuildings) invalidateObstacles();
 
     markUpdatePhase('projectiles', String(GS.projectiles.length));
+    StrikeFX?.simTick?.();
     for (let pi = GS.projectiles.length - 1; pi >= 0; pi--) {
       const p = GS.projectiles[pi];
       const dx = p.tx - p.x;
@@ -15353,7 +15364,8 @@ const Game = (() => {
           !svc('GfxQuality') || svc('GfxQuality').allowProjectileTrails(GS.projectiles.length);
         const trailEvery = gfxQ?.trailEveryN ?? 1;
         if (trailOk && GS.updateTick % trailEvery === 0) {
-          svc('Particles').trail(p.x, p.y, p.type === 'arrow' ? '#8a6030' : '#a060ff');
+          if (globalThis.ProjectileArt) globalThis.ProjectileArt.trail(p, GS.updateTick);
+          else svc('Particles').trail(p.x, p.y, p.type === 'arrow' ? '#8a6030' : '#a060ff');
         }
         if (dist < p.speed) {
           const hit = getUnitById(p.targetId);
@@ -15363,6 +15375,7 @@ const Game = (() => {
               ? Math.max(4, p.accuracy - getSightPenaltyForUnit(shooter))
               : p.accuracy;
           if (hit?.hp > 0 && Math.random() * 100 <= projHit) {
+            p.landed = true;
             // Prefer live shooter so vet/aura/crossover/WWE modifiers apply (not a bare damage stub).
             const src =
               shooter && shooter.hp > 0
@@ -15422,6 +15435,7 @@ const Game = (() => {
               takeDamage(hit, Math.round(dmg * 0.55), { attackerTeam: p.team });
             }
           }
+          globalThis.ProjectileArt?.impact?.(p, hit);
           remove = true;
         } else {
           p.x += (dx / dist) * p.speed;
@@ -15503,6 +15517,7 @@ const Game = (() => {
       GameFeedback.update();
       GameFeedback.updateDanger(GS.units, GS.worldH, GS.rallyY);
     }
+    globalThis.BannerArt?.observe?.(GS, siegeCtx);
     if (svc('VisualPolish')) {
       svc('VisualPolish').update();
       svc('VisualPolish').updateAudioMix({
@@ -15586,6 +15601,7 @@ const Game = (() => {
         );
       }
       SiegeLoop.drawGround(GS.ctx);
+      svc('Particles')?.drawGround?.(GS.ctx, getVisibleBounds(140));
       if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
         svc('VisualPolish').drawTerritoryBorders(
           GS.ctx,
@@ -16087,8 +16103,10 @@ const Game = (() => {
       }
       CombatFX.draw(GS.ctx, vBounds);
       for (const p of GS.projectiles) {
-        if (isInView(p.x, p.y, 20, 0)) svc('SpriteGen').drawProjectile(GS.ctx, p);
+        if (isInView(p.x, p.y, 20, 0))
+          (globalThis.ProjectileArt || svc('SpriteGen')).drawProjectile(GS.ctx, p, GS.updateTick);
       }
+      globalThis.ProjectileArt?.drawOver?.(GS.ctx, vBounds, GS.updateTick);
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
