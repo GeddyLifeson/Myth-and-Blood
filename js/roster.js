@@ -1642,11 +1642,43 @@ const Roster = (() => {
    * weather layers (the game calls this last in the world pass) so the dark never hides
    * what is wrong with a unit.
    */
-  function drawMarks(c, units, tick) {
+  const bodyDark = {};
+  function isDarkBody(u) {
+    const type = u.spriteType || u.type;
+    let d = bodyDark[type];
+    if (d === undefined) {
+      const hex = (SpriteGen.UNIT_STYLE[type] || {}).body || '#000000';
+      const n = parseInt(hex.slice(1), 16);
+      d = ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255 < 0.42;
+      bodyDark[type] = d;
+    }
+    return d;
+  }
+
+  /** A cold pale edge on the lit side of a dark enemy, so it reads against night ground. */
+  function drawRim(c, u, k) {
+    const r =
+      SpriteGen.bodyRadius(u.spriteType || u.type, u.team) * (u.spriteScale || 1) * 0.62 + 0.5;
+    c.lineCap = 'round';
+    c.strokeStyle = `rgba(176,196,236,${(0.12 * k).toFixed(2)})`;
+    c.lineWidth = 1;
+    c.beginPath();
+    c.arc(u.x, u.y, r, 0, Math.PI * 2);
+    c.stroke();
+    c.strokeStyle = `rgba(214,226,252,${(0.6 * k).toFixed(2)})`;
+    c.lineWidth = 1.6;
+    c.beginPath();
+    c.arc(u.x, u.y, r, Math.PI * 1.15, Math.PI * 1.85);
+    c.stroke();
+  }
+
+  function drawMarks(c, units, tick, light = 1) {
     c.save();
+    const rimK = Math.max(0, Math.min(1, (0.8 - light) / 0.3));
     for (let i = 0; i < units.length; i++) {
       const u = units[i];
       if (u.hp <= 0) continue;
+      if (rimK > 0 && u.team === 'enemy' && isDarkBody(u)) drawRim(c, u, rimK);
       const n = collectMarks(u, tick);
       if (n > 0) {
         const big = (u.spriteScale || 1) - 1;

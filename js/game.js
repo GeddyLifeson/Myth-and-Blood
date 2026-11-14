@@ -16135,7 +16135,7 @@ const Game = (() => {
       }
 
       // Status marks go over the night and weather layers so they read in the dark.
-      Roster.drawMarks(GS.ctx, GS.units, GS.updateTick);
+      Roster.drawMarks(GS.ctx, GS.units, GS.updateTick, getDayLightLevel());
 
       GS.ctx.globalAlpha = 1;
       GS.ctx.setLineDash([]);
