@@ -1,5 +1,5 @@
 /**
- * Myth and Blood — the words of the siege.
+ * Myth and Blood: the words of the siege.
  *
  * One voice: grim, spare, close to the mud. Short sentences. No numbers and no system
  * names inside a story line; the rules live in the encyclopedia and the README.

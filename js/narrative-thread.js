@@ -1,5 +1,5 @@
 /**
- * Narrative Thread — the names the line remembers.
+ * Narrative Thread: the names the line remembers.
  * Soldiers who last long enough become legends, and a legend strengthens everyone who
  * serves after him. Also speaks the opening lines of a run and a few late milestones.
  */
@@ -163,12 +163,12 @@ const NarrativeThread = (() => {
     const msg = `A name for the wall: ${entry.label} (${def?.short || kind}). ${def?.desc || ''}`;
     state.log.unshift({ at: Date.now(), text: msg });
     ctx.showMessage?.(msg, 360);
-    ctx.addHighlight?.('legend', `${entry.label} — a name the line keeps`);
+    ctx.addHighlight?.('legend', `${entry.label}: a name the line keeps`);
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'legend',
         wave,
-        title: `Name kept — ${entry.label}`,
+        title: `Name kept: ${entry.label}`,
         summary: `${entry.label} is cut into the wall as ${def?.label || kind}. Those who serve after fight harder for it.`,
       });
     }
@@ -260,9 +260,9 @@ const NarrativeThread = (() => {
     const beat = SIEGE_BEATS[wave];
     if (!beat || beatsShown.has(wave)) return;
     beatsShown.add(wave);
-    ctx.showMessage?.(`Chronicle — ${beat.hook}`, 440);
+    ctx.showMessage?.(`Chronicle: ${beat.hook}`, 440);
     if (beat.sub) ctx.showMessage?.(beat.sub, 400);
-    ctx.addHighlight?.('milestone', `${beat.title} — ${state?.crownEpithet || 'the line'}`);
+    ctx.addHighlight?.('milestone', `${beat.title}: ${state?.crownEpithet || 'the line'}`);
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'narrative',

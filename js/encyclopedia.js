@@ -1,5 +1,5 @@
 /**
- * Myth and Blood — encyclopedia (main menu, pause menu, in-game HUD).
+ * Myth and Blood: encyclopedia (main menu, pause menu, in-game HUD).
  *
  * A reference a player uses during a siege: how the game works, what each soldier,
  * building and enemy does, and how to beat what is coming.
@@ -108,7 +108,15 @@ const Encyclopedia = (() => {
 
     add(
       'The siege',
-      'One field, one line, no end. The host comes from the top of the field; your line is the bottom edge. Each wave is a day. Clear it and night falls, you are paid, and you prepare for the next. Soldiers who die are gone for good. There is no final wave: the run is over when the line breaks, and what counts is how long it stood.'
+      'One field, one line, no end. The host comes from the top of the field; your line is the bottom edge. Each wave is a day. Clear it and night falls, you are paid, and you prepare for the next. Soldiers who die are gone for good. There is no final wave. Clearing wave 100 is counted as a victory, and the siege goes on: the run is over when the line breaks, and what counts is how long it stood.'
+    );
+    add(
+      'The journey',
+      'Waves 1 to 10 teach the field: hold the north with a few troops, a wall and an outpost. By wave 25 you need research, a med tent and a line that can take a pounding. Every fifth wave is a horde and every tenth a named warlord. Clearing wave 100 counts as the victory. After that the host keeps growing and you fight on for score, with academies feeding the line and ribbons marking the milestones.'
+    );
+    add(
+      'Victory',
+      'Clearing wave 100 counts as the victory, once per run. It pays out the victory achievements, the faction trials that ask for a win, and legacy credit. Play then continues with no end wave. A run that begins past wave 100 in the Academy Era mode never fought its way there and cannot win this way. Creative mode awards nothing.'
     );
     add(
       'Night and day',
@@ -190,7 +198,7 @@ const Encyclopedia = (() => {
         Object.values(diffs)
           .map(
             (d) =>
-              `${d.label} — start with ${d.startingTp} TP, breach limit ${d.missLimit}, enemy health ${pct(d.enemyHpMult)}, enemy numbers ${pct(d.enemyCountMult)}.`
+              `${d.label}: start with ${d.startingTp} TP, breach limit ${d.missLimit}, enemy health ${pct(d.enemyHpMult)}, enemy numbers ${pct(d.enemyCountMult)}.`
           )
           .join('\n')
       );
@@ -348,7 +356,8 @@ const Encyclopedia = (() => {
         entry(
           'buildings',
           name,
-          `${intro}\n\n${members.map(([, d]) => `${d.name} — ${d.cost} TP`).join('\n')}`
+          `${intro}\n\n${members.map(([, d]) => `${d.name}: ${d.cost} TP`).join('\n')}`,
+          { refs: { builds: members.map(([id]) => id) } }
         )
       );
     };
@@ -376,6 +385,19 @@ const Encyclopedia = (() => {
       'Late works for commanders who have sworn a company of champions. Soldiers collect a tonic from a stand during the night.',
       (id) => /^perk_/.test(id)
     );
+    const theirs = Object.entries(defs).filter(([id]) => /^enemy_/.test(id));
+    if (theirs.length) {
+      out.push(
+        entry(
+          'buildings',
+          'Enemy works',
+          `The enemy builds too, far up the field. You cannot build these, only break them.\n\n${theirs
+            .map(([, d]) => `${d.name}: ${d.hp} health`)
+            .join('\n')}`,
+          { refs: { builds: theirs.map(([id]) => id) } }
+        )
+      );
+    }
     return out;
   }
 
@@ -429,11 +451,11 @@ const Encyclopedia = (() => {
     const general = unitName('general');
     add(
       `The ${general}'s orders`,
-      `With a ${general} on the field, by day, two orders reach every soldier near him.\n\nWar Cry (${key('day', 'order', 'warCry', '[')}) — they strike 20% harder for 8 seconds and regain morale. Ready again after 45 seconds.\n\nHold the Line (${key('day', 'order', 'holdLine', ']')}) — they take 40% less damage for 7 seconds. Ready again after 60 seconds.`
+      `With a ${general} on the field, by day, two orders reach every soldier near him.\n\nWar Cry (${key('day', 'order', 'warCry', '[')}): they strike 20% harder for 8 seconds and regain morale. Ready again after 45 seconds.\n\nHold the Line (${key('day', 'order', 'holdLine', ']')}): they take 40% less damage for 7 seconds. Ready again after 60 seconds.`
     );
     add(
       'Hunt, Hold and posts',
-      `${key('day', 'hunt', null, 'H')} — Hunt: release Hold.\n${key('day', 'holdHere', null, 'Shift+H')} — Hold here.\nShift+click the field — move there and hold.\n${key('unit_selected', 'backToPosts', null, 'B')} — back to posts (with soldiers selected).\n\nSee How to play for the rules.`
+      `${key('day', 'hunt', null, 'H')}: Hunt: release Hold.\n${key('day', 'holdHere', null, 'Shift+H')}: Hold here.\nShift+click the field: move there and hold.\n${key('unit_selected', 'backToPosts', null, 'B')}: back to posts (with soldiers selected).\n\nSee How to play for the rules.`
     );
     const abilities = G('Abilities') || {};
     for (const [id, a] of Object.entries(abilities)) {
@@ -738,7 +760,7 @@ const Encyclopedia = (() => {
     if (!R) return [];
     const page = (name, p, weakLabel) => ({
       cat: 'roles',
-      name: `${name} — ${p.role}`,
+      name: `${name}: ${p.role}`,
       body: `${p.trait}\n\n${weakLabel}: ${p.weak}`,
     });
     const out = [];
@@ -749,7 +771,7 @@ const Encyclopedia = (() => {
       for (const m of company.members) {
         out.push({
           cat: 'roles',
-          name: `${m.def.name} — ${m.profile.role}`,
+          name: `${m.def.name}: ${m.profile.role}`,
           body: `${company.label}\n\n${m.profile.trait}\n\nWeakness: ${m.profile.weak}`,
         });
       }
@@ -831,10 +853,25 @@ const Encyclopedia = (() => {
           `${head}\n\n${c.members
             .map(
               (m) =>
-                `${m.def.name} — ${m.profile.role}, ${m.def.cost} TP\n${m.profile.trait}\nWeakness: ${m.profile.weak}`
+                `${m.def.name}: ${m.profile.role}, ${m.def.cost} TP\n${m.profile.trait}\nWeakness: ${m.profile.weak}`
             )
             .join('\n\n')}`,
           { companyId: c.id, refs }
+        )
+      );
+    }
+    // Lone heroes are flagged in the unit data and sit outside every company.
+    for (const [id, d] of Object.entries(G('UnitDefs') || {})) {
+      if (!d.isDoomslayer) continue;
+      const open = !!G('MetaProgress')?.isDoomslayerHeroUnlocked?.();
+      out.push(
+        entry(
+          'champions',
+          open ? d.name : 'A hero beyond price',
+          open
+            ? `${d.cost} TP. ${d.hp} health. He fights alone and does not tire.`
+            : 'Not yet earned. The ledgers name no price and no hall.',
+          { unitId: id, refs: { units: [id] }, tease: !open }
         )
       );
     }
@@ -888,6 +925,8 @@ const Encyclopedia = (() => {
   // ------------------------------------------------------------------ render
   const esc = (s) =>
     String(s ?? '')
+      // Roster and data strings still carry em dashes; show them as a colon.
+      .replace(/ — /g, ': ')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')

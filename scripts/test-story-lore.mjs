@@ -66,7 +66,10 @@ assert(branch === 'iron_crown', `expected iron_crown branch, got ${branch}`);
 
 const wave25 = StoryLore.getWaveNarrative(25);
 assert(wave25?.title === 'No Quarter', 'branch-specific wave 25 narrative');
-assert(StoryLore.getWaveNarrative(31)?.title === 'Default', 'other waves fall back to the shared beat');
+assert(
+  StoryLore.getWaveNarrative(31)?.title === 'Default',
+  'other waves fall back to the shared beat'
+);
 
 const snap = StoryLore.getSessionSnapshot();
 assert(snap?.branchLabel === 'The Iron Hand', 'session snapshot branch label');

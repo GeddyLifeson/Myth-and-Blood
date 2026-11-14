@@ -1,5 +1,5 @@
 /**
- * Story / Lore — the name the men give your way of fighting, from the choices you make,
+ * Story / Lore: the name the men give your way of fighting, from the choices you make,
  * and the lines spoken at the dawns that mark how long the line has stood.
  */
 const StoryLore = (() => {
@@ -246,7 +246,7 @@ const StoryLore = (() => {
 
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
-        title: `How it ended — ${BRANCHES[branch]?.label || branch}`,
+        title: `How it ended: ${BRANCHES[branch]?.label || branch}`,
         summary: line,
         branch,
         wave: ctx.wave,
@@ -416,7 +416,7 @@ const StoryLore = (() => {
       const outro = RUN_OUTRO[arc.branch] || RUN_OUTRO.pragmatist;
       entries.push({
         cat: 'story',
-        name: `${br.label} — ${arc.victory ? 'stood down at' : 'fell at'} wave ${arc.wave}`,
+        name: `${br.label}: ${arc.victory ? 'stood down at' : 'fell at'} wave ${arc.wave}`,
         body: arc.victory ? outro.victory : outro.defeat,
         storyMeta: new Date(arc.at).toLocaleDateString(),
       });

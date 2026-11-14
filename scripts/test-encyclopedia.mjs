@@ -80,6 +80,13 @@ ok(
   }
   ok(bad.length === 0, `no entry references a missing unit, building or enemy ${bad.join(' | ')}`);
 
+  const seenUnits = new Set(entries.flatMap((e) => [e.unitId, ...(e.refs?.units || [])]));
+  const seenBuilds = new Set(entries.flatMap((e) => [e.buildId, ...(e.refs?.builds || [])]));
+  const noUnit = Object.keys(UnitDefs).filter((t) => !seenUnits.has(t));
+  ok(noUnit.length === 0, `every unit in the data has an entry ${noUnit.join(',')}`);
+  const noBuild = Object.keys(BuildDefs).filter((t) => !seenBuilds.has(t));
+  ok(noBuild.length === 0, `every building in the data has an entry ${noBuild.join(',')}`);
+
   const has = (field, id) => entries.some((e) => e[field] === id);
   const troops = Object.keys(Roster.TROOPS).filter((t) => UnitDefs[t]);
   ok(
