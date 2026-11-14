@@ -1110,7 +1110,7 @@ const LoreData = (() => {
         'Evolved operatives are your evolved allies — rare power spikes early (1–2 operatives flip sieges), full faction armies with synergies mid-game, and the northern war demolition experts after wave 200. See Crossover System tab for full curve, secret rosters, and operative list.',
         {
           classified:
-            'Northern war operatives (Gearwright, Stone Axe Lord, Kael Skyburst, Cataclysm Lord, Marcus, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
+            'Northern war operatives (Pell Rivetson, Dorn Quarrykin, Tavish Coalheart, Mother Scoria, Hale Brandreth, etc.) gain settlement-siege bonuses and splash raze vs northern holds.',
           classifiedRule: 'meta_crossover',
         }
       ),
