@@ -2175,7 +2175,6 @@ const Game = (() => {
   const SURROUND_MIN_FILLED = 6;
   const MORALE_WITNESS_RADIUS = 150;
   const MORALE_WITNESS_CLOSE = 70;
-  const MORALE_WITNESS_BREAK_COUNT = 3;
   const OPENING_RESOLVE_WAVES = 2;
   const GENERAL_RALLY_RANGE = 40;
   const GENERAL_W2W_BUFF_TICKS = 200;
@@ -2566,19 +2565,18 @@ const Game = (() => {
         unitDistSq(observer, deadUnit) < MORALE_WITNESS_CLOSE * MORALE_WITNESS_CLOSE;
       observer.witnessDeaths = (observer.witnessDeaths || 0) + 1;
       const enemyWitness = observer.team === 'enemy';
-      let moraleLoss = closeWitness ? 3 : 2;
-      if (enemyWitness) {
-        moraleLoss = closeWitness
-          ? DIFFICULTY_TUNING.enemyWitnessLossClose
-          : DIFFICULTY_TUNING.enemyWitnessLossFar;
-      }
+      const t = DIFFICULTY_TUNING;
+      let moraleLoss = enemyWitness
+        ? closeWitness
+          ? t.enemyWitnessLossClose
+          : t.enemyWitnessLossFar
+        : closeWitness
+          ? t.soldierWitnessLossClose
+          : t.soldierWitnessLossFar;
       if (isGeneralDeath) moraleLoss += 3;
       if (isEliteDeath && observer.team === 'enemy') moraleLoss += 1;
       observer.morale = Math.max(0, observer.morale - moraleLoss);
-      if (
-        (!enemyWitness && observer.witnessDeaths >= MORALE_WITNESS_BREAK_COUNT) ||
-        observer.morale <= moraleBreakThreshold(observer)
-      ) {
+      if (observer.morale <= moraleBreakThreshold(observer)) {
         triggerMoraleBreak(observer, 'witness');
       }
     }
@@ -13389,8 +13387,8 @@ const Game = (() => {
     actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
     if (!(actual > 0)) return 0;
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
-    // from out of reach must not hold a wave open forever.
-    if (actual > 0 && unit.team === 'enemy') {
+    // from out of reach must not hold a wave open forever, nor a stream of raised minions.
+    if (actual > 0 && unit.team === 'enemy' && !unit.summoned) {
       SiegeLoop.noteCombat(GS.updateTick);
       GS.huntQuietTicks = 0; // an enemy was hurt: the army is not idle
     } else if (actual > 0 && unit.team === 'player') SiegeLoop.noteBlood(GS.updateTick);

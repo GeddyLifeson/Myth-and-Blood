@@ -277,6 +277,50 @@ const enemy = (api, type, x, y, set = {}) => {
   ok(!probe(bossType, false).pinned, 'a named boss cannot be pinned');
 }
 
+// 4. A soldier breaks on morale, not on a count of deaths seen.
+{
+  const f = quietField(12);
+  f.GameState.wave = 5;
+  const watcher = player(f, 'archer', 200, 330, {
+    hp: 1e6,
+    maxHp: 1e6,
+    morale: 40,
+    maxMorale: 40,
+    canHunt: false,
+  });
+  for (let i = 0; i < 10; i++) {
+    player(f, 'footman', 150 + i * 10, 310, { hp: 1, maxHp: 1, canHunt: false });
+    enemy(f, 'orc', 150 + i * 10, 296, { damage: 400, accuracy: 100, hp: 1e6, maxHp: 1e6 });
+  }
+  let fled = false;
+  let seen = 0;
+  f.step(600, () => {
+    if (watcher.fleeing) fled = true;
+    seen = Math.max(seen, watcher.witnessDeaths || 0);
+  });
+  ok(seen >= 3, `control: the watcher saw three deaths or more (${seen.toFixed(1)})`);
+  ok(watcher.morale < 40, `seeing comrades die costs morale (${watcher.morale})`);
+  ok(
+    !fled,
+    `a soldier with morale left stands after seeing three comrades die (wave ${f.GameState.wave})`
+  );
+}
+
+// 5. A wedged summoner cannot hold a wave open with a stream of minions.
+{
+  const count = (f) => f.GameState.units.filter((u) => u.type === 'goblin' && u.hp > 0);
+  const raise = (set) => {
+    const f = quietField(13);
+    enemy(f, 'bone_summoner', 200, 120, { speed: 0, summonTimer: 1, ...set });
+    f.step(5);
+    return count(f);
+  };
+  const minions = raise({});
+  ok(minions.length === 1, `control: a summoner raises a minion (${minions.length})`);
+  ok(minions[0]?.summoned === true, 'a raised minion is marked as summoned');
+  ok(raise({ stormLine: true }).length === 0, 'a summoner told to storm the line raises nothing');
+}
+
 if (failures()) {
   console.error(`${failures()} check(s) failed`);
   process.exit(1);

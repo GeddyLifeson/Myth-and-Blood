@@ -28,13 +28,14 @@ const MAX_VETERAN_TIER = 6;
 /** Veteran, enemy morale and boss numbers in one place; every veteran term is capped. */
 const DIFFICULTY_TUNING = {
   // Attack interval = attackBase - attackPerXp * min(attackXpCap, experience), plus 0-19.
+  // Early growth is as fast as it always was; it stops at about wave 7 strength.
   attackBase: 90,
-  attackPerXp: 3,
-  attackXpCap: 14,
+  attackPerXp: 4,
+  attackXpCap: 12,
   // Experience adds floor(min(xpDamageCap, experience) / xpDamageDivisor) damage.
-  xpDamageDivisor: 3,
-  xpDamageCap: 30,
-  xpPerKill: 1,
+  xpDamageDivisor: 2,
+  xpDamageCap: 20,
+  xpPerKill: 2,
   // Star bumps stop after two gold stars; they keep fractions and add no range.
   starBumpCap: 18,
   // Per promotion tier.
@@ -44,13 +45,16 @@ const DIFFICULTY_TUNING = {
   tierFlatDamage: 2,
   // A healer, builder or courier ranks up every Nth working wave.
   specialistWavesPerRank: 3,
-  healTierBase: 1.12,
+  healTierBase: 1.17,
   healTierStep: 0.02,
   healRangeBase: 1.04,
   healRangeStep: 0.01,
-  // Morale an enemy loses per death it sees, close and far. Only soldiers break on three.
+  // Morale lost per death seen, close and far. Nobody breaks on a count of deaths: with
+  // a death or two a wave expected, that rule made one bad wave end the run.
   enemyWitnessLossClose: 2,
   enemyWitnessLossFar: 1,
+  soldierWitnessLossClose: 2,
+  soldierWitnessLossFar: 1,
   // Health multiplier for a named boss, on top of the wave scale.
   namedBossHpMult: 3,
 };
@@ -1470,18 +1474,19 @@ const Waves = [
  * Pre-100: smooth climb; wave 100 is the difficulty/variety peak before RTS escalation.
  */
 /**
- * Early-pressure knobs for getWaveConfig. Between waves 7 and 20 the host grows by four a
- * wave (it was two) and its health and damage climb faster; after wave 20 the old slopes
- * resume from the higher level. An army that only ever buys the next soldier used to reach
- * wave 28-31 on Normal without conceding a breach.
+ * Pressure knobs for getWaveConfig. The host grows by MID_COUNT_PER_WAVE a wave from wave
+ * 4, plus MID_PRESSURE_EXTRA a wave between MID_PRESSURE_FROM and MID_PRESSURE_UNTIL. The
+ * EARLY_* terms add health and damage per wave on top of the academy curve; they are zero
+ * while veterans are capped, and are the dials to raise if the middle of a run gets easy.
  */
-const MID_PRESSURE_FROM = 6;
+const MID_COUNT_PER_WAVE = 1.5;
+const MID_PRESSURE_FROM = 10;
 const MID_PRESSURE_UNTIL = 20;
-const MID_PRESSURE_EXTRA = 2;
-const EARLY_HP_EXTRA = 0.02;
-const EARLY_DMG_EXTRA = 0.015;
-const EARLY_HP_PER_WAVE = 0.03;
-const EARLY_DMG_PER_WAVE = 0.025;
+const MID_PRESSURE_EXTRA = 1;
+const EARLY_HP_EXTRA = 0;
+const EARLY_DMG_EXTRA = 0;
+const EARLY_HP_PER_WAVE = 0;
+const EARLY_DMG_PER_WAVE = 0;
 
 /** Health and damage scale every enemy type gets at this wave; getWaveConfig and spawning share it. */
 function getEnemyWaveScale(waveNum) {
@@ -1516,11 +1521,11 @@ function getWaveConfig(waveNum) {
 
   const templateCount = base.count + Math.floor(Math.min(waveNum - 1, Waves.length - 1) * 0.45);
   const academyCount = 8 + eased * 70;
-  // Hosts used to sit at 20 from wave 10 to wave 20 while income kept growing, so the
-  // middle of a run had no pressure. They now grow by one a wave until the late ramp takes over.
   const pressureWaves = Math.max(0, Math.min(waveNum, MID_PRESSURE_UNTIL) - MID_PRESSURE_FROM);
   const midCount =
-    waveNum >= 4 ? Math.min(90, 4 + waveNum * 2 + pressureWaves * MID_PRESSURE_EXTRA) : 0;
+    waveNum >= 4
+      ? Math.min(90, 4 + waveNum * MID_COUNT_PER_WAVE + pressureWaves * MID_PRESSURE_EXTRA)
+      : 0;
   const count = Math.floor(Math.max(templateCount, academyCount, midCount) + post * 38);
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
