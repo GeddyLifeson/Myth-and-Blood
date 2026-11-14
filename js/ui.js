@@ -537,8 +537,12 @@ const UI = (() => {
     });
 
     document.getElementById('hunt-toggle').addEventListener('click', () => {
-      Game.toggleGlobalHunt();
-      updateHUD();
+      Game.orderHunt();
+      updateHUD(true);
+    });
+    document.getElementById('hold-here')?.addEventListener('click', () => {
+      Game.orderHoldHere();
+      updateHUD(true);
     });
 
     document.getElementById('clear-selection-btn')?.addEventListener('click', () => {
@@ -1166,7 +1170,9 @@ const UI = (() => {
     }
 
     const huntBtn = hudEls['hunt-toggle'];
-    if (huntBtn) huntBtn.textContent = `HUNT: ${gs.globalHunt ? 'ON' : 'OFF'}`;
+    if (huntBtn) huntBtn.textContent = 'HUNT';
+    const holdBtn = hudEls['hold-here'];
+    if (holdBtn) holdBtn.textContent = gs.heldCount ? `HOLD · ${gs.heldCount}` : 'HOLD';
 
     const formSection = hudEls['formation-section'];
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1903,6 +1909,7 @@ const UI = (() => {
       'perk-build-section',
       'loadout-section',
       'hunt-toggle',
+      'hold-here',
       'formation-section',
       'research-open',
       'builder-repair-toggle',
@@ -1947,7 +1954,7 @@ const UI = (() => {
       gs.pendingWallFacing,
       gs.moveBuildingTarget,
       gs.paused,
-      gs.globalHunt,
+      gs.heldCount,
       gs.courierUsedThisWave,
       gs.spyUsedThisWave,
       gs.doctrineUsedThisWave,

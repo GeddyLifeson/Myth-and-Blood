@@ -1672,6 +1672,13 @@ function createUnit(type, x, y, team, opts = {}) {
   u.perks = [];
   u.attackSpeedMult = 1;
   u.manualOrder = false;
+  // Hold is a per-soldier order (Shift + move, or Hold here). Hunt is the default.
+  u.holding = false;
+  u.marchBest = Infinity;
+  u.marchStall = 0;
+  u.medQueued = false;
+  u.medHurt = false;
+  u.medPrevHp = def.hp;
   u.holdX = null;
   u.holdY = null;
   u.pendingHoldX = null;

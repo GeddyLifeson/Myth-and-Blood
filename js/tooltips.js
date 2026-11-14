@@ -16,7 +16,7 @@ const Tooltips = (() => {
     castle:
       'Compound: 4 walls, 4 outposts, Keep, med tent, and mess hall — requires Fortification research.',
     medical_tent:
-      'All wounded allies at ≤25% HP retreat here when damaged instead of fighting to the death.',
+      'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside.',
     mess_hall: 'Morale aura for nearby troops — stacks with bards and rallies.',
     watchtower:
       '5 TP. Reveals stealth and burrowers; enemies nearby suffer accuracy penalties. Archers gain +35 range. Requires Field Engineering.',
@@ -50,7 +50,7 @@ const Tooltips = (() => {
     mage: 'Arcane bolts with splash. Strong vs clustered swarms.',
     cavalry: 'Fast melee with charge bonus. Hunts stragglers and flanks.',
     healer:
-      'Heals allies in range — including other healers. At ≤25% HP, retreats to med tents on damage like all allies. Ranks when healing each wave.',
+      'Heals allies in range — including other healers. Goes to a med tent when wounded, like every soldier. Ranks when healing each wave.',
     knight: 'Heavy armored melee with damage resistance. Banner courier can summon one.',
     sapper: 'Bonus siege damage (×2.5) vs walls and siege engines.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
@@ -318,9 +318,9 @@ const Tooltips = (() => {
         footer: 'Click wall · Free · Esc to cancel',
       },
       'hunt-toggle': {
-        title: 'Global Hunt',
-        body: `All hunt-capable troops ${gs?.globalHunt ? 'actively pursue' : 'hold position unless'} foes and enemy hamlets/guilds.`,
-        footer: 'Hotkey: H',
+        title: 'Hunt',
+        body: `Release Hold: the selected soldiers (or the whole army if none are selected) hunt from their posts again. Hunting is the default.${gs?.heldCount ? ` ${gs.heldCount} holding now.` : ''}`,
+        footer: 'Hotkey: H · Hold here: Shift+H · Move and hold: Shift+click',
       },
       'clear-selection-btn': {
         title: 'Clear Selection',
