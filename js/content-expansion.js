@@ -1668,11 +1668,15 @@ const ContentExpansion = (() => {
     }
     if (ability === 'meteor') {
       AudioEngine.SFX.fireball();
-      StrikeFX?.play?.('meteor', wx, wy, ab.radius);
-      StrikeFX?.impact?.('meteor', wx, wy, ab.radius, 1.45 * coolFx);
-      if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(10 * coolFx));
-      ctx.damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
-      ctx.damageInRadius(wx, wy - 30, ab.radius * 0.7, Math.floor(ab.damage * 0.6), 'player');
+      // The rock takes a moment to fall: shake and damage land with it.
+      const land = () => {
+        StrikeFX?.impact?.('meteor', wx, wy, ab.radius, 1.45 * coolFx);
+        if (typeof VisualPolish !== 'undefined')
+          VisualPolish.addScreenShake(Math.round(10 * coolFx));
+        ctx.damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+        ctx.damageInRadius(wx, wy - 30, ab.radius * 0.7, Math.floor(ab.damage * 0.6), 'player');
+      };
+      if (!StrikeFX?.cast?.('meteor', wx, wy, ab.radius, land)) land();
       ctx.showMessage('Meteor shower impacts the field!');
       return true;
     }
