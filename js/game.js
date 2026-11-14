@@ -7227,7 +7227,8 @@ const Game = (() => {
     const grid = new Map();
     for (let i = 0; i < n; i++) {
       const u = GS.units[i];
-      if (!unitBlocksMovement(u)) continue;
+      // Runners leave past the edge; the clamp below would hold them inside the field for good.
+      if (!unitBlocksMovement(u) || u.fleeing) continue;
       const key = `${Math.floor(u.x / cellSize)},${Math.floor(u.y / cellSize)}`;
       if (!grid.has(key)) grid.set(key, []);
       grid.get(key).push(i);
