@@ -74,10 +74,15 @@ const lateWave = (id) => {
   return -1;
 };
 ok(lateWave('dominion_storm') > 0, 'the event deck can pick dominion storm after wave 175');
-ok(
-  DME.pickEvent(100) === null || DME.pickEvent(100).waveMin <= 100,
-  'no event arrives before its wave'
-);
+{
+  let early = 0;
+  for (let w = 1; w <= 400; w++) {
+    const e = DME.pickEvent(w);
+    if (e && w < e.waveMin) early++;
+  }
+  ok(early === 0, 'no event arrives before its wave');
+  ok(DME.pickEvent(100)?.id !== 'dominion_storm', 'dominion storm waits for wave 175');
+}
 ok(!!DME.EVENTS.worldheart_pulse, 'worldheart pulse event exists');
 
 const FH = vm.runInContext(`${hazards}\nFactionHazards`, ctx);
