@@ -1,0 +1,6 @@
+p1-4000|normal 4000 60000 P1 --maxwave=22 --json
+p2-4000|normal 4000 60000 P2 --maxwave=22 --json
+p1-4131|normal 4131 60000 P1 --maxwave=22 --json
+p2-4131|normal 4131 60000 P2 --maxwave=22 --json
+cf-routFix-4000|normal 4000 40000 routFix --maxwave=16 --json
+ext-normal-4000|normal 4000 110000 --maxwave=31 --json

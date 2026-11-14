@@ -1,0 +1,2 @@
+ext-normal-4000|normal 4000 110000 --maxwave=31 --json
+ext-normal-4131|normal 4131 110000 --maxwave=31 --json

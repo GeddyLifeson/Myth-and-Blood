@@ -1,0 +1,21 @@
+cf-xpCap8-4000|node bot.mjs normal 4000 36000 xpCap=8 --maxwave=15 --json
+cf-noEnemyRout-4000|node bot.mjs normal 4000 36000 noEnemyRout --maxwave=15 --json
+cf-xpCap8+noEnemyRout-4000|node bot.mjs normal 4000 36000 xpCap=8 noEnemyRout --maxwave=15 --json
+p1-4000|node bot.mjs normal 4000 60000 P1 --maxwave=22 --json
+p2-4000|node bot.mjs normal 4000 60000 P2 --maxwave=22 --json
+duels2|./duels2.sh
+cf-all-4000|node bot.mjs normal 4000 36000 xpCap=8 noEnemyRout noStars noHealerRank --maxwave=15 --json
+cf-noHealerRank-4000|node bot.mjs normal 4000 36000 noHealerRank --maxwave=15 --json
+cf-xpCap8-4131|node bot.mjs normal 4131 36000 xpCap=8 --maxwave=15 --json
+cf-noEnemyRout-4131|node bot.mjs normal 4131 36000 noEnemyRout --maxwave=15 --json
+cf-noStars-4000|node bot.mjs normal 4000 36000 noStars --maxwave=15 --json
+cf-tent-4000|node bot.mjs normal 4000 36000 --tent --maxwave=15 --json
+cf-tent+noMedSeek-4000|node bot.mjs normal 4000 36000 noMedSeek --tent --maxwave=15 --json
+cf-noAssist-4000|node bot.mjs normal 4000 36000 noAssist --maxwave=15 --json
+cf-enemyAcc20-4000|node bot.mjs normal 4000 36000 enemyAcc=20 --maxwave=15 --json
+p1-4131|node bot.mjs normal 4131 60000 P1 --maxwave=22 --json
+cf-xpCap8+noEnemyRout-4131|node bot.mjs normal 4131 36000 xpCap=8 noEnemyRout --maxwave=15 --json
+ext-normal-4000|node bot.mjs normal 4000 110000 --maxwave=31 --json
+p2-4131|node bot.mjs normal 4131 60000 P2 --maxwave=22 --json
+cf-xpCdOnly8-4000|node bot.mjs normal 4000 36000 xpCdOnly=8 --maxwave=15 --json
+cf-routFix-4000|node bot.mjs normal 4000 36000 routFix --maxwave=15 --json

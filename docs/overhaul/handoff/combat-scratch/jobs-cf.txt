@@ -1,0 +1,26 @@
+cf-xpCap8-4000|normal 4000 40000 xpCap=8 --maxwave=16 --json
+cf-noEnemyRout-4000|normal 4000 40000 noEnemyRout --maxwave=16 --json
+cf-xpCap8-4131|normal 4131 40000 xpCap=8 --maxwave=16 --json
+cf-noEnemyRout-4131|normal 4131 40000 noEnemyRout --maxwave=16 --json
+cf-xpCap8+noEnemyRout-4000|normal 4000 40000 xpCap=8 noEnemyRout --maxwave=16 --json
+cf-xpCap8+noEnemyRout-4131|normal 4131 40000 xpCap=8 noEnemyRout --maxwave=16 --json
+cf-all-4000|normal 4000 40000 xpCap=8 noEnemyRout noStars noHealerRank --maxwave=16 --json
+cf-all-4131|normal 4131 40000 xpCap=8 noEnemyRout noStars noHealerRank --maxwave=16 --json
+cf-xpCdOnly8-4000|normal 4000 40000 xpCdOnly=8 --maxwave=16 --json
+cf-xpDmgOnly8-4000|normal 4000 40000 xpDmgOnly=8 --maxwave=16 --json
+cf-noStars-4000|normal 4000 40000 noStars --maxwave=16 --json
+cf-noHealerRank-4000|normal 4000 40000 noHealerRank --maxwave=16 --json
+cf-noAssist-4000|normal 4000 40000 noAssist --maxwave=16 --json
+cf-enemyAcc20-4000|normal 4000 40000 enemyAcc=20 --maxwave=16 --json
+cf-tent-4000|normal 4000 40000 --tent --maxwave=16 --json
+cf-tent+noMedSeek-4000|normal 4000 40000 noMedSeek --tent --maxwave=16 --json
+cf-xpCap8-4262|normal 4262 40000 xpCap=8 --maxwave=16 --json
+cf-noEnemyRout-4262|normal 4262 40000 noEnemyRout --maxwave=16 --json
+cf-xpCap8+noEnemyRout-4262|normal 4262 40000 xpCap=8 noEnemyRout --maxwave=16 --json
+cf-all-4262|normal 4262 40000 xpCap=8 noEnemyRout noStars noHealerRank --maxwave=16 --json
+cf-noStars-4131|normal 4131 40000 noStars --maxwave=16 --json
+cf-noAssist-4131|normal 4131 40000 noAssist --maxwave=16 --json
+cf-enemyAcc20-4131|normal 4131 40000 enemyAcc=20 --maxwave=16 --json
+cf-tent-4131|normal 4131 40000 --tent --maxwave=16 --json
+cf-tent+noMedSeek-4131|normal 4131 40000 noMedSeek --tent --maxwave=16 --json
+cf-noHealerRank-4131|normal 4131 40000 noHealerRank --maxwave=16 --json

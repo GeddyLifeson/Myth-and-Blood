@@ -1,16 +1,19 @@
 # Overhaul
 
+Picking this work up? Start with [HANDOFF.md](HANDOFF.md).
+
 A full audit of the game was run on 2026-11-13, after the combat loop, roster, sprites and
 sound had been rebuilt. Five reports cover everything else. Each lists what a system does,
 whether a player meets it, bugs with file and line, and a proposed rework.
 
-| Report                                                   | Covers                                                               |
-| -------------------------------------------------------- | -------------------------------------------------------------------- |
-| [economy-progression.md](economy-progression.md)         | buildings, income, research, tech paths, between-run progression     |
-| [factions-events-ops.md](factions-events-ops.md)         | enemy factions, wave make-up, events, spy, courier, spells, strikes  |
-| [screens-ui.md](screens-ui.md)                           | every screen and panel, phone layout, keys, CSS                      |
-| [visuals-animation-sound.md](visuals-animation-sound.md) | buildings, field, effects, unit animation, every sound and music cue |
-| [engine-content.md](engine-content.md)                   | `game.js` structure, saves, performance, modes, achievements, lore   |
+| Report                                                   | Covers                                                                                     |
+| -------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| [economy-progression.md](economy-progression.md)         | buildings, income, research, tech paths, between-run progression                           |
+| [factions-events-ops.md](factions-events-ops.md)         | enemy factions, wave make-up, events, spy, courier, spells, strikes                        |
+| [screens-ui.md](screens-ui.md)                           | every screen and panel, phone layout, keys, CSS                                            |
+| [visuals-animation-sound.md](visuals-animation-sound.md) | buildings, field, effects, unit animation, every sound and music cue                       |
+| [combat-core.md](combat-core.md)                         | the fight itself: veterancy, hit and damage rolls, morale, healing, AI (some runs pending) |
+| [engine-content.md](engine-content.md)                   | `game.js` structure, saves, performance, modes, achievements, lore                         |
 
 The reports describe the code as it was on that date. Line numbers drift as the work lands.
 
@@ -66,6 +69,8 @@ The owner left these to recommendation on 2026-11-13. Each can be reversed.
 | Army upkeep                       | Stays at 7% per soldier past 14, shown on every price.                                                                                               |
 | Strong champions                  | Left as marquee picks.                                                                                                                               |
 | Fixed keys                        | Space pauses, Tab cycles soldiers, Escape cancels.                                                                                                   |
+| Pull requests                     | One per group as it passes the full suite (war, screens, art, content, engine), not one at the end.                                                  |
+| Crossover hero ids                | Display names change first; internal ids are renamed later in one step with a save migration.                                                        |
 
 ## Hotkeys and keybinds
 

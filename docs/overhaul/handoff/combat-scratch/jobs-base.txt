@@ -1,0 +1,12 @@
+normal 4000 60000 --maxwave=30 --json
+normal 4131 60000 --maxwave=30 --json
+normal 4262 60000 --maxwave=30 --json
+baby 4000 45000 --maxwave=25 --json
+chad 4000 60000 --maxwave=30 --json
+doomslayer 4000 60000 --maxwave=30 --json
+chad 4131 60000 --maxwave=30 --json
+doomslayer 4131 60000 --maxwave=30 --json
+baby 4131 45000 --maxwave=25 --json
+chad 4262 60000 --maxwave=30 --json
+doomslayer 4262 60000 --maxwave=30 --json
+baby 4262 45000 --maxwave=25 --json
