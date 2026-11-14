@@ -166,11 +166,7 @@ const PathfindingCore = (() => {
     }
 
     // BFS ring search. Cap visits so a fully-blocked map cannot explode.
-    const maxVisit = Math.min(
-      gridW * gridH,
-      (maxRadius * 2 + 1) * (maxRadius * 2 + 1),
-      NEAR_QUEUE
-    );
+    const maxVisit = Math.min(gridW * gridH, (maxRadius * 2 + 1) * (maxRadius * 2 + 1), NEAR_QUEUE);
     ensureSearchBuffers();
     if (++visitStamp >= 65500) {
       visitGen.fill(0);
