@@ -136,7 +136,12 @@ const BiomeSpawn = (() => {
     return c;
   }
 
-  function biasSpawnPosition(pos, side, worldW, worldH, rawCtx = {}) {
+  /**
+   * Enemies enter at the top edge. The biome there decides how far down the field they
+   * appear: open plains at the edge itself, rougher ground a little further in. Only y
+   * moves; x is the entry sector's business.
+   */
+  function biasSpawnPosition(pos, _side, worldW, worldH, rawCtx = {}) {
     if (!pos) return pos;
     const profile = getSpawnProfileAt(pos.x, pos.y, {
       ...rawCtx,
@@ -144,18 +149,8 @@ const BiomeSpawn = (() => {
       worldH,
     });
     const depth = profile.spawnDepth ?? 0.35;
-    const out = { ...pos };
-
-    if (side === 'north' || !side || side === 'default') {
-      const targetY = 12 + depth * Math.max(40, (rawCtx.rallyY || worldH * 0.7) * 0.55);
-      out.y = out.y * 0.55 + targetY * 0.45;
-    } else if (side === 'south') {
-      out.y = out.y * 0.7 + (worldH - 24 - depth * 20) * 0.3;
-    } else if (side === 'east' || side === 'west') {
-      const midY = (rawCtx.rallyY || worldH * 0.65) * (0.35 + depth * 0.4);
-      out.y = out.y * 0.6 + midY * 0.4;
-    }
-    return out;
+    const targetY = 12 + depth * Math.max(40, (rawCtx.rallyY || worldH * 0.7) * 0.55);
+    return { ...pos, y: pos.y * 0.55 + targetY * 0.45 };
   }
 
   function pickWildlifeType(wave, rawCtx = {}, rng = Math.random) {

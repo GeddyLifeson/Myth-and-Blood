@@ -88,7 +88,7 @@ const run = (n) => {
 
 // --- mines: laid at night, per-night count and cap ----------------------------------------
 Game.creativeForceNight();
-ok(Game.creativeSpawnPlayerAt('sapper', c.x, c.y + 80), 'spawn a Sapper');
+ok(Game.creativeSpawnPlayerAt('sapper', c.x, c.y - 30), 'spawn a Sapper');
 const sapper = live('sapper', 'player')[0];
 run(25);
 ok(
@@ -445,7 +445,7 @@ quietDay();
   run(5);
   SapperKit.getMines().length = 0;
   sapper.x = c.x;
-  sapper.y = c.y + 80;
+  sapper.y = c.y - 30;
   sapper.postX = sapper.x;
   sapper.postY = sapper.y;
   sapper.manualOrder = false;
@@ -543,7 +543,7 @@ quietDay();
 {
   Game.creativeForceNight();
   ok(
-    Game.creativeSpawnPlayerAt('sapper', c.x + 120, c.y + 90),
+    Game.creativeSpawnPlayerAt('sapper', c.x + 120, c.y - 20),
     'a second Sapper for the save test'
   );
   run(25);
