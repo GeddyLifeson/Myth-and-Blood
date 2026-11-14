@@ -44,6 +44,45 @@ game is in:
   lists only the keys that work in the current state.
 - Controller and touch equivalents where they fit.
 
+## Decisions
+
+The owner left these to recommendation on 2026-11-13. Each can be reversed.
+
+| Question                          | Decision                                                                                                                                             |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Deleting systems                  | Rework and merge freely. Nothing is deleted outright without asking.                                                                                 |
+| The game past wave 100            | The era resets that wipe the field go. One field for the whole run; later waves keep scaling and keep their content.                                 |
+| Flank attacks                     | Top edge only, in three entry sectors. The map stays one size.                                                                                       |
+| Enemy structures                  | Return in a small form: war camps at the top edge that strengthen the next wave unless destroyed.                                                    |
+| Crossover hero factions           | Kept, reworked into original characters with new names. Internal ids are renamed with a save migration.                                              |
+| Cheats                            | Using one voids that run's score, ribbons and achievements.                                                                                          |
+| Online play                       | Share codes only. The broken turn hand-off is fixed; real networking is not built.                                                                   |
+| Level editor, creative mode, mods | Kept working, no redesign.                                                                                                                           |
+| Unavailable items                 | Greyed out with the reason on hover, not hidden.                                                                                                     |
+| Hunt                              | Default for every soldier, on a short leash around the post. Shift + move means hold. The global toggle becomes Hunt and Hold here commands.         |
+| Med tent                          | Wounded soldiers go at once when not fighting, and break off below half health when they are. Held soldiers go too and return. The General does not. |
+| Hiring                            | One per click; Shift keeps the troop armed.                                                                                                          |
+| Spoils choice                     | Centred, field dimmed behind it, nothing else until a choice is made. Event decisions get the same treatment; crates stay quick pickups.             |
+| Army upkeep                       | Stays at 7% per soldier past 14, shown on every price.                                                                                               |
+| Strong champions                  | Left as marquee picks.                                                                                                                               |
+| Fixed keys                        | Space pauses, Tab cycles soldiers, Escape cancels.                                                                                                   |
+
+## Hotkeys and keybinds
+
+Added by the owner after the audit. Every action gets a key, and keys depend on the state the
+game is in:
+
+- A key map per state: main menu, night (deploy and build), day (battle), a unit selected, a
+  building selected, placement armed, pause, spoils choice, game over, creative mode.
+- No key does two things in the same state. The audit found `U` and `P` doubled, `V`
+  unreachable and a dead speed binding ([screens-ui.md](screens-ui.md)).
+- Deploy and build keys follow what is unlocked, so new troops such as the Crossbowman are not
+  left without one.
+- Rebinding in settings, saved per browser, with a reset to defaults.
+- The current key for each action shown on its button and tooltip, and a key sheet on `?` that
+  lists only the keys that work in the current state.
+- Controller and touch equivalents where they fit.
+
 ## Decisions waiting on the owner
 
 - Whether the game past wave 100 (era resets) stays.
