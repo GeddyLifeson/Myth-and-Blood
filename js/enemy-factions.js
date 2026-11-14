@@ -661,6 +661,7 @@ const EnemyFactions = (() => {
         { type: 'berserker', from: 7, w: 1.3, heavy: true, max: 0.25 },
         { type: 'shaman', from: 9, w: 0.5, cap: 3 },
         { type: 'war_chief', from: 10, w: 0.3, key: true, heavy: true, cap: 2 },
+        { type: 'siege_tower', from: 12, w: 0.5, heavy: true, rear: true, cap: 3 },
       ],
       bosses: ['boss_gorath', 'boss_volk'],
       champions: ['war_chief', 'berserker', 'orc'],
@@ -880,10 +881,13 @@ const EnemyFactions = (() => {
     'void_abyssal',
     'mirror_empires',
   ];
-  const MAX_LEAD_TYPES = 5;
-  const MAX_ALLY_TYPES = 2;
+  const MAX_TYPES = 7;
+  const MIN_TYPES = 4;
+  const MAX_GUARD_TYPES = 3;
+  /** The ally's share of the host; the lead keeps 72 to 78 per cent. */
+  const ALLY_SHARES = [0.22, 0.25, 0.28];
   const COUNT_MIN = 0.75;
-  const COUNT_MAX = 1.35;
+  const COUNT_MAX = 1.5;
 
   const UNIT_FACTION = {};
   for (const [fid, host] of Object.entries(HOSTS)) {
@@ -1153,6 +1157,7 @@ const EnemyFactions = (() => {
       const fid = BOSS_FACTION[ctx.boss.type];
       plan.leadId = fid && active.includes(fid) ? fid : active[active.length - 1];
       plan.tacticId = HOSTS[plan.leadId].tactic;
+      planAlly(plan, wave, rng);
       return plan;
     }
 
@@ -1169,6 +1174,7 @@ const EnemyFactions = (() => {
       plan.horde = pick.id;
       plan.leadId = pick.faction;
       plan.tacticId = `horde:${pick.id}`;
+      planAlly(plan, wave, rng);
       return plan;
     }
 
@@ -1209,20 +1215,31 @@ const EnemyFactions = (() => {
     plan.tacticId = HOSTS[lead.id].tactic;
     if (!plan.revenge && lead.pull >= 0.35 && draw[lead.id]?.why) plan.drawnBy = draw[lead.id].why;
 
-    // At most one ally, and not every day.
+    // One ally every day it can field anyone, so the lead stays near three quarters.
     const allies = rows.filter(
       (r) =>
         r.id !== lead.id &&
         r.id !== 'mirror_empires' &&
         HOSTS[r.id].roster.some((e) => e.aux && wave >= e.from && unitExists(e.type))
     );
-    const leadTypes = HOSTS[lead.id].roster.filter((e) => wave >= e.from && unitExists(e.type));
-    const thin = leadTypes.length < 3;
-    if (allies.length && (thin || rng() < 0.6)) {
+    if (allies.length) {
       plan.allyId = weightedPick(allies, rng).id;
-      plan.allyShare = 0.2 + Math.floor(rng() * 3) * 0.05;
+      plan.allyShare = ALLY_SHARES[Math.floor(rng() * ALLY_SHARES.length)];
     }
     return plan;
+  }
+
+  /** Boss and horde waves have an ally too: the boss's (or the flavour's) faction still leads. */
+  function planAlly(plan, wave, rng) {
+    const pool = leadCandidates(wave).filter(
+      (id) =>
+        id !== plan.leadId &&
+        id !== 'mirror_empires' &&
+        HOSTS[id].roster.some((e) => e.aux && wave >= e.from && unitExists(e.type))
+    );
+    if (!pool.length) return;
+    plan.allyId = pool[Math.floor(rng() * pool.length)];
+    plan.allyShare = ALLY_SHARES[Math.floor(rng() * ALLY_SHARES.length)];
   }
 
   /** Tomorrow's plan, made once and kept until its wave is fought. */
@@ -1274,7 +1291,7 @@ const EnemyFactions = (() => {
     return TACTICS[plan.tacticId] || getFactionTactic(plan.leadId);
   }
 
-  function pickLeadEntries(plan, wave, params, rng) {
+  function pickLeadEntries(plan, wave, params, rng, limit = MAX_TYPES) {
     const host = HOSTS[plan.leadId];
     const noElites = !!params.noElites;
     let avail = host.roster.filter(
@@ -1287,12 +1304,23 @@ const EnemyFactions = (() => {
       .map((e) => ({ e, r: rng() * e.w }))
       .sort((a, b) => b.r - a.r)
       .map((x) => x.e);
-    const chosen = must.slice(0, MAX_LEAD_TYPES);
+    const chosen = must.slice(0, limit);
     for (const e of rest) {
-      if (chosen.length >= MAX_LEAD_TYPES) break;
+      if (chosen.length >= limit) break;
       chosen.push(e);
     }
     return chosen;
+  }
+
+  /** The ally's first `n` types, its supporting (aux) ones first, none that the lead fields. */
+  function allyEntries(plan, wave, n, lead) {
+    const host = plan.allyId ? HOSTS[plan.allyId] : null;
+    if (!host) return [];
+    return host.roster
+      .filter((e) => wave >= e.from && unitExists(e.type) && !lead.some((l) => l.type === e.type))
+      .sort((a, b) => (b.aux ? 1 : 0) - (a.aux ? 1 : 0))
+      .slice(0, n)
+      .map((e) => ({ ...e }));
   }
 
   /** Mirror Doctrine: field what StrategyCounterplay says beats the player's army. */
@@ -1310,16 +1338,6 @@ const EnemyFactions = (() => {
     if (!picks.length) return base;
     const keep = base.filter((e) => e.core && !picks.some((p) => p.type === e.type)).slice(0, 2);
     return picks.concat(keep);
-  }
-
-  function weightedMean(entries) {
-    let sum = 0;
-    let w = 0;
-    for (const e of entries) {
-      sum += unitThreat(e.type) * e.w;
-      w += e.w;
-    }
-    return w > 0 ? sum / w : 1;
   }
 
   /**
@@ -1353,6 +1371,13 @@ const EnemyFactions = (() => {
         .filter((e) => wave >= (e.from || 1) && unitExists(e.type))
         .map((e) => ({ ...e }));
       if (!lead.length) lead = [{ type: 'goblin', w: 1 }];
+      let allyN = 2;
+      for (;;) {
+        ally = allyEntries(plan, wave, allyN, lead);
+        if (lead.length + ally.length < MIN_TYPES && ally.length === allyN && allyN < 4) allyN++;
+        else break;
+      }
+      allyShare = ally.length ? plan.allyShare || 0.25 : 0;
       target = legacyHordeMeanThreat(wave);
     } else if (wave < 4 && Array.isArray(params.template) && params.template.length) {
       const tally = {};
@@ -1370,65 +1395,103 @@ const EnemyFactions = (() => {
       maxAllyShare = 0.75;
       target = 0; // the opening keeps its hand-set head count
     } else {
-      lead = pickLeadEntries(plan, wave, params, rng).map((e) => ({ ...e }));
-      if (tactic.mirror) lead = mirrorEntries(params, lead);
-      if (plan.allyId && HOSTS[plan.allyId]) {
-        ally = HOSTS[plan.allyId].roster
-          .filter((e) => e.aux && wave >= e.from && unitExists(e.type))
-          .filter((e) => !lead.some((l) => l.type === e.type))
-          .slice(0, MAX_ALLY_TYPES)
-          .map((e) => ({ ...e }));
-        allyShare = ally.length ? plan.allyShare || 0.25 : 0;
+      if (plan.kind === 'boss') {
+        if (plan.bossType && unitExists(plan.bossType)) head.push(plan.bossType);
+        if (!params.noElites) {
+          // A guard of more than three kinds would leave no room for the rest of the host.
+          const kinds = new Set();
+          for (const m of params.packMinions || []) {
+            if (!unitExists(m) || (!kinds.has(m) && kinds.size >= MAX_GUARD_TYPES)) continue;
+            kinds.add(m);
+            head.push(m);
+          }
+        }
+      } else if (plan.revenge && unitExists(plan.revenge.type) && !params.noElites) {
+        head.push(plan.revenge.type);
       }
+      // Seven kinds at most, four where the rosters allow: trim the lead, or widen the ally.
+      let limit = 5;
+      let allyN = 2;
+      for (;;) {
+        lead = pickLeadEntries(plan, wave, params, rngFor(plan.seed, wave, 'lead'), limit).map(
+          (e) => ({ ...e })
+        );
+        if (tactic.mirror) lead = mirrorEntries(params, lead);
+        ally = allyEntries(plan, wave, allyN, lead);
+        const kinds = new Set([...head, ...lead.map((e) => e.type), ...ally.map((e) => e.type)]);
+        if (kinds.size > MAX_TYPES && limit > 1) limit--;
+        else if (kinds.size < MIN_TYPES && ally.length === allyN && allyN < 4) allyN++;
+        else break;
+      }
+      allyShare = ally.length ? plan.allyShare || 0.25 : 0;
       target = legacyMeanThreat(wave) * (1 + 0.03 * Math.min(8, params.eliteSlots | 0));
       if (plan.kind === 'boss') {
         // The old escort was a fixed list of elites plus ordinary fill; match its weight.
         const esc = params.noElites ? { sum: 0, n: 0 } : legacyBossEscortThreat(wave);
         const fill = Math.max(0, baseCount - 1 - esc.n);
         target = (esc.sum + fill * target) / Math.max(1, esc.n + fill);
-        if (plan.bossType && unitExists(plan.bossType)) head.push(plan.bossType);
-        if (!params.noElites) {
-          for (const m of params.packMinions || []) if (unitExists(m)) head.push(m);
-        }
-        ally = [];
-        allyShare = 0;
-      } else if (plan.revenge && unitExists(plan.revenge.type) && !params.noElites) {
-        head.push(plan.revenge.type);
       }
     }
     for (const e of lead) e.w *= tw[e.type] > 0 ? Math.min(3, tw[e.type]) : 1;
 
     // Lean on the heavy or the light end of the roster until the host's mean threat is near
     // the old wave's, then let the head count take up what is left.
+    const mult = tactic.threat || 1;
+    const headThreat = head.reduce((a, t) => a + unitThreat(t), 0);
+    for (const e of lead) e.cap0 = e.cap > 0 ? e.cap : 0;
+    const leadBodiesFor = (n) => Math.max(1, Math.round((n - head.length) * (1 - allyShare)));
+    // No type swamps the host (`max`), and the heavy ones may grow with it (`cap` per 30 bodies).
+    const setCaps = (n) => {
+      const bodies = leadBodiesFor(n);
+      for (const e of lead) {
+        let cap = e.cap0 > 0 ? Math.ceil(e.cap0 * (e.heavy ? Math.max(1, bodies / 30) : 1)) : 0;
+        if (e.max > 0 && lead.length > 1) {
+          const byShare = Math.max(1, Math.ceil(bodies * e.max));
+          cap = cap > 0 ? Math.min(cap, byShare) : byShare;
+        }
+        e.cap = cap;
+      }
+    };
+    /** Mean threat per body of the host as it would be built at head count n. */
+    const hostMean = (n) => {
+      setCaps(n);
+      const leadN = WaveCompositionCore.apportion(lead, leadBodiesFor(n));
+      const allyN = WaveCompositionCore.apportion(
+        ally,
+        Math.max(0, n - head.length - leadBodiesFor(n))
+      );
+      let sum = headThreat;
+      let bodies = head.length;
+      for (const counts of [leadN, allyN]) {
+        for (const [t, k] of Object.entries(counts)) {
+          sum += unitThreat(t) * k;
+          bodies += k;
+        }
+      }
+      return bodies ? (sum / bodies) * mult : 1;
+    };
     let countMult = 1;
     if (target > 0) {
-      const mult = tactic.threat || 1;
-      for (let i = 0; plan.kind !== 'horde' && i < 3; i++) {
-        const raw = weightedMean(lead);
-        const mean = (raw * (1 - allyShare) + weightedMean(ally) * allyShare) * mult;
-        const low = mean < target * 0.92;
-        if (!low && mean <= target * 1.08) break;
+      for (let i = 0; plan.kind !== 'horde' && i < 14; i++) {
+        const mean = hostMean(baseCount);
+        const low = mean < target * 0.96;
+        if (!low && mean <= target * 1.04) break;
         let moved = false;
         for (const e of lead) {
-          if (low ? e.heavy : e.core && !e.heavy) {
-            e.w *= 1.3;
+          if (e.heavy) {
+            e.w *= low ? 1.4 : 0.75;
             moved = true;
-          }
+          } else if (!e.key) e.w *= low ? 0.85 : 1.15;
         }
         if (!moved) break;
       }
-      const mean = (weightedMean(lead) * (1 - allyShare) + weightedMean(ally) * allyShare) * mult;
-      countMult = Math.max(COUNT_MIN, Math.min(COUNT_MAX, target / Math.max(0.2, mean)));
+      countMult = Math.max(
+        COUNT_MIN,
+        Math.min(COUNT_MAX, target / Math.max(0.2, hostMean(baseCount)))
+      );
     }
     const count = Math.max(1, Math.round(baseCount * countMult));
-    // No type swamps the host: its share of the lead's bodies is capped.
-    const leadBodies = Math.max(1, Math.round((count - head.length) * (1 - allyShare)));
-    for (const e of lead) {
-      if (e.max > 0 && lead.length > 1) {
-        const byShare = Math.max(1, Math.ceil(leadBodies * e.max));
-        e.cap = e.cap > 0 ? Math.min(e.cap, byShare) : byShare;
-      }
-    }
+    setCaps(count);
     const front = lead.filter((e) => e.front).map((e) => e.type);
     const rear = lead.filter((e) => e.rear).map((e) => e.type);
     const built = WaveCompositionCore.composeHost({

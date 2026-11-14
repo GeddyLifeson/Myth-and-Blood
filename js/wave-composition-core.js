@@ -140,7 +140,7 @@ const WaveCompositionCore = (() => {
     const ally = (o.ally || []).filter((e) => e && e.w > 0);
     const maxShare = o.maxAllyShare > 0 ? Math.min(0.9, o.maxAllyShare) : 0.4;
     const share = ally.length ? Math.max(0, Math.min(maxShare, Number(o.allyShare) || 0)) : 0;
-    const allyCount = Math.min(total, Math.round(total * share));
+    const allyCount = Math.min(total, Math.round((o.count | 0) * share));
     const leadCount = total - allyCount;
     const leadN = apportion(o.lead, leadCount);
     const allyN = apportion(ally, allyCount);

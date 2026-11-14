@@ -38,6 +38,11 @@ const HostTactics = (() => {
       leadTypes: new Set(),
       spawned: 0,
       total: 0,
+      leadShare: 0,
+      kinds: 0,
+      threat: 0,
+      targetThreat: 0,
+      countMult: 1,
       startTick: 0,
       wall: null,
       dash: null,
@@ -92,6 +97,11 @@ const HostTactics = (() => {
     st.crest = factionOf(plan)?.color || BONE;
     st.leadTypes = new Set(comp?.leadTypes || []);
     st.total = comp?.queue?.length || 0;
+    st.leadShare = comp?.leadShare || 0;
+    st.kinds = comp?.typeCount || 0;
+    st.threat = comp?.threat || 0;
+    st.targetThreat = comp?.targetThreat || 0;
+    st.countMult = comp?.countMult || 1;
     st.startTick = ctx.tick;
     const queue = comp?.queue || [];
     if (tactic.formation) {
@@ -974,6 +984,11 @@ const HostTactics = (() => {
       active: st.active,
       tacticId: st.tactic ? st.tactic.id : null,
       leadId: st.plan ? st.plan.leadId : null,
+      leadShare: st.leadShare,
+      kinds: st.kinds,
+      threat: st.threat,
+      targetThreat: st.targetThreat,
+      countMult: st.countMult,
       fired: { ...st.fired },
       wall: st.wall ? st.wall.state : null,
       rifts: st.rifts.length,
