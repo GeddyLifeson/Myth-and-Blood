@@ -561,7 +561,8 @@ const Roster = (() => {
     // Named bosses: two traits each and a second phase at half health.
     boss_gorath: {
       role: 'Boss — warlord',
-      trait: 'War Banner and Blood Rage. At half health he enrages.',
+      trait:
+        'War Banner and Blood Rage. At half health he enrages and sounds the charge: the whole warband runs.',
       weak: 'Kill his escort first; the banner only helps those near him.',
       warAura: { r: 130 },
       bloodRage: 1.25,
@@ -569,7 +570,8 @@ const Roster = (() => {
     },
     boss_morwen: {
       role: 'Boss — hexer',
-      trait: 'Hex and Grave Call. At half health she raises a pack of plague rats.',
+      trait:
+        'Hex and Grave Call. At half health she raises a pack of plague rats, and every fallen foe on the field stands up again.',
       weak: 'Cavalry; she is fragile for a boss.',
       kite: true,
       hex: { pct: 0.25, ticks: 300 },
@@ -577,7 +579,7 @@ const Roster = (() => {
     },
     boss_thokk: {
       role: 'Boss — mountain',
-      trait: 'Trample and Regrowth. At half health his regrowth doubles.',
+      trait: 'Trample and Regrowth. At half health his regrowth doubles and the pack stampedes.',
       weak: 'Ballistae and mages; he is very slow.',
       cleave: { r: 42, pct: 0.5 },
       regen: 0.008,
@@ -586,7 +588,7 @@ const Roster = (() => {
     },
     boss_grimm: {
       role: 'Boss — cinder knight',
-      trait: 'Plate and Cinder Hide. At half health he enrages.',
+      trait: 'Plate and Cinder Hide. At half health he enrages and the ground around him burns.',
       weak: 'Mages; keep melee off him.',
       armourVsRanged: 0.7,
       thorns: 8,
@@ -596,7 +598,7 @@ const Roster = (() => {
     boss_vexis: {
       role: 'Boss — shadow',
       trait:
-        'Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder.',
+        'Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder and steps through a rift to behind your line.',
       weak: 'Low health for a boss; pin it with a tight formation.',
       prefer: 'support',
       pounce: 2,
@@ -615,7 +617,7 @@ const Roster = (() => {
     },
     boss_sylvara: {
       role: 'Boss — wyrm mother',
-      trait: 'Wyrmfire. At half health she calls a flight of harpies.',
+      trait: 'Wyrmfire. At half health she calls a flight of harpies and rings herself in fire.',
       weak: 'Ballistae.',
       kite: true,
       splashEvery: { n: 1, r: 48, pct: 0.5 },
@@ -623,7 +625,8 @@ const Roster = (() => {
     },
     boss_rotfather: {
       role: 'Boss — plague lord',
-      trait: 'Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him.',
+      trait:
+        'Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him and the fallen rise again.',
       weak: 'Kill him far from your line.',
       plague: { dps: 4, ticks: 300 },
       regen: 0.008,
@@ -632,7 +635,7 @@ const Roster = (() => {
     },
     boss_volk: {
       role: 'Boss — dread marshal',
-      trait: 'War Banner and Suppressing Fire. At half health he enrages.',
+      trait: 'War Banner and Suppressing Fire. At half health he enrages and sounds the charge.',
       weak: 'Cavalry; break his escort and he is alone.',
       warAura: { r: 140 },
       hex: { pct: 0.2, ticks: 240 },
@@ -641,7 +644,8 @@ const Roster = (() => {
     },
     boss_malachar: {
       role: 'Boss — the eternal',
-      trait: 'Hex, Regrowth and War Banner. At half health he enrages and calls dark knights.',
+      trait:
+        'Hex, Regrowth and War Banner. At half health he enrages, calls dark knights, and the fallen rise again.',
       weak: 'Everything you have, at once.',
       warAura: { r: 150 },
       hex: { pct: 0.25, ticks: 300 },
@@ -791,6 +795,10 @@ const Roster = (() => {
     const p = profileOf(attacker);
     const tick = ctx.tick;
     let mult = 1;
+    // A faction whose fire burns the ground leaves embers where this blow lands.
+    if (attacker.hostLead && typeof HostTactics !== 'undefined') {
+      HostTactics.onHit(attacker, target, ctx);
+    }
     if ((attacker.hexUntil || 0) > tick) mult *= 1 - (attacker.hexPct || 0.2);
     if (attacker.team === 'enemy' && (attacker.warAuraUntil || 0) > tick) mult *= 1.15;
     if (
@@ -1009,6 +1017,8 @@ const Roster = (() => {
         if (dx * dx + dy * dy <= r2) ctx.hurt(u, p.deathBurst.dmg, null, true);
       }
     }
+    // The leading faction's tactic may have a say (the dead that rise again).
+    if (typeof HostTactics !== 'undefined') HostTactics.onDeath(unit, killer, ctx);
     const kp = killer ? profileOf(killer) : null;
     if (kp && kp.killHeal && killer.team !== unit.team) heal(killer, killer.maxHp * kp.killHeal);
     if (kp && kp.killCheer) {
@@ -1062,6 +1072,15 @@ const Roster = (() => {
     }
   }
 
+  /** What the faction part of a boss's second phase tells the player. */
+  const PHASE_LINES = {
+    charge: 'He sounds the charge.',
+    stampede: 'The pack stampedes.',
+    raise: 'The fallen rise again.',
+    vanish: 'It steps through a rift behind your line.',
+    burn: 'The ground around him burns.',
+  };
+
   function runPhase(unit, phase, ctx) {
     unit.phased = true;
     ctx.float(unit.x, unit.y - 34, 'ENRAGED', '#ff3030');
@@ -1078,7 +1097,12 @@ const Roster = (() => {
         ctx.spawnEnemy(type, unit.x + Math.cos(a) * 34, unit.y + Math.sin(a) * 34);
       }
     }
-    ctx.showMessage(`${ctx.unitName(unit)} is wounded and turns savage!`, 240);
+    // A boss at half health also does what his faction does (js/host-tactics.js).
+    const move = typeof HostTactics !== 'undefined' ? HostTactics.onBossPhase(unit, ctx) : null;
+    ctx.showMessage(
+      `${ctx.unitName(unit)} is wounded and turns savage!${move ? ` ${PHASE_LINES[move] || ''}` : ''}`,
+      240
+    );
   }
 
   function slowTick(ctx) {
@@ -1177,6 +1201,8 @@ const Roster = (() => {
     if (ctx.tick % SLOW_TICK === 0) slowTick(ctx);
     // The Sapper's mines, charges and knife-range retreat (js/sapper-kit.js).
     if (typeof SapperKit !== 'undefined') SapperKit.update(ctx);
+    // The leading faction's tactic (js/host-tactics.js).
+    if (typeof HostTactics !== 'undefined') HostTactics.update(ctx);
   }
 
   // ---------------------------------------------------------------- overlays
@@ -1593,6 +1619,7 @@ const Roster = (() => {
     }
     c.restore();
     if (typeof SapperKit !== 'undefined') SapperKit.drawOver(c, tick);
+    if (typeof HostTactics !== 'undefined') HostTactics.drawOver(c, tick);
   }
 
   // ---------------------------------------------------------------------- AI

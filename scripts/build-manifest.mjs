@@ -80,6 +80,7 @@ export const GAME_SCRIPTS = [
   'strategy-counterplay.js',
   'faction-reputation.js',
   'enemy-factions.js',
+  'host-tactics.js',
   'progression-restarts.js',
   'eternal-path-framework.js',
   'martial-path-evolution.js',

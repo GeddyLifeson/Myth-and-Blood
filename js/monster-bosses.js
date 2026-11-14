@@ -3,6 +3,8 @@
  * of themed minions plus northern field structures.
  */
 const MonsterBosses = (() => {
+  // Each boss belongs to a faction (EnemyFactions.HOSTS[...].bosses): his wave is led by that
+  // faction and plays its tactic, and his guard below is drawn from the same faction.
   const EVOLUTION_TIERS = [
     {
       minAppearance: 1,
@@ -40,71 +42,71 @@ const MonsterBosses = (() => {
 
   const BOSS_PACKS = {
     boss_gorath: {
-      minions: ['berserker', 'orc', 'warg_rider', 'orc_archer'],
-      eliteMinions: ['war_chief', 'troll', 'iron_colossus'],
+      minions: ['berserker', 'orc_shieldbearer', 'orc_archer', 'orc'],
+      eliteMinions: ['war_chief', 'berserker'],
       structures: ['enemy_trade_outpost', 'enemy_quarry'],
       spawnSide: 'north',
       packName: 'Ash March Warband',
     },
     boss_morwen: {
-      minions: ['necromancer', 'bone_summoner', 'grim_revenant', 'shaman'],
-      eliteMinions: ['dreadborn_champion', 'bone_summoner', 'grim_revenant'],
+      minions: ['necromancer', 'bone_summoner', 'dark_knight', 'necromancer'],
+      eliteMinions: ['dreadborn_champion', 'abomination'],
       structures: ['enemy_trade_outpost', 'enemy_shadow_academy'],
       spawnSide: 'north',
       packName: 'Bone Court',
     },
     boss_thokk: {
-      minions: ['siege_tower', 'goblin_sapper', 'troll', 'berserker'],
-      eliteMinions: ['iron_colossus', 'behemoth', 'siege_tower'],
+      minions: ['troll', 'warg_rider', 'warg_rider', 'behemoth'],
+      eliteMinions: ['behemoth', 'troll'],
       structures: ['enemy_quarry', 'enemy_trade_outpost'],
       spawnSide: 'north',
       packName: 'Gatebreakers',
     },
     boss_grimm: {
-      minions: ['dark_knight', 'hellbound_legionnaire', 'berserker', 'dark_mage'],
-      eliteMinions: ['cinderbound_juggernaut', 'dreadborn_champion'],
+      minions: ['sky_drake', 'hellbound_legionnaire', 'harpy', 'wailing_wraith'],
+      eliteMinions: ['cinderbound_juggernaut', 'elder_wyrm'],
       structures: ['enemy_trade_outpost'],
       spawnSide: 'north',
       packName: 'Cinder Oath',
     },
     boss_vexis: {
       minions: ['void_stalker', 'umbral_stalker', 'assassin', 'nightmare_strider'],
-      eliteMinions: ['void_stalker', 'abomination'],
+      eliteMinions: ['void_stalker', 'umbral_stalker'],
       structures: ['enemy_quarry'],
       spawnSide: 'north',
       packName: 'Hollow Stalkers',
     },
     boss_karg: {
-      minions: ['iron_colossus', 'siege_tower', 'goblin_engineer', 'war_chief'],
-      eliteMinions: ['iron_colossus', 'elder_wyrm'],
+      minions: ['iron_colossus', 'siege_tower', 'goblin_engineer', 'goblin_sapper'],
+      eliteMinions: ['iron_colossus', 'siege_tower'],
       structures: ['enemy_hamlet', 'enemy_quarry'],
       spawnSide: 'north',
       packName: 'Iron Foundry',
     },
     boss_sylvara: {
-      minions: ['sky_drake', 'harpy', 'elder_wyrm', 'bone_summoner'],
+      minions: ['sky_drake', 'harpy', 'elder_wyrm', 'wailing_wraith'],
       eliteMinions: ['elder_wyrm', 'sky_drake'],
       structures: ['enemy_quarry', 'enemy_trade_outpost'],
       spawnSide: 'north',
       packName: 'Burning Sky Brood',
     },
     boss_rotfather: {
-      minions: ['plague_rat', 'necromancer', 'grim_revenant', 'abomination'],
+      minions: ['abomination', 'necromancer', 'grim_revenant', 'bone_summoner'],
       eliteMinions: ['bone_summoner', 'abomination'],
       structures: ['enemy_trade_outpost', 'enemy_shadow_academy'],
       spawnSide: 'north',
       packName: 'Rot Host',
     },
     boss_volk: {
-      minions: ['siege_tower', 'war_chief', 'hellmortar_pack', 'orc'],
-      eliteMinions: ['iron_colossus', 'war_chief'],
+      minions: ['war_chief', 'orc_shieldbearer', 'berserker', 'orc_archer'],
+      eliteMinions: ['war_chief', 'berserker'],
       structures: ['enemy_hamlet', 'enemy_quarry'],
       spawnSide: 'north',
       packName: 'North Hammer',
     },
     boss_malachar: {
-      minions: ['dreadborn_champion', 'grim_revenant', 'void_stalker', 'necromancer', 'elder_wyrm'],
-      eliteMinions: ['elder_wyrm', 'cinderbound_juggernaut', 'iron_colossus'],
+      minions: ['dreadborn_champion', 'grim_revenant', 'dark_knight', 'necromancer', 'abomination'],
+      eliteMinions: ['dreadborn_champion', 'abomination'],
       structures: ['enemy_hamlet', 'enemy_war_academy', 'enemy_shadow_academy'],
       spawnSide: 'north',
       packName: 'Endless Siege Host',
@@ -146,7 +148,7 @@ const MonsterBosses = (() => {
       name: 'Thokk the Mountain',
       title: 'Walker of Shattered Gates',
       tagline: 'Walls crumble when he exhales.',
-      faction: 'Orc Warbands',
+      faction: 'The Wild Hunt',
       lore: 'A walking landslide with opinions about your gates. Thokk does not climb walls — he becomes the breach. Sappers speak of him in whispers and refund requests.',
       mechanics:
         'Colossal melee · siegeMult ×3.5 vs structures · enrages below ~50% HP · very slow.',
@@ -160,7 +162,7 @@ const MonsterBosses = (() => {
       name: 'Grimm Ashborne',
       title: 'Knight of the Cinder Oath',
       tagline: 'Steel and flame — nothing else remains.',
-      faction: 'Dark Legions',
+      faction: 'Cinder Flight',
       lore: 'Oath-bound knight wreathed in cinder. Grimm burned his own standard to light the march south. He fights as if the battlefield owes him a debt.',
       mechanics: 'Melee duelist · fireAura damages nearby allies.',
       counter: 'Outposts, ranged focus, keep melee out of his aura radius.',
@@ -173,7 +175,7 @@ const MonsterBosses = (() => {
       name: 'Vexis the Hollow',
       title: 'Shadow That Hungers',
       tagline: "Your General's heartbeat is his compass.",
-      faction: 'Void / Abyssal',
+      faction: 'The Void Court',
       lore: "Hollow shadow that smells your General's fear. Vexis was a court assassin before the host made him a warlord. He does not want your walls — he wants your banner.",
       mechanics: 'Fast melee assassin · huntsGeneral — paths toward your General.',
       counter: 'Keep garrison on the Keep; knights screen the General.',
@@ -186,7 +188,7 @@ const MonsterBosses = (() => {
       name: 'Iron Lord Karg',
       title: 'Forge-Walker',
       tagline: 'A walking foundry that wants your hamlets.',
-      faction: 'Orc Warbands',
+      faction: 'Goblin Hordes',
       lore: 'Foundry on legs. Karg ate three hamlets in the Border Wars and wore the rivets as trophies. RTS-era commanders learn his footsteps mean economy damage, not duel damage.',
       mechanics: 'Siege colossus · siegeMult ×4.5 · 540 base HP · extremely slow.',
       counter: 'Sappers, sabotage spy, meteor — hunt before he reaches settlements.',
@@ -199,7 +201,7 @@ const MonsterBosses = (() => {
       name: 'Sylvara Wyrm-Mother',
       title: 'Matriarch of the Burning Sky',
       tagline: 'The horizon is her throat.',
-      faction: 'Void / Abyssal',
+      faction: 'Cinder Flight',
       lore: 'Mother of drakes; the sky is her nursery. Sylvara darkens the horizon before her brood arrives. Anti-air becomes mandatory, not optional.',
       mechanics: 'Flying ranged dragon · extreme range (180) · high damage.',
       counter: 'Ballistas, pikemen, anti-air evolved allies, frost nova.',
@@ -225,7 +227,7 @@ const MonsterBosses = (() => {
       name: 'Dread Marshal Volk',
       title: 'Hammer of the North Host',
       tagline: 'Siege engines kneel when he passes.',
-      faction: 'Mirror Empires (late)',
+      faction: 'Orc Warbands',
       lore: 'Marshal who makes siege towers look quaint. Volk coordinated the North Host through four named campaigns. He arrives when your walls are proudest.',
       mechanics: 'Siege lord · siegeMult ×3.8 · enrages below ~50% HP.',
       counter: 'Wall repair builders, sappers, all strikes, sustained DPS.',
@@ -238,7 +240,7 @@ const MonsterBosses = (() => {
       name: 'Malachar the Eternal',
       title: 'Voice of the Endless Siege',
       tagline: 'Wave one hundred was only his rehearsal.',
-      faction: 'Void / Abyssal',
+      faction: 'Dark Legions',
       lore: 'Wave one hundred wears his name like a verdict. Malachar has fallen before — the host insists he is eternal. He hunts generals, regenerates, and sieges in the same breath. Empire Ascendant truly begins when he does.',
       mechanics: 'Ultimate boss · regen · huntsGeneral · siegeMult ×2.5 · enrage · 520 base HP.',
       counter: 'Full army, all strikes, evolved ally burst — spend saved TP before wave 100.',
@@ -305,9 +307,8 @@ const MonsterBosses = (() => {
     const pack = getPackDef(bossType);
     if (!pack) return '';
     const minions = buildMinionList(bossType, evolution).length;
-    const structs = Math.min(pack.structures?.length || 0, 1 + (evolution.structureBonus || 0));
     const evoNote = evolution.label ? `${evolution.label} ` : '';
-    return `${evoNote}${pack.packName} — ${minions} pack, ${structs} hold${structs > 1 ? 's' : ''}`;
+    return `${evoNote}${pack.packName} — a guard of ${minions}`;
   }
 
   function prepareBossWave(bossType, wave, baseScale = 1) {

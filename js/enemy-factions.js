@@ -1,9 +1,14 @@
 /**
- * Enemy Faction Evolution — each major hostile archetype follows a 4-stage track:
- *   Stage 1: Basic grunts
- *   Stage 2: Elites + named sub-bosses
- *   Stage 3: Structures (outposts → quarries → hamlets)
- *   Stage 4: Full settlements + counter-raids on player territory
+ * Enemy factions. One faction leads each wave and brings its own tactic.
+ *
+ *   FACTIONS  who they are, and the older four-stage tier data (unit unlocks by wave,
+ *             counter-raids) that other modules still read.
+ *   HOSTS     what each faction fields when it leads: roster, bosses, crest, tactic.
+ *   TACTICS   how a led wave behaves on the field. Plain data; js/host-tactics.js reads it.
+ *   HORDES    the horde flavours, each a real recipe with its own behaviour.
+ *
+ * planWave() picks tomorrow's lead (and at most one ally) at nightfall; composeWave() turns
+ * that plan into a spawn queue. Both are pure for a given seed and game state.
  */
 const EnemyFactions = (() => {
   const EVOLUTION_STAGES = {
@@ -251,10 +256,10 @@ const EnemyFactions = (() => {
     },
     void_abyssal: {
       id: 'void_abyssal',
-      name: 'Void / Abyssal',
+      name: 'The Void Court',
       shortName: 'Void',
       color: '#7040b0',
-      waveMin: 32,
+      waveMin: 12,
       tiers: [
         {
           tier: 1,
@@ -322,6 +327,84 @@ const EnemyFactions = (() => {
           buildInterval: 14,
           counterRaids: true,
           counterRaidInterval: 11,
+        },
+      ],
+    },
+    wild_hunt: {
+      id: 'wild_hunt',
+      name: 'The Wild Hunt',
+      shortName: 'Hunt',
+      color: '#d0a040',
+      waveMin: 6,
+      tiers: [
+        {
+          tier: 1,
+          stage: 1,
+          waveMin: 6,
+          label: 'The Pack',
+          tagline: 'Wargs and rats run the edges of the field.',
+          units: ['warg_rider', 'plague_rat'],
+          elites: [],
+          subBosses: [],
+          weight: 1.1,
+          buildings: [],
+          buildingCap: 0,
+          buildInterval: 0,
+          counterRaids: false,
+        },
+        {
+          tier: 2,
+          stage: 2,
+          waveMin: 25,
+          label: 'Great Beasts',
+          tagline: 'Trolls and behemoths lumber in behind the pack.',
+          units: ['warg_rider', 'plague_rat', 'troll', 'behemoth'],
+          elites: ['troll', 'behemoth'],
+          subBosses: [],
+          weight: 1.2,
+          buildings: [],
+          buildingCap: 0,
+          buildInterval: 0,
+          counterRaids: false,
+        },
+      ],
+    },
+    cinder_flight: {
+      id: 'cinder_flight',
+      name: 'Cinder Flight',
+      shortName: 'Cinder',
+      color: '#f07828',
+      waveMin: 14,
+      tiers: [
+        {
+          tier: 1,
+          stage: 1,
+          waveMin: 14,
+          label: 'The Roost',
+          tagline: 'Harpies, wraiths and drakes come over the top of your line.',
+          units: ['harpy', 'wailing_wraith', 'sky_drake'],
+          elites: [],
+          subBosses: [],
+          weight: 1.1,
+          buildings: [],
+          buildingCap: 0,
+          buildInterval: 0,
+          counterRaids: false,
+        },
+        {
+          tier: 2,
+          stage: 2,
+          waveMin: 50,
+          label: 'Wyrm Sky',
+          tagline: 'Elder wyrms and hellfire crews set the field alight.',
+          units: ['harpy', 'sky_drake', 'hellbound_legionnaire', 'elder_wyrm'],
+          elites: ['elder_wyrm', 'cinderbound_juggernaut'],
+          subBosses: [],
+          weight: 1.2,
+          buildings: [],
+          buildingCap: 0,
+          buildInterval: 0,
+          counterRaids: false,
         },
       ],
     },
@@ -411,63 +494,413 @@ const EnemyFactions = (() => {
     },
   };
 
+  // ------------------------------------------------------------------ tactics
+  /**
+   * How a led wave behaves. Every key below is read by a small generic hook in
+   * js/host-tactics.js; there is no per-faction code path.
+   *
+   *   squad      { size }          bodies that arrive together (the arrival rate is unchanged)
+   *   runners    0..1              share of eligible bodies that run for the line (0 = none)
+   *   formation  shield line: `front` types set the pace, the rest hold behind them, and the
+   *              host charges when the line is `chargeAt` px from your soldiers. `horn` types
+   *              sound the charge; if the host brought one and it is dead, there is no charge.
+   *   dash       share of `types` that run down a field edge and turn in at your ranged troops
+   *   rise       the dead get up once after `delay` ticks at `hp` of full, unless destroyed
+   *   fearless   never routs
+   *   ambush     share of `types` that never cross the field: they step out of a rift behind
+   *              your line `warn` ticks after it opens
+   *   dive       flyers skip the muster, pick your most isolated soldier and dive at `speed`
+   *   burn       fire attacks leave burning ground (radius, ticks, damage per second)
+   *   rush       the whole host moves at `speed` x normal from the start
+   *   mirror     composition answers your army (see StrategyCounterplay)
+   *   bossPhase  what the faction's boss does at half health (HostTactics.onBossPhase)
+   *   threat     how much harder a body is to beat under this tactic; the host shrinks to match
+   */
+  const TACTICS = {
+    swarm: {
+      id: 'swarm',
+      name: 'Swarm and Sappers',
+      desc: 'Small packs from every part of the edge. A third of them run straight for the line and the sappers go for your buildings.',
+      counter:
+        'Mages and splash clear packs; keep cavalry or scouts back for runners; guard your buildings.',
+      sign: 'Many small packs, runners in the dust.',
+      silhouette: 'a wide scatter of small shapes',
+      squad: { size: 3 },
+      runners: 0.34,
+      bossPhase: 'summon',
+    },
+    shield_wall: {
+      id: 'shield_wall',
+      name: 'Shield Wall',
+      desc: 'Shieldbearers form a row and the host walks in behind it, archers at the back. When the line is close the horn sounds and they charge.',
+      counter:
+        'Arrows bounce off the shields: use mages and sappers, or kill the War Chief so the horn never sounds.',
+      sign: 'A row of shields at walking pace, then a horn.',
+      silhouette: 'one dense block behind a straight front',
+      squad: { size: 8 },
+      runners: 0,
+      formation: {
+        front: ['orc_shieldbearer'],
+        back: ['orc_archer', 'shaman'],
+        horn: ['war_chief', 'boss_gorath', 'boss_volk'],
+        pace: 0.34,
+        chargeAt: 150,
+        chargeSpeed: 1.6,
+        chargeTicks: 420,
+        patience: 4200,
+      },
+      bossPhase: 'charge',
+    },
+    flank_dash: {
+      id: 'flank_dash',
+      name: 'Flank Dash',
+      desc: 'Half the pack sprints down the left and right edges of the field and turns in on your archers, mages and healers.',
+      counter:
+        'Pikemen or footmen on both ends of the line; do not leave ranged troops on the wings.',
+      sign: 'Dust along both edges of the field.',
+      silhouette: 'fast shapes hugging both edges',
+      squad: { size: 5 },
+      dash: {
+        share: 0.5,
+        types: ['warg_rider', 'plague_rat', 'nightmare_strider'],
+        speed: 1.3,
+        lane: 34,
+      },
+      bossPhase: 'stampede',
+    },
+    risen: {
+      id: 'risen',
+      name: 'The Dead Rise',
+      desc: 'They never rout, and each one that falls gets up again once, a few seconds later, unless the body was destroyed.',
+      counter:
+        'Mages, ballistae, sapper charges, strikes and healers put them down for good; arrows and blades only knock them over.',
+      sign: 'Bone piles that stand back up.',
+      silhouette: 'a slow, thin column that does not waver',
+      squad: { size: 6 },
+      fearless: true,
+      rise: { delay: 270, hp: 0.5 },
+      threat: 1.3,
+      bossPhase: 'raise',
+    },
+    unseen: {
+      id: 'unseen',
+      name: 'The Unseen Third',
+      desc: 'A third of the host never crosses the field. A rift opens behind your line, by the Medical Tent or the General, and they step out of it.',
+      counter:
+        'Keep a reserve behind the line and a guard on the tent. A Watchtower shows every rift at dawn.',
+      sign: 'A violet rift behind your line, then blades.',
+      silhouette: 'fewer shapes than the count suggests',
+      squad: { size: 5 },
+      ambush: {
+        share: 0.34,
+        types: ['assassin', 'void_stalker', 'umbral_stalker', 'nightmare_strider'],
+        warn: 200,
+        perRift: 5,
+        style: 'rift',
+      },
+      bossPhase: 'vanish',
+    },
+    air_raid: {
+      id: 'air_raid',
+      name: 'Fire from the Sky',
+      desc: 'Flyers skip the muster and dive on whichever soldier stands most alone. Their fire leaves burning ground.',
+      counter: 'Keep soldiers together, bring ballistae and archers, and step off the embers.',
+      sign: 'A talon mark over one soldier; patches of burning ground.',
+      silhouette: 'shapes above the field, not on it',
+      squad: { size: 4 },
+      dive: { speed: 1.5, within: 170, alone: 70 },
+      burn: { r: 26, ticks: 420, dps: 5, max: 10 },
+      threat: 1.1,
+      bossPhase: 'burn',
+    },
+    mirror: {
+      id: 'mirror',
+      name: 'Mirror Doctrine',
+      desc: 'They have read your army and bring what beats it.',
+      counter: 'Change what you field: the host answers the army it saw last night.',
+      sign: 'A host built against your line.',
+      silhouette: 'a host shaped like the gaps in yours',
+      squad: { size: 6 },
+      mirror: true,
+      bossPhase: 'charge',
+    },
+  };
+
+  // -------------------------------------------------------------------- hosts
+  /**
+   * What a faction fields when it leads. `from` is the first wave a type can appear (no type
+   * comes earlier than it did before factions led waves). `core` types are always in the
+   * host; `key` types carry the tactic; `heavy` types are the expensive ones the composer
+   * leans on to hit the wave's threat; `aux` types may march in support of another faction.
+   */
+  const HOSTS = {
+    goblin_hordes: {
+      tactic: 'swarm',
+      band: (w) => (w < 10 ? 4 : w < 25 ? 2 : 1.2),
+      roster: [
+        { type: 'goblin', from: 1, w: 6, core: true, aux: true },
+        { type: 'goblin_sapper', from: 4, w: 2.2, key: true, aux: true },
+        { type: 'goblin_firebrand', from: 5, w: 1.5 },
+        { type: 'goblin_burrower', from: 9, w: 1.5 },
+        { type: 'goblin_engineer', from: 12, w: 0.5 },
+        { type: 'siege_tower', from: 7, w: 0.6, heavy: true, rear: true, cap: 4 },
+        { type: 'iron_colossus', from: 40, w: 0.5, heavy: true, rear: true, cap: 3 },
+      ],
+      bosses: ['boss_karg'],
+      champions: ['siege_tower', 'goblin_engineer', 'goblin_sapper'],
+      names: ['Skarn Nine-Fingers', 'Old Mother Gnash', 'Pit-Boss Krel'],
+    },
+    orc_warbands: {
+      tactic: 'shield_wall',
+      band: (w) => (w < 30 ? 3 : 2),
+      roster: [
+        { type: 'orc', from: 1, w: 5, core: true, aux: true },
+        { type: 'orc_archer', from: 2, w: 2.2, aux: true },
+        { type: 'orc_shieldbearer', from: 7, w: 2.6, key: true, front: true },
+        { type: 'berserker', from: 7, w: 1.3, heavy: true },
+        { type: 'shaman', from: 9, w: 0.5, cap: 3 },
+        { type: 'war_chief', from: 10, w: 0.3, key: true, heavy: true, cap: 2 },
+      ],
+      bosses: ['boss_gorath', 'boss_volk'],
+      champions: ['war_chief', 'berserker', 'orc'],
+      names: ['Urzog Red-Hand', 'Brakka the Scarred', 'Dhurn Oathbreaker'],
+    },
+    wild_hunt: {
+      tactic: 'flank_dash',
+      band: () => 2,
+      roster: [
+        { type: 'warg_rider', from: 3, w: 3, core: true, aux: true },
+        { type: 'plague_rat', from: 6, w: 4, core: true, aux: true },
+        { type: 'troll', from: 6, w: 0.9, heavy: true, cap: 6 },
+        { type: 'behemoth', from: 25, w: 0.5, heavy: true, cap: 4 },
+      ],
+      bosses: ['boss_thokk'],
+      champions: ['behemoth', 'troll', 'warg_rider'],
+      names: ['The Grey Bitch', 'Hollow-Tusk', 'Ruin-Paw'],
+    },
+    dark_legions: {
+      tactic: 'risen',
+      band: (w) => (w < 20 ? 2 : 2.5),
+      roster: [
+        { type: 'dark_knight', from: 8, w: 2.4, core: true },
+        { type: 'necromancer', from: 8, w: 1.4, key: true, aux: true },
+        { type: 'bone_summoner', from: 11, w: 1.1, aux: true },
+        { type: 'abomination', from: 20, w: 0.6, heavy: true, cap: 5 },
+        { type: 'dreadborn_champion', from: 35, w: 0.4, heavy: true, cap: 3 },
+        { type: 'grim_revenant', from: 45, w: 0.8 },
+      ],
+      bosses: ['boss_morwen', 'boss_rotfather', 'boss_malachar'],
+      champions: ['dreadborn_champion', 'abomination', 'dark_knight'],
+      names: ['Ser Valdric the Unburied', 'The Ashen Abbess', 'Wight-Captain Orm'],
+    },
+    void_abyssal: {
+      tactic: 'unseen',
+      band: (w) => (w < 32 ? 1.3 : 2.2),
+      roster: [
+        { type: 'dark_mage', from: 5, w: 2.6, core: true, aux: true },
+        { type: 'assassin', from: 8, w: 2, core: true, key: true },
+        { type: 'nightmare_strider', from: 30, w: 1, heavy: true },
+        { type: 'void_stalker', from: 32, w: 1, heavy: true },
+        { type: 'warp_prophet', from: 40, w: 0.8, aux: true },
+        { type: 'umbral_stalker', from: 50, w: 0.8, heavy: true },
+      ],
+      bosses: ['boss_vexis'],
+      champions: ['void_stalker', 'umbral_stalker', 'assassin'],
+      names: ['The Quiet Sister', 'Nhal of the Ninth Door', 'Whisper-Without-Face'],
+    },
+    cinder_flight: {
+      tactic: 'air_raid',
+      band: (w) => (w < 25 ? 1.5 : 2),
+      roster: [
+        { type: 'harpy', from: 6, w: 4, core: true, aux: true },
+        { type: 'wailing_wraith', from: 12, w: 1.4 },
+        { type: 'sky_drake', from: 14, w: 1.5, key: true, heavy: true },
+        { type: 'hellbound_legionnaire', from: 25, w: 1.4, aux: true },
+        { type: 'elder_wyrm', from: 50, w: 0.5, heavy: true, cap: 4 },
+        { type: 'cinderbound_juggernaut', from: 55, w: 0.4, heavy: true, cap: 3 },
+        { type: 'hellmortar_pack', from: 60, w: 0.6, rear: true },
+      ],
+      bosses: ['boss_grimm', 'boss_sylvara'],
+      champions: ['elder_wyrm', 'sky_drake', 'harpy'],
+      names: ['Ashwing', 'The Red Matron', 'Cinder-Eye'],
+    },
+    mirror_empires: {
+      tactic: 'mirror',
+      band: () => 2,
+      roster: [
+        { type: 'orc', from: 1, w: 3, core: true },
+        { type: 'dark_knight', from: 1, w: 2, core: true },
+        { type: 'goblin_engineer', from: 1, w: 0.6 },
+        { type: 'necromancer', from: 1, w: 1 },
+        { type: 'war_chief', from: 1, w: 0.4, heavy: true, cap: 3 },
+        { type: 'siege_tower', from: 1, w: 0.5, heavy: true, rear: true, cap: 4 },
+      ],
+      bosses: [],
+      champions: ['war_chief', 'dark_knight'],
+      names: ['The Other General', 'Your Shadow in Iron', 'Marshal of the Glass'],
+    },
+  };
+
+  // ------------------------------------------------------------------- hordes
+  /**
+   * Horde flavours. Each is a recipe (who comes, in what shares) plus the tactic keys that
+   * make it play differently. A flavour is only offered once every type in `needs` is out.
+   */
+  const HORDES = [
+    {
+      id: 'goblin_tide',
+      label: 'Goblin Tide',
+      tagline: 'Goblins in small packs across the whole edge, and a third of them run.',
+      faction: 'goblin_hordes',
+      mix: [
+        { type: 'goblin', w: 8 },
+        { type: 'goblin_firebrand', w: 1, from: 5 },
+      ],
+      tactic: { squad: { size: 4 }, runners: 0.36 },
+      counter: 'Splash damage, and something fast kept back for runners.',
+    },
+    {
+      id: 'orc_pack',
+      label: 'Orc Pack',
+      tagline: 'No shield wall and no waiting: the whole warband comes at a run.',
+      faction: 'orc_warbands',
+      needs: ['orc'],
+      mix: [
+        { type: 'orc', w: 6 },
+        { type: 'berserker', w: 1.5, from: 8 },
+        { type: 'orc_archer', w: 1.5 },
+      ],
+      tactic: { squad: { size: 8 }, runners: 0, rush: { speed: 1.3 } },
+      counter: 'Pikemen and a braced line; they arrive together and fast.',
+    },
+    {
+      id: 'plague_swarm',
+      label: 'Plague Swarm',
+      tagline: 'Rats pour down both edges of the field. Their bites keep hurting.',
+      faction: 'wild_hunt',
+      needs: ['plague_rat'],
+      from: 6,
+      mix: [
+        { type: 'plague_rat', w: 8 },
+        { type: 'goblin', w: 2 },
+      ],
+      tactic: {
+        squad: { size: 6 },
+        dash: { share: 0.6, types: ['plague_rat'], speed: 1.15, lane: 34 },
+      },
+      counter: 'Splash damage and healers; guard the ends of the line.',
+    },
+    {
+      id: 'warg_run',
+      label: 'Warg Run',
+      tagline: 'Riders down both wings, straight at your archers and healers.',
+      faction: 'wild_hunt',
+      needs: ['warg_rider'],
+      from: 6,
+      mix: [
+        { type: 'warg_rider', w: 5 },
+        { type: 'goblin', w: 4 },
+        { type: 'plague_rat', w: 2, from: 6 },
+      ],
+      tactic: {
+        squad: { size: 5 },
+        dash: { share: 0.85, types: ['warg_rider'], speed: 1.3, lane: 34 },
+      },
+      counter: 'Pikemen on both wings.',
+    },
+    {
+      id: 'sapper_rush',
+      label: 'Sapper Rush',
+      tagline:
+        'A screen of goblins up front; the sappers behind it are all headed for your buildings.',
+      faction: 'goblin_hordes',
+      needs: ['goblin_sapper'],
+      from: 5,
+      mix: [
+        { type: 'goblin', w: 6, front: true },
+        { type: 'goblin_sapper', w: 4 },
+        { type: 'goblin_firebrand', w: 1, from: 5 },
+      ],
+      tactic: { squad: { size: 6 }, runners: 0.15 },
+      counter: 'Archers on the sappers before they reach a wall; they burst when they die.',
+    },
+    {
+      id: 'burrower_surge',
+      label: 'Burrower Surge',
+      tagline: 'Half the host comes up out of the ground behind your line.',
+      faction: 'goblin_hordes',
+      needs: ['goblin_burrower'],
+      from: 9,
+      mix: [
+        { type: 'goblin_burrower', w: 5 },
+        { type: 'goblin', w: 5 },
+      ],
+      tactic: {
+        squad: { size: 5 },
+        runners: 0.1,
+        ambush: {
+          share: 0.5,
+          types: ['goblin_burrower'],
+          warn: 240,
+          perRift: 6,
+          style: 'tunnel',
+        },
+      },
+      counter: 'A reserve behind the line; scouts and watchtowers show the tunnel mouths at dawn.',
+    },
+  ];
+
+  /** The fixed escort a boss wave used to bring, kept only to size the new escort's threat. */
+  const LEGACY_BOSS_ESCORT = [
+    ['dark_knight', 1],
+    ['dark_knight', 1],
+    ['berserker', 1],
+    ['necromancer', 1],
+    ['bone_summoner', 10],
+    ['sky_drake', 14],
+    ['abomination', 20],
+    ['hellbound_legionnaire', 25],
+    ['dreadborn_champion', 25],
+    ['behemoth', 25],
+    ['warp_prophet', 35],
+    ['grim_revenant', 35],
+    ['void_stalker', 35],
+    ['iron_colossus', 40],
+    ['umbral_stalker', 45],
+    ['hellmortar_pack', 45],
+    ['elder_wyrm', 50],
+    ['cinderbound_juggernaut', 55],
+  ];
+  /** The five factions whose tier lists fed the old blended pool. */
+  const LEGACY_POOL_FACTIONS = [
+    'goblin_hordes',
+    'orc_warbands',
+    'dark_legions',
+    'void_abyssal',
+    'mirror_empires',
+  ];
+  const MAX_LEAD_TYPES = 5;
+  const MAX_ALLY_TYPES = 2;
+  const COUNT_MIN = 0.75;
+  const COUNT_MAX = 1.35;
+
   const UNIT_FACTION = {};
+  for (const [fid, host] of Object.entries(HOSTS)) {
+    if (fid === 'mirror_empires') continue;
+    for (const e of host.roster) if (!UNIT_FACTION[e.type]) UNIT_FACTION[e.type] = fid;
+    for (const b of host.bosses) UNIT_FACTION[b] = fid;
+  }
+  // Types no host fields any more keep the faction their tier list gave them.
   for (const f of Object.values(FACTIONS)) {
     for (const tier of f.tiers) {
-      for (const u of tier.units) {
-        if (!UNIT_FACTION[u]) UNIT_FACTION[u] = f.id;
-      }
-      for (const u of tier.elites || []) {
+      for (const u of [...tier.units, ...(tier.elites || [])]) {
         if (!UNIT_FACTION[u]) UNIT_FACTION[u] = f.id;
       }
     }
   }
-  Object.assign(UNIT_FACTION, {
-    goblin: 'goblin_hordes',
-    plague_rat: 'goblin_hordes',
-    goblin_firebrand: 'goblin_hordes',
-    goblin_sapper: 'goblin_hordes',
-    goblin_burrower: 'goblin_hordes',
-    goblin_engineer: 'goblin_hordes',
-    harpy: 'goblin_hordes',
-    orc: 'orc_warbands',
-    orc_archer: 'orc_warbands',
-    warg_rider: 'orc_warbands',
-    berserker: 'orc_warbands',
-    troll: 'orc_warbands',
-    war_chief: 'orc_warbands',
-    iron_colossus: 'orc_warbands',
-    dark_knight: 'dark_legions',
-    dark_mage: 'dark_legions',
-    necromancer: 'dark_legions',
-    bone_summoner: 'dark_legions',
-    shaman: 'dark_legions',
-    assassin: 'dark_legions',
-    grim_revenant: 'dark_legions',
-    dreadborn_champion: 'dark_legions',
-    void_stalker: 'void_abyssal',
-    umbral_stalker: 'void_abyssal',
-    abomination: 'void_abyssal',
-    behemoth: 'void_abyssal',
-    elder_wyrm: 'void_abyssal',
-    cinderbound_juggernaut: 'void_abyssal',
-    siege_tower: 'orc_warbands',
-    sky_drake: 'void_abyssal',
-    hellbound_legionnaire: 'dark_legions',
-    nightmare_strider: 'void_abyssal',
-    warp_prophet: 'dark_legions',
-    hellmortar_pack: 'orc_warbands',
-    boss_gorath: 'orc_warbands',
-    boss_thokk: 'orc_warbands',
-    boss_karg: 'orc_warbands',
-    boss_volk: 'orc_warbands',
-    boss_morwen: 'dark_legions',
-    boss_grimm: 'dark_legions',
-    boss_rotfather: 'dark_legions',
-    boss_malachar: 'void_abyssal',
-    boss_vexis: 'void_abyssal',
-    boss_sylvara: 'void_abyssal',
-  });
+  const BOSS_FACTION = {};
+  for (const [fid, host] of Object.entries(HOSTS))
+    for (const b of host.bosses) BOSS_FACTION[b] = fid;
 
   const BUILDING_FACTION = {
     enemy_trade_outpost: 'goblin_hordes',
@@ -479,9 +912,19 @@ const EnemyFactions = (() => {
   };
 
   let announcedTiers = new Set();
+  /** Plans by wave number, the leads of the waves already fought, and this run's salt. */
+  let plans = {};
+  let history = [];
+  let runSalt = 0;
+  let lastHorde = null;
 
   function resetRun() {
     announcedTiers = new Set();
+    plans = {};
+    history = [];
+    lastHorde = null;
+    // Unseeded runs should not all meet the same factions in the same order.
+    runSalt = Math.floor(Math.random() * 0x7fffffff);
   }
 
   function getEvolutionStageDef(stage) {
@@ -492,16 +935,25 @@ const EnemyFactions = (() => {
     return FACTIONS[id] || null;
   }
 
+  function getHost(id) {
+    return HOSTS[id] || null;
+  }
+
+  function getTactic(id) {
+    return TACTICS[id] || null;
+  }
+
+  function getFactionTactic(factionId) {
+    const host = HOSTS[factionId];
+    return host ? TACTICS[host.tactic] : null;
+  }
+
   function getFactionTier(factionId, wave) {
     const f = FACTIONS[factionId];
     if (!f || wave < f.waveMin) return null;
-    const effWave =
-      typeof FactionReputation !== 'undefined'
-        ? FactionReputation.getEffectiveWaveForTier(factionId, wave)
-        : wave;
     let tier = f.tiers[0];
     for (const t of f.tiers) {
-      if (effWave >= t.waveMin) tier = t;
+      if (wave >= t.waveMin) tier = t;
     }
     const stageDef = getEvolutionStageDef(tier.stage);
     return {
@@ -518,7 +970,6 @@ const EnemyFactions = (() => {
   function getActiveFactions(wave) {
     return Object.values(FACTIONS)
       .filter((f) => wave >= f.waveMin)
-      .filter((f) => !false)
       .map((f) => ({
         ...f,
         currentTier: getFactionTier(f.id, wave),
@@ -530,6 +981,10 @@ const EnemyFactions = (() => {
     return UNIT_FACTION[type] || null;
   }
 
+  function getBossFaction(type) {
+    return BOSS_FACTION[type] || null;
+  }
+
   function getBuildingFaction(type) {
     return BUILDING_FACTION[type] || null;
   }
@@ -538,13 +993,34 @@ const EnemyFactions = (() => {
     return typeof EnemyDefs === 'undefined' || !!EnemyDefs[type];
   }
 
-  function enrichPool(pool, wave) {
-    const merged = [...(pool || [])];
+  // ------------------------------------------------------------------- threat
+  /** Rough worth of one body: a goblin is about 0.9, an orc 1.8, a troll 4.5. */
+  function unitThreat(type) {
+    const d = typeof EnemyDefs !== 'undefined' ? EnemyDefs[type] : null;
+    if (!d) return 1;
+    let t = ((d.hp || 40) / 40) * 0.6 + ((d.damage || 15) / 15) * 0.4;
+    if ((d.range || 0) > 60) t *= 1.15;
+    if (d.flying) t *= 1.15;
+    return t;
+  }
+
+  function meanThreat(types) {
+    if (!types || !types.length) return 1;
+    let sum = 0;
+    for (const t of types) sum += unitThreat(t);
+    return sum / types.length;
+  }
+
+  /** The pool an ordinary wave drew from before factions led waves (all factions blended). */
+  function legacyPool(wave) {
+    const cfg = typeof getWaveConfig === 'function' ? getWaveConfig(wave) : null;
+    const merged = [...((cfg && cfg.pool) || ['goblin'])];
     const seen = new Set(merged);
-    for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      const add = [...tier.units, ...(tier.elites || [])];
-      for (const u of add) {
+    for (const id of LEGACY_POOL_FACTIONS) {
+      const tier = getFactionTier(id, wave);
+      // Factions that now take the field earlier did not feed the old pool until their first tier.
+      if (!tier || wave < tier.waveMin) continue;
+      for (const u of [...tier.units, ...(tier.elites || [])]) {
         if (!unitExists(u)) continue;
         if (!seen.has(u)) {
           merged.push(u);
@@ -556,92 +1032,515 @@ const EnemyFactions = (() => {
     return merged;
   }
 
-  function mergeFactionWeights(wave, baseWeights = {}) {
-    const out = { ...baseWeights };
-    for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      const mods =
-        typeof PlayerCounterEvolution !== 'undefined'
-          ? PlayerCounterEvolution.getFactionModifiers(f.id, wave)
-          : { spawnMult: 1 };
-      const rep =
-        typeof FactionReputation !== 'undefined'
-          ? FactionReputation.getFactionModifiers(f.id, wave)
-          : { spawnMult: 1 };
-      const weighted = [...tier.units, ...(tier.elites || [])];
-      for (const u of weighted) {
-        if (!unitExists(u)) continue;
-        const eliteBoost = tier.elites?.includes(u) ? 1.12 : 1;
-        out[u] = Math.max(
-          out[u] || 1,
-          tier.weight * eliteBoost * (mods.spawnMult || 1) * (rep.spawnMult || 1)
-        );
-      }
-    }
-    return out;
+  /** Mean threat per body of the old blended wave: what a led wave is sized against. */
+  function legacyMeanThreat(wave) {
+    return meanThreat(legacyPool(wave));
   }
 
-  function biasSpawnQueue(queue, wave, rng = Math.random) {
-    if (!queue?.length || wave < 4) return queue;
-    const out = [...queue];
-    for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      const biasPool =
-        tier.stage >= 2 && tier.elites?.length ? [...tier.units, ...tier.elites] : tier.units;
-      const slots = Math.max(
-        1,
-        Math.floor(out.length * 0.05 * (tier.weight - 0.9) * (1 + tier.stage * 0.08))
-      );
-      for (let i = 0; i < slots; i++) {
-        const unit = biasPool[Math.floor(rng() * biasPool.length)];
-        if (!unit || !unitExists(unit)) continue;
-        out[Math.floor(rng() * out.length)] = unit;
-      }
-    }
-    return out;
+  function legacyHordeMeanThreat(wave) {
+    const swarm = meanThreat([
+      'goblin',
+      'goblin',
+      'goblin',
+      'plague_rat',
+      'plague_rat',
+      'orc',
+      'orc',
+    ]);
+    const harass = ['goblin_sapper'];
+    if (wave >= 6) harass.push('warg_rider', 'orc_archer', 'harpy');
+    if (wave >= 9) harass.push('goblin_burrower');
+    return swarm * 0.88 + meanThreat(harass) * 0.12;
   }
 
-  function injectSubBosses(queue, wave, rng = Math.random) {
-    if (!queue?.length || wave < 8) return queue;
-    const out = [...queue];
-    let injected = 0;
-    for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      if (tier.stage < 2 || !tier.subBosses?.length) continue;
-      if (wave % 10 === 0) continue;
-      if (injected >= 2) break;
-      const mods =
-        typeof PlayerCounterEvolution !== 'undefined'
-          ? PlayerCounterEvolution.getFactionModifiers(f.id, wave)
-          : { spawnMult: 1 };
-      const rep =
-        typeof FactionReputation !== 'undefined'
-          ? FactionReputation.getFactionModifiers(f.id, wave)
-          : { spawnMult: 1, eliteChanceMult: 1 };
-      let chance = tier.stage >= 4 ? 0.24 : tier.stage >= 3 ? 0.16 : 0.09;
-      chance *= (mods.spawnMult || 1) * (rep.eliteChanceMult || 1);
-      if (rng() > chance) continue;
-      const boss = tier.subBosses[Math.floor(rng() * tier.subBosses.length)];
-      if (!boss || !unitExists(boss)) continue;
-      out[Math.floor(rng() * out.length)] = boss;
-      injected++;
+  function legacyBossEscortThreat(wave) {
+    let sum = 0;
+    let n = 0;
+    for (const [type, from] of LEGACY_BOSS_ESCORT) {
+      if (wave < from || !unitExists(type)) continue;
+      sum += unitThreat(type);
+      n++;
     }
-    return out;
+    return { sum, n };
   }
 
-  function biasHordeQueue(queue, wave, rng = Math.random) {
-    if (!queue?.length) return queue;
-    const tier = getFactionTier('goblin_hordes', wave);
-    if (!tier) return queue;
-    const goblinUnits = tier.units.filter((u) =>
-      ['goblin', 'plague_rat', 'goblin_sapper', 'goblin_burrower', 'goblin_engineer'].includes(u)
-    );
-    if (!goblinUnits.length) return queue;
-    const bias = tier.stage >= 3 ? 0.34 : tier.stage >= 2 ? 0.3 : 0.26;
-    return queue.map((t) => {
-      if (rng() < bias) return goblinUnits[Math.floor(rng() * goblinUnits.length)];
-      return t;
+  // ----------------------------------------------------------------- planning
+  function rngFor(seed, wave, tag) {
+    let h = (Number(seed) || 0) >>> 0;
+    const s = `${wave}:${tag}`;
+    for (let i = 0; i < s.length; i++)
+      h = (Math.imul(h ^ s.charCodeAt(i), 16777619) + 0x9e3779b9) | 0;
+    return WaveCompositionCore.mulberry32(h >>> 0);
+  }
+
+  function weightedPick(rows, rng) {
+    const total = rows.reduce((a, r) => a + r.w, 0);
+    if (!(total > 0)) return rows[0] || null;
+    let roll = rng() * total;
+    for (const r of rows) {
+      roll -= r.w;
+      if (roll <= 0) return r;
+    }
+    return rows[rows.length - 1];
+  }
+
+  /** Factions that can lead at this wave: active, and with at least one type to field. */
+  function leadCandidates(wave) {
+    return Object.keys(HOSTS).filter((id) => {
+      const f = FACTIONS[id];
+      if (!f || wave < f.waveMin) return false;
+      return HOSTS[id].roster.some((e) => wave >= e.from && unitExists(e.type));
     });
+  }
+
+  /**
+   * How strongly the player's build draws each faction. Reads the per-type weights that
+   * ColonyValue.deriveWavePressure and StrategyCounterplay already produce (walls draw
+   * siege crews, a ranged line draws flyers and wargs, healers draw assassins) and sums
+   * them per faction. Returns { factionId: { pull, why } }.
+   */
+  function buildDraw(ctx = {}) {
+    const out = {};
+    const add = (weights, why) => {
+      for (const [type, w] of Object.entries(weights || {})) {
+        const fid = UNIT_FACTION[type];
+        if (!fid || !(w > 1)) continue;
+        const row = out[fid] || (out[fid] = { pull: 0, why: '' });
+        row.pull += w - 1;
+        if (why && !row.why) row.why = why;
+      }
+    };
+    for (const s of ctx.strategies || []) add(s.weights, s.label);
+    add(ctx.pressureWeights, '');
+    return out;
+  }
+
+  /**
+   * Decide who leads a wave. Called at nightfall for the next wave, so the night can show
+   * it; the result is cached per wave and reused at dawn.
+   *   ctx.seed           run seed for this wave (getSpawnFillSeed); ctx.seeded: a Seed Run
+   *   ctx.boss           the named boss entry on a boss wave ({ type, ... })
+   *   ctx.horde          true on a horde wave
+   *   ctx.revenge        faction id that is owed a revenge wave (FactionReputation)
+   *   ctx.barred         faction ids that will not lead (their avenger was just killed)
+   *   ctx.strategies / ctx.pressureWeights   what the player has built (see buildDraw)
+   */
+  function planWave(wave, ctx = {}) {
+    // A Seed Run must give the same factions every time; any other run gets its own salt.
+    const seed = ((Number(ctx.seed) || 0) ^ (ctx.seeded ? 0 : runSalt)) >>> 0;
+    const rng = rngFor(seed, wave, 'plan');
+    const active = leadCandidates(wave);
+    const plan = {
+      wave,
+      seed,
+      kind: 'ordinary',
+      leadId: 'goblin_hordes',
+      allyId: null,
+      allyShare: 0,
+      tacticId: 'swarm',
+      drawnBy: '',
+      bossType: null,
+      horde: null,
+      revenge: null,
+    };
+    if (!active.length) return plan;
+
+    if (ctx.boss && ctx.boss.type) {
+      plan.kind = 'boss';
+      plan.bossType = ctx.boss.type;
+      const fid = BOSS_FACTION[ctx.boss.type];
+      plan.leadId = fid && active.includes(fid) ? fid : active[active.length - 1];
+      plan.tacticId = HOSTS[plan.leadId].tactic;
+      return plan;
+    }
+
+    if (ctx.horde) {
+      const open = HORDES.filter(
+        (h) =>
+          wave >= (h.from || 1) &&
+          wave >= (FACTIONS[h.faction]?.waveMin || 1) &&
+          (h.needs || []).every(unitExists)
+      );
+      const rows = open.map((h) => ({ h, w: lastHorde === h.id ? 0.15 : 1 }));
+      const pick = (weightedPick(rows, rng) || { h: HORDES[0] }).h;
+      plan.kind = 'horde';
+      plan.horde = pick.id;
+      plan.leadId = pick.faction;
+      plan.tacticId = `horde:${pick.id}`;
+      return plan;
+    }
+
+    // Waves 1-3 are the hand-written opening: goblins lead, whatever the template adds.
+    if (wave < 4) return plan;
+
+    const draw = buildDraw(ctx);
+    const barred = new Set(ctx.barred || []);
+    const last = history.length ? history[history.length - 1].leadId : null;
+    const prev = history.length > 1 ? history[history.length - 2].leadId : null;
+    let rows = active
+      .filter((id) => !barred.has(id) || active.length === 1)
+      .map((id) => {
+        let w = HOSTS[id].band(wave);
+        if (id === last) w *= 0.12;
+        else if (id === prev) w *= 0.5;
+        const pull = Math.min(1.5, (draw[id]?.pull || 0) * 0.35);
+        w *= 1 + pull;
+        return { id, w, pull };
+      });
+    if (!rows.length) rows = active.map((id) => ({ id, w: 1, pull: 0 }));
+    let lead = weightedPick(rows, rng);
+    if (ctx.revenge && active.includes(ctx.revenge)) {
+      lead = rows.find((r) => r.id === ctx.revenge) || { id: ctx.revenge, w: 1, pull: 0 };
+      const host = HOSTS[ctx.revenge];
+      const type = host.champions.find((t) => {
+        const e = host.roster.find((r) => r.type === t);
+        return unitExists(t) && (!e || wave >= e.from);
+      });
+      if (type) {
+        plan.revenge = {
+          type,
+          name: host.names[Math.floor(rng() * host.names.length)] || 'The Avenger',
+        };
+      }
+    }
+    plan.leadId = lead.id;
+    plan.tacticId = HOSTS[lead.id].tactic;
+    if (!plan.revenge && lead.pull >= 0.35 && draw[lead.id]?.why) plan.drawnBy = draw[lead.id].why;
+
+    // At most one ally, and not every day.
+    const allies = rows.filter(
+      (r) =>
+        r.id !== lead.id &&
+        r.id !== 'mirror_empires' &&
+        HOSTS[r.id].roster.some((e) => e.aux && wave >= e.from && unitExists(e.type))
+    );
+    const leadTypes = HOSTS[lead.id].roster.filter((e) => wave >= e.from && unitExists(e.type));
+    const thin = leadTypes.length < 3;
+    if (allies.length && (thin || rng() < 0.6)) {
+      plan.allyId = weightedPick(allies, rng).id;
+      plan.allyShare = 0.2 + Math.floor(rng() * 3) * 0.05;
+    }
+    return plan;
+  }
+
+  /** Tomorrow's plan, made once and kept until its wave is fought. */
+  function planFor(wave, ctx) {
+    if (!plans[wave]) plans[wave] = planWave(wave, ctx || {});
+    return plans[wave];
+  }
+
+  function getPlan(wave) {
+    return plans[wave] || null;
+  }
+
+  /** Drop a cached plan (the wave is being re-planned: a restart, a forced horde). */
+  function forgetPlan(wave) {
+    delete plans[wave];
+  }
+
+  /** The wave is being fought: its lead goes into the rotation history. */
+  function commitPlan(plan) {
+    if (!plan) return;
+    if (history.length && history[history.length - 1].wave === plan.wave) return;
+    history.push({ wave: plan.wave, leadId: plan.leadId });
+    if (plan.horde) lastHorde = plan.horde;
+    if (history.length > 12) history.shift();
+    for (const w of Object.keys(plans)) if (Number(w) < plan.wave - 2) delete plans[w];
+  }
+
+  // -------------------------------------------------------------- composition
+  function hordeDef(id) {
+    return HORDES.find((h) => h.id === id) || null;
+  }
+
+  /** The tactic a plan plays: the lead's own, or the horde flavour's keys over a bare base. */
+  function tacticForPlan(plan) {
+    if (!plan) return null;
+    if (plan.kind === 'horde') {
+      const h = hordeDef(plan.horde);
+      if (!h) return null;
+      return {
+        id: `horde:${h.id}`,
+        name: h.label,
+        desc: h.tagline,
+        counter: h.counter,
+        sign: h.tagline,
+        silhouette: 'a flood, far more bodies than usual',
+        ...h.tactic,
+      };
+    }
+    return TACTICS[plan.tacticId] || getFactionTactic(plan.leadId);
+  }
+
+  function pickLeadEntries(plan, wave, params, rng) {
+    const host = HOSTS[plan.leadId];
+    const noElites = !!params.noElites;
+    let avail = host.roster.filter(
+      (e) => wave >= e.from && unitExists(e.type) && !(noElites && e.heavy && !e.core)
+    );
+    if (!avail.length) avail = [{ type: 'goblin', from: 1, w: 1, core: true }];
+    const must = avail.filter((e) => e.core || e.key);
+    const rest = avail
+      .filter((e) => !(e.core || e.key))
+      .map((e) => ({ e, r: rng() * e.w }))
+      .sort((a, b) => b.r - a.r)
+      .map((x) => x.e);
+    const chosen = must.slice(0, MAX_LEAD_TYPES);
+    for (const e of rest) {
+      if (chosen.length >= MAX_LEAD_TYPES) break;
+      chosen.push(e);
+    }
+    return chosen;
+  }
+
+  /** Mirror Doctrine: field what StrategyCounterplay says beats the player's army. */
+  function mirrorEntries(params, base) {
+    const tally = {};
+    for (const s of params.strategies || []) {
+      for (const [type, w] of Object.entries(s.weights || {})) {
+        if (unitExists(type)) tally[type] = Math.max(tally[type] || 0, w);
+      }
+    }
+    const picks = Object.entries(tally)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([type, w]) => ({ type, w: w * 2, key: true }));
+    if (!picks.length) return base;
+    const keep = base.filter((e) => e.core && !picks.some((p) => p.type === e.type)).slice(0, 2);
+    return picks.concat(keep);
+  }
+
+  function weightedMean(entries) {
+    let sum = 0;
+    let w = 0;
+    for (const e of entries) {
+      sum += unitThreat(e.type) * e.w;
+      w += e.w;
+    }
+    return w > 0 ? sum / w : 1;
+  }
+
+  /**
+   * Turn a plan into a spawn queue.
+   *   params.count        bodies the wave would have had (difficulty, colony, spy mods applied)
+   *   params.noElites     Assassinate was used: no heavy types, no escort
+   *   params.typeWeights  per-type multipliers (difficulty presets)
+   *   params.eliteSlots   extra elite pressure (colony value, host threat): raises the target threat
+   *   params.strategies   active StrategyCounterplay strategies (Mirror Doctrine)
+   *   params.packMinions  boss wave: the boss's own guard, placed right behind him
+   *   params.template     waves 1-3: the hand-written pool
+   * @returns {{queue, counts, count, leadCount, allyCount, leadShare, typeCount, leadTypes,
+   *            allyTypes, threat, targetThreat, countMult}}
+   */
+  function composeWave(plan, params = {}) {
+    const wave = plan.wave;
+    const rng = rngFor(plan.seed, wave, 'compose');
+    const baseCount = Math.max(1, params.count | 0);
+    const tw = params.typeWeights || {};
+    const tactic = tacticForPlan(plan) || {};
+    let lead;
+    let ally = [];
+    let allyShare = 0;
+    let target;
+    let maxAllyShare = 0.4;
+    const head = [];
+
+    if (plan.kind === 'horde') {
+      const h = hordeDef(plan.horde) || HORDES[0];
+      lead = h.mix
+        .filter((e) => wave >= (e.from || 1) && unitExists(e.type))
+        .map((e) => ({ ...e }));
+      if (!lead.length) lead = [{ type: 'goblin', w: 1 }];
+      target = legacyHordeMeanThreat(wave);
+    } else if (wave < 4 && Array.isArray(params.template) && params.template.length) {
+      const tally = {};
+      for (const t of params.template) if (unitExists(t)) tally[t] = (tally[t] || 0) + 1;
+      const rows = Object.entries(tally).map(([type, w]) => ({ type, w }));
+      lead = rows.filter((e) => UNIT_FACTION[e.type] === plan.leadId);
+      ally = rows.filter((e) => UNIT_FACTION[e.type] !== plan.leadId);
+      if (!lead.length) {
+        lead = rows;
+        ally = [];
+      }
+      const aw = ally.reduce((a, e) => a + e.w, 0);
+      const lw = lead.reduce((a, e) => a + e.w, 0);
+      allyShare = aw / Math.max(1, aw + lw);
+      maxAllyShare = 0.75;
+      target = 0; // the opening keeps its hand-set head count
+    } else {
+      lead = pickLeadEntries(plan, wave, params, rng).map((e) => ({ ...e }));
+      if (tactic.mirror) lead = mirrorEntries(params, lead);
+      if (plan.allyId && HOSTS[plan.allyId]) {
+        ally = HOSTS[plan.allyId].roster
+          .filter((e) => e.aux && wave >= e.from && unitExists(e.type))
+          .filter((e) => !lead.some((l) => l.type === e.type))
+          .slice(0, MAX_ALLY_TYPES)
+          .map((e) => ({ ...e }));
+        allyShare = ally.length ? plan.allyShare || 0.25 : 0;
+      }
+      target = legacyMeanThreat(wave) * (1 + 0.03 * Math.min(8, params.eliteSlots | 0));
+      if (plan.kind === 'boss') {
+        // The old escort was a fixed list of elites plus ordinary fill; match its weight.
+        const esc = params.noElites ? { sum: 0, n: 0 } : legacyBossEscortThreat(wave);
+        const fill = Math.max(0, baseCount - 1 - esc.n);
+        target = (esc.sum + fill * target) / Math.max(1, esc.n + fill);
+        if (plan.bossType && unitExists(plan.bossType)) head.push(plan.bossType);
+        if (!params.noElites) {
+          for (const m of params.packMinions || []) if (unitExists(m)) head.push(m);
+        }
+        ally = [];
+        allyShare = 0;
+      } else if (plan.revenge && unitExists(plan.revenge.type) && !params.noElites) {
+        head.push(plan.revenge.type);
+      }
+    }
+    for (const e of lead) e.w *= tw[e.type] > 0 ? Math.min(3, tw[e.type]) : 1;
+
+    // Lean on the heavy or the light end of the roster until the host's mean threat is near
+    // the old wave's, then let the head count take up what is left.
+    let countMult = 1;
+    if (target > 0) {
+      const mult = tactic.threat || 1;
+      for (let i = 0; i < 4; i++) {
+        const raw = weightedMean(lead);
+        const mean = (raw * (1 - allyShare) + weightedMean(ally) * allyShare) * mult;
+        const low = mean < target * 0.92;
+        if (!low && mean <= target * 1.08) break;
+        let moved = false;
+        for (const e of lead) {
+          const t = unitThreat(e.type);
+          if (low ? t > raw * 1.05 : t < raw * 0.95) {
+            e.w *= 1.5;
+            moved = true;
+          }
+        }
+        if (!moved) break;
+      }
+      const mean = (weightedMean(lead) * (1 - allyShare) + weightedMean(ally) * allyShare) * mult;
+      countMult = Math.max(COUNT_MIN, Math.min(COUNT_MAX, target / Math.max(0.2, mean)));
+    }
+    const count = Math.max(1, Math.round(baseCount * countMult));
+    const front = lead.filter((e) => e.front).map((e) => e.type);
+    const rear = lead.filter((e) => e.rear).map((e) => e.type);
+    const built = WaveCompositionCore.composeHost({
+      count,
+      rng,
+      lead,
+      ally,
+      allyShare,
+      maxAllyShare,
+      head,
+      front,
+      rear,
+      allySquad: Math.max(2, (tactic.squad && tactic.squad.size) || 4),
+    });
+    const leadTypes = [...new Set(head.concat(lead.map((e) => e.type)))].filter(
+      (t) => built.counts[t] > 0
+    );
+    const allyTypes = ally.map((e) => e.type).filter((t) => built.counts[t] > 0);
+    return {
+      queue: built.queue,
+      counts: built.counts,
+      count: built.queue.length,
+      baseCount,
+      countMult,
+      leadCount: built.leadCount,
+      allyCount: built.allyCount,
+      leadShare: built.queue.length ? built.leadCount / built.queue.length : 1,
+      typeCount: Object.keys(built.counts).length,
+      leadTypes,
+      allyTypes,
+      threat: meanThreat(built.queue) * built.queue.length * (tactic.threat || 1),
+      targetThreat: (target || meanThreat(built.queue)) * baseCount,
+    };
+  }
+
+  // ------------------------------------------------------------------ preview
+  /**
+   * What the night shows about tomorrow. Unscouted: the faction and its crest, a silhouette
+   * and "about N". Scouted (a Watchtower stands, or a Scout Report was bought): the tactic
+   * by name, its counter, and an exact head count by type.
+   */
+  function describeHost(plan, comp, scouted) {
+    if (!plan) return null;
+    const f = FACTIONS[plan.leadId] || {};
+    const ally = plan.allyId ? FACTIONS[plan.allyId] : null;
+    const tactic = tacticForPlan(plan) || {};
+    const count = comp ? comp.count : 0;
+    const makeup = comp
+      ? Object.entries(comp.counts)
+          .map(([type, n]) => ({
+            type,
+            n,
+            name: (typeof EnemyDefs !== 'undefined' && EnemyDefs[type]?.name) || type,
+          }))
+          .sort((a, b) => b.n - a.n)
+      : [];
+    const round = count < 10 ? count : Math.round(count / 5) * 5;
+    return {
+      wave: plan.wave,
+      kind: plan.kind,
+      factionId: plan.leadId,
+      factionName: f.name || plan.leadId,
+      shortName: f.shortName || plan.leadId,
+      crest: f.color || '#c0c0c0',
+      allyName: ally && comp && comp.allyCount > 0 ? ally.name : '',
+      allyCrest: ally ? ally.color : '',
+      scouted: !!scouted,
+      count,
+      countText: scouted ? `${count}` : `about ${round}`,
+      silhouette: tactic.silhouette || '',
+      tacticName: scouted ? tactic.name || '' : '',
+      tacticDesc: scouted ? tactic.desc || '' : '',
+      counter: tactic.counter || '',
+      makeup: scouted ? makeup : [],
+      horde: plan.kind === 'horde' ? (hordeDef(plan.horde) || {}).label || 'Horde' : '',
+      bossType: plan.bossType || null,
+      revenge: plan.revenge ? { ...plan.revenge } : null,
+      drawnBy: plan.drawnBy || '',
+    };
+  }
+
+  /** One line for the HUD chip and the wave banner. */
+  function formatHostLine(d) {
+    if (!d) return '';
+    const parts = [];
+    let who = `${d.factionName} lead`;
+    if (d.kind === 'boss') who = `${d.factionName} — boss wave`;
+    else if (d.kind === 'horde') who = `${d.horde} (${d.factionName} horde)`;
+    else if (d.revenge) who = `${d.factionName} come for revenge under ${d.revenge.name}`;
+    parts.push(who);
+    if (d.allyName) parts.push(`${d.allyName} in support`);
+    parts.push(`${d.countText} foes`);
+    if (d.scouted) {
+      if (d.tacticName) parts.push(`Tactic: ${d.tacticName}`);
+      if (d.makeup.length) parts.push(d.makeup.map((m) => `${m.n} ${m.name}`).join(', '));
+    } else if (d.silhouette) parts.push(`Unscouted: ${d.silhouette}`);
+    if (d.counter) parts.push(`Counter: ${d.counter}`);
+    return parts.join(' · ');
+  }
+
+  // -------------------------------------------------------- older entry points
+  /** Kept for callers outside the wave builder; the pool is no longer blended by faction. */
+  function enrichPool(pool) {
+    return [...(pool || [])];
+  }
+
+  function mergeFactionWeights(_wave, baseWeights = {}) {
+    return { ...baseWeights };
+  }
+
+  function biasSpawnQueue(queue) {
+    return queue;
+  }
+
+  function biasHordeQueue(queue) {
+    return queue;
+  }
+
+  /** Named bosses come on their own wave only; nothing is injected into ordinary waves. */
+  function injectSubBosses(queue) {
+    return queue;
   }
 
   function countFactionBuildings(buildings, factionId) {
@@ -695,7 +1594,7 @@ const EnemyFactions = (() => {
 
   function formatActiveFactions(wave) {
     return getActiveFactions(wave)
-      .map((f) => `${f.shortName} S${f.currentTier.stage}`)
+      .map((f) => f.shortName)
       .join(' · ');
   }
 
@@ -738,11 +1637,6 @@ const EnemyFactions = (() => {
     for (const f of getActiveFactions(wave)) {
       const tier = f.currentTier;
       if (!tier.counterRaids) continue;
-      const rep =
-        typeof FactionReputation !== 'undefined'
-          ? FactionReputation.getFactionModifiers(f.id, wave)
-          : { counterRaidMult: 1 };
-      if ((rep.counterRaidMult || 1) < 0.55 && rng() > rep.counterRaidMult) continue;
       const interval = tier.counterRaidInterval || 12;
       if (wave % interval !== 0) continue;
 
@@ -831,38 +1725,23 @@ const EnemyFactions = (() => {
     return spawned;
   }
 
+  /** A faction's first day on the field is announced once, with what it does. */
   function checkTierAnnouncements(wave, hooks = {}) {
-    const { showMessage, addHighlight, floatingText, worldW, worldH } = hooks;
+    const { showMessage, addHighlight, floatingText, worldW } = hooks;
     for (const f of getActiveFactions(wave)) {
-      const tier = f.currentTier;
-      const key = `${f.id}:${tier.tier}`;
+      const key = `${f.id}:debut`;
       if (announcedTiers.has(key)) continue;
-      // Reputation can delay tiers so wave !== waveMin forever — announce on first active sighting.
       announcedTiers.add(key);
-      const stageName = tier.stageLabel || tier.label;
-      addHighlight?.('host', `${f.name} — Stage ${tier.stage}`);
+      if (wave <= 1 && f.id === 'goblin_hordes') continue;
+      const tactic = getFactionTactic(f.id);
+      addHighlight?.('host', `${f.name} take the field`);
       showMessage?.(
-        `Host evolves — ${f.name} reach Stage ${tier.stage} (${stageName}): ${tier.tagline}`,
+        `${f.name} have joined the war${tactic ? ` — ${tactic.name}: ${tactic.sign}` : '.'}`,
         400
       );
-      floatingText?.(worldW / 2, 72, `${f.shortName.toUpperCase()} STAGE ${tier.stage}`, f.color);
-      if (tier.counterRaids) {
-        showMessage?.(
-          `${f.shortName} kingdom active — counter-raids may strike your settlements.`,
-          320
-        );
-      }
+      floatingText?.(worldW / 2, 72, f.name.toUpperCase(), f.color);
     }
   }
-
-  const BUILDING_LABELS = {
-    enemy_trade_outpost: 'Enemy Trade Outpost',
-    enemy_quarry: 'Enemy Quarry',
-    enemy_hamlet: 'Enemy Hamlet',
-    enemy_merchant_guild: 'Enemy Merchant Guild',
-    enemy_shadow_academy: 'Enemy Shadow Academy',
-    enemy_war_academy: 'Enemy War Academy',
-  };
 
   function formatUnitName(type) {
     if (typeof EnemyDefs !== 'undefined' && EnemyDefs[type]?.name) return EnemyDefs[type].name;
@@ -878,167 +1757,81 @@ const EnemyFactions = (() => {
     return types.map(formatUnitName).join(', ');
   }
 
-  function formatBuildingList(types) {
-    if (!types?.length) return '—';
-    return types.map((t) => BUILDING_LABELS[t] || t.replace(/_/g, ' ')).join(', ');
+  function rosterLine(host) {
+    return host.roster
+      .filter((e) => unitExists(e.type))
+      .map((e) => `${formatUnitName(e.type)}${e.from > 1 ? ` (wave ${e.from}+)` : ''}`)
+      .join(', ');
   }
 
-  function formatStageMechanics(tier) {
-    const lines = [];
-    if (tier.elites?.length) {
-      lines.push('Elite units receive +12% spawn weight vs grunts in the same tier.');
-    }
-    if (tier.subBosses?.length) {
-      const chance = tier.stage >= 4 ? '24%' : tier.stage >= 3 ? '16%' : '9%';
-      lines.push(
-        `Named sub-bosses (${formatUnitList(tier.subBosses)}) may replace a spawn on non-boss waves (~${chance} chance per active faction, up to 2 per wave).`
-      );
-    }
-    if (tier.buildings?.length) {
-      lines.push(
-        `Northern builds unlock at this tier (wave ≥10): up to ${tier.buildingCap} holds, one attempt every ${tier.buildInterval} waves while under cap.`
-      );
-      if (tier.stage === 3)
-        lines.push(
-          'Stage 3 favors trade posts and quarries; hamlets appear later in the tier band.'
-        );
-      if (tier.stage >= 4)
-        lines.push('Stage 4 favors full settlements — hamlets, guilds, and academies when listed.');
-    }
-    if (tier.counterRaids) {
-      lines.push(
-        `Counter-raids fire every ${tier.counterRaidInterval} waves: ${formatUnitList(tier.elites?.length ? tier.elites : tier.units)} strike your hamlets, guilds, or outposts from hostile flanks.`
-      );
-    }
-    lines.push(
-      `Faction spawn weight ×${tier.weight.toFixed(2)} — higher tiers thicken this realm in the nightly queue.`
-    );
-    if (tier.stage >= 2) {
-      lines.push(
-        'From waveMin+4 onward, faction units duplicate in enrichPool — expect more of this roster in the host mix.'
-      );
-    }
-    return lines.join('\n');
-  }
-
-  function formatStageEntryBody(faction, tier) {
-    const stageDef = getEvolutionStageDef(tier.stage);
+  function formatFactionBody(f) {
+    const host = HOSTS[f.id];
+    const tactic = TACTICS[host.tactic];
     return [
-      `${faction.name} — ${tier.tagline}`,
+      `${f.name} can lead a wave from wave ${f.waveMin}. When they lead they are about three quarters of the host, with at most one other faction in support.`,
       '',
-      `Unlocks at wave ${tier.waveMin} (faction debuts wave ${faction.waveMin}). Global stage: ${stageDef?.label || `Stage ${tier.stage}`} — ${stageDef?.desc || ''}`,
+      `Tactic — ${tactic.name}: ${tactic.desc}`,
+      `Counter: ${tactic.counter}`,
+      `On the field: ${tactic.sign}`,
       '',
-      `Grunt pool: ${formatUnitList(tier.units)}`,
-      tier.elites?.length ? `Elite pool: ${formatUnitList(tier.elites)}` : 'Elite pool: none yet',
-      tier.subBosses?.length
-        ? `Sub-boss roster: ${formatUnitList(tier.subBosses)}`
-        : 'Sub-boss roster: none',
-      tier.buildings?.length
-        ? `Northern structures: ${formatBuildingList(tier.buildings)} (cap ${tier.buildingCap})`
-        : 'Northern structures: assault-only — no enemy holds yet',
-      tier.counterRaids
-        ? 'Counter-raids: ACTIVE — protect hamlets and guilds'
-        : 'Counter-raids: inactive',
-      '',
-      formatStageMechanics(tier),
-      '',
-      'Hostility (Cordial → Blood Feud) and counter-offensive doctrines can pull this tier earlier or hold evolution back. Check HOST HUD and Threat Map for live stance and evolution offset.',
-    ]
-      .filter(Boolean)
-      .join('\n');
-  }
-
-  function formatFactionEvolutionBody(faction) {
-    const blocks = faction.tiers.map((tier, i) => {
-      const header = `Stage ${tier.stage}: ${tier.label} (Wave ${tier.waveMin}+)`;
-      const summary = [
-        tier.tagline,
-        `Units: ${formatUnitList(tier.units)}`,
-        tier.elites?.length ? `Elites: ${formatUnitList(tier.elites)}` : null,
-        tier.subBosses?.length ? `Sub-bosses: ${formatUnitList(tier.subBosses)}` : null,
-        tier.buildings?.length ? `Builds: ${formatBuildingList(tier.buildings)}` : 'Builds: none',
-        tier.counterRaids ? `Counter-raids every ${tier.counterRaidInterval} waves` : null,
-      ]
-        .filter(Boolean)
-        .join(' · ');
-      return `${header}\n${summary}`;
-    });
-    return [
-      `${faction.name} evolves on an independent 4-stage track from wave ${faction.waveMin}. Each stage reshapes the spawn pool, northern economy, and raid pressure.`,
-      '',
-      blocks.join('\n\n'),
-      '',
-      'See individual stage pages in this tab for full unit lists and mechanics. Named boss waves (every 10th) use the Monster Evolution roster — sub-bosses inject on other waves.',
+      `They field: ${rosterLine(host)}.`,
+      host.bosses.length
+        ? `Bosses: ${formatUnitList(host.bosses)}. A boss wave is led by the boss's own faction and plays its tactic.`
+        : 'No boss of their own.',
     ].join('\n');
   }
 
   function getEncyclopediaEntries() {
-    const stageTable = Object.entries(EVOLUTION_STAGES)
-      .map(([n, s]) => `Stage ${n} — ${s.label} (${s.short}): ${s.desc}`)
-      .join('\n');
-
     const factionList = Object.values(FACTIONS)
       .map((f) => `${f.name} (wave ${f.waveMin}+)`)
       .join(' · ');
-
     const entries = [
       {
         cat: 'enemies',
-        name: 'Enemy Faction Evolution System',
+        name: 'Enemy Factions',
         body: [
-          "Five hostile realms evolve independently on a shared 4-stage track. Your HOST HUD and Threat Map show each faction's current stage, tagline, northern building count, and whether counter-raids are active.",
+          'One faction leads each wave. It is chosen at nightfall and named in the night preview with its crest colour. The leader is about three quarters of the host; at most one ally marches in support, in its own squads. A wave holds four to seven kinds of enemy.',
           '',
-          'Stage 1 Grunts — basic horde filler thickens the lanes.',
-          'Stage 2 Elite Host — veteran elites and named sub-bosses join non-boss waves.',
-          'Stage 3 Fortified — enemy trade posts, quarries, and hamlets rise in the north.',
-          'Stage 4 Kingdom — full settlements plus counter-raids on your hamlets and guilds.',
+          'Every faction has one tactic that changes how its waves behave, and one clear answer to it. The preview always gives the answer; a Watchtower or a Scout Report also names the tactic and gives an exact head count.',
           '',
-          `Active factions: ${factionList}`,
+          `Factions: ${factionList}`,
           '',
-          'Faction reputation, counter-offensive doctrines, expeditions, and realm elimination all interact with evolution timing — high hostility pulls tiers forward; truces and debuffs hold them back.',
+          'Who leads rotates: the faction that led yesterday rarely leads today. What you build draws them too. Walls draw siege crews, a line of archers and mages draws flyers and wargs, healers draw assassins.',
+          '',
+          'Every tenth wave is a boss wave: the boss, his guard and a host of his own faction. Every fifth wave that is not a boss wave is a horde.',
         ].join('\n'),
       },
       {
         cat: 'enemies',
-        name: 'Evolution Stages Reference',
+        name: 'Horde Flavours',
         body: [
-          'Global stage labels apply to every faction tier:',
+          'A horde is more bodies, weaker each, arriving faster. Each flavour is a different host that plays differently:',
           '',
-          stageTable,
-          '',
-          'Each faction also has a named tier label per stage (Swarm, Warband Captains, Shadow Forts, etc.) announced when that wave threshold is first reached.',
+          ...HORDES.map((h) => `${h.label} — ${h.tagline} Counter: ${h.counter}`),
         ].join('\n'),
+        campaignWave: 5,
       },
       {
         cat: 'enemies',
-        name: 'Threat Map & HOST Intel',
+        name: 'Grudges and Revenge Waves',
         body: [
-          'Open the Threat Map via 🗺 in the top bar, FACTION INTEL in the right panel, or by clicking the HOST HUD.',
+          'Each faction keeps a grudge that rises with every one of its soldiers you kill. The Faction Intel panel shows it as a bar.',
           '',
-          'Per-realm intel cards show: evolution stage (Grunts → Kingdom), tier tagline, northern building count, hostility stance (Cordial → Blood Feud), counter-offensive debuffs, multi-front flank assignment, and The Long Siege sector %.',
+          'When a grudge is full, that faction leads the next ordinary wave as a revenge wave under a named avenger: one tougher champion, marked with the faction crest. The night preview says so.',
           '',
-          'Dormant factions display their unlock wave. Eliminated realms show CONQUERED and stop spawning. Stage 4 kingdoms badge COUNTER-RAIDS when they can strike your settlements.',
-          '',
-          'Night spawn queue intel lists faction roster mix (e.g. Goblin×12 · Dark×4). Combine with kingdom strength preview before dawn.',
+          'Kill the avenger and the grudge is settled: that faction will not lead for the next three waves. A Truce message halves the highest grudge.',
         ].join('\n'),
+        campaignWave: 6,
       },
     ];
-
-    for (const faction of Object.values(FACTIONS)) {
+    for (const f of Object.values(FACTIONS)) {
+      if (!HOSTS[f.id]) continue;
       entries.push({
         cat: 'enemies',
-        name: `${faction.name} — Evolution Track`,
-        body: formatFactionEvolutionBody(faction),
-        campaignWave: faction.waveMin,
+        name: `${f.name} — ${TACTICS[HOSTS[f.id].tactic].name}`,
+        body: formatFactionBody(f),
+        campaignWave: f.waveMin,
       });
-      for (const tier of faction.tiers) {
-        entries.push({
-          cat: 'enemies',
-          name: `${faction.name} — Stage ${tier.stage}: ${tier.label}`,
-          body: formatStageEntryBody(faction, tier),
-          campaignWave: tier.waveMin,
-        });
-      }
     }
     return entries;
   }
@@ -1049,6 +1842,8 @@ const EnemyFactions = (() => {
     const raidingFactions = active
       .filter((f) => f.currentTier.counterRaids)
       .map((f) => f.shortName);
+    const today = plans[wave] || null;
+    const tomorrow = plans[wave + 1] || null;
     return {
       evolutionStages: EVOLUTION_STAGES,
       activeFactions: active.map((f) => {
@@ -1056,6 +1851,7 @@ const EnemyFactions = (() => {
           typeof FactionReputation !== 'undefined'
             ? FactionReputation.getFactionModifiers(f.id, wave)
             : null;
+        const tactic = getFactionTactic(f.id);
         return {
           id: f.id,
           name: f.name,
@@ -1065,31 +1861,57 @@ const EnemyFactions = (() => {
           stage: f.currentTier.stage,
           tierLabel: f.currentTier.stageLabel || f.currentTier.label,
           tagline: f.currentTier.tagline,
+          tacticName: tactic?.name || '',
+          tacticDesc: tactic?.desc || '',
+          counter: tactic?.counter || '',
+          leadsToday: today?.leadId === f.id,
+          leadsTomorrow: tomorrow?.leadId === f.id,
           buildingCount: hostKingdom.breakdown[f.id]?.count || 0,
           counterRaids: !!f.currentTier.counterRaids,
           hostility: rep?.hostility,
           stanceLabel: rep?.stanceLabel,
           stanceColor: rep?.stanceColor,
-          evolutionOffset: rep?.evolutionWaveOffset || 0,
-          economicFocus: !!rep?.economicFocus,
+          evolutionOffset: 0,
+          economicFocus: false,
         };
       }),
       hostKingdomTotal: hostKingdom.total,
       counterRaidFactions: raidingFactions,
       rosterIntel: formatFactionRoster(spawnQueue),
       activeSummary: formatActiveFactions(wave),
+      leadToday: today ? { ...today } : null,
+      leadTomorrow: tomorrow ? { ...tomorrow } : null,
     };
   }
 
   return {
     FACTIONS,
     EVOLUTION_STAGES,
+    TACTICS,
+    HOSTS,
+    HORDES,
     resetRun,
     getFactionDef,
+    getHost,
+    getTactic,
+    getFactionTactic,
     getFactionTier,
     getActiveFactions,
     getUnitFaction,
+    getBossFaction,
     getBuildingFaction,
+    unitThreat,
+    legacyMeanThreat,
+    leadCandidates,
+    planWave,
+    planFor,
+    getPlan,
+    forgetPlan,
+    commitPlan,
+    tacticForPlan,
+    composeWave,
+    describeHost,
+    formatHostLine,
     enrichPool,
     mergeFactionWeights,
     biasSpawnQueue,

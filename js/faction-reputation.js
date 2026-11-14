@@ -1,55 +1,60 @@
 /**
- * Faction Reputation / Hostility — light memory per hostile realm.
- * Aggressive play raises hostility (earlier evolution, harder spawns).
- * Truces and restraint lower it (economic northern pressure instead).
+ * Faction grudges. Every faction keeps one number, a grudge from 0 to 100, and it only
+ * moves for reasons the player can see: killing that faction's soldiers raises it, a Truce
+ * lowers it. Nothing else reads it; it does not scale spawns, health or evolution.
+ *
+ * A full grudge has one consequence: that faction leads the next ordinary wave as a revenge
+ * wave under a named avenger (EnemyFactions.planWave). Kill the avenger and the faction
+ * will not lead again for three waves.
  */
 const FactionReputation = (() => {
   const WAVE_MIN = 6;
-  const DEFAULT_HOSTILITY = 22;
-  const HOSTILITY_MAX = 100;
-  const HOSTILITY_MIN = 0;
+  const GRUDGE_MAX = 100;
+  const BAR_WAVES = 3;
 
   const STANCES = [
     {
-      max: 18,
-      id: 'cordial',
-      label: 'Cordial',
+      max: 24,
+      id: 'unbloodied',
+      label: 'Unbloodied',
       color: '#80c8a0',
-      desc: 'Economic probes — trade posts multiply in the north.',
+      desc: 'No score to settle.',
     },
-    { max: 34, id: 'wary', label: 'Wary', color: '#a0b0c0', desc: 'Standard evolution pace.' },
     {
-      max: 52,
-      id: 'hostile',
-      label: 'Hostile',
+      max: 59,
+      id: 'bloodied',
+      label: 'Bloodied',
       color: '#e0a050',
-      desc: 'Heavier spawns and faster military evolution.',
+      desc: 'They are counting their dead.',
     },
     {
-      max: 72,
+      max: 99,
       id: 'vengeful',
       label: 'Vengeful',
       color: '#ff7050',
-      desc: 'Elites arrive early — counter-raids more likely.',
+      desc: 'A few more kills and they come for revenge.',
     },
     {
       max: 100,
       id: 'blood_feud',
       label: 'Blood Feud',
       color: '#ff4040',
-      desc: 'Full evolution rush — maximum host pressure.',
+      desc: 'Their avenger leads the next ordinary wave.',
     },
   ];
 
-  let hostility = {};
-  let engagedThisWave = {};
+  let grudge = {};
   let truceUntil = {};
+  let barredUntil = {};
+  /** The revenge wave now on the field: { factionId, wave, name, slain }. */
+  let avenger = null;
   let announced = false;
 
   function resetRun() {
-    hostility = {};
-    engagedThisWave = {};
+    grudge = {};
     truceUntil = {};
+    barredUntil = {};
+    avenger = null;
     announced = false;
   }
 
@@ -62,23 +67,13 @@ const FactionReputation = (() => {
     return EnemyFactions.getActiveFactions(wave).map((f) => f.id);
   }
 
-  function ensureFaction(factionId, wave = 0) {
-    if (!factionId) return;
-    if (hostility[factionId] == null) {
-      hostility[factionId] = DEFAULT_HOSTILITY;
-    }
-    if (wave >= WAVE_MIN && !announced && Object.keys(hostility).length >= 1) {
-      announced = true;
-    }
+  function clamp(value) {
+    return Math.max(0, Math.min(GRUDGE_MAX, Math.round(value * 10) / 10));
   }
 
-  function clampHostility(value) {
-    return Math.max(HOSTILITY_MIN, Math.min(HOSTILITY_MAX, Math.round(value)));
-  }
-
+  /** The grudge, 0 to 100. (Named for the callers that predate grudges.) */
   function getHostility(factionId) {
-    if (!factionId) return DEFAULT_HOSTILITY;
-    return hostility[factionId] ?? DEFAULT_HOSTILITY;
+    return Math.round(grudge[factionId] || 0);
   }
 
   function getStance(factionId) {
@@ -86,20 +81,16 @@ const FactionReputation = (() => {
     return STANCES.find((s) => h <= s.max) || STANCES[STANCES.length - 1];
   }
 
-  function addHostility(factionId, amount, wave = 0) {
+  function addHostility(factionId, amount, _wave = 0) {
     if (!factionId || !amount) return getHostility(factionId);
-    ensureFaction(factionId, wave);
-    if (truceUntil[factionId] > wave) amount *= 0.35;
-    hostility[factionId] = clampHostility(getHostility(factionId) + amount);
-    engagedThisWave[factionId] = true;
-    return hostility[factionId];
+    grudge[factionId] = clamp((grudge[factionId] || 0) + amount);
+    return getHostility(factionId);
   }
 
-  function reduceHostility(factionId, amount, wave = 0) {
+  function reduceHostility(factionId, amount, _wave = 0) {
     if (!factionId || !amount) return getHostility(factionId);
-    ensureFaction(factionId, wave);
-    hostility[factionId] = clampHostility(getHostility(factionId) - amount);
-    return hostility[factionId];
+    grudge[factionId] = clamp((grudge[factionId] || 0) - amount);
+    return getHostility(factionId);
   }
 
   function resolveFactionId(entity) {
@@ -113,222 +104,193 @@ const FactionReputation = (() => {
     return null;
   }
 
-  function killHostilityGain(unit) {
-    if (unit.isNamedBoss || unit.type?.startsWith('boss_')) return 14;
-    if (unit.type === 'war_chief' || unit.isNamedBoss) return 8;
-    if (unit.type === 'siege_tower' || unit.type === 'iron_colossus') return 5;
-    if (typeof isEliteEnemy === 'function' && isEliteEnemy(unit)) return 4;
-    return 2;
+  function killWeight(unit) {
+    if (unit.isNamedBoss || unit.type?.startsWith('boss_')) return 15;
+    if (unit.type === 'war_chief') return 5;
+    if (unit.type === 'siege_tower' || unit.type === 'iron_colossus') return 3;
+    if (typeof isEliteEnemy === 'function' && isEliteEnemy(unit)) return 2;
+    return 1;
   }
 
-  function structureHostilityGain(building) {
-    const type = building?.type || '';
-    if (type === 'enemy_hamlet' || type === 'enemy_merchant_guild') return 16;
-    if (type === 'enemy_shadow_academy' || type === 'enemy_war_academy') return 18;
-    if (type === 'enemy_quarry') return 11;
-    if (type === 'enemy_trade_outpost') return 8;
-    return 6;
+  /** About one and a half led waves' worth of kills fills a grudge, at any wave. */
+  function killGain(unit, wave) {
+    const cfg = typeof getWaveConfig === 'function' ? getWaveConfig(Math.max(1, wave)) : null;
+    const host = Math.max(8, (cfg && cfg.count) || 20);
+    return (killWeight(unit) * 70) / host;
   }
 
-  function getEvolutionWaveOffset(factionId) {
-    const h = getHostility(factionId);
-    if (h >= 55) return Math.min(14, Math.floor((h - 50) / 3) + 2);
-    if (h >= 38) return Math.floor((h - 38) / 4);
-    if (h <= 16) return -Math.min(10, Math.floor((20 - h) / 2));
-    return 0;
+  function factionName(fid) {
+    const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
+    return def?.name || fid;
   }
 
-  function getEffectiveWaveForTier(factionId, wave) {
-    return Math.max(1, (wave | 0) + getEvolutionWaveOffset(factionId));
-  }
-
+  /** No hidden effects: every multiplier is 1. The grudge and its stance are for display. */
   function getFactionModifiers(factionId, wave) {
-    const h = getHostility(factionId);
     const stance = getStance(factionId);
-    let spawnMult = 1;
-    let eliteChanceMult = 1;
-    let buildingIntervalMult = 1;
-    let buildingCapDelta = 0;
-    let economicFocus = false;
-    let counterRaidMult = 1;
-
-    if (h >= 42) {
-      spawnMult = 1 + (h - 42) * 0.006;
-      eliteChanceMult = 1 + (h - 42) * 0.008;
-      buildingCapDelta = h >= 60 ? -1 : 0;
-      buildingIntervalMult = 1.12;
-    } else if (h <= 20) {
-      spawnMult = 1 - (20 - h) * 0.005;
-      buildingIntervalMult = 0.72;
-      buildingCapDelta = h <= 14 ? 1 : 0;
-      economicFocus = h <= 18;
-      counterRaidMult = h <= 12 ? 0.45 : 0.7;
-    }
-
-    if (truceUntil[factionId] > wave) {
-      spawnMult *= 0.88;
-      counterRaidMult *= 0.5;
-    }
-
     return {
-      hostility: h,
+      hostility: getHostility(factionId),
       stance: stance.id,
       stanceLabel: stance.label,
       stanceColor: stance.color,
-      evolutionWaveOffset: getEvolutionWaveOffset(factionId),
-      effectiveWave: getEffectiveWaveForTier(factionId, wave),
-      spawnMult,
-      eliteChanceMult,
-      buildingIntervalMult,
-      buildingCapDelta,
-      economicFocus,
-      counterRaidMult,
+      evolutionWaveOffset: 0,
+      effectiveWave: wave | 0,
+      spawnMult: 1,
+      eliteChanceMult: 1,
+      buildingIntervalMult: 1,
+      buildingCapDelta: 0,
+      economicFocus: false,
+      counterRaidMult: 1,
       truceActive: (truceUntil[factionId] || 0) > wave,
+      revengeDue: getHostility(factionId) >= GRUDGE_MAX,
+      barred: (barredUntil[factionId] || 0) > wave,
     };
+  }
+
+  function getEvolutionWaveOffset() {
+    return 0;
+  }
+
+  function getEffectiveWaveForTier(_factionId, wave) {
+    return Math.max(1, wave | 0);
   }
 
   function onEnemySlain(unit, wave, ctx = {}) {
     if (!isActive(wave)) return null;
     const fid = resolveFactionId(unit);
     if (!fid) return null;
-    const gain = killHostilityGain(unit);
-    const h = addHostility(fid, gain, wave);
-    if (gain >= 8 && ctx.hooks?.showMessage) {
-      const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
-      ctx.hooks.showMessage(
-        `${def?.shortName || fid} hostility rises — ${getStance(fid).label} (${h}).`,
-        220
+    if (unit.isAvenger && avenger && !avenger.slain && avenger.factionId === fid) {
+      return onAvengerSlain(wave, ctx);
+    }
+    const before = getHostility(fid);
+    const h = addHostility(fid, killGain(unit, wave), wave);
+    if (before < GRUDGE_MAX && h >= GRUDGE_MAX) {
+      ctx.hooks?.showMessage?.(
+        `${factionName(fid)} swear a blood feud — their avenger will lead a wave against you.`,
+        320
       );
     }
-    return { factionId: fid, hostility: h, gain };
+    return { factionId: fid, hostility: h, gain: h - before };
   }
 
   function onEnemyStructureDestroyed(building, wave, ctx = {}) {
     if (!isActive(wave) || building?.owner !== 'enemy') return null;
     const fid = resolveFactionId(building);
     if (!fid) return null;
-    const gain = structureHostilityGain(building);
-    const h = addHostility(fid, gain, wave);
-    const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
+    const h = addHostility(fid, 20, wave);
     ctx.hooks?.showMessage?.(
-      `${def?.shortName || fid} remembers the razing — hostility ${h} (${getStance(fid).label}).`,
+      `${factionName(fid)} will remember the razing — grudge ${h}/100 (${getStance(fid).label}).`,
       280
     );
-    return { factionId: fid, hostility: h, gain };
+    return { factionId: fid, hostility: h, gain: 20 };
   }
 
-  function onCounterOffensive(factionId, wave, ctx = {}) {
+  function onCounterOffensive(factionId, wave) {
     if (!isActive(wave) || !factionId) return null;
-    const h = addHostility(factionId, 12, wave);
-    const def =
-      typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(factionId) : null;
-    ctx.hooks?.showMessage?.(
-      `${def?.shortName || factionId} marks your counter-offensive — hostility ${h}.`,
-      260
-    );
-    return { factionId, hostility: h };
+    return { factionId, hostility: addHostility(factionId, 12, wave) };
   }
 
-  function onExpedition(factionId, wave, ctx = {}) {
+  function onExpedition(factionId, wave) {
     if (!isActive(wave) || !factionId) return null;
-    const h = addHostility(factionId, 8, wave);
-    return { factionId, hostility: h };
+    return { factionId, hostility: addHostility(factionId, 8, wave) };
   }
 
-  function onSettlementRaid(factionId, wave, ctx = {}) {
+  function onSettlementRaid(factionId, wave) {
     if (!isActive(wave) || !factionId) return null;
-    const h = addHostility(factionId, 10, wave);
-    return { factionId, hostility: h };
+    return { factionId, hostility: addHostility(factionId, 10, wave) };
   }
 
   function onSpyAggression(wave, ctx = {}) {
     if (!isActive(wave)) return;
-    for (const fid of getActiveFactionIds(wave)) {
-      addHostility(fid, 4, wave);
-    }
-    ctx.hooks?.showMessage?.('Host factions note your spy aggression — hostility ticks up.', 240);
+    for (const fid of getActiveFactionIds(wave)) addHostility(fid, 4, wave);
+    ctx.hooks?.showMessage?.('The host notes your spies — every grudge rises by 4.', 240);
   }
 
+  /** A Truce halves the worst grudge and holds off any revenge wave for two waves. */
   function onTruce(wave, ctx = {}) {
     if (!isActive(wave)) return null;
     const active = getActiveFactionIds(wave);
     if (!active.length) return null;
-
     let primary = active[0];
-    let peak = -1;
-    for (const fid of active) {
-      const h = getHostility(fid);
-      if (h > peak) {
-        peak = h;
-        primary = fid;
-      }
-    }
-
-    reduceHostility(primary, 18, wave);
-    truceUntil[primary] = wave + 2;
-    for (const fid of active) {
-      if (fid === primary) continue;
-      reduceHostility(fid, 8, wave);
-      truceUntil[fid] = wave + 1;
-    }
-
-    const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(primary) : null;
-    const stance = getStance(primary);
+    for (const fid of active) if (getHostility(fid) > getHostility(primary)) primary = fid;
+    const before = getHostility(primary);
+    grudge[primary] = clamp(before / 2);
+    for (const fid of active) truceUntil[fid] = wave + 2;
     ctx.hooks?.showMessage?.(
-      `Truce courier reaches ${def?.shortName || primary} — hostility −18 (${stance.label}, ${getHostility(primary)}). Other realms ease slightly.`,
+      `Truce reaches ${factionName(primary)} — grudge ${before} → ${getHostility(primary)}. No revenge wave for two waves.`,
       360
     );
     ctx.hooks?.floatingText?.(ctx.worldW / 2, 88, 'TRUCE', '#80c8a0');
     return { primaryFaction: primary, hostility: getHostility(primary) };
   }
 
-  function onWaveEnd(wave, ctx = {}) {
-    if (!isActive(wave)) return;
-    const active = getActiveFactionIds(wave);
-    const notes = [];
-    for (const fid of active) {
-      ensureFaction(fid, wave);
-      if (!engagedThisWave[fid]) {
-        const before = getHostility(fid);
-        reduceHostility(fid, 2, wave);
-        if (before > 20 && getHostility(fid) < before) {
-          const def =
-            typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
-          notes.push(`${def?.shortName || fid} −2`);
-        }
-      }
-    }
-    engagedThisWave = {};
-    if (notes.length && wave >= 10 && ctx.hooks?.showMessage && Math.random() < 0.35) {
-      ctx.hooks.showMessage(`Quiet wave — ${notes.slice(0, 2).join(', ')} hostility eases.`, 220);
-    }
-  }
+  /** Grudges do not fade on their own: only a Truce or a revenge wave clears one. */
+  function onWaveEnd() {}
 
   function checkWaveAnnouncement(wave, ctx = {}) {
     if (!isActive(wave) || announced) return;
-    if (wave !== WAVE_MIN) return;
     announced = true;
     ctx.hooks?.showMessage?.(
-      'Faction reputation active — realms remember how hard you fight them. Truces and restraint shift threats toward economy vs evolution.',
+      'Factions keep a grudge for every soldier you kill. Fill one and that faction sends a revenge wave under a named avenger.',
       420
     );
   }
 
-  function formatHostilitySummary(wave) {
-    const active = getActiveFactionIds(wave);
-    if (!active.length) return '';
-    return active
+  /** The faction owed a revenge wave at `wave`, if any (the fullest grudge wins). */
+  function dueRevenge(wave) {
+    if (!isActive(wave)) return null;
+    let best = null;
+    for (const fid of getActiveFactionIds(wave)) {
+      if (getHostility(fid) < GRUDGE_MAX) continue;
+      if ((truceUntil[fid] || 0) > wave || (barredUntil[fid] || 0) > wave) continue;
+      if (!best || (grudge[fid] || 0) > (grudge[best] || 0)) best = fid;
+    }
+    return best;
+  }
+
+  /** Factions that will not lead at `wave` because their avenger was killed. */
+  function getBarred(wave) {
+    return Object.keys(barredUntil).filter((fid) => barredUntil[fid] > wave);
+  }
+
+  /** The revenge wave has come: the grudge is spent, win or lose. */
+  function onRevengeWave(factionId, wave, revenge, ctx = {}) {
+    if (!factionId) return;
+    grudge[factionId] = 0;
+    avenger = { factionId, wave, name: revenge?.name || 'The Avenger', slain: false };
+    ctx.hooks?.showMessage?.(
+      `REVENGE — ${factionName(factionId)} come for blood under ${avenger.name}. Kill the avenger and they will keep away for ${BAR_WAVES} waves.`,
+      420
+    );
+  }
+
+  function onAvengerSlain(wave, ctx = {}) {
+    if (!avenger || avenger.slain) return null;
+    avenger.slain = true;
+    barredUntil[avenger.factionId] = wave + BAR_WAVES + 1;
+    ctx.hooks?.showMessage?.(
+      `${avenger.name} is dead. ${factionName(avenger.factionId)} will not lead a wave for ${BAR_WAVES} waves.`,
+      380
+    );
+    ctx.hooks?.floatingText?.(ctx.worldW / 2, 88, 'GRUDGE SETTLED', '#80c8a0');
+    return { factionId: avenger.factionId, settled: true };
+  }
+
+  function getAvenger() {
+    return avenger ? { ...avenger } : null;
+  }
+
+  function formatSummary(wave) {
+    return getActiveFactionIds(wave)
+      .filter((fid) => getHostility(fid) > 0)
       .map((fid) => {
         const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
-        const stance = getStance(fid);
-        return `${def?.shortName || fid} ${stance.label[0]}${getHostility(fid)}`;
+        return `${def?.shortName || fid} grudge ${getHostility(fid)}`;
       })
       .join(' · ');
   }
 
   function getStateSnapshot(wave) {
-    const active = getActiveFactionIds(wave);
-    const factions = active.map((fid) => {
+    const factions = getActiveFactionIds(wave).map((fid) => {
       const def = typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionDef(fid) : null;
       const mods = getFactionModifiers(fid, wave);
       const stance = getStance(fid);
@@ -340,10 +302,12 @@ const FactionReputation = (() => {
         stance: stance.id,
         stanceLabel: stance.label,
         stanceColor: stance.color,
-        evolutionOffset: mods.evolutionWaveOffset,
-        effectiveWave: mods.effectiveWave,
-        economicFocus: mods.economicFocus,
+        evolutionOffset: 0,
+        effectiveWave: wave | 0,
+        economicFocus: false,
         truceActive: mods.truceActive,
+        revengeDue: mods.revengeDue,
+        barred: mods.barred,
         desc: stance.desc,
       };
     });
@@ -354,8 +318,9 @@ const FactionReputation = (() => {
     return {
       active: isActive(wave),
       waveMin: WAVE_MIN,
-      summary: formatHostilitySummary(wave),
+      summary: formatSummary(wave),
       highestHostility: highest,
+      avenger: getAvenger(),
       factions,
     };
   }
@@ -381,6 +346,11 @@ const FactionReputation = (() => {
     onTruce,
     onWaveEnd,
     checkWaveAnnouncement,
+    dueRevenge,
+    getBarred,
+    onRevengeWave,
+    onAvengerSlain,
+    getAvenger,
     getStateSnapshot,
   };
 })();

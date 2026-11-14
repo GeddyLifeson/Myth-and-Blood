@@ -2801,6 +2801,15 @@ const Game = (() => {
       const plan = GS.nextWavePlan;
       return GS.timeOfDay === 'night' && plan && plan.wave === GS.wave + 1 ? plan.sides : null;
     },
+    /** Tomorrow's host for the night preview: lead faction, tactic, head count. */
+    get nextHost() {
+      if (GS.timeOfDay !== 'night') return null;
+      let towers = 0;
+      for (const b of GS.buildings) {
+        if (b.isWatchtower && b.owner === 'player' && b.complete && b.hp > 0) towers++;
+      }
+      return hostPreviewFor(GS.wave + 1, towers > 0 || GS.scoutedWave === GS.wave + 1);
+    },
     get viewScale() {
       return GS.viewScale || 1;
     },
@@ -3295,6 +3304,8 @@ const Game = (() => {
     syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
     GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
+    // ...and who leads it, so the preview can name the faction.
+    if (!GS.creativeMode) planHostFor(GS.wave + 1);
     SiegeLoop.onNightBegin(siegeCtx);
     refreshUnitCounts();
     const playerUnits = [];
@@ -7760,6 +7771,7 @@ const Game = (() => {
       ContentExpansion.registerDefs();
     }
     if (svc('EnemyFactions')) svc('EnemyFactions').resetRun();
+    if (typeof HostTactics !== 'undefined') HostTactics.resetRun();
     if (svc('FactionReputation')) svc('FactionReputation').resetRun();
     if (svc('AsymmetricWarfare')) svc('AsymmetricWarfare').resetRun();
     if (svc('SettlementRaids')) svc('SettlementRaids').resetRun();
@@ -8024,120 +8036,158 @@ const Game = (() => {
     return 1 + (mult - 1) * (waveNum <= 1 ? 1 / 3 : 2 / 3);
   }
 
-  function computeSpawnFillParams(waveNum) {
+  /** True when this wave is a horde (every fifth wave, or every wave in a forced-horde mode). */
+  function isHordeWaveFor(waveNum, isBoss) {
+    const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
+    const forceHorde =
+      runSession?.forceHorde ||
+      (typeof OnlineMultiplayer !== 'undefined' && OnlineMultiplayer.isForceHordeMode(runSession));
+    if (isBoss) return false;
+    if (forceHorde) return waveNum >= 1;
+    return !!(svc('GameDepth') && svc('GameDepth').isHordeWave?.(waveNum));
+  }
+
+  /**
+   * Everything that sizes a wave: how many bodies it would have, which elites are allowed,
+   * and what the player's build is pulling towards it. Shared by the dawn builder and the
+   * night preview, so the preview's head count is the one that would spawn if dawn came now.
+   */
+  function hostBuildParams(waveNum) {
     const cfg = getWaveConfig(waveNum);
     const diff = getDifficulty();
     const isBoss =
       svc('GameDepth') && svc('GameDepth').isBossWave
         ? svc('GameDepth').isBossWave(waveNum)
         : cfg.boss;
-    if (!isBoss && svc('GameDepth')?.isHordeWave?.(waveNum)) return null;
-
-    const colonyAssess = assessColonyThreat(waveNum);
-    const colonyPressure = colonyAssess?.pressure;
-
-    let count = Math.max(
-      1,
-      Math.floor(
-        cfg.count *
-          GS.waveModifiers.countMult *
-          openingCountMult(diff.enemyCountMult, waveNum) *
-          (colonyPressure?.countMult || 1)
-      )
-    );
-    if (isRtsEra(waveNum)) {
-      const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
-      count = Math.floor(count * (1.22 + rtsProg * 0.28));
-    }
-    if (isEnemyRtsEra(waveNum)) {
-      const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
-      count = Math.floor(count * (1.1 + enemyRts * 0.18));
-    }
-    count += getEnemyEconomySpawnBonus();
-    count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
-    if (GS.waveModifiers.stealReduction)
-      count = Math.max(1, count - GS.waveModifiers.stealReduction);
-
-    let pool = ColonyValue?.mergePool
-      ? svc('ColonyValue').mergePool([...cfg.pool], colonyPressure || {})
-      : [...cfg.pool];
-    if (svc('EnemyFactions')) pool = svc('EnemyFactions').enrichPool(pool, waveNum);
-    let weights = ColonyValue?.mergeWeights
-      ? svc('ColonyValue').mergeWeights(getDifficulty().enemyWeight || {}, colonyPressure?.weights)
-      : getDifficulty().enemyWeight || {};
-    if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(waveNum, weights);
-    if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
-        weights,
+    const isHorde = isHordeWaveFor(waveNum, isBoss);
+    const colonyPressure = assessColonyThreat(waveNum)?.pressure;
+    const mods = GS.waveModifiers || {};
+    const asym = getAsymmetricMods();
+    let count;
+    let hordeInfo = null;
+    if (isHorde) {
+      const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
+      const hordeMult =
+        (runSession?.hordeCountMult || 1) *
+        (typeof OnlineMultiplayer !== 'undefined'
+          ? OnlineMultiplayer.getHordeCountMult(runSession)
+          : 1);
+      // GameDepth still owns the horde's numbers (size, pace, health); the host itself is
+      // composed by the leading faction's flavour.
+      hordeInfo = svc('GameDepth').buildHordeSpawnQueue(
         waveNum,
-        getLivingPlanetCtx()
+        [],
+        {
+          ...mods,
+          countMult: (mods.countMult || 1) * (colonyPressure?.countMult || 1) * hordeMult,
+        },
+        diff
       );
-      weights = biomeMerge.weights;
-      count = svc('BiomeSpawn').adjustSpawnCount(count, waveNum, getLivingPlanetCtx());
+      count = hordeInfo.queue.length;
+    } else {
+      count = Math.max(
+        1,
+        Math.floor(
+          cfg.count *
+            (mods.countMult || 1) *
+            openingCountMult(diff.enemyCountMult, waveNum) *
+            (colonyPressure?.countMult || 1)
+        )
+      );
+      if (isRtsEra(waveNum)) {
+        const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
+        count = Math.floor(count * (1.22 + rtsProg * 0.28));
+      }
+      if (isEnemyRtsEra(waveNum)) {
+        const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
+        count = Math.floor(count * (1.1 + enemyRts * 0.18));
+      }
+      count += getEnemyEconomySpawnBonus();
+      count = Math.max(1, Math.floor(count * (asym.enemyCountMult || 1)));
+      if (mods.stealReduction) count = Math.max(1, count - mods.stealReduction);
+      if (svc('BiomeSpawn')) {
+        count = svc('BiomeSpawn').adjustSpawnCount(count, waveNum, getLivingPlanetCtx());
+      }
     }
-
+    const typeWeights = diff.enemyWeight || {};
     return {
+      cfg,
+      diff,
+      isBoss,
+      isHorde,
+      hordeInfo,
+      colonyPressure,
       count,
-      pool,
-      weights,
-      elites: SPAWN_ELITE_TYPES,
-      noElites: !!(GS.waveModifiers.noElites || diff.forceNoElites),
-      seed: getSpawnFillSeed(waveNum),
+      noElites: !!(mods.noElites || diff.forceNoElites),
+      typeWeights,
+      pressureWeights: ColonyValue?.mergeWeights
+        ? svc('ColonyValue').mergeWeights(typeWeights, colonyPressure?.weights)
+        : typeWeights,
+      eliteSlots: (colonyPressure?.eliteSlots || 0) + (asym.eliteSlotBonus || 0),
+      strategies: svc('StrategyCounterplay') ? svc('StrategyCounterplay').getActive() : [],
     };
   }
 
-  function buildWeightedSpawnFill(params) {
-    const bridge = svc('PathWorkerBridge');
-    const key = `${GS.wave}:${params.count}:${params.seed}`;
-    const prefetched = bridge?.takePrefetchedSpawnQueue?.(GS.wave, key);
-    if (prefetched) return prefetched;
-    if (typeof WaveCompositionCore !== 'undefined') {
-      return WaveCompositionCore.buildWeightedSpawnQueue({
-        count: params.count,
-        pool: params.pool,
-        weights: params.weights,
-        elites: params.elites,
-        noElites: params.noElites,
-        seed: params.seed,
-      });
-    }
-    const queue = [];
-    for (let i = 0; i < params.count; i++) {
-      let pickPool = params.pool;
-      if (params.noElites && params.elites.length) {
-        pickPool = params.pool.filter((t) => !params.elites.includes(t));
-      }
-      if (!pickPool.length) pickPool = params.pool;
-      if (!pickPool.length) break;
-      if (Object.keys(params.weights).length) {
-        const weighted = [];
-        for (const t of pickPool) {
-          const w = Math.max(1, Math.floor((params.weights[t] || 1) * 10));
-          for (let j = 0; j < w; j++) weighted.push(t);
-        }
-        queue.push(weighted[Math.floor(gameRandom() * weighted.length)]);
-      } else {
-        queue.push(pickPool[Math.floor(gameRandom() * pickPool.length)]);
-      }
-    }
-    return queue;
-  }
-
-  function prefetchSpawnQueueForWave(waveNum) {
-    const bridge = svc('PathWorkerBridge');
-    if (!bridge?.isReady?.()) return;
-    const params = computeSpawnFillParams(waveNum);
-    if (!params) return;
-    bridge.prefetchSpawnQueue({
-      wave: waveNum,
-      count: params.count,
-      pool: params.pool,
-      weights: params.weights,
-      elites: params.elites,
-      noElites: params.noElites,
-      seed: params.seed,
+  /**
+   * Who leads a wave. Made once (normally at nightfall, so the night can show it) and kept
+   * until the wave is fought.
+   */
+  function planHostFor(waveNum, params) {
+    const factions = svc('EnemyFactions');
+    if (!factions || !factions.planFor) return null;
+    const hp = params || hostBuildParams(waveNum);
+    const kind = hp.isBoss ? 'boss' : hp.isHorde ? 'horde' : 'ordinary';
+    const cached = factions.getPlan(waveNum);
+    if (cached && cached.kind === kind) return cached;
+    if (cached) factions.forgetPlan(waveNum);
+    const rep = svc('FactionReputation');
+    const session = svc('GameModes') ? svc('GameModes').getSession() : null;
+    return factions.planFor(waveNum, {
+      seed: getSpawnFillSeed(waveNum),
+      seeded: !!session?.seed,
+      boss: hp.isBoss && svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(waveNum) : null,
+      horde: hp.isHorde,
+      revenge: kind === 'ordinary' && rep?.dueRevenge ? rep.dueRevenge(waveNum) : null,
+      barred: rep?.getBarred ? rep.getBarred(waveNum) : [],
+      strategies: hp.strategies,
+      pressureWeights: hp.pressureWeights,
     });
   }
+
+  /** The boss's own guard for a boss wave, without counting it as an appearance. */
+  function bossGuardFor(waveNum) {
+    const named = svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(waveNum) : null;
+    const pack = named && svc('MonsterBosses') ? svc('MonsterBosses').getPackDef(named.type) : null;
+    return pack ? pack.minions.filter((t) => EnemyDefs[t]) : [];
+  }
+
+  /**
+   * Tomorrow's host as the night shows it: the plan, and the host it would be if dawn came
+   * now. `scouted` (a Watchtower, a Scout Report) decides how much of it is told.
+   */
+  function hostPreviewFor(waveNum, scouted) {
+    const factions = svc('EnemyFactions');
+    if (!factions || !factions.composeWave || GS.creativeMode) return null;
+    const hp = hostBuildParams(waveNum);
+    const plan = planHostFor(waveNum, hp);
+    if (!plan) return null;
+    const guard = hp.isBoss && !hp.noElites ? bossGuardFor(waveNum) : [];
+    const comp = factions.composeWave(plan, {
+      count: hp.count + guard.length,
+      noElites: hp.noElites,
+      typeWeights: hp.typeWeights,
+      eliteSlots: hp.eliteSlots,
+      strategies: hp.strategies,
+      packMinions: guard,
+      template: waveNum < 4 ? hp.cfg.pool : null,
+    });
+    return typeof FactionIntel !== 'undefined' && FactionIntel.hostReport
+      ? FactionIntel.hostReport(plan, comp, scouted)
+      : factions.describeHost(plan, comp, scouted);
+  }
+
+  /** The host is composed on the main thread now (it is a few dozen entries); nothing to prefetch. */
+  function prefetchSpawnQueueForWave() {}
 
   function expireStalePendingPaths() {
     for (const unit of GS.units) {
@@ -8283,379 +8333,8 @@ const Game = (() => {
     EconomyRules.onWaveStart(mods);
   }
 
-  function buildSpawnQueue() {
-    GS.currentWaveConfig = getWaveConfig(GS.wave);
-    GS.currentHordeWave = null;
-    const diff = getDifficulty();
-    const isBoss =
-      svc('GameDepth') && svc('GameDepth').isBossWave
-        ? svc('GameDepth').isBossWave(GS.wave)
-        : GS.currentWaveConfig.boss;
-    const colonyAssess = assessColonyThreat(GS.wave);
-    let colonyPressure = colonyAssess?.pressure;
-
-    const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
-    const forceHorde =
-      runSession?.forceHorde ||
-      (typeof OnlineMultiplayer !== 'undefined' && OnlineMultiplayer.isForceHordeMode(runSession));
-    const isHorde =
-      forceHorde && !isBoss
-        ? GS.wave >= 1
-        : !isBoss && svc('GameDepth') && svc('GameDepth').isHordeWave?.(GS.wave);
-
-    if (isHorde) {
-      const pool = ColonyValue?.mergePool
-        ? svc('ColonyValue').mergePool([...(GS.currentWaveConfig.pool || [])], colonyPressure || {})
-        : [...(GS.currentWaveConfig.pool || [])];
-      const hordeMult =
-        (runSession?.hordeCountMult || 1) *
-        (typeof OnlineMultiplayer !== 'undefined'
-          ? OnlineMultiplayer.getHordeCountMult(runSession)
-          : 1);
-      const hordeMods = {
-        ...GS.waveModifiers,
-        countMult: (GS.waveModifiers.countMult || 1) * (colonyPressure?.countMult || 1) * hordeMult,
-      };
-      GS.currentHordeWave = svc('GameDepth').buildHordeSpawnQueue(GS.wave, pool, hordeMods, diff);
-      if (
-        colonyPressure &&
-        GS.colonySnapshot?.signals?.wallCount >= 4 &&
-        GS.wave >= 7 &&
-        !GS.currentHordeWave.queue.includes('siege_tower')
-      ) {
-        GS.currentHordeWave.queue.unshift('siege_tower', 'goblin_sapper');
-        GS.currentHordeWave.hasSiege = true;
-      }
-      GS.spawnQueue = svc('GameDepth')
-        ? svc('GameDepth').injectEvilOperativesIntoQueue(
-            [...GS.currentHordeWave.queue],
-            GS.wave,
-            gameRandom
-          )
-        : [...GS.currentHordeWave.queue];
-      if (svc('EnemyFactions')) {
-        GS.spawnQueue = svc('EnemyFactions').biasHordeQueue(GS.spawnQueue, GS.wave, gameRandom);
-        GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
-      }
-      GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
-      GS.waveEnemyTotal = GS.spawnQueue.length;
-      GS.waveProgress = 0;
-      const towers = GS.spawnQueue.filter((t) => t === 'siege_tower').length;
-      GS.nextWaveIntel =
-        svc('GameDepth').formatWaveIntel(
-          GS.spawnQueue,
-          getWaveAttackSides(),
-          GS.currentHordeWave.hasSiege,
-          towers
-        ) || '';
-      const f = GS.currentHordeWave.flavor || svc('GameDepth')?.HORDE_FLAVORS?.[0];
-      addHighlight('horde', `Horde wave ${GS.wave} — ${f?.label || 'Horde'}`);
-      showMessage(`HORDE WAVE ${GS.wave}! ${f?.label || 'Horde'} — ${f?.tagline || ''}`, 360);
-      const hordeI = GS.currentHordeWave.intensity ?? 0.5;
-      const hordeColor = hordeI >= 0.72 ? '#ff4840' : hordeI >= 0.48 ? '#ff8040' : '#ff9040';
-      svc('FloatingText').status(GS.worldW / 2, 48, 'HORDE INCOMING', hordeColor);
-      svc('FloatingText').status(GS.worldW / 2, 62, (f?.label || 'Horde').toUpperCase(), '#ffc060');
-      if (GS.currentHordeWave.hasSiege) {
-        playSfx('siegeRumble');
-        showMessage('Siege elements embedded in the horde — protect your walls!', 280);
-      }
-      if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
-        const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
-        GS.nextWaveIntel = note + (GS.nextWaveIntel ? ` · ${GS.nextWaveIntel}` : '');
-      }
-      if (svc('EnemyFactions')) {
-        const roster = svc('EnemyFactions').formatFactionRoster(GS.spawnQueue);
-        if (roster)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
-      }
-      if (typeof ProgressionRestarts !== 'undefined') {
-        const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
-        if (prNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
-      }
-      if (typeof PacingTools !== 'undefined') {
-        const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-        if (ptNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
-      }
-      if (typeof EternalLegacyTree !== 'undefined') {
-        const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
-        if (elNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;
-      }
-      if (typeof FoundationalMedievalLayer !== 'undefined') {
-        const fmNote = FoundationalMedievalLayer.formatIntelNote({ wave: GS.wave });
-        if (fmNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${fmNote}` : fmNote;
-      }
-      if (typeof AscensionSystem !== 'undefined') {
-        const ascNote = AscensionSystem.formatIntelNote({ wave: GS.wave });
-        if (ascNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
-      }
-      if (typeof ThematicEraSynergies !== 'undefined') {
-        const synNote = ThematicEraSynergies.formatIntelNote({ wave: GS.wave });
-        if (synNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
-      }
-      if (typeof HybridPowerFantasy !== 'undefined') {
-        const pfNote = HybridPowerFantasy.formatIntelNote({ wave: GS.wave });
-        if (pfNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${pfNote}` : pfNote;
-      }
-      if (typeof NarrativeThread !== 'undefined') {
-        const crownNote = NarrativeThread.formatIntelNote({ wave: GS.wave });
-        if (crownNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
-      }
-      if (typeof TechTreeBranches !== 'undefined') {
-        const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
-        if (techNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
-      }
-      if (typeof EternalPathFramework !== 'undefined') {
-        const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
-        if (epfNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
-      }
-      if (typeof MartialPathEvolution !== 'undefined') {
-        const mpeNote = MartialPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mpeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
-      }
-      if (typeof ArcanePathEvolution !== 'undefined') {
-        const apeNote = ArcanePathEvolution.formatIntelNote({ wave: GS.wave });
-        if (apeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
-      }
-      if (typeof TechPathEvolution !== 'undefined') {
-        const tpeNote = TechPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (tpeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
-      }
-      if (typeof MythicPathEvolution !== 'undefined') {
-        const mypNote = MythicPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mypNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
-      }
-      appendCounterIntel();
-      return;
-    }
-    let count = Math.max(
-      1,
-      Math.floor(
-        GS.currentWaveConfig.count *
-          GS.waveModifiers.countMult *
-          openingCountMult(diff.enemyCountMult, GS.wave) *
-          (colonyPressure?.countMult || 1)
-      )
-    );
-    if (isRtsEra(GS.wave)) {
-      const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(GS.wave) : 0;
-      count = Math.floor(count * (1.22 + rtsProg * 0.28));
-    }
-    if (isEnemyRtsEra(GS.wave)) {
-      const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(GS.wave) : 0;
-      count = Math.floor(count * (1.1 + enemyRts * 0.18));
-    }
-    count += getEnemyEconomySpawnBonus();
-    count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
-    const asymElites = getAsymmetricMods().eliteSlotBonus || 0;
-    if (GS.waveModifiers.stealReduction)
-      count = Math.max(1, count - GS.waveModifiers.stealReduction);
-    const elites = SPAWN_ELITE_TYPES;
-    let pool = ColonyValue?.mergePool
-      ? svc('ColonyValue').mergePool([...GS.currentWaveConfig.pool], colonyPressure || {})
-      : [...GS.currentWaveConfig.pool];
-    if (svc('EnemyFactions')) pool = svc('EnemyFactions').enrichPool(pool, GS.wave);
-    let weights = ColonyValue?.mergeWeights
-      ? svc('ColonyValue').mergeWeights(getDifficulty().enemyWeight || {}, colonyPressure?.weights)
-      : getDifficulty().enemyWeight || {};
-    if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(GS.wave, weights);
-    if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
-        weights,
-        GS.wave,
-        getLivingPlanetCtx()
-      );
-      weights = biomeMerge.weights;
-      count = svc('BiomeSpawn').adjustSpawnCount(count, GS.wave, getLivingPlanetCtx());
-    }
-    const fillParams = {
-      count,
-      pool,
-      weights,
-      elites,
-      noElites: !!(GS.waveModifiers.noElites || diff.forceNoElites),
-      seed: getSpawnFillSeed(GS.wave),
-    };
-    GS.spawnQueue = buildWeightedSpawnFill(fillParams);
-    GS.namedBossWave = svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(GS.wave) : null;
-    let monsterBossPrep = null;
-    if (GS.namedBossWave && svc('MonsterBosses')) {
-      monsterBossPrep = svc('MonsterBosses').prepareBossWave(
-        GS.namedBossWave.type,
-        GS.wave,
-        GS.namedBossWave.scale || 1
-      );
-      GS.namedBossWave = {
-        ...GS.namedBossWave,
-        scale: monsterBossPrep.totalScale,
-        evolution: monsterBossPrep.evolution,
-        packSummary: monsterBossPrep.packSummary,
-      };
-    }
-    if (isBoss && (!GS.waveModifiers.noElites || GS.namedBossWave)) {
-      let bossCore = GameDepth?.bossWaveComposition(GS.wave, pool) || [
-        'war_chief',
-        'dark_knight',
-        'dark_knight',
-      ];
-      if (GS.waveModifiers.noElites && GS.namedBossWave) {
-        bossCore = [GS.namedBossWave.type];
-      }
-      GS.spawnQueue = bossCore.concat(GS.spawnQueue.slice(0, Math.max(0, count - bossCore.length)));
-      if (GS.namedBossWave && svc('MonsterBosses')) {
-        GS.spawnQueue = svc('MonsterBosses').injectPackIntoQueue(
-          GS.spawnQueue,
-          GS.namedBossWave.type,
-          monsterBossPrep
-        );
-      }
-      if (GS.namedBossWave) {
-        const assassinNote = GS.waveModifiers.noElites
-          ? ' (elites assassinated — boss remains)'
-          : '';
-        const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
-        addHighlight(
-          'boss',
-          `Boss wave ${GS.wave} — ${GS.namedBossWave.name} leads the assault${assassinNote}`
-        );
-        showMessage(
-          `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name} — ${GS.namedBossWave.tagline}${packNote}`,
-          380
-        );
-        svc('FloatingText').status(
-          GS.worldW / 2,
-          44,
-          GS.namedBossWave.name.toUpperCase(),
-          '#ffd040'
-        );
-        svc('FloatingText').status(
-          GS.worldW / 2,
-          58,
-          GS.namedBossWave.title.toUpperCase(),
-          '#ff6060'
-        );
-        if (svc('MonsterBosses') && GS.namedBossWave.evolution?.label) {
-          svc('MonsterBosses').announceEvolution(monsterBossPrep, GS.namedBossWave, {
-            showMessage,
-            addHighlight,
-            floatingText: floatStatus,
-            worldW: GS.worldW,
-          });
-        }
-      } else {
-        addHighlight('boss', `Boss wave ${GS.wave} — War Chief leads the assault`);
-        showMessage(`BOSS WAVE ${GS.wave}! War Chief leads the assault!`, 320);
-        svc('FloatingText').status(GS.worldW / 2, 48, 'BOSS WAVE', '#ff4040');
-      }
-      playSfx('bossWarn');
-    } else if (isBoss) {
-      GS.namedBossWave = null;
-    }
-    if (typeof GameFeedback !== 'undefined') {
-      GameFeedback.resetWave();
-      GameFeedback.onWaveStart(GS.wave, {
-        boss: !!isBoss || !!GS.namedBossWave,
-        horde: !!GS.currentHordeWave,
-        siege: !!GS.currentHordeWave?.hasSiege || isSiegeWave?.(),
-        subtitle:
-          GS.namedBossWave?.name || (GS.currentHordeWave ? 'Brace for the swarm' : 'Hold the line'),
-      });
-    }
-    if (colonyPressure && svc('ColonyValue')) {
-      svc('ColonyValue').injectElites(GS.spawnQueue, pool, colonyPressure, gameRandom);
-    }
-    const wantSiege = (GS.colonySnapshot?.signals?.wallCount || 0) >= 3 || GS.wave >= 7;
-    if (
-      wantSiege &&
-      !GS.spawnQueue.includes('siege_tower') &&
-      !GS.waveModifiers.noElites &&
-      !isBoss &&
-      !GS.currentHordeWave
-    ) {
-      GS.spawnQueue[Math.floor(gameRandom() * GS.spawnQueue.length)] = 'siege_tower';
-    }
-    if (GS.waveModifiers.revealed || GS.waveModifiers.nextPreview) {
-      GS.nextWaveIntel =
-        GameDepth?.formatWaveIntel(GS.spawnQueue, getWaveAttackSides(), false, 0) ||
-        [...new Set(GS.spawnQueue.map((t) => EnemyDefs[t]?.name || t))].join(', ');
-      GS.waveModifiers.nextPreview = GS.nextWaveIntel;
-      showMessage(`Scout report: ${GS.nextWaveIntel}`, 360);
-    }
-    GS.waveEnemyTotal = GS.spawnQueue.length;
-    GS.waveProgress = 0;
-    GS.bossTrackId =
-      GS.namedBossWave?.type ||
-      [
-        'boss_malachar',
-        'boss_volk',
-        'boss_karg',
-        'boss_sylvara',
-        'war_chief',
-        'behemoth',
-        'elder_wyrm',
-        'iron_colossus',
-      ].find((t) => GS.spawnQueue.includes(t)) ||
-      null;
-    if (svc('ContentExpansion')) {
-      GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
-    }
-    if (svc('GameDepth')) {
-      GS.spawnQueue = svc('GameDepth').injectEvilOperativesIntoQueue(
-        GS.spawnQueue,
-        GS.wave,
-        gameRandom
-      );
-    }
-    if (svc('EnemyFactions')) {
-      GS.spawnQueue = svc('EnemyFactions').biasSpawnQueue(GS.spawnQueue, GS.wave, gameRandom);
-      GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
-    }
-    if (asymElites > 0 && !GS.waveModifiers.noElites) {
-      const elitePool = elites.filter((t) => pool.includes(t) || EnemyDefs[t]);
-      for (let i = 0; i < asymElites && elitePool.length; i++) {
-        GS.spawnQueue[Math.floor(gameRandom() * GS.spawnQueue.length)] =
-          elitePool[Math.floor(gameRandom() * elitePool.length)];
-      }
-    }
-    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
-    GS.waveEnemyTotal = GS.spawnQueue.length;
-    if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
-      const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
-      GS.nextWaveIntel = note + (GS.nextWaveIntel ? ` · ${GS.nextWaveIntel}` : '');
-    }
-    if (svc('EnemyFactions')) {
-      const roster = svc('EnemyFactions').formatFactionRoster(GS.spawnQueue);
-      if (roster) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
-    }
-    if (svc('AsymmetricWarfare')) {
-      const asym = getAsymmetricSnapshot();
-      if (asym) {
-        GS.nextWaveIntel =
-          (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') +
-          `Cmd ${asym.commanderAuthority} vs Host Lv${asym.hostThreatLevel}`;
-      }
-    }
-    if (GS.multiFrontPlan?.intel) {
-      GS.nextWaveIntel =
-        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.multiFrontPlan.intel;
-    }
-    if (GS.namedBossWave?.packSummary) {
-      GS.nextWaveIntel =
-        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
-    }
+  /** Notes other systems add after the host line of the wave intel. */
+  function appendModuleIntelNotes() {
     if (typeof ProgressionRestarts !== 'undefined') {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
@@ -8721,7 +8400,178 @@ const Game = (() => {
       if (mypNote)
         GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
     }
+  }
+
+  /**
+   * Build the wave. One faction leads it (chosen at nightfall by planHostFor) and at most
+   * one ally marches in support; EnemyFactions.composeWave turns that into the queue and
+   * HostTactics is told which tactic to play. Boss waves are led by the boss's own faction;
+   * horde waves by the flavour's faction.
+   */
+  function buildSpawnQueue() {
+    GS.currentWaveConfig = getWaveConfig(GS.wave);
+    GS.currentHordeWave = null;
+    // Rebuilt from nothing every wave: it used to grow by one prepended note a day.
+    GS.nextWaveIntel = '';
+    const factions = svc('EnemyFactions');
+    const hp = hostBuildParams(GS.wave);
+    const { isBoss, isHorde, colonyPressure } = hp;
+
+    GS.namedBossWave =
+      isBoss && svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(GS.wave) : null;
+    let monsterBossPrep = null;
+    if (GS.namedBossWave && svc('MonsterBosses')) {
+      monsterBossPrep = svc('MonsterBosses').prepareBossWave(
+        GS.namedBossWave.type,
+        GS.wave,
+        GS.namedBossWave.scale || 1
+      );
+      GS.namedBossWave = {
+        ...GS.namedBossWave,
+        scale: monsterBossPrep.totalScale,
+        evolution: monsterBossPrep.evolution,
+        packSummary: monsterBossPrep.packSummary,
+      };
+    }
+
+    const plan = planHostFor(GS.wave, hp);
+    const guard = isBoss && !hp.noElites ? monsterBossPrep?.minions || [] : [];
+    const comp = plan
+      ? factions.composeWave(plan, {
+          count: hp.count + guard.length,
+          noElites: hp.noElites,
+          typeWeights: hp.typeWeights,
+          eliteSlots: hp.eliteSlots,
+          strategies: hp.strategies,
+          packMinions: guard,
+          template: GS.wave < 4 ? GS.currentWaveConfig.pool : null,
+        })
+      : null;
+    // No faction module (a stripped build): fall back to a plain draw from the wave's pool.
+    GS.spawnQueue = comp
+      ? comp.queue.slice()
+      : WaveCompositionCore.buildWeightedSpawnQueue({
+          count: hp.count,
+          pool: GS.currentWaveConfig.pool,
+          weights: hp.typeWeights,
+          elites: SPAWN_ELITE_TYPES,
+          noElites: hp.noElites,
+          seed: getSpawnFillSeed(GS.wave),
+        });
+    const lead = plan ? factions.getFactionDef(plan.leadId) : null;
+    const tactic = plan ? factions.tacticForPlan(plan) : null;
+
+    if (isHorde) {
+      const flavor = { label: tactic?.name || 'Horde', tagline: tactic?.desc || '' };
+      GS.currentHordeWave = {
+        ...hp.hordeInfo,
+        queue: GS.spawnQueue,
+        count: GS.spawnQueue.length,
+        flavor,
+        hasSiege: GS.spawnQueue.includes('siege_tower'),
+      };
+      addHighlight('horde', `Horde wave ${GS.wave} — ${flavor.label}`);
+      showMessage(`HORDE WAVE ${GS.wave}! ${flavor.label} — ${flavor.tagline}`, 360);
+      const hordeI = GS.currentHordeWave.intensity ?? 0.5;
+      const hordeColor = hordeI >= 0.72 ? '#ff4840' : hordeI >= 0.48 ? '#ff8040' : '#ff9040';
+      svc('FloatingText').status(GS.worldW / 2, 48, 'HORDE INCOMING', hordeColor);
+      svc('FloatingText').status(GS.worldW / 2, 62, flavor.label.toUpperCase(), '#ffc060');
+    } else if (isBoss && GS.namedBossWave) {
+      const assassinNote = hp.noElites ? ' (guard assassinated — boss remains)' : '';
+      const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
+      const hostNote = lead ? ` · ${lead.name}` : '';
+      addHighlight(
+        'boss',
+        `Boss wave ${GS.wave} — ${GS.namedBossWave.name} leads the assault${assassinNote}`
+      );
+      showMessage(
+        `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name} — ${GS.namedBossWave.tagline}${hostNote}${packNote}`,
+        380
+      );
+      svc('FloatingText').status(GS.worldW / 2, 44, GS.namedBossWave.name.toUpperCase(), '#ffd040');
+      svc('FloatingText').status(
+        GS.worldW / 2,
+        58,
+        GS.namedBossWave.title.toUpperCase(),
+        '#ff6060'
+      );
+      if (svc('MonsterBosses') && GS.namedBossWave.evolution?.label) {
+        svc('MonsterBosses').announceEvolution(monsterBossPrep, GS.namedBossWave, {
+          showMessage,
+          addHighlight,
+          floatingText: floatStatus,
+          worldW: GS.worldW,
+        });
+      }
+      playSfx('bossWarn');
+    } else if (lead && tactic && GS.wave >= 4) {
+      addHighlight('host', `Wave ${GS.wave} — ${lead.name} lead (${tactic.name})`);
+      showMessage(`${lead.name} lead today — ${tactic.name}. ${tactic.counter}`, 380);
+      svc('FloatingText').status(GS.worldW / 2, 48, lead.name.toUpperCase(), lead.color);
+    }
+    if (typeof GameFeedback !== 'undefined') {
+      GameFeedback.resetWave();
+      GameFeedback.onWaveStart(GS.wave, {
+        boss: !!isBoss || !!GS.namedBossWave,
+        horde: !!GS.currentHordeWave,
+        siege: !!GS.currentHordeWave?.hasSiege || isSiegeWave?.(),
+        subtitle:
+          GS.namedBossWave?.name ||
+          (GS.currentHordeWave
+            ? 'Brace for the swarm'
+            : lead && tactic
+              ? tactic.name
+              : 'Hold the line'),
+      });
+    }
+    if (!isHorde && svc('ContentExpansion')) {
+      GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
+    }
+    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
+    if (GS.currentHordeWave) GS.currentHordeWave.queue = GS.spawnQueue;
+    GS.waveEnemyTotal = GS.spawnQueue.length;
+    GS.waveProgress = 0;
+    GS.bossTrackId =
+      GS.namedBossWave?.type ||
+      ['war_chief', 'behemoth', 'elder_wyrm', 'iron_colossus'].find((t) =>
+        GS.spawnQueue.includes(t)
+      ) ||
+      null;
+
+    // The intel line: who leads and how they fight, then what other systems add.
+    const scouted = !!(GS.waveModifiers.revealed || GS.waveModifiers.nextPreview);
+    if (plan && comp) {
+      const report = factions.describeHost(plan, comp, true);
+      GS.nextWaveIntel = factions.formatHostLine(report);
+      if (scouted) {
+        GS.waveModifiers.nextPreview = GS.nextWaveIntel;
+        showMessage(`Scout report: ${GS.nextWaveIntel}`, 360);
+      }
+    }
+    if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
+      const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
+      if (note) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${note}` : note;
+    }
+    if (GS.namedBossWave?.packSummary) {
+      GS.nextWaveIntel =
+        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
+    }
+    appendModuleIntelNotes();
     appendCounterIntel();
+
+    // Hand the wave to its tactic, and let the rotation and the grudges know it is here.
+    if (plan && comp) {
+      if (typeof HostTactics !== 'undefined') {
+        HostTactics.beginWave(plan, { ...comp, queue: GS.spawnQueue }, siegeCtx);
+      }
+      factions.commitPlan(plan);
+      if (plan.revenge && svc('FactionReputation')?.onRevengeWave) {
+        svc('FactionReputation').onRevengeWave(plan.leadId, GS.wave, plan.revenge, {
+          hooks: uiHooks(),
+          worldW: GS.worldW,
+        });
+      }
+    }
   }
 
   function spawnFactionCounterRaids() {
@@ -14492,6 +14342,7 @@ const Game = (() => {
     let dest = null;
     if (!unit.lineBreaker) {
       const prey =
+        (typeof HostTactics !== 'undefined' && HostTactics.preyFor(unit)) ||
         (Roster.preference(unit) === 'support' && findPreferredPlayer(unit, Roster.isSupport)) ||
         findNearestPlayer(unit);
       if (prey) {
@@ -14524,6 +14375,9 @@ const Game = (() => {
 
   function updateEnemyAI(unit) {
     if (unit.hp <= 0) return;
+    // A tactic that moves this enemy itself (a dash down the field edge).
+    if (unit.dash && typeof HostTactics !== 'undefined' && HostTactics.drive(unit, siegeCtx))
+      return;
     if (unit.flying && unit.combatType !== 'siege' && GS.state === 'playing' && !GS.creativeMode) {
       updateFlyerAI(unit);
       return;
@@ -14739,6 +14593,15 @@ const Game = (() => {
       if (GS.spawnTimer <= 0) {
         const type = GS.spawnQueue.shift();
         let side = nextEnemySpawnSide(type);
+        // The leading faction's tactic may place this one itself (a flank lane, a rift
+        // behind the line) or hold it back until its rift has opened.
+        const tweak =
+          typeof HostTactics !== 'undefined' ? HostTactics.spawnTweak(type, side, siegeCtx) : null;
+        if (tweak && tweak.defer) {
+          GS.spawnQueue.push(type);
+          GS.spawnTimer = 24;
+          return;
+        }
         if (svc('MonsterBosses') && GS.namedBossWave) {
           if (type === GS.namedBossWave.type) {
             const packSide = svc('MonsterBosses').getPackDef(GS.namedBossWave.type)?.spawnSide;
@@ -14748,7 +14611,7 @@ const Game = (() => {
             if (packSide && getWaveAttackSides().includes(packSide)) side = packSide;
           }
         }
-        const pos = spawnPosForSide(side);
+        const pos = tweak && tweak.x != null ? tweak : spawnPosForSide(side);
         const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: side });
         if (svc('EnemyFactions')) u.enemyFaction = svc('EnemyFactions').getUnitFaction(type);
         if (svc('MonsterBosses') && GS.namedBossWave) {
@@ -14798,7 +14661,11 @@ const Game = (() => {
           playSfx('bossWarn');
         }
         u.huntMode = true;
-        SiegeLoop.tagEnemySpawn(u, siegeCtx);
+        // The tactic decides who runs for the line when it has a say; otherwise the usual roll.
+        const tacticRunners =
+          typeof HostTactics !== 'undefined' &&
+          HostTactics.onSpawn(u, tweak && tweak.tag, siegeCtx);
+        if (!tacticRunners) SiegeLoop.tagEnemySpawn(u, siegeCtx);
         Roster.onSpawn(u, GS.creativeMode ? 0 : GS.wave);
         GS.units.push(u);
         const baseInterval =
@@ -14818,10 +14685,15 @@ const Game = (() => {
               colonyInterval *
               planetInterval *
               asymInterval
-          ) + Math.floor(Math.random() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
+          ) + Math.floor(gameRandom() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
         );
         // Enemies arrive in squads, not a trickle: a squad lands together, then a longer lull.
-        const squad = GS.creativeMode ? 1 : Math.min(10, 2 + Math.floor(GS.wave / 4));
+        const tacticSquad = typeof HostTactics !== 'undefined' ? HostTactics.squad() : null;
+        const squad = GS.creativeMode
+          ? 1
+          : tacticSquad
+            ? tacticSquad.size
+            : Math.min(10, 2 + Math.floor(GS.wave / 4));
         if ((GS.spawnSquadLeft || 0) > 1) {
           GS.spawnSquadLeft--;
           spawnGap = 6;
