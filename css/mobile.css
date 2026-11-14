@@ -661,6 +661,24 @@
     line-height: 1.3 !important;
   }
 
+  /* Achievement toast: under the strip, clear of the thumb button and the bar. */
+  html.m-playing #achievement-toast {
+    z-index: 70;
+    right: calc(6px + var(--m-sr));
+    bottom: auto;
+    top: calc(var(--m-hud-h) + var(--m-st) + 6px);
+    width: min(300px, calc(100vw - 12px));
+    box-sizing: border-box;
+  }
+  /* Wave-clear achievement summary: above the message line, left of the thumb button. */
+  html.m-playing .wave-summary-ach {
+    z-index: 70;
+    left: calc(8px + var(--m-sl));
+    right: auto;
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 150px);
+    max-width: calc(100vw - 16px);
+  }
+
   /* ── Short landscape: strip on the left edge, bar on the right ─ */
   @media (max-height: 520px) and (orientation: landscape) {
     :root {
@@ -762,6 +780,14 @@
     }
     html.m-playing #m-more {
       align-content: start;
+    }
+    html.m-playing #achievement-toast {
+      top: calc(6px + var(--m-st));
+      right: calc(var(--m-bar-w) + var(--m-sr) + 8px);
+    }
+    html.m-playing .wave-summary-ach {
+      left: calc(var(--m-hud-w) + var(--m-sl) + 8px);
+      bottom: calc(8px + var(--m-sb));
     }
     html.m-playing body.ui-v2 .message-log-panel {
       inset: 6px calc(var(--m-bar-w) + var(--m-sr) + 6px) 6px

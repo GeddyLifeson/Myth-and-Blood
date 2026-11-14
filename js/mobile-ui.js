@@ -27,6 +27,7 @@ const MobileUI = (() => {
   let mineMode = false;
   let wasArmed = false;
   let lastSig = '';
+  let fitSig = '';
   const els = {};
 
   const root = () => document.documentElement;
@@ -289,6 +290,21 @@ const MobileUI = (() => {
     Game.panCameraToFraction?.(0.5, 0.5);
   }
 
+  /** Zoom so the field covers the whole view (no empty bands); a pan shows the rest. */
+  function fillField() {
+    const gs = typeof GameState !== 'undefined' ? GameState : null;
+    const c = byId('game-canvas');
+    if (!gs || !c || !(gs.baseViewScale > 0)) return;
+    const ins = getPanelInsets();
+    const vw = c.width - ins.left - ins.right;
+    const vh = c.height - ins.top - ins.bottom;
+    // The map's view height is worldH + 50 (getMapViewH in js/game.js).
+    const cover = Math.max(vw / gs.worldW, vh / (gs.worldH + 50)) / gs.baseViewScale;
+    Game.zoomCameraToScale?.(c.width / 2, c.height / 2, cover);
+    // Bottom edge: the soldiers and the breach line; enemies walk down into view.
+    Game.panCameraToFraction?.(0.5, 1);
+  }
+
   // ---------------------------------------------------------------------------
   // Field insets: the part of the canvas the HUD covers
   // ---------------------------------------------------------------------------
@@ -361,6 +377,7 @@ const MobileUI = (() => {
     root().classList.toggle('m-playing', playing);
     if (!playing) {
       if (openSheetName()) closeSheets();
+      fitSig = '';
       return;
     }
     const gs = Game.getState();
@@ -432,6 +449,12 @@ const MobileUI = (() => {
       lastSig = sig;
       relayout();
     }
+    // Fill the view once per run and per screen size; after that the player's zoom stays.
+    const size = `${window.innerWidth}x${window.innerHeight}`;
+    if (fitSig !== size) {
+      fitSig = size;
+      fillField();
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -446,6 +469,58 @@ const MobileUI = (() => {
     }
   }
 
+  // ---------------------------------------------------------------------------
+  // Text floor: the desktop CSS has hundreds of 6 to 12 px sizes; on a phone none go below 14
+  // ---------------------------------------------------------------------------
+
+  const FONT_FLOOR = 14;
+  let floorObserver = null;
+  let floorQueue = [];
+  let floorTimer = null;
+
+  function floorFonts(node) {
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+    for (let t = walker.nextNode(); t; t = walker.nextNode()) {
+      const el = t.parentElement;
+      if (!el || el.dataset.mFloor || !t.nodeValue.trim()) continue;
+      if (parseFloat(getComputedStyle(el).fontSize) >= FONT_FLOOR) continue;
+      el.dataset.mFloor = '1';
+      el.style.setProperty('font-size', `${FONT_FLOOR}px`, 'important');
+    }
+  }
+
+  function startFontFloor() {
+    floorFonts(document.body);
+    floorObserver = new MutationObserver((records) => {
+      for (const r of records) {
+        for (const n of r.addedNodes) {
+          // New text in an old element (textContent =) arrives as a text node.
+          const el = n.nodeType === 1 ? n : n.parentElement;
+          if (el) floorQueue.push(el);
+        }
+      }
+      if (floorTimer || !floorQueue.length) return;
+      // Batched: the HUD rebuilds parts of itself many times a second.
+      floorTimer = setTimeout(() => {
+        floorTimer = null;
+        const batch = floorQueue;
+        floorQueue = [];
+        for (const n of batch) if (n.isConnected) floorFonts(n);
+      }, 120);
+    });
+    floorObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function stopFontFloor() {
+    floorObserver?.disconnect();
+    floorObserver = null;
+    floorQueue = [];
+    for (const el of document.querySelectorAll('[data-m-floor]')) {
+      el.style.removeProperty('font-size');
+      delete el.dataset.mFloor;
+    }
+  }
+
   function setActive(on) {
     on = !!on;
     if (on === active) return;
@@ -453,10 +528,12 @@ const MobileUI = (() => {
     root().classList.toggle('mobile-ui', active);
     if (active) {
       build();
+      startFontFloor();
       clearInterval(syncTimer);
       syncTimer = setInterval(sync, SYNC_MS);
       sync();
     } else {
+      stopFontFloor();
       clearInterval(syncTimer);
       syncTimer = null;
       closeSheets();

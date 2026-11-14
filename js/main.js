@@ -514,9 +514,20 @@
       m?.sync();
     }
 
+    // The OS took the touch (a call, a system gesture): drop it without a tap.
+    function handleTouchCancel() {
+      clearTouchHold();
+      endPinch();
+      lastTap = null;
+      if (!pointerDown) return;
+      pointerDown = false;
+      Game.handlePointerUp();
+    }
+
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });
     canvas.addEventListener('touchmove', handleTouchMove, { passive: false });
     canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    canvas.addEventListener('touchcancel', handleTouchCancel);
 
     if (uiOverlay) {
       uiOverlay.addEventListener(
