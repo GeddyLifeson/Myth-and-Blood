@@ -783,7 +783,13 @@ const SiegeLoop = (() => {
         return prevPool.has(t) || ctx.wave < 1 ? name : `${name} (new)`;
       });
     const countMult = ctx.countMultFor ? ctx.countMultFor(next) : ctx.enemyCountMult || 1;
-    const count = Math.max(1, Math.round((cfg.count || 0) * countMult));
+    const plan = ctx.nextSectorPlan;
+    const planned =
+      plan && plan.wave === next && plan.counts
+        ? Object.values(plan.counts).reduce((a, n) => a + n, 0)
+        : 0;
+    // The sector markers and this line must give one head count.
+    const count = planned || Math.max(1, Math.round((cfg.count || 0) * countMult));
     let kind = '';
     if (cfg.boss) kind = 'Boss wave';
     else if (typeof GameDepth !== 'undefined' && GameDepth.isHordeWave?.(next)) kind = 'Horde';

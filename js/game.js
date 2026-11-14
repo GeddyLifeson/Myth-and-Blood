@@ -17054,6 +17054,7 @@ const Game = (() => {
       GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
       if (GS.cheatsUsed) SiegeLoop.voidRun();
       if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveSectors(GS.wave + 1);
+      SiegeLoop.refreshPreview(siegeCtx);
       if (svc('UX')) svc('UX').onPauseChanged(true);
       syncInteractionState({ refreshCounts: true });
       return true;

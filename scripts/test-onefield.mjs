@@ -229,6 +229,7 @@ const rngOf = (seed) => {
   let allTop = true;
   let allInSector = true;
   let countsReal = true;
+  let previewAgrees = true;
   let nightMatches = 0;
   let nightWaves = 0;
   let multi = 0;
@@ -257,6 +258,9 @@ const rngOf = (seed) => {
       marks.some((m) => m.count !== night.counts[m.sector])
     )
       countsReal = false;
+    const shown = SiegeLoop.getPreview();
+    if (!shown || shown.count !== Object.values(night.counts).reduce((a, c) => a + c, 0))
+      previewAgrees = false;
     Game.beginDayPhase(true);
     const dawn = JSON.parse(JSON.stringify(GS.sectorPlan));
     const queued = GS.spawnQueue.length;
@@ -286,6 +290,7 @@ const rngOf = (seed) => {
     );
   }
   console.log('  night → dawn per sector:', notes.join(' | '));
+  ok(previewAgrees, 'the night line and the sector markers give the same head count');
   ok(allTop, 'every enemy appears at the top edge');
   ok(allInSector, 'every enemy appears inside its own sector');
   ok(countsReal, 'the enemies that enter a sector are exactly the count the plan gives it');
