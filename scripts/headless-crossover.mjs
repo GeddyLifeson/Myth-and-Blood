@@ -1558,7 +1558,7 @@ function testFactionIntel(exp) {
   const night = { ...gs, nextHost: { factionName: 'Orc Warbands', countText: 'about 40' } };
   assert(
     FactionIntel.formatSummary(night).includes('Tomorrow: Orc Warbands lead'),
-    'summary should name tomorrow's lead'
+    'summary should name the lead for tomorrow'
   );
   const snap = FactionIntel.getStateSnapshot(gs);
   assert(snap.activeCount >= 2, 'snapshot should count active factions');
