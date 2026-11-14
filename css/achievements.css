@@ -1,9 +1,21 @@
 /* Grouped achievement panel: one collapsible section per family, one card per ladder. */
-.achievements-grid {
+#achievements-screen .achievements-panel {
+  max-width: 900px;
+}
+
+#achievements-screen .achievements-recent {
+  flex-shrink: 0;
+  max-height: none;
+  overflow: visible;
+}
+
+#achievements-screen .achievements-grid {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   gap: 6px;
-  max-height: 58vh;
+  min-height: 0;
+  max-height: none;
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -157,6 +169,7 @@
 }
 
 .ach2-titles {
+  flex-basis: 100%;
   margin: 4px 0 0;
   color: var(--text-secondary, #b8a890);
   font-size: 14px;

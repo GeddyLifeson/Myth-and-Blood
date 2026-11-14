@@ -1051,7 +1051,7 @@ const Achievements = (() => {
     set('achievements-recent', (el) => {
       el.innerHTML = recentUnlocked.length
         ? recentUnlocked
-            .slice(0, 6)
+            .slice(0, 4)
             .map(
               (r) =>
                 `<div class="ach-recent-card unlocked"><strong>${esc(fill(r.name))}</strong></div>`
