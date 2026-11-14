@@ -16,8 +16,7 @@ const HowToPlay = (() => {
   const BLOOD = '#c8202a';
 
   // ------------------------------------------------------------------ reading the game
-  const esc = (t) =>
-    String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   const kbd = (name) => (name ? `<kbd>${esc(name)}</kbd>` : '');
 
   /** The key bound to an action right now, as a key cap, or '' when it has none. */
@@ -658,7 +657,8 @@ const HowToPlay = (() => {
       '</div>';
     document.body.appendChild(root);
     root.addEventListener('click', (e) => {
-      const t = e.target && e.target.closest ? e.target.closest('[data-htp], [data-htp-tab]') : null;
+      const t =
+        e.target && e.target.closest ? e.target.closest('[data-htp], [data-htp-tab]') : null;
       if (!t) {
         // A click on the dimmed backdrop closes; a click inside the box does nothing.
         if (e.target === root) close();
@@ -775,7 +775,8 @@ const HowToPlay = (() => {
   /** The "?" key sheet is rebuilt each time it opens: give each new one a link. */
   function addKeySheetLink(sheet) {
     const foot = sheet && sheet.querySelector ? sheet.querySelector('.key-sheet-foot') : null;
-    const host = foot || (sheet && sheet.querySelector ? sheet.querySelector('.key-sheet-box') : null);
+    const host =
+      foot || (sheet && sheet.querySelector ? sheet.querySelector('.key-sheet-box') : null);
     if (!host || host.querySelector('[data-htp-open]')) return;
     host.appendChild(linkButton('How to play'));
   }

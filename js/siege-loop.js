@@ -326,7 +326,9 @@ const SiegeLoop = (() => {
   /** What the next recruit of this type is charged, upkeep included. */
   function recruitCost(ctx, type) {
     const base = unitDef(type)?.cost ?? 0;
-    return Math.ceil(base * deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0));
+    return Math.ceil(
+      base * deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0)
+    );
   }
   /** Can the purse pay? A caller that does not report a purse (a test) is not held back. */
   const canPay = (ctx, cost) => ctx.tp == null || ctx.tp >= cost;
@@ -484,7 +486,8 @@ const SiegeLoop = (() => {
         'Your lab stands. Open RESEARCH and start Iron Weapons. It opens the Knight, the Sapper and the Crossbowman.',
       target: () => ({ dom: ['#research-open', TAB_BUILD] }),
       done: () =>
-        researched('iron_weapons') || (typeof Research !== 'undefined' && !!Research.getActiveInfo()),
+        researched('iron_weapons') ||
+        (typeof Research !== 'undefined' && !!Research.getActiveInfo()),
     },
     {
       id: 'strikes',
@@ -716,8 +719,8 @@ const SiegeLoop = (() => {
     } catch (_) {
       base = {};
     }
+    // No sound here: the card plays it, so the simulation's random stream is untouched.
     run.prompt = { id: step.id, since: ctx.tick || 0, wave: upcomingWave(ctx), base };
-    ctx.playSfx?.('click');
   }
 
   function closePrompt(ctx) {
@@ -2550,6 +2553,7 @@ const SiegeLoop = (() => {
     dismissPrompt,
     promptText,
     stepStatus,
+    stepIds: () => FIRST_STEPS.map((s) => s.id),
     resetIntroduction,
     introductionStatus,
   };

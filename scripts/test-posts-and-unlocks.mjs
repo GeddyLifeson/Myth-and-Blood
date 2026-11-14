@@ -325,10 +325,7 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
       status('upkeep', at(3, true, { army: 13, freeArmyBonus: 3 })) === 'waiting',
     'upkeep: opens one soldier short of the surcharge (granaries move the mark)'
   );
-  ok(
-    status('sapper', at(5, true)) === 'waiting',
-    'sapper: not while Iron Weapons is unresearched'
-  );
+  ok(status('sapper', at(5, true)) === 'waiting', 'sapper: not while Iron Weapons is unresearched');
   ok(
     status('preview', at(5, false)) === 'early' || status('preview', at(6, false)) === 'waiting',
     'preview: only at night, when the note is on screen'
@@ -384,7 +381,10 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
     }
   };
   const text = (id, ctx) => SiegeLoop.promptText(id, ctx || at(5, true));
-  ok(/Press D or click BEGIN DAY/.test(text('dawn')), `default: D begins the day ("${text('dawn')}")`);
+  ok(
+    /Press D or click BEGIN DAY/.test(text('dawn')),
+    `default: D begins the day ("${text('dawn')}")`
+  );
   rebind('beginDay', null, 'g');
   ok(
     /Press G or click BEGIN DAY/.test(text('dawn')) && !/Press D/.test(text('dawn')),
@@ -422,8 +422,13 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   for (const state of Hotkeys.STATES) {
     Hotkeys.KEYMAPS[state] = Hotkeys.KEYMAPS[state].filter((b) => b.action !== 'beginDay');
   }
-  ok(/^It is night.*Click BEGIN DAY/.test(text('dawn')), 'unbound: "Click BEGIN DAY", no key named');
-  const every = SiegeLoop.FIRST_STEPS.map((s) => text(s.id, at(8, true, { canRecruitGeneral: true })));
+  ok(
+    /^It is night.*Click BEGIN DAY/.test(text('dawn')),
+    'unbound: "Click BEGIN DAY", no key named'
+  );
+  const every = SiegeLoop.FIRST_STEPS.map((s) =>
+    text(s.id, at(8, true, { canRecruitGeneral: true }))
+  );
   ok(
     every.every((t) => t.length > 20 && !/\[\[|undefined|null|NaN|\(\)/.test(t)),
     'every prompt renders to plain words with no blanks'
@@ -445,10 +450,7 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   ok(SiegeLoop.dismissPrompt() === true, 'the prompt can be dismissed');
   ok(SiegeLoop.introductionStatus().prompt === null, 'dismissed: the card is empty');
   run(Game, 300);
-  ok(
-    SiegeLoop.introductionStatus().prompt !== 'deploy',
-    'a dismissed prompt does not come back'
-  );
+  ok(SiegeLoop.introductionStatus().prompt !== 'deploy', 'a dismissed prompt does not come back');
   ok(SiegeLoop.dismissPrompt() === false, 'dismissing with nothing open does nothing');
 
   // Night 1: the order prompt points at a soldier on the field, and a move order closes it.
@@ -472,15 +474,23 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   ok(p.target.dom[0] === '#begin-day-btn', 'it points at BEGIN DAY');
   // A save taken now reopens the same prompt on load.
   const snap = Game.exportGameState();
-  ok(snap.siegeLoop?.openStep === 'dawn' || JSON.stringify(snap).includes('"openStep":"dawn"'), 'the open prompt is saved');
+  ok(
+    snap.siegeLoop?.openStep === 'dawn' || JSON.stringify(snap).includes('"openStep":"dawn"'),
+    'the open prompt is saved'
+  );
   Game.beginDayPhase(true);
   run(Game, 40);
   ok(SiegeLoop.introductionStatus().prompt !== 'dawn', 'beginning the day closes it');
   ok(Game.importGameState(JSON.parse(JSON.stringify(snap))), 'the save loads');
   Game.updatePresentation?.();
-  ok(SiegeLoop.introductionStatus().prompt === 'dawn', 'and the prompt that was open is open again');
+  ok(
+    SiegeLoop.introductionStatus().prompt === 'dawn',
+    'and the prompt that was open is open again'
+  );
 
   // A prompt left alone lapses at the next nightfall and is not repeated.
+  // A loaded siege opens paused; play on, or no nightfall ever comes.
+  Game.setPaused(false);
   Game.beginDayPhase(true);
   run(Game, 40);
   GS.tactical = 0; // nothing else can open: every later prompt needs TP or a later wave
@@ -508,7 +518,11 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   ok(/"veteran":true/.test(sb.localStorage.getItem(STEPS_KEY) || ''), 'and it is stored');
 }
 {
-  const { Game, SiegeLoop, GameState: GS } = start(11, 'normal', {
+  const {
+    Game,
+    SiegeLoop,
+    GameState: GS,
+  } = start(11, 'normal', {
     [STEPS_KEY]: JSON.stringify({ veteran: true }),
   });
   Game.updatePresentation?.();

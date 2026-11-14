@@ -260,7 +260,8 @@ const Onboarding = (() => {
   let targetSelectors = null;
   let frame = 0;
 
-  const hasDom = () => typeof document !== 'undefined' && !!document.body && !!document.createElement;
+  const hasDom = () =>
+    typeof document !== 'undefined' && !!document.body && !!document.createElement;
 
   /** Prompt text to HTML: escaped, with `[[Q]]` drawn as a key cap. */
   function promptHtml(text) {
@@ -397,6 +398,7 @@ const Onboarding = (() => {
       card.classList.remove('teach-in');
       void card.offsetWidth;
       card.classList.add('teach-in');
+      AudioEngine?.SFX?.click?.();
     }
     card.hidden = false;
     if (!frame) follow();
