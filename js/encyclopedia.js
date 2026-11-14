@@ -14,6 +14,46 @@ const Encyclopedia = (() => {
   let panelOpen = false;
   let returnToPause = false;
 
+  const COLISEUM_TEASE = {
+    stone_cold:
+      'The Wall-Splitter: old bailiff rolls say elites fall to one keystone blow, and the yard goes quiet.',
+    the_rock: 'The Cairn-Maker raises a stone over every foe he drops; his kill streaks ring loud.',
+    ric_flair: 'The Gilded Bastard: allies near him fight with a boasting nerve.',
+    hulk_hogan:
+      'The Unfelled: below half health his stubborn blood surges and he will not stay down.',
+    macho_man:
+      'The Javelin of Spite hurls from the high ground, and the crit lands before the cheer.',
+    sting: 'The Gaoler drags the wounded back by the chain. Few slip his hold.',
+    john_cena: 'The Oathkeeper never yields: blows seem to glance off when the fight turns ugly.',
+    bautista: 'The Bull of Marrowgate: his goring sweep scatters everyone standing too close.',
+    roman_reigns: 'The Fen Warden: his shoulder ram ends arguments and several orcs at once.',
+    shawn_michaels:
+      'The Tourney Darling: a spinning heel rings out when the moment is right, usually a crit.',
+    bret_hart: 'The Lockwright: one hold, one foe, no way out.',
+    undertaker:
+      'The Bell of Low Hallow: a passing bell spreads dread; enemy morale withers nearby.',
+    kane: 'The Troll-Flayer: his barbed hide bites harder the bigger the target.',
+    andre_giant: 'The Walking Keep: footsteps splash damage; walls fear him.',
+    razor_ramon: 'The Patient Blade: steady, stylish, inevitable edge damage.',
+    kevin_nash: 'The Lintel: every fourth blow brings the roof down on the ranks.',
+    roddy_piper: 'The Heckler: when he scores, allies feel it.',
+    hacksaw_duggan:
+      'The Colour-Serjeant: raises the colours and rallies the line at the start of each wave.',
+    junkyard_dog: "The Ram of Tanner's Row: his brow stuns on a crit.",
+    rey_mysterio: 'The Rope-Dancer: too quick to pin, too clever to catch.',
+    eddie_guerrero:
+      'The Light-Fingered: lie, cheat, steal; maybe lift a purse from an elite for TP.',
+    chris_benoit: 'The Vise: surgical, cruel, single-target devastation.',
+    oba_femi: 'The Unbeaten Novice: surrounded is when he hits hardest.',
+    brock_lesnar: 'The Butcher of the Bloodsand: if you are wounded, you are gone.',
+    cm_punk: 'The Hedge-Preacher: the last word finishes anyone already hurting.',
+    seth_rollins: 'The Poacher: a long cast at wounded targets.',
+    sheamus: 'The Peat-Cutter: his sweep leaves a line of bodies.',
+    bray_wyatt:
+      'The Bog Oracle: her corpse-candle dims enemy accuracy when dusk falls on the field.',
+    randy_orton: 'The Still Hand: a sudden fall on anyone already hurting.',
+  };
+
   const CATEGORIES = [
     { id: 'howto', label: 'How to play' },
     { id: 'army', label: 'Your army' },
@@ -853,7 +893,7 @@ const Encyclopedia = (() => {
           `${head}\n\n${c.members
             .map(
               (m) =>
-                `${m.def.name}: ${m.profile.role}, ${m.def.cost} TP\n${m.profile.trait}\nWeakness: ${m.profile.weak}`
+                `${m.def.name}: ${m.profile.role}, ${m.def.cost} TP\n${COLISEUM_TEASE[m.id] ? `${COLISEUM_TEASE[m.id]}\n` : ''}${m.profile.trait}\nWeakness: ${m.profile.weak}`
             )
             .join('\n\n')}`,
           { companyId: c.id, refs }
