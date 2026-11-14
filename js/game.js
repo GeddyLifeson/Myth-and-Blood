@@ -7798,7 +7798,8 @@ const Game = (() => {
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
     if (svc('NeutralRelations')) svc('NeutralRelations').resetRun();
     if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').resetRun();
-    if (svc('DynamicMapEvents')) svc('DynamicMapEvents').resetRun();
+    if (svc('DynamicMapEvents'))
+      svc('DynamicMapEvents').resetRun(svc('GameModes')?.getSession?.()?.seed);
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
     if (typeof ProgressionRestarts !== 'undefined') ProgressionRestarts.resetRun();
     if (typeof PacingTools !== 'undefined') PacingTools.resetRun();

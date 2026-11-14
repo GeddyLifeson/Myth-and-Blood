@@ -14,7 +14,7 @@ function start(seed) {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
     `${code}\n({ Game, SpriteGen, SiegeLoop, GameState, UnitDefs, BuildDefs, EnemyDefs, SpyActions,
-      EconomyRules, WarCamps })`,
+      EconomyRules, WarCamps, DynamicMapEvents, ContentExpansion, NeutralWildlife })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -470,6 +470,55 @@ function toNight(api, wave) {
     ratio > 0.8 && ratio < 0.95,
     `a disrupted wave fields about 87% of the bodies, not 75% (${ratio.toFixed(2)})`
   );
+}
+
+// --- 8. events: about one wave in four ------------------------------------------------------
+{
+  const { DynamicMapEvents: D, ContentExpansion: C, NeutralWildlife: N } = start(11);
+  const seen = { planet: 0, field: 0, wildlife: 0 };
+  let evWaves = 0;
+  let total = 0;
+  let worstGap = 0;
+  let mismatched = 0;
+  for (let seed = 1; seed <= 20; seed++) {
+    let n = 0;
+    D.resetRun(`seed-${seed}`);
+    let last = 0;
+    for (let wave = 1; wave <= 300; wave++) {
+      const hits = [
+        D.pickEvent(wave) && 'planet',
+        C.pickWaveEvent(wave) && 'field',
+        N.pickWaveEvent(wave) && 'wildlife',
+      ].filter(Boolean);
+      total++;
+      if (
+        hits.length > 1 ||
+        (hits.length === 1) !== (D.eventSlot(wave) !== null && hits[0] === D.eventSlot(wave))
+      )
+        mismatched++;
+      if (hits.length) {
+        n++;
+        evWaves++;
+        seen[hits[0]]++;
+        worstGap = Math.max(worstGap, wave - last);
+        last = wave;
+      }
+    }
+    if (seed === 1) ok(n > 50 && n < 100, `one seeded run of 300 waves has ${n} event waves`);
+  }
+  const share = evWaves / total;
+  ok(
+    share > 0.2 && share < 0.28,
+    `events fire on ${(share * 100).toFixed(1)}% of waves over 6000 (about one in four)`
+  );
+  ok(mismatched === 0, 'one event system speaks per event wave, and only in its own slot');
+  ok(worstGap <= 8, `never more than ${worstGap} waves between events`);
+  ok(
+    seen.planet > 0 && seen.field > 0 && seen.wildlife > 0,
+    `all three kinds appear (${JSON.stringify(seen)})`
+  );
+  const planet = Object.values(D.EVENTS).every((e) => e.choices.length >= 2);
+  ok(planet, 'every planet event offers a real choice');
 }
 
 process.exit(failures() ? 1 : 0);
