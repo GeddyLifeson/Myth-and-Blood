@@ -50,7 +50,7 @@
     "disrupt": {
       "name": "Disrupt Supply Lines",
       "cost": 5,
-      "desc": "Next wave: 25% fewer enemies, but the rest are 12% tougher and march 15% faster. Price rises 1 TP every 6 waves."
+      "desc": "Next wave: 25% fewer enemies in the main host, 12% tougher and 15% faster. Half of those cut off catch up as a follow-up squad late in the wave. Price rises 1 TP every 6 waves."
     },
     "assassin": {
       "name": "Assassinate Captain",

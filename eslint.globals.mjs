@@ -203,6 +203,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "WWE_ACADEMY_RECOMMENDED_GUILDS",
   "WWE_ACADEMY_RECOMMENDED_HAMLETS",
   "WWE_SHOWMANSHIP_ABILITIES",
+  "WarCamps",
   "WaveCompositionCore",
   "Waves",
   "WweAcademy",

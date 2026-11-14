@@ -150,195 +150,140 @@ const FactionIntel = (() => {
     return s;
   }
 
-  function drawThreatMap(canvas, rows, gs) {
+  // ------------------------------------------------------------ what is true now
+  /**
+   * The Threat Map shows what exists: where the next wave enters, the war camps standing at
+   * the top edge and what each adds. The old stage bars and building counts described a
+   * northern kingdom that is never built, so they are gone from the panel.
+   */
+  const SECTOR_IDS = ['left', 'centre', 'right'];
+
+  function campState() {
+    if (typeof WarCamps === 'undefined' || typeof GameState === 'undefined') return null;
+    return WarCamps.getSnapshot({ buildings: GameState.buildings, wave: GameState.wave });
+  }
+
+  /** Sectors the coming (night) or current (day) wave uses; null when the plan has none. */
+  function activeSectors() {
+    if (typeof WarCamps === 'undefined' || typeof GameState === 'undefined') return null;
+    const plan =
+      GameState.timeOfDay === 'night'
+        ? GameState.nextWavePlan
+        : { sectors: GameState.waveSectors || GameState.multiFrontPlan?.sectors };
+    return WarCamps.planSectors(plan);
+  }
+
+  function threatSummary(gs) {
+    const night = gs.timeOfDay === 'night';
+    const preview = typeof SiegeLoop !== 'undefined' ? SiegeLoop.getPreview?.() : null;
+    if (night && preview) return SiegeLoop.previewText(preview);
+    return night ? `Wave ${(gs.wave || 0) + 1} is gathering.` : `Wave ${gs.wave || 0} is on the field.`;
+  }
+
+  function sectorLine(gs) {
+    const sectors = activeSectors();
+    const night = gs.timeOfDay === 'night';
+    if (sectors) {
+      return `${night ? 'The next wave enters' : 'This wave entered'} by the ${sectors.join(' and ')} of the top edge.`;
+    }
+    const sides =
+      (typeof GameState !== 'undefined' &&
+        (night ? GameState.nextWavePlan?.sides : GameState.waveAttackSides)) ||
+      [];
+    const other = sides.filter((x) => x !== 'north');
+    return other.length
+      ? `${night ? 'The next wave comes' : 'This wave came'} from the north and the ${other.join(', ')}.`
+      : `${night ? 'The next wave comes' : 'This wave came'} from the top edge.`;
+  }
+
+  function drawSectorMap(canvas, camps, sectors) {
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const w = canvas.width;
     const h = canvas.height;
+    const INK = '#07050a';
+    const BONE = '#e4dcc4';
+    const BLOOD = '#a01018';
     ctx.clearRect(0, 0, w, h);
-
-    const visible = rows.filter((r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 8);
-    const cols = Math.max(1, visible.length);
-    const colW = w / cols;
-    const mapTop = 18;
-    const mapH = h - 36;
-
-    ctx.font = '8px Cinzel';
+    ctx.fillStyle = '#14100f';
+    ctx.fillRect(0, 0, w, h);
+    const third = w / 3;
+    ctx.font = 'bold 11px Georgia, serif';
     ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(200, 160, 120, 0.7)';
-    ctx.fillText('— NORTH / HOST SECTORS —', w / 2, 10);
-
-    for (let i = 0; i < visible.length; i++) {
-      const row = visible[i];
-      const cx = colW * i + colW / 2;
-      const x0 = colW * i + 4;
-      const barW = colW - 8;
-
-      ctx.fillStyle = 'rgba(20, 14, 10, 0.85)';
-      ctx.fillRect(x0, mapTop, barW, mapH);
-      ctx.strokeStyle =
-        row.status === 'eliminated'
-          ? 'rgba(120, 255, 160, 0.5)'
-          : hexToRgba(row.color, row.status === 'dormant' ? 0.25 : 0.55);
-      ctx.lineWidth = row.counterRaids ? 2 : 1;
-      ctx.strokeRect(x0, mapTop, barW, mapH);
-
-      const stage = row.status === 'eliminated' ? 4 : row.debuffed ? row.effectiveStage : row.stage;
-      const segH = mapH / 4;
-      for (let s = 0; s < 4; s++) {
-        const sy = mapTop + mapH - (s + 1) * segH;
-        const filled = s < stage;
-        ctx.fillStyle = filled
-          ? hexToRgba(row.color, row.status === 'dormant' ? 0.2 : 0.55 + s * 0.08)
-          : 'rgba(30, 24, 18, 0.6)';
-        ctx.fillRect(x0 + 2, sy + 1, barW - 4, segH - 2);
-        if (filled && s === 3 && row.counterRaids) {
-          ctx.fillStyle = 'rgba(255, 80, 60, 0.35)';
-          ctx.fillRect(x0 + 2, sy + 1, barW - 4, segH - 2);
+    for (let i = 0; i < 3; i++) {
+      const on = !sectors || sectors.includes(SECTOR_IDS[i]);
+      ctx.fillStyle = on ? 'rgba(160,16,24,0.34)' : 'rgba(228,220,196,0.05)';
+      ctx.fillRect(i * third + 2, 2, third - 4, h - 20);
+      ctx.strokeStyle = on ? BLOOD : '#4c4841';
+      ctx.lineWidth = on ? 2 : 1;
+      ctx.strokeRect(i * third + 2, 2, third - 4, h - 20);
+      ctx.fillStyle = on ? BONE : '#777266';
+      ctx.fillText(
+        `${SECTOR_IDS[i].toUpperCase()}${sectors ? (on ? ' — host enters' : ' — quiet') : ''}`,
+        i * third + third / 2,
+        h - 6
+      );
+      if (on) {
+        // chevrons pointing down the field
+        ctx.strokeStyle = BLOOD;
+        ctx.lineWidth = 2;
+        for (let c = 0; c < 2; c++) {
+          const cy = h - 40 + c * 8;
+          ctx.beginPath();
+          ctx.moveTo(i * third + third / 2 - 9, cy - 5);
+          ctx.lineTo(i * third + third / 2, cy);
+          ctx.lineTo(i * third + third / 2 + 9, cy - 5);
+          ctx.stroke();
         }
       }
-
-      if (row.status === 'eliminated') {
-        ctx.strokeStyle = 'rgba(120, 255, 160, 0.8)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x0 + 6, mapTop + 8);
-        ctx.lineTo(x0 + barW - 6, mapTop + mapH - 8);
-        ctx.moveTo(x0 + barW - 6, mapTop + 8);
-        ctx.lineTo(x0 + 6, mapTop + mapH - 8);
-        ctx.stroke();
-      }
-
-      ctx.font = '7px Cinzel';
-      ctx.fillStyle =
-        row.status === 'dormant' ? 'rgba(120, 110, 100, 0.8)' : 'rgba(255, 230, 200, 0.9)';
-      const stageText =
-        row.status === 'dormant'
-          ? `W${row.waveMin}`
-          : row.status === 'eliminated'
-            ? 'FALLEN'
-            : row.debuffed
-              ? `S${row.effectiveStage}/${row.stage}`
-              : `S${row.stage}`;
-      ctx.fillText(stageText, cx, mapTop + mapH + 10);
-
-      ctx.font = '6px Cinzel';
-      ctx.fillStyle = hexToRgba(row.color, 0.95);
-      const label = row.shortName.slice(0, 6).toUpperCase();
-      ctx.fillText(label, cx, h - 4);
     }
+    const worldW = (typeof GameState !== 'undefined' && GameState.worldW) || 1;
+    for (const c of camps) {
+      const x = Math.max(34, Math.min(w - 34, (c.x / worldW) * w));
+      const y = 24;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.moveTo(x - 11, y + 9);
+      ctx.lineTo(x, y - 10);
+      ctx.lineTo(x + 11, y + 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.fillStyle = '#ff8a30';
+      ctx.beginPath();
+      ctx.arc(x, y + 4, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = BONE;
+      ctx.fillText(c.name, x, y + 24);
+      ctx.fillStyle = INK;
+      ctx.fillRect(x - 20, y + 29, 40, 5);
+      ctx.fillStyle = BLOOD;
+      ctx.fillRect(x - 20, y + 29, 40 * (c.maxHp ? c.hp / c.maxHp : 0), 5);
+    }
+    ctx.textAlign = 'left';
   }
 
-  function hexToRgba(hex, alpha = 1) {
-    const h = String(hex || '#888').replace('#', '');
-    const full =
-      h.length === 3
-        ? h
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : h;
-    const n = parseInt(full, 16);
-    if (Number.isNaN(n)) return `rgba(128,128,128,${alpha})`;
-    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
-  }
-
-  function renderStageBar(stage, effectiveStage, debuffed, color) {
-    const s = debuffed ? effectiveStage : stage;
-    const cells = [];
-    for (let i = 1; i <= 4; i++) {
-      const on = i <= s;
-      const peak = i <= stage && debuffed && i > effectiveStage;
-      cells.push(
-        `<span class="intel-stage-cell${on ? ' on' : ''}${peak ? ' peak' : ''}"` +
-          ` style="${on ? `background:${color}88;border-color:${color}` : ''}"` +
-          ` title="${STAGE_LABELS[i - 1] || `Stage ${i}`}"></span>`
-      );
-    }
-    return `<div class="intel-stage-bar">${cells.join('')}</div>`;
-  }
-
-  function renderFactionCard(row) {
-    const fid = row.factionId || row.id;
-    const focused = fid && fid === focusedFactionId;
-    const statusClass = `intel-card-${row.status}${focused ? ' intel-focused' : ''}`;
-    const badges = [];
-    if (row.debuffed) badges.push('<span class="intel-badge intel-badge-weak">WEAKENED</span>');
-    if (row.counterRaids)
-      badges.push('<span class="intel-badge intel-badge-raid">COUNTER-RAIDS</span>');
-    if (row.economicFocus)
-      badges.push('<span class="intel-badge intel-badge-eco">ECO FOCUS</span>');
-    if (row.status === 'eliminated')
-      badges.push('<span class="intel-badge intel-badge-fallen">ELIMINATED</span>');
-    if (row.conquestPct != null && row.status !== 'eliminated') {
-      badges.push(`<span class="intel-badge intel-badge-conquest">${row.conquestPct}% SEC</span>`);
-    }
-
-    const meta = [];
-    if (row.status === 'dormant') {
-      meta.push(`Awakens wave ${row.waveMin}`);
-    } else if (row.status !== 'eliminated') {
-      if (row.buildingCount)
-        meta.push(`${row.buildingCount} northern site${row.buildingCount > 1 ? 's' : ''}`);
-      if (row.stanceLabel) {
-        meta.push(
-          `<span style="color:${row.stanceColor || '#c0a060'}">${row.stanceLabel}` +
-            `${row.hostility != null ? ` (${row.hostility})` : ''}</span>`
-        );
-      }
-      if (row.evolutionOffset) {
-        meta.push(`evo ${row.evolutionOffset > 0 ? '+' : ''}${row.evolutionOffset}`);
-      }
-      if (row.frontLabel) meta.push(`Front: ${row.frontLabel}`);
-      if (row.doctrineLabel) meta.push(row.doctrineLabel);
-    }
-
-    const stageTitle =
-      row.status === 'dormant'
-        ? 'Not yet active'
-        : row.debuffed
-          ? `Effective Stage ${row.effectiveStage} (was ${row.stage}) — ${row.tierLabel}`
-          : `Stage ${row.stage} — ${row.tierLabel}`;
-
+  function renderCampCard(c) {
+    const line = c.sabotaged ? 'sabotaged: no bonus this wave' : c.line;
     return (
-      `<div class="intel-faction-card ${statusClass}" data-faction-intel="${fid || ''}" style="border-left-color:${row.color}">` +
-      `<div class="intel-card-head">` +
-      `<span class="intel-faction-name">${row.name}</span>` +
-      `<span class="intel-faction-stage" style="color:${row.color}">${stageTitle}</span>` +
-      `</div>` +
-      (row.status !== 'dormant' && row.status !== 'eliminated'
-        ? renderStageBar(row.stage, row.effectiveStage, row.debuffed, row.color)
-        : '') +
-      (badges.length ? `<div class="intel-badges">${badges.join('')}</div>` : '') +
-      (row.tagline && row.status !== 'dormant'
-        ? `<p class="intel-tagline">${row.tagline}</p>`
-        : '') +
-      (meta.length ? `<p class="intel-meta">${meta.join(' · ')}</p>` : '') +
-      `</div>`
-    );
-  }
-
-  function renderCompactRow(row) {
-    const stage = row.debuffed ? row.effectiveStage : row.stage;
-    const cls = `intel-compact-row intel-compact-${row.status}`;
-    const extra = row.counterRaids ? ' ⚔' : row.debuffed ? ' ↓' : '';
-    const dorm = row.status === 'dormant' ? `W${row.waveMin}` : `S${stage}${extra}`;
-    return (
-      `<div class="${cls}" title="${row.name} — ${row.tierLabel}\n${row.tagline || ''}">` +
-      `<span class="intel-compact-dot" style="background:${row.color}"></span>` +
-      `<span class="intel-compact-name">${row.shortName}</span>` +
-      `<span class="intel-compact-stage" style="color:${row.color}">${dorm}</span>` +
+      `<div class="intel-faction-card intel-card-active" style="border-left-color:#a01018">` +
+      `<div class="intel-card-head"><span class="intel-faction-name">${c.name}</span>` +
+      `<span class="intel-faction-stage" style="color:#e4dcc4">${c.sector} of the top edge</span></div>` +
+      `<p class="intel-tagline">Next wave: ${line}.</p>` +
+      `<p class="intel-meta">Health ${c.hp}/${c.maxHp} · ${c.guards} guard${c.guards === 1 ? '' : 's'} · ` +
+      `bounty ${c.bounty} TP · ${c.wavesLeft > 0 ? `stands ${c.wavesLeft} more wave${c.wavesLeft === 1 ? '' : 's'}` : 'packs up after this wave'}</p>` +
       `</div>`
     );
   }
 
   function renderPanel(gs) {
-    const rows = buildIntelRows(gs);
-    const summary = formatSummary(gs);
-    const hostLevel = gs.asymmetricWarfare?.hostThreatLevel;
-    const hostLabel = gs.asymmetricWarfare?.hostLevelLabel;
-    const roster = gs.enemyFactions?.rosterIntel || gs.nextWaveIntel || '';
+    const camps = campState();
+    const list = camps ? camps.camps : [];
+    const sectors = activeSectors();
+    const summary = threatSummary(gs);
 
     const summaryEl = document.getElementById('faction-intel-summary');
     const listEl = document.getElementById('faction-intel-list');
@@ -347,29 +292,54 @@ const FactionIntel = (() => {
     const rosterEl = document.getElementById('faction-intel-roster');
     const compactSummary = document.getElementById('faction-intel-compact-summary');
     const compactList = document.getElementById('faction-intel-compact-list');
+    const legendEl = document.querySelector?.('.faction-intel-map-legend');
 
     if (summaryEl) summaryEl.textContent = summary;
-    if (hostEl) {
-      hostEl.textContent = hostLevel
-        ? `Host Threat Lv${hostLevel} — ${hostLabel || 'Evolving'}`
-        : 'Host threat escalates as factions evolve and build in the north.';
+    if (hostEl) hostEl.textContent = sectorLine(gs);
+    if (legendEl) {
+      legendEl.textContent =
+        'The top edge in three sectors. Red: the host enters there. A tent with a fire: a war camp.';
     }
-    if (rosterEl)
-      rosterEl.textContent = roster || 'Roster reveals at dawn or via Scout/Infiltrate.';
+    const fromWave = camps ? camps.fromWave : 6;
+    const none =
+      (gs.wave || 0) + 1 < fromWave
+        ? `No war camps yet. From wave ${fromWave} the enemy may raise one at nightfall.`
+        : 'No war camp stands tonight.';
     if (listEl) {
-      listEl.innerHTML = rows.map(renderFactionCard).join('');
+      listEl.innerHTML = list.length
+        ? list.map(renderCampCard).join('')
+        : `<p class="intel-tagline">${none}</p>`;
     }
-    if (mapCanvas) drawThreatMap(mapCanvas, rows, gs);
+    if (rosterEl) {
+      const how =
+        'A camp is attacked only on your order: select soldiers and move them onto it (cavalry get there first, Sappers hit hardest), land a strike on it, or send the spy’s raid. Burn it before dawn and its bonus is gone.';
+      const live = camps && camps.active.length
+        ? ` In force this wave: ${camps.active.map((a) => `${a.name} — ${a.line}`).join('; ')}.`
+        : '';
+      const raid = camps && camps.raid
+        ? camps.raid.waiting
+          ? ' A raid rides at nightfall.'
+          : ' Raiders are on their way.'
+        : '';
+      const names = (gs.enemyFactions?.activeFactions || []).map((f) => f.shortName || f.name);
+      rosterEl.textContent = `${how}${live}${raid}${names.length ? ` Hosts in the field: ${names.join(', ')}.` : ''}`;
+    }
+    if (mapCanvas) drawSectorMap(mapCanvas, list, sectors);
 
-    const showCompact = (gs.wave || 0) >= WAVE_MIN || rows.some((r) => r.status !== 'dormant');
     const section = document.getElementById('faction-intel-section');
-    if (section) section.style.display = showCompact ? '' : 'none';
-    if (compactSummary) compactSummary.textContent = summary;
+    if (section) section.style.display = (gs.wave || 0) >= WAVE_MIN ? '' : 'none';
+    if (compactSummary) compactSummary.textContent = sectorLine(gs);
     if (compactList) {
-      const compactRows = rows.filter(
-        (r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 6
-      );
-      compactList.innerHTML = compactRows.map(renderCompactRow).join('');
+      compactList.innerHTML = list.length
+        ? list
+            .map(
+              (c) =>
+                `<div class="intel-compact-row intel-compact-active"><span class="intel-compact-dot" style="background:#a01018"></span>` +
+                `<span class="intel-compact-name">${c.name} (${c.sector})</span>` +
+                `<span class="intel-compact-stage">${c.sabotaged ? 'sabotaged' : c.line}</span></div>`
+            )
+            .join('')
+        : `<div class="intel-compact-row"><span class="intel-compact-name">${none}</span></div>`;
     }
   }
 

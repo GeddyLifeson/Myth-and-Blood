@@ -810,6 +810,8 @@ const SiegeLoop = (() => {
       runners: next >= RUNNER_FROM_WAVE,
       makeup,
       makeupSource: makeup ? (ctx.watchtowers > 0 ? 'Watchtower' : 'Scout') : '',
+      // War camps standing at the top edge and what each adds to this wave.
+      camps: typeof WarCamps !== 'undefined' ? WarCamps.previewLine(ctx) : '',
     };
   }
 
@@ -843,6 +845,7 @@ const SiegeLoop = (() => {
       parts.push(`${p.makeupSource} report: ${p.makeup.map((m) => `${m.n} ${m.name}`).join(', ')}`);
     } else if (p.names.length) parts.push(p.names.join(', '));
     if (p.runners) parts.push('line-breakers likely');
+    if (p.camps) parts.push(`War camps — ${p.camps}`);
     return parts.join(' · ');
   }
 

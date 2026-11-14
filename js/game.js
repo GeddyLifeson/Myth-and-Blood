@@ -768,6 +768,8 @@ const Game = (() => {
       const off = offsets[i] || { x: 0, y: 0 };
       orderMove(unit, anchor.x + off.x, anchor.y + off.y, true, { hold: opts.hold ?? false });
     });
+    // A move that lands on a war camp is the order to attack it; any other move cancels that.
+    if (typeof WarCamps !== 'undefined') WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx);
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
@@ -2908,6 +2910,28 @@ const Game = (() => {
   };
   SiegeLoop.bindContext(() => siegeCtx);
 
+  /** What WarCamps needs on top of the siege context: the building code and the wave plan. */
+  const warCampCtx = Object.create(siegeCtx, {
+    nextPlan: { get: () => GS.nextWavePlan },
+    spawnQueue: { get: () => GS.spawnQueue },
+    createCamp: {
+      value: (type, x, y) => {
+        const b = createBuilding(type, x, y, 'enemy');
+        if (!b) return null;
+        b.complete = true;
+        b.buildProgress = b.buildTime || 1;
+        ensureBuildingHealth(b);
+        GS.buildings.push(b);
+        return b;
+      },
+    },
+    removeCamp: { value: (b) => finalizeBuildingDestroyed(b, { silent: true, packedUp: true }) },
+    campDamage: { value: (unit, b) => calcBuildingDamage(unit, b) },
+    foeInReach: { value: (unit) => !!findNearestFoeInRange(unit) },
+    markCrate: { value: () => SiegeLoop.forgeMaps() },
+    refreshPreview: { value: () => SiegeLoop.refreshPreview?.(siegeCtx) },
+  });
+
   function isDayPhase() {
     return GS.timeOfDay === 'day';
   }
@@ -3295,6 +3319,7 @@ const Game = (() => {
     syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
     GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
+    if (typeof WarCamps !== 'undefined') WarCamps.onNightBegin(warCampCtx);
     SiegeLoop.onNightBegin(siegeCtx);
     refreshUnitCounts();
     const playerUnits = [];
@@ -7651,6 +7676,7 @@ const Game = (() => {
     // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
+    if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
       diff.startingTp +
@@ -8278,7 +8304,14 @@ const Game = (() => {
       showMessage(`Ambush on the road: the first ${mods.softenCount} foes arrive wounded.`, 260);
     }
     if ((mods.speedMult || 1) > 1) {
-      showMessage('Disrupted host: fewer of them, but tougher and on a forced march.', 260);
+      // Disrupt: the foes cut off on the road are late, not gone.
+      const late = (mods.countMult || 1) < 1 ? EconomyRules.rejoinSquad(GS.spawnQueue, mods.countMult) : 0;
+      showMessage(
+        late > 0
+          ? `Disrupted host: fewer of them, tougher and on a forced march. ${late} stragglers will catch up late in the wave.`
+          : 'Disrupted host: fewer of them, but tougher and on a forced march.',
+        280
+      );
     }
     EconomyRules.onWaveStart(mods);
   }
@@ -8968,6 +9001,8 @@ const Game = (() => {
       });
     }
     buildSpawnQueue();
+    // Camps still standing at dawn add their bodies before Sabotage strips siege engines.
+    if (typeof WarCamps !== 'undefined') WarCamps.onWaveStart(warCampCtx);
     applyEconomyWaveMods();
     if (GS.namedBossWave && svc('MonsterBosses')) {
       svc('MonsterBosses').spawnPackStructures(
@@ -9486,6 +9521,7 @@ const Game = (() => {
     const def = SpyActions[action];
     const ruleKey = `spy:${action}`;
     const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    rules?.patchCampActions?.();
     const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
       ? svc('ContentExpansion').getSpyCost(action, baseCost)
@@ -9510,6 +9546,23 @@ const Game = (() => {
     if (GS.spyUsedThisWave) {
       showMessage('Spy network already used this wave!');
       return false;
+    }
+
+    if (action === 'settlement_raid' && typeof WarCamps !== 'undefined') {
+      // The raid goes for a war camp. No camp, no raid, and nothing is charged.
+      const res = WarCamps.orderRaid(warCampCtx);
+      if (!res.ok) {
+        showMessage(`${def.name}: ${res.reason}`);
+        return false;
+      }
+      GS.tactical -= cost;
+      GS.spyUsedThisWave = true;
+      rules?.markUsed(ruleKey, GS.wave);
+      syncEconomyActions();
+      playSfx('magicCast');
+      ach('spy', { action });
+      syncInteractionState();
+      return true;
     }
 
     if (svc('ContentExpansion') && svc('ContentExpansion').handleSpyAction) {
@@ -9550,7 +9603,7 @@ const Game = (() => {
       GS.pendingWaveMods.hpMult = (GS.pendingWaveMods.hpMult || 1) * r.hpMult;
       GS.pendingWaveMods.speedMult = r.speedMult;
       showMessage(
-        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes, but ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster.`,
+        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes in the main host, ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster. Half of those cut off catch up as a late squad.`,
         300
       );
     } else if (action === 'assassin') {
@@ -9600,6 +9653,10 @@ const Game = (() => {
       const r = rules?.rule(ruleKey) || { delayTicks: 600 };
       GS.pendingWaveMods.noSiege = true;
       GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
+      const spiked = typeof WarCamps !== 'undefined' ? WarCamps.sabotage(warCampCtx) : null;
+      if (spiked) {
+        showMessage(`Saboteurs spike the ${WarCamps.KINDS[spiked.kind].name}: no bonus from it this wave.`, 260);
+      }
       showMessage(
         `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
         300
@@ -10241,6 +10298,11 @@ const Game = (() => {
     if (!b || b._destroyed) return false;
     const wasProducer = isUnitProducingBuilding(b);
     const wasEnemyEconomy = isEnemyEconomyStructure(b);
+    // The record is wiped when it goes back to the pool, so keep what WarCamps needs.
+    const wasWarCamp =
+      typeof WarCamps !== 'undefined' && WarCamps.isCamp(b)
+        ? { id: b.id, type: b.type, x: b.x, y: b.y }
+        : null;
     if (
       b.owner === 'player' &&
       !opts.silent &&
@@ -10264,7 +10326,14 @@ const Game = (() => {
     clearBuildingTargeting(b);
     removeBuildingRecord(b);
     invalidateObstacles();
-    if (opts.message) showMessage(opts.message);
+    if (wasWarCamp) {
+      // WarCamps announces it (bounty, crate, what the next wave loses).
+      if (!opts.packedUp) {
+        GS.structuresRazedThisWave++;
+        GS.runStructuresRazed++;
+        WarCamps.onDestroyed(wasWarCamp, opts.attacker || null, warCampCtx);
+      }
+    } else if (opts.message) showMessage(opts.message);
     else if (!opts.silent) {
       const name = BuildDefs[b.type]?.name || 'Structure';
       const prefix = b.owner === 'enemy' ? 'Enemy ' : '';
@@ -13697,6 +13766,10 @@ const Game = (() => {
         takeDamage(u, damage * (1 - (dist / radius) * 0.5), opts);
       }
     }
+    // The player's strikes and blasts also fall on war camps.
+    if (team === 'player' && typeof WarCamps !== 'undefined') {
+      WarCamps.onBlast(x, y, radius, damage, warCampCtx);
+    }
   }
 
   function doomslayerDamage(target) {
@@ -14799,6 +14872,10 @@ const Game = (() => {
         }
         u.huntMode = true;
         SiegeLoop.tagEnemySpawn(u, siegeCtx);
+        if (typeof WarCamps !== 'undefined') {
+          const campLabel = WarCamps.onEnemySpawn(u);
+          if (campLabel) svc('FloatingText')?.status?.(u.x, u.y - 14, campLabel, '#ff8060');
+        }
         Roster.onSpawn(u, GS.creativeMode ? 0 : GS.wave);
         GS.units.push(u);
         const baseInterval =
@@ -14936,6 +15013,7 @@ const Game = (() => {
     GS.updateTick++;
     if (GS.state === 'playing') {
       SiegeLoop.update(siegeCtx);
+      if (typeof WarCamps !== 'undefined') WarCamps.update(warCampCtx);
       Roster.update(siegeCtx);
     }
     markUpdatePhase('update-begin', `w${GS.wave} u${GS.units.length}`);
@@ -16092,6 +16170,7 @@ const Game = (() => {
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
+      if (typeof WarCamps !== 'undefined') WarCamps.draw(GS.ctx, warCampCtx, GS.updateTick);
       Roster.drawOverlays(GS.ctx, GS.units, GS.updateTick);
       svc('Particles').draw(GS.ctx, vBounds);
       svc('FloatingText').draw(GS.ctx, vBounds);
@@ -16894,6 +16973,7 @@ const Game = (() => {
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
       economyRules: typeof EconomyRules !== 'undefined' ? EconomyRules.exportState() : null,
+      warCamps: typeof WarCamps !== 'undefined' ? WarCamps.exportState(warCampCtx) : null,
       scoutedWave: GS.scoutedWave ?? -1,
       pendingReinforce: [...GS.pendingReinforce],
       spawnDelayBonus: GS.spawnDelayBonus,
@@ -16929,7 +17009,10 @@ const Game = (() => {
         angle: p.angle || 0,
       })),
       units: collectAliveUnitSnaps(),
-      buildings: GS.buildings.map((b) => ({
+      // War camps are saved by WarCamps (kind, health, sector) and rebuilt on load.
+      buildings: GS.buildings
+        .filter((b) => typeof WarCamps === 'undefined' || !WarCamps.isCamp(b))
+        .map((b) => ({
         id: b.id,
         type: b.type,
         x: b.x,
@@ -17191,6 +17274,7 @@ const Game = (() => {
       GS.spatialFrame = -1;
       if (svc('Research') && snap.research) svc('Research').restoreSnapshot(snap.research);
       SiegeLoop.importState(snap.siegeLoop || null, siegeCtx);
+      if (typeof WarCamps !== 'undefined') WarCamps.importState(snap.warCamps || null, warCampCtx);
       if (typeof ProgressionRestarts !== 'undefined') {
         if (snap.progressionRestarts) {
           ProgressionRestarts.restoreSnapshot(snap.progressionRestarts);
@@ -17874,6 +17958,13 @@ const Game = (() => {
     setSelectionFormation,
     reformSelectionFormation,
     moveSelectionToWorld,
+    /** War camps: test and creative hooks (raise one, hit one, read the damage a soldier does). */
+    warCampHooks: {
+      ctx: () => warCampCtx,
+      raise: (opts) => (typeof WarCamps !== 'undefined' ? WarCamps.raiseCamp(warCampCtx, opts) : null),
+      hit: (b, amount) => damageBuilding(b, amount, null),
+      damageOf: (unit, b) => calcBuildingDamage(unit, b),
+    },
     restartCurrentWave,
     quickSave,
     quickLoad,

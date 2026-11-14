@@ -84,6 +84,7 @@ export const HEADLESS_FILES = [
   'pacing-tools.js',
   'roster.js',
   'sapper-kit.js',
+  'war-camps.js',
   'game-core.js',
   'game-state.js',
   'game.js',
