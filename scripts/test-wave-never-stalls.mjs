@@ -102,6 +102,8 @@ function lastEnemies(Game, GS, types, tweak) {
   ok(Game.isPlaying(), 'the run goes on');
 
   // The rule does not fire on a host that is fighting: an ordinary wave is fought out.
+  // Soldiers hunt again, as they do by default, so the wide entry sectors are covered.
+  Game.orderHunt();
   if (GS.timeOfDay === 'night') Game.beginDayPhase(true);
   const wave = GS.wave;
   let kills0 = GS.kills;

@@ -87,6 +87,8 @@ Game.setCreativeSetting?.('instantBuild', true);
 Game.creativeForceDay?.();
 Game.creativeSetWave?.(15);
 
+// Open ground: a random tree on the spot would refuse the spawn.
+Game.creativeClearDecorations();
 const cx = Game.getWorldCenter();
 ok(Game.creativeSpawnEnemyBuildingAt('enemy_trade_outpost', cx.x, 80), 'spawn enemy trade post');
 const enemySnap = Game.getBuildingsSnapshot().find((b) => b.type === 'enemy_trade_outpost');
