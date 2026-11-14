@@ -6,55 +6,11 @@
   // maps are built once at load instead of on every keypress).
   // ---------------------------------------------------------------------------
 
-  /** Held camera-pan keys. */
+  /** Held camera-pan keys (released on keyup whatever the state). */
   const CAMERA_PAN_KEYS = ['arrowup', 'arrowdown', 'arrowleft', 'arrowright'];
 
-  /** Alt+1..5 → formation id (index = digit - 1). */
-  const FORMATION_HOTKEYS = ['line', 'column', 'wedge', 'box', 'spread'];
-
-  /** Number-row deploy hotkeys. */
-  const DEPLOY_HOTKEYS = {
-    1: 'footman',
-    2: 'archer',
-    3: 'mage',
-    4: 'cavalry',
-    5: 'healer',
-    6: 'knight',
-    7: 'builder',
-    8: 'sapper',
-    9: 'courier',
-    0: 'general',
-  };
-
-  /** Ability hotkeys. */
-  const ABILITY_HOTKEYS = {
-    q: 'fireball',
-    w: 'lightning',
-    e: 'heal',
-    r: 'reinforce',
-    t: 'rally',
-    f: 'meteor',
-    v: 'fus_ro_dah',
-    ';': 'fire_breath',
-    "'": 'ice_form',
-    j: 'frost_nova',
-    k: 'scout_flare',
-    x: 'fortify',
-    p: 'dispel',
-  };
-
-  /** Building placement hotkeys. */
-  const BUILD_HOTKEYS = {
-    o: 'outpost',
-    l: 'wall',
-    c: 'castle',
-    n: 'medical_tent',
-    m: 'mess_hall',
-    g: 'hamlet',
-    u: 'merchant_guild',
-    y: 'watchtower',
-    b: 'trade_outpost',
-  };
+  // Every other key lives in js/hotkeys.js: one key map per game state. The keydown
+  // handler below works out the state, looks the key up there and runs HOTKEY_ACTIONS.
 
   // ---------------------------------------------------------------------------
   // Selection-mode predicates — previously duplicated verbatim at four sites.
@@ -296,46 +252,63 @@
       const wasClick = Game.handlePointerUp();
       if (wasClick && e.button === 0) {
         const { sx, sy } = screenCoords(e);
+        const armedBefore = Game.getState();
+        const wasPlacing = !!(armedBefore.selectedDeploy || armedBefore.selectedBuild);
         Game.handleClick(sx, sy, {
           selectSameType: e.shiftKey,
           shiftKey: e.shiftKey,
           repeatDeploy: e.shiftKey,
           toggleSelection: e.ctrlKey || e.metaKey,
         });
+        // Shift-click kept a troop or building armed: releasing Shift will put it away.
+        const armedAfter = Game.getState();
+        shiftRepeatArmed =
+          wasPlacing && e.shiftKey && !!(armedAfter.selectedDeploy || armedAfter.selectedBuild);
         UI.updateHUD(true);
       }
     });
 
-    function panelCanWheelScroll(panel, deltaY) {
-      if (!panel || panel.scrollHeight <= panel.clientHeight + 1) return false;
-      if (deltaY > 0) return panel.scrollTop + panel.clientHeight < panel.scrollHeight - 1;
-      return panel.scrollTop > 0;
-    }
-
     function isModalWheelTarget(el) {
       if (el?.closest?.('.screen.active')) return true;
+      if (el?.closest?.('#spoils-panel, #key-sheet, .inpage-dialog')) return true;
       const creative = el?.closest?.('#creative-panel');
       if (creative && creative.style.display !== 'none') return true;
       return false;
     }
 
-    function shouldMapWheelZoom(e, sx, sy) {
-      const zoomingOut = e.deltaY > 0;
-      const overMap = Game.isScreenInMapArea?.(sx, sy);
-      if (overMap) return true;
+    /** Wheel distance in pixels whatever unit the device reports. */
+    function wheelPixels(e, scroller) {
+      if (e.deltaMode === 1) return e.deltaY * 32;
+      if (e.deltaMode === 2) return e.deltaY * scroller.clientHeight * 0.9;
+      return e.deltaY;
+    }
 
-      const sidePanel = e.target?.closest?.('#left-panel, #right-panel');
-      if (sidePanel && panelCanWheelScroll(sidePanel, e.deltaY)) return false;
-
-      return zoomingOut;
+    /**
+     * The wheel over a side panel scrolls that panel and never the field, wherever in the
+     * panel the pointer is (tabs, headers, gaps) and whether or not it can scroll further.
+     */
+    function handleSidePanelWheel(e, sidePanel) {
+      const scroller = sidePanel.querySelector('.side-panel-scroll');
+      if (!scroller) return;
+      sidePanel._userScrollAt = performance.now();
+      // Inside the scroll area the browser scrolls it (and any nested list) itself.
+      if (e.target?.closest?.('.side-panel-scroll') === scroller) return;
+      e.preventDefault();
+      scroller.scrollTop += wheelPixels(e, scroller);
     }
 
     function handleWheelEvent(e) {
       if (!Game.isPlaying()) return;
       if (isModalWheelTarget(e.target)) return;
 
+      const sidePanel = e.target?.closest?.('#left-panel, #right-panel');
+      if (sidePanel) {
+        handleSidePanelWheel(e, sidePanel);
+        return;
+      }
+
       const { sx, sy } = screenCoords(e);
-      if (!shouldMapWheelZoom(e, sx, sy)) return;
+      if (!Game.isScreenInMapArea?.(sx, sy) && e.deltaY < 0) return;
 
       e.preventDefault();
       Game.zoomCameraAt(sx, sy, e.deltaY);
@@ -344,6 +317,7 @@
     window.addEventListener('wheel', handleWheelEvent, { passive: false, capture: true });
 
     let touchHoldTimer = null;
+    let touchDownAt = 0;
     let touchHoldStart = null;
     let pinchActive = false;
     let pinchStartDist = 0;
@@ -408,6 +382,7 @@
       const t = e.touches[0];
       const { sx, sy } = screenCoords(t);
       pointerDown = true;
+      touchDownAt = Date.now();
       const dragSlop = typeof TouchInput !== 'undefined' ? TouchInput.getDragThreshold() : 14;
       Game.handlePointerDown(sx, sy, 0, { pan: true, dragThreshold: dragSlop });
       clearTouchHold();
@@ -456,7 +431,8 @@
       if (wasClick && e.changedTouches[0]) {
         const t = e.changedTouches[0];
         const { sx, sy } = screenCoords(t);
-        Game.handleClick(sx, sy, { touch: true });
+        // A long press on the ground is the touch form of Shift + click: go there and hold.
+        Game.handleClick(sx, sy, { touch: true, hold: Date.now() - touchDownAt >= 450 });
         UI.updateHUD(true);
       }
     }
@@ -499,181 +475,220 @@
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable;
     }
 
-    document.addEventListener('keydown', (e) => {
-      if (isTypingTarget()) return;
-      const key = e.key.toLowerCase();
-      if (CAMERA_PAN_KEYS.includes(key)) {
-        if (Game.isPlaying()) {
-          e.preventDefault();
-          Game.setCameraKey(key, true);
-        }
-        return;
+    /** Soldiers selected right now. */
+    function selectionCount(gs) {
+      return gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
+    }
+
+    /** Which key map applies this instant (see Hotkeys.stateOf for the precedence). */
+    function hotkeyState() {
+      const gs = Game.getState();
+      const playing = Game.isPlaying();
+      return Hotkeys.stateOf({
+        playing,
+        ended: gs.state === 'victory' || gs.state === 'defeat',
+        spoils: playing && SiegeLoop.isSpoilsHeld(),
+        paused: playing && !!gs.paused,
+        placingWall: gs.selectedBuild === 'wall',
+        placing:
+          (isPlacementOrCourierArmed(gs) && !gs.moveBuildingTarget) || isCreativeToolArmed(gs),
+        units: playing ? selectionCount(gs) : 0,
+        building: !!gs.moveBuildingTarget,
+        creative: !!Game.isCreativeMode?.(),
+        night: gs.timeOfDay === 'night',
+      });
+    }
+
+    /** Close the topmost open panel. True when something was closed. */
+    function closeTopPanel() {
+      if (UI.isKeySheetOpen?.()) {
+        UI.closeKeySheet();
+        return true;
       }
-      if (key === ' ') {
-        e.preventDefault();
-        if (Game.isPlaying() && Game.getState().paused && typeof UX !== 'undefined') {
-          UX.closePauseMenu(true);
-        } else {
-          Game.togglePause();
-        }
-        UI.updateHUD(true);
+      const logPanel = document.getElementById('message-log-panel');
+      if (logPanel?.classList.contains('open')) {
+        logPanel.classList.remove('open');
+        return true;
       }
-      if (key === 'tab') {
-        e.preventDefault();
-        if (typeof UX !== 'undefined') UX.toggleMessageLog?.();
-        return;
+      if (typeof Settings !== 'undefined' && Settings.isOpen()) {
+        Settings.close();
+        return true;
       }
-      if ((key === '[' || key === ']') && Game.isPlaying()) {
-        SiegeLoop.order(key === '[' ? 'warCry' : 'holdLine');
-        return;
+      if (typeof Encyclopedia !== 'undefined' && Encyclopedia.isOpen()) {
+        Encyclopedia.close();
+        return true;
       }
-      if (e.key === 'F10') {
-        e.preventDefault();
-        if (typeof ErrorReporting !== 'undefined' && ErrorReporting.openBugReport) {
-          ErrorReporting.openBugReport({ source: 'hotkey-f10' });
-        }
-        return;
+      if (typeof FactionIntel !== 'undefined' && FactionIntel.isPanelOpen()) {
+        FactionIntel.closePanel();
+        return true;
       }
-      if (key === 'escape') {
-        const logPanel = document.getElementById('message-log-panel');
-        if (logPanel?.classList.contains('open')) {
-          logPanel.classList.remove('open');
-          return;
-        }
-        if (typeof Settings !== 'undefined' && Settings.isOpen()) {
-          Settings.close();
-          UI.updateHUD(true);
-          return;
-        }
-        if (typeof Encyclopedia !== 'undefined' && Encyclopedia.isOpen()) {
-          Encyclopedia.close();
-          UI.updateHUD(true);
-          return;
-        }
-        if (typeof FactionIntel !== 'undefined' && FactionIntel.isPanelOpen()) {
-          FactionIntel.closePanel();
-          UI.updateHUD(true);
-          return;
-        }
-        if (Game.isPlaying()) {
-          const gs = Game.getState();
-          if (isPlacementOrCourierArmed(gs)) {
-            Game.clearPlacementMode();
-            UI.updateHUD(true);
-            return;
-          }
-          if (isCreativeToolArmed(gs)) {
-            Game.creativeSetTool?.(null);
-            UI.updateHUD(true);
-            return;
-          }
-          if (typeof UX !== 'undefined') {
-            if (gs.paused) UX.closePauseMenu(true);
-            else UX.openPauseMenu();
-          } else {
-            Game.clearSelection();
-          }
-        } else {
-          Game.clearSelection();
-        }
-        UI.updateHUD(true);
-      }
-      if (key === 'd' && Game.isPlaying() && Game.getState().timeOfDay === 'night') {
-        e.preventDefault();
-        Game.beginDayPhase(true);
-        UI.updateHUD(true);
-        return;
-      }
-      if (key === 'r' && Game.isPlaying() && Game.getState().selectedBuild === 'wall') {
-        if (Game.cycleWallPlacementFacing?.()) {
-          e.preventDefault();
-          UI.updateHUD(true);
-          return;
-        }
-      }
-      if (key === 'h') {
-        Game.toggleGlobalHunt();
-      }
-      // C, G and F double as build/strike hotkeys (Castle, Hamlet, Meteor). The selection
-      // commands only take the key when there is a selection for them to act on.
-      const selState = Game.isPlaying() ? Game.getState() : null;
-      const selCount = selState
-        ? selState.selectedUnitIds?.length || 0 || (selState.selectedUnitId ? 1 : 0)
-        : 0;
-      if (key === 'f' && Game.isPlaying() && selCount > 0) {
-        e.preventDefault();
-        Game.focusSelection?.();
-        UI.updateHUD(true);
-        return;
-      }
-      // B with a selection: back to posts. With nothing selected it is still Trade Outpost.
-      if (key === 'b' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && selCount > 0) {
-        e.preventDefault();
-        Game.returnSelectionToPosts?.();
-        UI.updateHUD(true);
-        return;
-      }
-      if (key === 'c' && Game.isPlaying() && !e.ctrlKey && !e.metaKey && selCount > 0) {
-        Game.clearSelection();
-        UI.updateHUD(true);
-        return;
-      }
-      if (
-        key === 'g' &&
-        Game.isPlaying() &&
-        !e.ctrlKey &&
-        !e.metaKey &&
-        !e.altKey &&
-        !e.shiftKey &&
-        selCount >= 2
-      ) {
-        e.preventDefault();
-        Game.reformSelectionFormation?.();
-        UI.updateHUD(true);
-        return;
-      }
-      if (e.altKey && Game.isPlaying() && key >= '1' && key <= '5') {
-        const fid = FORMATION_HOTKEYS[parseInt(key, 10) - 1];
-        if (fid && Game.setSelectionFormation?.(fid)) {
-          e.preventDefault();
-          const gs = Game.getState();
-          if ((gs.selectedUnitIds?.length || 0) + (gs.selectedUnitId ? 1 : 0) >= 2) {
-            Game.reformSelectionFormation?.(fid);
-          }
-          UI.updateHUD(true);
-        }
-        return;
-      }
-      if (key === ']' && Game.isPlaying()) {
-        Game.cycleGameSpeed?.();
-        UI.updateHUD(true);
-      }
-      if (key === 'a') {
-        Achievements.togglePanel();
-      }
-      if (key === 'i') {
-        Encyclopedia.togglePanel();
-      }
-      if (key === '`') {
-        Cheats.togglePanel();
-      }
-      if (key === 'p' && Game.isCreativeMode?.()) {
-        e.preventDefault();
-        CreativeMode.togglePanel();
-        UI.updateHUD(true);
-      }
-      if (key === 'v') {
+      return false;
+    }
+
+    function spoilCards() {
+      return [...document.querySelectorAll('#spoils-panel [data-spoil]')];
+    }
+
+    /** Select from the keyboard: refused with a reason when unavailable, else shown. */
+    function selectByKey(kind, id) {
+      if (!id) return;
+      const res = UI.selectItem(kind, id);
+      if (res.ok) UI.revealSelection?.();
+    }
+
+    /**
+     * What each action in the key maps does. A handler returns false when the key should
+     * be left to the browser (nothing happened); anything else counts as handled.
+     */
+    const HOTKEY_ACTIONS = {
+      keySheet: () => UI.toggleKeySheet?.(hotkeyState()),
+      mute: () => {
         const muted = AudioEngine.toggleMute();
         const btn = document.getElementById('sound-toggle');
         if (btn) btn.textContent = muted ? '🔇' : '🔊';
         if (typeof Settings !== 'undefined') Settings.set('muted', muted);
+      },
+      achievements: () => Achievements.togglePanel(),
+      encyclopedia: () => Encyclopedia.togglePanel(),
+      cheats: () => Cheats.togglePanel(),
+      // js/perf.js listens for F3 itself; the binding exists so the key is listed and reserved.
+      perf: () => false,
+      bugReport: () => {
+        if (typeof ErrorReporting !== 'undefined' && ErrorReporting.openBugReport) {
+          ErrorReporting.openBugReport({ source: 'hotkey-f10' });
+        }
+      },
+      pan: (key) => Game.setCameraKey(key, true),
+      pause: () => Game.togglePause(),
+      resume: () => {
+        if (closeTopPanel()) return;
+        if (typeof UX !== 'undefined') UX.closePauseMenu(true);
+        else Game.togglePause();
+      },
+      messageLog: () => {
+        if (typeof UX !== 'undefined') UX.toggleMessageLog?.();
+      },
+      // Tab walks through your soldiers, one at a time, and centres the view on each.
+      cycleSoldier: (_arg, gs) => {
+        const mine = (Game.getUnitsSnapshot?.() || [])
+          .filter((u) => u.team === 'player')
+          .sort((a, b) => a.y - b.y || a.x - b.x || (a.id > b.id ? 1 : -1));
+        if (!mine.length) return false;
+        const at = mine.findIndex((u) => u.id === gs.selectedUnitId);
+        const next = mine[(at + 1) % mine.length];
+        if (!Game.selectUnit(next.id)) return false;
+        Game.focusSelection?.();
+        return true;
+      },
+      hunt: () => Game.orderHunt(),
+      holdHere: () => Game.orderHoldHere(),
+      order: (id) => SiegeLoop.order(id),
+      loadout: (id, gs) => {
+        if (!(gs.kingdomLoadoutsUnlocked || gs.wave >= 100)) return false;
+        Game.setLoadout?.(id);
+        return true;
+      },
+      beginDay: (_arg, gs) => {
+        if (gs.timeOfDay !== 'night') return false;
+        Game.beginDayPhase(true);
+        return true;
+      },
+      ability: (id) => selectByKey('ability', id),
+      build: (id) => selectByKey('build', id),
+      deploySlot: (slot) => selectByKey('deploy', Hotkeys.deployTypeAt(slot)),
+      pauseMenu: () => {
+        if (closeTopPanel()) return;
+        if (typeof UX !== 'undefined') UX.openPauseMenu();
+        else Game.clearSelection();
+      },
+      cancel: (_arg, gs) => {
+        if (closeTopPanel()) return;
+        if (isCreativeToolArmed(gs) && !isPlacementOrCourierArmed(gs)) {
+          Game.creativeSetTool?.(null);
+        } else {
+          Game.clearPlacementMode();
+        }
+        shiftRepeatArmed = false;
+      },
+      closePanel: () => {
+        if (!closeTopPanel()) Game.clearSelection();
+      },
+      rotateWall: () => Game.cycleWallPlacementFacing?.(),
+      focusSelection: () => Game.focusSelection?.(),
+      clearSelection: () => Game.clearSelection(),
+      backToPosts: () => Game.returnSelectionToPosts?.(),
+      reform: (_arg, gs) => {
+        if (selectionCount(gs) < 2) return false;
+        Game.reformSelectionFormation?.();
+        return true;
+      },
+      promote: () => Game.upgradeSelectedVeteran?.(),
+      formation: (fid, gs) => {
+        if (!Game.setSelectionFormation?.(fid)) return false;
+        if (selectionCount(gs) >= 2) Game.reformSelectionFormation?.(fid);
+        return true;
+      },
+      creativePanel: () => CreativeMode.togglePanel(),
+      startRun: () => {
+        const menu = document.getElementById('menu-screen');
+        const overlay = document.querySelector('.screen.active:not(#menu-screen)');
+        if (!menu?.classList.contains('active') || overlay) return false;
+        document.getElementById('start-btn')?.click();
+        return true;
+      },
+      restart: () => {
+        const btn = document.getElementById('restart-btn');
+        if (!btn || !document.getElementById('gameover-screen')?.classList.contains('active')) {
+          return false;
+        }
+        btn.click();
+        return true;
+      },
+      spoilPick: (i) => spoilCards()[i]?.click(),
+      spoilMove: (step) => {
+        const cards = spoilCards();
+        if (!cards.length) return;
+        const at = cards.indexOf(document.activeElement);
+        const next = at < 0 ? 0 : (at + step + cards.length) % cards.length;
+        cards[next].focus();
+      },
+      spoilConfirm: () => {
+        const cards = spoilCards();
+        (cards.includes(document.activeElement) ? document.activeElement : cards[0])?.click();
+      },
+    };
+
+    // Shift-click placed a troop or building and left it armed: letting go of Shift ends it.
+    let shiftRepeatArmed = false;
+
+    document.addEventListener('keydown', (e) => {
+      if (isTypingTarget()) return;
+      if (typeof InPageDialog !== 'undefined' && InPageDialog.isOpen()) return;
+      const key = Hotkeys.keyOfEvent(e);
+      if (!key) return;
+      if (e.key === 'Shift') UI.setCursorState?.(lastMouse.x, lastMouse.y, true);
+      // The key sheet is its own little modal: ? or Esc closes it, nothing else gets through.
+      if (UI.isKeySheetOpen?.()) {
+        if (key === '?' || key === 'escape') {
+          e.preventDefault();
+          UI.closeKeySheet();
+        }
         return;
       }
-      if (DEPLOY_HOTKEYS[key] && Game.getState().canDeploy) Game.selectDeploy(DEPLOY_HOTKEYS[key]);
-      if (ABILITY_HOTKEYS[key]) Game.selectAbility(ABILITY_HOTKEYS[key]);
-      if (key === 'z') Game.setLoadout?.('balanced');
-      if (BUILD_HOTKEYS[key]) Game.selectBuild(BUILD_HOTKEYS[key]);
-      if (key === 'u' && Game.getState().canDeploy) Game.upgradeSelectedVeteran?.();
+      const state = hotkeyState();
+      const binding = Hotkeys.lookup(state, key);
+      if (!binding) {
+        // A modal state swallows every key it does not use (Tab must not reach the page behind).
+        if (state === 'spoils' && key !== 'f3' && key !== 'f10' && key !== 'f12') {
+          e.preventDefault();
+        }
+        return;
+      }
+      const run = HOTKEY_ACTIONS[binding.action];
+      if (!run) return;
+      const handled = run(binding.arg, Game.getState(), e);
+      if (handled === false) return;
+      e.preventDefault();
       UI.updateHUD(true);
     });
 
@@ -682,7 +697,39 @@
       if (CAMERA_PAN_KEYS.includes(key)) {
         Game.setCameraKey(key, false);
       }
+      if (e.key === 'Shift') {
+        UI.setCursorState?.(lastMouse.x, lastMouse.y, false);
+        // Deploy/build placement only: Shift held = keep placing, Shift released = done.
+        // (Shift on a move order belongs to the move-order click handler, not to this.)
+        if (shiftRepeatArmed) {
+          shiftRepeatArmed = false;
+          const gs = Game.getState();
+          if (Game.isPlaying() && (gs.selectedDeploy || gs.selectedBuild)) {
+            Game.clearPlacementMode();
+            UI.updateHUD(true);
+          }
+        }
+      }
     });
+
+    // Where the pointer is, for the price tag that follows it while something is armed.
+    const lastMouse = { x: -1, y: -1 };
+    window.addEventListener(
+      'mousemove',
+      (e) => {
+        // Only over the field: the tag has no business on top of the panels.
+        const overField = e.target === canvas || isMapPassthroughTarget(e.target);
+        lastMouse.x = overField ? e.clientX : -1;
+        lastMouse.y = overField ? e.clientY : -1;
+        UI.setCursorState?.(lastMouse.x, lastMouse.y, e.shiftKey);
+      },
+      { passive: true }
+    );
+
+    // Was a run in progress on the previous frame? The HUD is only refreshed every fifth
+    // frame while playing, so a run that ended on any other frame never showed its result
+    // screen. The frame the run ends on now always refreshes it.
+    let wasPlaying = false;
 
     function loop() {
       if (typeof ErrorReporting !== 'undefined') ErrorReporting.heartbeatBegin();
@@ -742,6 +789,11 @@
           }
         }
       });
+      const nowPlaying = Game.isPlaying();
+      if (wasPlaying && !nowPlaying) {
+        guard('UI.updateHUD', () => UI.updateHUD(true), { phase: 'hud', warnMs: 400 });
+      }
+      wasPlaying = nowPlaying;
       if (typeof ErrorReporting !== 'undefined') ErrorReporting.heartbeatEnd('gameLoop');
       requestAnimationFrame(loop);
     }

@@ -184,10 +184,12 @@ const LoreData = (() => {
       rule: 'wave:25',
     },
     sapper: {
-      flavor: 'Demolition experts who see every wall as a puzzle to solve — friend or foe.',
-      mechanics: 'Demolishes walls and siege engines with bonus siege damage (×2.5).',
+      flavor:
+        'Field engineers who spend the night on their knees in the mud and the day counting fuses. Every one of them can tell you how many paces a goblin runs in two heartbeats.',
+      mechanics:
+        'Buries 2 mines a night in front of his post (4 live); Shift+click at night re-sites one. By day lobs a satchel charge at the thickest knot within 110 every 5 seconds. Blasts ignore armour, shields and braced lines, hit siege engines twice as hard, and cannot reach flyers. Up close he has a knife and backs away.',
       classified:
-        'Priority target siege towers and enemy hamlets in RTS era — sappers end structures faster than any strike.',
+        'Post him a few steps behind the footmen so his mines lie where the line-breakers run. Veterans (4 nights or 8 kills, then 9 nights or 20 kills) bury one more mine and cut a shorter fuse.',
       rule: 'era:rts',
     },
     general: {
@@ -484,7 +486,7 @@ const LoreData = (() => {
     },
     harpy: {
       classified:
-        'coliseum aerial finishers and Baki/FotNS melee struggle without anti-air — evolved dossier 7-B.',
+        'coliseum aerial finishers and Iron Pit and North Star melee struggle without anti-air — evolved dossier 7-B.',
       rule: 'meta_crossover',
     },
     sky_drake: {
@@ -757,7 +759,7 @@ const LoreData = (() => {
       ],
       mess_hall: ['Morale aura for nearby troops — stack with bards and rallies.', 'wave:12'],
       watchtower: [
-        'Vision reveals stealth/burrowers. Enemies in range suffer accuracy penalties.',
+        '4 TP. The night preview lists the next wave by type and number while a tower stands. Vision reveals stealth/burrowers.',
         'kill:goblin_burrower,5',
       ],
       spike_trap: [
@@ -765,11 +767,11 @@ const LoreData = (() => {
         'wave:20',
       ],
       quarry: [
-        '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement.',
+        '14 TP, 1 Builder, Prospecting research. +3 TP at dawn (shared 6-site cap with trade posts). Blocks movement.',
         'waves_cleared:15',
       ],
       trade_outpost: [
-        '16 TP, 2 Builders. +1 TP/round + morale aura. Shared 6-site cap — hamlets win late.',
+        '10 TP, 1 Builder, no research. +2 TP at dawn + morale aura. Shared 6-site cap.',
         'waves_cleared:20',
       ],
       fortress_upgrade: ['Fortify completed settlement: +HP, cover, +1 TP/round.', 'era:rts'],
@@ -1115,7 +1117,7 @@ const LoreData = (() => {
       entry(
         'eras',
         'Kingdom Evolution',
-        'Four Evolve-style growth stages for your force: Outpost Realm (1–30), Kingdom Rising (31–99), Empire Ascendant (100–199), Planetary Dominion (200+). HUD shows your stage; each tier unlocks stronger kingdom bonuses.',
+        'Four growth stages for your force: Outpost Realm (1–30), Kingdom Rising (31–99), Empire Ascendant (100–199), Planetary Dominion (200+). HUD shows your stage; each tier unlocks stronger kingdom bonuses.',
         {
           classified:
             'Stage 3 amplifies colony-value wave pressure. Stage 4 unlocks Settlement Raid spy and Counter-Hold courier.',
@@ -1260,7 +1262,7 @@ const LoreData = (() => {
       entry(
         'campaign',
         'Kingdom Evolution (Player Growth)',
-        'Four Evolve-style stages in the Kingdom HUD: Outpost Realm (1–30, +5% line HP), Kingdom Rising (31–99, +3% army damage), Empire Ascendant (100–199, colony value steers pressure; wave 150+ raids), Planetary Dominion (200+, mirror settlements, Counter-Hold courier, +5% army / +10% siege).',
+        'Four stages in the Kingdom HUD: Outpost Realm (1–30, +5% line HP), Kingdom Rising (31–99, +3% army damage), Empire Ascendant (100–199, colony value steers pressure; wave 150+ raids), Planetary Dominion (200+, mirror settlements, Counter-Hold courier, +5% army / +10% siege).',
         {
           classified:
             'Evolution meter blends colony value 35%, buildings 25%, veterans 25%, research 15%. Banner grows pennant → hell-forged standard.',

@@ -822,10 +822,22 @@ const BUILDER_MAX_PROJECTS = 2;
 const RETREAT_HP_RATIO = 0.25;
 
 const CourierMessages = {
-  reinforce: { name: 'Request Reinforcements', cost: 3, desc: 'King sends 2 footmen next round' },
+  reinforce: {
+    name: 'Request Reinforcements',
+    cost: 4,
+    desc: 'King sends 2 footmen next round. The army surcharge applies to the price.',
+  },
   decree: { name: 'Royal Decree', cost: 2, desc: '+5 morale to all troops' },
-  levy: { name: 'Tax Levy', cost: 0, desc: '+6 TP at start of next round' },
-  banner: { name: 'Call the Banner', cost: 5, desc: 'Summon 1 knight immediately' },
+  levy: {
+    name: 'Tax Levy',
+    cost: 1,
+    desc: '+5 TP at the next wave clear; every soldier loses 2 morale.',
+  },
+  banner: {
+    name: 'Call the Banner',
+    cost: 6,
+    desc: 'Summon 1 knight immediately. Needs Iron Weapons; +2 TP per earlier call, and the army surcharge applies.',
+  },
   supplies: { name: 'Supply Train', cost: 3, desc: 'Heal all allies 25 HP' },
   truce: { name: 'Offer Truce', cost: 4, desc: 'Delay spawns; +8 morale all troops' },
   hunt_pact: {
@@ -1429,6 +1441,18 @@ const Waves = [
  * Wave scaling centered on Academy Era (wave 100).
  * Pre-100: smooth climb; wave 100 is the difficulty/variety peak before RTS escalation.
  */
+/**
+ * Early-pressure knobs for getWaveConfig. Between waves 7 and 20 the host grows by four a
+ * wave (it was two) and its health and damage climb faster; after wave 20 the old slopes
+ * resume from the higher level. An army that only ever buys the next soldier used to reach
+ * wave 28-31 on Normal without conceding a breach.
+ */
+const MID_PRESSURE_FROM = 6;
+const MID_PRESSURE_UNTIL = 20;
+const MID_PRESSURE_EXTRA = 2;
+const EARLY_HP_EXTRA = 0.02;
+const EARLY_DMG_EXTRA = 0.015;
+
 function getWaveConfig(waveNum) {
   const idx = Math.min(Math.max(0, waveNum - 1), Waves.length - 1);
   const base = Waves[idx];
@@ -1452,14 +1476,17 @@ function getWaveConfig(waveNum) {
   const academyCount = 8 + eased * 70;
   // Hosts used to sit at 20 from wave 10 to wave 20 while income kept growing, so the
   // middle of a run had no pressure. They now grow by one a wave until the late ramp takes over.
-  const midCount = waveNum >= 4 ? Math.min(90, 4 + waveNum * 2) : 0;
+  const pressureWaves = Math.max(0, Math.min(waveNum, MID_PRESSURE_UNTIL) - MID_PRESSURE_FROM);
+  const midCount =
+    waveNum >= 4 ? Math.min(90, 4 + waveNum * 2 + pressureWaves * MID_PRESSURE_EXTRA) : 0;
   const count = Math.floor(Math.max(templateCount, academyCount, midCount) + post * 38);
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
   // Early pressure: enemies used to stay at wave-1 strength for the first twenty waves.
   const early = Math.min(40, Math.max(0, waveNum - 2));
-  const hpScale = 1 + eased * 3.15 + post * 1.85 + early * 0.03;
-  const dmgScale = 1 + eased * 1.95 + post * 1.15 + early * 0.025;
+  const surge = Math.min(MID_PRESSURE_UNTIL, early);
+  const hpScale = 1 + eased * 3.15 + post * 1.85 + early * 0.03 + surge * EARLY_HP_EXTRA;
+  const dmgScale = 1 + eased * 1.95 + post * 1.15 + early * 0.025 + surge * EARLY_DMG_EXTRA;
   const boss = waveNum % 10 === 0;
 
   return { count, pool, interval, boss, hpScale, dmgScale };
@@ -1672,6 +1699,13 @@ function createUnit(type, x, y, team, opts = {}) {
   u.perks = [];
   u.attackSpeedMult = 1;
   u.manualOrder = false;
+  // Hold is a per-soldier order (Shift + move, or Hold here). Hunt is the default.
+  u.holding = false;
+  u.marchBest = Infinity;
+  u.marchStall = 0;
+  u.medQueued = false;
+  u.medHurt = false;
+  u.medPrevHp = def.hp;
   u.holdX = null;
   u.holdY = null;
   u.pendingHoldX = null;
@@ -1867,6 +1901,15 @@ function createBuilding(type, x, y, owner, opts = {}) {
   b.isResourceGen = def.isResourceGen || false;
   b.tpPerRound = def.tpPerRound || 0;
   b.isFortressUpgrade = def.isFortressUpgrade || false;
+  // Outpost upgrade (Barracks / Granary) and per-wave job counters; pooled records must reset.
+  b.isOutpostUpgrade = def.isOutpostUpgrade || false;
+  b.upgrade = null;
+  b.upgradeName = null;
+  b.upgradePending = false;
+  b.holdWave = -1;
+  b.holdsUsed = 0;
+  b.saveWave = -1;
+  b.savesUsed = 0;
   b.fortressTier = def.fortressTier || 0;
   b.waveBuildRequired = def.waveBuildTime || 0;
   b.waveBuildProgress = 0;

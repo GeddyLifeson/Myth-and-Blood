@@ -75,7 +75,20 @@ const SaveManager = (() => {
     if (slot.checksum && slot.checksum !== hash(body)) {
       return { ok: false, error: 'Checksum mismatch — save may be corrupted' };
     }
-    if (!slot.data.version) return { ok: false, error: 'Incompatible save version' };
+    const v = slot.data.version;
+    const known =
+      typeof Game !== 'undefined' && Game.isSupportedSaveVersion
+        ? Game.isSupportedSaveVersion(v)
+        : v === 1 || v === 2;
+    if (!known) {
+      const newer = typeof Game !== 'undefined' && Number.isInteger(v) && v > Game.SAVE_VERSION;
+      return {
+        ok: false,
+        error: newer
+          ? 'This save was made by a newer version of the game and cannot be loaded here.'
+          : 'This save has an unknown format and cannot be loaded.',
+      };
+    }
     return { ok: true };
   }
 
@@ -149,7 +162,11 @@ const SaveManager = (() => {
     host.innerHTML = slots
       .map((s) => {
         if (s.empty) {
-          return `<div class="save-slot empty"><span>Slot ${s.index + 1}</span><span>Empty</span></div>`;
+          return `<div class="save-slot empty" data-slot="${s.index}"><span>Slot ${s.index + 1}</span><span>Empty</span>
+        <div class="save-slot-btns">
+          <button class="save-slot-btn" data-action="save" data-slot="${s.index}">Save</button>
+        </div>
+      </div>`;
         }
         const when =
           typeof SaveThumbnail !== 'undefined'
@@ -203,6 +220,11 @@ const SaveManager = (() => {
   return {
     init,
     renderPauseSlots,
+    listSlots,
+    saveToSlot,
+    loadFromSlot,
+    deleteSlot,
+    validateSlot,
   };
 })();
 

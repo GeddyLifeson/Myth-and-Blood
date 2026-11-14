@@ -116,7 +116,16 @@ const CrownLegacies = (() => {
     save();
   }
 
+  // getCombinedEffects() sits on the damage path (every hit). It used to read and parse
+  // localStorage each time; the store is now read once and kept in memory. Everything that
+  // changes it goes through save(), and the menu paths still call load() to pick up edits.
+  let loadedOnce = false;
+  function ensureLoaded() {
+    if (!loadedOnce) load();
+  }
+
   function load() {
+    loadedOnce = true;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) data = { ...data, ...JSON.parse(raw) };
@@ -201,7 +210,7 @@ const CrownLegacies = (() => {
   }
 
   function getCombinedEffects(legacySnap = null) {
-    load();
+    ensureLoaded();
     const leg = legacySnap || getLegacySnapshot();
     const out = {
       startTp: 0,

@@ -222,9 +222,15 @@ const CreativeMode = (() => {
       AudioEngine.resume().then((ok) => {
         if (ok) AudioEngine.SFX.unlockChime();
         AudioEngine.SFX.click();
-        UI.hideMenusForPlay?.();
+        // Creative boots at once; the "Preparing your defense" overlay is for the campaign
+        // start and nothing here would ever take it down again.
+        UI.hideMenusForPlay?.({ showLaunch: false });
         Game.setDifficulty(UI.getSelectedDifficulty?.() || 'normal');
-        Game.startCreative();
+        try {
+          Game.startCreative();
+        } finally {
+          UI.setLaunchOverlayVisible?.(false);
+        }
         Achievements?.tryUnlock('creative_sandbox');
         showInGame(true);
         syncToggles(Game.getState());
@@ -402,9 +408,20 @@ const CreativeMode = (() => {
     });
 
     document.getElementById('creative-export-scenario')?.addEventListener('click', () => {
-      const name = prompt('Scenario name:', 'My Scenario') || 'Scenario';
-      const json = CreativeTools?.serializeScenario(name);
-      if (json) copyToClipboard(json);
+      const exportAs = (name) => {
+        const json = CreativeTools?.serializeScenario(name || 'Scenario');
+        if (json) copyToClipboard(json);
+      };
+      if (typeof InPageDialog === 'undefined') {
+        exportAs('Scenario');
+        return;
+      }
+      InPageDialog.prompt('Scenario name:', 'My Scenario', {
+        title: 'Export scenario',
+        okLabel: 'Export',
+      }).then((name) => {
+        if (name !== null) exportAs(name.trim());
+      });
     });
     document.getElementById('creative-export-replay')?.addEventListener('click', () => {
       const json = CreativeTools?.exportReplay();

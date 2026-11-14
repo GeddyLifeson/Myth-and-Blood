@@ -211,7 +211,7 @@ const CrossoverHub = (() => {
           ${isFeatured ? '<div class="crossover-featured-badge">Featured</div>' : ''}
           <div class="wwe-card-name" style="color:${def.color}">${def.name}</div>
           <div class="wwe-card-cost">${def.cost} TP</div>
-          <div class="wwe-card-stats">HP ${def.hp} · DMG ${def.damage} · ${def.type}${def.jojoPart ? ` · Pt.${def.jojoPart}` : ''}</div>
+          <div class="wwe-card-stats">HP ${def.hp} · DMG ${def.damage} · ${def.type}${def.jojoPart ? ` · Cohort ${def.jojoPart}` : ''}</div>
           <div class="wwe-card-ability">${def.abilityDesc}</div>
           ${recruited.has(id) ? '<div class="wwe-recruited">★ Signed</div>' : ''}
           ${onField ? '<div class="wwe-on-field">ON FIELD</div>' : ''}
@@ -333,7 +333,8 @@ const CrossoverHub = (() => {
     });
     document.getElementById('crossover-build-btn')?.addEventListener('click', () => {
       const f = CrossoverFactions[activeFaction];
-      if (f && typeof Game !== 'undefined') Game.selectBuild(f.building);
+      if (f && typeof Availability !== 'undefined') Availability.trySelect('build', f.building);
+      else if (f && typeof Game !== 'undefined') Game.selectBuild(f.building);
       togglePanel();
       UI.updateHUD(true);
     });

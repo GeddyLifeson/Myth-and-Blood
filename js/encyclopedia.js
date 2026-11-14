@@ -111,7 +111,7 @@ const Encyclopedia = (() => {
     {
       cat: 'allies',
       name: 'Sapper',
-      body: 'Demolishes walls and siege engines with bonus siege damage.',
+      body: 'Field engineer. Buries mines at night that blow under the first enemy to step on them, and lobs satchel charges by day. Blasts ignore armour and shields. Only a knife up close — keep him behind the line.',
     },
     {
       cat: 'allies',
@@ -237,7 +237,7 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Wall',
-      body: 'Blocks movement. 2 footman slots per wall when General commands Keep. Siege priority.',
+      body: '5 TP. Blocks movement and holds line-breakers: each wall stops up to 3 runners per wave that come within reach, and they have to stand and fight. 2 footman slots per wall when General commands Keep. Siege priority.',
     },
     {
       cat: 'buildings',
@@ -247,7 +247,7 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Medical Tent',
-      body: 'Wounded allies at ≤25% HP retreat to the globally nearest med tent. Healers flee here on any damage until safe. Units heal while garrisoned and rejoin the fight once restored.',
+      body: 'Wounded allies at ≤25% HP retreat to the globally nearest med tent. Healers flee here on any damage until safe. Units heal while garrisoned and rejoin the fight once restored. Stretcher bearers: once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health instead of dying.',
     },
     { cat: 'buildings', name: 'Mess Hall', body: 'Morale aura for nearby troops.' },
     {
@@ -263,12 +263,12 @@ const Encyclopedia = (() => {
     {
       cat: 'buildings',
       name: 'Quarry',
-      body: '14 TP, 2 Builders. +1 TP/round (counts toward 6-site cap with trade posts). Early economy — hamlets outscale it after wave 100.',
+      body: '14 TP, 1 Builder, needs Prospecting. +3 TP at dawn, shown over the building (counts toward 6-site cap with trade posts).',
     },
     {
       cat: 'buildings',
       name: 'Trade Outpost',
-      body: '16 TP, 2 Builders. +1 TP/round and morale aura. Same 6-site cap as quarries.',
+      body: '10 TP, 1 Builder, no research. +2 TP at dawn, shown over the building, and a small morale aura. Same 6-site cap as quarries.',
     },
     {
       cat: 'buildings',
@@ -443,7 +443,7 @@ const Encyclopedia = (() => {
     {
       cat: 'campaign',
       name: 'Kingdom Evolution (Player Growth)',
-      body: 'Your force evolves in four Evolve-style stages shown in the Kingdom HUD: Stage 1 Outpost Realm (waves 1–30) — defensive line, basic troops, first veterans (+5% line HP). Stage 2 Kingdom Rising (31–99) — academies, settlements, evolved allies, +3% army damage. Stage 3 Empire Ascendant (100–199) — loadouts, fortress economy, colony value heavily steers wave pressure; wave 150+ unlocks Settlement Raid missions. Stage 4 Planetary Dominion (200+) — massive map, mirror settlements, Counter-Hold courier, +5% army / +10% siege.',
+      body: 'Your force evolves in four stages shown in the Kingdom HUD: Stage 1 Outpost Realm (waves 1–30) — defensive line, basic troops, first veterans (+5% line HP). Stage 2 Kingdom Rising (31–99) — academies, settlements, evolved allies, +3% army damage. Stage 3 Empire Ascendant (100–199) — loadouts, fortress economy, colony value heavily steers wave pressure; wave 150+ unlocks Settlement Raid missions. Stage 4 Planetary Dominion (200+) — massive map, mirror settlements, Counter-Hold courier, +5% army / +10% siege.',
     },
     {
       cat: 'campaign',
@@ -458,7 +458,7 @@ const Encyclopedia = (() => {
     {
       cat: 'campaign',
       name: 'Asymmetric Warfare',
-      body: 'Evolve-style opposing roles: YOU are the Kingdom Commander — macro (night builds, hamlets, academies, research, TP) plus micro (HUNT, rally, doctrines, spy/courier). The HOST is an Evolving Threat — auto-spawns, faction kingdoms, levels up (Threat Lv 1–25+), and pressures the whole map. COMMAND HUD shows macro authority vs micro orders; HOST HUD shows threat level; the Kingdom bar compares blue (you) vs red (host). High Commander Authority grants longer nights, faster builders, and bonus TP. High Host Threat adds spawns, faster assaults, multi-flank bias, and elite injections. Raze northern holds to push threat level down.',
+      body: 'Opposing roles: YOU are the Kingdom Commander — macro (night builds, hamlets, academies, research, TP) plus micro (HUNT, rally, doctrines, spy/courier). The HOST is an Evolving Threat — auto-spawns, faction kingdoms, levels up (Threat Lv 1–25+), and pressures the whole map. COMMAND HUD shows macro authority vs micro orders; HOST HUD shows threat level; the Kingdom bar compares blue (you) vs red (host). High Commander Authority grants longer nights, faster builders, and bonus TP. High Host Threat adds spawns, faster assaults, multi-flank bias, and elite injections. Raze northern holds to push threat level down.',
     },
     {
       cat: 'campaign',
@@ -718,12 +718,12 @@ const Encyclopedia = (() => {
     marcus_fenix: [
       'Gruff trench veteran — chainsaw screams mean someone is about to die.',
       'Marek Ironhart is the trench captain — Burst Trenchsaw chainsaw finishers on low HP. Core of any trench roster.',
-      'Center your gun line; Dom heals him when paired.',
+      'Center your gun line; Calder heals him when paired.',
     ],
     dom_santiago: [
-      'Brothers in arms — Ironhart fights better when Dom is close.',
-      "Dane Calder heals Ironhart when nearby and brings Brothers in Arms sustain. Keep Dom within Ironhart's screen.",
-      'Never split Dom from Ironhart on hard waves.',
+      'Brothers in arms — Ironhart fights better when Calder is close.',
+      "Dane Calder heals Ironhart when nearby and brings Brothers in Arms sustain. Keep Calder within Ironhart's screen.",
+      'Never split Calder from Ironhart on hard waves.',
     ],
     damon_baird: [
       'Sarcastic tech head — structures and siege towers fear him.',
@@ -805,12 +805,12 @@ const Encyclopedia = (() => {
     doppo_orochi: [
       'Karate precision — Iron Way finishes wounded targets cleanly.',
       'Daigo Serpent punishes wounded foes with Iron Way precision strikes. Reliable second-line duelist.',
-      'Pair with Ironson Bakari — soften targets, Doppo executes.',
+      'Pair with Ironson Bakari — soften targets, Serpent executes.',
     ],
     jack_hanma: [
       'Bite first, talk never — bonus damage vs larger enemies.',
       'Jax Ironson chews through bruisers — Bite bonus vs larger enemies. Strong vs trolls and siege.',
-      'Send Jack at trolls and tall elites.',
+      'Send Jax at trolls and tall elites.',
     ],
     oliva_biscuit: [
       'Iron Body — American heavyweight who barely moves, barely bleeds.',
@@ -824,23 +824,23 @@ const Encyclopedia = (() => {
     ],
     pickle: [
       'Primitive fury — prehistoric power, low morale, high carnage.',
-      'Pickle is raw prehistoric bruiser — Primitive Fury trades morale for devastation. Chaos unit for emergency holds.',
+      'The Primal is a raw prehistoric bruiser — Primitive Fury trades morale for devastation. Chaos unit for emergency holds.',
       'Emergency line plug when TP allows a monster.',
     ],
 
     jonathan_joestar: [
       'Gentleman fighter — Solar Pulse purges undead elites.',
-      'Jonas Ashford is Part 1 melee — Solar Pulse bonus vs undead elites like necromancers.',
+      'Jonas Ashford is Cohort 1 melee — Solar Pulse bonus vs undead elites like necromancers.',
       'Send at necromancer waves.',
     ],
     dio_brando_p1: [
-      'Crimson Chill — Part 1 crimson lord slows enemy morale.',
+      'Crimson Chill — Cohort 1 crimson lord slows enemy morale.',
       'Dorian Crimson is fast melee that saps enemy morale with Crimson Chill.',
       'Disrupt enemy morale while Jonathan holds the line.',
     ],
     zeppeli: [
       'Solar Heal heals allies when elites fall — solar teacher.',
-      'Will Zephyr is Part 1 support — Solar Heal heals allies on elite kill.',
+      'Will Zephyr is Cohort 1 support — Solar Heal heals allies on elite kill.',
       'Keep near your kill lane to proc sustain.',
     ],
     joseph_joestar_p2: [
@@ -850,7 +850,7 @@ const Encyclopedia = (() => {
     ],
     caesar_zeppeli: [
       'Pressure Cutter crits from range — pressure bubbles find weak points.',
-      'Cassius Zephyr is Part 2 ranged crit — Pressure Cutter rewards accurate shots.',
+      'Cassius Zephyr is Cohort 2 ranged crit — Pressure Cutter rewards accurate shots.',
       'Outpost garrison for crit fishing.',
     ],
     stroheim: [
@@ -860,47 +860,47 @@ const Encyclopedia = (() => {
     ],
     jotaro_kujo: [
       'Spirit Rush — rapid finisher pins elites and shreds them.',
-      'Jiro Ashen is Part 3 melee powerhouse — Spirit Rush rapid finisher on pinned foes. Elite deletion.',
+      'Jiro Ashen is Cohort 3 melee powerhouse — Spirit Rush rapid finisher on pinned foes. Elite deletion.',
       "Focus fire elites into Jiro Ashen's lane.",
     ],
     kakyoin: [
       'Emerald Spray — emerald splash AoE from safety.',
-      'Nori Emerald provides Part 3 ranged AoE — Emerald Spray hits clusters.',
+      'Nori Emerald provides Cohort 3 ranged AoE — Emerald Spray hits clusters.',
       'Behind walls vs grouped spawns.',
     ],
     polnareff: [
       'Silver Flurry flurries wounded foes — fast melee skirmisher.',
-      'Jean-Luc Silver is speedy Part 3 melee — Silver Flurry flurries low HP targets.',
+      'Jean-Luc Silver is speedy Cohort 3 melee — Silver Flurry flurries low HP targets.',
       'Chase wounded routed enemies.',
     ],
     avdol: [
       'Crimson Flame — fire splash on every hit.',
-      'Mahmoud Flame is Part 3 support-ranged — Crimson Flame fire splash chips groups.',
+      'Mahmoud Flame is Cohort 3 support-ranged — Crimson Flame fire splash chips groups.',
       'Mid-line fire support.',
     ],
     josuke_higashikata: [
       'Restorative March — heals allies he passes on the march.',
-      'Jun Diamond is Part 4 support — Restorative March heals allies in his path. Move him through wounded troops.',
+      'Jun Diamond is Cohort 4 support — Restorative March heals allies in his path. Move him through wounded troops.',
       'March Jun through retreating allies.',
     ],
     okuyasu: [
       'The Hand erases space — burst single-target deletion.',
-      'Oku Hand is Part 4 bruiser — The Hand erases space for burst damage. Simple, violent, effective.',
+      'Oku Hand is Cohort 4 bruiser — The Hand erases space for burst damage. Simple, violent, effective.',
       'Point at high-priority single targets.',
     ],
     rohan_kishibe: [
       'Script Ward — debuffs enemy accuracy from range.',
-      'Ronan Artist is Part 4 ranged debuffer — Script Ward ruins enemy accuracy.',
+      'Ronan Artist is Cohort 4 ranged debuffer — Script Ward ruins enemy accuracy.',
       'Opposite enemy archer lanes.',
     ],
     kira_yoshikage: [
       'Quiet Erase — final toll on wounded prey.',
-      'Yoshi Quiet executes wounded foes with Quiet Erase — quiet, lethal Part 4 finisher.',
+      'Yoshi Quiet executes wounded foes with Quiet Erase — quiet, lethal Cohort 4 finisher.',
       'Mop up after your line softens the wave.',
     ],
     giorno_giovanna: [
       'Golden Pulse — heals allies on kill.',
-      'Gio Gold is Part 5 support — Golden Pulse heals on kill. gold-court sustain engine.',
+      'Gio Gold is Cohort 5 support — Golden Pulse heals on kill. gold-court sustain engine.',
       'Keep in active kill zones.',
     ],
     bruno_bucciarati: [
@@ -910,22 +910,22 @@ const Encyclopedia = (() => {
     ],
     guido_mista: [
       'Ricochet Pistols ricochet — one shot, several targets.',
-      "Guy Pistols's Ricochet Pistols ricochet hits multiple foes — Part 5 ranged multitarget.",
+      "Guy Pistols's Ricochet Pistols ricochet hits multiple foes — Cohort 5 ranged multitarget.",
       'Counter spread formations.',
     ],
     diavolo: [
       'Crimson Erase — deletes wounded targets from time.',
-      'the Scarlet Regent is Part 5 assassin — Crimson Erase removes wounded enemies. Expensive but decisive.',
+      'the Scarlet Regent is Cohort 5 assassin — Crimson Erase removes wounded enemies. Expensive but decisive.',
       'Elite and assassin hunter.',
     ],
     jolyne_cujoh: [
-      'Unbound Thread strings slow enemies — Part 6 control melee.',
-      'Jolie String slows with Unbound Thread — Part 6 control fighter.',
+      'Unbound Thread strings slow enemies — Cohort 6 control melee.',
+      'Jolie String slows with Unbound Thread — Cohort 6 control fighter.',
       'Hold chokepoints while allies DPS.',
     ],
     weather_report: [
       'Storm Field — AoE lightning pressure from range.',
-      'Storm Caller is Part 6 ranged AoE — lightning pressure across lanes.',
+      'Storm Caller is Cohort 6 ranged AoE — lightning pressure across lanes.',
       'Wide map AoE supplement.',
     ],
     ermes_costello: [
@@ -939,18 +939,18 @@ const Encyclopedia = (() => {
       'Hunt on wide territory; needs open lanes.',
     ],
     gyro_zeppeli: [
-      'Steel Ball perfect spin — ranged cavalry cleave on charge.',
-      'Gyre Ballista is Part 7 ranged cavalry — Steel Ball cleave on charge. Tag-team with Johan Rotation.',
+      'Iron Orb perfect spin — ranged cavalry cleave on charge.',
+      'Gyre Ballista is Cohort 7 ranged cavalry — Iron Orb cleave on charge. Tag-team with Johan Rotation.',
       'Pair with Johan Rotation for golden ball hunt missions.',
     ],
     diego_brando: [
       'Predator Form — predatory charge damage.',
-      'Diego Fang is Part 7 fast cavalry — Predator Form predatory charges. Aggressive hunter.',
+      'Diego Fang is Cohort 7 fast cavalry — Predator Form predatory charges. Aggressive hunter.',
       'Flank and hunt; high speed, lower morale.',
     ],
     lucy_steel: [
       'Borrowed Luck — support cavalry rally aura.',
-      'Lucia Ticket is Part 7 support cavalry — Borrowed Luck rally aura for mounted allies.',
+      'Lucia Ticket is Cohort 7 support cavalry — Borrowed Luck rally aura for mounted allies.',
       'Ride with Johan Rotation and Gyre Ballista for morale.',
     ],
 
@@ -966,22 +966,22 @@ const Encyclopedia = (() => {
     ],
     toki: [
       'Open Palm Burst heals allies in aura — gentle fist, iron will.',
-      'Toki heals allies in aura with Open Palm Burst — mandatory North Star support.',
-      'Center your melee blob on Toki.',
+      'Tomo heals allies in aura with Open Palm Burst — mandatory North Star support.',
+      'Center your melee blob on Tomo.',
     ],
     rei: [
       'Waterbird Fist — fast strikes hit multiple foes.',
-      'Rei is fast multi-hit melee — Waterbird Fist cleaves several targets.',
+      'Ren is fast multi-hit melee — Waterbird Fist cleaves several targets.',
       'Counter fast enemy swarms.',
     ],
     jaggi: [
       'Dirty tricks — debuffs enemy morale on every hit.',
-      'Jagi fights dirty — morale debuffs on hit. Chaos agent, low morale himself.',
+      'Jago fights dirty — morale debuffs on hit. Chaos agent, low morale himself.',
       'Disrupt enemy morale lines.',
     ],
     shin: [
       'White Heron Fist — heavy single-target blows.',
-      'Shin delivers Nanto Hakuro heavy single-target blows — mini-boss duelist.',
+      'Shen delivers White Heron heavy single-target blows — mini-boss duelist.',
       'Point at high-HP single targets.',
     ],
 
@@ -1028,22 +1028,22 @@ const Encyclopedia = (() => {
 
     chapter_captain: [
       'Volley discipline — legionnaires fight harder in formation.',
-      'Chapter Captain is the crimson legions ranged core — Volley Discipline rewards clustering legionnaires on the line.',
-      'Center your gun line with Guardsmen and Librarian support.',
+      'Legion Captain is the crimson legions ranged core — Volley Discipline rewards clustering legionnaires on the line.',
+      'Center your gun line with Line Guardsmen and Rift Archivist support.',
     ],
     chaplain: [
       'Litanies of hate shake enemy morale on every strike.',
-      'Chaplain is melee support — Litany of Wrath debuffs foes in his aura. Morale weapon for breaking blobs.',
-      'Hold the front beside Terminators; let hate do the work.',
+      'War Chaplain is melee support — Litany of Wrath debuffs foes in his aura. Morale weapon for breaking blobs.',
+      'Hold the front beside Heavy Bulwarks; let hate do the work.',
     ],
     librarian: [
       'Smite arcs through necromancers and dark mages.',
-      'Librarian brings psychic ranged DPS — Smite deletes casters and undead summoners.',
+      'Rift Archivist brings psychic ranged DPS — Smite deletes casters and undead summoners.',
       'Place opposite enemy mage lanes.',
     ],
     commissar: [
       'Summary execution for cowards below a quarter health.',
-      'Commissar is morale anchor and finisher — Summary Execution deletes routed low-HP foes.',
+      'Field Enforcer is morale anchor and finisher — Summary Execution deletes routed low-HP foes.',
       'Backline support; highest morale in the roster.',
     ],
     guardsman: [
@@ -1115,7 +1115,7 @@ const Encyclopedia = (() => {
     ],
     daemon_knight: [
       'Unholy armor soaks damage below 40% HP.',
-      'Daemon Knight is heavy melee tank — Unholy Armor pulse when wounded. Slower than Terminator, meaner.',
+      'Daemon Knight is heavy melee tank — Unholy Armor pulse when wounded. Slower than a Heavy Bulwark, meaner.',
       'Anchor the cult; protect Magus behind.',
     ],
     heretic_acolyte: [
@@ -1151,7 +1151,7 @@ const Encyclopedia = (() => {
     ],
     nightingale: [
       'Shadow blades from forgotten guilds — strike when the dragon sleeps.',
-      'Nightingale is fast melee — Shadow Strike executes wounded foes.',
+      'Shadow Nightjar is fast melee — Shadow Strike executes wounded foes.',
       'Flank assassins while huscarls hold the shout line.',
     ],
     restoration_saint: [
@@ -1196,7 +1196,7 @@ const Encyclopedia = (() => {
       def.jojoPart === 7
         ? ' · Gilded Derby cavalry'
         : def.jojoPart
-          ? ` · Bound Spirit Part ${def.jojoPart}`
+          ? ` · Bound Spirit Cohort ${def.jojoPart}`
           : '';
     return `${role}${part} · ${def.cost} TP · HP ${def.hp} · DMG ${def.damage} · ACC ${def.accuracy} · SPD ${def.speed}`;
   }
@@ -1235,7 +1235,7 @@ const Encyclopedia = (() => {
           : '';
       const haloTrial =
         factionId === 'halo'
-          ? ' Win a campaign without losing your General — promote five Footmen to command and crown one as General — never leave a man behind — or discover another way in.'
+          ? ' Win a campaign without losing your General — promote five Footmen to command and crown one as General — or discover another way in.'
           : '';
       const gearsTrial =
         factionId === 'gears'
@@ -1251,7 +1251,7 @@ const Encyclopedia = (() => {
           : '';
       const jojoTrial =
         factionId === 'jojo'
-          ? ' Win a campaign after recruiting three evolved heroes and keeping them on the field together for most waves — teamwork, bound spirits, dramatic poses and alliances — or discover another way in.'
+          ? ' Win a campaign after recruiting three evolved heroes and keeping them on the field together for most waves — teamwork, bound spirits and alliances — or discover another way in.'
           : '';
       const fotnsTrial =
         factionId === 'fotns'
@@ -1259,7 +1259,7 @@ const Encyclopedia = (() => {
           : '';
       const dragonballTrial =
         factionId === 'dragonball'
-          ? ' Reach wave 200+, defeat the planetary threat boss, and field a high-ki army when the warlord falls — power level escalation, protecting the planet — or discover another way in.'
+          ? ' Reach wave 200+, defeat the planetary threat boss, and field a skyburst army when the warlord falls — protecting the planet — or discover another way in.'
           : '';
       const warhammerTrial =
         factionId === 'imperium' || factionId === 'warp'
@@ -1372,7 +1372,7 @@ const Encyclopedia = (() => {
       {
         cat: 'research',
         name: 'Research Lab',
-        body: 'Build a Research Lab to analyze slain foes for Science Points and unlock the full technology tree. Stronger enemies pay more SP; each wave has an analysis cap (extra labs raise it). Open the Research tab in the encyclopedia after the game loads for all nodes, costs, prerequisites, and unlocks.',
+        body: 'Build a Research Lab (18 TP, 1 Builder) to earn Science Points: +6 SP per lab at every dawn (first two labs), plus analysis of slain foes up to a per-wave cap (extra labs raise it). Iron Weapons costs 20 SP, so knights, sappers and crossbowmen arrive two or three waves after the lab stands. Open the Research tab in the encyclopedia after the game loads for all nodes, costs, prerequisites, and unlocks.',
       },
     ];
   }

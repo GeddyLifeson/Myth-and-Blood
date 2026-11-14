@@ -271,7 +271,7 @@ const SiegeLoop = (() => {
     {
       id: 'deploy',
       wave: 1,
-      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. In Hunt mode (H) soldiers fight on their own and walk back to their posts.',
+      text: 'Pick a troop on the left (keys 1-6) and click the field to deploy. Soldiers hunt on their own and walk back to their posts. Select one and click to move him; Shift+click sends him there to hold.',
     },
     {
       id: 'crates',
@@ -284,9 +284,9 @@ const SiegeLoop = (() => {
       text: 'Enemies with a red pennant are line-breakers: they run past your troops. Each one that gets through is a breach, counted at the top.',
     },
     {
-      id: 'orders',
+      id: 'build',
       wave: 4,
-      text: "The General's orders: with a General on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
+      text: 'Builders raise works: deploy a Builder (7), open the Build tab and place a Wall to hold line-breakers, a Medical Tent, or a Research Lab. A lab earns science each dawn; Iron Weapons opens knights, sappers and crossbowmen.',
     },
     {
       id: 'spoils',
@@ -302,6 +302,13 @@ const SiegeLoop = (() => {
       id: 'intel',
       wave: 8,
       text: 'Spy and courier are open: the right panel scouts the next wave and sends one royal message per wave.',
+    },
+    {
+      // Shown only once a General can be recruited (Command Theory researched), never before.
+      id: 'orders',
+      wave: 6,
+      needs: 'general',
+      text: "The General's orders: a General can now be recruited (0). With him on the field, War Cry ([) and Hold the Line (]) steel the soldiers near him.",
     },
   ];
 
@@ -341,6 +348,8 @@ const SiegeLoop = (() => {
   }
 
   function stepReached(step, ctx) {
+    // A step that explains a unit waits until the player can actually recruit it.
+    if (step.needs === 'general' && !(ctx && ctx.canRecruitGeneral)) return false;
     return upcomingWave(ctx) >= step.wave;
   }
 
@@ -410,6 +419,8 @@ const SiegeLoop = (() => {
     rings: [],
     tally: { runners: 0, crates: 0, earlyCalls: 0, ribbons: [], bosses: 0, bestVeteran: null },
     lastCombatTick: 0,
+    lastBloodTick: 0,
+    stormedAt: 0,
     lastEnemyCount: 0,
     nextId: 1,
     staged: false,
@@ -450,6 +461,20 @@ const SiegeLoop = (() => {
   }
 
   // ------------------------------------------------------------ run events
+  /**
+   * Does this run go on the record (ribbon progress, ribbons earned, best score)? Not in
+   * Creative mode, and not once a cheat has been used. A voided run keeps the ribbon perks
+   * it started with; it just earns nothing more.
+   */
+  function isRecorded() {
+    return !!run && run.counted && !run.voided;
+  }
+
+  /** A cheat was used: nothing from this run is recorded from here on. */
+  function voidRun() {
+    if (run) run.voided = true;
+  }
+
   /** Called once when a battle begins. Returns bonus starting TP. */
   function startRun(ctx) {
     run = freshRun();
@@ -462,6 +487,7 @@ const SiegeLoop = (() => {
     // Let the opening announcements pass before the first line of the introduction.
     run.stepNextTick = (ctx.tick || 0) + 240;
     fx = computeFx();
+    if (typeof SapperKit !== 'undefined') SapperKit.reset();
     hideSpoils();
     syncHud(ctx);
     ctx.ambience(ctx.isNight ? 'night' : 'day');
@@ -473,10 +499,11 @@ const SiegeLoop = (() => {
   }
 
   /** Warband: half as many soldiers, each worth far more. */
-  function deployCostMult(army = 0) {
+  function deployCostMult(army = 0, freeBonus = 0) {
     // A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head.
-    const upkeep =
-      run.active && !run.creativeRun ? 1 + Math.max(0, army - ARMY_FREE) * ARMY_UPKEEP : 1;
+    // Granaries (an Outpost upgrade) feed a few more before the surcharge starts.
+    const free = ARMY_FREE + Math.max(0, freeBonus || 0);
+    const upkeep = run.active && !run.creativeRun ? 1 + Math.max(0, army - free) * ARMY_UPKEEP : 1;
     return (run.warband ? 2 : 1) * upkeep;
   }
 
@@ -537,6 +564,9 @@ const SiegeLoop = (() => {
   }
 
   /** True while an enemy is still forming up and should be left alone by auto-targeting. */
+  /** Ticks the stormed host is given to draw blood before the stragglers give up (20 s). */
+  const STORM_PATIENCE = 1200;
+
   function isMustering(foe) {
     return run.active && !run.creativeRun && foe.team === 'enemy' && !foe.mustered;
   }
@@ -550,6 +580,11 @@ const SiegeLoop = (() => {
     run.lastCombatTick = tick;
   }
 
+  /** A soldier of yours was hurt (the standoff rule above only counts enemy blood). */
+  function noteBlood(tick) {
+    run.lastBloodTick = tick;
+  }
+
   /**
    * A standoff cannot last. If the whole host is on the field and nobody has drawn
    * blood for about a minute, the enemy stops waiting and storms the line.
@@ -557,10 +592,42 @@ const SiegeLoop = (() => {
   function checkStandoff(ctx, enemies) {
     if (ctx.isNight || ctx.creative || enemies === 0 || ctx.queueLeft > 0) {
       run.lastCombatTick = ctx.tick;
+      run.stormedAt = 0;
       return;
     }
+    // The storm was ordered. If, twenty seconds on, nobody has been hurt on either side and
+    // no enemy has moved, whatever is left cannot or will not reach the line (wedged,
+    // hovering, idle). It quits the field, so a wave can never hang on an enemy the player
+    // has no way to get at. Any blood or movement starts the twenty seconds again.
+    if (run.stormedAt && run.lastCombatTick <= run.stormedAt) {
+      if (ctx.tick - run.stormedAt < STORM_PATIENCE) return;
+      let moving = run.lastBloodTick > run.stormedAt;
+      for (const u of ctx.units) {
+        if (u.team !== 'enemy' || u.hp <= 0) continue;
+        if (Math.hypot(u.x - (u.stormX ?? u.x), u.y - (u.stormY ?? u.y)) > 24) moving = true;
+        u.stormX = u.x;
+        u.stormY = u.y;
+      }
+      if (moving) {
+        run.stormedAt = ctx.tick;
+        run.lastCombatTick = ctx.tick;
+        return;
+      }
+      run.stormedAt = 0;
+      run.lastCombatTick = ctx.tick;
+      let gone = 0;
+      for (const u of ctx.units) {
+        if (u.team !== 'enemy' || u.hp <= 0) continue;
+        u.hp = 0;
+        gone++;
+      }
+      if (gone > 0) ctx.showMessage('The last of the host loses heart and quits the field.', 260);
+      return;
+    }
+    run.stormedAt = 0;
     if (ctx.tick - run.lastCombatTick < 1800 + ctx.worldH * 3) return;
     run.lastCombatTick = ctx.tick;
+    run.stormedAt = ctx.tick;
     let stormed = 0;
     for (const u of ctx.units) {
       if (u.team !== 'enemy' || u.hp <= 0 || u.fleeing || u.type === 'siege_tower') continue;
@@ -571,6 +638,11 @@ const SiegeLoop = (() => {
       u.pathTargetId = null;
       u.combatTargetId = null;
       stormed++;
+    }
+    for (const u of ctx.units) {
+      if (u.team !== 'enemy' || u.hp <= 0) continue;
+      u.stormX = u.x;
+      u.stormY = u.y;
     }
     if (stormed > 0) {
       ctx.showMessage('The enemy tires of waiting and storms the line!', 260);
@@ -636,6 +708,7 @@ const SiegeLoop = (() => {
     ctx.playSfx('breachHorn');
     ctx.burst('dust', unit.x, unit.y);
     flashBreach();
+    globalThis.FieldArt?.noteBreach?.(unit.x);
     const shock = Math.max(0, 4 * (1 + fx.breachShock));
     if (shock > 0) {
       for (const u of ctx.units) {
@@ -671,8 +744,9 @@ const SiegeLoop = (() => {
   }
 
   function claimSpoils(index, ctx) {
+    if (!ctx && hudCtx) ctx = hudCtx();
     const draft = run.drafts[0];
-    if (!draft) return false;
+    if (!draft || !ctx) return false;
     const id = draft[index];
     const def = EDICTS[id];
     if (!def) return false;
@@ -680,7 +754,7 @@ const SiegeLoop = (() => {
     run.edicts.push(id);
     fx = computeFx();
     if (def.instantTp) ctx.addTp(def.instantTp);
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.edicts++;
       checkRibbons(ctx);
       saveStore();
@@ -713,6 +787,20 @@ const SiegeLoop = (() => {
     let kind = '';
     if (cfg.boss) kind = 'Boss wave';
     else if (typeof GameDepth !== 'undefined' && GameDepth.isHordeWave?.(next)) kind = 'Horde';
+    // A standing Watchtower (or a Scout Report) turns the rough preview into a head count
+    // by type: the pool's shares of the expected host, largest first.
+    let makeup = null;
+    if (ctx.watchtowers > 0 || ctx.scoutedNext) {
+      const total = Object.values(weights).reduce((a, n) => a + n, 0) || 1;
+      makeup = Object.keys(weights)
+        .map((t) => ({
+          name: (typeof EnemyDefs !== 'undefined' && EnemyDefs[t]?.name) || t,
+          n: Math.round((weights[t] / total) * count),
+        }))
+        .filter((m) => m.n > 0)
+        .sort((a, b) => b.n - a.n)
+        .slice(0, 8);
+    }
     return {
       wave: next,
       count,
@@ -720,6 +808,8 @@ const SiegeLoop = (() => {
       kind,
       boss: !!cfg.boss,
       runners: next >= RUNNER_FROM_WAVE,
+      makeup,
+      makeupSource: makeup ? (ctx.watchtowers > 0 ? 'Watchtower' : 'Scout') : '',
     };
   }
 
@@ -749,7 +839,9 @@ const SiegeLoop = (() => {
     if (!p) return '';
     const parts = [`Wave ${p.wave}: about ${p.count} foes`];
     if (p.kind) parts.push(p.kind);
-    if (p.names.length) parts.push(p.names.join(', '));
+    if (p.makeup && p.makeup.length) {
+      parts.push(`${p.makeupSource} report: ${p.makeup.map((m) => `${m.n} ${m.name}`).join(', ')}`);
+    } else if (p.names.length) parts.push(p.names.join(', '));
     if (p.runners) parts.push('line-breakers likely');
     return parts.join(' · ');
   }
@@ -776,9 +868,10 @@ const SiegeLoop = (() => {
       ctx.showMessage('Spoils of war — choose one reward before the next assault.', 260);
     }
     run.preview = buildPreview(ctx);
+    if (typeof SapperKit !== 'undefined') SapperKit.layForNight(ctx);
     ctx.ambience('night');
     run.crates = run.crates.filter((c) => !c.spent);
-    if (run.counted) {
+    if (isRecorded()) {
       const s = store.stats;
       s.maxWave = Math.max(s.maxWave, ctx.wave);
       s.bestCleanStreak = Math.max(s.bestCleanStreak, run.cleanStreak);
@@ -792,6 +885,21 @@ const SiegeLoop = (() => {
     syncHud(ctx);
   }
 
+  /** Spy: Forge Maps. A marked, safe crate lands at the start of the next day. */
+  function forgeMaps() {
+    if (!run.active) return false;
+    run.forgedMaps = true;
+    return true;
+  }
+
+  /** Rebuild the night preview (a watchtower finished, or a scout reported in). */
+  function refreshPreview(ctx) {
+    if (!run.active || !ctx || !ctx.isNight) return null;
+    run.preview = buildPreview(ctx);
+    syncHud(ctx);
+    return run.preview;
+  }
+
   /** TP for sounding the horn before the night runs out. */
   function earlyCallBonus(secondsLeft, ctx) {
     if (!run.active || ctx.creative || ctx.wave < 1) return 0;
@@ -799,7 +907,7 @@ const SiegeLoop = (() => {
     if (base <= 0) return 0;
     const bonus = base * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
     run.tally.earlyCalls++;
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.earlyCalls++;
       checkRibbons(ctx);
       saveStore();
@@ -830,8 +938,10 @@ const SiegeLoop = (() => {
     const x = 60 + ctx.rng() * (ctx.worldW - 120);
     const top = Math.max(120, ctx.worldH * 0.3);
     const y = top + ctx.rng() * Math.max(40, ctx.deployY - 30 - top);
-    run.crates.push({ id: run.nextId++, x, y, age: 0, spent: false });
-    ctx.float(x, y - 14, 'SUPPLIES', '#e8dcc0');
+    const forged = !!run.forgedMaps;
+    run.forgedMaps = false;
+    run.crates.push({ id: run.nextId++, x, y, age: 0, spent: false, forged });
+    ctx.float(x, y - 14, forged ? 'MARKED SUPPLIES' : 'SUPPLIES', forged ? '#ffe080' : '#e8dcc0');
     ctx.burst('dust', x, y);
     ctx.playSfx('whoosh');
   }
@@ -839,12 +949,13 @@ const SiegeLoop = (() => {
   function openCrate(crate, opener, ctx) {
     crate.spent = true;
     run.tally.crates++;
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.crates++;
       checkRibbons(ctx);
       saveStore();
     }
-    const roll = ctx.rng();
+    // A crate found with forged maps (spy) is never bait and always holds TP.
+    const roll = crate.forged ? 0.3 : ctx.rng();
     if (roll < 0.14 && !fx.safeCrates && ctx.wave >= 3) {
       ctx.float(crate.x, crate.y - 14, 'AMBUSH!', '#ff4040');
       ctx.showMessage('The crate was bait — goblins spring the ambush!', 200);
@@ -887,6 +998,7 @@ const SiegeLoop = (() => {
     const tick = ctx.tick;
 
     if (!ctx.isNight && !ctx.creative) {
+      if (run.forgedMaps) dropCrate(ctx);
       if (ctx.wave >= CRATE_FROM_WAVE && run.crates.length < 3) {
         run.crateTimer -= 1 + fx.crateRate;
         if (run.crateTimer <= 0) {
@@ -911,6 +1023,16 @@ const SiegeLoop = (() => {
             // The approach lasts until the squad crosses into your half, or 25 seconds at most.
             u.musterAge = (u.musterAge || 0) + 6;
             if (u.musterAge >= 1500 || !inMusterZone(u, ctx)) u.mustered = true;
+          }
+          if (u.lineBreaker && !u.heldByWall && typeof EconomyRules !== 'undefined') {
+            // A wall holds runners: one that comes within reach stops and has to fight.
+            const wall = EconomyRules.tryHoldRunner(u, ctx.walls, ctx.wave);
+            if (wall) {
+              u.speed /= 1.3;
+              u.path = [];
+              u.pathIndex = 0;
+              ctx.float(u.x, u.y - 16, 'HELD', '#c8d8f0');
+            }
           }
           if (u.lineBreaker && hasBreached(u, ctx)) recordBreach(u, ctx);
           else unstickFromEdge(u, ctx);
@@ -956,7 +1078,7 @@ const SiegeLoop = (() => {
       if ((a === 'cavalry' || a === 'knight' || a === 'scout') && SHOOTERS[t]) return 1.4;
       if (a === 'archer' && SWARM[t]) return 1.25;
       if (a === 'archer' && ARMOURED[t]) return 0.8;
-      if ((a === 'mage' || a === 'ballista' || a === 'sapper') && ARMOURED[t]) return 1.35;
+      if ((a === 'mage' || a === 'ballista') && ARMOURED[t]) return 1.35;
       if (a === 'footman' && t === 'berserker') return 1.2;
       return 1;
     }
@@ -979,7 +1101,7 @@ const SiegeLoop = (() => {
     crossbowman: 'Strong against armour',
     mage: 'Strong against armour',
     ballista: 'Strong against armour',
-    sapper: 'Strong against armour',
+    sapper: 'Blasts ignore armour and shields · cannot reach flyers',
     footman: 'Strong against berserkers',
   };
 
@@ -1054,7 +1176,7 @@ const SiegeLoop = (() => {
     });
     if (unit.team === 'enemy') {
       if (killer) killer.kills = (killer.kills || 0) + 1;
-      if (run.counted) {
+      if (isRecorded()) {
         store.stats.kills++;
         if (unit.lineBreaker) store.stats.runnersKilled++;
         if (unit.isNamedBoss) store.stats.bosses++;
@@ -1277,7 +1399,7 @@ const SiegeLoop = (() => {
 
   /** Score the run that is ending. Creative runs are not scored. */
   function scoreRun(ctx) {
-    if (!ctx || ctx.creative || !run.counted) return null;
+    if (!ctx || ctx.creative || !isRecorded()) return null;
     return computeScore({
       // The wave in progress when the realm fell does not count as cleared.
       waves: Math.max(0, (ctx.wave || 0) - (ctx.isNight ? 0 : 1)),
@@ -1312,8 +1434,10 @@ const SiegeLoop = (() => {
       flawless: run.flawless,
       warband: run.warband,
       counted: run.counted,
+      voided: !!run.voided,
       fallen: run.fallen.slice(),
       stepsShown: [...run.stepsShown],
+      sapperKit: typeof SapperKit !== 'undefined' ? SapperKit.exportState() : null,
     };
   }
 
@@ -1321,6 +1445,7 @@ const SiegeLoop = (() => {
     run = freshRun();
     run.active = true;
     run.counted = snap ? snap.counted !== false : !ctx.creative;
+    run.voided = !!(snap && snap.voided) || !!ctx.cheatsUsed;
     run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
     // A loaded siege does not repeat lines the player has already been through.
     run.stepsShown = Array.isArray(snap?.stepsShown)
@@ -1337,6 +1462,7 @@ const SiegeLoop = (() => {
       run.fallen = Array.isArray(snap.fallen) ? snap.fallen : [];
     }
     fx = computeFx();
+    if (typeof SapperKit !== 'undefined') SapperKit.importState(snap ? snap.sapperKit : null);
     if (ctx.isNight) run.preview = buildPreview(ctx);
     renderSpoils(ctx);
     syncHud(ctx);
@@ -1360,6 +1486,10 @@ const SiegeLoop = (() => {
       lines.push(`Deadliest soldier: ${esc(t.bestVeteran.name)} — ${t.bestVeteran.kills} kills`);
     }
     let html = '';
+    // A cheat voids the run: no score, no ribbon progress, no achievements.
+    if (ctx && ctx.cheatsUsed) {
+      html += '<div class="result-cheats" id="result-cheats">Cheats used — run not recorded</div>';
+    }
     const score = run.score;
     if (score) {
       const n = (v) => v.toLocaleString('en-US');
@@ -1464,6 +1594,10 @@ const SiegeLoop = (() => {
       if (id === 'siege-warcry') castOrder('warCry', hudCtx());
       else if (id === 'siege-holdline') castOrder('holdLine', hudCtx());
     });
+    // A click on the backdrop does nothing, and does not take the focus off the cards.
+    spoils.addEventListener('mousedown', (e) => {
+      if (!(e.target && e.target.closest && e.target.closest('[data-spoil]'))) e.preventDefault();
+    });
     spoils.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-spoil]') : null;
       if (btn && hudCtx) claimSpoils(Number(btn.dataset.spoil), hudCtx());
@@ -1533,7 +1667,12 @@ const SiegeLoop = (() => {
     }
     const up = el('siege-upkeep');
     if (up) {
-      const pct = Math.round((deployCostMult(ctx.army || 0) / (run.warband ? 2 : 1) - 1) * 100);
+      const pct = Math.round(
+        (deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0) /
+          (run.warband ? 2 : 1) -
+          1) *
+          100
+      );
       up.hidden = pct <= 0;
       up.textContent = `Recruit cost +${pct}%`;
     }
@@ -1553,32 +1692,93 @@ const SiegeLoop = (() => {
     }
   }
 
+  // The spoils choice is a modal: while it is on screen the siege waits for the player.
+  // "On screen" means a real page showed it. With no DOM (tests, headless sims) nothing is
+  // held and unclaimed spoils are still picked at dawn, as before.
+  let spoilsModalShown = false;
+  let spoilsModalForced = null;
+  let heldUpdates = 0;
+  // More sim steps than a rendered frame ever runs (10x speed plus catch-up): past this
+  // within one presented frame, something is stepping the game itself (a bot).
+  const HELD_UPDATES_BOT_LIMIT = 120;
+
+  function isSpoilsHeld() {
+    if (!run.active || !run.drafts.length) return false;
+    return spoilsModalForced != null ? spoilsModalForced : spoilsModalShown;
+  }
+
+  /** The render loop calls this once per presented frame. */
+  function notePresentationFrame() {
+    heldUpdates = 0;
+  }
+
+  /**
+   * Asked by Game.update() before it advances anything. True: the choice is pending in
+   * front of a player, do not advance. A caller stepping the sim without presenting frames
+   * (a bot driving a live page) gets the choice made for it instead of a stall.
+   */
+  function holdForSpoils(ctx) {
+    if (!isSpoilsHeld()) return false;
+    if (++heldUpdates > HELD_UPDATES_BOT_LIMIT) {
+      heldUpdates = 0;
+      while (run.drafts.length) claimSpoils(Math.floor(ctx.rng() * 3), ctx);
+      return false;
+    }
+    return true;
+  }
+
+  /** Tests: force the modal state on or off without a DOM (null restores detection). */
+  function setSpoilsModalForTest(v) {
+    spoilsModalForced = v == null ? null : !!v;
+    heldUpdates = 0;
+  }
+
+  let spoilsRenderedKey = '';
+
   function renderSpoilsDom() {
     const panel = el('spoils-panel') || (ensureHud() && el('spoils-panel'));
     if (!panel) return;
     const draft = run.active ? run.drafts[0] : null;
     if (!draft) {
-      panel.hidden = true;
-      panel.innerHTML = '';
+      hideSpoils();
       return;
     }
+    const key = `${run.edicts.length}:${draft.join(',')}`;
+    spoilsModalShown = panel.isConnected === true;
+    if (key === spoilsRenderedKey && !panel.hidden) return;
+    spoilsRenderedKey = key;
     panel.hidden = false;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', 'Spoils of war — choose one');
+    const more = run.drafts.length > 1 ? ` (${run.drafts.length} to choose)` : '';
     panel.innerHTML =
-      '<div class="spoils-title">Spoils of war — choose one</div><div class="spoils-row">' +
+      '<div class="spoils-box"><div class="spoils-title">Spoils of war</div>' +
+      `<div class="spoils-sub">Choose one reward to keep for the rest of the siege${more}. The siege waits for you.</div>` +
+      '<div class="spoils-row">' +
       draft
         .map(
           (id, i) =>
-            `<button class="spoils-card" data-spoil="${i}"><strong>${EDICTS[id].name}</strong><span>${EDICTS[id].desc}</span></button>`
+            `<button type="button" class="spoils-card" data-spoil="${i}"><kbd class="spoils-key">${i + 1}</kbd><strong>${EDICTS[id].name}</strong><span>${EDICTS[id].desc}</span></button>`
         )
         .join('') +
-      '</div><div class="spoils-note">The siege does not wait. Unclaimed spoils are chosen for you at dawn.</div>';
+      '</div><div class="spoils-note">Press 1, 2 or 3 — or the arrow keys and Enter.</div></div>';
+    if (document.body && document.body.classList) document.body.classList.add('spoils-open');
+    const first = panel.querySelector ? panel.querySelector('[data-spoil]') : null;
+    if (first && first.focus) first.focus();
   }
 
   function hideSpoils() {
+    spoilsModalShown = false;
+    spoilsRenderedKey = '';
+    heldUpdates = 0;
     const panel = el('spoils-panel');
     if (panel) {
       panel.hidden = true;
       panel.innerHTML = '';
+    }
+    if (typeof document !== 'undefined' && document.body && document.body.classList) {
+      document.body.classList.remove('spoils-open');
     }
   }
 
@@ -1609,7 +1809,10 @@ const SiegeLoop = (() => {
   // ----------------------------------------------------------------- drawing
   /** Blood and remains that stay on the field. Drawn under the units. */
   function drawGround(ctx2d) {
-    if (!run.active || !run.stains.length) return;
+    if (!run.active) return;
+    if (typeof SapperKit !== 'undefined')
+      SapperKit.drawGround(ctx2d, hudCtx ? hudCtx().selectedIds : null);
+    if (!run.stains.length) return;
     ctx2d.save();
     for (const s of run.stains) {
       ctx2d.globalAlpha = s.scorch ? 0.62 : 0.5;
@@ -1801,6 +2004,7 @@ const SiegeLoop = (() => {
     unopposedBreaks,
     isMustering,
     noteCombat,
+    noteBlood,
     breachGoal,
     onNightBegin,
     earlyCallBonus,
@@ -1815,6 +2019,12 @@ const SiegeLoop = (() => {
     castOrder,
     order: (kind) => (hudCtx ? castOrder(kind, hudCtx()) : false),
     claimSpoils,
+    isSpoilsHeld,
+    voidRun,
+    isRecorded,
+    holdForSpoils,
+    notePresentationFrame,
+    setSpoilsModalForTest,
     getRibbons,
     renderRibbonList,
     exportState,
@@ -1824,6 +2034,10 @@ const SiegeLoop = (() => {
     drawWorld,
     getHudState,
     FIRST_STEPS,
+    forgeMaps,
+    refreshPreview,
+    previewText,
+    getPreview: () => run.preview,
     spawnMarkers,
     computeScore,
     getBestScores,

@@ -18,6 +18,8 @@ const Research = (() => {
     'medical_tent',
     'mess_hall',
     'research_lab',
+    'watchtower',
+    'trade_outpost',
     'enemy_hamlet',
     'enemy_merchant_guild',
     'enemy_trade_outpost',
@@ -168,7 +170,7 @@ const Research = (() => {
     {
       id: 'iron_weapons',
       name: 'Iron Weapons',
-      cost: 35,
+      cost: 20,
       wave: 3,
       category: 'military',
       desc: 'Sappers, knights and crossbowmen. Unlocks Siege Engineering (ballista) and Advanced Infantry (scout/pikeman).',
@@ -177,8 +179,8 @@ const Research = (() => {
     {
       id: 'veteran_doctrine',
       name: 'Veteran Doctrine',
-      cost: 45,
-      wave: 12,
+      cost: 34,
+      wave: 10,
       category: 'military',
       prereq: ['iron_weapons'],
       desc: 'Spend TP to promote core troops — keeps vanilla ranks relevant as waves escalate.',
@@ -187,7 +189,7 @@ const Research = (() => {
     {
       id: 'fortification',
       name: 'Fortification',
-      cost: 40,
+      cost: 30,
       wave: 6,
       category: 'defense',
       desc: 'Castle compounds — walls, keep, and command center.',
@@ -196,17 +198,17 @@ const Research = (() => {
     {
       id: 'field_engineering',
       name: 'Field Engineering',
-      cost: 30,
-      wave: 4,
+      cost: 18,
+      wave: 3,
       category: 'defense',
-      desc: 'Scouts and traps for the battlefield.',
-      build: ['watchtower', 'spike_trap'],
+      desc: 'Spike traps, and the Outpost upgrades: Barracks or Granary.',
+      build: ['spike_trap', 'outpost_barracks', 'outpost_granary'],
     },
     {
       id: 'morale_arts',
       name: 'Morale Arts',
-      cost: 32,
-      wave: 5,
+      cost: 18,
+      wave: 4,
       category: 'support',
       desc: 'Bards inspire the ranks.',
       deploy: ['bard'],
@@ -214,8 +216,8 @@ const Research = (() => {
     {
       id: 'command_theory',
       name: 'Command Theory',
-      cost: 50,
-      wave: 8,
+      cost: 30,
+      wave: 6,
       category: 'military',
       prereq: ['iron_weapons'],
       desc: 'Officers who command the whole army.',
@@ -224,8 +226,8 @@ const Research = (() => {
     {
       id: 'advanced_infantry',
       name: 'Advanced Infantry',
-      cost: 42,
-      wave: 10,
+      cost: 26,
+      wave: 7,
       category: 'military',
       prereq: ['iron_weapons'],
       desc: 'Scouts and pikemen formations.',
@@ -234,8 +236,8 @@ const Research = (() => {
     {
       id: 'siege_engineering',
       name: 'Siege Engineering',
-      cost: 55,
-      wave: 12,
+      cost: 34,
+      wave: 9,
       category: 'military',
       prereq: ['iron_weapons'],
       desc: 'Deploy ballistas (6 TP) and found Sapper/Ballista Academies.',
@@ -245,12 +247,12 @@ const Research = (() => {
     {
       id: 'prospecting',
       name: 'Prospecting',
-      cost: 48,
-      wave: 15,
+      cost: 30,
+      wave: 8,
       category: 'economy',
       prereq: ['field_engineering'],
-      desc: 'Quarries and trade posts.',
-      build: ['quarry', 'trade_outpost'],
+      desc: 'Quarries: +3 TP at dawn each.',
+      build: ['quarry'],
     },
     {
       id: 'academy_charter',
@@ -500,7 +502,7 @@ const Research = (() => {
 
   function getWaveKillScienceCap(wave, buildings) {
     const labs = countLabs(buildings);
-    const base = 3 + Math.floor((wave || 0) / 5);
+    const base = 4 + Math.floor((wave || 0) / 4);
     const labBonus = labs * 2;
     return Math.min(22, base + labBonus);
   }
@@ -596,6 +598,19 @@ const Research = (() => {
       ctx.floatingText(unit.x, unit.y - 14, label, '#80c0ff');
     }
     return granted;
+  }
+
+  /**
+   * Study at dawn: every standing lab (the first two count) pays science when a wave is
+   * cleared, on top of what the kills earned. This is what makes the first tier reachable
+   * two or three waves after the lab stands; kills alone gave about 4 SP a wave early on.
+   */
+  function onWaveCleared(ctx = {}) {
+    const labs = countLabs(ctx.buildings);
+    if (labs <= 0 || typeof EconomyRules === 'undefined') return 0;
+    const amount = EconomyRules.dawnScience(labs);
+    if (amount <= 0) return 0;
+    return applyScienceGain(amount, ctx);
   }
 
   /** Auto-complete core research through a wave (Academy Era bootstrap). */
@@ -1267,6 +1282,7 @@ const Research = (() => {
     resetRun,
     onWaveStart,
     onEnemySlain,
+    onWaveCleared,
     grantBootstrapUnlocks,
     grantSciencePoints,
     tick,
@@ -1275,6 +1291,7 @@ const Research = (() => {
     completeResearch,
     isDeployUnlocked,
     isBuildUnlocked,
+    isResearched: (id) => completed.has(id),
     registerModUnlocks,
     clearModUnlocks,
     isFactionUnlocked,

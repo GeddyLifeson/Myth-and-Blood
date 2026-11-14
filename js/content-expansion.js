@@ -181,7 +181,12 @@ const ContentExpansion = (() => {
       },
     });
 
-    Object.assign(BuildDefs, {
+    // data/buildings.json is the source of truth. This table only fills in buildings the
+    // data pack does not carry; it used to overwrite the pack's numbers with its own copy.
+    const fillMissingBuildDefs = (src) => {
+      for (const k in src) if (!BuildDefs[k]) BuildDefs[k] = src[k];
+    };
+    fillMissingBuildDefs({
       watchtower: {
         name: 'Watchtower',
         cost: 5,
@@ -889,7 +894,11 @@ const ContentExpansion = (() => {
     Object.assign(SpyActions, {
       muster: { name: 'Muster Deserters', cost: 5, desc: 'Next wave -2 foes; reveals flanks' },
       war_chest: { name: 'Raid War Chest', cost: 4, desc: '+6 TP now; next wave +2 enemies' },
-      forge_maps: { name: 'Forge Maps', cost: 3, desc: 'Reveal traps & map caches this wave' },
+      forge_maps: {
+        name: 'Forge Maps',
+        cost: 3,
+        desc: 'A supply crate lands at dawn, marked on the field: no ambush, always TP.',
+      },
       tunnel: {
         name: 'Tunnel Network',
         cost: 5,
@@ -898,7 +907,7 @@ const ContentExpansion = (() => {
       settlement_raid: {
         name: 'Settlement Raid',
         cost: 7,
-        desc: 'Wave 150+ — sabotage weakest enemy hold for 45% max HP',
+        desc: 'Wave 150+ — strike an enemy hold for 45% of its health. No holds stand yet, so this is refused and costs nothing.',
         kingdomStage: 3,
         waveMin: 150,
       },
@@ -1117,6 +1126,15 @@ const ContentExpansion = (() => {
     return ctx.buildings.filter(
       (b) => b.owner === 'player' && b.complete && b.hp > 0 && b.isResourceGen
     ).length;
+  }
+
+  /** True when every paying slot is taken, counting sites still under construction. */
+  function economySitesFull() {
+    if (!ctx) return false;
+    const n = ctx.buildings.filter(
+      (b) => b.owner === 'player' && b.hp > 0 && b.isResourceGen
+    ).length;
+    return n >= ECONOMY_GEN_TP_CAP;
   }
 
   function getEconomyTpBonus() {
@@ -1726,7 +1744,8 @@ const ContentExpansion = (() => {
       for (const d of ctx.decorations) {
         if (d.type === 'supply_crate' || d.type === 'oil_barrel') d.revealed = true;
       }
-      ctx.showMessage('Maps forged — caches and traps revealed on the battlefield!');
+      if (typeof SiegeLoop !== 'undefined' && SiegeLoop.forgeMaps) SiegeLoop.forgeMaps();
+      ctx.showMessage('Maps forged — a marked supply crate will land at dawn. No ambush.');
       return true;
     }
     if (action === 'tunnel') {
@@ -2010,12 +2029,12 @@ const ContentExpansion = (() => {
       {
         cat: 'buildings',
         name: 'Quarry',
-        body: '14 TP, 2 Builders. +1 TP/round (max 6 quarries + trade posts combined). Blocks movement — early bridge, not a hamlet substitute.',
+        body: '14 TP, 1 Builder, Prospecting research. +3 TP at dawn (max 6 quarries + trade posts combined). Blocks movement.',
       },
       {
         cat: 'buildings',
         name: 'Trade Outpost',
-        body: '16 TP, 2 Builders. +1 TP/round and morale aura. Counts toward the 6-site economy cap — hamlets scale better late.',
+        body: '10 TP, 1 Builder, no research. +2 TP at dawn and morale aura. Counts toward the 6-site economy cap.',
       },
       {
         cat: 'buildings',
@@ -2103,6 +2122,7 @@ const ContentExpansion = (() => {
     registerDefs,
     getFortifyZones,
     getEconomyTpBonus,
+    economySitesFull,
     applyWaveEvent,
     spawnDestructibles,
     applyLoadoutToUnit,

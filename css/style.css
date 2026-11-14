@@ -1,5 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=MedievalSharp&display=swap');
 
+/* The hidden attribute always hides. Author rules such as .menu-btn { display: block }
+   used to beat the browser's own [hidden] rule, leaving a broken image and the co-op
+   button visible in the solo pause menu. (The side-panel panes opt out in theme-v2.css.) */
+[hidden] {
+  display: none !important;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -5873,4 +5880,79 @@ body.game-playing #night-prep-card:not([hidden]) {
 .skill-node-locked {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+/* In-page dialogs (js/dialog.js): replace alert / confirm / prompt. */
+.inpage-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(5, 4, 5, 0.72);
+}
+.inpage-dialog-box {
+  width: min(440px, calc(100vw - 32px));
+  padding: 18px 20px 16px;
+  background: #0d0b0b;
+  border: 2px solid #d8cdb4;
+  box-shadow: 5px 5px 0 #000;
+  color: #e8dcc0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+.inpage-dialog-title {
+  margin-bottom: 8px;
+  font-family: 'Pirata One', Cinzel, serif;
+  font-size: 22px;
+  letter-spacing: 1px;
+  color: #c0241c;
+}
+.inpage-dialog-message {
+  font-size: 15px;
+  line-height: 1.45;
+}
+.inpage-dialog-input {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 7px 9px;
+  background: #050405;
+  border: 1px solid #d8cdb4;
+  color: #f2e8d0;
+  font: inherit;
+  font-size: 15px;
+}
+.inpage-dialog-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.inpage-dialog-btn {
+  min-width: 88px;
+  min-height: 36px;
+  padding: 6px 14px;
+  background: #0d0b0b;
+  border: 2px solid #d8cdb4;
+  color: #e8dcc0;
+  font-family: Cinzel, serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+.inpage-dialog-btn.primary {
+  background: #d8cdb4;
+  color: #0d0b0b;
+}
+.inpage-dialog-btn.primary.danger {
+  background: #a01c16;
+  border-color: #a01c16;
+  color: #f2e8d0;
+}
+.inpage-dialog-btn:focus-visible,
+.inpage-dialog-input:focus-visible {
+  outline: 2px solid #c0241c;
+  outline-offset: 2px;
 }

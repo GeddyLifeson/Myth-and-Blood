@@ -184,8 +184,22 @@
               <button class="build-btn" data-build="outpost">
                 <span>Outpost</span><span class="cost">4</span>
               </button>
+              <button
+                class="build-btn"
+                data-build="outpost_barracks"
+                title="Outpost upgrade (either this or a Granary): a free footman every third dawn."
+              >
+                <span>&rarr; Barracks</span><span class="cost">6</span>
+              </button>
+              <button
+                class="build-btn"
+                data-build="outpost_granary"
+                title="Outpost upgrade (either this or a Barracks): feeds 3 more soldiers before the recruit surcharge."
+              >
+                <span>&rarr; Granary</span><span class="cost">6</span>
+              </button>
               <button class="build-btn" data-build="wall">
-                <span>Wall</span><span class="cost">6</span>
+                <span>Wall</span><span class="cost">5</span>
               </button>
               <button class="build-btn" data-build="castle">
                 <span>Castle</span><span class="cost">50</span>
@@ -197,11 +211,11 @@
                 <span>Mess Hall</span><span class="cost">5</span>
               </button>
               <button class="build-btn" data-build="research_lab">
-                <span>Research Lab</span><span class="cost">45</span>
+                <span>Research Lab</span><span class="cost">18</span>
               </button>
               <button id="research-open" class="meta-btn research-btn">RESEARCH</button>
               <button class="build-btn" data-build="watchtower">
-                <span>Watchtower</span><span class="cost">5</span>
+                <span>Watchtower</span><span class="cost">4</span>
               </button>
               <button class="build-btn" data-build="spike_trap">
                 <span>Spike Trap</span><span class="cost">3</span>
@@ -210,7 +224,7 @@
                 <span>Quarry</span><span class="cost">14</span>
               </button>
               <button class="build-btn" data-build="trade_outpost">
-                <span>Trade Post</span><span class="cost">16</span>
+                <span>Trade Post</span><span class="cost">10</span>
               </button>
               <button class="build-btn settlement-btn" data-build="fortress_upgrade">
                 <span>Fortify</span><span class="cost">50</span>
@@ -664,16 +678,16 @@
             <div class="side-tab-pane" data-side-pane="courier" role="tabpanel">
               <div class="panel-header">COURIER MSGS</div>
               <button class="courier-btn" data-courier="reinforce">
-                <span>Reinforce</span><span class="cost">3</span>
+                <span>Reinforce</span><span class="cost">4</span>
               </button>
               <button class="courier-btn" data-courier="decree">
                 <span>Decree</span><span class="cost">2</span>
               </button>
               <button class="courier-btn" data-courier="levy">
-                <span>Tax Levy</span><span class="cost">0</span>
+                <span>Tax Levy</span><span class="cost">1</span>
               </button>
               <button class="courier-btn" data-courier="banner">
-                <span>Call Banner</span><span class="cost">5</span>
+                <span>Call Banner</span><span class="cost">6</span>
               </button>
               <button class="courier-btn" data-courier="supplies">
                 <span>Supplies</span><span class="cost">3</span>
@@ -994,16 +1008,23 @@
             <button
               id="speed-toggle"
               class="meta-btn cmd-top-btn"
-              title="Game speed — click to cycle 1× to 10× (hotkey ])"
+              title="Game speed — click to cycle 1× to 10×"
             >
               SPEED: 1×
             </button>
             <button
               id="hunt-toggle"
               class="meta-btn cmd-top-btn"
-              title="Hunt mode — troops seek enemies on their own (hotkey H)"
+              title="Hunt — release Hold for the selection, or the whole army (hotkey H)"
             >
-              HUNT: ON
+              HUNT
+            </button>
+            <button
+              id="hold-here"
+              class="meta-btn cmd-top-btn"
+              title="Hold here — the selection, or the whole army, stays put and fights only what comes in reach (hotkey Shift+H)"
+            >
+              HOLD
             </button>
             <button
               id="top-pause-btn"
@@ -1425,11 +1446,11 @@
         <div id="hint-bar">
           <span class="hint-text"
             >Drag to pan · Shift+drag select · Right-click deselect · Night = prep (+35% build) · D
-            skip dawn · Tab log · Space pause · ] speed</span
+            skip dawn · Tab next soldier · Space pause · ? keys</span
           ><button
             id="hint-log-btn"
             class="hint-log-btn"
-            title="Message history (Tab)"
+            title="Message history (Shift+Tab)"
             aria-label="Open message log"
           >
             📜
@@ -1639,7 +1660,7 @@
               <strong>The Journey</strong> — hold the north in the early waves, enter the Academy
               Era at wave 100 (train troops instead of buying them, found settlements), then face
               enemy settlements and wider maps from wave 200. <strong>SPEED</strong> and
-              <strong>HUNT</strong> are in the top bar.
+              <strong>HUNT</strong> / <strong>HOLD</strong> are in the top bar.
             </p>
             <p>
               <strong>TP</strong> is awarded once per round when you clear a wave (+8, scaling).
@@ -1657,8 +1678,10 @@
               grow a command aura and assign footmen to wall slots inside the compound.
             </p>
             <p>
-              <strong>Medical Tent</strong> (5 TP): wounded allies below 40% HP retreat here to
-              heal; without a tent they fight to the death.
+              <strong>Medical Tent</strong> (5 TP): once it stands, any soldier below full health
+              walks to it before anything else, heals to full and returns to his post. In a fight he
+              stays while above 50% health. 4 beds; the rest queue outside. Without a tent they
+              fight on.
             </p>
             <p>
               <strong>Enemy symmetry</strong>: horde grunts (goblins, orcs) scale slowly — late
@@ -1717,8 +1740,11 @@
               starting point immediately.
             </p>
             <p>
-              <strong>Hunt mode</strong>: soldiers pathfind toward enemies. Click to override with
-              manual move.
+              <strong>Hunt and Hold</strong>: every soldier hunts from his post and returns to it.
+              Click the map to move him (new post). <kbd>Shift</kbd>+click moves him there to
+              <strong>hold</strong>: he stays put and fights only what comes in reach, marked by a
+              small shield at his feet. <kbd>H</kbd> releases, <kbd>Shift</kbd>+<kbd>H</kbd> holds
+              here.
             </p>
             <p>
               <strong>Honor names & promotions</strong>: core troops earn stars from combat — 3 gold
@@ -1732,8 +1758,9 @@
               <kbd>O/L/C/N/M</kbd> Build (N=Med, M=Mess)
             </p>
             <p>
-              <kbd>H</kbd> Hunt · <kbd>Esc</kbd> Cancel · <kbd>Space</kbd> Pause · Fighters: bronze
-              ★ from kills · Specialists rank when they work (once/wave)
+              <kbd>H</kbd> Hunt · <kbd>Shift</kbd>+<kbd>H</kbd> Hold · <kbd>Esc</kbd> Cancel ·
+              <kbd>Space</kbd> Pause · Fighters: bronze ★ from kills · Specialists rank when they
+              work (once/wave)
             </p>
             <p>
               Elite enemies glow purple. Sappers demolish walls. Mage bolts splash. Knights resist
@@ -1789,7 +1816,7 @@
             </p>
             <p>
               <strong>Bound Spirit Court</strong>: win after recruiting three evolved heroes and
-              keeping them on the field together for most waves — teamwork, stands, and bizarre
+              keeping them on the field together for most waves — teamwork, bound spirits and
               alliances.
             </p>
             <p>
@@ -1798,7 +1825,7 @@
             </p>
             <p>
               <strong>Skyburst Order</strong>: reach wave 200+, defeat the planetary threat boss,
-              and field a high-ki army when the Worldheart falls — protect the planet.
+              and field a skyburst army when the Worldheart falls — protect the planet.
             </p>
             <p>
               <strong>Crimson Legions & Rift Cult</strong>: win on Chad difficulty or higher while
@@ -2425,7 +2452,7 @@
         <div id="gameover-confetti" class="gameover-confetti" aria-hidden="true"></div>
         <div class="menu-content gameover-content">
           <div id="result-crest" class="result-crest" aria-hidden="true"></div>
-          <h2 id="result-title">VICTORY</h2>
+          <h2 id="result-title"></h2>
           <p id="result-subtitle" class="result-subtitle"></p>
           <div id="result-stats" class="result-stats-grid"></div>
           <div id="result-highlights" class="result-highlights"></div>
@@ -2507,6 +2534,8 @@
       </div>
     </div>
     <script src="js/html-util.js"></script>
+    <script src="js/dialog.js"></script>
+    <script src="js/hotkeys.js"></script>
     <script src="js/floatingText.js"></script>
     <script src="js/pathfinding-core.js"></script>
     <script src="js/pathfinding.js"></script>
@@ -2519,6 +2548,9 @@
     <script src="js/gfx-quality.js"></script>
     <script src="js/sprites.js"></script>
     <script src="js/visual-polish.js"></script>
+    <script src="js/building-art.js"></script>
+    <script src="js/building-art-types.js"></script>
+    <script src="js/field-art.js"></script>
     <script src="js/audio.js"></script>
     <script src="js/particles.js"></script>
     <script src="js/effects.js"></script>
@@ -2581,6 +2613,7 @@
     <script src="js/settlement-raids.js"></script>
     <script src="js/multi-front-siege.js"></script>
     <script src="js/monster-bosses.js"></script>
+    <script src="js/economy-rules.js"></script>
     <script src="js/player-counter-evolution.js"></script>
     <script src="js/research.js"></script>
     <script src="js/mod-loader.js"></script>
@@ -2590,6 +2623,7 @@
     <script src="js/pacing-tools.js"></script>
     <script src="js/game-runtime.js"></script>
     <script src="js/roster.js"></script>
+    <script src="js/sapper-kit.js"></script>
     <script src="js/game-core.js"></script>
     <script src="js/game-state.js"></script>
     <script src="js/procgen-obstacles.js"></script>
@@ -2601,6 +2635,7 @@
     <script src="js/error-reporting.js"></script>
     <script src="js/analytics.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/availability.js"></script>
     <script src="js/tooltips.js"></script>
     <script src="js/ux.js"></script>
     <script src="js/ui.js"></script>

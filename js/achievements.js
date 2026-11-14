@@ -783,7 +783,12 @@ const Achievements = (() => {
           addMastery('doom', 2);
         }
         if (data.killerType === 'cavalry' && data.charging) session.flags.add('cavalry_charge');
-        if (data.killerType === 'sapper' && data.siege) session.flags.add('sapper_siege');
+        if (
+          data.killerType === 'sapper' &&
+          (data.siege || data.enemyType === 'iron_colossus' || data.enemyType === 'hellmortar_pack')
+        ) {
+          session.flags.add('sapper_siege');
+        }
         break;
       }
 

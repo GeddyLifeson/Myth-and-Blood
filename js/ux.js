@@ -18,28 +18,25 @@ const UX = (() => {
   let lastUnitPanelKey = '';
   let lastUnitPanelStructure = '';
 
-  const PAUSE_SHORTCUTS = [
-    { keys: 'Space', label: 'Resume' },
-    { keys: 'Esc', label: 'Pause / cancel order' },
-    { keys: 'Tab', label: 'Message log' },
-    { keys: 'F', label: 'Focus selection' },
-    { keys: 'C', label: 'Clear selection' },
-    { keys: 'Right-click', label: 'Deselect / cancel order' },
-    { keys: 'H', label: 'Toggle hunt' },
-    { keys: 'D', label: 'Begin day (night)' },
-    { keys: ']', label: 'Cycle speed' },
-    { keys: 'I', label: 'Encyclopedia' },
-    { keys: 'F3', label: 'Perf monitor' },
-    { keys: '1–9', label: 'Deploy unit' },
-    { keys: '0', label: 'General' },
-    { keys: 'Shift+drag', label: 'Box select' },
+  /** Mouse and touch rows of the pause list. The key rows come from js/hotkeys.js. */
+  const PAUSE_POINTER_SHORTCUTS = [
     { keys: 'Drag (empty)', label: 'Box select' },
-    { keys: 'G', label: 'Reform selection' },
-    { keys: 'Alt+1–5', label: 'Formation presets' },
-    { keys: 'Pinch', label: 'Zoom map' },
-    { keys: 'Hold', label: 'Cancel armed order' },
-    { keys: 'Research btn', label: 'Tech tree' },
+    { keys: 'Right-click', label: 'Deselect / cancel order' },
+    { keys: 'Shift+click', label: 'Place more of the same' },
+    { keys: 'Shift+click (move)', label: 'Move and hold' },
+    { keys: 'Wheel / pinch', label: 'Zoom the map' },
+    { keys: 'Hold (touch)', label: 'Cancel armed order' },
   ];
+
+  /** The pause list: the keys that work while paused, then how to see the rest. */
+  function pauseShortcuts() {
+    const rows = typeof Hotkeys !== 'undefined' ? Hotkeys.sheet('pause') : [];
+    return [
+      ...rows,
+      { keys: '?', label: 'In play: the keys for what you are doing' },
+      ...PAUSE_POINTER_SHORTCUTS,
+    ];
+  }
 
   const TUTORIAL_STEPS = [
     {
@@ -56,8 +53,8 @@ const UX = (() => {
     },
     {
       maxWave: 3,
-      title: 'Hunt Mode',
-      body: '<kbd>H</kbd> toggles Hunt — soldiers path toward foes. Click a unit, then click the map to override with a manual move.',
+      title: 'Hunt and Hold',
+      body: 'Every soldier hunts from his post on his own. Click a unit, then click the map to move him: that spot is his new post. <kbd>Shift</kbd>+click sends him there to <strong>hold</strong>: he stays put and only fights what comes in reach. <kbd>H</kbd> releases a hold, <kbd>Shift</kbd>+<kbd>H</kbd> holds where he stands.',
       highlight: 'hunt-toggle',
     },
     {
@@ -501,8 +498,8 @@ const UX = (() => {
 
     // Include vet stars / promote eligibility so rank-ups refresh the panel while selected.
     const structureKey = multi
-      ? `m:${info.length}:${gs.selectionFormationLabel || 'Box'}`
-      : `s:${info[0].id}:${info[0].huntMode ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
+      ? `m:${info.length}:${info.filter((x) => x.holding).length}:${gs.selectionFormationLabel || 'Box'}`
+      : `s:${info[0].id}:${info[0].holding ? 1 : 0}:${info[0].vetBronze || 0}:${info[0].vetSilver || 0}:${info[0].vetGold || 0}:${info[0].vetTier || 0}:${info[0].canVetUpgrade ? 1 : 0}:${info[0].vetUpgradeEligible ? 1 : 0}:${info[0].canPromote ? 1 : 0}:${info[0].honorName || ''}:${info[0].kills || 0}:${info[0].wavesSurvived || 0}`;
 
     if (!multi) {
       const u = info[0];
@@ -548,7 +545,7 @@ const UX = (() => {
           <span class="combat-chip">Σ DMG ${Math.round(totalDmg)}</span>
           ${wounded ? `<span class="combat-chip warn">${wounded} wounded</span>` : ''}
         </div>
-        <div class="unit-info-row">Drag-select · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation · G reform · click map to move</div>
+        <div class="unit-info-row">Drag-select · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation · G reform · click map to move · Shift+click to move and hold</div>
         <div class="unit-info-chips">${info
           .slice(0, 8)
           .map((u) => `<span class="unit-chip">${escapeHtml(u.displayName)}</span>`)
@@ -564,8 +561,8 @@ const UX = (() => {
         </div>
         <div class="unit-info-actions">
           <button class="unit-quick-btn" data-action="form-reform" title="Reform in place (G)">Reform</button>
-          <button class="unit-quick-btn" data-action="hunt-on" title="Enable hunt">Hunt</button>
-          <button class="unit-quick-btn" data-action="hunt-off" title="Disable hunt">Hold</button>
+          <button class="unit-quick-btn" data-action="hunt-on" title="Hunt from their posts again (H)">Hunt</button>
+          <button class="unit-quick-btn" data-action="hunt-off" title="Hold here: stay put, fight only what comes in reach (Shift+H)">Hold here${info.some((x) => x.holding) ? ` ⛨${info.filter((x) => x.holding).length}` : ''}</button>
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
         </div>
@@ -626,7 +623,7 @@ const UX = (() => {
             : ''
         }
         <div class="unit-info-actions">
-          <button class="unit-quick-btn" data-action="hunt-toggle" title="Toggle hunt">${u.huntMode ? 'Hold Position' : 'Hunt'}</button>
+          ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? '⛨ Holding · Release' : 'Hold here'}</button>` : ''}
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
           ${u.ascensionLabel ? `<div class="unit-info-status ascension-badge">${escapeHtml(u.ascensionLabel)}${u.ascensionWeapon ? ` · ${escapeHtml(u.ascensionWeapon)}` : ''}</div>` : ''}
@@ -750,10 +747,10 @@ const UX = (() => {
         : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
       hint =
-        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
+        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
     else
       hint =
-        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · C clear · Tab log';
+        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
       hint = `${gs.story.branchLabel}${gs.story.summary ? ` — ${gs.story.summary}` : ''} · ${hint}`;
@@ -768,7 +765,7 @@ const UX = (() => {
     const cancelBtn = showCancel
       ? '<button id="hint-cancel-btn" class="hint-cancel-btn" type="button" title="Cancel order (Esc)">Cancel</button>'
       : '';
-    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Tab)" aria-label="Open message log">📜</button>`;
+    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Shift+Tab)" aria-label="Open message log">📜</button>`;
     bindHintBarActions();
   }
 
@@ -830,13 +827,15 @@ const UX = (() => {
       shortcutsEl.innerHTML = `
         <div class="pause-shortcuts-title">Shortcuts</div>
         <div class="pause-shortcuts-items">
-          ${PAUSE_SHORTCUTS.map(
-            (s) => `
+          ${pauseShortcuts()
+            .map(
+              (s) => `
             <div class="pause-shortcut">
               <kbd>${escapeHtml(s.keys)}</kbd><span>${escapeHtml(s.label)}</span>
             </div>
           `
-          ).join('')}
+            )
+            .join('')}
         </div>`;
     }
     const qsBtn = document.getElementById('pause-quicksave');
@@ -1259,6 +1258,10 @@ const UX = (() => {
         crest.hidden = false;
       }
       if (confetti) confetti.innerHTML = '';
+    }
+
+    if (subtitle && typeof Game !== 'undefined' && Game.cheatsUsed?.()) {
+      subtitle.textContent += ' · Cheats used — run not recorded';
     }
 
     const losses = gs.playerDeaths ?? gs.misses ?? 0;

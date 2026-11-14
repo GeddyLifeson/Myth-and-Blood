@@ -184,17 +184,18 @@
   "sapper": {
     "name": "Sapper",
     "cost": 5,
-    "hp": 65,
-    "accuracy": 25,
-    "damage": 38,
-    "range": 24,
-    "meleeRange": 24,
+    "hp": 60,
+    "accuracy": 40,
+    "damage": 12,
+    "range": 110,
+    "meleeRange": 22,
     "speed": 0.9,
-    "type": "melee",
+    "type": "ranged",
     "morale": 13,
     "experience": 6,
     "canHunt": true,
-    "siegeMult": 2.5
+    "reloadMult": 0.4,
+    "siegeMult": 2
   },
   "knight": {
     "name": "Knight",

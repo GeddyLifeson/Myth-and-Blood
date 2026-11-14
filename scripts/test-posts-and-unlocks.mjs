@@ -84,14 +84,16 @@ const clearFoes = (GS) => {
   // A manually held soldier is left alone.
   const b = squad[1];
   clearFoes(GS);
-  Game.toggleGlobalHunt();
+  Game.selectUnit(b.id);
+  Game.orderHoldHere();
   const held = { x: b.x, y: b.y };
   run(Game, 300);
   ok(
     !b.returningToPost && Math.hypot(b.x - held.x, b.y - held.y) < 8,
     'the hold stance is untouched: a held soldier does not wander'
   );
-  Game.toggleGlobalHunt();
+  Game.orderHunt();
+  Game.selectUnit(a.id);
   // Posts survive a save and load.
   const snap = Game.exportGameState();
   const aId = a.id; // the object goes back to the pool on load
@@ -164,14 +166,35 @@ const clearFoes = (GS) => {
   ok(fs.unlocked.deploy && !fs.unlocked.strikes && !fs.unlocked.intel, 'wave 1 shows deploy only');
   run(Game, 300);
   ok(
-    GS.messages.some((m) => /Hunt mode/.test(m.text)),
-    'wave 1 prompt: deploying and Hunt mode'
+    GS.messages.some((m) => /hunt on their own/.test(m.text) && /Shift\+click/.test(m.text)),
+    'wave 1 prompt: deploying, hunting and Shift+click to hold'
   );
-  const wantAt = { crates: 2, breach: 3, orders: 4, spoils: 5, strikes: 6, intel: 8 };
+  const wantAt = { crates: 2, breach: 3, build: 4, spoils: 5, strikes: 6, intel: 8 };
   for (const id in wantAt) {
     const step = SiegeLoop.FIRST_STEPS.find((s) => s.id === id);
     ok(step && step.wave === wantAt[id], `${id} is introduced for wave ${wantAt[id]}`);
   }
+  // The wave-4 line used to explain the General's orders, which nobody can have on wave 4
+  // (a General needs Command Theory). It now explains builders, and the orders line waits
+  // until a General can really be recruited.
+  const w4 = SiegeLoop.FIRST_STEPS.find((s) => s.wave === 4);
+  ok(!/General/.test(w4.text), 'the wave 4 prompt does not describe a General');
+  const orders = SiegeLoop.FIRST_STEPS.find((s) => s.id === 'orders');
+  ok(orders && orders.needs === 'general' && orders.wave >= 6, 'orders wait for a General');
+  const hud = (extra) =>
+    SiegeLoop.getHudState({ wave: 7, isNight: true, missLimit: 10, ...extra }).firstSteps;
+  ok(
+    !hud({ canRecruitGeneral: false }).unlocked.orders,
+    'no General yet: orders stay unintroduced'
+  );
+  ok(
+    hud({ canRecruitGeneral: true }).unlocked.orders,
+    'General recruitable: orders are introduced'
+  );
+  ok(
+    !Game.getState().siegeLoop.firstSteps.unlocked.orders,
+    'a fresh run cannot recruit a General, so the game does not introduce his orders'
+  );
   // Nothing is blocked: a strike can still be picked while its tab is dimmed.
   const tpBefore = GS.tactical;
   GS.tactical = 50;

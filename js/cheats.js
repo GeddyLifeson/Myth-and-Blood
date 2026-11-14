@@ -114,7 +114,7 @@ const Cheats = (() => {
     'void residue': {
       id: 'cod115',
       message:
-        '115 — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
+        'VOID RESIDUE — Splinter Vale, Dr. Volkov, Brass Kozlov & Blade Sato unlocked! Build Void Residue Barracks.',
       apply() {
         MetaProgress.unlock115();
         Achievements?.tryUnlock('cheat_used');
@@ -150,7 +150,7 @@ const Cheats = (() => {
     },
     'ninefold march': {
       id: 'lotr',
-      message: 'NINE RINGS FALL — Fellowship of Ninefold March unlocked!',
+      message: 'THE NINEFOLD MARCH — march company unlocked!',
       apply() {
         MetaProgress.unlockLotr();
         Achievements?.tryUnlock('cheat_used');
@@ -168,7 +168,8 @@ const Cheats = (() => {
     },
     'bound spirit': {
       id: 'jojo',
-      message: 'Spirit Court sigil — bound spirit heroes (Parts 1–7) unlocked! Part 7 = cavalry.',
+      message:
+        'Spirit Court sigil — bound spirit heroes (Cohorts 1–7) unlocked! Cohort 7 = cavalry.',
       apply() {
         MetaProgress.unlockJojo();
         Achievements?.tryUnlock('cheat_used');
@@ -177,7 +178,7 @@ const Cheats = (() => {
     },
     'spirit court': {
       id: 'jojo',
-      message: 'BOUND SPIRIT COURT — Parts 1–7 unlocked! Gilded Derby cavalry ready.',
+      message: 'BOUND SPIRIT COURT — Cohorts 1–7 unlocked! Gilded Derby cavalry ready.',
       apply() {
         MetaProgress.unlockJojo();
         Achievements?.tryUnlock('cheat_used');
@@ -261,6 +262,14 @@ const Cheats = (() => {
   };
 
   let lastMessage = '';
+  let pendingRunMark = false;
+
+  /** Read once by Game.start(): was a code entered on the menu since the last run began? */
+  function takePendingRunMark() {
+    const marked = pendingRunMark;
+    pendingRunMark = false;
+    return marked;
+  }
 
   function normalize(code) {
     return code.trim().toLowerCase().replace(/\s+/g, ' ');
@@ -275,6 +284,10 @@ const Cheats = (() => {
     }
     MetaProgress.recordCheat(cheat.id);
     const wasPlaying = typeof Game !== 'undefined' && Game.isPlaying();
+    // Every code voids a run: the one in progress, or (for a code entered on the menu) the
+    // next one started. A voided run records no score, ribbon progress or achievements.
+    if (wasPlaying && Game.markCheatsUsed) Game.markCheatsUsed();
+    else pendingRunMark = true;
     cheat.apply();
     if (cheat.inGameOnly && !wasPlaying) {
       lastMessage = `${cheat.message} (Start a battle first — this code only works in-game.)`;
@@ -301,7 +314,7 @@ const Cheats = (() => {
     if (!panel) return;
     panel.classList.toggle('active');
     const msg = document.getElementById('cheat-result');
-    if (msg) msg.textContent = lastMessage || 'Enter a cheat code below.';
+    if (msg) msg.textContent = lastMessage || 'Enter a cheat code above.';
   }
 
   function init() {
@@ -327,7 +340,15 @@ const Cheats = (() => {
     });
   }
 
-  return { init, submit, togglePanel, getLastMessage, getCodeHints, normalize };
+  return {
+    init,
+    submit,
+    togglePanel,
+    getLastMessage,
+    getCodeHints,
+    normalize,
+    takePendingRunMark,
+  };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

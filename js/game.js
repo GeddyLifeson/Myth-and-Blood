@@ -746,7 +746,11 @@ const Game = (() => {
       .filter((u) => u && u.hp > 0);
   }
 
-  function moveSelectionToWorld(tx, ty, formationId = GS.selectionFormation) {
+  /**
+   * Move the selection. opts.hold: true = go there and hold (Shift + click, long-press),
+   * false/omitted = plain move, hunt from the new post, 'keep' = standing orders unchanged.
+   */
+  function moveSelectionToWorld(tx, ty, formationId = GS.selectionFormation, opts = {}) {
     const liveUnits =
       typeof Formations !== 'undefined'
         ? Formations.sortUnitsForFormation(getSelectedLiveUnits())
@@ -762,8 +766,11 @@ const Game = (() => {
           }));
     liveUnits.forEach((unit, i) => {
       const off = offsets[i] || { x: 0, y: 0 };
-      orderMove(unit, anchor.x + off.x, anchor.y + off.y, true);
+      orderMove(unit, anchor.x + off.x, anchor.y + off.y, true, { hold: opts.hold ?? false });
     });
+    if (opts.hold === true && liveUnits.some((u) => u.holding)) {
+      showMessage('Go there and hold. A plain move or H releases.', 150);
+    }
     syncInteractionState();
     return true;
   }
@@ -798,7 +805,7 @@ const Game = (() => {
     }
     cx /= live.length;
     cy /= live.length;
-    moveSelectionToWorld(cx, cy, formationId);
+    moveSelectionToWorld(cx, cy, formationId, { hold: 'keep' });
     const label =
       typeof Formations !== 'undefined' ? Formations.getLabel(formationId) : formationId;
     showMessage(`${label} formation — ${live.length} units`, 160);
@@ -1102,6 +1109,7 @@ const Game = (() => {
     if (Array.isArray(GS.moveMarkers)) {
       for (const m of GS.moveMarkers) shiftOne(m);
     }
+    if (typeof SapperKit !== 'undefined') SapperKit.shift(dx, dy);
     GS.cameraWorldX += dx;
     GS.cameraWorldY += dy;
   }
@@ -1367,12 +1375,18 @@ const Game = (() => {
   // Thronefall-style hold posts: assigned station, hard plant when home, walk back if displaced.
   const HOLD_AT_DIST = 5;
   const HOLD_SNAP_DIST = 7;
+  const HOLD_SETTLE_DIST = 26;
+  const HOLD_SETTLE_TICKS = 45;
 
-  /** Standing ground: hunt off, player stance locked, not mid player click-order. */
+  /**
+   * Standing ground. Hold is a per-soldier order (unit.holding), given by Shift + move
+   * or "Hold here"; it is not a global mode. True once he is not mid click-order.
+   */
   function isHoldStance(unit) {
     if (!unit || unit.team !== 'player' || unit.hp <= 0) return false;
-    if (unit.huntMode) return false;
-    if (!unit.canHunt) return false;
+    if (!unit.holding || !unit.canHunt) return false;
+    // Sent on a raid, he goes; the hold resumes at his post when the raid is over.
+    if (unit.raidTargetId || unit.raidMissionId) return false;
     if (unit.fleeing || unit.demoralized || unit.retreatingToMed || unit.atMedicalTent)
       return false;
     if (unit.garrisoned || unit.wallGarrisoned || unit.stationedKeep) return false;
@@ -1381,8 +1395,7 @@ const Game = (() => {
     if (unit.isGeneral && unit.rallyTargetId) return false;
     // Mid click-to-move: still marching to an unreached destination.
     if (isPlayerMarchingOrder(unit)) return false;
-    // Hold when explicitly locked (manualOrder) or hunt-disabled idle soldier.
-    return !!(unit.manualOrder || !unit.huntMode);
+    return true;
   }
 
   /** On station (close enough to assigned post) — freeze position. */
@@ -1431,6 +1444,9 @@ const Game = (() => {
     } else if (!opts.reassign && hasHoldPost(unit)) {
       hx = unit.holdX;
       hy = unit.holdY;
+    } else if (!opts.reassign && hasPost(unit)) {
+      hx = unit.postX;
+      hy = unit.postY;
     } else {
       hx = unit.x;
       hy = unit.y;
@@ -1438,6 +1454,11 @@ const Game = (() => {
     const pos = clampPos(hx, hy);
     unit.holdX = pos.x;
     unit.holdY = pos.y;
+    // The held spot and the post are the same place: B, the med tent and a load all
+    // bring him back to it.
+    unit.postX = pos.x;
+    unit.postY = pos.y;
+    stopPostReturn(unit);
     unit.pendingHoldX = null;
     unit.pendingHoldY = null;
     unit.targetX = unit.holdX;
@@ -1463,11 +1484,33 @@ const Game = (() => {
   function updateHoldPosts() {
     for (const unit of GS.units) {
       if (!isHoldStance(unit)) continue;
+      // Other systems (raids, reinforcements) switch hunt back on; a held soldier does not hunt.
+      unit.huntMode = false;
+      unit.manualOrder = true;
       if (!hasHoldPost(unit)) {
-        unit.holdX = unit.x;
-        unit.holdY = unit.y;
+        unit.holdX = hasPost(unit) ? unit.postX : unit.x;
+        unit.holdY = hasPost(unit) ? unit.postY : unit.y;
       }
       const d = distToHoldPost(unit);
+      if (d > HOLD_AT_DIST && d <= HOLD_SETTLE_DIST) {
+        // A spot he cannot quite stand on (a tree, a wall, a comrade): he used to step
+        // towards it and be pushed off again for ever. Where he ends up is the spot.
+        if (d < (unit.holdBest ?? Infinity) - 0.3) {
+          unit.holdBest = d;
+          unit.holdStall = 0;
+        } else if ((unit.holdStall = (unit.holdStall || 0) + 1) > HOLD_SETTLE_TICKS) {
+          unit.holdX = unit.x;
+          unit.holdY = unit.y;
+          unit.postX = unit.x;
+          unit.postY = unit.y;
+          unit.holdBest = Infinity;
+          unit.holdStall = 0;
+          continue;
+        }
+      } else {
+        unit.holdBest = Infinity;
+        unit.holdStall = 0;
+      }
       if (d <= HOLD_AT_DIST) {
         // Hard plant — no micro-drift from separation, combat, or float error.
         unit.x = unit.holdX;
@@ -1705,6 +1748,96 @@ const Game = (() => {
     }
   }
 
+  /**
+   * A planted shield at the feet of a soldier under a Hold order, selected or not, so
+   * the player can always tell who will not move. Hunting soldiers show nothing.
+   */
+  function drawHoldMarker(u) {
+    const ctx = GS.ctx;
+    if (!ctx || u.team !== 'player' || !u.canHunt) return;
+    if (u.garrisoned || u.wallGarrisoned || u.stationedKeep) return;
+    ctx.save();
+    ctx.translate(u.x - 15, u.y + 11);
+    ctx.scale(1.25, 1.25);
+    // the ground it is planted in
+    ctx.fillStyle = 'rgba(7,5,10,0.5)';
+    ctx.fillRect(-6, 5.5, 12, 2.5);
+    // heater shield, point down
+    ctx.beginPath();
+    ctx.moveTo(-5, -6);
+    ctx.lineTo(5, -6);
+    ctx.lineTo(5, 0);
+    ctx.lineTo(3.6, 4);
+    ctx.lineTo(0, 7);
+    ctx.lineTo(-3.6, 4);
+    ctx.lineTo(-5, 0);
+    ctx.lineTo(-5, -6);
+    ctx.fillStyle = '#e4dcc4';
+    ctx.fill();
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = '#07050a';
+    ctx.stroke();
+    // cross
+    ctx.fillStyle = '#8a1c1c';
+    ctx.fillRect(-0.9, -4.5, 1.8, 9);
+    ctx.fillRect(-3.6, -2.6, 7.2, 1.8);
+    ctx.restore();
+  }
+
+  /** A red cross over a wounded soldier who is walking to, or waiting at, the med tent. */
+  function drawMedMark(u) {
+    const ctx = GS.ctx;
+    if (!ctx) return;
+    const x = u.x;
+    const y = u.y - 30;
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.fillStyle = '#f2ecdc';
+    ctx.strokeStyle = '#07050a';
+    ctx.lineWidth = 1.4;
+    ctx.fillRect(-5.5, -5.5, 11, 11);
+    ctx.strokeRect(-5.5, -5.5, 11, 11);
+    ctx.fillStyle = u.medQueued ? '#b07a1c' : '#b3201c';
+    ctx.fillRect(-1.6, -4, 3.2, 8);
+    ctx.fillRect(-4, -1.6, 8, 3.2);
+    ctx.restore();
+  }
+
+  const MARCH_GIVE_UP_TICKS = 150;
+
+  /**
+   * End move orders that have arrived or cannot arrive. A soldier sent to a spot he
+   * could not quite reach (a building, a crowd) used to stay on the order for good,
+   * neither hunting nor holding. Now where he got to becomes his post.
+   */
+  function updateManualMarches() {
+    for (const unit of GS.units) {
+      if (unit.team !== 'player' || unit.hp <= 0 || !unit.manualOrder || !unit.canHunt) continue;
+      if (unit.pathTargetId === 'hold' || unit.targetX == null || unit.targetY == null) continue;
+      if (unit.retreatingToMed || unit.atMedicalTent || unit.fleeing || unit.demoralized) continue;
+      if (hasPendingOutpostGarrison(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit))
+        continue;
+      const d = Math.hypot(unit.x - unit.targetX, unit.y - unit.targetY);
+      if (d > 12) {
+        if (d < (unit.marchBest ?? Infinity) - 0.4) {
+          unit.marchBest = d;
+          unit.marchStall = 0;
+          continue;
+        }
+        unit.marchStall = (unit.marchStall || 0) + 1;
+        if (unit.marchStall < MARCH_GIVE_UP_TICKS) continue;
+        setUnitPost(unit, unit.x, unit.y);
+        unit.pendingHoldX = unit.x;
+        unit.pendingHoldY = unit.y;
+      }
+      unit.marchBest = Infinity;
+      unit.marchStall = 0;
+      unit.path = [];
+      unit.pathIndex = 0;
+      finishManualOrder(unit);
+    }
+  }
+
   /** Order soldiers back to their posts now (hotkey B). A manual march, so nothing distracts them. */
   function returnSelectionToPosts() {
     const live = getSelectedLiveUnits().filter((u) => u.team === 'player' && hasPost(u));
@@ -1716,7 +1849,7 @@ const Game = (() => {
     for (const u of live) {
       if (u.isGeneral || u.fleeing || u.demoralized) continue;
       if (Math.hypot(u.x - u.postX, u.y - u.postY) <= POST_ARRIVE_DIST) continue;
-      orderMove(u, u.postX, u.postY, true);
+      orderMove(u, u.postX, u.postY, true, { hold: 'keep' });
       sent++;
     }
     showMessage(
@@ -1727,27 +1860,26 @@ const Game = (() => {
     return sent > 0;
   }
 
-  /** Restore hunt/hold from the global HUNT toggle after posts, med, rally, etc. */
+  /**
+   * Put a soldier back on his standing order after anything that interrupted it (med
+   * tent, rout and rally, garrison, load, era reset). Hunt is the default; Hold is kept
+   * only for soldiers the player ordered to hold.
+   */
   function applyGlobalHuntState(unit) {
     if (!unit?.canHunt) return;
-    if (GS.globalHunt) {
-      unit.huntMode = true;
-      // Don't cancel an active click-to-move destination.
-      if (
-        unit.manualOrder &&
-        unit.pathTargetId !== 'hold' &&
-        unit.targetX != null &&
-        unit.targetY != null &&
-        Math.hypot(unit.x - unit.targetX, unit.y - unit.targetY) > 12
-      ) {
-        unit.huntMode = false;
-        return;
-      }
-      unit.manualOrder = false;
-      clearHoldPost(unit);
-    } else {
-      enterHoldStance(unit, { reassign: !hasHoldPost(unit) });
+    if (unit.holding) {
+      if (isPlayerMarchingOrder(unit)) return; // he plants when he arrives
+      enterHoldStance(unit, hasPost(unit) ? { x: unit.postX, y: unit.postY } : { reassign: true });
+      return;
     }
+    unit.huntMode = true;
+    // Don't cancel an active click-to-move destination.
+    if (isPlayerMarchingOrder(unit)) {
+      unit.huntMode = false;
+      return;
+    }
+    unit.manualOrder = false;
+    clearHoldPost(unit);
   }
 
   function unitHasActiveMarch(unit) {
@@ -2179,8 +2311,184 @@ const Game = (() => {
     }
   }
 
+  // ---------------------------------------------------------------- hunt leash
+  // Hunt is tied to the post. A soldier leaves it only this far to reach an enemy, so a
+  // chase cannot string him across the field one target at a time.
+  const HUNT_LEASH_MELEE = 240; // how far a melee soldier walks from his post
+  const HUNT_LEASH_RANGED = 140; // ranged step forward only far enough to shoot
+  const HUNT_LEASH_RUNNER_MULT = 1.5; // line-breakers are chased further
+  const HUNT_LEASH_KEEP_MULT = 1.2; // a target already engaged is kept a little longer
+  const HUNT_LEASH_STRUCTURE_MULT = 2; // enemy buildings do not run away
+  const HUNT_HEAR_DIST = 130; // this close, an enemy is noticed without a clear line of sight
+
+  // The leash must not leave a wave unfinishable or slow it to a crawl. Once the whole
+  // host is on the field and formed up, if no enemy has been hurt and none has come any
+  // closer for this long, the hunters nearest the enemy go out as a party to finish them.
+  // The rest of the line, and every held soldier, stays.
+  const HUNT_SWEEP_QUIET_TICKS = 600; // ten seconds
+  const HUNT_SWEEP_MIN_PARTY = 3;
+  const HUNT_SWEEP_STRENGTH = 2; // the party's health against the enemy's
+  GS.huntSweep = false;
+  GS.huntQuietTicks = 0;
+  GS.huntFront = Infinity;
+
+  function isSweeping(unit) {
+    return (
+      GS.huntSweep &&
+      unit.team === 'player' &&
+      (unit.sweepUntil || 0) > GS.updateTick &&
+      !!unit.huntMode &&
+      !unit.manualOrder &&
+      !unit.holding
+    );
+  }
+
+  function sweepCandidates() {
+    return GS.units.filter(
+      (u) =>
+        u.team === 'player' &&
+        u.hp > 0 &&
+        u.canHunt &&
+        u.huntMode &&
+        !u.holding &&
+        !u.manualOrder &&
+        !u.garrisoned &&
+        !u.wallGarrisoned &&
+        !u.stationedKeep
+    );
+  }
+
+  function updateHuntSweep() {
+    if (isNightPhase() || GS.creativeMode) {
+      GS.huntSweep = false;
+      GS.huntQuietTicks = 0;
+      GS.huntFront = Infinity;
+      return;
+    }
+    const stragglers = [];
+    let foes = 0;
+    let foeHp = 0;
+    for (const u of GS.units) {
+      if (u.hp <= 0 || u.team !== 'enemy' || u.fleeing) continue;
+      foes++;
+      foeHp += u.hp;
+      if (!SiegeLoop.isMustering(u) && !isEnemyHiddenByFog(u)) stragglers.push(u);
+    }
+    // More of the host still to come, or still forming up: not a standstill yet.
+    if (!foes || GS.spawnQueue.length > 0 || stragglers.length < foes) {
+      GS.huntSweep = false;
+      GS.huntQuietTicks = 0;
+      GS.huntFront = Infinity;
+      return;
+    }
+    if (GS.updateTick % 30 !== 0) {
+      if (!GS.huntSweep) GS.huntQuietTicks++;
+      return;
+    }
+    const hunters = sweepCandidates();
+    if (!hunters.length) return;
+    if (!GS.huntSweep) {
+      // An enemy still closing on the posts is on his way to the fight; wait for him.
+      let front = Infinity;
+      for (const f of stragglers) {
+        for (const h of hunters) {
+          const d = posDistSq(f.x, f.y, h.postX ?? h.x, h.postY ?? h.y);
+          if (d < front) front = d;
+        }
+      }
+      front = Math.sqrt(front);
+      if (front < GS.huntFront - 6) GS.huntQuietTicks = 0;
+      GS.huntFront = front;
+      // Quiet = no enemy hurt (takeDamage resets the count) and none coming closer. A
+      // soldier locked on to an enemy he cannot reach does not count as fighting.
+      if (++GS.huntQuietTicks < HUNT_SWEEP_QUIET_TICKS) return;
+      GS.huntSweep = true;
+      showMessage('The enemy hangs back: a party goes out to finish them.', 200);
+    }
+    // Re-pick the party twice a second: the hunters nearest the stragglers, enough of
+    // them to outweigh what is left (a boss draws the whole line, one goblin three men).
+    const target = stragglers[0];
+    hunters.sort(
+      (a, b) => posDistSq(a.x, a.y, target.x, target.y) - posDistSq(b.x, b.y, target.x, target.y)
+    );
+    let weight = 0;
+    let n = 0;
+    for (const h of hunters) {
+      if (n >= HUNT_SWEEP_MIN_PARTY && weight >= foeHp * HUNT_SWEEP_STRENGTH) break;
+      weight += h.hp;
+      n++;
+      h.sweepUntil = GS.updateTick + 60;
+    }
+  }
+
+  /** True for a player soldier whose targets are limited to the leash round his post. */
+  function isLeashed(unit) {
+    return (
+      unit.team === 'player' &&
+      !!unit.canHunt &&
+      hasPost(unit) &&
+      !unit.raidTargetId &&
+      !unit.raidMissionId &&
+      !unit.garrisoned &&
+      !unit.wallGarrisoned &&
+      !unit.stationedKeep
+    );
+  }
+
+  /** How far from the post he may stand while fighting. */
+  function huntLeashOf(unit) {
+    return unit.combatType === 'ranged' || unit.combatType === 'siege'
+      ? HUNT_LEASH_RANGED
+      : HUNT_LEASH_MELEE;
+  }
+
+  /** Can he strike this point without standing further than `mult` leashes from his post? */
+  function pointInHuntLeash(unit, x, y, mult = 1, extraReach = 0) {
+    const reach = huntLeashOf(unit) * mult + maxAttackRange(unit) + extraReach;
+    return posDistSq(unit.postX, unit.postY, x, y) <= reach * reach;
+  }
+
+  function foeInHuntLeash(unit, foe) {
+    if (!isLeashed(unit) || isSweeping(unit)) return true;
+    let mult = foe.lineBreaker ? HUNT_LEASH_RUNNER_MULT : 1;
+    if (foe.id === unit.combatTargetId) mult *= HUNT_LEASH_KEEP_MULT;
+    return pointInHuntLeash(unit, foe.x, foe.y, mult) || inAttackRange(unit, foe);
+  }
+
+  /** An enemy that has got past this soldier's post, towards what he is guarding. */
+  function foeIsPastPost(unit, foe) {
+    if (!hasPost(unit)) return false;
+    switch (foe.spawnSide || 'north') {
+      case 'south':
+        return foe.y < unit.postY;
+      case 'east':
+        return foe.x < unit.postX;
+      case 'west':
+        return foe.x > unit.postX;
+      default:
+        return foe.y > unit.postY;
+    }
+  }
+
+  /**
+   * Enough comrades are already striking this enemy that one more would only queue
+   * behind them. Counts blows, not intentions: five men all walking towards the same
+   * orc used to count as "surrounded" and every one of them stopped short.
+   */
+  function isCrowdedOut(unit, foe) {
+    if (foe.team === 'neutral' || foe.isNeutral) return false;
+    if (!isFullySurrounded(foe, unit.team)) return false;
+    if (unit.team !== 'player') return true;
+    let striking = 0;
+    for (const e of getEnemyEngagersCached(foe, unit.team, unit)) {
+      if (inAttackRange(e, foe) && ++striking >= 3) return true;
+    }
+    return false;
+  }
+
   function isPursuableFoe(unit, foe) {
     if (!foe || foe.team === unit.team || !isValidCombatFoe(foe)) return false;
+    if (!foeInHuntLeash(unit, foe)) return false;
     // Player units cannot chase/fire on fog-hidden host troops (matches render + minimap).
     if (unit.team === 'player' && foe.team === 'enemy' && isEnemyHiddenByFog(foe)) return false;
     // Troops do not charge the spot where the enemy appears; they engage once a squad
@@ -2192,6 +2500,8 @@ const Game = (() => {
     ) {
       return false;
     }
+    // A Sapper's charges cannot reach flyers, so he neither chases nor "engages" them.
+    if (unit.type === 'sapper' && unit.team === 'player' && foe.flying) return false;
     return true;
   }
 
@@ -2355,13 +2665,8 @@ const Game = (() => {
     unit.morale = Math.min(unit.maxMorale, (unit.morale || 0) + amount);
     unit.rallyTimer = Math.max(unit.rallyTimer || 0, 150);
     if (unit.canHunt) {
-      if (GS.globalHunt) {
-        unit.huntMode = true;
-        unit.manualOrder = false;
-        clearHoldPost(unit);
-      } else {
-        enterHoldStance(unit);
-      }
+      unit.manualOrder = false;
+      applyGlobalHuntState(unit);
     }
   }
 
@@ -2402,7 +2707,8 @@ const Game = (() => {
       }
       if (general.stationedKeep) releaseFromKeep(general);
       general.rallyTargetId = next.id;
-      general.huntMode = true;
+      // The General never hunts (canHunt is false); the rally walk is its own path.
+      general.huntMode = false;
       general.manualOrder = false;
       general.combatTargetId = null;
       general.w2wBuffTimer = GENERAL_W2W_BUFF_TICKS;
@@ -2472,6 +2778,9 @@ const Game = (() => {
     get creative() {
       return !!GS.creativeMode;
     },
+    get cheatsUsed() {
+      return !!GS.cheatsUsed;
+    },
     get modeId() {
       return getRunModeId();
     },
@@ -2513,6 +2822,33 @@ const Game = (() => {
     get army() {
       return unitCounts.player;
     },
+    get upkeepArmy() {
+      return unitCounts.upkeepArmy ?? unitCounts.player;
+    },
+    get freeArmyBonus() {
+      return unitCounts.freeArmyBonus || 0;
+    },
+    /** Complete player walls: each holds a few line-breakers per wave. */
+    get walls() {
+      return GS.buildings;
+    },
+    /** Standing watchtowers turn the night preview into a head count by type. */
+    get watchtowers() {
+      let n = 0;
+      for (const b of GS.buildings) {
+        if (b.isWatchtower && b.owner === 'player' && b.complete && b.hp > 0) n++;
+      }
+      return n;
+    },
+    /** A Scout Report bought tonight does the same for one wave. */
+    get scoutedNext() {
+      return GS.scoutedWave === GS.wave + 1;
+    },
+    /** The General can be recruited (Command Theory researched, or everything unlocked). */
+    get canRecruitGeneral() {
+      if (GS.units.some((u) => u.isGeneral && u.team === 'player' && u.hp > 0)) return true;
+      return !svc('Research') || svc('Research').isDeployUnlocked('general', getResearchOpts());
+    },
     get enemiesLeft() {
       return countActiveEnemies();
     },
@@ -2546,13 +2882,26 @@ const Game = (() => {
     },
     unitName: (u) => (typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type),
     /** Secondary damage from traits (splash, thorns, poison). Never triggers traits again. */
-    hurt: (u, amount, attacker, echo) =>
+    hurt: (u, amount, attacker, echo, extra) =>
       takeDamage(u, amount, {
         attacker: attacker || null,
         attackerTeam: attacker ? attacker.team : u.team === 'player' ? 'enemy' : 'player',
         rosterEcho: !!echo,
         splash: true,
+        ...extra,
       }),
+    // For SapperKit: terrain test, enemy structures, and whose mines to ring.
+    blocked: (x, y, u) => isTerrainBlocked(x, y, u),
+    get buildings() {
+      return GS.buildings;
+    },
+    hurtBuilding: (b, amount, attacker) => damageBuilding(b, amount, attacker || null),
+    get selectedIds() {
+      return getSelectedUnitIds();
+    },
+    get paused() {
+      return !!GS.paused;
+    },
     defeat: () => {
       if (GS.state === 'playing') endGame(false);
     },
@@ -2721,6 +3070,9 @@ const Game = (() => {
     unitCounts.crossoverOnField.length = 0;
     unitCounts.garrisonedPlayer = 0;
     unitCounts.mageCount = 0;
+    unitCounts.upkeepArmy = 0;
+    unitCounts.freeArmyBonus =
+      typeof EconomyRules !== 'undefined' ? EconomyRules.freeArmyBonus(GS.buildings) : 0;
     const byType = unitCounts.livePlayerByType;
     for (const k in byType) delete byType[k];
     for (let i = 0; i < GS.units.length; i++) {
@@ -2728,6 +3080,8 @@ const Game = (() => {
       if (u.hp <= 0) continue;
       if (u.team === 'player') {
         unitCounts.player++;
+        // Specialists do not raise the recruit surcharge.
+        if (u.type !== 'builder' && u.type !== 'courier') unitCounts.upkeepArmy++;
         byType[u.type] = (byType[u.type] || 0) + 1;
         if (u.garrisoned) unitCounts.garrisonedPlayer++;
         if (u.type === 'builder') unitCounts.liveBuilders++;
@@ -2879,6 +3233,7 @@ const Game = (() => {
 
   function beginPresentationFrame() {
     GS.presentationFrame++;
+    SiegeLoop.notePresentationFrame();
     GS.gsCtxFrame = -1;
     GS.igCtxFrame = -1;
   }
@@ -2937,6 +3292,7 @@ const Game = (() => {
     GS.nightTimer = 0;
     refreshUnitCounts();
     awardRoundTP();
+    syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
     GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
     SiegeLoop.onNightBegin(siegeCtx);
@@ -3162,6 +3518,7 @@ const Game = (() => {
 
   function beginDayPhase(manual = false) {
     if (!isNightPhase()) return;
+    if (SiegeLoop.isSpoilsHeld()) return;
     const secondsLeft = getNightSecondsRemaining();
     GS.timeOfDay = 'day';
     GS.nightTimer = 0;
@@ -3549,11 +3906,18 @@ const Game = (() => {
           u.retreatingToMed = null;
           u.atMedicalTent = null;
           u.demoralized = false;
-          u.huntMode = GS.globalHunt;
+          u.fleeing = false;
+          u.manualOrder = false;
           // The old era's post is on a field that no longer exists.
           u.postX = x;
           u.postY = y;
+          u.holdX = null;
+          u.holdY = null;
           stopPostReturn(u);
+          // Hunt by default; a held soldier holds his new post. Never for the General,
+          // healers or builders, who used to be switched to Hunt here.
+          u.huntMode = !!u.canHunt && !u.holding;
+          if (u.canHunt && u.holding) enterHoldStance(u, { x, y, reassign: true });
           if (typeof repairHonorName === 'function') repairHonorName(u);
           GS.units.push(u);
           n++;
@@ -4051,10 +4415,7 @@ const Game = (() => {
       ) {
         u.morale = Math.min(u.maxMorale, u.morale + fx.mythicMorale);
       }
-      if (fx.hpMult > 1) {
-        u.maxHp = Math.floor(u.maxHp * fx.hpMult);
-        u.hp = Math.min(u.hp, u.maxHp);
-      }
+      // fx.hpMult is applied once, above; it used to be applied here a second time.
       if (fx.buildSpeedMult > 1 && u.type === 'builder') {
         u.buildSpeedMult = (u.buildSpeedMult || 1) * fx.buildSpeedMult;
       }
@@ -4214,7 +4575,7 @@ const Game = (() => {
     const exclude = excludeBuildingIds
       ? new Set(Array.isArray(excludeBuildingIds) ? excludeBuildingIds : [excludeBuildingIds])
       : null;
-    const snapOnHamlet = bdef?.isFortressUpgrade && exclude?.size;
+    const snapOnHamlet = (bdef?.isFortressUpgrade || bdef?.isOutpostUpgrade) && exclude?.size;
     if (!snapOnHamlet && isBlocked(wx, wy, null, margin)) return true;
     for (const b of GS.buildings) {
       if (exclude?.has(b.id)) continue;
@@ -4245,8 +4606,98 @@ const Game = (() => {
     return { x: best.x, y: best.y, hamlet: best };
   }
 
+  /**
+   * Outpost upgrades (Barracks or Granary) are placed on a finished Outpost that has not
+   * been upgraded yet. Each Outpost takes one, once: that is the either/or.
+   */
+  function resolveOutpostUpgradeSite(wx, wy, def) {
+    let best = null;
+    let bestD = Infinity;
+    const maxDist = def.requiresOutpostNearby || 44;
+    for (const b of GS.buildings) {
+      if (b.type !== 'outpost' || b.owner !== 'player' || !b.complete || b.hp <= 0) continue;
+      if (b.upgrade || b.upgradePending) continue;
+      const d2 = posDistSq(b.x, b.y, wx, wy);
+      if (d2 < maxDist * maxDist && d2 < bestD) {
+        bestD = d2;
+        best = b;
+      }
+    }
+    return best ? { x: best.x, y: best.y, outpost: best } : null;
+  }
+
+  /** The upgrade's scaffolding is done: turn its Outpost into a Barracks or a Granary. */
+  function completeOutpostUpgrade(b) {
+    const def = BuildDefs[b.type] || {};
+    const info = typeof EconomyRules !== 'undefined' ? EconomyRules.OUTPOST_UPGRADES[b.type] : null;
+    let host = null;
+    let bestD = Infinity;
+    for (const o of GS.buildings) {
+      if (o.type !== 'outpost' || o.owner !== 'player' || !o.complete || o.hp <= 0) continue;
+      if (o.upgrade) continue;
+      const d2 = posDistSq(o.x, o.y, b.x, b.y);
+      if (d2 < 60 * 60 && d2 < bestD) {
+        bestD = d2;
+        host = o;
+      }
+    }
+    const idx = GS.buildings.indexOf(b);
+    if (idx >= 0) {
+      GS.buildings.splice(idx, 1);
+      releaseBuildingRecord(b);
+    }
+    invalidateObstacles();
+    if (!host || !info) {
+      // The Outpost fell while the work was under way: the price comes back.
+      GS.tactical += def.cost || 0;
+      sanitizeTactical();
+      showMessage('The Outpost was lost before its upgrade finished — TP refunded.', 240);
+      return;
+    }
+    host.upgrade = info.id;
+    host.upgradeName = info.label;
+    host.upgradePending = false;
+    host.maxHp = Math.floor(host.maxHp + (def.hpBonus || 0));
+    host.hp = Math.min(host.maxHp, host.hp + (def.hpBonus || 0));
+    svc('FloatingText')?.status?.(host.x, host.y - 24, info.label.toUpperCase(), '#ffe080');
+    showMessage(`Outpost upgraded to ${info.label}. ${info.note}`, 320);
+    refreshUnitCounts();
+  }
+
+  /**
+   * Stretcher bearers: once per wave, a soldier struck down near a Medical Tent is carried
+   * in alive instead of dying.
+   */
+  function tryStretcherSave(unit) {
+    if (typeof EconomyRules === 'undefined' || !unit || unit.team !== 'player') return false;
+    if (unit.isDoomslayer || unit.isGeneral || !isDayPhase() || GS.creativeMode) return false;
+    const tent = EconomyRules.claimStretcher(unit.x, unit.y, GS.buildings, GS.wave);
+    if (!tent) return false;
+    const r = EconomyRules.BUILDINGS.medical_tent;
+    releaseFromGarrison(unit);
+    unit.hp = Math.max(1, Math.ceil(unit.maxHp * r.saveHp));
+    const slot = getMedicalTentSlot(tent);
+    unit.x = slot.x;
+    unit.y = slot.y;
+    unit.path = [];
+    unit.pathIndex = 0;
+    unit.combatTargetId = null;
+    unit.structureTargetId = null;
+    unit.fleeing = false;
+    unit.pinned = false;
+    unit.fightToDeath = false;
+    unit.stretcherSaves = (unit.stretcherSaves || 0) + 1;
+    tryMedicalRetreat(unit, { silent: true });
+    const name = typeof getUnitDisplayName === 'function' ? getUnitDisplayName(unit) : unit.type;
+    svc('FloatingText')?.status?.(tent.x, tent.y - 24, 'SAVED', '#80ffa0');
+    showMessage(`${name} was carried to the medical tent alive.`, 220);
+    return true;
+  }
+
   function ach(type, data = {}) {
     if (GS.creativeMode && !GS.creativeSettings.enableAchievements) return;
+    // A run in which a cheat was used earns no achievements.
+    if (GS.cheatsUsed) return;
     if (svc('Achievements')) svc('Achievements').onEvent(type, data);
   }
 
@@ -4371,6 +4822,18 @@ const Game = (() => {
       buildX = site.x;
       buildY = site.y;
       excludeBuildId = site.hamlet.id;
+    }
+    let upgradeHost = null;
+    if (def.isOutpostUpgrade) {
+      const site = resolveOutpostUpgradeSite(wx, wy, def);
+      if (!site) {
+        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        return false;
+      }
+      buildX = site.x;
+      buildY = site.y;
+      excludeBuildId = site.outpost.id;
+      upgradeHost = site.outpost;
     }
     if (isBuildSiteBlocked(buildX, buildY, def, excludeBuildId)) {
       // Creative / tests: nudge off trees and rocks instead of hard-failing the spawn.
@@ -5512,17 +5975,22 @@ const Game = (() => {
     }
     if (tacticalTargetCache.has(unit.id)) return tacticalTargetCache.get(unit.id);
 
-    const maxSeek =
+    let maxSeek =
       unit.team === 'enemy'
         ? Math.max(maxAttackRange(unit) + 220, 450)
         : maxAttackRange(unit) + 140;
     const options = [];
+    // A soldier sent out after stragglers looks across the whole field.
+    const sweeping = isSweeping(unit);
+    if (sweeping) maxSeek = Math.hypot(GS.worldW, GS.worldH);
+    // Leashed hunters look for line-breakers a little further out than for the rest.
+    const runnerSeek = isLeashed(unit) && unit.huntMode && !sweeping ? maxSeek + 110 : maxSeek;
     let foeList;
     if (useSpatialQueries()) {
       svc('Spatial').queryRadiusInto(
         unit.x,
         unit.y,
-        maxSeek,
+        runnerSeek,
         (e) => e.kind === 'unit' && e.ref?.team !== unit.team && e.ref?.hp > 0 && !e.ref?.fleeing,
         svc('Spatial')._scratch
       );
@@ -5537,15 +6005,32 @@ const Game = (() => {
       if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
       if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;
       const dist = unitDistance(unit, foe);
-      if (dist > maxSeek) continue;
-      if (!lineOfSight(unit.x, unit.y, foe.x, foe.y)) continue;
+      if (dist > (foe.lineBreaker ? runnerSeek : maxSeek)) continue;
+      // Sight is needed to pick a target, not to keep one: a soldier who lost sight of
+      // his enemy behind a tree one step into the chase used to stop and stand there.
+      // Nor to notice an enemy this close: a tree between them left him standing idle
+      // with an orc a few strides away.
+      const chasing =
+        unit.team === 'player' &&
+        (sweeping ||
+          foe.id === unit.combatTargetId ||
+          foe.id === unit.pathTargetId ||
+          dist <= HUNT_HEAR_DIST);
+      if (!chasing && !lineOfSight(unit.x, unit.y, foe.x, foe.y)) continue;
+
+      // Never lock on to what cannot be pursued (still mustering, beyond the leash):
+      // a soldier that did stood frozen on it while a reachable enemy walked past.
+      if (unit.team === 'player' && !isPursuableFoe(unit, foe)) continue;
 
       const engagers = getEnemyEngagersCached(foe, unit.team, unit);
-      const surrounded =
-        foe.team === 'neutral' || foe.isNeutral ? false : isFullySurrounded(foe, unit.team);
-      if (surrounded && !inAttackRange(unit, foe)) continue;
+      if (isCrowdedOut(unit, foe) && !inAttackRange(unit, foe)) continue;
 
       let score = dist;
+      if (unit.team === 'player' && foe.team === 'enemy') {
+        // Runners first, then whatever has got past his post.
+        if (foe.lineBreaker) score -= 160;
+        else if (foeIsPastPost(unit, foe)) score -= 70;
+      }
       if (unit.team === 'enemy' && foe.isGeneral) {
         score -= unit.type === 'assassin' ? 1200 : 800;
         if (foe.stationedKeep && unit.type !== 'assassin') score += 400;
@@ -5568,7 +6053,9 @@ const Game = (() => {
         if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
         if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;
         const dist = unitDistance(unit, foe);
-        if (dist > maxSeek || !lineOfSight(unit.x, unit.y, foe.x, foe.y)) continue;
+        if (dist > (foe.lineBreaker ? runnerSeek : maxSeek)) continue;
+        if (!lineOfSight(unit.x, unit.y, foe.x, foe.y)) continue;
+        if (unit.team === 'player' && !isPursuableFoe(unit, foe)) continue;
         let score = dist + (sameTypeEngaging(foe, unit) ? 120 : 0);
         options.push({ foe, score });
       }
@@ -5589,7 +6076,7 @@ const Game = (() => {
    * Posts spread the line out, and without this each man would meet the enemy alone.
    */
   function findSquadAssistTarget(unit) {
-    if (!unit.huntMode || unit.manualOrder || !unit.canHunt) return null;
+    if (!unit.huntMode || unit.manualOrder || !unit.canHunt || unit.holding) return null;
     let best = null;
     let bestD = SQUAD_ASSIST_FOE_DIST * SQUAD_ASSIST_FOE_DIST;
     const allyR2 = SQUAD_ASSIST_ALLY_DIST * SQUAD_ASSIST_ALLY_DIST;
@@ -5617,6 +6104,9 @@ const Game = (() => {
       if (foe.team !== 'enemy' || foe.hp <= 0 || foe.fleeing) continue;
       if (posDistSq(unit.x, unit.y, foe.x, foe.y) > r2) continue;
       if (SiegeLoop.isMustering(foe) || isEnemyHiddenByFog(foe)) continue;
+      // Only an enemy he may actually go for keeps him out. One beyond his leash used
+      // to hold him standing in the open, neither attacking nor going home.
+      if (!foeInHuntLeash(unit, foe)) continue;
       return true;
     }
     return false;
@@ -5958,7 +6448,7 @@ const Game = (() => {
         );
         applyPlayerStatMods(u);
         u.targetY = GS.rallyY;
-        u.huntMode = GS.globalHunt;
+        u.huntMode = !!u.canHunt;
         GS.units.push(u);
       }
       ox += 34;
@@ -6187,6 +6677,14 @@ const Game = (() => {
           units: GS.units,
           spawnUnit,
           applyPlayerMods: applyPlayerStatMods,
+          rng: gameRandom,
+          unitName: (u) =>
+            typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type,
+          // A soldier lost on the march is a real loss: counted, and his record released.
+          loseUnit: (u) => {
+            GS.runPlayerDeaths++;
+            releaseUnitRecord(u);
+          },
           globalHunt: GS.globalHunt,
           deployX: GS.worldW / 2,
           deployY: GS.deployY,
@@ -6517,6 +7015,9 @@ const Game = (() => {
       // Keep livePlayerByType accurate for subsequent builder/courier academies this dawn.
       unitCounts.livePlayerByType[unitType] = (unitCounts.livePlayerByType[unitType] || 0) + 1;
       unitCounts.player++;
+      // Keep the upkeep count in step at once, so the next recruit in the same tick is priced right.
+      if (type !== 'builder' && type !== 'courier' && unitCounts.upkeepArmy != null)
+        unitCounts.upkeepArmy++;
     }
     if (trained > 0) {
       refreshUnitCounts();
@@ -6996,6 +7497,66 @@ const Game = (() => {
     }
   }
 
+  /**
+   * Dawn pay-out of the starter works. The TP itself is part of getTpPerRound(); this shows
+   * where it came from as a number over each building, pays the labs' science, and musters
+   * the Barracks' free footman.
+   * @returns {{tp: number, science: number, mustered: number}}
+   */
+  function payDawnWorks() {
+    const out = { tp: 0, science: 0, mustered: 0 };
+    if (GS.creativeMode && GS.creativeSettings.freeResources) return out;
+    const ft = svc('FloatingText');
+    const gens = GS.buildings
+      .filter((b) => b.owner === 'player' && b.complete && b.hp > 0 && b.isResourceGen)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      .slice(0, 6);
+    for (const b of gens) {
+      const tp = BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0;
+      if (tp <= 0) continue;
+      out.tp += tp;
+      ft?.status?.(b.x, b.y - 22, `+${tp} TP`, '#80ffa0');
+    }
+    if (svc('Research') && svc('Research').onWaveCleared) {
+      out.science = svc('Research').onWaveCleared({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        showMessage,
+      });
+      if (out.science > 0) {
+        for (const b of GS.buildings) {
+          if (b.isResearchLab && b.owner === 'player' && b.complete && b.hp > 0) {
+            ft?.status?.(
+              b.x,
+              b.y - 22,
+              `+${EconomyRules.BUILDINGS.research_lab.dawnScience} SP`,
+              '#80c0ff'
+            );
+          }
+        }
+      }
+    }
+    if (typeof EconomyRules !== 'undefined' && GS.wave < ACADEMY_ERA_WAVE) {
+      for (const b of EconomyRules.barracksMuster(GS.buildings, GS.wave)) {
+        const u = spawnUnit('footman', b.x, b.y + 26, 'player');
+        if (!u) continue;
+        u.targetY = GS.rallyY;
+        u.huntMode = GS.globalHunt;
+        GS.units.push(u);
+        out.mustered++;
+        ft?.status?.(b.x, b.y - 22, 'MUSTER', '#ffe080');
+      }
+      if (out.mustered > 0) {
+        showMessage(
+          `Barracks muster: ${out.mustered} footm${out.mustered === 1 ? 'an' : 'en'} report for duty.`,
+          220
+        );
+        refreshUnitCounts();
+      }
+    }
+    return out;
+  }
+
   function awardRoundTP() {
     if (GS.tpAwardedForWave === GS.wave) return;
     GS.tpAwardedForWave = GS.wave;
@@ -7008,12 +7569,19 @@ const Game = (() => {
         : 1;
     const gained = Math.max(0, Math.floor(getTpPerRound() * techTpMult + GS.pendingLevy));
     GS.tactical += gained;
+    const levyPaid = GS.pendingLevy;
     GS.pendingLevy = 0;
     sanitizeTactical();
-    const ecoNote = eco > 0 ? ` (+${eco} from settlements)` : '';
+    const works = payDawnWorks();
+    const ecoParts = [];
+    if (eco > 0) ecoParts.push(`+${eco} from settlements`);
+    if (works.tp > 0) ecoParts.push(`+${works.tp} from works`);
+    if (levyPaid > 0) ecoParts.push(`+${levyPaid} levy`);
+    const ecoNote = ecoParts.length ? ` (${ecoParts.join(', ')})` : '';
     // Wave summary banner (kills / TP / casualties) — richer than a single toast
     if (typeof GameFeedback !== 'undefined') {
       const fbStats = GameFeedback.getWaveStats?.() || {};
+      svc('SpriteGen').celebrate?.(GS.updateTick);
       const summary = GameFeedback.onWaveClear({
         wave: GS.wave,
         tpGained: gained,
@@ -7051,6 +7619,9 @@ const Game = (() => {
       // Scout / Infiltrate / Bribe set this for the coming wave; dropping it here
       // meant the promised roster report never appeared at dawn.
       revealed: GS.pendingWaveMods.revealed,
+      speedMult: GS.pendingWaveMods.speedMult,
+      noSiege: GS.pendingWaveMods.noSiege,
+      softenShare: GS.pendingWaveMods.softenShare,
     });
     GS.pendingWaveMods = { ...GameRuntime.DEFAULT_PENDING_WAVE_MODS };
   }
@@ -7077,11 +7648,22 @@ const Game = (() => {
     releaseAllBuildings();
     refreshUnitCounts();
     GS.moveMarkers = [];
-    GS.tactical = diff.startingTp + SiegeLoop.startRun(siegeCtx);
+    // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
+    // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
+    if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
+    const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
+    GS.tactical =
+      diff.startingTp +
+      (typeof EconomyRules !== 'undefined'
+        ? EconomyRules.grantStartTp(ribbonStartTp)
+        : ribbonStartTp);
     GS.wave = 0;
     GS.kills = 0;
     GS.misses = 0;
     GS.runPlayerDeaths = 0;
+    // A cheat code entered on the menu (unlock codes) marks the run it leads into.
+    GS.cheatsUsed = !!(svc('Cheats') && svc('Cheats').takePendingRunMark?.());
+    if (GS.cheatsUsed) SiegeLoop.voidRun();
     GS.playerCasualtiesThisWave = 0;
     GS.castleBreachWarned = false;
     GS.castleBreachRecorded = false;
@@ -7184,6 +7766,7 @@ const Game = (() => {
     if (svc('MultiFrontSiege')) svc('MultiFrontSiege').resetRun();
     if (svc('MonsterBosses')) svc('MonsterBosses').resetRun();
     if (svc('PlayerCounterEvolution')) svc('PlayerCounterEvolution').resetRun();
+    GS.scoutedWave = -1;
     if (svc('LivingPlanet')) svc('LivingPlanet').resetRun();
     if (svc('FactionHazards')) svc('FactionHazards').resetRun();
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
@@ -7282,6 +7865,7 @@ const Game = (() => {
         rallyY: GS.rallyY,
         units: GS.units,
         grantTp: (n) => {
+          if (typeof EconomyRules !== 'undefined') n = EconomyRules.grantStartTp(n);
           if (n > 0) {
             GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
             sanitizeTactical();
@@ -7297,6 +7881,7 @@ const Game = (() => {
         creative: false,
         units: GS.units,
         grantTp: (n) => {
+          if (typeof EconomyRules !== 'undefined') n = EconomyRules.grantStartTp(n);
           if (n > 0) {
             GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
             sanitizeTactical();
@@ -7400,17 +7985,34 @@ const Game = (() => {
     'umbral_stalker',
     'cinderbound_juggernaut',
     'hellmortar_pack',
-    'boss_gorath',
-    'boss_morwen',
-    'boss_thokk',
-    'boss_grimm',
-    'boss_vexis',
-    'boss_karg',
-    'boss_sylvara',
-    'boss_rotfather',
-    'boss_volk',
-    'boss_malachar',
   ];
+
+  // Named bosses belong to boss waves (every 10th). They are not ordinary elites: listing
+  // them above let host-threat elite slots drop wave-100 bosses into wave 27.
+
+  /**
+   * Last step of building a wave: on an ordinary wave any named boss that an injector
+   * (faction sub-bosses, elite slots, events) put in the queue is swapped for a plain elite.
+   * On a boss wave it makes sure the wave's own boss is still in the queue.
+   */
+  function stripStrayNamedBosses(queue, waveNum) {
+    if (!Array.isArray(queue) || !queue.length) return queue;
+    const bossWave =
+      svc('GameDepth') && svc('GameDepth').isBossWave
+        ? svc('GameDepth').isBossWave(waveNum)
+        : waveNum > 0 && waveNum % 10 === 0;
+    if (bossWave) {
+      // The random elite/faction swaps above can overwrite the boss himself; put him back.
+      const own = GS.namedBossWave?.type;
+      if (own && EnemyDefs[own] && !queue.includes(own)) queue[0] = own;
+      return queue;
+    }
+    const standIns = ['dark_knight', 'troll', 'war_chief'].filter((t) => EnemyDefs[t]);
+    let n = 0;
+    return queue.map((t) =>
+      EnemyDefs[t]?.isNamedBoss ? standIns[n++ % Math.max(1, standIns.length)] || 'orc' : t
+    );
+  }
 
   /**
    * Hard difficulties send extra bodies, but the first two waves arrive before the player
@@ -7639,6 +8241,48 @@ const Game = (() => {
     });
   }
 
+  /** What the priced actions need to know about the run right now. */
+  function econCtx() {
+    return {
+      wave: GS.wave,
+      upkeepMult: getDeployCostMult(),
+      isDeployUnlocked: (type) =>
+        !svc('Research') || svc('Research').isDeployUnlocked(type, getResearchOpts()),
+    };
+  }
+
+  /** Refresh action prices and cooldown labels (night start, after a use, after a load). */
+  function syncEconomyActions() {
+    if (typeof EconomyRules !== 'undefined') EconomyRules.syncActionDefs(econCtx());
+  }
+
+  /**
+   * Spy trade-offs that shape the queue once it is built: Sabotage removes siege engines,
+   * Deep Infiltration weakens the first arrivals. Disrupt's forced march is applied per
+   * enemy as it spawns.
+   */
+  function applyEconomyWaveMods() {
+    if (typeof EconomyRules === 'undefined') return;
+    const mods = GS.waveModifiers || {};
+    if (mods.noSiege) {
+      const cut = EconomyRules.stripSiege(GS.spawnQueue);
+      showMessage(
+        cut > 0
+          ? `Sabotage: ${cut} siege engine${cut === 1 ? '' : 's'} never left camp.`
+          : 'Sabotage: the host brought no siege engines today.',
+        260
+      );
+    }
+    if (mods.softenShare > 0) {
+      mods.softenCount = EconomyRules.softenCountFor(GS.spawnQueue.length);
+      showMessage(`Ambush on the road: the first ${mods.softenCount} foes arrive wounded.`, 260);
+    }
+    if ((mods.speedMult || 1) > 1) {
+      showMessage('Disrupted host: fewer of them, but tougher and on a forced march.', 260);
+    }
+    EconomyRules.onWaveStart(mods);
+  }
+
   function buildSpawnQueue() {
     GS.currentWaveConfig = getWaveConfig(GS.wave);
     GS.currentHordeWave = null;
@@ -7693,6 +8337,7 @@ const Game = (() => {
         GS.spawnQueue = svc('EnemyFactions').biasHordeQueue(GS.spawnQueue, GS.wave, gameRandom);
         GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
       }
+      GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
       GS.waveEnemyTotal = GS.spawnQueue.length;
       GS.waveProgress = 0;
       const towers = GS.spawnQueue.filter((t) => t === 'siege_tower').length;
@@ -7985,6 +8630,7 @@ const Game = (() => {
           elitePool[Math.floor(gameRandom() * elitePool.length)];
       }
     }
+    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
     GS.waveEnemyTotal = GS.spawnQueue.length;
     if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
       const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
@@ -8322,6 +8968,7 @@ const Game = (() => {
       });
     }
     buildSpawnQueue();
+    applyEconomyWaveMods();
     if (GS.namedBossWave && svc('MonsterBosses')) {
       svc('MonsterBosses').spawnPackStructures(
         GS.namedBossWave.type,
@@ -8377,6 +9024,8 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
+    // getState() is cached per presented frame; the HUD must not read 'playing' from it.
+    invalidateStateCache();
     SiegeLoop.endRun(siegeCtx);
     if (!GS.creativeMode) {
       ach('game_end', {
@@ -8705,11 +9354,11 @@ const Game = (() => {
       if (researchLocked) {
         const need =
           type === 'ballista'
-            ? 'Locked: Research Lab → Iron Weapons → Siege Engineering (wave 12+, 55 SP).'
+            ? 'Locked: Research Lab → Iron Weapons → Siege Engineering (wave 9+, 34 SP).'
             : type === 'bard'
-              ? 'Locked: Research Lab → Morale Arts (wave 5+, 32 SP).'
+              ? 'Locked: Research Lab → Morale Arts (wave 4+, 18 SP).'
               : type === 'scout' || type === 'pikeman'
-                ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 10+).'
+                ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 7+, 26 SP).'
                 : type === 'sapper' || type === 'knight' || type === 'crossbowman'
                   ? 'Locked: Research Lab → Iron Weapons first.'
                   : type === 'general'
@@ -8718,9 +9367,7 @@ const Game = (() => {
         showMessage(need, 320);
         // Still allow selection so the button highlights; map click re-checks.
       } else {
-        const costMult = getDeployCostMult();
-        const cost =
-          GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+        const cost = getDeployCost(type);
         const costLabel = cost > 0 ? `${cost} TP` : 'free';
         showMessage(
           `${def.name || type} ready — click map (${costLabel}). Hold Shift to place more without reselecting.`,
@@ -8731,6 +9378,17 @@ const Game = (() => {
     }
     syncInteractionState();
     playSfx('click');
+  }
+
+  /**
+   * The one price of a recruit: base cost times army upkeep (and Warband), rounded up.
+   * Buttons, tooltips, the "ready" banner and the charge itself all read this.
+   */
+  function getDeployCost(type) {
+    const def = getPlayerUnitDef(type) || UnitDefs[type];
+    if (!def || !Number.isFinite(def.cost)) return 0;
+    if (GS.creativeMode && GS.creativeSettings && GS.creativeSettings.freeResources) return 0;
+    return Math.ceil(def.cost * getDeployCostMult());
   }
 
   function selectAbility(a) {
@@ -8826,11 +9484,19 @@ const Game = (() => {
 
   function executeSpyAction(action) {
     const def = SpyActions[action];
+    const ruleKey = `spy:${action}`;
+    const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
-      ? svc('ContentExpansion').getSpyCost(action, def?.cost ?? 99)
-      : (def?.cost ?? 99);
+      ? svc('ContentExpansion').getSpyCost(action, baseCost)
+      : baseCost;
     if (!def || GS.tactical < cost) {
       showMessage('Not enough TP or invalid action!');
+      return false;
+    }
+    const gate = rules?.canUse(ruleKey, econCtx());
+    if (gate && !gate.ok) {
+      showMessage(`${def.name}: ${gate.reason}`);
       return false;
     }
     if (!isKingdomActionUnlocked(def)) {
@@ -8851,6 +9517,8 @@ const Game = (() => {
       if (ok) {
         GS.tactical -= cost;
         GS.spyUsedThisWave = true;
+        rules?.markUsed(ruleKey, GS.wave);
+        syncEconomyActions();
         playSfx('magicCast');
         ach('spy', { action });
         syncInteractionState();
@@ -8876,12 +9544,28 @@ const Game = (() => {
       GS.pendingWaveMods.stealReduction += 2;
       showMessage('Spy stole enemy war chest! +4 TP');
     } else if (action === 'disrupt') {
-      GS.pendingWaveMods.countMult = 0.65;
-      showMessage('Supply lines disrupted! Next wave weakened.');
+      // A trade, not a discount: fewer come, but the ones who do are fed first and pushed hard.
+      const r = rules?.rule(ruleKey) || { countMult: 0.75, hpMult: 1.12, speedMult: 1.15 };
+      GS.pendingWaveMods.countMult = r.countMult;
+      GS.pendingWaveMods.hpMult = (GS.pendingWaveMods.hpMult || 1) * r.hpMult;
+      GS.pendingWaveMods.speedMult = r.speedMult;
+      showMessage(
+        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes, but ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster.`,
+        300
+      );
     } else if (action === 'assassin') {
       GS.pendingWaveMods.noElites = true;
       showMessage('Enemy captain assassinated! No elites next wave.');
-    } else if (action === 'scout' || action === 'infiltrate') {
+    } else if (action === 'infiltrate') {
+      // Used to run the same code as Scout Report. Now it is an ambush on the road.
+      const r = rules?.rule(ruleKey) || { softenShare: 0.3, softenHp: 0.6 };
+      GS.pendingWaveMods.softenShare = r.softenShare;
+      showMessage(
+        `Infiltrators lie in wait: the first ${Math.round(r.softenShare * 100)}% of the next wave will arrive at ${Math.round(r.softenHp * 100)}% health.`,
+        300
+      );
+    } else if (action === 'scout') {
+      GS.scoutedWave = GS.wave + 1;
       GS.pendingWaveMods.revealed = true;
       GS.waveModifiers.revealed = true;
       const sides = getUnlockedAttackSides(GS.wave + 1);
@@ -8891,7 +9575,12 @@ const Game = (() => {
       let extra = '';
       if (boss) extra = ' Named BOSS expected.';
       else if (horde) extra = ' HORDE expected.';
-      GS.nextWaveIntel = `Scout intel locked — exact roster at dawn.${sides.length > 1 ? ` Possible flanks: ${sides.join(', ')}` : ''}${extra}`;
+      // The head count by type goes into the night preview now, not at dawn when it is too late.
+      const preview = SiegeLoop.refreshPreview?.(siegeCtx);
+      const report = preview
+        ? SiegeLoop.previewText(preview)
+        : 'Scout intel locked — roster at dawn.';
+      GS.nextWaveIntel = `${report}${sides.length > 1 ? ` · Possible flanks: ${sides.join(', ')}` : ''}${extra}`;
       showMessage(GS.nextWaveIntel, 340);
     } else if (action === 'bribery') {
       GS.pendingWaveMods.revealed = true;
@@ -8908,8 +9597,13 @@ const Game = (() => {
       GS.pendingWaveMods.hpMult = 0.8;
       showMessage('Enemy caches poisoned! Next wave -20% HP.');
     } else if (action === 'sabotage') {
-      GS.spawnDelayBonus = 120;
-      showMessage('Siege equipment sabotaged! Enemy spawns delayed.');
+      const r = rules?.rule(ruleKey) || { delayTicks: 600 };
+      GS.pendingWaveMods.noSiege = true;
+      GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
+      showMessage(
+        `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
+        300
+      );
     } else {
       // Unknown action after expansion miss — refund.
       GS.tactical += cost;
@@ -8923,6 +9617,8 @@ const Game = (() => {
     ) {
       svc('FactionReputation').onSpyAggression(GS.wave, { hooks: { showMessage } });
     }
+    rules?.markUsed(ruleKey, GS.wave);
+    syncEconomyActions();
     playSfx('magicCast');
     ach('spy', { action });
     syncInteractionState();
@@ -9113,12 +9809,18 @@ const Game = (() => {
       }
       return false;
     }
+    // The soldiers leave the field but stay themselves: their records are kept by the
+    // expedition and put back when it returns, with name, rank and kills intact.
     for (const uid of result.expedition.unitIds) {
       const idx = GS.units.findIndex((u) => u.id === uid);
-      if (idx >= 0) {
-        const [u] = GS.units.splice(idx, 1);
-        releaseUnitRecord(u);
-      }
+      if (idx < 0) continue;
+      const [u] = GS.units.splice(idx, 1);
+      if (GS.selectedUnitId === uid) GS.selectedUnitId = null;
+      GS.selectedUnitIds = GS.selectedUnitIds.filter((id) => id !== uid);
+      u.path = [];
+      u.pathIndex = 0;
+      u.combatTargetId = null;
+      u.structureTargetId = null;
     }
     if (svc('FactionReputation')) {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
@@ -9271,11 +9973,19 @@ const Game = (() => {
 
   function sendCourierMessage(msg) {
     const def = CourierMessages[msg];
+    const ruleKey = `courier:${msg}`;
+    const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
-      ? svc('ContentExpansion').getCourierCost(msg, def?.cost ?? 99)
-      : (def?.cost ?? 99);
+      ? svc('ContentExpansion').getCourierCost(msg, baseCost)
+      : baseCost;
     if (!def || GS.tactical < cost) {
       showMessage('Not enough TP!');
+      return false;
+    }
+    const gate = rules?.canUse(ruleKey, econCtx());
+    if (gate && !gate.ok) {
+      showMessage(`${def.name}: ${gate.reason}`);
       return false;
     }
     if (!isKingdomActionUnlocked(def)) {
@@ -9305,6 +10015,7 @@ const Game = (() => {
     }
     GS.tactical -= cost;
     GS.courierMessagesUsedThisWave++;
+    rules?.markUsed(ruleKey, GS.wave);
     const courier = GS.units.find((u) => u.type === 'courier' && u.hp > 0);
     let cdMult = courier?.courierCooldownMult || 1;
     // Twin Dispatch rides 20% cooler (faster) between messages.
@@ -9336,6 +10047,7 @@ const Game = (() => {
       playSfx('deploy');
       ach('courier', { message: msg });
       syncInteractionState({ refreshCounts: true });
+      syncEconomyActions();
       return true;
     }
 
@@ -9348,8 +10060,21 @@ const Game = (() => {
           u.demoralized = false;
           u.witnessDeaths = 0;
         });
-    else if (msg === 'levy') GS.pendingLevy = 6;
-    else if (msg === 'banner') {
+    else if (msg === 'levy') {
+      // The levy is paid by the soldiers' families: it costs morale as well as a fee.
+      const r = rules?.rule(ruleKey) || { pay: 5, morale: 2 };
+      GS.pendingLevy += r.pay;
+      for (const u of GS.units) {
+        if (u.team !== 'player' || u.hp <= 0 || !(u.maxMorale > 0)) continue;
+        u.morale = Math.max(0, u.morale - r.morale);
+      }
+      svc('FloatingText')?.status?.(
+        GS.worldW / 2,
+        GS.rallyY - 40,
+        `LEVY -${r.morale} MORALE`,
+        '#ffb060'
+      );
+    } else if (msg === 'banner') {
       const u = spawnUnit('knight', 200, GS.deployY, 'player');
       u.targetY = GS.rallyY;
       GS.units.push(u);
@@ -9398,6 +10123,7 @@ const Game = (() => {
     playSfx('deploy');
     ach('courier', { message: msg });
     syncInteractionState({ refreshCounts: msg === 'banner' });
+    syncEconomyActions();
     return true;
   }
 
@@ -9468,8 +10194,8 @@ const Game = (() => {
     if (b.isMedical) {
       for (const u of GS.units) {
         if (u.retreatingToMed === b.id || u.atMedicalTent === b.id) {
-          u.retreatingToMed = null;
-          u.atMedicalTent = null;
+          // Tent lost: back to duty (hunt or hold), not left standing with hunt off.
+          endMedicalRetreat(u);
           u.fightToDeath = false;
         }
       }
@@ -9530,6 +10256,9 @@ const Game = (() => {
     }
     b.hp = 0;
     b._destroyed = true;
+    if (!opts.silent && typeof BuildingArt !== 'undefined') {
+      BuildingArt.noteDestroyed(b, GS.updateTick);
+    }
     cleanupBuildingOccupants(b);
     detachBuildingFromBuilders(b);
     clearBuildingTargeting(b);
@@ -9881,7 +10610,8 @@ const Game = (() => {
       return;
     }
     if (unit.canHunt) {
-      if (GS.globalHunt) {
+      if (!unit.holding) {
+        // A plain move: he hunts again from the new post.
         unit.manualOrder = false;
         unit.huntMode = true;
         unit.path = [];
@@ -9892,7 +10622,7 @@ const Game = (() => {
         unit.pathRecalc = 0;
         clearHoldPost(unit);
       } else {
-        // Hunt off: destination becomes the assigned hold post (Thronefall station).
+        // Shift + move: the destination is where he holds.
         const hx = Number.isFinite(unit.pendingHoldX) ? unit.pendingHoldX : unit.x;
         const hy = Number.isFinite(unit.pendingHoldY) ? unit.pendingHoldY : unit.y;
         enterHoldStance(unit, { x: hx, y: hy, reassign: true });
@@ -9904,8 +10634,16 @@ const Game = (() => {
     unit.pathIndex = 0;
   }
 
-  function orderMove(unit, tx, ty, manual = true) {
+  /**
+   * Move order. A manual order makes the destination the soldier's post. opts.hold:
+   * true = hold there (Shift + move), false = hunt from there (plain move, the default),
+   * 'keep' = leave his standing order as it is (B, formations).
+   */
+  function orderMove(unit, tx, ty, manual = true, opts = {}) {
     const pos = clampPos(tx, ty);
+    if (manual && unit.team === 'player' && opts.hold !== 'keep') {
+      unit.holding = !!opts.hold && !!unit.canHunt;
+    }
     if (manual && (unit.garrisoned || hasPendingOutpostGarrison(unit))) releaseFromGarrison(unit);
     if (manual && unit.stationedKeep) releaseFromKeep(unit);
     if (manual && (unit.wallGarrisoned || isMarchingToWallSlot(unit)))
@@ -9913,6 +10651,7 @@ const Game = (() => {
     if (manual && unit.retreatingToMed) {
       unit.retreatingToMed = null;
       unit.atMedicalTent = null;
+      unit.medQueued = false;
       unit.fightToDeath = false;
     }
     if (manual) {
@@ -9934,6 +10673,8 @@ const Game = (() => {
       unit.pathWaitTicks = 0;
       unit.pinned = false;
       unit.pinTimer = 0;
+      unit.marchBest = Infinity;
+      unit.marchStall = 0;
       // Ready to fire on the first in-range foe while marching (no leftover attack CD).
       unit.actionTimer = 0;
       unit.attackAnimTimer = 0;
@@ -9963,27 +10704,65 @@ const Game = (() => {
     GS.moveMarkers.push({ x: pos.x, y: pos.y, life: 150, unitId: unit.id });
   }
 
-  function toggleGlobalHunt() {
-    GS.globalHunt = !GS.globalHunt;
-    GS.units
-      .filter((u) => u.team === 'player' && u.canHunt)
-      .forEach((u) => {
-        if (GS.globalHunt) {
-          u.huntMode = true;
-          u.manualOrder = false;
-          u.pathRecalc = 0;
-          clearHoldPost(u);
-        } else if (hasPost(u) && !u.isGeneral) {
-          // Hunt off: stand at the post, not wherever the last chase ended.
-          enterHoldStance(u, { x: u.postX, y: u.postY });
-        } else {
-          enterHoldStance(u, { reassign: true });
-        }
-      });
+  /** Soldiers a Hunt / Hold command applies to: the selection, or the whole army. */
+  function stanceOrderTargets() {
+    const sel = getSelectedLiveUnits().filter((u) => u.team === 'player' && u.canHunt);
+    if (sel.length) return { units: sel, all: false };
+    if (getSelectedUnitIds().length) return { units: [], all: false };
+    return {
+      units: GS.units.filter((u) => u.team === 'player' && u.hp > 0 && u.canHunt),
+      all: true,
+    };
+  }
+
+  /** "Hunt": release Hold. The soldier hunts again from where he was holding. */
+  function orderHunt() {
+    const { units, all } = stanceOrderTargets();
+    let n = 0;
+    for (const u of units) {
+      if (!u.holding) continue;
+      u.holding = false;
+      n++;
+      if (u.fleeing || u.demoralized || u.retreatingToMed || u.atMedicalTent) continue;
+      if (u.garrisoned || u.wallGarrisoned || u.stationedKeep) continue;
+      u.pathRecalc = 0;
+      applyGlobalHuntState(u);
+    }
     showMessage(
-      GS.globalHunt ? 'All soldiers hunting!' : 'Hold posts set — units return to station'
+      n
+        ? `${all ? 'The army hunts' : n > 1 ? `${n} soldiers hunt` : 'He hunts'} again.`
+        : units.length
+          ? 'Already hunting. Hold is given with Shift + move or Hold here.'
+          : 'No soldiers to order.',
+      160
     );
     syncInteractionState();
+    return n;
+  }
+
+  /** "Hold here": plant each soldier where he stands until released or moved. */
+  function orderHoldHere() {
+    const { units, all } = stanceOrderTargets();
+    let n = 0;
+    for (const u of units) {
+      if (u.garrisoned || u.wallGarrisoned || u.stationedKeep) continue;
+      if (hasPendingOutpostGarrison(u) || isMarchingToKeep(u) || isMarchingToWallSlot(u)) continue;
+      u.holding = true;
+      n++;
+      // Away at the tent or broken: he keeps his post and holds it when he is back.
+      if (u.fleeing || u.demoralized || u.retreatingToMed || u.atMedicalTent) continue;
+      u.manualOrder = false; // "here" ends a march in progress
+      setUnitPost(u, u.x, u.y);
+      enterHoldStance(u, { x: u.x, y: u.y, reassign: true });
+    }
+    showMessage(
+      n
+        ? `${all ? 'The whole army holds' : n > 1 ? `${n} soldiers hold` : 'He holds'} here. H releases.`
+        : 'No soldiers to order.',
+      160
+    );
+    syncInteractionState();
+    return n;
   }
 
   function updateHuntPaths() {
@@ -10042,11 +10821,7 @@ const Game = (() => {
           u.pathIndex = 0;
           continue;
         }
-        if (
-          !(foe.team === 'neutral' || foe.isNeutral) &&
-          isFullySurrounded(foe, u.team) &&
-          !inAttackRange(u, foe)
-        ) {
+        if (isCrowdedOut(u, foe) && !inAttackRange(u, foe)) {
           u.path = [];
           u.pathIndex = 0;
           continue;
@@ -10297,6 +11072,18 @@ const Game = (() => {
       buildY = site.y;
       excludeBuildId = site.hamlet.id;
     }
+    let upgradeHost = null;
+    if (def.isOutpostUpgrade) {
+      const site = resolveOutpostUpgradeSite(wx, wy, def);
+      if (!site) {
+        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        return false;
+      }
+      buildX = site.x;
+      buildY = site.y;
+      excludeBuildId = site.outpost.id;
+      upgradeHost = site.outpost;
+    }
     if (isBuildSiteBlocked(buildX, buildY, def, excludeBuildId)) {
       showMessage('Not enough space — settlements need wide ground!');
       return false;
@@ -10326,6 +11113,12 @@ const Game = (() => {
       );
     }
 
+    if (def.isResourceGen && svc('ContentExpansion')?.economySitesFull?.()) {
+      // Checked before the TP is spent: a seventh site used to take the money and pay nothing.
+      showMessage('All 6 income sites are in use — another one would pay nothing.', 260);
+      return false;
+    }
+    if (upgradeHost) upgradeHost.upgradePending = true;
     if (!(GS.creativeMode && GS.creativeSettings.freeResources)) GS.tactical -= def.cost;
     // Pending-march completion must not wipe a different build tool the player just armed.
     if (!buildOpts.keepSelection) GS.selectedBuild = null;
@@ -10598,9 +11391,7 @@ const Game = (() => {
         showMessage(need, 280);
         return false;
       }
-      const costMult = getDeployCostMult();
-      const deployCost =
-        GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+      const deployCost = getDeployCost(GS.selectedDeploy);
       if (GS.tactical < deployCost) {
         showMessage('Not enough TP!');
         return false;
@@ -10662,7 +11453,8 @@ const Game = (() => {
       if (typeof MythicPathEvolution !== 'undefined') {
         MythicPathEvolution.recordDeploy(GS.selectedDeploy, GS.wave);
       }
-      // Shift-click (or selectSameType): keep deploy mode for rapid multi-place.
+      // A plain click places one and puts the troop away. Shift-click keeps it armed for
+      // the next one, as long as the next one (dearer, with upkeep) can still be paid for.
       const keepDeploy =
         !!(opts.shiftKey || opts.repeatDeploy || opts.selectSameType) &&
         GS.selectedDeploy !== 'general' &&
@@ -10670,11 +11462,11 @@ const Game = (() => {
       if (!keepDeploy) {
         GS.selectedDeploy = null;
       } else {
-        const nextCost =
-          GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+        refreshUnitCounts();
+        const nextCost = getDeployCost(GS.selectedDeploy);
         if (GS.tactical < nextCost) {
           GS.selectedDeploy = null;
-          showMessage('Not enough TP for another — deploy cleared.', 180);
+          showMessage(`The next one costs ${nextCost} TP — not enough. Recruiting ended.`, 200);
         }
       }
       return ackInteraction(true);
@@ -10779,12 +11571,35 @@ const Game = (() => {
     }
 
     if (getSelectedUnitIds().length) {
-      moveSelectionToWorld(pos.x, pos.y);
+      // Shift+click at night with a Sapper selected re-sites one of his mines.
+      if (
+        opts.shiftKey &&
+        typeof SapperKit !== 'undefined' &&
+        SapperKit.orderMine(getSelectedUnitIds(), pos.x, pos.y, siegeCtx)
+      ) {
+        return ackInteraction(true);
+      }
+      // Shift + click (or a long press on touch) = go there and hold.
+      moveSelectionToWorld(pos.x, pos.y, undefined, { hold: !!(opts.shiftKey || opts.hold) });
       return true;
     }
 
     if (GS.selectedBuild) {
-      return placeBuilding(pos.x, pos.y);
+      const buildType = GS.selectedBuild;
+      const placed = placeBuilding(pos.x, pos.y);
+      // Shift-click: keep the same building armed for the next one (a run of walls).
+      if (
+        placed &&
+        opts.shiftKey &&
+        !GS.selectedBuild &&
+        BuildDefs[buildType] &&
+        ((GS.creativeMode && GS.creativeSettings.freeResources) ||
+          GS.tactical >= BuildDefs[buildType].cost)
+      ) {
+        GS.selectedBuild = buildType;
+        syncInteractionState();
+      }
+      return placed;
     }
 
     return false;
@@ -11109,6 +11924,9 @@ const Game = (() => {
       svc('FloatingText').status(b.x, b.y - 20, 'SCIENCE', '#80c0ff');
     }
     if (svc('ContentExpansion')) svc('ContentExpansion').onBuildingComplete(b);
+    if (b.isOutpostUpgrade || BuildDefs[b.type]?.isOutpostUpgrade) completeOutpostUpgrade(b);
+    // A watchtower finished at night reports on the coming wave straight away.
+    if (b.isWatchtower && isNightPhase()) SiegeLoop.refreshPreview?.(siegeCtx);
     ach('building_complete', {
       buildType: b.type,
       wallCount: countPlayerWalls(),
@@ -11701,19 +12519,150 @@ const Game = (() => {
     }
   }
 
-  /** Global search — no distance cap; picks closest completed player med tent. */
+  // ---------------------------------------------------------------- med tent rule
+  // With a finished med tent on the field, a wounded soldier goes to it before anything
+  // else. These are the owner's knobs.
+  /** Out of a fight, he goes at any missing health (1 = anything below full). */
+  const MED_SEEK_HP_RATIO = 1;
+  /** In an active exchange he fights on while above this share of health, then breaks off. */
+  const MED_FIGHT_BREAK_RATIO = 0.5;
+  /** An enemy targeting him inside this distance counts as an active exchange (px). */
+  const MED_THREAT_DIST = 60;
+  /** Soldiers one tent treats at a time; the rest queue outside. */
+  const MED_TENT_CAPACITY = 4;
+  /** The walk to the tent bends round enemies closer than this to the straight route. */
+  const MED_AVOID_DIST = 70;
+  const MED_QUEUE_RING = 30;
+
+  function medTentOccupants(tent, except = null) {
+    let n = 0;
+    for (const u of GS.units) {
+      if (u !== except && u.hp > 0 && u.team === 'player' && u.atMedicalTent === tent.id) n++;
+    }
+    return n;
+  }
+
+  function medTentHasRoom(tent, unit) {
+    return medTentOccupants(tent, unit) < MED_TENT_CAPACITY;
+  }
+
+  /**
+   * The tent a wounded soldier should use: the nearest with a free bed, else the nearest
+   * at all (he queues outside it). A soldier already queueing stays with his tent unless
+   * another one has a bed, so he does not walk back and forth between two full tents.
+   */
   function findNearestMedicalTent(unit) {
     let best = null,
-      bestD2 = Infinity;
+      bestD2 = Infinity,
+      roomy = null,
+      roomyD2 = Infinity,
+      current = null;
     for (const b of GS.buildings) {
       if (!isMedicalTentBuilding(b)) continue;
       const d2 = posDistSq(b.x, b.y, unit.x, unit.y);
+      if (b.id === unit.retreatingToMed) current = b;
       if (d2 < bestD2) {
         bestD2 = d2;
         best = b;
       }
+      if (d2 < roomyD2 && medTentHasRoom(b, unit)) {
+        roomyD2 = d2;
+        roomy = b;
+      }
     }
-    return best;
+    if (roomy) return roomy;
+    return current || best;
+  }
+
+  /** Where the n-th patient lies, so four soldiers are not drawn on one spot. */
+  function medBedPos(tent, idx) {
+    const slot = getMedicalTentSlot(tent);
+    const col = idx % 2 ? 1 : -1;
+    const row = Math.floor(idx / 2);
+    return idx <= 0 ? slot : { x: slot.x + col * 9 * (row || 1), y: slot.y + row * 7 };
+  }
+
+  /** Where the n-th waiting soldier stands: an arc on the home side of the tent. */
+  function medQueuePos(tent, idx) {
+    const r = (tent.radius || 24) + MED_QUEUE_RING + Math.floor(idx / 5) * 16;
+    const a = Math.PI * (0.2 + 0.15 * (idx % 5));
+    return clampPos(tent.x + Math.cos(a) * r, tent.y + Math.sin(a) * r);
+  }
+
+  /** Lowest bed (queued = false) or queue place (queued = true) nobody else has. */
+  function freeMedIndex(tent, unit, queued) {
+    const used = new Set();
+    for (const u of GS.units) {
+      if (u === unit || u.hp <= 0 || u.team !== 'player') continue;
+      if (queued) {
+        if (u.medQueued && u.retreatingToMed === tent.id) used.add(u.medQueueIdx);
+      } else if (u.atMedicalTent === tent.id) used.add(u.medBedIdx);
+    }
+    let i = 0;
+    while (used.has(i)) i++;
+    return i;
+  }
+
+  /** In a fight right now: an enemy inside his weapon range, or one close and after him. */
+  function inActiveExchange(unit) {
+    if (findNearestFoeInRange(unit)) return true;
+    const r2 = MED_THREAT_DIST * MED_THREAT_DIST;
+    for (const foe of GS.units) {
+      if (foe.team === unit.team || foe.hp <= 0 || foe.fleeing) continue;
+      if (foe.combatTargetId !== unit.id && foe.pathTargetId !== unit.id) continue;
+      if (posDistSq(foe.x, foe.y, unit.x, unit.y) <= r2) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The med tent rule: should this soldier leave for the tent now? Only asked when a
+   * finished tent stands. The General, the Doomslayer, temporary troops, soldiers under
+   * cover (outpost, wall, keep), routing or broken men and soldiers still marching on a
+   * move order are left to their own rules.
+   */
+  function wantsMedTent(unit) {
+    if (unit.team !== 'player' || unit.hp <= 0) return false;
+    if (unit.retreatingToMed || unit.atMedicalTent || unit.healerFleeing) return false;
+    if (unit.isGeneral || unit.isDoomslayer || unit.temporary || unit.summoned) return false;
+    if (unit.combatType === 'courier') return false;
+    if (unit.fleeing || unit.demoralized) return false;
+    if (unit.garrisoned || unit.wallGarrisoned || unit.stationedKeep || unit.siegeDeployed)
+      return false;
+    if (hasPendingOutpostGarrison(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit))
+      return false;
+    if (unit.raidTargetId || unit.raidMissionId) return false;
+    const ratio = unit.hp / unit.maxHp;
+    if (ratio >= MED_SEEK_HP_RATIO || unit.maxHp - unit.hp < 0.5) return false;
+    // Wounded means he has lost health. A maximum that grew (field tenure, promotion)
+    // leaves a gap too, and that alone does not send the whole army to the tent.
+    if (!unit.medHurt) return false;
+    // A move order is finished first.
+    if (unit.manualOrder && isPlayerMarchingOrder(unit)) return false;
+    if (ratio > MED_FIGHT_BREAK_RATIO && inActiveExchange(unit)) return false;
+    return true;
+  }
+
+  /** Back to duty after the tent (healed, tent lost, no tent left): hunt or hold as before. */
+  function endMedicalRetreat(unit) {
+    // Step out of the tent first: a bed lies inside its walls.
+    if (unit.atMedicalTent) nudgeUnitFree(unit);
+    unit.retreatingToMed = null;
+    unit.atMedicalTent = null;
+    unit.medQueued = false;
+    unit.medQueueIdx = null;
+    unit.medBedIdx = null;
+    unit.healerFleeing = false;
+    if (unit.pathTargetId?.startsWith?.('med:')) {
+      unit.pathTargetId = null;
+      unit.path = [];
+      unit.pathIndex = 0;
+    }
+    if (unit.canHunt) {
+      applyGlobalHuntState(unit);
+      // Walk home now, not after the usual two idle seconds.
+      if (!unit.holding) unit.postIdle = POST_IDLE_TICKS;
+    }
   }
 
   function isBeingTargeted(unit) {
@@ -11728,6 +12677,71 @@ const Game = (() => {
     return false;
   }
 
+  /** Closest a route passes to any enemy that is not already on top of the walker. */
+  function routeClearance(unit, path, foes) {
+    let min = Infinity;
+    let px = unit.x;
+    let py = unit.y;
+    for (const wp of path) {
+      for (const f of foes) {
+        // distance from the foe to the segment (px,py)-(wp)
+        const dx = wp.x - px;
+        const dy = wp.y - py;
+        const len2 = dx * dx + dy * dy || 1;
+        const t = Math.max(0, Math.min(1, ((f.x - px) * dx + (f.y - py) * dy) / len2));
+        const d = Math.hypot(f.x - (px + dx * t), f.y - (py + dy * t));
+        if (d < min) min = d;
+      }
+      px = wp.x;
+      py = wp.y;
+    }
+    return min;
+  }
+
+  /**
+   * Route to the tent. If the plain route brushes past an enemy, try going round on
+   * either side and take whichever keeps furthest from them.
+   */
+  function planMedPath(unit, slot) {
+    const pf = svc('Pathfinding');
+    const leg = (ax, ay, bx, by) =>
+      pf.findPath(ax, ay, bx, by, unit, isTerrainBlockedForPath, { maxNodes: 2400 }) || [];
+    const direct = leg(unit.x, unit.y, slot.x, slot.y);
+    const foes = [];
+    for (const f of GS.units) {
+      if (f.team === unit.team || f.hp <= 0 || f.fleeing) continue;
+      if (f.team === 'neutral' || f.isNeutral) continue;
+      // An enemy already on top of him cannot be walked round.
+      if (posDistSq(f.x, f.y, unit.x, unit.y) < MED_AVOID_DIST * MED_AVOID_DIST) continue;
+      foes.push(f);
+    }
+    if (!direct.length || !foes.length) return direct;
+    let best = direct;
+    let bestClear = routeClearance(unit, direct, foes);
+    if (bestClear >= MED_AVOID_DIST) return direct;
+    const dx = slot.x - unit.x;
+    const dy = slot.y - unit.y;
+    const len = Math.hypot(dx, dy) || 1;
+    if (len < MED_AVOID_DIST * 1.5) return direct;
+    for (const side of [1, -1]) {
+      const via = clampPos(
+        unit.x + dx * 0.5 + (-dy / len) * side * MED_AVOID_DIST * 1.8,
+        unit.y + dy * 0.5 + (dx / len) * side * MED_AVOID_DIST * 1.8
+      );
+      if (isTerrainBlockedForPath(via.x, via.y, unit)) continue;
+      const a = leg(unit.x, unit.y, via.x, via.y);
+      const b = a.length ? leg(via.x, via.y, slot.x, slot.y) : [];
+      if (!a.length || !b.length) continue;
+      const route = a.concat(b);
+      const clear = routeClearance(unit, route, foes);
+      if (clear > bestClear + 8) {
+        bestClear = clear;
+        best = route;
+      }
+    }
+    return best;
+  }
+
   function setMedRetreatPath(unit, tent) {
     const slot = getMedicalTentSlot(tent);
     unit.pathTargetId = `med:${tent.id}`;
@@ -11736,17 +12750,7 @@ const Game = (() => {
     unit.targetX = slot.x;
     unit.targetY = slot.y;
     if (svc('Perf')) svc('Perf').begin('path');
-    unit.path = svc('Pathfinding').findPath(
-      unit.x,
-      unit.y,
-      slot.x,
-      slot.y,
-      unit,
-      isTerrainBlockedForPath,
-      {
-        maxNodes: 2400,
-      }
-    );
+    unit.path = planMedPath(unit, slot);
     if (svc('Perf')) svc('Perf').end('path');
     unit.pathIndex = 0;
     if (!unit.path?.length) unit.path = [{ x: slot.x, y: slot.y }];
@@ -11761,6 +12765,10 @@ const Game = (() => {
     if (unit.stationedKeep) releaseFromKeep(unit);
     unit.retreatingToMed = tent.id;
     unit.atMedicalTent = null;
+    unit.medQueued = false;
+    unit.medQueueIdx = null;
+    unit.medBedIdx = null;
+    stopPostReturn(unit);
     unit.fightToDeath = false;
     unit.fleeing = false;
     unit.fledBattle = false;
@@ -11835,6 +12843,8 @@ const Game = (() => {
     if (!tent) return null;
     if (unit.retreatingToMed !== tent.id) {
       unit.retreatingToMed = tent.id;
+      unit.medQueued = false;
+      unit.medQueueIdx = null;
       setMedRetreatPath(unit, tent);
     }
     return tent;
@@ -11843,17 +12853,46 @@ const Game = (() => {
   function marchToMedicalTent(unit, tent) {
     const slot = getMedicalTentSlot(tent);
     const dist2 = posDistSq(unit.x, unit.y, slot.x, slot.y);
-    if (dist2 <= 100) {
-      unit.x = slot.x;
-      unit.y = slot.y;
+    const room = medTentHasRoom(tent, unit);
+    const queueR = (tent.radius || 24) + MED_QUEUE_RING + 14;
+    if (room && (dist2 <= 100 || (unit.medQueued && dist2 <= queueR * queueR * 1.6))) {
+      // A bed is free: in he goes.
+      unit.medBedIdx = freeMedIndex(tent, unit, false);
+      const bed = medBedPos(tent, unit.medBedIdx);
+      unit.x = bed.x;
+      unit.y = bed.y;
       unit.path = [];
       unit.pathIndex = 0;
-      unit.targetX = slot.x;
-      unit.targetY = slot.y;
+      unit.targetX = bed.x;
+      unit.targetY = bed.y;
       unit.atMedicalTent = tent.id;
+      unit.medQueued = false;
+      unit.medQueueIdx = null;
       unit.animState = 'idle';
       return true;
     }
+    if (!room && (unit.medQueued || dist2 <= queueR * queueR)) {
+      // Tent full: wait outside, in line, and do not wander.
+      if (!unit.medQueued) {
+        unit.medQueued = true;
+        unit.medQueueIdx = freeMedIndex(tent, unit, true);
+        svc('FloatingText').status(unit.x, unit.y, 'WAITING', '#e0b060');
+      }
+      const q = medQueuePos(tent, unit.medQueueIdx || 0);
+      unit.huntMode = false;
+      unit.manualOrder = false;
+      unit.structureTargetId = null;
+      unit.path = [];
+      unit.pathIndex = 0;
+      unit.targetX = q.x;
+      unit.targetY = q.y;
+      if (unit.attackAnimTimer > 0) return false;
+      if (posDistSq(unit.x, unit.y, q.x, q.y) > 16) {
+        if (steerToward(unit, q.x, q.y)) unit.animState = 'walk';
+      } else if (unit.animState === 'walk') unit.animState = 'idle';
+      return false;
+    }
+    unit.medQueued = false;
     unit.huntMode = false;
     unit.manualOrder = false;
     unit.combatTargetId = null;
@@ -11877,36 +12916,52 @@ const Game = (() => {
   }
 
   function releaseHealerMedRetreat(unit) {
-    unit.retreatingToMed = null;
-    unit.atMedicalTent = null;
-    unit.healerFleeing = false;
     unit.fightToDeath = false;
     unit.pathTargetId = null;
     unit.path = [];
     unit.pathIndex = 0;
     unit.healTargetId = null;
-    if (unit.canHunt) applyGlobalHuntState(unit);
+    endMedicalRetreat(unit);
   }
 
   function updateMedicalRetreats() {
+    let anyTent = false;
+    for (const b of GS.buildings) {
+      if (isMedicalTentBuilding(b)) {
+        anyTent = true;
+        break;
+      }
+    }
     for (const unit of GS.units) {
       if (unit.team !== 'player' || unit.hp <= 0) continue;
 
+      // Note who has actually been hurt since he was last at full health.
+      if (unit.hp < (unit.medPrevHp ?? unit.hp) - 0.01) unit.medHurt = true;
+      else if (unit.maxHp - unit.hp < 0.5) unit.medHurt = false;
+      unit.medPrevHp = unit.hp;
+
       if (unit.combatType === 'healer' && unit.healerFleeing && !isBeingTargeted(unit)) {
+        // Safe again. If he is hurt and a tent stands, the med tent rule sends him on.
         releaseHealerMedRetreat(unit);
         svc('FloatingText').status(unit.x, unit.y, 'SAFE', '#80e080');
-        continue;
       }
 
       if (needsMedicalRetreat(unit) && !unit.atMedicalTent && !unit.healerFleeing) {
         tryMedicalRetreat(unit, { silent: !!unit.retreatingToMed });
       }
 
+      // The med tent rule: with a tent on the field, the wounded go before anything else.
+      if (anyTent && wantsMedTent(unit)) {
+        const tent = findNearestMedicalTent(unit);
+        if (tent) beginMedicalRetreat(unit, tent, { silent: unit.hp / unit.maxHp > 0.9 });
+      }
+
       if (unit.retreatingToMed && !unit.atMedicalTent) {
         const tent = resolveMedicalRetreatTent(unit);
         if (!tent) {
-          unit.retreatingToMed = null;
-          unit.fightToDeath = true;
+          // The tent is gone: back to duty.
+          endMedicalRetreat(unit);
+          unit.fightToDeath = unit.hp / unit.maxHp <= RETREAT_HP_RATIO;
         }
       }
 
@@ -11915,8 +12970,7 @@ const Game = (() => {
         (b) => b.id === unit.atMedicalTent && isMedicalTentBuilding(b)
       );
       if (!tent) {
-        unit.atMedicalTent = null;
-        unit.retreatingToMed = null;
+        endMedicalRetreat(unit);
         continue;
       }
       const nightHealMult = isNightPhase() ? 1.55 : 1;
@@ -11929,19 +12983,15 @@ const Game = (() => {
           svc('Particles').heal(unit.x, unit.y);
         }
       }
-      const healedEnough = unit.hp / unit.maxHp >= 0.72;
+      // He leaves healed to full (a tent too weak to heal lets him go at once).
+      const healed = unit.hp >= unit.maxHp - 0.01 || healAmt <= 0.3;
       const healerSafe =
         unit.combatType === 'healer' && unit.healerFleeing && !isBeingTargeted(unit);
-      const hpRetreatDone = !unit.healerFleeing && healedEnough;
-      if (healerSafe || hpRetreatDone) {
-        if (unit.healerFleeing) releaseHealerMedRetreat(unit);
-        else {
-          unit.retreatingToMed = null;
-          unit.atMedicalTent = null;
-          unit.fightToDeath = false;
-          unit.pathTargetId = null;
-          if (unit.canHunt) applyGlobalHuntState(unit);
-        }
+      if (healed && (!unit.healerFleeing || healerSafe)) {
+        if (unit.hp >= unit.maxHp - 0.01) unit.hp = unit.maxHp;
+        unit.fightToDeath = false;
+        if (unit.combatType === 'healer') releaseHealerMedRetreat(unit);
+        else endMedicalRetreat(unit);
         svc('FloatingText').status(unit.x, unit.y, 'READY', '#80e080');
       }
     }
@@ -11963,6 +13013,8 @@ const Game = (() => {
   function getEnemyStructureSeekDist(unit) {
     const mapReach = Math.hypot(GS.worldW * 0.92, GS.worldH * 0.88);
     const rtsReach = isEnemyRtsEra(GS.wave) ? GS.worldH * 0.98 : 0;
+    // On a raid he goes wherever the target is; otherwise the post's leash applies
+    // (see findNearestAttackableEnemyBuilding).
     if (unit?.huntMode) return Math.max(720, mapReach, rtsReach);
     return Math.max(maxAttackRange(unit) + 200, 480);
   }
@@ -11986,6 +13038,12 @@ const Game = (() => {
       if (!isAttackableEnemyStructure(b)) continue;
       const d = Math.hypot(b.x - unit.x, b.y - unit.y);
       if (d > maxDist) continue;
+      if (
+        isLeashed(unit) &&
+        !pointInHuntLeash(unit, b.x, b.y, HUNT_LEASH_STRUCTURE_MULT, b.radius || 28) &&
+        !inBuildingAttackRange(unit, b)
+      )
+        continue;
       let score = d;
       if (b.isHamlet) score -= 100;
       if (b.isMerchantGuild) score -= 80;
@@ -12324,7 +13382,10 @@ const Game = (() => {
     if (!(actual > 0)) return 0;
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
     // from out of reach must not hold a wave open forever.
-    if (actual > 0 && unit.team === 'enemy') SiegeLoop.noteCombat(GS.updateTick);
+    if (actual > 0 && unit.team === 'enemy') {
+      SiegeLoop.noteCombat(GS.updateTick);
+      GS.huntQuietTicks = 0; // an enemy was hurt: the army is not idle
+    } else if (actual > 0 && unit.team === 'player') SiegeLoop.noteBlood(GS.updateTick);
     if (unit.team === 'player' && svc('CrownLegacies') && !GS.creativeMode) {
       actual *= svc('CrownLegacies').getCombinedEffects().damageTakenMult || 1;
     }
@@ -12444,6 +13505,7 @@ const Game = (() => {
       // A volley can stop an enemy once; massed archers can no longer hold it in place forever.
       if (unit.team === 'enemy') unit.pinImmuneUntil = GS.updateTick + 290;
     }
+    if (unit.hp <= 0 && unit.team === 'player' && tryStretcherSave(unit)) return actual;
     if (unit.hp <= 0) {
       unit.hp = 0;
       let quickRevived = false;
@@ -12534,7 +13596,7 @@ const Game = (() => {
           const kiSnap = sampleKiEnergyArmy(playerAlive);
           if (kiSnap?.high) {
             ach('planet_boss_ki_stand', { wave: GS.wave, bossType: unit.type, ...kiSnap });
-            showMessage('Power overwhelming — ki warriors break the warlord!', 380);
+            showMessage('Power overwhelming — skyburst warriors break the warlord!', 380);
           }
         }
         if (isMajorBossUnit(unit)) {
@@ -12603,7 +13665,7 @@ const Game = (() => {
         }
       }
       if (!quickRevived) {
-        if (svc('VisualPolish')) svc('VisualPolish').registerDeath(unit);
+        if (svc('VisualPolish')) svc('VisualPolish').registerDeath(unit, opts?.attacker);
         applyWitnessDeath(unit);
       }
     } else if (unit.team === 'player' && unit.hp > 0) {
@@ -12723,6 +13785,10 @@ const Game = (() => {
   function fireWeapon(unit, target) {
     const dist = unitDistance(unit, target);
     if (!inAttackRange(unit, target)) return;
+    // A Sapper throws a satchel charge instead of shooting; up close he falls through to a knife.
+    if (unit.type === 'sapper' && typeof SapperKit !== 'undefined') {
+      if (SapperKit.fire(unit, target, siegeCtx)) return;
+    }
 
     let hit = unit.accuracy;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -12779,9 +13845,6 @@ const Game = (() => {
           });
         }
         if (unit.combatType === 'cavalry') unit.chargeTimer = 0;
-        if (unit.type === 'sapper' && (target.type === 'siege_tower' || target.siegeDeployed)) {
-          svc('FloatingText').status(target.x, target.y, 'SIEGE!', '#ff8040');
-        }
       } else {
         // Miss swing whoosh — hit SFX is layered inside takeDamage on connect
         playSfx('whoosh');
@@ -13098,6 +14161,21 @@ const Game = (() => {
           setUnitPath(unit, ap.x, ap.y);
         }
       }
+    } else if (unit.team === 'enemy') {
+      // Nobody to mend: an enemy healer follows the host down the field instead of
+      // standing where it spawned (which left a wave unfinishable once the rest had died).
+      unit.pathRecalc = (unit.pathRecalc || 0) - 1;
+      if (unit.pathRecalc <= 0 || !unit.path?.length) {
+        unit.pathRecalc = 45;
+        const alone = !GS.units.some(
+          (o) => o.team === 'enemy' && o.hp > 0 && o !== unit && o.combatType !== 'healer'
+        );
+        if (alone && SiegeLoop.unopposedBreaks(siegeCtx)) unit.lineBreaker = true;
+        const adv = unit.lineBreaker
+          ? SiegeLoop.breachGoal(unit, siegeCtx)
+          : getEnemyAdvancePoint(unit);
+        if (Math.hypot(adv.x - unit.x, adv.y - unit.y) > 12) setUnitPath(unit, adv.x, adv.y);
+      }
     } else if (!unit.manualOrder) {
       unit.path = [];
       unit.pathIndex = 0;
@@ -13299,10 +14377,13 @@ const Game = (() => {
     b.buildProgress += getBuilderBuildTicks(unit);
     if (b.buildProgress >= b.buildTime) {
       b.complete = true;
+      // An upgrade's scaffolding is consumed (and its record recycled) inside the hook.
+      const doneName = BuildDefs[b.type]?.name || 'Building';
+      const consumed = !!b.isOutpostUpgrade;
       onBuildingComplete(b);
       invalidateObstacles();
       unit.building = null;
-      showMessage(`${BuildDefs[b.type].name} complete!`);
+      if (!consumed) showMessage(`${doneName} complete!`);
       svc('Particles').dust(b.x, b.y);
     }
   }
@@ -13316,7 +14397,8 @@ const Game = (() => {
       unit.combatType === 'courier'
     )
       return;
-    if (unit.retreatingToMed || unit.atMedicalTent) return;
+    const medWaiting = !!unit.medQueued && !!unit.retreatingToMed && !unit.atMedicalTent;
+    if ((unit.retreatingToMed || unit.atMedicalTent) && !medWaiting) return;
     if (isMarchingToOutpost(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit)) return;
 
     if (unit.pinned) {
@@ -13329,7 +14411,7 @@ const Game = (() => {
 
     // Manual click-to-move / hold post: fire at targets in range, never chase off station.
     // Hold posts return via updateHoldPosts; combat must not repath them away.
-    if (unit.manualOrder || isHoldStance(unit)) {
+    if (unit.manualOrder || medWaiting || isHoldStance(unit)) {
       // Prefer enemies in range from the assigned post when planted.
       const foe = findCombatTarget(unit);
       if (foe && isPursuableFoe(unit, foe) && inAttackRange(unit, foe)) {
@@ -13385,7 +14467,7 @@ const Game = (() => {
 
     const fightingNeutral = target.team === 'neutral' || target.isNeutral;
     // Neutrals near map edges: always close in (surround logic false-positives on borders).
-    if (isFullySurrounded(target, unit.team) && unit.team === 'player' && !fightingNeutral) {
+    if (unit.team === 'player' && !fightingNeutral && isCrowdedOut(unit, target)) {
       releaseCombatPursuit(unit, { keepManual: unit.manualOrder });
       unit.actionTimer = 10;
       retargetIfHunting(unit);
@@ -13438,6 +14520,8 @@ const Game = (() => {
     unit.animState = 'walk';
   }
 
+  const ENEMY_ENGINEER_WORKS = false;
+
   function updateEnemyAI(unit) {
     if (unit.hp <= 0) return;
     if (unit.flying && unit.combatType !== 'siege' && GS.state === 'playing' && !GS.creativeMode) {
@@ -13446,7 +14530,10 @@ const Game = (() => {
     }
     if (svc('ContentExpansion') && svc('ContentExpansion').updateEnemyAI(unit)) return;
     if (unit.type === 'siege_tower' && updateSiegeTower(unit)) return;
-    if (unit.combatType === 'healer' || unit.combatType === 'builder') return;
+    // Healers move in updateHealer. Enemy builders (Goblin Engineer) march with the host:
+    // they used to return here and stand at the map edge for good, so a wave whose last
+    // enemy was an engineer never ended.
+    if (unit.combatType === 'healer') return;
     if (unit.pinned) return;
 
     // An enemy storming the line does not stop to trade blows.
@@ -13519,7 +14606,9 @@ const Game = (() => {
 
     if (unit.attackAnimTimer > 0) return;
 
-    if (unit.type === 'goblin_engineer') {
+    // Engineer field works (barricades, raid trade posts) never ran while engineers stood
+    // still. They stay off until the owner decides whether enemy structures come back.
+    if (ENEMY_ENGINEER_WORKS && unit.type === 'goblin_engineer') {
       if (Math.random() < 0.004) {
         GS.decorations.push({
           type: 'barricade',
@@ -13678,6 +14767,10 @@ const Game = (() => {
             namedBossScale: u.isNamedBoss ? GS.namedBossWave?.scale : null,
           });
         }
+        if (typeof EconomyRules !== 'undefined') {
+          const label = EconomyRules.onEnemySpawn(u, GS.waveModifiers);
+          if (label) svc('FloatingText')?.status?.(u.x, u.y - 14, label, '#ffb060');
+        }
         if (u.isNamedBoss) {
           const title = u.bossTitle || EnemyDefs[type]?.bossTitle || '';
           svc('FloatingText').status(
@@ -13750,7 +14843,15 @@ const Game = (() => {
   }
 
   function updatePerkCollectionLocal() {
-    if (!isNightPhase() || !svc('Perks') || !svc('Perks').perkMachinesUnlocked()) return;
+    // Tonics open either between runs (MetaProgress) or by researching Tonic Stations
+    // Science. The research path could build stations nobody was allowed to drink from.
+    if (!isNightPhase() || !svc('Perks')) return;
+    if (
+      !svc('Perks').perkMachinesUnlocked() &&
+      !(svc('Research') && svc('Research').isResearched?.('perk_science')) &&
+      !(GS.creativeMode && GS.creativeSettings.unlockAll)
+    )
+      return;
     for (const unit of GS.units) {
       if (!svc('Perks').isEligibleForPerks(unit) || unit.hp <= 0) continue;
       if (
@@ -13830,6 +14931,8 @@ const Game = (() => {
       if (svc('VisualPolish')) svc('VisualPolish').update();
       return;
     }
+    // The spoils choice is a modal: nothing advances until the player has chosen.
+    if (GS.state === 'playing' && SiegeLoop.holdForSpoils(siegeCtx)) return;
     GS.updateTick++;
     if (GS.state === 'playing') {
       SiegeLoop.update(siegeCtx);
@@ -14066,6 +15169,9 @@ const Game = (() => {
     markUpdatePhase('unit-ai', String(GS.units.length));
     for (const unit of GS.units) {
       if (unit.hp <= 0) continue;
+      // Hit flash and honor glow count down here, once per tick, not in draw().
+      if (unit.hitFlash > 0) unit.hitFlash--;
+      if (unit.honorGlowTimer > 0) unit.honorGlowTimer--;
       const tier = throttleCtx ? svc('UpdateThrottle').getUnitTier(unit, throttleCtx) : 'full';
       const throttle = svc('UpdateThrottle');
       if (throttle?.shouldRunUnitAIMinimal(unit, tier, GS.updateTick)) {
@@ -14131,6 +15237,8 @@ const Game = (() => {
         }
         const tent = resolveMedicalRetreatTent(unit);
         if (tent) marchToMedicalTent(unit, tent);
+        // Waiting outside a full tent, he still strikes whatever comes within reach.
+        if (unit.medQueued && !unit.atMedicalTent) updateUnitCombat(unit);
         continue;
       }
 
@@ -14338,6 +15446,8 @@ const Game = (() => {
     resolveOverlaps();
     // After overlaps: hard-plant holders on station / walk anyone displaced back home.
     markUpdatePhase('hold-posts');
+    updateHuntSweep();
+    updateManualMarches();
     updateHoldPosts();
     updatePostReturn();
     for (let mi = GS.moveMarkers.length - 1; mi >= 0; mi--) {
@@ -14427,6 +15537,8 @@ const Game = (() => {
     if (svc('Perf')) svc('Perf').begin('draw');
     const gfxQ = getGfxQuality();
     const light = getDayLightLevel();
+    const fieldArt = typeof FieldArt !== 'undefined' ? FieldArt : null;
+    const buildingArt = typeof BuildingArt !== 'undefined' ? BuildingArt : null;
     sanitizeCameraState();
     syncCameraTransform();
     if (!isMapOverlappingViewport()) clampCameraToBounds();
@@ -14456,20 +15568,24 @@ const Game = (() => {
       GS.ctx.scale(drawScale, drawScale);
       worldLayerDrawn = true;
 
-      GS.ctx.drawImage(
-        svc('SpriteGen').getBattlefieldCanvas(GS.worldW, getMapViewH(), BASE_FIELD_W, BASE_FIELD_H),
-        0,
-        0
-      );
-      SiegeLoop.drawGround(GS.ctx);
-      if (svc('LivingPlanet') && svc('VisualPolish') && gfxQ?.drawBorders !== false) {
-        svc('VisualPolish').drawBiomeRegions(
-          GS.ctx,
-          GS.worldW,
-          getMapViewH(),
-          svc('LivingPlanet').getRegionBands(getLivingPlanetCtx())
+      if (fieldArt) {
+        // Inked ground; the biomes are painted into it, so there is no tinted region box.
+        fieldArt.drawGround(GS.ctx, GS.worldW, getMapViewH(), GS.updateTick, () =>
+          svc('LivingPlanet') ? svc('LivingPlanet').getRegionBands(getLivingPlanetCtx()) : []
+        );
+      } else {
+        GS.ctx.drawImage(
+          svc('SpriteGen').getBattlefieldCanvas(
+            GS.worldW,
+            getMapViewH(),
+            BASE_FIELD_W,
+            BASE_FIELD_H
+          ),
+          0,
+          0
         );
       }
+      SiegeLoop.drawGround(GS.ctx);
       if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
         svc('VisualPolish').drawTerritoryBorders(
           GS.ctx,
@@ -14479,12 +15595,15 @@ const Game = (() => {
         );
         if (getAdvancedMods().fogOfWar && gfxQ?.drawFog !== false) {
           const fogTop = Math.max(40, GS.rallyY - 40);
-          const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
-          grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
-          grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
-          grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
-          GS.ctx.fillStyle = grad;
-          GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
+          if (fieldArt) fieldArt.drawFogOfWar(GS.ctx, GS.worldW, fogTop);
+          else {
+            const grad = GS.ctx.createLinearGradient(0, 0, 0, fogTop);
+            grad.addColorStop(0, 'rgba(14, 18, 28, 0.42)');
+            grad.addColorStop(0.55, 'rgba(14, 18, 28, 0.16)');
+            grad.addColorStop(1, 'rgba(14, 18, 28, 0)');
+            GS.ctx.fillStyle = grad;
+            GS.ctx.fillRect(0, 0, GS.worldW, fogTop);
+          }
         }
       }
       svc('SpriteGen').drawAttackSideMarkers(
@@ -14529,6 +15648,7 @@ const Game = (() => {
       if (gfxQ?.drawDecor !== false) {
         for (const d of GS.decorations) {
           if (!isInView(d.x, d.y, d.size || 16)) continue;
+          if (fieldArt && fieldArt.drawDecor(GS.ctx, d)) continue;
           if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);
@@ -14539,10 +15659,33 @@ const Game = (() => {
         }
       }
 
+      // The line enemies must not cross, then rubble, then the standing buildings.
+      if (fieldArt) {
+        fieldArt.drawLine(GS.ctx, GS.worldW, GS.worldH, GS.updateTick, {
+          dark: fieldArt.darkness(),
+        });
+      }
+      if (buildingArt) buildingArt.drawRubble(GS.ctx, GS.updateTick);
+      const artEnv = buildingArt
+        ? {
+            dark: fieldArt ? fieldArt.darkness() : 0,
+            hoverX: null,
+            hoverY: null,
+            k: 1 / Math.max(0.5, GS.viewScale),
+            lowDetail: gfxQ?.drawDecor === false,
+          }
+        : null;
+      if (artEnv && GS.pointerScreen.sx >= 0) {
+        const hw = screenToWorld(GS.pointerScreen.sx, GS.pointerScreen.sy);
+        artEnv.hoverX = hw.x;
+        artEnv.hoverY = hw.y;
+      }
       for (const b of GS.buildings) {
         if (b.hp <= 0 || !isInView(b.x, b.y, b.radius || 28)) continue;
-        svc('SpriteGen').drawBuilding(GS.ctx, b);
-        if (gfxQ?.buildingHpBars !== false) {
+        if (artEnv) buildingArt.draw(GS.ctx, b, GS.updateTick, artEnv);
+        else svc('SpriteGen').drawBuilding(GS.ctx, b);
+        // The drawing shows damage itself; the bar appears only once a building is hurt.
+        if (gfxQ?.buildingHpBars !== false && (!artEnv || b.hp < b.maxHp)) {
           const barW = b.isHamlet || b.isMerchantGuild ? 40 : 32;
           ensureBuildingHealth(b);
           const hpRatio = b.maxHp > 0 ? b.hp / b.maxHp : 0;
@@ -14556,6 +15699,10 @@ const Game = (() => {
           );
         }
       }
+      if (buildingArt) {
+        buildingArt.drawCollapses(GS.ctx, GS.updateTick);
+        buildingArt.drawHover(GS.ctx, artEnv);
+      }
 
       if (
         GS.selectedBuild === 'wall' &&
@@ -14567,7 +15714,10 @@ const Game = (() => {
           const pos = clampPos(pw.x, pw.y);
           const wallDef = BuildDefs.wall;
           const valid = wallDef && !isBuildSiteBlocked(pos.x, pos.y, wallDef);
-          svc('SpriteGen').drawWallPlacementGhost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
+          const ghost = buildingArt
+            ? buildingArt.drawWallGhost
+            : svc('SpriteGen').drawWallPlacementGhost;
+          ghost(GS.ctx, pos.x, pos.y, GS.pendingWallFacing, {
             valid,
             radius: wallDef?.radius,
           });
@@ -14715,7 +15865,6 @@ const Game = (() => {
           GS.ctx.fill();
         }
         if (drawOverlays && gfxQ?.honorGlow !== false && (u.honorGlowTimer || 0) > 0) {
-          u.honorGlowTimer--;
           const glow = u.honorGlowTimer / 240;
           GS.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 + glow * 0.25})`;
           GS.ctx.beginPath();
@@ -14733,18 +15882,15 @@ const Game = (() => {
         // spriteType is derived from type at spawn and should always be a string; fall back
         // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
         // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
+        // State and frame (gait, idle variation, rout, celebrate, work) come from the sprite clock.
+        const anim = svc('SpriteGen').animFor(u, GS.updateTick);
         const img = svc('SpriteGen').getUnitCanvas(
           u.spriteType || u.type,
           drawRot,
           u.team,
-          // An attack plays its four frames across the swing, not on the walk clock.
-          u.animState === 'attack'
-            ? Math.max(0, Math.min(3, 3 - Math.floor((u.attackAnimTimer || 0) / 4)))
-            : u.frame,
+          anim.frame,
           sprScale,
-          (u.hitFlash || 0) > 0 && u.animState !== 'attack' && u.animState !== 'death'
-            ? 'hurt'
-            : u.animState,
+          anim.state,
           unitLod
         );
         // Micro hit recoil offset
@@ -14779,7 +15925,6 @@ const Game = (() => {
             GS.ctx.stroke();
           }
           GS.ctx.restore();
-          u.hitFlash--;
         }
         if (
           u.id === GS.selectedUnitId ||
@@ -14791,12 +15936,6 @@ const Game = (() => {
             u.y,
             u.id === GS.selectedUnitId ? 14 : 12
           );
-        }
-        if (u.huntMode && u.team === 'player' && !svc('VisualPolish')) {
-          GS.ctx.fillStyle = '#ff4040';
-          GS.ctx.font = '8px sans-serif';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('H', u.x + 12, u.y - 14);
         }
         const hpMode = gfxQ?.unitHpBars ?? 'all';
         const showHp = hpMode === 'all' || gfxOverlayFor(u, hpMode);
@@ -14863,17 +16002,19 @@ const Game = (() => {
             }
           }
         }
-        if (u.retreatingToMed && u.hp > 0) {
-          GS.ctx.fillStyle = '#60c0ff';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('↩ MED', u.x, u.y - 30);
-        }
+        if (u.retreatingToMed && u.hp > 0) drawMedMark(u);
+        if (u.holding && u.hp > 0) drawHoldMarker(u);
         if (svc('VisualPolish')) {
           if (gfxOverlayFor(u, gfxQ?.drawAccent ?? true))
             svc('VisualPolish').drawFactionAccent(GS.ctx, u);
-          if (gfxQ?.drawAccessibility !== false)
+          if (gfxQ?.drawAccessibility !== false) {
+            // Hunting is the default and shows nothing. The cue still draws a red "H"
+            // on every hunter, so it is asked about a soldier who is not hunting.
+            const hunting = u.huntMode;
+            if (u.team === 'player') u.huntMode = false;
             svc('VisualPolish').drawAccessibilityCue(GS.ctx, u);
+            u.huntMode = hunting;
+          }
         } else if (u.isWwe && u.wweColor) {
           GS.ctx.strokeStyle = u.wweColor;
           GS.ctx.lineWidth = 2;
@@ -14957,13 +16098,15 @@ const Game = (() => {
 
       if (svc('VisualPolish')) {
         const atm = gfxQ?.atmosphere ?? 'full';
+        // With FieldArt, VisualPolish keeps the weather clock, particles and boss dread
+        // (asked for as plain day), and FieldArt lays the weather and the light map over it.
         if (atm === 'full') {
           svc('VisualPolish').drawAtmosphere(
             GS.ctx,
             GS.worldW,
             getMapViewH(),
-            light,
-            GS.timeOfDay,
+            fieldArt ? 1 : light,
+            fieldArt ? 'day' : GS.timeOfDay,
             GS.wave,
             GS.updateTick,
             {
@@ -14971,7 +16114,12 @@ const Game = (() => {
               bossActive: unitCounts.bossActive,
             }
           );
-        } else if (atm === 'simple') {
+          if (fieldArt) {
+            fieldArt.drawWeather(GS.ctx, GS.worldW, getMapViewH(), GS.wave, GS.updateTick, {
+              lowDetail: gfxQ?.weatherParticles === false,
+            });
+          }
+        } else if (atm === 'simple' && !fieldArt) {
           svc('VisualPolish').drawAtmosphere(
             GS.ctx,
             GS.worldW,
@@ -14982,6 +16130,18 @@ const Game = (() => {
             GS.updateTick,
             { simple: true }
           );
+        }
+        if (fieldArt && (atm === 'full' || atm === 'simple')) {
+          fieldArt.drawLight(GS.ctx, GS.worldW, getMapViewH(), {
+            light,
+            phase: GS.timeOfDay,
+            tick: GS.updateTick,
+            buildings: GS.buildings,
+            units: GS.units,
+            hazards: GS.hazards,
+            simple: atm === 'simple',
+            inView: isInView,
+          });
         }
         if (GS.currentHordeWave && isDayPhase() && gfxQ?.drawOverlay !== false) {
           svc('VisualPolish').drawHordeIntensity(
@@ -15248,8 +16408,18 @@ const Game = (() => {
     return true;
   }
 
+  /** Any cheat voids the run; the after-action report says "cheats used — run not recorded". */
+  function markCheatsUsed() {
+    if (GS.state !== 'playing') return false;
+    GS.cheatsUsed = true;
+    // Voided: no score, no ribbon progress, no achievements for the rest of this run.
+    SiegeLoop.voidRun();
+    return true;
+  }
+
   function applyCheatEffect(type, value) {
     if (GS.state !== 'playing') return;
+    markCheatsUsed();
     switch (type) {
       case 'tp':
         GS.tactical += value;
@@ -15344,10 +16514,13 @@ const Game = (() => {
               : u.type;
         let status = '';
         if (u.demoralized) status = 'Demoralized';
-        else if (u.retreatingToMed) status = 'Retreating to med tent';
+        else if (u.atMedicalTent) status = 'In the med tent';
+        else if (u.retreatingToMed)
+          status = u.medQueued ? 'Waiting at the med tent' : 'Going to the med tent';
         else if (u.garrisoned || u.wallGarrisoned) status = 'Garrisoned';
         else if (u.stationedKeep) status = 'Commanding Keep';
         else if (u.building && !u.building.complete) status = 'Building';
+        else if (u.canHunt && u.holding) status = 'Holding position';
         return {
           id: u.id,
           type: u.type,
@@ -15382,6 +16555,8 @@ const Game = (() => {
           isSpecialist: typeof isSpecialistUnit === 'function' && isSpecialistUnit(u),
           perks: u.perks || [],
           huntMode: u.huntMode,
+          holding: !!(u.canHunt && u.holding),
+          canHold: !!u.canHunt,
           status,
           // Combat readout for unit panel
           damage: Math.round(u.damage || 0),
@@ -15508,30 +16683,15 @@ const Game = (() => {
     return true;
   }
 
+  /** Selection card: on = Hunt (release hold), off = Hold here. */
   function setSelectedHunt(on) {
-    const ids = GS.selectedUnitIds.length
-      ? GS.selectedUnitIds
-      : GS.selectedUnitId
-        ? [GS.selectedUnitId]
-        : [];
-    ids.forEach((id) => {
-      const u = getUnitById(id);
-      if (u?.hp > 0 && u.canHunt) u.huntMode = !!on;
-    });
-    showMessage(on ? 'Selected units hunting.' : 'Selected units holding position.', 140);
+    if (!getSelectedUnitIds().length) return 0;
+    return on ? orderHunt() : orderHoldHere();
   }
 
   function toggleSelectedHunt() {
-    const ids = GS.selectedUnitIds.length
-      ? GS.selectedUnitIds
-      : GS.selectedUnitId
-        ? [GS.selectedUnitId]
-        : [];
-    const anyOff = ids.some((id) => {
-      const u = getUnitById(id);
-      return u?.canHunt && !u.huntMode;
-    });
-    setSelectedHunt(anyOff);
+    const anyHeld = getSelectedLiveUnits().some((u) => u.canHunt && u.holding);
+    return setSelectedHunt(anyHeld);
   }
 
   function restartCurrentWave() {
@@ -15555,6 +16715,7 @@ const Game = (() => {
     GS.spawnQueue = [];
     GS.spawnTimer = 0;
     buildSpawnQueue();
+    applyEconomyWaveMods();
     GS.waveProgress = 0;
     addHighlight('wave', `Wave ${GS.wave} restarted`);
     showMessage(`Wave ${GS.wave} restarted.`, 200);
@@ -15609,6 +16770,7 @@ const Game = (() => {
       hasTombstone: u.hasTombstone,
       attackSpeedMult: u.attackSpeedMult,
       huntMode: u.huntMode,
+      holding: !!u.holding,
       generalStars: u.generalStars,
       isGeneral: !!u.isGeneral,
       stationedKeep: u.stationedKeep,
@@ -15659,15 +16821,53 @@ const Game = (() => {
       const u = GS.units[i];
       if (u.hp > 0) out.push(serializeUnitSnap(u));
     }
+    // Soldiers away on an expedition are saved as standing at the muster line, so a save
+    // can never lose a veteran. (Loading calls the expedition off; see importGameState.)
+    const away = svc('PlayerCounterEvolution')?.getAwayUnits?.() || [];
+    for (let i = 0; i < away.length; i++) {
+      const u = away[i];
+      if (!(u.hp > 0)) continue;
+      const snapU = serializeUnitSnap(u);
+      snapU.x = GS.worldW / 2 + (i - (away.length - 1) / 2) * 18;
+      snapU.y = GS.deployY;
+      out.push(snapU);
+    }
     return out;
+  }
+
+  // Save format. 1: original. 2: adds nextWavePlan (tomorrow's attack sides, rolled at
+  // nightfall) and the cheats-used flag. Loading accepts 1..SAVE_VERSION; anything else
+  // (a newer build's save, a damaged number) is refused before any state is touched.
+  const SAVE_VERSION = 2;
+
+  function isSupportedSaveVersion(v) {
+    return Number.isInteger(v) && v >= 1 && v <= SAVE_VERSION;
+  }
+
+  const SAVE_SIDES = ['north', 'east', 'west', 'south'];
+
+  /** A saved spawn plan is used only if it is for the coming wave and names real sides. */
+  function restoreNextWavePlan(plan, wave) {
+    if (!plan || plan.wave !== wave + 1 || !Array.isArray(plan.sides)) return null;
+    const sides = plan.sides.filter((x) => SAVE_SIDES.includes(x));
+    if (!sides.length || sides.length !== plan.sides.length) return null;
+    let multiFrontPlan = null;
+    try {
+      multiFrontPlan = plan.multiFrontPlan ? JSON.parse(JSON.stringify(plan.multiFrontPlan)) : null;
+    } catch (_) {
+      multiFrontPlan = null;
+    }
+    return { wave: plan.wave, sides, multiFrontPlan };
   }
 
   function exportGameState() {
     if (GS.state !== 'playing') return null;
     return {
-      version: 1,
+      version: SAVE_VERSION,
       savedAt: Date.now(),
       wave: GS.wave,
+      nextWavePlan: restoreNextWavePlan(GS.nextWavePlan, GS.wave),
+      cheatsUsed: !!GS.cheatsUsed,
       tactical: GS.tactical,
       kills: GS.kills,
       misses: GS.misses,
@@ -15693,6 +16893,8 @@ const Game = (() => {
         : null,
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
+      economyRules: typeof EconomyRules !== 'undefined' ? EconomyRules.exportState() : null,
+      scoutedWave: GS.scoutedWave ?? -1,
       pendingReinforce: [...GS.pendingReinforce],
       spawnDelayBonus: GS.spawnDelayBonus,
       courierCooldown: GS.courierCooldown,
@@ -15757,6 +16959,8 @@ const Game = (() => {
         academyUnit: b.academyUnit || null,
         crossoverFaction: b.crossoverFaction || null,
         fortressTier: b.fortressTier || 0,
+        upgrade: b.upgrade || null,
+        upgradeName: b.upgradeName || null,
         garrisonUnitId: b.garrisonUnitId || null,
         slotX: b.slotX,
         slotY: b.slotY,
@@ -15775,12 +16979,13 @@ const Game = (() => {
   }
 
   function importGameState(snap) {
-    if (!snap?.version) return false;
+    if (!snap || !isSupportedSaveVersion(snap.version)) return false;
     try {
       GS.state = 'playing';
       GS.paused = true;
       GS.wave = snap.wave;
       GS.nextWavePlan = null;
+      GS.cheatsUsed = !!snap.cheatsUsed;
       GS.tactical = snap.tactical;
       GS.kills = snap.kills;
       GS.misses = snap.misses;
@@ -15794,11 +16999,20 @@ const Game = (() => {
       } else if (svc('AdvancedDifficulty') && Array.isArray(snap.advancedMods)) {
         svc('AdvancedDifficulty').setActive(snap.advancedMods);
       }
-      GS.globalHunt = snap.globalHunt ?? GS.globalHunt;
+      // Saves from before per-soldier Hold carried one global switch; off meant everyone held.
+      const legacyHoldAll = snap.globalHunt === false;
+      GS.globalHunt = true;
       GS.builderAutoRepair = snap.builderAutoRepair ?? GS.builderAutoRepair;
       GS.tpAwardedForWave = snap.tpAwardedForWave ?? -1;
       GS.runPlayerDeaths = snap.runPlayerDeaths ?? snap.misses ?? 0;
       GS.pendingLevy = snap.pendingLevy ?? 0;
+      if (typeof EconomyRules !== 'undefined') {
+        EconomyRules.importState(snap.economyRules);
+        // A loaded run has already had its starting bonus.
+        if (!snap.economyRules) EconomyRules.grantStartTp(EconomyRules.START_TP_BONUS_CAP);
+      }
+      GS.scoutedWave = snap.scoutedWave ?? -1;
+      svc('PlayerCounterEvolution')?.recallAll?.();
       GS.pendingReinforce = Array.isArray(snap.pendingReinforce) ? [...snap.pendingReinforce] : [];
       GS.spawnDelayBonus = snap.spawnDelayBonus ?? 0;
       GS.courierCooldown = Math.max(0, snap.courierCooldown | 0);
@@ -15867,6 +17081,20 @@ const Game = (() => {
         if (us.id) u.id = us.id;
         Object.assign(u, us);
         stopPostReturn(u);
+        if (u.team === 'player') {
+          // Standing order: Hold only if the save says so, Hunt otherwise. A march in
+          // progress is not saved, so he walks to his post (the order's destination).
+          u.manualOrder = false;
+          u.medHurt = u.hp < u.maxHp * 0.97;
+          u.medPrevHp = u.hp;
+          u.holding = !!u.canHunt && (!!us.holding || legacyHoldAll);
+          u.huntMode = !!u.canHunt && !u.holding;
+          if (u.holding && !u.garrisoned && !u.wallGarrisoned && !u.stationedKeep) {
+            const hp = clampPos(u.postX ?? u.x, u.postY ?? u.y);
+            u.holdX = hp.x;
+            u.holdY = hp.y;
+          }
+        }
         if (u.spawnWave == null) u.spawnWave = GS.wave;
         if (u.tenureApplied == null) u.tenureApplied = 0;
         u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
@@ -15993,6 +17221,11 @@ const Game = (() => {
           }))
         : [];
       wireGameContext();
+      // Tomorrow's host: the saved plan, or for an older save made at night a fresh roll,
+      // so the field-edge markers still tell the truth.
+      GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
+      if (GS.cheatsUsed) SiegeLoop.voidRun();
+      if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
       if (svc('UX')) svc('UX').onPauseChanged(true);
       syncInteractionState({ refreshCounts: true });
       return true;
@@ -16125,7 +17358,15 @@ const Game = (() => {
   }
 
   function getState() {
-    if (GS.stateFrameId === GS.presentationFrame && GS.stateFrameCache) return GS.stateFrameCache;
+    // Cached per presented frame, but never across a change in TP: a snapshot showing a
+    // purse the player no longer has (or does not have yet) is worse than rebuilding it.
+    if (
+      GS.stateFrameId === GS.presentationFrame &&
+      GS.stateFrameCache &&
+      GS.stateFrameCache.tactical === GS.tactical
+    ) {
+      return GS.stateFrameCache;
+    }
     const army = unitCounts.player;
     const liveColony = getLiveColonyState();
     const displayColony = liveColony.colony || GS.colonySnapshot;
@@ -16182,6 +17423,11 @@ const Game = (() => {
       paused: GS.paused,
       gameSpeed: GS.gameSpeed,
       globalHunt: GS.globalHunt,
+      // Soldiers under a Hold order (the HUD shows the count on the HOLD button).
+      heldCount: GS.units.reduce(
+        (n, u) => n + (u.team === 'player' && u.hp > 0 && u.canHunt && u.holding ? 1 : 0),
+        0
+      ),
       mageCount: unitCounts.mageCount || 0,
       spyNetwork: GS.spyNetwork,
       courierCooldown: GS.courierCooldown,
@@ -16585,6 +17831,9 @@ const Game = (() => {
     handleClick,
     isPlaying,
     selectDeploy,
+    getDeployCost,
+    getDeployCostMult,
+    getTactical: () => GS.tactical,
     selectAbility,
     useAbility,
     selectBuild,
@@ -16599,7 +17848,8 @@ const Game = (() => {
     dispatchExpedition,
     dispatchRaidStrike,
     respondMapEvent,
-    toggleGlobalHunt,
+    orderHunt,
+    orderHoldHere,
     toggleBuilderAutoRepair,
     clearSelection,
     selectUnit,
@@ -16632,11 +17882,15 @@ const Game = (() => {
     quitToMenu,
     getSessionHighlights,
     exportGameState,
+    SAVE_VERSION,
+    isSupportedSaveVersion,
     importGameState,
     setDifficulty,
     recruitWweSuperstar,
     recruitCrossoverOperative,
     applyCheatEffect,
+    markCheatsUsed,
+    cheatsUsed: () => !!GS.cheatsUsed,
     getDifficultyPercent,
     beginDayPhase,
     isDayPhase,

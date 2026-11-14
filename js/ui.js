@@ -101,6 +101,47 @@ const UI = (() => {
   }
 
   let gameOverShown = false;
+  let restartInFlight = false;
+
+  function hideGameOverScreen() {
+    const goScreen = document.getElementById('gameover-screen');
+    goScreen?.classList.remove(
+      'active',
+      'gameover-victory',
+      'gameover-defeat',
+      'gameover-economy',
+      'gameover-conquest'
+    );
+    document.getElementById('gameover-confetti')?.replaceChildren();
+  }
+
+  /**
+   * The result screen follows the game state, whichever way the state changed: it comes up
+   * once when a run ends, and comes down whenever a run is in progress again (restart
+   * button, loaded save, a start made from anywhere else).
+   */
+  function syncGameOverScreen(gs) {
+    const ended = gs.state === 'victory' || gs.state === 'defeat';
+    if (ended) {
+      if (gameOverShown || restartInFlight) return;
+      gameOverShown = true;
+      if (typeof UX !== 'undefined' && UX.renderVictoryScreen) UX.renderVictoryScreen(gs);
+      else {
+        const title = document.getElementById('result-title');
+        title.textContent = gs.state === 'victory' ? 'VICTORY!' : 'DEFEAT';
+        title.className = gs.state;
+        document.getElementById('gameover-screen')?.classList.add('active');
+      }
+      if (typeof CrownLegacies !== 'undefined') refreshCrownLegaciesPanel();
+      if (typeof EternalLegacyTree !== 'undefined') refreshEternalLegacyPanel();
+      return;
+    }
+    if (gs.state !== 'playing') return;
+    if (gameOverShown && !restartInFlight) gameOverShown = false;
+    if (document.getElementById('gameover-screen')?.classList.contains('active')) {
+      hideGameOverScreen();
+    }
+  }
   let defenseStartInFlight = false;
   let selectedDifficulty = 'normal';
   const hudEls = {};
@@ -197,23 +238,257 @@ const UI = (() => {
       }
 
       panel._scrollToSidePane = scrollToPane;
+
+      // Remember when the player is scrolling, so nothing scrolls the panel under them.
+      if (scroller) {
+        const touched = () => {
+          panel._userScrollAt = performance.now();
+        };
+        scroller.addEventListener('wheel', touched, { passive: true });
+        scroller.addEventListener('touchstart', touched, { passive: true });
+        scroller.addEventListener('touchmove', touched, { passive: true });
+        const hold = () => {
+          panel._scrollHeld = true;
+          touched();
+        };
+        const release = () => {
+          if (panel._scrollHeld) touched();
+          panel._scrollHeld = false;
+        };
+        scroller.addEventListener('pointerdown', hold);
+        window.addEventListener('pointerup', release);
+        window.addEventListener('pointercancel', release);
+        scroller.addEventListener('scroll', () => {
+          if (panel._scrollHeld) touched();
+        });
+      }
     });
   }
 
+  /** Largest price on offer: what a full TP bar stands for (set by updateButtonStates). */
+  let tpBarMax = 24;
+  let lastTpSeen = null;
+
+  /** The key bound to a spell or building while nothing is selected, or null. */
+  function keyFor(action, id) {
+    return typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', action, id) : null;
+  }
+
+  function shortKey(key) {
+    return key ? Hotkeys.keyLabel(key).replace('Shift+', '⇧') : '';
+  }
+
   /**
-   * When a deploy/build/ability is selected, scroll its section into view.
+   * One button's state: dimmed when it cannot be used (the reason is its tooltip), marked
+   * when it is the thing selected, and showing its key.
+   */
+  function markButton(btn, avail, selected, key) {
+    btn.classList.toggle('selected', !!selected);
+    btn.classList.toggle('disabled', !avail.ok && !selected);
+    btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
+    btn.setAttribute('aria-disabled', !avail.ok && !selected ? 'true' : 'false');
+    btn.dataset.reason = avail.ok ? '' : avail.reason || '';
+    const label = shortKey(key);
+    let k = btn._keyEl;
+    if (!k && label) {
+      k = document.createElement('kbd');
+      k.className = 'hk';
+      k.setAttribute('aria-hidden', 'true');
+      btn.appendChild(k);
+      btn._keyEl = k;
+    }
+    if (k) {
+      if (k.textContent !== label) k.textContent = label;
+      k.hidden = !label;
+    }
+  }
+
+  const USER_SCROLL_QUIET_MS = 1500;
+
+  /** The player is scrolling this panel (wheel, scroll-bar drag, touch) or just was. */
+  function userIsScrolling(panel) {
+    if (!panel) return false;
+    if (panel._scrollHeld) return true;
+    return performance.now() - (panel._userScrollAt || -1e9) < USER_SCROLL_QUIET_MS;
+  }
+
+  /**
+   * Bring a panel button into view. Only ever called when the selection was changed from
+   * the keyboard, and never while the player is scrolling that panel: the panel used to be
+   * dragged back to the selection on every HUD refresh.
    */
   function revealPanelControl(el) {
-    if (!el) return;
-    const pane = el.closest?.('.side-tab-pane');
+    if (!el) return false;
     const panel = el.closest?.('.side-panel');
-    if (!pane || !panel) return;
-    const id = pane.dataset.sidePane;
-    if (!id) return;
-    if (typeof panel._scrollToSidePane === 'function') panel._scrollToSidePane(id);
-    else {
-      pane.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
+    const scroller = el.closest?.('.side-panel-scroll');
+    if (!panel || !scroller) return false;
+    if (userIsScrolling(panel)) return false;
+    const box = scroller.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.top >= box.top + 2 && r.bottom <= box.bottom - 2) return false;
+    const top = scroller.scrollTop + (r.top - box.top) - Math.max(8, (box.height - r.height) / 2);
+    scroller.scrollTo({ top: Math.max(0, top), behavior: 'auto' });
+    return true;
+  }
+
+  /** The panel button for a troop, building, spell, spy action or message. */
+  function controlFor(kind, id) {
+    const sel = {
+      deploy: `.deploy-btn[data-unit="${id}"]`,
+      build: `.build-btn[data-build="${id}"]`,
+      ability: `.ability-btn[data-ability="${id}"]`,
+      spy: `.spy-btn[data-spy="${id}"]`,
+      courier: `.courier-btn[data-courier="${id}"]`,
+    }[kind];
+    return sel ? document.querySelector(sel) : null;
+  }
+
+  /** A refused click or key: the button (and its price) flashes; the reason is on screen. */
+  function flashRefused(kind, id) {
+    const btn = controlFor(kind, id);
+    if (!btn) return;
+    btn.classList.remove('refused');
+    void btn.offsetWidth;
+    btn.classList.add('refused');
+    clearTimeout(btn._refusedTimer);
+    btn._refusedTimer = setTimeout(() => btn.classList.remove('refused'), 700);
+  }
+
+  /** Click or key on a panel item: selected if it can be, otherwise refused with its reason. */
+  function selectItem(kind, id) {
+    const res = Availability.trySelect(kind, id);
+    updateHUD(true);
+    if (!res.ok) flashRefused(kind, id);
+    return res;
+  }
+
+  /** The panel button of whatever is armed, or null. */
+  function selectedControl(gs) {
+    if (gs.selectedDeploy) {
+      return document.querySelector(`.deploy-btn[data-unit="${gs.selectedDeploy}"]`);
     }
+    if (gs.selectedBuild) {
+      return document.querySelector(`.build-btn[data-build="${gs.selectedBuild}"]`);
+    }
+    if (gs.selectedAbility) {
+      return document.querySelector(`.ability-btn[data-ability="${gs.selectedAbility}"]`);
+    }
+    return null;
+  }
+
+  /** Called by the hotkey handler after a key changed the selection. */
+  function revealSelection() {
+    return revealPanelControl(selectedControl(Game.getState()));
+  }
+
+  // ---- the key sheet ("?") ----------------------------------------------------------------
+  function isKeySheetOpen() {
+    return !!document.getElementById('key-sheet');
+  }
+
+  function closeKeySheet() {
+    document.getElementById('key-sheet')?.remove();
+  }
+
+  /** Lists only the keys that do something on this screen, right now. */
+  function toggleKeySheet(state) {
+    if (isKeySheetOpen()) {
+      closeKeySheet();
+      return;
+    }
+    const gs = Game.getState();
+    const usable = (kind, id) => {
+      const r = Availability.check(kind, id, gs);
+      return r.ok || !r.locked;
+    };
+    const rows = Hotkeys.sheet(state, (b) => {
+      if (b.action === 'deploySlot') {
+        const type = Hotkeys.deployTypeAt(b.arg);
+        return type && usable('deploy', type)
+          ? `Recruit ${Availability.nameOf('deploy', type)}`
+          : null;
+      }
+      if (b.action === 'ability') return usable('ability', b.arg) ? `Cast ${b.label}` : null;
+      if (b.action === 'build') return usable('build', b.arg) ? `Build ${b.label}` : null;
+      if (b.action === 'beginDay') return gs.timeOfDay === 'night' ? 'Begin the day' : null;
+      if (b.action === 'order') return gs.hasGeneral ? b.label : null;
+      if (b.action === 'loadout') {
+        return gs.kingdomLoadoutsUnlocked || gs.wave >= 100 ? b.label : null;
+      }
+      if (b.action === 'reform') return (gs.selectedUnitIds?.length || 0) >= 2 ? b.label : null;
+      if (b.action === 'perf') return b.label;
+      return b.label;
+    });
+    const placing = ['night', 'day', 'placement', 'placement_wall', 'creative'].includes(state);
+    if (placing) {
+      rows.push({
+        keys: 'Shift+click',
+        label: 'Place one and keep placing the same troop or building',
+      });
+      rows.push({ keys: 'Right-click', label: 'Cancel / deselect' });
+    }
+    const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    const root = document.createElement('div');
+    root.id = 'key-sheet';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', 'Keys');
+    root.innerHTML =
+      '<div class="key-sheet-box"><div class="key-sheet-title">Keys</div>' +
+      `<div class="key-sheet-state">${esc(Hotkeys.STATE_LABELS[state] || state)}</div>` +
+      '<div class="key-sheet-rows">' +
+      rows
+        .map(
+          (r) =>
+            `<div class="key-sheet-row"><kbd>${esc(r.keys)}</kbd><span>${esc(r.label)}</span></div>`
+        )
+        .join('') +
+      '</div><div class="key-sheet-foot">Press ? or Esc to close. The list changes with what you are doing.</div></div>';
+    root.addEventListener('click', closeKeySheet);
+    document.body.appendChild(root);
+  }
+
+  // ---- the price tag that follows the cursor while a troop or building is armed --------
+  let cursorTag = null;
+  let cursorTagText = '';
+  const cursorPos = { x: -1, y: -1, shift: false };
+
+  function setCursorState(x, y, shift) {
+    cursorPos.x = x;
+    cursorPos.y = y;
+    cursorPos.shift = !!shift;
+    updateCursorTag(Game.getState());
+  }
+
+  function updateCursorTag(gs) {
+    const armed = Game.isPlaying?.() && !gs.paused ? Availability.armed(gs) : null;
+    const show = armed && armed.kind !== 'ability' && cursorPos.x >= 0;
+    if (!show) {
+      if (cursorTag && !cursorTag.hidden) cursorTag.hidden = true;
+      return;
+    }
+    if (!cursorTag) {
+      cursorTag = document.createElement('div');
+      cursorTag.id = 'placement-tag';
+      cursorTag.setAttribute('aria-hidden', 'true');
+      document.body.appendChild(cursorTag);
+    }
+    const cost =
+      armed.kind === 'deploy'
+        ? Availability.deployCost(armed.id, gs)
+        : Availability.buildCost(armed.id, gs);
+    const single = armed.id === 'general' || armed.id === 'doomslayer_hero';
+    const text = single
+      ? `${Availability.nameOf(armed.kind, armed.id)} · ${cost} TP`
+      : cursorPos.shift
+        ? `${Availability.nameOf(armed.kind, armed.id)} · next ${cost} TP · placing more`
+        : `${Availability.nameOf(armed.kind, armed.id)} · ${cost} TP · hold Shift to place more`;
+    if (text !== cursorTagText) {
+      cursorTagText = text;
+      cursorTag.textContent = text;
+    }
+    cursorTag.hidden = false;
+    cursorTag.style.transform = `translate(${Math.round(cursorPos.x + 16)}px, ${Math.round(cursorPos.y + 18)}px)`;
   }
 
   function init() {
@@ -417,16 +692,11 @@ const UI = (() => {
     });
 
     document.getElementById('restart-btn').addEventListener('click', () => {
-      gameOverShown = false;
-      const goScreen = document.getElementById('gameover-screen');
-      goScreen?.classList.remove(
-        'active',
-        'gameover-victory',
-        'gameover-defeat',
-        'gameover-economy',
-        'gameover-conquest'
-      );
-      document.getElementById('gameover-confetti')?.replaceChildren();
+      // The run is still 'defeat' until the deferred Game.start() below has run. Until
+      // then the result screen must stay down, and a second click must not start twice.
+      if (restartInFlight) return;
+      restartInFlight = true;
+      hideGameOverScreen();
       hideMenusForPlay();
       const mode = typeof GameModes !== 'undefined' ? GameModes.getMenu() : null;
       if (mode?.challengeType) {
@@ -439,47 +709,49 @@ const UI = (() => {
           Game.start();
         } catch (err) {
           console.error('Game.start failed on restart', err);
+          restartInFlight = false;
+          gameOverShown = false;
+          setLaunchOverlayVisible(false);
           showMainMenu();
           return;
         }
+        restartInFlight = false;
+        gameOverShown = false;
         setLaunchOverlayVisible(false);
         updateHUD(true);
         Game.draw?.();
       });
     });
 
+    // Every panel button goes through Availability.trySelect: an item that cannot be used
+    // is refused with its reason and is never selected.
     document.getElementById('left-panel')?.addEventListener('click', (e) => {
       const deploy = e.target.closest('.deploy-btn');
       if (deploy?.dataset.unit) {
-        Game.selectDeploy(deploy.dataset.unit);
-        updateHUD(true);
+        selectItem('deploy', deploy.dataset.unit);
         return;
       }
       const build = e.target.closest('.build-btn');
       if (build?.dataset.build) {
-        Game.selectBuild(build.dataset.build);
-        updateHUD(true);
+        selectItem('build', build.dataset.build);
       }
     });
 
     document.querySelectorAll('.ability-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        Game.selectAbility(btn.dataset.ability);
-        updateHUD(true);
+        selectItem('ability', btn.dataset.ability);
       });
     });
 
     document.querySelectorAll('.spy-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        Game.executeSpyAction(btn.dataset.spy);
-        updateHUD(true);
+        selectItem('spy', btn.dataset.spy);
       });
     });
 
     document.querySelectorAll('.courier-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        Game.sendCourierMessage(btn.dataset.courier);
-        updateHUD(true);
+        selectItem('courier', btn.dataset.courier);
       });
     });
 
@@ -537,8 +809,12 @@ const UI = (() => {
     });
 
     document.getElementById('hunt-toggle').addEventListener('click', () => {
-      Game.toggleGlobalHunt();
-      updateHUD();
+      Game.orderHunt();
+      updateHUD(true);
+    });
+    document.getElementById('hold-here')?.addEventListener('click', () => {
+      Game.orderHoldHere();
+      updateHUD(true);
     });
 
     document.getElementById('clear-selection-btn')?.addEventListener('click', () => {
@@ -956,7 +1232,12 @@ const UI = (() => {
   }
 
   function updateButtonStates(gs) {
-    const freeTp = gs.creativeMode && gs.creativeSettings?.freeResources;
+    const prices = [];
+    // Recruit keys follow what is unlocked (starting roster first, then each unlock).
+    Hotkeys.deploySlots((t) => {
+      const r = Availability.deploy(t, gs);
+      return !(r.locked && (r.research || t === 'doomslayer_hero'));
+    });
     hudBtns.deploy.forEach((btn) => {
       const type = btn.dataset.unit;
       // Recover expansion defs (ballista/bard/…) if a data race wiped UnitDefs.
@@ -970,50 +1251,34 @@ const UI = (() => {
       }
       const def = getPlayerUnitDef(type) || UnitDefs[type];
       const costEl = btn.querySelector?.('.cost') || btn._costEl;
-      const cost = Number.isFinite(def?.cost)
-        ? def.cost
-        : Number.isFinite(parseInt(costEl?.textContent, 10))
-          ? parseInt(costEl.textContent, 10)
-          : 99;
-      if (costEl && Number.isFinite(def?.cost) && costEl.textContent !== String(def.cost)) {
-        costEl.textContent = String(def.cost);
+      // One rule decides the price shown, the dimming, the click, the hotkey and the tooltip.
+      const avail = Availability.deploy(type, gs);
+      if (costEl && Number.isFinite(def?.cost) && costEl.textContent !== String(avail.cost)) {
+        costEl.textContent = String(avail.cost);
       }
-      const oneOnly = type === 'general' && gs.hasGeneral;
-      const doomOnly =
-        type === 'doomslayer_hero' && (!gs.doomslayerUnlocked || (!freeTp && gs.tactical < cost));
-      const researchBlocked =
-        !gs.creativeMode &&
-        typeof Research !== 'undefined' &&
-        !Research.isDeployUnlocked(type, {
-          creativeUnlockAll: gs.creativeMode && gs.creativeSettings?.unlockAll,
-          doomMetaUnlocked: gs.doomslayerUnlocked,
-        });
-      const special = type === 'doomslayer_hero';
-      const creativeDeployOff =
-        gs.creativeMode && gs.creativeSettings && !gs.creativeSettings.academyDeploy;
-      const deployBlocked = !special && creativeDeployOff;
-      btn.classList.toggle('selected', type === gs.selectedDeploy);
-      btn.classList.toggle(
-        'disabled',
-        deployBlocked || researchBlocked || (!freeTp && gs.tactical < cost) || oneOnly || doomOnly
-      );
-      btn.classList.toggle('research-locked', researchBlocked && !deployBlocked);
-      if (researchBlocked) {
-        const hint =
-          type === 'ballista'
-            ? 'Research: Iron Weapons → Siege Engineering'
-            : type === 'bard'
-              ? 'Research: Morale Arts'
-              : type === 'scout' || type === 'pikeman'
-                ? 'Research: Iron Weapons → Advanced Infantry'
-                : type === 'sapper' || type === 'knight' || type === 'crossbowman'
-                  ? 'Research: Iron Weapons'
-                  : type === 'general'
-                    ? 'Research: Iron Weapons → Command Theory'
-                    : 'Research required at the Research Lab';
-        btn.title = `${def?.name || type} — ${hint}`;
-      } else if (def?.name) {
-        btn.title = `${def.name} — ${cost} TP · click then place on map (Shift-click keeps deploy selected)`;
+      // Upkeep (or Warband) is raising it: the base price stays visible, struck through.
+      const price = Availability.deployPrice(type, gs);
+      let was = btn._wasEl;
+      if (!was && price.raised && costEl) {
+        was = document.createElement('s');
+        was.className = 'cost-was';
+        costEl.after(was);
+        btn._wasEl = was;
+      }
+      if (was) {
+        const wasText = price.raised ? String(price.base) : '';
+        if (was.textContent !== wasText) was.textContent = wasText;
+        was.hidden = !price.raised;
+        was.title = price.raised ? Availability.deployPriceText(type, gs) : '';
+      }
+      if (!avail.locked && Number.isFinite(avail.cost)) prices.push(avail.cost);
+      const selected = type === gs.selectedDeploy;
+      markButton(btn, avail, selected, Hotkeys.deployKey(type));
+      btn.classList.toggle('research-locked', !!avail.research);
+      if (def?.name) {
+        btn.title = avail.ok
+          ? `${def.name} — ${Availability.deployPriceText(type, gs)} · click, then click the field (hold Shift to place more)`
+          : `${def.name} — ${avail.reason}`;
       }
     });
 
@@ -1043,112 +1308,61 @@ const UI = (() => {
     if (perkSection) perkSection.style.display = gs.perksUnlocked ? '' : 'none';
     hudBtns.ability.forEach((btn) => {
       const id = btn.dataset.ability;
-      const base = Abilities[id]?.cost ?? 99;
-      const cost = freeTp
-        ? 0
-        : typeof ContentExpansion !== 'undefined' && ContentExpansion.getAbilityCost
-          ? ContentExpansion.getAbilityCost(id, base, gs.wave)
-          : base;
+      const avail = Availability.ability(id, gs);
       const costEl = btn._costEl;
-      if (costEl && costEl.textContent !== String(cost)) costEl.textContent = String(cost);
-      btn.classList.toggle('selected', id === gs.selectedAbility);
-      const needsMage = id === 'dispel' || Abilities[id]?.requiresMage;
-      const mageOk = !needsMage || (gs.mageCount || 0) > 0;
-      btn.classList.toggle('disabled', (!freeTp && gs.tactical < cost) || !mageOk);
-      if (needsMage && !mageOk) {
-        btn.title = 'Requires a living Mage on the field';
-      } else if (needsMage) {
-        btn.title = 'Arcane Dispel — purge void/burn/plague zones (mage cast range)';
+      if (costEl && Number.isFinite(avail.cost) && costEl.textContent !== String(avail.cost)) {
+        costEl.textContent = String(avail.cost);
       }
+      if (!avail.locked && Number.isFinite(avail.cost)) prices.push(avail.cost);
+      markButton(btn, avail, id === gs.selectedAbility, keyFor('ability', id));
+      const name = Abilities[id]?.name || id;
+      btn.title = avail.ok
+        ? `${name} — ${avail.cost} TP · click, then click the field`
+        : `${name} — ${avail.reason}`;
     });
     hudBtns.build.forEach((btn) => {
       const buildType = btn.dataset.build;
       const def = BuildDefs[buildType];
       const costEl = btn._costEl;
       // Prefer live def; if BuildDefs was wiped mid-boot, keep HTML label — never fake 99 TP.
-      const labelCost = parseInt(costEl?.textContent, 10);
-      const cost = Number.isFinite(def?.cost)
-        ? def.cost
-        : Number.isFinite(labelCost)
-          ? labelCost
-          : 0;
       if (costEl && Number.isFinite(def?.cost) && costEl.textContent !== String(def.cost)) {
         costEl.textContent = String(def.cost);
       }
-      const isAcademyBuild =
-        BuildDefs[buildType]?.isAcademy &&
-        !BuildDefs[buildType]?.isCrossoverBarracks &&
-        !BuildDefs[buildType]?.isWweAcademy;
-      // Prefer live mentor check when Game API is available (avoids stale buildableAcademies).
-      let academyBlocked = false;
-      if (!gs.creativeMode && isAcademyBuild) {
-        if (typeof Game !== 'undefined' && Game.getAcademyBuildStatus) {
-          const st = Game.getAcademyBuildStatus(buildType);
-          academyBlocked = !st?.mentorOk;
-        } else if (gs.buildableAcademies) {
-          academyBlocked = !gs.buildableAcademies.includes(buildType);
-        }
+      const avail = def
+        ? Availability.build(buildType, gs)
+        : { ok: false, reason: 'not available', locked: true };
+      markButton(btn, avail, buildType === gs.selectedBuild, keyFor('build', buildType));
+      btn.classList.toggle('research-locked', !!avail.research && !avail.mentor);
+      btn.classList.toggle('mentor-ready', !!avail.mentorReady);
+      if (def?.name) {
+        btn.title = avail.ok
+          ? `${def.name} — ${avail.cost} TP · click, then click the field (hold Shift to place more)`
+          : `${def.name} — ${avail.reason}`;
       }
-      const builderBlocked =
-        !gs.creativeSettings?.instantBuild &&
-        def?.requiresBuilders &&
-        (gs.liveBuilders ?? 0) < def.requiresBuilders;
-      const researchBlocked =
-        !gs.creativeMode &&
-        typeof Research !== 'undefined' &&
-        !Research.isBuildUnlocked(buildType, {
-          creativeUnlockAll: gs.creativeMode && gs.creativeSettings?.unlockAll,
-          perksMetaUnlocked: gs.perksUnlocked,
-        });
-      btn.classList.toggle('selected', buildType === gs.selectedBuild);
-      btn.classList.toggle(
-        'disabled',
-        (!freeTp && gs.tactical < cost) || academyBlocked || builderBlocked || researchBlocked
-      );
-      btn.classList.toggle(
-        'research-locked',
-        researchBlocked && !academyBlocked && !builderBlocked
-      );
-      btn.classList.toggle('mentor-ready', isAcademyBuild && !academyBlocked && researchBlocked);
     });
+    // The "Recruit cost +N%" chip reads the same price function as the buttons.
+    const upkeepChip = document.getElementById('siege-upkeep');
+    if (upkeepChip) {
+      const pct = Availability.deployPrice('footman', gs).upkeepPct;
+      const text = `Recruit cost +${pct}%`;
+      if (upkeepChip.textContent !== text) upkeepChip.textContent = text;
+      upkeepChip.hidden = pct <= 0;
+    }
+    // A full bar: enough for the dearest troop or strike on offer.
+    tpBarMax = Availability.tpBarMax(prices);
     hudBtns.spy.forEach((btn) => {
       const def = SpyActions[btn.dataset.spy];
-      const cost = def?.cost ?? 99;
-      const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-      const waveMin = parseInt(btn.dataset.waveMin || def?.waveMin || '0', 10);
-      const stageLocked = stageReq > 0 && (gs.kingdomStage || 1) < stageReq;
-      const waveLocked = waveMin > 0 && (gs.wave || 0) < waveMin;
-      btn.classList.toggle(
-        'disabled',
-        gs.tactical < cost || gs.spyUsedThisWave || stageLocked || waveLocked
-      );
-      btn.classList.toggle('kingdom-locked', stageLocked || waveLocked);
-      if (waveLocked) {
-        btn.title = `Unlocks at wave ${waveMin}`;
-      } else if (stageLocked && typeof KINGDOM_EVOLUTION_STAGES !== 'undefined') {
-        btn.title = `Unlocks in ${KINGDOM_EVOLUTION_STAGES[stageReq]?.name || 'later stage'}`;
-      } else {
-        btn.title = def?.desc || '';
-      }
+      const avail = Availability.spy(btn.dataset.spy, gs);
+      markButton(btn, avail, false, null);
+      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
+      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Spy action'} — ${avail.reason}`;
     });
     hudBtns.courier.forEach((btn) => {
       const def = CourierMessages[btn.dataset.courier];
-      const cost = def?.cost ?? 99;
-      const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-      const stageLocked = stageReq > 0 && (gs.kingdomStage || 1) < stageReq;
-      btn.classList.toggle('selected', btn.dataset.courier === gs.selectedCourierMsg);
-      const courierCap =
-        (gs.courierMessagesUsedThisWave || 0) >= Math.max(1, gs.courierMessagesPerWave || 1);
-      btn.classList.toggle(
-        'disabled',
-        gs.tactical < cost || !gs.hasCourier || gs.courierCooldown > 0 || courierCap || stageLocked
-      );
-      btn.classList.toggle('kingdom-locked', stageLocked);
-      if (stageLocked && typeof KINGDOM_EVOLUTION_STAGES !== 'undefined') {
-        btn.title = `Unlocks in ${KINGDOM_EVOLUTION_STAGES[stageReq]?.name || 'later stage'}`;
-      } else {
-        btn.title = def?.desc || '';
-      }
+      const avail = Availability.courier(btn.dataset.courier, gs);
+      markButton(btn, avail, btn.dataset.courier === gs.selectedCourierMsg, null);
+      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
+      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Message'} — ${avail.reason}`;
     });
 
     const loadoutSection = hudEls['loadout-section'];
@@ -1166,7 +1380,9 @@ const UI = (() => {
     }
 
     const huntBtn = hudEls['hunt-toggle'];
-    if (huntBtn) huntBtn.textContent = `HUNT: ${gs.globalHunt ? 'ON' : 'OFF'}`;
+    if (huntBtn) huntBtn.textContent = 'HUNT';
+    const holdBtn = hudEls['hold-here'];
+    if (holdBtn) holdBtn.textContent = gs.heldCount ? `HOLD · ${gs.heldCount}` : 'HOLD';
 
     const formSection = hudEls['formation-section'];
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1207,23 +1423,6 @@ const UI = (() => {
     }
     const rotateBtn = hudEls['rotate-wall-btn'];
     if (rotateBtn) rotateBtn.classList.toggle('selected', gs.selectedRotateWall);
-
-    // Keep the active side-panel tab open when a tool is selected (UI v2 tabs).
-    if (gs.selectedDeploy) {
-      revealPanelControl(document.querySelector(`.deploy-btn[data-unit="${gs.selectedDeploy}"]`));
-    } else if (gs.selectedBuild) {
-      revealPanelControl(document.querySelector(`.build-btn[data-build="${gs.selectedBuild}"]`));
-    } else if (gs.selectedAbility) {
-      revealPanelControl(
-        document.querySelector(`.ability-btn[data-ability="${gs.selectedAbility}"]`)
-      );
-    } else if (gs.selectedCourierMsg) {
-      revealPanelControl(
-        document.querySelector(`.courier-btn[data-courier="${gs.selectedCourierMsg}"]`)
-      );
-    } else if (gs.selectedDemolish || gs.selectedMoveBuilding || gs.selectedRotateWall) {
-      revealPanelControl(demolishBtn || moveBtn || rotateBtn);
-    }
 
     const threatEl = hudEls['threat-text'];
     if (threatEl) {
@@ -1903,6 +2102,7 @@ const UI = (() => {
       'perk-build-section',
       'loadout-section',
       'hunt-toggle',
+      'hold-here',
       'formation-section',
       'research-open',
       'builder-repair-toggle',
@@ -1947,7 +2147,7 @@ const UI = (() => {
       gs.pendingWallFacing,
       gs.moveBuildingTarget,
       gs.paused,
-      gs.globalHunt,
+      gs.heldCount,
       gs.courierUsedThisWave,
       gs.spyUsedThisWave,
       gs.doctrineUsedThisWave,
@@ -2118,6 +2318,26 @@ const UI = (() => {
 
   function updateHUD(force = false) {
     if (Game.isPlaying?.()) ensureMenuDismissedForPlay();
+    // Before any early return below: the result screen must never depend on which frame
+    // the run happened to end in.
+    syncGameOverScreen(Game.getState());
+    // Tactical Points: the number and bar are written from the live purse on every
+    // refresh, before any early return, and a change in it always redraws the buttons.
+    // (They used to be written only on a full redraw, which a paused game never reached.)
+    {
+      const live = Game.getState();
+      if (Game.isPlaying?.()) Availability.dropUnavailableSelection(live);
+      const owned = Availability.renderTp(
+        { text: hudEls['tp-text'], fill: hudEls['tp-fill'] },
+        live,
+        tpBarMax
+      );
+      if (owned !== lastTpSeen) {
+        lastTpSeen = owned;
+        force = true;
+      }
+      updateCursorTag(Game.getState());
+    }
     const hudRev = typeof Game.getHudRevision === 'function' ? Game.getHudRevision() : -1;
     if (!force && hudRev >= 0 && hudRev === lastHudRevision) {
       const gs = Game.getState();
@@ -2140,10 +2360,6 @@ const UI = (() => {
     lastHudKey = key;
     lastHudRevision = hudRev;
 
-    const tpPool = Math.max(24, (gs.tpPerRound ?? TP_PER_ROUND) * 3);
-    if (hudEls['tp-fill'])
-      hudEls['tp-fill'].style.width = `${Math.min(100, (gs.tactical / tpPool) * 100)}%`;
-    if (hudEls['tp-text']) hudEls['tp-text'].textContent = Math.floor(gs.tactical);
     const armyEl = hudEls['army-text'];
     if (armyEl) armyEl.textContent = String(gs.army ?? 0);
     const eco = gs.settlementTpBonus ?? 0;
@@ -2322,6 +2538,8 @@ const UI = (() => {
     if (typeof Achievements !== 'undefined') Achievements.updateTopBar();
 
     updateButtonStates(gs);
+    // The bar's scale (the dearest thing on offer) was just recomputed.
+    Availability.renderTp({ text: hudEls['tp-text'], fill: hudEls['tp-fill'] }, gs, tpBarMax);
 
     // Early waves: hide the long-run meta chips so the top bar shows only what matters now.
     const hudEarly = !gs.creativeMode && (gs.wave || 0) < 10;
@@ -2344,18 +2562,6 @@ const UI = (() => {
       }
     }
 
-    if ((gs.state === 'victory' || gs.state === 'defeat') && !gameOverShown) {
-      gameOverShown = true;
-      if (typeof UX !== 'undefined' && UX.renderVictoryScreen) UX.renderVictoryScreen(gs);
-      else {
-        const title = document.getElementById('result-title');
-        title.textContent = gs.state === 'victory' ? 'VICTORY!' : 'DEFEAT';
-        title.className = gs.state;
-      }
-      if (typeof CrownLegacies !== 'undefined') refreshCrownLegaciesPanel();
-      if (typeof EternalLegacyTree !== 'undefined') refreshEternalLegacyPanel();
-    }
-
     if (typeof CreativeMode !== 'undefined') CreativeMode.onHudUpdate(gs);
     if (typeof UX !== 'undefined') UX.onGameUpdate(gs);
     if (typeof Tooltips !== 'undefined') Tooltips.refreshDynamic(gs);
@@ -2367,6 +2573,13 @@ const UI = (() => {
     updateSpeedControl,
     refreshPanelIcons,
     hideMenusForPlay,
+    setLaunchOverlayVisible,
+    revealSelection,
+    selectItem,
+    setCursorState,
+    toggleKeySheet,
+    isKeySheetOpen,
+    closeKeySheet,
     ensureMenuDismissedForPlay,
     showMainMenu,
     getSelectedDifficulty: () => selectedDifficulty,

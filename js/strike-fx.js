@@ -92,7 +92,7 @@ const StrikeFX = (() => {
       heal: 'rgba(80,220,160,0.12)',
       rally: 'rgba(240,200,80,0.14)',
     };
-    const flashLife = Math.max(6, Math.round(10 + mult * 4));
+    const flashLife = Math.min(MAX_FLASH_LIFE, Math.max(6, Math.round(8 + mult * 2)));
     screenFlashes.push({
       color: flashColors[type] || 'rgba(255,255,255,0.12)',
       life: flashLife,
@@ -554,12 +554,32 @@ const StrikeFX = (() => {
     drawDebris(ctx, bounds);
   }
 
+  const MAX_FLASH_ALPHA = 0.22;
+  const MAX_FLASH_LIFE = 14;
+
+  /** Alpha of one screen flash this frame: its colour's own alpha, faded out, capped. */
+  function flashAlpha(f) {
+    const m = /([\d.]+)\)$/.exec(f.color || '');
+    const base = Math.min(MAX_FLASH_ALPHA, m ? parseFloat(m[1]) || 0 : 0.12);
+    const t = Math.max(0, Math.min(1, f.life / (f.maxLife || 1)));
+    return base * t * t;
+  }
+
   function drawScreenFx(ctx, w, h) {
+    // A flash is a brief tint, never a flood: it fades from the alpha written in its own
+    // colour (0.12-0.28), stacked flashes share one fill, and the total is capped.
+    let best = null;
+    let bestA = 0;
     for (const f of screenFlashes) {
-      const a = (f.life / f.maxLife) * 0.85;
-      ctx.fillStyle = f.color.replace(/[\d.]+\)$/, `${a})`);
-      ctx.fillRect(0, 0, w, h);
+      const a = flashAlpha(f);
+      if (a > bestA) {
+        bestA = a;
+        best = f;
+      }
     }
+    if (!best || bestA <= 0.004) return;
+    ctx.fillStyle = best.color.replace(/[\d.]+\)$/, `${bestA.toFixed(3)})`);
+    ctx.fillRect(0, 0, w, h);
   }
 
   function drawFortifyZones(ctx, zones, tick) {

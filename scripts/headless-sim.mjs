@@ -256,7 +256,9 @@ const STRATS = [
   [
     'hunt_flip',
     (Gm, t) => {
-      if (t % 300 === 0) Gm.toggleGlobalHunt();
+      // Flip the whole army between Hold here and Hunt.
+      if (t % 600 === 0) Gm.orderHoldHere();
+      else if (t % 300 === 0) Gm.orderHunt();
     },
   ],
   [
