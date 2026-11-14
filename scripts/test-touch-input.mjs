@@ -16,7 +16,12 @@ function run(w, h) {
   const env = { ...process.env, TOUCH_W: String(w), TOUCH_H: String(h) };
   // Set by some parent tools; Electron would then start as plain Node.
   delete env.ELECTRON_RUN_AS_NODE;
-  const r = spawnSync(electron, [join(here, 'lib', 'touch-harness.js')], {
+  // Linux CI: the setuid sandbox helper is not root-owned and there is no display.
+  const linux = process.platform === 'linux';
+  const args = [...(linux ? ['--no-sandbox'] : []), join(here, 'lib', 'touch-harness.js')];
+  const [cmd, argv] =
+    linux && !process.env.DISPLAY ? ['xvfb-run', ['-a', electron, ...args]] : [electron, args];
+  const r = spawnSync(cmd, argv, {
     env,
     encoding: 'utf8',
     timeout: 120000,
