@@ -105,6 +105,8 @@ for (let t = 0; t < 90000 && done.size < WANT.length && Game.isPlaying(); t++) {
   Game.update();
 }
 if (done.size < WANT.length) {
-  console.error(`only ${done.size}/${WANT.length} fixtures written (run ended at wave ${Game.getState().wave})`);
+  console.error(
+    `only ${done.size}/${WANT.length} fixtures written (run ended at wave ${Game.getState().wave})`
+  );
   process.exit(1);
 }

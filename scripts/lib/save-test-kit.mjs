@@ -99,7 +99,8 @@ export function playUntil(g, stop, maxTicks = 60000) {
           bot.tent = 1;
         } else if (bot.tent === 1 && s.tactical >= 5 && bot.tries < 40) {
           Game.selectBuild('medical_tent');
-          if (Game.handleClick(560 - (bot.tries % 8) * 14, 610 - (bot.tries % 3) * 12)) bot.tent = 2;
+          if (Game.handleClick(560 - (bot.tries % 8) * 14, 610 - (bot.tries % 3) * 12))
+            bot.tent = 2;
           else if (++bot.tries >= 40) bot.tent = 2;
         } else if (t % 20 === 0) Game.beginDayPhase(true);
       } else if (s.canDeploy && s.tactical >= cost && bot.deployed < 40) {
@@ -280,12 +281,14 @@ export function normalise(g) {
     gs[k] = plain(v);
   }
   const byId = (a, b) => String(a.id).localeCompare(String(b.id));
-  const units = GS.units.filter((u) => u.hp > 0).map((u) => {
-    const out = entity(u, UNIT_TRANSIENT);
-    out.$buildTarget = u.building?.id || null;
-    out.$buildQueue = (u.buildQueue || []).map((q) => q.id || `${q.type}@${q.x},${q.y}`);
-    return out;
-  });
+  const units = GS.units
+    .filter((u) => u.hp > 0)
+    .map((u) => {
+      const out = entity(u, UNIT_TRANSIENT);
+      out.$buildTarget = u.building?.id || null;
+      out.$buildQueue = (u.buildQueue || []).map((q) => q.id || `${q.type}@${q.x},${q.y}`);
+      return out;
+    });
   const away = (g.PlayerCounterEvolution?.getAwayUnits?.() || []).map((u) =>
     entity(u, UNIT_TRANSIENT)
   );
@@ -293,11 +296,13 @@ export function normalise(g) {
     gs,
     units: units.sort(byId),
     away: away.sort(byId),
-    buildings: GS.buildings.map((b) => {
-      const out = entity(b, new Set());
-      if (out.wallSlots) out.wallSlots = out.wallSlots.map((s) => ({ ...s }));
-      return out;
-    }).sort(byId),
+    buildings: GS.buildings
+      .map((b) => {
+        const out = entity(b, new Set());
+        if (out.wallSlots) out.wallSlots = out.wallSlots.map((s) => ({ ...s }));
+        return out;
+      })
+      .sort(byId),
     decorations: GS.decorations.map((d) => entity(d, new Set())),
     projectiles: GS.projectiles.map((p) => entity(p, new Set())),
     modules: g.SaveRegistry.saveAll(),
@@ -318,12 +323,15 @@ export function diff(a, b, path = '', out = [], limit = 40) {
   const ta = a === null ? 'null' : Array.isArray(a) ? 'array' : typeof a;
   const tb = b === null ? 'null' : Array.isArray(b) ? 'array' : typeof b;
   if (ta !== tb || (ta !== 'object' && ta !== 'array')) {
-    out.push(`${path || '(root)'}: ${JSON.stringify(a)?.slice(0, 80)} -> ${JSON.stringify(b)?.slice(0, 80)}`);
+    out.push(
+      `${path || '(root)'}: ${JSON.stringify(a)?.slice(0, 80)} -> ${JSON.stringify(b)?.slice(0, 80)}`
+    );
     return out;
   }
   if (ta === 'array') {
     if (a.length !== b.length) out.push(`${path}.length: ${a.length} -> ${b.length}`);
-    for (let i = 0; i < Math.min(a.length, b.length); i++) diff(a[i], b[i], `${path}[${i}]`, out, limit);
+    for (let i = 0; i < Math.min(a.length, b.length); i++)
+      diff(a[i], b[i], `${path}[${i}]`, out, limit);
     return out;
   }
   for (const k of new Set([...Object.keys(a), ...Object.keys(b)])) {

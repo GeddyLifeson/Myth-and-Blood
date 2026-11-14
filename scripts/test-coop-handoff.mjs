@@ -25,11 +25,17 @@ A.Game.setDifficulty('baby');
 A.Game.start();
 ok(!!OA.getActiveRoom(), 'starting a co-op run opens a room for player A');
 ok(OA.isMyCoopTurn(), 'it is A’s turn in the room A made');
-ok(playUntil(A, (s) => s.wave === 1 && s.timeOfDay === 'night'), 'A plays to the first night');
+ok(
+  playUntil(A, (s) => s.wave === 1 && s.timeOfDay === 'night'),
+  'A plays to the first night'
+);
 const beforeA = JSON.parse(JSON.stringify(normalise(A)));
 
 const h1 = OA.handoffKingdom(A.Game.exportGameState());
-ok(h1.ok && typeof h1.code === 'string' && h1.code.startsWith('KINGDOM:'), 'A hands off with a code');
+ok(
+  h1.ok && typeof h1.code === 'string' && h1.code.startsWith('KINGDOM:'),
+  'A hands off with a code'
+);
 ok(!OA.isMyCoopTurn(), 'after handing off it is no longer A’s turn');
 const again = OA.handoffKingdom(A.Game.exportGameState());
 ok(!again.ok && /turn/i.test(again.error || ''), `A cannot hand off twice (${again.error})`);
@@ -44,7 +50,10 @@ const d1 = diff(beforeA, JSON.parse(JSON.stringify(normalise(B))));
 ok(d1.length === 0, `B has exactly A’s game (${d1.slice(0, 6).join(' | ') || 'no differences'})`);
 if (B.GS.paused) B.Game.togglePause?.();
 B.GS.paused = false;
-ok(playUntil(B, (s) => s.wave === 2 && s.timeOfDay === 'night'), 'B plays wave 2');
+ok(
+  playUntil(B, (s) => s.wave === 2 && s.timeOfDay === 'night'),
+  'B plays wave 2'
+);
 const beforeB = JSON.parse(JSON.stringify(normalise(B)));
 
 const h2 = OB.handoffKingdom(B.Game.exportGameState());
@@ -65,7 +74,10 @@ ok(!!pend && A.Game.importGameState(pend), 'A loads the game B handed back');
 const d2 = diff(beforeB, JSON.parse(JSON.stringify(normalise(A))));
 ok(d2.length === 0, `A has exactly B’s game (${d2.slice(0, 6).join(' | ') || 'no differences'})`);
 A.GS.paused = false;
-ok(playUntil(A, (s) => s.wave === 3 && s.timeOfDay === 'night'), 'A plays wave 3');
+ok(
+  playUntil(A, (s) => s.wave === 3 && s.timeOfDay === 'night'),
+  'A plays wave 3'
+);
 const h3 = OA.handoffKingdom(A.Game.exportGameState());
 ok(h3.ok && h3.nextCommander === 'Branwen', 'A hands off a second time, to B');
 const i3 = OB.importShareCode(h3.code || '');
@@ -88,16 +100,25 @@ ok(!OC.getActiveRoom(), 'a refused code does not create a room');
 
 // A code from a newer version of the game.
 const body = C.SaveFormat.fromText(h3.code.slice('KINGDOM:'.length));
-ok(!!body && body.state && body.state.version === C.SaveFormat.VERSION, 'the code holds the full versioned save');
+ok(
+  !!body && body.state && body.state.version === C.SaveFormat.VERSION,
+  'the code holds the full versioned save'
+);
 ok(typeof body.state.checksum === 'string', 'the save inside the code carries its checksum');
 const newerSave = JSON.parse(JSON.stringify(body));
 newerSave.state.version = C.SaveFormat.VERSION + 1;
 const r1 = OC.importShareCode('KINGDOM:' + C.SaveFormat.toText(newerSave));
-ok(!r1.ok && /newer version/i.test(r1.error || ''), `a newer save is refused politely (${r1.error})`);
+ok(
+  !r1.ok && /newer version/i.test(r1.error || ''),
+  `a newer save is refused politely (${r1.error})`
+);
 const newerCode = JSON.parse(JSON.stringify(body));
 newerCode.v = 99;
 const r2 = OC.importShareCode('KINGDOM:' + C.SaveFormat.toText(newerCode));
-ok(!r2.ok && /newer version/i.test(r2.error || ''), `a newer code format is refused politely (${r2.error})`);
+ok(
+  !r2.ok && /newer version/i.test(r2.error || ''),
+  `a newer code format is refused politely (${r2.error})`
+);
 const tampered = JSON.parse(JSON.stringify(body));
 tampered.state.tactical += 5000;
 const r3 = OC.importShareCode('KINGDOM:' + C.SaveFormat.toText(tampered));
