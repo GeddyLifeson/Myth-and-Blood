@@ -1,5 +1,5 @@
 /**
- * In-game HUD tooltips — rich descriptions for panels and top bar.
+ * In-game HUD tooltips - rich descriptions for panels and top bar.
  */
 const Tooltips = (() => {
   let el = null;
@@ -14,20 +14,20 @@ const Tooltips = (() => {
     outpost: 'Forward cover with one garrison slot. Archers inside gain +55 range.',
     wall: 'Blocks movement. Two footman slots per segment when a General commands the Keep. Castle walls face N/E/S/W. Press R while placing to set facing; ROTATE tool turns completed walls.',
     castle:
-      'Compound: 4 walls, 4 outposts, Keep, med tent, and mess hall — requires Fortification research.',
+      'Compound: 4 walls, 4 outposts, Keep, med tent, and mess hall - requires Fortification research.',
     medical_tent:
       'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside.',
-    mess_hall: 'Morale aura for nearby troops — stacks with bards and rallies.',
+    mess_hall: 'Morale aura for nearby troops - stacks with bards and rallies.',
     watchtower:
       '5 TP. Reveals stealth and burrowers; enemies nearby suffer accuracy penalties. Archers gain +35 range. Requires Field Engineering.',
     spike_trap:
-      '3 TP. Hidden spikes — first enemy crossing each cooldown takes heavy damage. Requires Field Engineering.',
+      '3 TP. Hidden spikes - first enemy crossing each cooldown takes heavy damage. Requires Field Engineering.',
     quarry:
       '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
     trade_outpost:
       '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
     research_lab:
-      '45 TP, 2 Builders. Analyzes slain foes for Science Points — stronger enemies yield more SP (wave cap). Required to research.',
+      '45 TP, 2 Builders. Analyzes slain foes for Science Points - stronger enemies yield more SP (wave cap). Required to research.',
     fortress_upgrade:
       'Place on a completed settlement: +HP, cover, +1 TP/round, and raises a palisade wall ring.',
     hamlet: '100 TP, 5 Builders, 5-wave build. +5 TP/round. Requires Settlement Charter research.',
@@ -50,10 +50,10 @@ const Tooltips = (() => {
     mage: 'Arcane bolts with splash. Strong vs clustered swarms.',
     cavalry: 'Fast melee with charge bonus. Hunts stragglers and flanks.',
     healer:
-      'Heals allies in range — including other healers. Goes to a med tent when wounded, like every soldier. Ranks when healing each wave.',
+      'Heals allies in range - including other healers. Goes to a med tent when wounded, like every soldier. Ranks when healing each wave.',
     knight: 'Heavy armored melee with damage resistance. Banner courier can summon one.',
     sapper:
-      'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close — keep him behind the line.',
+      'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close - keep him behind the line.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
     bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
     ballista:
@@ -67,7 +67,7 @@ const Tooltips = (() => {
   };
 
   const ACADEMY_NOTE =
-    'Find an Immortal veteran first — each academy needs a max-rank mentor of that unit type alive on the field before you can found it. Once complete, trains one free unit each round (Builder/Courier academies train while only the mentor is on the field).';
+    'Find an Immortal veteran first - each academy needs a max-rank mentor of that unit type alive on the field before you can found it. Once complete, trains one free unit each round (Builder/Courier academies train while only the mentor is on the field).';
 
   function esc(s) {
     return String(s ?? '')
@@ -114,7 +114,7 @@ const Tooltips = (() => {
     if (ab.mitigation)
       return `${Math.round(ab.mitigation * 100)}% damage reduction in zone for ${Math.round(ab.duration / 60)}s.`;
     if (ab.damage) return `${ab.damage} damage in radius ${ab.radius}.`;
-    return 'Tactical strike — click the map to cast.';
+    return 'Tactical strike - click the map to cast.';
   }
 
   function unitStats(def) {
@@ -140,7 +140,7 @@ const Tooltips = (() => {
       : typeof Game !== 'undefined' && Game.getDeployCost
         ? Game.getDeployCost(type)
         : (def.cost ?? 0);
-    const note = UNIT_NOTES[type] || `${def.name} — deploy onto the rally field.`;
+    const note = UNIT_NOTES[type] || `${def.name} - deploy onto the rally field.`;
     // The price charged, and what it is made of when upkeep or Warband raises it.
     let footer =
       (typeof Availability !== 'undefined' && gs
@@ -179,7 +179,7 @@ const Tooltips = (() => {
         status?.mentorRank ||
         (typeof getMaxVeteranRankName === 'function' ? getMaxVeteranRankName(mentor) : 'Immortal');
       const trains = def.academyUnit || mentor;
-      body = `${ACADEMY_NOTE} This hall trains ${trains} — requires an on-field ${mentorName} at ${rank} (V${status?.mentorNeed || 6}).`;
+      body = `${ACADEMY_NOTE} This hall trains ${trains} - requires an on-field ${mentorName} at ${rank} (V${status?.mentorNeed || 6}).`;
       if (status?.hasMentor) {
         body += ` Mentor ready: Immortal ${mentorName} is on the field.`;
         if (status.researchOk === false) {
@@ -188,7 +188,7 @@ const Tooltips = (() => {
           body += ' You can found this academy now.';
         }
       } else if (status?.mentorProgress > 0) {
-        body += ` Progress: V${status.mentorProgress}/${status.mentorNeed || 6} on field — keep promoting after each gold-star cycle.`;
+        body += ` Progress: V${status.mentorProgress}/${status.mentorNeed || 6} on field - keep promoting after each gold-star cycle.`;
       } else if (status?.reason) {
         body += ` ${status.reason}`;
       }
@@ -202,7 +202,7 @@ const Tooltips = (() => {
     } else if (!body) {
       body = def?.buildTime
         ? `Build time ${def.buildTime} ticks.`
-        : 'Field structure — place with a Builder.';
+        : 'Field structure - place with a Builder.';
     }
     if (def?.requiresBuilders) body += ` Requires ${def.requiresBuilders} live Builders.`;
     if (def?.tpPerRound) body += ` +${def.tpPerRound} TP/round.`;
@@ -364,7 +364,7 @@ const Tooltips = (() => {
       'speed-toggle': {
         title: 'Game Speed',
         body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click to cycle from 1× up to 10×.`,
-        footer: 'No key — use this button · Paused always runs 1×',
+        footer: 'No key - use this button · Paused always runs 1×',
       },
       'wwe-academy-open': {
         title: 'Grand Coliseum',
@@ -469,8 +469,8 @@ const Tooltips = (() => {
         body: 'Assault wave counter. The map expands every 10 waves on all sides; pressure rises with wave number.',
         footer:
           gs?.timeOfDay === 'night'
-            ? 'Night prep — press D or BEGIN DAY'
-            : 'Day — enemies attacking',
+            ? 'Night prep - press D or BEGIN DAY'
+            : 'Day - enemies attacking',
       };
     }
     if (label === 'CYCLE') {
@@ -514,20 +514,20 @@ const Tooltips = (() => {
       if (gs?.namedBoss) brief.push(`Boss: ${gs.namedBoss}`);
       const sides = gs?.attackSides || [];
       if (sides.length) brief.push(`Flanks: ${sides.join(', ')}`);
-      if (gs?.colonyThreatTier && gs.colonyThreatTier !== '—') {
+      if (gs?.colonyThreatTier && gs.colonyThreatTier !== '-') {
         brief.push(String(gs.colonyThreatTier));
       }
       return {
         title: 'Wave Intel',
-        body: 'Incoming assault snapshot — flanks, boss flags, and threat tier. Use Scout Report for a full roster.',
-        footer: brief.length ? brief.join(' · ') : 'No intel — use Scout Report',
+        body: 'Incoming assault snapshot - flanks, boss flags, and threat tier. Use Scout Report for a full roster.',
+        footer: brief.length ? brief.join(' · ') : 'No intel - use Scout Report',
       };
     }
     if (label === 'SYN') {
       return {
         title: 'Faction Synergies',
         body: 'Active evolved/coliseum synergy bonuses and seasonal events.',
-        footer: (gs?.factionSynergies || []).join(', ') || '—',
+        footer: (gs?.factionSynergies || []).join(', ') || '-',
       };
     }
     if (label === 'DIFF') {
@@ -540,7 +540,7 @@ const Tooltips = (() => {
     const btnTips = {
       'top-pause-btn': {
         title: 'Pause',
-        body: 'Pause menu — resume, settings, encyclopedia, quit.',
+        body: 'Pause menu - resume, settings, encyclopedia, quit.',
         footer: 'Esc or Space',
       },
       'top-settings-btn': {
@@ -551,7 +551,7 @@ const Tooltips = (() => {
       'sound-toggle': { title: 'Sound', body: 'Toggle music and SFX.', footer: 'Hotkey: V' },
       'faction-intel-btn': {
         title: 'Threat Map',
-        body: 'Faction evolution intel — active realms, stages, hostility, and north-sector map.',
+        body: 'Faction evolution intel - active realms, stages, hostility, and north-sector map.',
         footer: 'Click HOST HUD · Esc to close',
       },
       'encyclopedia-btn': {
@@ -566,7 +566,7 @@ const Tooltips = (() => {
       },
       'creative-panel-toggle': {
         title: 'Creative Lab',
-        body: 'Sandbox playtest — free TP, custom waves, spawn tools.',
+        body: 'Sandbox playtest - free TP, custom waves, spawn tools.',
         footer: 'Hotkey: P',
       },
       'perf-toggle': {
@@ -832,12 +832,12 @@ const Tooltips = (() => {
       },
       ACADEMIES: {
         title: 'Academies',
-        body: 'Find an Immortal veteran first — you cannot found an academy until a max-rank mentor of that unit type is alive on the field. Promote troops via Veteran Doctrine, deploy the mentor, then build. Each complete academy trains one free unit per round.',
+        body: 'Find an Immortal veteran first - you cannot found an academy until a max-rank mentor of that unit type is alive on the field. Promote troops via Veteran Doctrine, deploy the mentor, then build. Each complete academy trains one free unit per round.',
         footer: 'Hover each academy button for mentor requirements',
       },
       STRIKES: {
         title: 'Strikes',
-        body: 'One-shot tactical abilities — damage, heal, reinforce, or buff.',
+        body: 'One-shot tactical abilities - damage, heal, reinforce, or buff.',
         footer: 'Click strike, then click map target',
       },
       'SPY NETWORK': {

@@ -1,5 +1,5 @@
 /**
- * PanelModel — what the two side panels show, with no DOM in it.
+ * PanelModel - what the two side panels show, with no DOM in it.
  *
  *  - which tab is open, and which pane that makes visible (exactly one per panel);
  *  - which tab an item belongs to, and whether it sits in the open list or in the pane's
@@ -54,7 +54,7 @@ const PanelModel = (() => {
         return list[(at + step + list.length) % list.length];
       },
       isOpen: (id) => id === active,
-      /** { tabId: visible } — one true, the rest false. */
+      /** { tabId: visible } - one true, the rest false. */
       panes: () => paneState(list, active),
     };
   }

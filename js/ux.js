@@ -43,7 +43,7 @@ const UX = (() => {
     {
       maxWave: 1,
       title: 'Welcome, Commander',
-      body: 'Deploy Footmen with <kbd>1</kbd> or the left panel, then click the map to position them. Enemies march from the north — survive as long as you can.',
+      body: 'Deploy Footmen with <kbd>1</kbd> or the left panel, then click the map to position them. Enemies march from the north - survive as long as you can.',
       highlight: 'left-panel',
     },
     {
@@ -67,13 +67,13 @@ const UX = (() => {
     {
       maxWave: 8,
       title: 'Spy Network',
-      body: 'One spy action per wave from the right panel. Scout reveals the exact next roster — invaluable before big waves.',
+      body: 'One spy action per wave from the right panel. Scout reveals the exact next roster - invaluable before big waves.',
       highlight: 'right-panel',
     },
     {
       maxWave: 10,
       title: 'Territory Grows',
-      body: 'Every 10 waves the realm expands. The minimap shows biomes, your view box, and (from wave 25+) a <strong>flank compass</strong> — glowing edges mark active assault directions.',
+      body: 'Every 10 waves the realm expands. The minimap shows biomes, your view box, and (from wave 25+) a <strong>flank compass</strong> - glowing edges mark active assault directions.',
       highlight: 'minimap-panel',
     },
     {
@@ -85,19 +85,19 @@ const UX = (() => {
     {
       maxWave: 15,
       title: 'Veteran Stars',
-      body: 'Core troops earn stars from kills — three gold makes them eligible for a <strong>TP promotion</strong> (research Veteran Doctrine). Evolved operatives scale with waves automatically; footmen do not.',
+      body: 'Core troops earn stars from kills - three gold makes them eligible for a <strong>TP promotion</strong> (research Veteran Doctrine). Evolved operatives scale with waves automatically; footmen do not.',
       highlight: 'unit-info-panel',
     },
     {
       maxWave: 18,
       title: 'Box Select & Formations',
-      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
+      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel - Line, Column, Wedge, Box, or Spread - then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
       highlight: 'left-panel',
     },
     {
       maxWave: 20,
       title: 'Night Prep',
-      body: 'After each cleared wave, night falls for 1 minute: no spawns, +35% build speed. Press D or BEGIN DAY to start early — or wait for auto dawn.',
+      body: 'After each cleared wave, night falls for 1 minute: no spawns, +35% build speed. Press D or BEGIN DAY to start early - or wait for auto dawn.',
       highlight: 'begin-day-btn',
     },
     {
@@ -105,7 +105,7 @@ const UX = (() => {
       maxWave: 35,
       when: (gs) => gs.wave >= 8,
       title: 'Neutral Wildlife',
-      body: 'Wild beasts roam from wave 8 — they attack whichever army is nearest. Slay them for TP, but over-hunting turns them <strong>feral</strong>. Dispatch a <strong>Hunt Pact</strong> courier message to ally with wildlife instead.',
+      body: 'Wild beasts roam from wave 8 - they attack whichever army is nearest. Slay them for TP, but over-hunting turns them <strong>feral</strong>. Dispatch a <strong>Hunt Pact</strong> courier message to ally with wildlife instead.',
       highlight: 'right-panel',
     },
     {
@@ -113,19 +113,19 @@ const UX = (() => {
       maxWave: 60,
       when: (gs) => gs.hasResearchLab || (gs.sciencePoints ?? 0) > 0,
       title: 'Science & Research',
-      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks — each node gates new power.',
+      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks - each node gates new power.',
       highlight: 'research-open',
     },
     {
       when: (gs) => gs.wweUnlocked,
       title: 'Grand Coliseum',
-      body: 'The grand arena is yours — open <strong>GRAND COLISEUM</strong>, build the hall on the field, then sign champions. They scale with waves and bring morale bombs and finishers.',
+      body: 'The grand arena is yours - open <strong>GRAND COLISEUM</strong>, build the hall on the field, then sign champions. They scale with waves and bring morale bombs and finishers.',
       highlight: 'wwe-academy-open',
     },
     {
       when: (gs) => gs.crossoverUnlocked,
       title: 'Legion Operatives',
-      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
+      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field - combine tags (melee, ranged, support) for research perks.',
       highlight: 'crossover-hub-open',
     },
     {
@@ -135,14 +135,14 @@ const UX = (() => {
         (gs.wweOnField?.length ?? 0) > 0 ||
         gs.operativeSkills?.active,
       title: 'Operative Skill Trees',
-      body: 'Recruiting operatives earns <strong>skill points</strong> each run — spend them on faction skill nodes (accuracy, damage, morale). Lifetime mastery from achievements raises your budget. Watch the <strong>SYN</strong> chip for unlocked nodes.',
+      body: 'Recruiting operatives earns <strong>skill points</strong> each run - spend them on faction skill nodes (accuracy, damage, morale). Lifetime mastery from achievements raises your budget. Watch the <strong>SYN</strong> chip for unlocked nodes.',
       highlight: 'tab-ops',
     },
     {
       minWave: 22,
       when: (gs) => (gs.factionSynergies?.length ?? 0) > 0,
       title: 'Faction Synergies',
-      body: 'Field operatives from matching factions to activate <strong>synergy bonuses</strong> — extra damage, accuracy, morale, and siege power. Too many factions at once triggers soup penalties; anchor with 2–4 core tags.',
+      body: 'Field operatives from matching factions to activate <strong>synergy bonuses</strong> - extra damage, accuracy, morale, and siege power. Too many factions at once triggers soup penalties; anchor with 2–4 core tags.',
       highlight: 'tab-ops',
     },
     {
@@ -156,21 +156,21 @@ const UX = (() => {
       minWave: 6,
       when: (gs) => gs.factionReputation?.active,
       title: 'Faction Reputation',
-      body: 'Host realms track hostility from wave 6 — aggressive kills and raids raise evolution pressure. <strong>Truce</strong> couriers and quiet waves ease threats toward economic probes instead of military surges.',
+      body: 'Host realms track hostility from wave 6 - aggressive kills and raids raise evolution pressure. <strong>Truce</strong> couriers and quiet waves ease threats toward economic probes instead of military surges.',
       highlight: 'tab-ops',
     },
     {
       minWave: 25,
       maxWave: 40,
       title: 'Multi-Front Sieges',
-      body: 'New flanks open every 25 waves — East, West, then South. Wave intel shows coordinated vs competing assaults. Split garrisons or lean on hunt mode and strikes per front.',
+      body: 'New flanks open every 25 waves - East, West, then South. Wave intel shows coordinated vs competing assaults. Split garrisons or lean on hunt mode and strikes per front.',
       highlight: 'tab-ops',
     },
     {
       minWave: 12,
       maxWave: 18,
       title: 'Dynamic Planet Events',
-      body: 'Volcanic eruptions, ley storms, and ruin awakenings appear on the map. Respond during night prep — ignore them and both armies suffer; exploit them for TP and tempo.',
+      body: 'Volcanic eruptions, ley storms, and ruin awakenings appear on the map. Respond during night prep - ignore them and both armies suffer; exploit them for TP and tempo.',
       highlight: 'tab-ops',
     },
     {
@@ -178,21 +178,21 @@ const UX = (() => {
       maxWave: 80,
       when: (gs) => gs.kingdomRaidsUnlocked || (gs.hamletCount ?? 0) > 0 || gs.hasResearchLab,
       title: 'Settlement Economy',
-      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in — enemy settlement raids (wave 150+) and northern holds target economy sites first.',
+      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in - enemy settlement raids (wave 150+) and northern holds target economy sites first.',
       highlight: 'left-panel',
     },
     {
       minWave: 100,
       when: (gs) => gs.wave >= 100 || gs.rtsEra,
       title: 'RTS Escalation',
-      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling — promote core veterans or field more operatives to keep pace.',
+      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling - promote core veterans or field more operatives to keep pace.',
       highlight: 'tab-ops',
     },
     {
       minWave: 150,
       when: (gs) => gs.settlementRaids?.active,
       title: 'Settlement Raids',
-      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes — keep builders repairing and footmen garrisoned on economy tiles.',
+      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes - keep builders repairing and footmen garrisoned on economy tiles.',
       highlight: 'tab-ops',
     },
     {
@@ -324,7 +324,7 @@ const UX = (() => {
         `<span class="star-gold" title="Gold">${'♛'.repeat(Math.min(3, u.vetGold))}</span>`
       );
     if (u.vetTier) parts.push(`<span class="vet-tier">V${u.vetTier}</span>`);
-    return parts.join(' ') || '<span class="star-none">—</span>';
+    return parts.join(' ') || '<span class="star-none">-</span>';
   }
 
   function formatPerks(u) {
@@ -385,14 +385,14 @@ const UX = (() => {
     if (s.kind === 'doomslayer') {
       return `<div class="unit-info-scaling">
         <span class="scaling-title">Scaling</span>
-        <span class="scaling-chip doom">Hellwalker — fixed blade; heals 50% missing HP every 2 waves</span>
+        <span class="scaling-chip doom">Hellwalker - fixed blade; heals 50% missing HP every 2 waves</span>
       </div>`;
     }
     if (s.kind === 'ip') {
       const tenureLine =
         s.tenure > 0
           ? `<span class="scaling-chip tenure">Tenure ${s.tenure}w · HP ×${formatPctMult(s.tenureHpPct)} · DMG ×${formatPctMult(s.tenureDmgPct)}</span>`
-          : `<span class="scaling-chip tenure-dim">New deploy (W${s.spawnWave ?? '?'}) — tenure bonus grows each survived wave</span>`;
+          : `<span class="scaling-chip tenure-dim">New deploy (W${s.spawnWave ?? '?'}) - tenure bonus grows each survived wave</span>`;
       return `<div class="unit-info-scaling">
         <span class="scaling-title">Tenure &amp; Wave Scaling</span>
         <span class="scaling-chip wave">Wave HP ×${formatPctMult(s.waveHpPct)} · DMG ×${formatPctMult(s.waveDmgPct)}</span>
@@ -407,7 +407,7 @@ const UX = (() => {
       const tenure =
         s.tenure > 0
           ? `<span class="scaling-chip tenure">Field ${s.tenure} wave${s.tenure > 1 ? 's' : ''}${s.tenureCombatBonus ? ` (+${s.tenureCombatBonus}% eff.)` : ''}</span>`
-          : '<span class="scaling-chip tenure-dim">Fresh deploy — tenure softens obsolete pressure over time</span>';
+          : '<span class="scaling-chip tenure-dim">Fresh deploy - tenure softens obsolete pressure over time</span>';
       const vet = s.vetOffsetPct
         ? `<span class="scaling-chip vet">Vet −${s.vetOffsetPct}% pressure</span>`
         : '';
@@ -436,8 +436,8 @@ const UX = (() => {
           <span class="tenure-meter-label">Rank progress to V${s.maxRankTier || 6}</span>
           <div class="tenure-bar-track"><div class="tenure-bar-fill specialist" style="width:${rankPct}%"></div></div>
         </div>
-        ${s.tenureNote ? `<span class="scaling-chip tenure">${escapeHtml(s.tenureNote)}</span>` : '<span class="scaling-chip tenure-dim">Fresh deploy — work each wave to earn ranks.</span>'}
-        <span class="scaling-chip tenure-dim">Heal, build, or dispatch once per wave — or promote with TP after Veteran Doctrine.</span>
+        ${s.tenureNote ? `<span class="scaling-chip tenure">${escapeHtml(s.tenureNote)}</span>` : '<span class="scaling-chip tenure-dim">Fresh deploy - work each wave to earn ranks.</span>'}
+        <span class="scaling-chip tenure-dim">Heal, build, or dispatch once per wave - or promote with TP after Veteran Doctrine.</span>
         ${lateHint}
       </div>`;
     }
@@ -452,7 +452,7 @@ const UX = (() => {
     if (a.unlocked) {
       return `<div class="unit-info-ability unlocked">
         ${header}
-        <span class="ability-chip unlocked active" title="${escapeHtml(a.desc)}">✦ ${escapeHtml(a.name)} — ACTIVE</span>
+        <span class="ability-chip unlocked active" title="${escapeHtml(a.desc)}">✦ ${escapeHtml(a.name)} - ACTIVE</span>
         <span class="ability-desc">${escapeHtml(a.desc)}</span>
         <span class="scaling-chip tenure-dim">Unlocked at ${escapeHtml(a.unlockRank || `${needStars} gold stars`)}</span>
       </div>`;
@@ -462,8 +462,8 @@ const UX = (() => {
       a.rankNeeded === 1 ? '1 gold star to unlock' : `${a.rankNeeded} gold stars to unlock`;
     const prog = needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
     const promoteHint = u.canVetUpgrade
-      ? ' — eligible for TP promotion now'
-      : ' — work each wave (gold-star credit) or earn gold stars in battle';
+      ? ' - eligible for TP promotion now'
+      : ' - work each wave (gold-star credit) or earn gold stars in battle';
     return `<div class="unit-info-ability locked">
       ${header}
       <span class="ability-chip locked">◇ ${escapeHtml(a.name)} · ${needStars} gold stars</span>
@@ -520,7 +520,7 @@ const UX = (() => {
           // Keep combat chips in sync when damage rises from star bumps.
           const dmgChip = body.querySelector('.unit-info-combat .combat-chip');
           if (dmgChip && dmgChip.textContent.startsWith('DMG')) {
-            dmgChip.textContent = `DMG ${u.damage ?? '—'}`;
+            dmgChip.textContent = `DMG ${u.damage ?? '-'}`;
           }
           lastUnitPanelKey = barKey;
           return;
@@ -637,10 +637,10 @@ const UX = (() => {
         ${stance ? `<div class="unit-info-stance ${u.holding ? 'holding' : 'hunting'}"><strong>${u.holding ? 'HOLD' : 'HUNT'}</strong> ${escapeHtml(stance.replace(/^[A-Za-z]+: /, ''))}</div>` : ''}
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
         <div class="unit-info-combat">
-          <span class="combat-chip" title="Damage per hit">DMG ${u.damage ?? '—'}</span>
-          <span class="combat-chip" title="Attack range">${(u.combatType || '') === 'ranged' || (u.range || 0) > (u.meleeRange || 0) + 2 ? 'RNG' : 'MEL'} ${u.range ?? u.meleeRange ?? '—'}</span>
-          <span class="combat-chip" title="Accuracy">ACC ${u.accuracy ?? '—'}%</span>
-          <span class="combat-chip" title="Move speed">SPD ${u.speed ?? '—'}</span>
+          <span class="combat-chip" title="Damage per hit">DMG ${u.damage ?? '-'}</span>
+          <span class="combat-chip" title="Attack range">${(u.combatType || '') === 'ranged' || (u.range || 0) > (u.meleeRange || 0) + 2 ? 'RNG' : 'MEL'} ${u.range ?? u.meleeRange ?? '-'}</span>
+          <span class="combat-chip" title="Accuracy">ACC ${u.accuracy ?? '-'}%</span>
+          <span class="combat-chip" title="Move speed">SPD ${u.speed ?? '-'}</span>
         </div>
         <div class="unit-info-actions">
           ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? 'Release hold' : 'Hold here'}</button>` : ''}
@@ -776,28 +776,28 @@ const UX = (() => {
     if (!bar || gs.creativeMode) return;
     if (Settings?.get('showHintBar') === false) return;
     let hint = '';
-    if (gs.paused) hint = 'PAUSED — Space or Resume to continue · Esc for pause menu';
+    if (gs.paused) hint = 'PAUSED - Space or Resume to continue · Esc for pause menu';
     else if (gs.selectedDeploy)
-      hint = `Deploy ${getPlayerUnitDef(gs.selectedDeploy)?.name || gs.selectedDeploy} — click map · Shift+click place more · Esc/Cancel`;
+      hint = `Deploy ${getPlayerUnitDef(gs.selectedDeploy)?.name || gs.selectedDeploy} - click map · Shift+click place more · Esc/Cancel`;
     else if (gs.selectedBuild === 'wall')
-      hint = `Build Wall (facing ${gs.pendingWallFacing || 'north'}) — R rotate · click map · Esc/Cancel`;
+      hint = `Build Wall (facing ${gs.pendingWallFacing || 'north'}) - R rotate · click map · Esc/Cancel`;
     else if (gs.selectedBuild)
-      hint = `Build ${BuildDefs[gs.selectedBuild]?.name || gs.selectedBuild} — click map · Esc/Cancel`;
+      hint = `Build ${BuildDefs[gs.selectedBuild]?.name || gs.selectedBuild} - click map · Esc/Cancel`;
     else if (gs.selectedAbility)
-      hint = `Strike: ${Abilities[gs.selectedAbility]?.name || gs.selectedAbility} — click target · Esc/Cancel`;
+      hint = `Strike: ${Abilities[gs.selectedAbility]?.name || gs.selectedAbility} - click target · Esc/Cancel`;
     else if (gs.selectedDemolish)
-      hint = 'Demolish — click your structure (50% TP refund) · Esc/Cancel';
+      hint = 'Demolish - click your structure (50% TP refund) · Esc/Cancel';
     else if (gs.selectedMoveBuilding)
       hint = gs.moveBuildingType
-        ? `Move ${BuildDefs[gs.moveBuildingType]?.name || 'structure'} — click destination · Esc/Cancel`
-        : 'Move building — click structure, then destination (free) · Esc/Cancel';
+        ? `Move ${BuildDefs[gs.moveBuildingType]?.name || 'structure'} - click destination · Esc/Cancel`
+        : 'Move building - click structure, then destination (free) · Esc/Cancel';
     else if (gs.selectedRotateWall)
-      hint = 'Rotate wall — click a wall to turn 90° (free) · Esc/Cancel';
+      hint = 'Rotate wall - click a wall to turn 90° (free) · Esc/Cancel';
     else if (gs.timeOfDay === 'night') {
       const tip = gs.feedback?.nightTips?.[0]?.text;
       hint = tip
-        ? `Night (${gs.nightSecondsLeft ?? 60}s) — ${tip} · D begins day`
-        : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
+        ? `Night (${gs.nightSecondsLeft ?? 60}s) - ${tip} · D begins day`
+        : `Night prep (${gs.nightSecondsLeft ?? 60}s) - D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
       hint =
         'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
@@ -806,7 +806,7 @@ const UX = (() => {
         'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
-      hint = `${gs.story.branchLabel}${gs.story.summary ? ` — ${gs.story.summary}` : ''} · ${hint}`;
+      hint = `${gs.story.branchLabel}${gs.story.summary ? ` - ${gs.story.summary}` : ''} · ${hint}`;
     } else if (gs.online?.statusLine) {
       hint = `${gs.online.statusLine} · ${hint}`;
     }
@@ -967,7 +967,7 @@ const UX = (() => {
       AudioEngine?.SFX?.click?.();
       if (typeof SiegeLoop !== 'undefined') SiegeLoop.skipIntroduction();
       e.currentTarget.hidden = true;
-      onMessage('Introduction skipped — every command is on the HUD.', 'system');
+      onMessage('Introduction skipped - every command is on the HUD.', 'system');
       UI.updateHUD(true);
     });
     document.getElementById('pause-menu')?.addEventListener('click', () => {
@@ -1068,12 +1068,12 @@ const UX = (() => {
         const active = sides.join(', ');
         const quiet = unlocked.filter((s) => !sides.includes(s));
         panel.title =
-          `Minimap — active: ${active}` +
+          `Minimap - active: ${active}` +
           (quiet.length ? ` · quiet: ${quiet.join(', ')}` : '') +
           (data.multiFront?.intel ? ` · ${data.multiFront.intel}` : '') +
-          ' — click to pan';
+          ' - click to pan';
       } else {
-        panel.title = 'Strategic overview — assaults from the north — click to pan';
+        panel.title = 'Strategic overview - assaults from the north - click to pan';
       }
     }
   }
@@ -1221,12 +1221,12 @@ const UX = (() => {
   const VICTORY_COPY = {
     economy: {
       title: 'CAMPAIGN WON!',
-      subtitle: 'The northern host is broken — their war economy lies in ruins.',
+      subtitle: 'The northern host is broken - their war economy lies in ruins.',
       crest: '⚔',
     },
     planet_conquest: {
       title: 'TRUE VICTORY!',
-      subtitle: 'Wave one hundred is cleared — the realm stands and the campaign is won.',
+      subtitle: 'Wave one hundred is cleared - the realm stands and the campaign is won.',
       crest: '☀',
     },
     default: {
@@ -1307,7 +1307,7 @@ const UX = (() => {
     }
 
     if (subtitle && typeof Game !== 'undefined' && Game.cheatsUsed?.()) {
-      subtitle.textContent += ' · Cheats used — run not recorded';
+      subtitle.textContent += ' · Cheats used - run not recorded';
     }
 
     const losses = gs.playerDeaths ?? gs.misses ?? 0;

@@ -1,5 +1,5 @@
 /**
- * Myth and Blood — UI v2 overhaul
+ * Myth and Blood - UI v2 overhaul
  * Layered on style.css. Keeps all selectors/IDs; redesigns chrome, density, hierarchy.
  */
 
@@ -9,11 +9,11 @@
 body.ui-v2 {
   /* --ui-scale / --font-scale / --panel-opacity intentionally inherit from :root
      (style.css) and are kept live on <html> by the head script + settings.js.
-     Do NOT redeclare them as `var(--ui-scale, 1)` here — a custom property that
+     Do NOT redeclare them as `var(--ui-scale, 1)` here - a custom property that
      references itself is a cyclic dependency, which the CSS spec resolves to the
      guaranteed-invalid value. That emptied --ui-scale on body and every descendant,
      collapsing --panel-width to `calc(62px * )` and making the side panels fall back
-     to width:auto (content-sized) — they ballooned across the screen on large monitors. */
+     to width:auto (content-sized) - they ballooned across the screen on large monitors. */
 
   --ink-950: #0a0c12;
   --ink-900: #0e121c;
@@ -53,7 +53,7 @@ body.ui-v2 {
   --shadow-panel: 0 4px 16px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 200, 120, 0.03);
   --shadow-btn: 0 1px 0 rgba(0, 0, 0, 0.3);
 
-  /* Slim density — rails match short labels, not full essay columns */
+  /* Slim density - rails match short labels, not full essay columns */
   --panel-width: calc(62px * var(--ui-scale));
   --panel-right-width: calc(58px * var(--ui-scale));
   --top-bar-h: calc(34px * var(--ui-scale));
@@ -87,7 +87,7 @@ body.ui-v2.high-contrast {
 /* ── Side panels ───────────────────────────────────────────── */
 body.ui-v2 #left-panel,
 body.ui-v2 #right-panel {
-  /* Explicit fallback — see style.css #left-panel: without it an invalid
+  /* Explicit fallback - see style.css #left-panel: without it an invalid
      --panel-width collapses these rails to width:auto and they engulf the screen. */
   width: var(--panel-width, 62px);
   top: 0;
@@ -121,7 +121,7 @@ body.ui-v2 #right-panel {
   );
 }
 
-/* Sticky jump-nav — tiny chips, 2-row wrap ok */
+/* Sticky jump-nav - tiny chips, 2-row wrap ok */
 body.ui-v2 .side-panel-tabs {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -168,7 +168,7 @@ body.ui-v2 .side-tab:hover {
 
 body.ui-v2 .side-tab.active {
   color: var(--gold-400);
-  background: linear-gradient(180deg, rgba(90, 68, 28, 0.95), rgba(48, 36, 14, 0.98));
+  background: rgba(90, 68, 28, 0.95);
   border-color: var(--border-strong);
   box-shadow: 0 0 8px rgba(240, 180, 60, 0.14);
 }
@@ -221,7 +221,7 @@ body.ui-v2 .panel-divider {
   background: linear-gradient(90deg, transparent, var(--border-soft), transparent);
 }
 
-/* Long help text steals rail space — keep one tight line, rest in tooltips. */
+/* Long help text steals rail space - keep one tight line, rest in tooltips. */
 body.ui-v2 .panel-hint {
   font-family: 'Source Sans 3', sans-serif;
   font-size: calc(6px * var(--ui-scale) * var(--font-scale));
@@ -253,7 +253,7 @@ body.ui-v2 .formation-btn {
   justify-content: center;
   gap: 0;
   padding: 2px 1px;
-  background: linear-gradient(180deg, rgba(36, 44, 64, 0.95) 0%, rgba(22, 28, 42, 0.98) 100%);
+  background: rgba(36, 44, 64, 0.95);
   border: 1px solid rgba(120, 140, 180, 0.2);
   border-radius: 2px;
   color: var(--text-primary);
@@ -294,7 +294,7 @@ body.ui-v2 .meta-btn:hover,
 body.ui-v2 .doctrine-btn:hover,
 body.ui-v2 .counter-doctrine-btn:hover {
   border-color: var(--border-strong);
-  background: linear-gradient(180deg, rgba(52, 60, 88, 0.98) 0%, rgba(32, 40, 58, 1) 100%);
+  background: rgba(52, 60, 88, 0.98);
   transform: none;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
@@ -309,7 +309,7 @@ body.ui-v2 .meta-btn.pending {
   box-shadow:
     0 0 0 1px rgba(240, 200, 80, 0.2),
     0 0 8px rgba(240, 180, 60, 0.2);
-  background: linear-gradient(180deg, rgba(72, 56, 24, 0.95) 0%, rgba(40, 32, 16, 0.98) 100%);
+  background: rgba(72, 56, 24, 0.95);
 }
 
 body.ui-v2 .cost {
@@ -333,7 +333,7 @@ body.ui-v2 .ability-btn {
   border-color: rgba(200, 80, 70, 0.35);
 }
 body.ui-v2 .meta-btn {
-  background: linear-gradient(180deg, rgba(56, 32, 36, 0.95) 0%, rgba(36, 20, 24, 0.98) 100%);
+  background: rgba(56, 32, 36, 0.95);
   border-color: rgba(180, 80, 70, 0.4);
   font-size: calc(6px * var(--ui-scale) * var(--font-scale));
   letter-spacing: 0.02em;
@@ -344,7 +344,7 @@ body.ui-v2 .meta-btn {
 }
 body.ui-v2 .structure-btn {
   border-color: rgba(160, 100, 60, 0.45);
-  background: linear-gradient(180deg, rgba(56, 40, 28, 0.95) 0%, rgba(36, 26, 18, 0.98) 100%);
+  background: rgba(56, 40, 28, 0.95);
 }
 
 body.ui-v2 .btn-icon {
@@ -375,12 +375,7 @@ body.ui-v2 #top-bar.top-bar-v2 {
   align-items: stretch;
   gap: calc(2px * var(--ui-scale));
   padding: 2px 5px 3px;
-  background: linear-gradient(
-    180deg,
-    rgba(8, 10, 16, 0.88) 0%,
-    rgba(8, 10, 16, 0.4) 70%,
-    transparent 100%
-  );
+  background: rgba(8, 10, 16, 0.88);
   pointer-events: none;
   min-height: 0;
 }
@@ -543,7 +538,7 @@ body.ui-v2 .cycle-btn {
   padding: calc(3px * var(--ui-scale)) calc(5px * var(--ui-scale));
   border-radius: var(--radius-sm);
   border: 1px solid var(--gold-600);
-  background: linear-gradient(180deg, rgba(90, 60, 20, 0.95), rgba(50, 32, 10, 0.98));
+  background: rgba(90, 60, 20, 0.95);
   color: var(--gold-400);
   cursor: pointer;
   position: relative;
@@ -647,7 +642,7 @@ body.ui-v2 .unit-quick-btn:hover {
 body.ui-v2 .unit-quick-btn.vet-upgrade-btn {
   border-color: var(--gold-600);
   color: var(--gold-400);
-  background: linear-gradient(180deg, rgba(72, 52, 16, 0.95), rgba(40, 28, 8, 0.98));
+  background: rgba(72, 52, 16, 0.95);
 }
 
 /* ── Night prep card ───────────────────────────────────────── */
@@ -846,7 +841,7 @@ body.ui-v2 .menu-btn {
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--text-primary);
-  background: linear-gradient(180deg, rgba(36, 44, 64, 0.98), rgba(20, 26, 40, 1));
+  background: rgba(36, 44, 64, 0.98);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -865,7 +860,7 @@ body.ui-v2 .menu-btn:hover {
 }
 
 body.ui-v2 .menu-btn.primary {
-  background: linear-gradient(180deg, #a04028 0%, #701f14 55%, #50140c 100%);
+  background: #a04028;
   border-color: #e07040;
   color: #fff4e0;
   box-shadow:
@@ -876,7 +871,7 @@ body.ui-v2 .menu-btn.primary {
 
 body.ui-v2 .menu-btn.primary:hover {
   border-color: #ff9060;
-  background: linear-gradient(180deg, #c05030 0%, #882818 55%, #60180c 100%);
+  background: #c05030;
 }
 
 body.ui-v2 #title-art {
@@ -1108,7 +1103,7 @@ body.ui-v2 #game-container {
 
 body.ui-v2 #left-panel,
 body.ui-v2 #right-panel {
-  background: linear-gradient(180deg, rgba(10, 8, 10, 0.96) 0%, rgba(6, 5, 6, 0.96) 100%);
+  background: rgba(10, 8, 10, 0.96);
   border-color: rgba(190, 40, 40, 0.35);
 }
 
@@ -1123,7 +1118,7 @@ body.ui-v2 .counter-doctrine-btn,
 body.ui-v2 .loadout-btn,
 body.ui-v2 .formation-btn,
 body.ui-v2 .side-tab {
-  background: linear-gradient(180deg, #1c1619 0%, #0c0a0c 100%);
+  background: #1c1619;
   border: 1px solid #3a2226;
   border-radius: 1px;
   box-shadow: inset 0 0 0 1px #000;
@@ -1138,7 +1133,7 @@ body.ui-v2 .meta-btn:hover,
 body.ui-v2 .doctrine-btn:hover,
 body.ui-v2 .counter-doctrine-btn:hover,
 body.ui-v2 .side-tab:hover {
-  background: linear-gradient(180deg, #3a1216 0%, #1a080a 100%);
+  background: #3a1216;
   border-color: var(--blood-500);
   color: #fff;
 }
@@ -1149,7 +1144,7 @@ body.ui-v2 .courier-btn.selected,
 body.ui-v2 .meta-btn.selected,
 body.ui-v2 .meta-btn.pending,
 body.ui-v2 .side-tab.active {
-  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  background: #8a1014;
   border-color: var(--blood-400);
   color: #fff;
   box-shadow:
@@ -1188,7 +1183,7 @@ body.ui-v2 .subtitle {
   color: var(--blood-400);
 }
 body.ui-v2 .menu-content {
-  background: linear-gradient(180deg, rgba(12, 9, 11, 0.97) 0%, rgba(5, 4, 5, 0.98) 100%);
+  background: rgba(12, 9, 11, 0.97);
   border: 2px solid #000;
   outline: 1px solid rgba(190, 40, 40, 0.55);
   box-shadow:
@@ -1196,19 +1191,19 @@ body.ui-v2 .menu-content {
     0 18px 60px rgba(0, 0, 0, 0.8);
 }
 body.ui-v2 .menu-btn {
-  background: linear-gradient(180deg, #1c1619 0%, #0a080a 100%);
+  background: #1c1619;
   border: 1px solid #4a2428;
   border-radius: 1px;
   color: var(--text-primary);
   box-shadow: 3px 3px 0 #000;
 }
 body.ui-v2 .menu-btn:hover {
-  background: linear-gradient(180deg, #4a1216 0%, #1e080a 100%);
+  background: #4a1216;
   border-color: var(--blood-400);
   color: #fff;
 }
 body.ui-v2 .menu-btn.primary {
-  background: linear-gradient(180deg, #c81e1e 0%, #7a0c10 60%, #48060a 100%);
+  background: #c81e1e;
   border-color: #ff5a4a;
   color: #fff;
   font-family: 'Pirata One', 'Cinzel', serif;
@@ -1242,7 +1237,7 @@ body.ui-v2 #top-bar .stat-group {
   border-radius: 1px;
 }
 body.ui-v2 #top-bar .top-bar-actions .cmd-top-btn {
-  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  background: #8a1014;
   border-color: var(--blood-400);
   color: #fff;
 }
@@ -1311,7 +1306,7 @@ body.ui-v2 #message-box {
   animation: siege-pulse 0.9s infinite alternate;
 }
 .siege-order {
-  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  background: #8a1014;
   border: 1px solid #c8202a;
   color: #fff;
   font: inherit;
@@ -2057,7 +2052,6 @@ body.ui-v2 .uses-badge {
 }
 body.ui-v2 .uses-badge.spent {
   color: var(--bone-mute);
-  text-decoration: line-through;
 }
 
 /* ── Panel buttons: one row each (icon, name, price, key) ──────────────────────────────── */
@@ -2573,7 +2567,7 @@ body.ui-v2 #begin-day-btn.cycle-btn {
   overflow: hidden;
   text-align: left;
   color: #fff;
-  background: linear-gradient(180deg, #c8202a 0%, #7a0c10 100%);
+  background: #c8202a;
   border: 2px solid var(--bone);
   border-radius: 0;
   box-shadow: 4px 4px 0 #000;
@@ -2584,7 +2578,7 @@ body.ui-v2 #begin-day-btn.cycle-btn {
     box-shadow var(--ease);
 }
 body.ui-v2 #begin-day-btn.cycle-btn:hover {
-  background: linear-gradient(180deg, #e0303a 0%, #8e1014 100%);
+  background: #e0303a;
 }
 body.ui-v2 #begin-day-btn.cycle-btn:active {
   transform: translate(2px, 2px);
@@ -3506,12 +3500,12 @@ body.ui-v2 .menu-btn.primary {
   font-family: var(--font-head);
   font-size: var(--fs-2);
   color: #fff;
-  background: linear-gradient(180deg, #c8202a 0%, #7a0c10 100%);
+  background: #c8202a;
   border: 2px solid var(--bone);
   box-shadow: 3px 3px 0 #000;
 }
 body.ui-v2 .menu-btn.primary:hover {
-  background: linear-gradient(180deg, #e0303a 0%, #8e1014 100%);
+  background: #e0303a;
   border-color: #fff;
 }
 body.ui-v2 .menu-btn.small-btn {
@@ -3757,7 +3751,7 @@ body.ui-v2 #menu-screen::after {
   inset: 0;
   background:
     radial-gradient(ellipse 60% 70% at 50% 50%, rgba(5, 4, 5, 0.78), rgba(5, 4, 5, 0.2) 70%),
-    linear-gradient(180deg, rgba(5, 4, 5, 0.5), transparent 30%, rgba(5, 4, 5, 0.85));
+    rgba(5, 4, 5, 0.5);
   pointer-events: none;
 }
 body.ui-v2 .menu-home {
@@ -4591,7 +4585,7 @@ body.ui-v2 .inpage-dialog-btn:active {
 }
 body.ui-v2 .inpage-dialog-btn.primary {
   color: #fff;
-  background: linear-gradient(180deg, #c8202a 0%, #7a0c10 100%);
+  background: #c8202a;
   border: 2px solid var(--bone);
 }
 .key-sheet-box {
@@ -4818,4 +4812,158 @@ body.ui-v2 .in-locked > .lock-reason {
 body.ui-v2 .in-locked,
 body.ui-v2 .in-locked.disabled {
   grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+}
+
+/* ── Render pass: focus, pause fit, text floor, contrast, war room, tutorial ring ────────── */
+body.ui-v2 .tutorial-highlight {
+  outline: 3px solid var(--blood) !important;
+  outline-offset: 2px;
+  box-shadow: none !important;
+}
+body.ui-v2 .spoils-card:focus-visible,
+body.ui-v2 .spoils-card:focus {
+  outline: 3px solid #fff6dc;
+  outline-offset: 3px;
+  border-color: var(--blood);
+  background: #2a0c10;
+}
+body.ui-v2 .pause-quicksave-panel {
+  min-height: 0;
+  align-self: start;
+}
+body.ui-v2 #pause-screen .pause-stats {
+  gap: 3px;
+}
+body.ui-v2 .faction-intel-open-btn,
+body.ui-v2 .panel-opacity-preview-label,
+body.ui-v2 .panel-opacity-preview-top,
+body.ui-v2 .panel-opacity-preview-map,
+body.ui-v2 .settings-mode-btn,
+body.ui-v2 .error-log-item,
+body.ui-v2 .ach-filter-count,
+body.ui-v2 .ach-card-cat,
+body.ui-v2 .ency-classified-label,
+body.ui-v2 .ency-unlock-hint,
+body.ui-v2 .mode-academy-hint,
+body.ui-v2 .modes-hint,
+body.ui-v2 .cosmetic-pick-label,
+body.ui-v2 .wave-sum-recent {
+  font-size: var(--fs-1) !important;
+}
+body.ui-v2 .mode-academy-hint,
+body.ui-v2 .modes-hint,
+body.ui-v2 .ency-classified-label,
+body.ui-v2 .ency-unlock-hint,
+body.ui-v2 .ach-filter-count,
+body.ui-v2 .ach-card-cat,
+body.ui-v2 .panel-opacity-preview-label,
+body.ui-v2 .panel-opacity-preview-map,
+body.ui-v2 .wave-summary-ach,
+body.ui-v2 .wave-sum-recent {
+  color: var(--bone-dim);
+}
+body.ui-v2 .ach-tier-badge.tier-bronze {
+  color: #f0b070;
+}
+body.ui-v2 .cosmetic-pick-btn.locked,
+body.ui-v2 .cosmetic-theme-btn.locked {
+  opacity: 1;
+  border-style: dashed;
+  color: var(--bone-mute);
+}
+body.ui-v2 .ency-redacted {
+  /* A redaction bar: decoration, not text a reader needs. */
+  color: #4a3336;
+}
+body.ui-v2 #war-room .host-hud,
+body.ui-v2 #war-room .intel-hud,
+body.ui-v2 #war-room .cmd-hud,
+body.ui-v2 #war-room .planet-event-hud,
+body.ui-v2 #war-room .realm-hud,
+body.ui-v2 #war-room .control-hud,
+body.ui-v2 #war-room .syn-hud {
+  grid-template-columns: 1fr;
+}
+body.ui-v2 #war-room .host-hud .stat-value,
+body.ui-v2 #war-room .intel-hud .stat-value,
+body.ui-v2 #war-room .cmd-hud .stat-value,
+body.ui-v2 #war-room .planet-event-hud .stat-value,
+body.ui-v2 #war-room .realm-hud .stat-value,
+body.ui-v2 #war-room .control-hud .stat-value,
+body.ui-v2 #war-room .syn-hud .stat-value {
+  text-align: left;
+}
+body.ui-v2 #war-room .stat-value {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: normal;
+}
+/* A screen that is not showing must not take Tab focus. */
+body.ui-v2 .screen:not(.active) {
+  visibility: hidden;
+  transition:
+    opacity 0.2s,
+    visibility 0s 0.2s;
+}
+body.ui-v2 .screen.active {
+  visibility: visible;
+  transition: opacity 0.2s;
+}
+body.ui-v2 .side-panel .on-cooldown > .cost {
+  display: none;
+}
+body.ui-v2 .save-slot.empty {
+  opacity: 1;
+}
+body.ui-v2 .save-slot,
+body.ui-v2 .save-slot-meta,
+body.ui-v2 .pause-quicksave-meta,
+body.ui-v2 .pause-quicksave-panel.empty .pause-quicksave-meta,
+body.ui-v2 #achievement-toast .ach-toast-desc,
+body.ui-v2 #achievement-toast .ach-toast-progress,
+body.ui-v2 #achievement-toast .ach-toast-label {
+  color: var(--bone-dim);
+}
+body.ui-v2 .save-slot-btn {
+  font-size: var(--fs-1);
+  color: var(--bone);
+}
+body.ui-v2 .research-node.locked,
+body.ui-v2 .research-node.done {
+  opacity: 1;
+}
+body.ui-v2 .research-node.locked {
+  border-style: dashed;
+}
+body.ui-v2 .research-node.locked .research-node-name,
+body.ui-v2 .research-node.done .research-node-name {
+  color: var(--bone-dim);
+}
+body.ui-v2 .research-node.done {
+  border-color: var(--bone-mute);
+}
+body.ui-v2 .research-node-cost,
+body.ui-v2 .research-node-desc,
+body.ui-v2 .research-node-unlocks,
+body.ui-v2 .research-node-prereq {
+  color: var(--bone-dim);
+}
+body.ui-v2 .research-node-prereq.blocked {
+  color: #ff9a8a;
+}
+body.ui-v2 .intel-faction-stage,
+body.ui-v2 .intel-meta,
+body.ui-v2 .msg-log-time {
+  color: var(--bone-dim);
+}
+body.ui-v2 .intel-faction-card.intel-card-dormant,
+body.ui-v2 .intel-faction-card.intel-card-eliminated {
+  opacity: 1;
+}
+body.ui-v2 .intel-faction-card.intel-card-dormant {
+  border-style: dashed;
+}
+body.ui-v2 .intel-faction-stage {
+  color: var(--bone-dim) !important;
 }

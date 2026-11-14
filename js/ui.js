@@ -1,5 +1,5 @@
 /**
- * UI controller — panels, HUD, specialists.
+ * UI controller - panels, HUD, specialists.
  */
 const UI = (() => {
   const OVERLAY_SCREEN_IDS = [
@@ -55,12 +55,12 @@ const UI = (() => {
     if (!Game.isPlaying?.()) return;
     setPlayingUi(true);
     dismissMenuScreen();
-    // Do not strip pause/settings/encyclopedia — those are opened intentionally during play.
+    // Do not strip pause/settings/encyclopedia - those are opened intentionally during play.
   }
 
   function hideMenusForPlay(opts = {}) {
     const showLaunch = opts.showLaunch !== false;
-    // Hide menu before closing overlays — Settings/Encyclopedia close must not block dismissal.
+    // Hide menu before closing overlays - Settings/Encyclopedia close must not block dismissal.
     setPlayingUi(true);
     dismissMenuScreen();
     for (const id of OVERLAY_SCREEN_IDS) {
@@ -261,6 +261,39 @@ const UI = (() => {
           if (panel._scrollHeld) touched();
         });
       }
+    });
+  }
+
+  /**
+   * Keyboard way into the HUD. Tab cycles soldiers (a fixed key) while nothing is focused, so
+   * F6 moves focus to the open tab of each panel in turn; once a control has focus, Tab walks
+   * the page as usual. A mouse click lets go of focus so Tab goes back to soldiers.
+   */
+  function initKeyboardReach() {
+    const inHud = (el) =>
+      !!el && !!el.closest?.('#ui-overlay') && !el.closest('[role="dialog"], .screen');
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Tab' && inHud(document.activeElement)) {
+          e.stopPropagation();
+          return;
+        }
+        if (e.key !== 'F6' || typeof Game === 'undefined' || !Game.isPlaying()) return;
+        const stops = ['#left-panel', '#right-panel'].map((sel) =>
+          document.querySelector(`${sel} .side-tab[aria-selected="true"]`)
+        );
+        const at = stops.indexOf(document.activeElement?.closest?.('.side-tab'));
+        const next = stops[(at + 1) % stops.length];
+        if (!next) return;
+        e.preventDefault();
+        e.stopPropagation();
+        next.focus();
+      },
+      true
+    );
+    document.addEventListener('click', (e) => {
+      if (e.detail > 0) e.target.closest?.('#left-panel button, #right-panel button')?.blur();
     });
   }
 
@@ -750,6 +783,7 @@ const UI = (() => {
   function init() {
     document.body.classList.add('ui-v2');
     initSidePanelTabs();
+    initKeyboardReach();
     MetaProgress.load();
     if (typeof Achievements !== 'undefined') Achievements.init();
     if (typeof Encyclopedia !== 'undefined') Encyclopedia.init();
@@ -763,7 +797,7 @@ const UI = (() => {
     if (typeof CreativeMode !== 'undefined') CreativeMode.init();
     if (typeof Tooltips !== 'undefined') Tooltips.init();
     if (typeof FactionIntel !== 'undefined') FactionIntel.init();
-    // Grand Strategy / Intergalactic removed — pure wave defense.
+    // Grand Strategy / Intergalactic removed - pure wave defense.
 
     const titleCanvas = document.getElementById('title-art');
     function paintTitleArt() {
@@ -886,13 +920,13 @@ const UI = (() => {
           if (Game.isPlaying?.()) {
             ensureMenuDismissedForPlay();
             Game.showMessage?.(
-              `Run started with errors — ${err?.message || 'unknown error'}. Press F10 to report if gameplay is wrong.`,
+              `Run started with errors - ${err?.message || 'unknown error'}. Press F10 to report if gameplay is wrong.`,
               480
             );
           } else {
             showMainMenu();
             Game.showMessage?.(
-              `Could not start — ${err?.message || 'unknown error'}. Check the console for details.`,
+              `Could not start - ${err?.message || 'unknown error'}. Check the console for details.`,
               420
             );
             AudioEngine.resume().then((ok) => {
@@ -1054,7 +1088,7 @@ const UI = (() => {
       if (!btn || btn.classList.contains('planet-event-chosen')) return;
       const choiceId = btn.dataset.mapChoice;
       if (!choiceId) return;
-      // Always attempt respond — Game shows why it failed (day / TP / none pending).
+      // Always attempt respond - Game shows why it failed (day / TP / none pending).
       // Soft-lock styles must not swallow clicks with a silent return.
       const ok = Game.respondMapEvent?.(choiceId);
       if (ok) AudioEngine.SFX?.click?.();
@@ -1183,7 +1217,7 @@ const UI = (() => {
             const typeLabel =
               typeof formatUnitTypeName === 'function' ? formatUnitTypeName(h.type) : h.type;
             return (
-              `<button type="button" class="${cls}" data-heir="${h.key}" title="${h.name} — ${typeLabel}">` +
+              `<button type="button" class="${cls}" data-heir="${h.key}" title="${h.name} - ${typeLabel}">` +
               `<span>${h.name}</span><span class="crown-heir-status">${status}</span>` +
               `<span class="crown-heir-wave">${typeLabel} · crowned W${h.wave}</span></button>`
             );
@@ -1284,7 +1318,7 @@ const UI = (() => {
     const missions = raids?.missions || [];
     if (!missions.length) {
       list.innerHTML =
-        '<p class="panel-hint">No enemy holds spotted — factions build in the north after wave 150.</p>';
+        '<p class="panel-hint">No enemy holds spotted - factions build in the north after wave 150.</p>';
       return;
     }
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1323,7 +1357,7 @@ const UI = (() => {
     const freeTp = gs.creativeMode && gs.creativeSettings?.freeResources;
 
     if (me?.pending && me?.event?.prep) {
-      summary.textContent = `${me.event.name} — ${me.event.prep}${
+      summary.textContent = `${me.event.name} - ${me.event.prep}${
         nightOk ? '' : ' (night prep only)'
       }`;
     } else if (me?.activeSummary) {
@@ -1337,8 +1371,8 @@ const UI = (() => {
 
     if (!choices.length) {
       list.innerHTML = chosen
-        ? '<p class="panel-hint">Response locked — effects apply at dawn.</p>'
-        : '<p class="panel-hint">No planet event pending — check again after a wave clears at night.</p>';
+        ? '<p class="panel-hint">Response locked - effects apply at dawn.</p>'
+        : '<p class="panel-hint">No planet event pending - check again after a wave clears at night.</p>';
       return;
     }
 
@@ -1353,7 +1387,7 @@ const UI = (() => {
           cls = 'planet-event-chosen';
         } else if (!nightOk) {
           cls = 'planet-event-softlock';
-          lockHint = ' Night prep only — wait for night.';
+          lockHint = ' Night prep only - wait for night.';
         } else if (!canRespond) {
           cls = 'planet-event-softlock';
           lockHint = ' Already answered or no pending event.';
@@ -1419,7 +1453,7 @@ const UI = (() => {
     const targets = ce?.targets || [];
     if (!targets.length) {
       list.innerHTML =
-        '<p class="panel-hint">No host factions active yet — expeditions target evolving enemy realms.</p>';
+        '<p class="panel-hint">No host factions active yet - expeditions target evolving enemy realms.</p>';
       return;
     }
 
@@ -1544,8 +1578,8 @@ const UI = (() => {
       wweBtn.style.display = '';
       wweBtn.classList.toggle('disabled', !gs.wweUnlocked);
       wweBtn.title = gs.wweUnlocked
-        ? 'Grand Coliseum — arena champions'
-        : 'Grand Coliseum — unlock via research or Iron Creed';
+        ? 'Grand Coliseum - arena champions'
+        : 'Grand Coliseum - unlock via research or Iron Creed';
       wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM · LOCKED';
     }
     const crossBtn = hudEls['crossover-hub-open'];
@@ -1554,8 +1588,8 @@ const UI = (() => {
       crossBtn.style.display = '';
       crossBtn.classList.toggle('disabled', !gs.crossoverUnlocked);
       crossBtn.title = gs.crossoverUnlocked
-        ? 'Legion Archive — faction barracks & operatives'
-        : 'Legion Archive — unlock a crossover faction (meta or research) to open';
+        ? 'Legion Archive - faction barracks & operatives'
+        : 'Legion Archive - unlock a crossover faction (meta or research) to open';
       crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE · LOCKED';
     }
     const perkSection = hudEls['perk-build-section'];
@@ -1576,7 +1610,7 @@ const UI = (() => {
       const buildType = btn.dataset.build;
       const def = BuildDefs[buildType];
       const costEl = btn._costEl;
-      // Prefer live def; if BuildDefs was wiped mid-boot, keep HTML label — never fake 99 TP.
+      // Prefer live def; if BuildDefs was wiped mid-boot, keep HTML label - never fake 99 TP.
       if (costEl && Number.isFinite(def?.cost) && costEl.textContent !== String(def.cost)) {
         costEl.textContent = String(def.cost);
       }
@@ -1738,12 +1772,12 @@ const UI = (() => {
     const stageEl = document.getElementById('kingdom-stage-text');
     const evo = gs.kingdomEvolution;
     if (stageEl && evo) {
-      stageEl.textContent = evo.shortName || '—';
+      stageEl.textContent = evo.shortName || '-';
       stageEl.style.color = evo.color || '';
       const prog = evo.progress != null ? ` · ${Math.round(evo.progress * 100)}%` : '';
       stageEl.title = `${evo.name} (waves ${evo.waveMin}–${evo.waveMax ?? '∞'})${prog}\n${evo.tagline || ''}`;
     } else if (stageEl) {
-      stageEl.textContent = '—';
+      stageEl.textContent = '-';
       stageEl.title = 'Kingdom evolution stage';
     }
 
@@ -1761,10 +1795,10 @@ const UI = (() => {
       const bd = evoMeter.breakdown || {};
       const evoBar = evoFill.parentElement;
       if (evoBar) {
-        evoBar.title = `Evolution meter — Colony ${bd.colonyPct ?? 0}% · Buildings ${bd.buildingPct ?? 0}% (${bd.buildingCount ?? 0}) · Veterans ${bd.veteranPct ?? 0}% (${bd.veteranUnits ?? 0} named) · Research ${bd.researchPct ?? 0}% (${bd.researchCompleted ?? 0}/${bd.researchTotal ?? 0})`;
+        evoBar.title = `Evolution meter - Colony ${bd.colonyPct ?? 0}% · Buildings ${bd.buildingPct ?? 0}% (${bd.buildingCount ?? 0}) · Veterans ${bd.veteranPct ?? 0}% (${bd.veteranUnits ?? 0} named) · Research ${bd.researchPct ?? 0}% (${bd.researchCompleted ?? 0}/${bd.researchTotal ?? 0})`;
       }
     } else if (evoPct) {
-      evoPct.textContent = '—';
+      evoPct.textContent = '-';
     }
     if (bannerCanvas && typeof VisualPolish !== 'undefined' && VisualPolish.drawKingdomBanner) {
       const ctx = bannerCanvas.getContext('2d');
@@ -1781,7 +1815,7 @@ const UI = (() => {
         bannerOpts
       );
       const tierNames = ['Small Pennant', 'Kingdom Crest', 'Empire Banner', 'Hell-Forged Banner'];
-      bannerCanvas.title = `${tierNames[stage - 1] || 'Banner'} — stage ${stage} · ${evoMeter?.stageProgress ?? 0}% growth`;
+      bannerCanvas.title = `${tierNames[stage - 1] || 'Banner'} - stage ${stage} · ${evoMeter?.stageProgress ?? 0}% growth`;
     }
 
     refreshRaidPanel(gs);
@@ -1800,12 +1834,12 @@ const UI = (() => {
       const show = !!line || !!fmSnap?.inFoundationalEra;
       fmHud.style.display = show ? '' : 'none';
       if (show) {
-        fmText.textContent = line || '—';
+        fmText.textContent = line || '-';
         if (fmSnap?.leadingColor) {
           fmHud.style.borderColor = fmSnap.leadingColor;
         }
         fmHud.title = fmSnap?.leadingLabel
-          ? `Foundational DNA — ${fmSnap.leadingLabel} (waves 1–150)`
+          ? `Foundational DNA - ${fmSnap.leadingLabel} (waves 1–150)`
           : 'Lay your empire cultural DNA through archers, academies, or evolved heroes';
       }
     }
@@ -1822,9 +1856,9 @@ const UI = (() => {
       ascHud.style.display = show ? '' : 'none';
       if (show) {
         ascText.textContent =
-          line || (ascSnap?.legacyPoints ? `${ascSnap.legacyPoints} Legacy` : '—');
+          line || (ascSnap?.legacyPoints ? `${ascSnap.legacyPoints} Legacy` : '-');
         ascHud.title = ascSnap?.eraLabel
-          ? `Ascension — ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
+          ? `Ascension - ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
           : 'Ascend max veterans at Kingdom (150) and Galactic (400) era gates';
       }
     }
@@ -1840,11 +1874,11 @@ const UI = (() => {
       const show = !!thematicSynSnap?.active || !!line;
       thematicSynHud.style.display = show ? '' : 'none';
       if (show) {
-        thematicSynText.textContent = line || thematicSynSnap?.pathLabel || '—';
+        thematicSynText.textContent = line || thematicSynSnap?.pathLabel || '-';
         if (thematicSynSnap?.pathColor)
           thematicSynHud.style.borderColor = thematicSynSnap.pathColor;
         thematicSynHud.title = thematicSynSnap?.pathDesc
-          ? `${thematicSynSnap.pathLabel} — ${thematicSynSnap.pathDesc}`
+          ? `${thematicSynSnap.pathLabel} - ${thematicSynSnap.pathDesc}`
           : 'Cross-era synergy from your medieval foundation path';
       }
     }
@@ -1858,15 +1892,15 @@ const UI = (() => {
           ? EternalPathFramework.formatHudLine({ wave: gs.wave })
           : epfSnap?.hudLine || '';
       // Only surface once the framework itself has something to say (it returns '' pre-wave-50
-      // with no dominant path). A blanket `wave >= 1` forced this into view — and its bare '?'
-      // fallback text — from turn one, before any path exists to report on.
+      // with no dominant path). A blanket `wave >= 1` forced this into view - and its bare '?'
+      // fallback text - from turn one, before any path exists to report on.
       const show = !!line || !!epfSnap?.dominantPathId;
       epfHud.style.display = show ? '' : 'none';
       if (show) {
         epfText.textContent = line || 'Path ?';
         if (epfSnap?.dominantColor) epfHud.style.borderColor = epfSnap.dominantColor;
         epfHud.title = epfSnap?.dominantLabel
-          ? `${epfSnap.dominantLabel} — investment strengthens every era`
+          ? `${epfSnap.dominantLabel} - investment strengthens every era`
           : 'Four Eternal Paths evolve Medieval → Kingdom → Galactic';
       }
     }
@@ -1884,8 +1918,8 @@ const UI = (() => {
       if (show) {
         crownText.textContent = line || 'Ancient Crown';
         crownHud.title = crownSnap?.crownEpithet
-          ? `${crownSnap.crownEpithet} — ${crownSnap.legendCount || 0} legend(s) grant real power`
-          : 'The Ancient Crown endures — heroes become mythic figures';
+          ? `${crownSnap.crownEpithet} - ${crownSnap.legendCount || 0} legend(s) grant real power`
+          : 'The Ancient Crown endures - heroes become mythic figures';
       }
     }
 
@@ -1903,7 +1937,7 @@ const UI = (() => {
         techText.textContent = line || techSnap?.rootLabel || 'Root ?';
         if (techSnap?.rootColor) techHud.style.borderColor = techSnap.rootColor;
         techHud.title = techSnap?.techTreeLabel
-          ? `${techSnap.rootLabel} — ${techSnap.techTreeLabel}`
+          ? `${techSnap.rootLabel} - ${techSnap.techTreeLabel}`
           : 'Martial / Arcane / Mythic / Tech root locks wave 50';
       }
     }
@@ -1919,10 +1953,10 @@ const UI = (() => {
       const show = !!pfSnap?.active || !!pfSnap?.pending || !!line;
       pfHud.style.display = show ? '' : 'none';
       if (show) {
-        pfText.textContent = line || pfSnap?.fantasyLabel || '—';
+        pfText.textContent = line || pfSnap?.fantasyLabel || '-';
         if (pfSnap?.fantasyColor) pfHud.style.borderColor = pfSnap.fantasyColor;
         pfHud.title = pfSnap?.fantasyDesc
-          ? `${pfSnap.fantasyLabel} — ${pfSnap.fantasyDesc}`
+          ? `${pfSnap.fantasyLabel} - ${pfSnap.fantasyDesc}`
           : 'Pure medieval DNA unlocks apex power fantasy at wave 500';
       }
     }
@@ -1939,10 +1973,10 @@ const UI = (() => {
       elHud.style.display = show ? '' : 'none';
       if (show) {
         elText.textContent =
-          line || (elSnap?.investedCount ? `Crown ${elSnap.investedCount}` : '—');
+          line || (elSnap?.investedCount ? `Crown ${elSnap.investedCount}` : '-');
         elHud.title =
           elSnap?.investedCount > 0
-            ? `Echoes of the Past — ${elSnap.investedCount} node(s) invested`
+            ? `Echoes of the Past - ${elSnap.investedCount} node(s) invested`
             : 'Invest Echo Shards in Crown of Ages on the main menu';
       }
     }
@@ -1962,9 +1996,9 @@ const UI = (() => {
         ptText.textContent = line;
         ptHud.classList.toggle('pacing-tools-paused', !!gs.paused);
         ptHud.title = ptSnap?.strongPauseReason
-          ? `Strong pause — ${ptSnap.strongPauseReason}${q ? ` · ${q} queued` : ''}`
+          ? `Strong pause - ${ptSnap.strongPauseReason}${q ? ` · ${q} queued` : ''}`
           : q > 0
-            ? `${q} notification(s) queued — will drain on resume`
+            ? `${q} notification(s) queued - will drain on resume`
             : `Simulation running at ${gs.gameSpeed ?? 1}×`;
       }
     }
@@ -1982,9 +2016,9 @@ const UI = (() => {
       if (show) {
         prText.textContent =
           line ||
-          (prSnap?.nextGate ? `Next w${prSnap.nextGate.wave}: ${prSnap.nextGate.shortName}` : '—');
+          (prSnap?.nextGate ? `Next w${prSnap.nextGate.wave}: ${prSnap.nextGate.shortName}` : '-');
         prHud.title = prSnap?.lastRestart
-          ? `Escalation restart — ${prSnap.lastRestart.name}. Legacies, research, and TP imported.`
+          ? `Escalation restart - ${prSnap.lastRestart.name}. Legacies, research, and TP imported.`
           : prSnap?.nextGate
             ? `Wave ${prSnap.nextGate.wave} resets the tactical map but imports legacies and tech.`
             : 'Major escalation restarts import legacies, tech, and bonuses';
@@ -2013,7 +2047,7 @@ const UI = (() => {
     const strengthHud = document.getElementById('strength-hud');
     const cv = gs.colonyValue || 0;
     const ratio = gs.colonyThreatRatio || 1;
-    const tier = gs.colonyThreatTier || '—';
+    const tier = gs.colonyThreatTier || '-';
     const tierColor = gs.colonyThreatColor || '#88cc88';
     const nextP = gs.colonyNextPressure;
     const barPct = Math.max(0, Math.min(100, ((ratio - 0.5) / 1.75) * 100));
@@ -2034,7 +2068,7 @@ const UI = (() => {
     const threatTooltip =
       typeof ColonyValue !== 'undefined' && ColonyValue.formatThreatTooltip
         ? ColonyValue.formatThreatTooltip(colonySnap, nextP, gs.wave || 0)
-        : gs.colonyThreatTooltip || 'Kingdom strength vs next wave baseline — hover for details.';
+        : gs.colonyThreatTooltip || 'Kingdom strength vs next wave baseline - hover for details.';
     if (strengthFill) {
       strengthFill.style.width = cv > 0 ? `${barPct}%` : '0%';
       strengthFill.style.background = `linear-gradient(90deg, ${tierColor}77, ${tierColor})`;
@@ -2045,13 +2079,13 @@ const UI = (() => {
         typeof ColonyValue !== 'undefined' && ColonyValue.getThreatStageIndex
           ? ColonyValue.THREAT_TIERS[ColonyValue.getThreatStageIndex(ratio)]?.short
           : null;
-      strengthStage.textContent = cv > 0 ? stageShort || tier.slice(0, 4) : '—';
+      strengthStage.textContent = cv > 0 ? stageShort || tier.slice(0, 4) : '-';
       strengthStage.style.color = tierColor;
       strengthStage.style.borderColor = `${tierColor}88`;
-      strengthStage.title = cv > 0 ? `${tier} — Kingdom strength stage` : '';
+      strengthStage.title = cv > 0 ? `${tier} - Kingdom strength stage` : '';
     }
     if (strengthRatio) {
-      strengthRatio.textContent = cv > 0 ? `${ratio.toFixed(2)}×` : '—';
+      strengthRatio.textContent = cv > 0 ? `${ratio.toFixed(2)}×` : '-';
       strengthRatio.style.color = tierColor;
     }
     if (strengthWrap) {
@@ -2075,7 +2109,7 @@ const UI = (() => {
         const tips = (ef?.activeFactions || [])
           .map((f) => {
             const raid = f.counterRaids ? ' · counter-raids active' : '';
-            return `${f.name} Stage ${f.stage} — ${f.tierLabel} (${f.buildingCount} sites${raid})\n${f.tagline}`;
+            return `${f.name} Stage ${f.stage} - ${f.tierLabel} (${f.buildingCount} sites${raid})\n${f.tagline}`;
           })
           .join('\n\n');
         const raidNote = ef?.counterRaidFactions?.length
@@ -2099,10 +2133,10 @@ const UI = (() => {
               .join(' · ')}`
           : '';
         const hostRole = asymHost
-          ? `\n\n${asymHost.hostRole.name} Lv${asymHost.hostThreatLevel} — ${asymHost.hostLevelLabel}\n${asymHost.hostRole.macro}`
+          ? `\n\n${asymHost.hostRole.name} Lv${asymHost.hostThreatLevel} - ${asymHost.hostLevelLabel}\n${asymHost.hostRole.macro}`
           : '';
         hostEl.title =
-          (tips || 'Evolving host — levels up and threatens the map') +
+          (tips || 'Evolving host - levels up and threatens the map') +
           raidNote +
           debuffNote +
           repNote +
@@ -2121,8 +2155,8 @@ const UI = (() => {
           ((ef?.hostKingdomTotal || 0) >= 40 ? ' host-high' : '');
         hostEl.title = (hostEl.title || '') + '\n\nClick HOST or 🗺 to open Threat Map.';
       } else {
-        hostEl.textContent = '—';
-        hostEl.title = 'Evolving host — auto-escalates; you build and command to push back';
+        hostEl.textContent = '-';
+        hostEl.title = 'Evolving host - auto-escalates; you build and command to push back';
         hostEl.style.color = '';
         hostEl.className = 'stat-value host-value';
       }
@@ -2163,14 +2197,14 @@ const UI = (() => {
       if (show) {
         const label =
           me?.activeSummary ||
-          (me?.pending && me?.event?.name ? `${me.event.name} — respond` : null) ||
+          (me?.pending && me?.event?.name ? `${me.event.name} - respond` : null) ||
           me?.event?.name ||
           'Planet';
-        planetEl.textContent = (label || '—').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
+        planetEl.textContent = (label || '-').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
         planetEl.title =
           me?.event?.prep ||
           me?.activeSummary ||
-          'Dynamic map events — volcanic eruptions, awakening ruins, ley storms';
+          'Dynamic map events - volcanic eruptions, awakening ruins, ley storms';
         planetEl.className =
           'stat-value planet-event-value' + (me?.pending ? ' planet-event-active' : '');
         planetEl.style.color = me?.event?.color || '';
@@ -2204,7 +2238,7 @@ const UI = (() => {
         briefParts.push(String(gs.nextWaveIntel).split(' · ')[0].slice(0, 40));
       }
       const intel = briefParts.filter(Boolean).join(' · ');
-      intelEl.textContent = intel ? intel.slice(0, 48) + (intel.length > 48 ? '…' : '') : '—';
+      intelEl.textContent = intel ? intel.slice(0, 48) + (intel.length > 48 ? '…' : '') : '-';
       intelEl.title = intel || '';
       if (mf?.mode) {
         intelEl.className =
@@ -2667,7 +2701,7 @@ const UI = (() => {
         cycleText.textContent = `Night ${m}:${s}`;
         cycleText.className = 'stat-value cycle-night' + (sec <= 15 ? ' cycle-urgent' : '');
         cycleText.title =
-          'Night prep — no enemy spawns, +35% build speed. Press D to begin day early.';
+          'Night prep - no enemy spawns, +35% build speed. Press D to begin day early.';
       } else {
         const light = gs.dayLight ?? 1;
         cycleText.textContent = light < 0.72 ? 'Dusk' : 'Day';
@@ -2772,7 +2806,7 @@ const UI = (() => {
       }
     }
 
-    // Night prep card — short scannable brief (no intel wall-of-text)
+    // Night prep card - short scannable brief (no intel wall-of-text)
     const nightCard = document.getElementById('night-prep-card');
     if (nightCard) {
       if (gs.state === 'playing' && gs.timeOfDay === 'night' && !gs.paused) {
@@ -2827,17 +2861,17 @@ const UI = (() => {
               : asym.balance === 'host_advantage'
                 ? ' cmd-pressured'
                 : '');
-          cmdText.title = `${asym.playerRole.name} — Macro: ${asym.playerRole.macro}\nMicro: ${asym.playerRole.micro}`;
+          cmdText.title = `${asym.playerRole.name} - Macro: ${asym.playerRole.macro}\nMicro: ${asym.playerRole.micro}`;
         } else if (gs.generalBuff > 0) {
           cmdText.textContent = `${gs.generalBuff}%`;
           cmdText.className = 'stat-value cmd-value cmd-active';
           cmdText.title = '';
         } else if (gs.hasGeneral) {
-          cmdText.textContent = gs.generalStationed ? '—' : '→ KEEP';
+          cmdText.textContent = gs.generalStationed ? '-' : '→ KEEP';
           cmdText.className = 'stat-value cmd-value cmd-march';
           cmdText.title = '';
         } else {
-          cmdText.textContent = '—';
+          cmdText.textContent = '-';
           cmdText.className = 'stat-value cmd-value';
           cmdText.title = '';
         }

@@ -166,7 +166,6 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   Game.handleClick(520, 560);
   ok(GS.tactical < before, 'recruiting spent TP');
   same('recruit');
-  before = GS.tactical;
   GS.tactical += 30;
   Game.selectAbility('fireball');
   Game.handleClick(400, 200);
@@ -188,7 +187,6 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   Game.selectDeploy('courier');
   Game.handleClick(620, 600);
   Game.update();
-  before = GS.tactical;
   ok(Game.sendCourierMessage('levy'), 'Tax Levy sent');
   same('courier: Tax Levy (cost)');
   // While paused nothing ticks, and the HUD must still follow the purse.
@@ -209,7 +207,6 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   for (let w = 0; w < 6 && !Game.getState().siegeLoop.pendingSpoils; w++) toNight(Game, GS);
   const choices = Game.getState().siegeLoop.spoilsChoices;
   ok(choices.length === 3, `spoils offered on wave ${GS.wave}`);
-  before = GS.tactical;
   ok(SiegeLoop.claimSpoils(0), 'spoils claimed');
   same('spoils claimed');
   // Demolish refund (half price: an odd price must not leave half a point).
@@ -246,7 +243,7 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
 
 // --- 20. Shift-click places several, a plain click places one ----------------------------------------
 {
-  const { Game, GameState: GS, SiegeLoop, UnitDefs, Availability } = start(41);
+  const { Game, GameState: GS, UnitDefs, Availability } = start(41);
   ok(toNight(Game, GS), 'reached the first night');
   // Grow the army to the point where each recruit raises the next price.
   GS.tactical = 5000;
