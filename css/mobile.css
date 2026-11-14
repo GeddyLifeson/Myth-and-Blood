@@ -1,0 +1,756 @@
+/**
+ * Phone and small-tablet layout. Linked last; every rule sits inside the one media query
+ * below, which js/mobile-ui.js mirrors (MobileUI.QUERY) to switch its own elements on.
+ *
+ * The side panels keep their markup: they are restyled here by id into a bottom sheet
+ * (portrait) or a side drawer (short landscape). Elements with an `m-` id are built at
+ * run time by js/mobile-ui.js.
+ */
+@media (max-width: 820px), (max-height: 520px), (pointer: coarse) and (max-width: 1100px) {
+  :root {
+    /* Replaces the old whole-HUD shrink (min(width/1280, height/800)): sizes that still
+       derive from --ui-scale come out readable instead of 4 to 6 px. */
+    --ui-scale: 1.5 !important;
+    --m-hud-h: 48px;
+    --m-bar-h: 60px;
+    --m-side-w: 0px;
+    --m-bone: #ece4d0;
+    --m-dim: #b0a492;
+    --m-ink: #0b0809;
+    --m-ink-2: #17110f;
+    --m-blood: #c8202a;
+    --m-line: #4a3a30;
+    --m-st: env(safe-area-inset-top, 0px);
+    --m-sb: env(safe-area-inset-bottom, 0px);
+    --m-sl: env(safe-area-inset-left, 0px);
+    --m-sr: env(safe-area-inset-right, 0px);
+  }
+
+  /* ── Page: no scroll, no bounce, no browser zoom ─────────────── */
+  html,
+  body {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: pan-x pan-y;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+    overflow: hidden;
+  }
+  #game-canvas {
+    touch-action: none;
+  }
+  button {
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  /* ── Desktop chrome with no place on a phone ─────────────────── */
+  body.ui-v2 #top-bar,
+  body.ui-v2 #hint-bar,
+  body.ui-v2 .minimap-panel,
+  body.ui-v2 #siege-breaches,
+  .window-drag-handle {
+    display: none !important;
+  }
+
+  /* ── Shared button look ──────────────────────────────────────── */
+  .m-btn {
+    box-sizing: border-box;
+    min-width: 48px;
+    min-height: 48px;
+    margin: 0;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--m-ink-2);
+    color: var(--m-bone);
+    border: 2px solid var(--m-line);
+    border-radius: 0;
+    font: 700 15px/1.1 'Cinzel', Georgia, serif;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  .m-btn:active {
+    background: #2a1614;
+    border-color: var(--m-blood);
+  }
+  .m-btn[aria-pressed='true'] {
+    background: var(--m-blood);
+    border-color: var(--m-bone);
+    color: #fff;
+  }
+  .m-btn[hidden] {
+    display: none;
+  }
+
+  /* ── Status strip (one row) ──────────────────────────────────── */
+  #m-hud,
+  #m-bar,
+  #m-primary,
+  #m-ctx,
+  #m-more,
+  #m-scrim {
+    display: none;
+  }
+  html.m-playing #m-hud {
+    position: fixed;
+    z-index: 60;
+    top: 0;
+    left: 0;
+    right: 0;
+    box-sizing: border-box;
+    height: calc(var(--m-hud-h) + var(--m-st));
+    padding: var(--m-st) calc(4px + var(--m-sr)) 0 calc(8px + var(--m-sl));
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(11, 8, 9, 0.94);
+    border-bottom: 2px solid var(--m-blood);
+    color: var(--m-bone);
+    font: 700 16px/1 'Cinzel', Georgia, serif;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  #m-hud .m-stat {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  #m-hud .m-stat[hidden] {
+    display: none;
+  }
+  #m-hud #m-phase {
+    flex: 0 0 auto;
+  }
+  #m-hud #m-tp {
+    color: #f0c868;
+    flex: 0 0 auto;
+  }
+  #m-hud #m-breach.danger {
+    color: #ff5a4a;
+  }
+  #m-hud .m-spacer {
+    flex: 1 1 0;
+  }
+  #m-hud .m-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    height: 44px;
+    min-width: 44px;
+    padding: 0 6px;
+    font-size: 20px;
+  }
+
+  /* ── Bottom bar ──────────────────────────────────────────────── */
+  html.m-playing #m-bar {
+    position: fixed;
+    z-index: 60;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    height: calc(var(--m-bar-h) + var(--m-sb));
+    padding: 5px calc(5px + var(--m-sr)) calc(5px + var(--m-sb)) calc(5px + var(--m-sl));
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    background: rgba(11, 8, 9, 0.96);
+    border-top: 2px solid var(--m-blood);
+  }
+  #m-bar .m-btn {
+    min-width: 0;
+    height: 100%;
+    padding: 0 2px;
+    font-size: 14px;
+  }
+  #m-bar #m-open-left,
+  #m-bar #m-open-right {
+    background: #2a1614;
+    border-color: var(--m-blood);
+  }
+
+  /* Thumb button: Begin Day at night, speed by day. */
+  html.m-playing #m-primary {
+    position: fixed;
+    z-index: 61;
+    right: calc(10px + var(--m-sr));
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 10px);
+    display: inline-flex;
+    min-height: 56px;
+    min-width: 64px;
+    padding: 0 18px;
+    font-size: 18px;
+    background: var(--m-blood);
+    border-color: var(--m-bone);
+    color: #fff;
+    box-shadow: 4px 4px 0 #000;
+  }
+  html.m-playing #m-primary[data-mode='day'] {
+    background: var(--m-ink-2);
+    border-color: var(--m-line);
+    color: var(--m-bone);
+    min-height: 48px;
+    padding: 0 12px;
+  }
+  html.m-playing.m-ctx-open #m-primary {
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 68px);
+  }
+
+  /* Context bar: placing, or a selection. */
+  html.m-playing #m-ctx:not([hidden]) {
+    position: fixed;
+    z-index: 61;
+    left: calc(5px + var(--m-sl));
+    right: calc(5px + var(--m-sr));
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 5px);
+    box-sizing: border-box;
+    min-height: 56px;
+    padding: 4px 4px 4px 10px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    background: rgba(11, 8, 9, 0.96);
+    border: 2px solid var(--m-bone);
+    box-shadow: 4px 4px 0 #000;
+    color: var(--m-bone);
+  }
+  #m-ctx #m-ctx-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    font: 600 15px/1.2 'Source Sans 3', system-ui, sans-serif;
+  }
+  #m-ctx .m-btn {
+    flex: 0 0 auto;
+    min-height: 46px;
+    font-size: 14px;
+    padding: 0 8px;
+  }
+  #m-ctx #m-cancel {
+    border-color: var(--m-blood);
+  }
+
+  /* ── Sheets ──────────────────────────────────────────────────── */
+  html.m-sheet-open #m-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 80;
+    background: rgba(4, 3, 4, 0.5);
+  }
+
+  html.m-playing body.ui-v2 #left-panel,
+  html.m-playing body.ui-v2 #right-panel,
+  html.m-playing #m-more {
+    position: fixed;
+    z-index: 85;
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    width: auto;
+    height: min(66vh, 640px);
+    height: min(66dvh, 640px);
+    max-height: calc(100vh - var(--m-hud-h) - var(--m-st) - 8px);
+    max-height: calc(100dvh - var(--m-hud-h) - var(--m-st) - 8px);
+    padding: 0 var(--m-sr) var(--m-sb) var(--m-sl);
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: var(--m-ink);
+    border: none;
+    border-top: 2px solid var(--m-blood);
+    box-shadow: 0 -6px 0 rgba(0, 0, 0, 0.6);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: hidden;
+    opacity: 1;
+    pointer-events: auto;
+    visibility: hidden;
+    transform: translateY(104%);
+    transition:
+      transform 0.16s ease-out,
+      visibility 0s linear 0.16s;
+  }
+  html.m-playing.m-sheet-left body.ui-v2 #left-panel,
+  html.m-playing.m-sheet-right body.ui-v2 #right-panel,
+  html.m-playing.m-sheet-more #m-more {
+    visibility: visible;
+    transform: none;
+    transition: transform 0.16s ease-out;
+  }
+  html.reduced-motion body.ui-v2 #left-panel,
+  html.reduced-motion body.ui-v2 #right-panel,
+  html.reduced-motion #m-more {
+    transition: none;
+  }
+
+  .m-sheet-head {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 2px 4px 2px 14px;
+    border-bottom: 1px solid var(--m-line);
+  }
+  .m-sheet-head .m-sheet-title {
+    font: 700 18px/1 'Cinzel', Georgia, serif;
+    letter-spacing: 0.08em;
+    color: var(--m-bone);
+  }
+  .m-sheet-head .m-sheet-close {
+    border: none;
+    background: none;
+    font-size: 22px;
+  }
+
+  /* More sheet: a grid of large buttons, only as tall as it needs. */
+  html.m-playing #m-more {
+    height: auto;
+    padding: 12px calc(10px + var(--m-sr)) calc(12px + var(--m-sb)) calc(10px + var(--m-sl));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 8px;
+    overflow-y: auto;
+  }
+  #m-more .m-btn {
+    min-height: 54px;
+    font-size: 15px;
+  }
+
+  /* ── Side panels as sheets: tabs, then large cards ───────────── */
+  html.m-playing body.ui-v2 .side-panel .side-panel-tabs {
+    position: static;
+    flex: 0 0 auto;
+    display: flex;
+    gap: 4px;
+    padding: 6px 8px;
+    background: none;
+    border-bottom: 1px solid var(--m-line);
+  }
+  html.m-playing body.ui-v2 .side-panel .side-tab {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 46px;
+    padding: 0 4px;
+    font: 700 15px/1 'Cinzel', Georgia, serif !important;
+    letter-spacing: 0.03em;
+    border-radius: 0;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 8px 8px 16px;
+    gap: 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: auto;
+  }
+  /* Every text node in a sheet: 14 px floor. Specific sizes follow. */
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll,
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll * {
+    font-size: 14px !important;
+    line-height: 1.2 !important;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-tab-pane,
+  html.m-playing body.ui-v2 .side-panel .side-tab-pane[hidden],
+  html.m-playing
+    body.ui-v2
+    .side-panel
+    .side-tab-pane
+    > div:not(.panel-header):not(.panel-divider):not([style*='display: none']) {
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+  }
+  /* Real tabs (when the panels have them) hide the panes that are not current. */
+  html.m-playing body.ui-v2 .side-panel .side-tab-pane[hidden]:not(.active) {
+    display: none !important;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-tab-pane > :not(button),
+  html.m-playing body.ui-v2 .side-panel .side-tab-pane > div > :not(button) {
+    grid-column: 1 / -1;
+  }
+  html.m-playing body.ui-v2 .side-panel .panel-header {
+    margin: 6px 0 0;
+    padding: 2px 0 2px 8px;
+    font-size: 15px !important;
+    letter-spacing: 0.08em;
+    color: var(--m-bone);
+    border-left: 3px solid var(--m-blood);
+  }
+  html.m-playing body.ui-v2 .side-panel .panel-hint {
+    max-height: none;
+    display: block;
+    color: var(--m-dim);
+    -webkit-line-clamp: unset;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button {
+    box-sizing: border-box;
+    width: 100%;
+    min-width: 0;
+    min-height: 64px;
+    height: auto;
+    padding: 6px 4px;
+    gap: 3px;
+    border-radius: 0;
+    border-width: 2px;
+    white-space: normal;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button > span:not(.cost) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button canvas {
+    width: 40px;
+    height: 40px;
+    flex: 0 0 auto;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button kbd,
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button .hk {
+    display: none;
+  }
+  html.m-playing body.ui-v2 .side-panel .side-panel-scroll button.selected {
+    border-color: var(--m-bone);
+    background: #4a1216;
+  }
+  html.m-playing body.ui-v2 .side-panel .formation-btn-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+    gap: 6px;
+  }
+
+  /* ── Floating field notices ──────────────────────────────────── */
+  html.m-playing #siege-strip {
+    position: fixed;
+    z-index: 40;
+    top: calc(var(--m-hud-h) + var(--m-st) + 4px);
+    left: calc(6px + var(--m-sl));
+    right: calc(6px + var(--m-sr));
+    max-width: none;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+  html.m-playing #siege-strip .siege-chip {
+    font-size: 14px;
+    line-height: 1.2;
+    padding: 4px 8px;
+    max-width: 100%;
+  }
+  html.m-playing #siege-strip .siege-order {
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+    font-size: 14px;
+    pointer-events: auto;
+  }
+  html.m-playing body.ui-v2 .night-prep-card {
+    display: none;
+  }
+  html.m-playing body.ui-v2 #message-box {
+    top: auto;
+    left: 8px;
+    right: 8px;
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 76px);
+    transform: none;
+    max-width: none;
+    width: auto;
+    padding: 8px 12px;
+    font-size: 15px;
+    line-height: 1.25;
+    text-align: center;
+    white-space: normal;
+  }
+  html.m-playing body.ui-v2 .unit-info-panel {
+    position: fixed;
+    z-index: 58;
+    left: calc(5px + var(--m-sl));
+    right: calc(5px + var(--m-sr));
+    top: auto;
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 66px);
+    width: auto;
+    max-width: none;
+    max-height: 38vh;
+    max-height: 38dvh;
+    padding: 10px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    font-size: 14px;
+  }
+  html.m-playing body.ui-v2 .unit-info-panel * {
+    font-size: 14px !important;
+    line-height: 1.25 !important;
+  }
+  html.m-playing body.ui-v2 .unit-info-panel button,
+  html.m-playing body.ui-v2 .unit-info-panel .unit-quick-btn {
+    min-height: 46px;
+    min-width: 46px;
+    padding: 4px 10px;
+  }
+  html.m-playing body.ui-v2 .tutorial-callout {
+    top: calc(var(--m-hud-h) + var(--m-st) + 8px);
+    width: min(420px, 94vw);
+    max-height: 46vh;
+    overflow-y: auto;
+    font-size: 15px;
+  }
+  html.m-playing body.ui-v2 .tutorial-callout * {
+    font-size: 15px !important;
+    line-height: 1.3 !important;
+  }
+  html.m-playing body.ui-v2 .tutorial-callout button {
+    min-height: 46px;
+    padding: 0 14px;
+  }
+  html.m-playing body.ui-v2 .message-log-panel {
+    position: fixed;
+    z-index: 90;
+    inset: calc(var(--m-hud-h) + var(--m-st) + 6px) 6px calc(var(--m-bar-h) + var(--m-sb) + 6px);
+    width: auto;
+    max-width: none;
+    height: auto;
+    max-height: none;
+  }
+  html.m-playing body.ui-v2 .message-log-panel * {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+  html.m-playing body.ui-v2 .message-log-panel button {
+    min-width: 46px;
+    min-height: 46px;
+  }
+
+  /* ── Modals: fit the screen, scroll inside themselves ────────── */
+  body.ui-v2 .screen {
+    position: fixed;
+    inset: 0;
+    box-sizing: border-box;
+    padding: calc(8px + var(--m-st)) calc(8px + var(--m-sr)) calc(8px + var(--m-sb))
+      calc(8px + var(--m-sl));
+    align-items: flex-start;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    -webkit-overflow-scrolling: touch;
+  }
+  body.ui-v2 .screen > * {
+    box-sizing: border-box;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  body.ui-v2 .screen button,
+  body.ui-v2 .screen select,
+  body.ui-v2 .screen .menu-btn,
+  body.ui-v2 .screen .diff-btn,
+  body.ui-v2 .screen .mode-btn,
+  body.ui-v2 .screen .adv-preset-btn,
+  body.ui-v2 .screen [role='tab'] {
+    min-height: 46px;
+    min-width: 46px;
+    font-size: 15px;
+    line-height: 1.15;
+  }
+  body.ui-v2 .screen input[type='range'] {
+    min-height: 44px;
+  }
+  body.ui-v2 .screen input[type='checkbox'],
+  body.ui-v2 .screen input[type='radio'] {
+    width: 24px;
+    height: 24px;
+    min-width: 24px;
+  }
+  body.ui-v2 .screen label {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  body.ui-v2 .screen input[type='text'],
+  body.ui-v2 .screen input[type='number'],
+  body.ui-v2 .screen textarea {
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  /* Spoils: cards stack, the box scrolls. */
+  #spoils-panel {
+    padding: calc(8px + var(--m-st)) calc(8px + var(--m-sr)) calc(8px + var(--m-sb))
+      calc(8px + var(--m-sl));
+    touch-action: pan-y;
+  }
+  #spoils-panel .spoils-box {
+    max-height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 14px 12px;
+  }
+  #spoils-panel .spoils-cards,
+  #spoils-panel .spoils-row {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  #spoils-panel [data-spoil] {
+    width: 100%;
+    min-height: 72px;
+    box-sizing: border-box;
+  }
+  #spoils-panel .spoils-box * {
+    font-size: max(14px, 1em);
+  }
+
+  .inpage-dialog,
+  #key-sheet {
+    max-width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px - var(--m-st) - var(--m-sb));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+  .inpage-dialog button {
+    min-height: 46px;
+    min-width: 46px;
+    font-size: 15px;
+  }
+
+  body.ui-v2 .game-tooltip {
+    max-width: min(320px, 92vw);
+    font-size: 14px;
+  }
+  body.ui-v2 .game-tooltip * {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+  }
+
+  /* ── Short landscape: strip on the left edge, bar on the right ─ */
+  @media (max-height: 520px) and (orientation: landscape) {
+    :root {
+      --m-hud-w: 132px;
+      --m-bar-w: 92px;
+    }
+    html.m-playing #m-hud {
+      top: 0;
+      bottom: 0;
+      right: auto;
+      width: calc(var(--m-hud-w) + var(--m-sl));
+      height: auto;
+      padding: calc(6px + var(--m-st)) 6px calc(6px + var(--m-sb)) calc(8px + var(--m-sl));
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+      border-bottom: none;
+      border-right: 2px solid var(--m-blood);
+      white-space: normal;
+    }
+    #m-hud .m-stat {
+      flex: 0 0 auto;
+      line-height: 1.15;
+    }
+    #m-hud .m-btn {
+      width: 100%;
+    }
+    html.m-playing #m-bar {
+      top: 0;
+      left: auto;
+      width: calc(var(--m-bar-w) + var(--m-sr));
+      height: auto;
+      padding: calc(5px + var(--m-st)) calc(5px + var(--m-sr)) calc(5px + var(--m-sb)) 5px;
+      grid-template-columns: 1fr;
+      grid-auto-rows: 1fr;
+      border-top: none;
+      border-left: 2px solid var(--m-blood);
+    }
+    html.m-playing #m-primary,
+    html.m-playing.m-ctx-open #m-primary {
+      right: calc(var(--m-bar-w) + var(--m-sr) + 10px);
+      bottom: calc(10px + var(--m-sb));
+    }
+    html.m-playing #m-ctx:not([hidden]) {
+      left: calc(var(--m-hud-w) + var(--m-sl) + 8px);
+      right: auto;
+      max-width: calc(100vw - var(--m-hud-w) - var(--m-bar-w) - var(--m-sl) - var(--m-sr) - 190px);
+      bottom: calc(8px + var(--m-sb));
+      flex-wrap: wrap;
+    }
+    html.m-playing #siege-strip {
+      top: calc(4px + var(--m-st));
+      left: calc(var(--m-hud-w) + var(--m-sl) + 8px);
+      right: auto;
+      max-width: 230px;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    html.m-playing body.ui-v2 #message-box {
+      left: calc(var(--m-hud-w) + var(--m-sl) + 8px);
+      right: calc(var(--m-bar-w) + var(--m-sr) + 8px);
+      bottom: auto;
+      top: calc(6px + var(--m-st));
+      margin-left: 240px;
+    }
+    html.m-playing body.ui-v2 .unit-info-panel {
+      left: auto;
+      right: calc(var(--m-bar-w) + var(--m-sr) + 8px);
+      top: calc(6px + var(--m-st));
+      bottom: 76px;
+      width: 250px;
+      max-height: none;
+    }
+    /* Side drawers, full height. */
+    html.m-playing body.ui-v2 #left-panel,
+    html.m-playing body.ui-v2 #right-panel,
+    html.m-playing #m-more {
+      top: 0;
+      bottom: 0;
+      height: auto;
+      max-height: none;
+      width: min(62vw, 520px);
+      border-top: none;
+    }
+    html.m-playing body.ui-v2 #left-panel {
+      right: auto;
+      border-right: 2px solid var(--m-blood);
+      padding: var(--m-st) 0 var(--m-sb) var(--m-sl);
+      transform: translateX(-104%);
+    }
+    html.m-playing body.ui-v2 #right-panel,
+    html.m-playing #m-more {
+      left: auto;
+      border-left: 2px solid var(--m-blood);
+      transform: translateX(104%);
+    }
+    html.m-playing body.ui-v2 #right-panel {
+      padding: var(--m-st) var(--m-sr) var(--m-sb) 0;
+    }
+    html.m-playing #m-more {
+      align-content: start;
+    }
+    html.m-playing body.ui-v2 .message-log-panel {
+      inset: 6px calc(var(--m-bar-w) + var(--m-sr) + 6px) 6px
+        calc(var(--m-hud-w) + var(--m-sl) + 6px);
+    }
+  }
+}

@@ -118,6 +118,7 @@ export const GAME_SCRIPTS = [
   'tooltips.js',
   'ux.js',
   'ui.js',
+  'mobile-ui.js',
   'main.js',
 ];
 

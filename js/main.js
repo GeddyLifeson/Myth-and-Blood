@@ -371,6 +371,34 @@
       return true;
     }
 
+    /** Phone layout modes (js/mobile-ui.js): box-select, place more, re-site a mine. */
+    const mobile = () => (typeof MobileUI !== 'undefined' && MobileUI.isActive() ? MobileUI : null);
+    const DOUBLE_TAP_MS = 320;
+    const DOUBLE_TAP_PX = 28;
+    let touchBoxSelect = false;
+    let lastTap = null;
+
+    /**
+     * Double-tap on open ground: zoom in with that spot in the middle of the field, or
+     * back out to the whole field when already zoomed in.
+     */
+    function centreOnDoubleTap(sx, sy) {
+      const zoom = Game.getCameraZoom?.() ?? 1;
+      if (zoom > 1.4) {
+        Game.zoomCameraToScale(sx, sy, 1);
+        Game.panCameraToFraction?.(0.5, 0.5);
+        return;
+      }
+      Game.zoomCameraToScale(sx, sy, 2.2);
+      // The zoom keeps the tapped spot under the finger; drag it to the middle of the view.
+      const insets = typeof Settings !== 'undefined' ? Settings.getPanelInsets() : null;
+      const cx = insets ? (insets.left + canvas.width - insets.right) / 2 : canvas.width / 2;
+      const cy = insets ? (insets.top + canvas.height - insets.bottom) / 2 : canvas.height / 2;
+      Game.handlePointerDown(sx, sy, 0, { pan: true, forcePan: true, dragThreshold: 0 });
+      Game.handlePointerMove(cx, cy);
+      Game.handlePointerUp();
+    }
+
     function handleTouchStart(e) {
       if (e.touches.length === 2) {
         e.preventDefault();
@@ -384,12 +412,23 @@
       pointerDown = true;
       touchDownAt = Date.now();
       const dragSlop = typeof TouchInput !== 'undefined' ? TouchInput.getDragThreshold() : 14;
-      Game.handlePointerDown(sx, sy, 0, { pan: true, dragThreshold: dragSlop });
+      // One finger pans the field. Dragging a box needs the SELECT toggle, so a pan never
+      // turns into a selection by accident.
+      touchBoxSelect = !!mobile()?.isSelectMode();
+      Game.handlePointerDown(
+        sx,
+        sy,
+        0,
+        touchBoxSelect
+          ? { boxSelect: true, dragThreshold: dragSlop }
+          : { pan: true, forcePan: true, dragThreshold: dragSlop }
+      );
       clearTouchHold();
       if (Game.isPlaying()) {
         const gs = Game.getState();
         const armed = isPlacementArmed(gs) || isCreativeToolArmed(gs);
-        if (armed) {
+        // The phone layout has a CANCEL button; holding still to cancel is for layouts without.
+        if (armed && !mobile()) {
           touchHoldStart = { x: t.clientX, y: t.clientY };
           touchHoldTimer = setTimeout(() => {
             if (isPlacementArmed(gs)) {
@@ -428,13 +467,51 @@
       if (!pointerDown) return;
       pointerDown = false;
       const wasClick = Game.handlePointerUp();
-      if (wasClick && e.changedTouches[0]) {
-        const t = e.changedTouches[0];
-        const { sx, sy } = screenCoords(t);
-        // A long press on the ground is the touch form of Shift + click: go there and hold.
-        Game.handleClick(sx, sy, { touch: true, hold: Date.now() - touchDownAt >= 450 });
-        UI.updateHUD(true);
+      if (!wasClick) {
+        lastTap = null;
+        if (touchBoxSelect) {
+          mobile()?.onBoxSelectDone();
+          UI.updateHUD(true);
+        }
+        return;
       }
+      if (!e.changedTouches[0]) return;
+      const t = e.changedTouches[0];
+      const { sx, sy } = screenCoords(t);
+      const now = Date.now();
+      const before = Game.getState();
+      const idle =
+        Game.isPlaying() &&
+        !isPlacementOrCourierArmed(before) &&
+        !isCreativeToolArmed(before) &&
+        !selectionCount(before);
+      if (
+        idle &&
+        lastTap &&
+        now - lastTap.at <= DOUBLE_TAP_MS &&
+        Math.hypot(sx - lastTap.sx, sy - lastTap.sy) <= DOUBLE_TAP_PX
+      ) {
+        lastTap = null;
+        centreOnDoubleTap(sx, sy);
+        return;
+      }
+      lastTap = idle ? { at: now, sx, sy } : null;
+      const m = mobile();
+      const placing = !!(before.selectedDeploy || before.selectedBuild);
+      // PLACE MORE is the touch form of Shift-click while placing; MOVE MINE the touch form
+      // of Shift+click with a Sapper selected at night (SapperKit.orderMine).
+      const placeMore = placing && !!m?.isPlaceMore();
+      const mine = !placing && !!m?.isMineMode();
+      // A long press on the ground is the touch form of Shift + click: go there and hold.
+      Game.handleClick(sx, sy, {
+        touch: true,
+        hold: !mine && now - touchDownAt >= 450,
+        repeatDeploy: placeMore,
+        shiftKey: placeMore || mine,
+      });
+      if (mine) m.setMineMode(false);
+      UI.updateHUD(true);
+      m?.sync();
     }
 
     canvas.addEventListener('touchstart', handleTouchStart, { passive: false });

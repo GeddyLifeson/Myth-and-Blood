@@ -112,6 +112,8 @@ const Settings = (() => {
   }
 
   function getPanelInsets() {
+    // Phone layout: the field runs edge to edge and js/mobile-ui.js measures what covers it.
+    if (typeof MobileUI !== 'undefined' && MobileUI.isActive()) return MobileUI.getPanelInsets();
     const s = getEffectiveUIScale();
     return {
       left: Math.round(60 * s),

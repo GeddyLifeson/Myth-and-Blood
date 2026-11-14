@@ -5,12 +5,18 @@ const TouchInput = (() => {
   const SLOP_FINE = 7;
   const SLOP_COARSE = 16;
   const DEDUPE_MS = 320;
+  /** A touch held this long on a control shows its tooltip and does not press it. */
+  const LONG_PRESS_MS = 420;
+  const TIP_SHOW_MS = 2800;
 
   let coarse = false;
   let inited = false;
   const active = new Map();
   let lastClickAt = 0;
   let lastClickEl = null;
+  /** Until this time, the browser's own click for a touch we already handled is dropped. */
+  let swallowNativeClickUntil = 0;
+  const GHOST_CLICK_MS = 450;
 
   /** Non-button interactive targets that use click listeners (div cards, etc.). */
   const INTERACTIVE_CLASSES = [
@@ -102,24 +108,80 @@ const TouchInput = (() => {
     }
   }
 
+  // -- Long-press tooltip for controls that only carry a `title` ----------------
+  // Controls bound by js/tooltips.js show their own rich tip on a long press; this
+  // covers every other button, which on a touch screen has no hover to show a title.
+  let tipEl = null;
+  let tipHideTimer = null;
+
+  function hideTitleTip() {
+    clearTimeout(tipHideTimer);
+    if (tipEl) tipEl.hidden = true;
+  }
+
+  function showTitleTip(el) {
+    if (!el || el.isConnected === false || el.dataset?.tooltipBound) return;
+    const text = (el.getAttribute('title') || el.getAttribute('aria-label') || '').trim();
+    if (!text) return;
+    if (!tipEl) {
+      tipEl = document.createElement('div');
+      tipEl.id = 'touch-tip';
+      tipEl.setAttribute('role', 'tooltip');
+      tipEl.style.cssText =
+        'position:fixed;z-index:100000;max-width:min(280px,86vw);padding:10px 12px;' +
+        'background:#0b0809;color:#ece4d0;border:2px solid #c8202a;box-shadow:4px 4px 0 #000;' +
+        'font:600 15px/1.35 "Source Sans 3",system-ui,sans-serif;pointer-events:none;' +
+        'white-space:pre-line;';
+      document.body.appendChild(tipEl);
+    }
+    tipEl.textContent = text;
+    tipEl.hidden = false;
+    const r = el.getBoundingClientRect();
+    const t = tipEl.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const left = Math.max(6, Math.min(vw - t.width - 6, r.left + r.width / 2 - t.width / 2));
+    // Above the finger when there is room, else below the control.
+    const top = r.top - t.height - 12 >= 6 ? r.top - t.height - 12 : r.bottom + 12;
+    tipEl.style.left = `${Math.round(left)}px`;
+    tipEl.style.top = `${Math.round(top)}px`;
+    clearTimeout(tipHideTimer);
+    tipHideTimer = setTimeout(hideTitleTip, TIP_SHOW_MS);
+  }
+
   function onPointerDown(e) {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
+    hideTitleTip();
     const el = findInteractive(e.target);
     if (!el) return;
+    const touch = isTouchLike(e.pointerType);
     active.set(e.pointerId, {
       el,
       x: e.clientX,
       y: e.clientY,
       pointerType: e.pointerType,
+      at: Date.now(),
+      tipTimer: touch ? setTimeout(() => showTitleTip(el), LONG_PRESS_MS) : null,
     });
-    if (isTouchLike(e.pointerType)) {
+    if (touch) {
       // Block ghost mouse clicks + 300ms delay; map UI still uses synthetic el.click().
       e.preventDefault();
     }
   }
 
   function clearPointer(id) {
+    const tap = active.get(id);
+    if (tap?.tipTimer) clearTimeout(tap.tipTimer);
     active.delete(id);
+  }
+
+  function onPointerMove(e) {
+    const tap = active.get(e.pointerId);
+    if (!tap?.tipTimer) return;
+    // A finger that slides is scrolling the sheet, not asking for the tooltip.
+    if (Math.hypot(e.clientX - tap.x, e.clientY - tap.y) > getTapSlop()) {
+      clearTimeout(tap.tipTimer);
+      tap.tipTimer = null;
+    }
   }
 
   function onPointerUp(e) {
@@ -145,6 +207,11 @@ const TouchInput = (() => {
     if (isTouchLike(tap.pointerType)) {
       e.preventDefault();
       e.stopPropagation();
+      // The browser still sends its own click after touchend. By then the tap may have
+      // opened a sheet or dialog under the finger, and that click would land on it.
+      swallowNativeClickUntil = Date.now() + GHOST_CLICK_MS;
+      // A long press showed the tooltip; lifting the finger must not also press the button.
+      if (Date.now() - tap.at >= LONG_PRESS_MS) return;
       fireClick(target);
       return;
     }
@@ -158,16 +225,29 @@ const TouchInput = (() => {
     fireClick(target);
   }
 
+  function onNativeClick(e) {
+    if (!e.isTrusted || Date.now() > swallowNativeClickUntil) return;
+    // Keyboard activation (Enter, Space) reports no pointer position.
+    if (e.detail === 0) return;
+    swallowNativeClickUntil = 0;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+  }
+
   function onPointerCancel(e) {
     clearPointer(e.pointerId);
   }
 
   function bindUIButtons() {
     document.addEventListener('pointerdown', onPointerDown, { passive: false });
+    document.addEventListener('pointermove', onPointerMove, { passive: true });
     document.addEventListener('pointerup', onPointerUp, { passive: false });
     document.addEventListener('pointercancel', onPointerCancel);
+    document.addEventListener('click', onNativeClick, true);
     // Tab blur / app background — drop in-flight taps so the next press is clean.
-    window.addEventListener('blur', () => active.clear());
+    window.addEventListener('blur', () => {
+      for (const id of [...active.keys()]) clearPointer(id);
+    });
   }
 
   function applyTouchDeviceClass() {
@@ -197,7 +277,15 @@ const TouchInput = (() => {
     init();
   }
 
-  return { init, isCoarsePointer, getTapSlop, getDragThreshold, isInteractive, findInteractive };
+  return {
+    init,
+    isCoarsePointer,
+    getTapSlop,
+    getDragThreshold,
+    isInteractive,
+    findInteractive,
+    LONG_PRESS_MS,
+  };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

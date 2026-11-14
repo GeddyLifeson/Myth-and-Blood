@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <link rel="icon" href="data:," />
     <title>Myth and Blood — Fantasy Tactical Defense</title>
     <meta
@@ -23,32 +23,9 @@
       name="twitter:description"
       content="A browser-based fantasy tactical-defense game. Command an army, hold the line against endless waves, and build an empire."
     />
-    <script>
-      (function () {
-        var REF_W = 1280,
-          REF_H = 800;
-        var scale = 1;
-        try {
-          var raw =
-            localStorage.getItem('myth-and-blood-settings-v1') ||
-            localStorage.getItem('myth-and-blood-ux-settings');
-          var o = raw ? JSON.parse(raw) : {};
-          var w = window.innerWidth || REF_W;
-          var h = window.innerHeight || REF_H;
-          if (o.uiScaleMode === 'manual') {
-            scale = o.uiScaleManual || 1;
-          } else {
-            scale = Math.min(w / REF_W, h / REF_H);
-          }
-          scale = Math.max(0.6, Math.min(1.5, scale));
-        } catch (_) {
-          /* ignore */
-        }
-        document.documentElement.style.setProperty('--ui-scale', String(scale));
-      })();
-    </script>
     <link rel="stylesheet" href="css/style.css" />
     <link rel="stylesheet" href="css/theme-v2.css" />
+    <link rel="stylesheet" href="css/mobile.css" />
     <script src="js/touch-input.js"></script>
   </head>
   <body class="ui-v2">
@@ -2639,6 +2616,7 @@
     <script src="js/tooltips.js"></script>
     <script src="js/ux.js"></script>
     <script src="js/ui.js"></script>
+    <script src="js/mobile-ui.js"></script>
     <script src="js/main.js"></script>
   </body>
 </html>
