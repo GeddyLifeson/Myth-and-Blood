@@ -12,6 +12,10 @@
  * the impact visuals wait for the wind-up.
  */
 const StrikeFX = (() => {
+  // Visual stream from Particles, so effects never shift the seeded gameplay Math.random.
+  const vrand = () =>
+    typeof Particles !== 'undefined' && Particles.rand ? Particles.rand() : Math.random();
+
   const INK = '#07050a';
   const BONE = '#e4dcc4';
   const BLOOD_HI = '#c8141c';
@@ -123,7 +127,7 @@ const StrikeFX = (() => {
       pending: null,
       life,
       maxLife: life,
-      seed: Math.random() * 1000,
+      seed: vrand() * 1000,
     };
     strikes.push(s);
     cap(strikes, MAX_STRIKES);
@@ -178,17 +182,17 @@ const StrikeFX = (() => {
 
   function spawnDebris(x, y, count, colors) {
     for (let i = 0; i < count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const spd = 2 + Math.random() * 5;
+      const ang = vrand() * Math.PI * 2;
+      const spd = 2 + vrand() * 5;
       debris.push({
         x,
         y,
         vx: Math.cos(ang) * spd,
         vy: Math.sin(ang) * spd - 1.5,
-        life: 16 + Math.floor(Math.random() * 14),
+        life: 16 + Math.floor(vrand() * 14),
         maxLife: 28,
-        color: colors[Math.floor(Math.random() * colors.length)],
-        size: 1.5 + Math.random() * 2.5,
+        color: colors[Math.floor(vrand() * colors.length)],
+        size: 1.5 + vrand() * 2.5,
       });
     }
     cap(debris, MAX_DEBRIS);

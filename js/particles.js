@@ -22,6 +22,15 @@ const Particles = (() => {
   let lodSpawnScale = 1;
   let quality = 1;
 
+  // Visual-only stream (mulberry32): effects must never draw from the seeded gameplay Math.random.
+  let visSeed = 0x9e3779b9;
+  function rand() {
+    visSeed = (visSeed + 0x6d2b79f5) | 0;
+    let t = Math.imul(visSeed ^ (visSeed >>> 15), 1 | visSeed);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  }
+
   // Settled marks on the ground: blood flecks and scorch. A ring buffer, drawn under the units.
   const GROUND_MAX = 260;
   const GROUND_LIFE = 1500;
@@ -124,8 +133,8 @@ const Particles = (() => {
     const count = Math.max(1, Math.floor((config.count || 8) * lodSpawnScale));
     const colors = config.colors;
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = (config.speed || 2) * (0.5 + Math.random());
+      const angle = rand() * Math.PI * 2;
+      const speed = (config.speed || 2) * (0.5 + rand());
       const p = put(
         config.type || 'dot',
         px,
@@ -133,7 +142,7 @@ const Particles = (() => {
         Math.cos(angle) * speed,
         Math.sin(angle) * speed - (config.rise || 0),
         config.life || 30,
-        colors ? colors[Math.floor(Math.random() * colors.length)] : BONE,
+        colors ? colors[Math.floor(rand() * colors.length)] : BONE,
         config.size || 3
       );
       if (!p) return;
@@ -227,33 +236,33 @@ const Particles = (() => {
     const mult = Math.max(0.5, opts.mult || 1);
     const count = Math.max(2, Math.round((opts.count || 5) * mult * lodSpawnScale));
     for (let i = 0; i < count; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const speed = (1.2 + Math.random() * 2.4) * (0.7 + mult * 0.4);
+      const ang = rand() * Math.PI * 2;
+      const speed = (1.2 + rand() * 2.4) * (0.7 + mult * 0.4);
       drop(
-        x + (Math.random() - 0.5) * 4,
-        y + (Math.random() - 0.5) * 4,
+        x + (rand() - 0.5) * 4,
+        y + (rand() - 0.5) * 4,
         Math.cos(ang) * speed,
         Math.sin(ang) * speed * 0.8,
-        9 + Math.random() * 9,
-        1 + Math.random() * 0.9
+        9 + rand() * 9,
+        1 + rand() * 0.9
       );
     }
-    if (mult >= 1.2) groundMark(x + (Math.random() - 0.5) * 6, y + 4, 2 + mult, 0);
+    if (mult >= 1.2) groundMark(x + (rand() - 0.5) * 6, y + 4, 2 + mult, 0);
   }
 
   /** Directional spray along the blow, attacker to target. */
   function bloodSpray(x, y, angleRad, mult = 1) {
     const n = Math.max(2, Math.round(5 * mult * lodSpawnScale));
     for (let i = 0; i < n; i++) {
-      const ang = angleRad + (Math.random() - 0.5) * 0.9;
-      const speed = (2 + Math.random() * 3.4) * (0.75 + mult * 0.3);
+      const ang = angleRad + (rand() - 0.5) * 0.9;
+      const speed = (2 + rand() * 3.4) * (0.75 + mult * 0.3);
       drop(
-        x + (Math.random() - 0.5) * 3,
-        y + (Math.random() - 0.5) * 3,
+        x + (rand() - 0.5) * 3,
+        y + (rand() - 0.5) * 3,
         Math.cos(ang) * speed,
         Math.sin(ang) * speed,
-        8 + Math.random() * 10,
-        0.9 + Math.random() * 1.1
+        8 + rand() * 10,
+        0.9 + rand() * 1.1
       );
     }
   }
@@ -277,8 +286,8 @@ const Particles = (() => {
   function critBurst(x, y) {
     // Four ink splinters and a short blood ring: a crit reads without colouring the screen.
     for (let i = 0; i < 4; i++) {
-      const ang = (i / 4) * Math.PI * 2 + Math.random() * 0.7;
-      shard(x, y, ang, 3.2 + Math.random() * 1.6, i % 2 ? BONE : BLOOD_HI, 7);
+      const ang = (i / 4) * Math.PI * 2 + rand() * 0.7;
+      shard(x, y, ang, 3.2 + rand() * 1.6, i % 2 ? BONE : BLOOD_HI, 7);
     }
     ring(x, y, BLOOD_HI, 6, 12, 16);
   }
@@ -289,13 +298,13 @@ const Particles = (() => {
     for (let i = 0; i < n; i++) {
       const p = put(
         'smoke',
-        x + (Math.random() - 0.5) * size * 1.6,
-        y + (Math.random() - 0.5) * size,
-        (Math.random() - 0.5) * 0.5,
-        -0.35 - Math.random() * 0.5,
-        26 + Math.floor(Math.random() * 22),
+        x + (rand() - 0.5) * size * 1.6,
+        y + (rand() - 0.5) * size,
+        (rand() - 0.5) * 0.5,
+        -0.35 - rand() * 0.5,
+        26 + Math.floor(rand() * 22),
         i % 3 === 0 ? '#2a2226' : INK,
-        size * (0.7 + Math.random() * 0.6)
+        size * (0.7 + rand() * 0.6)
       );
       if (!p) return;
       p.drag = 0.97;
@@ -306,17 +315,17 @@ const Particles = (() => {
   function embers(x, y, count = 8, speed = 4) {
     const n = Math.max(1, Math.round(count * lodSpawnScale));
     for (let i = 0; i < n; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const spd = speed * (0.4 + Math.random() * 0.8);
+      const ang = rand() * Math.PI * 2;
+      const spd = speed * (0.4 + rand() * 0.8);
       const p = put(
         'dot',
         x,
         y,
         Math.cos(ang) * spd,
         Math.sin(ang) * spd - 0.6,
-        14 + Math.floor(Math.random() * 14),
+        14 + Math.floor(rand() * 14),
         EMBER[i % EMBER.length],
-        1.6 + Math.random() * 1.4
+        1.6 + rand() * 1.4
       );
       if (!p) return;
       p.gravity = 0.05;
@@ -331,13 +340,13 @@ const Particles = (() => {
       y,
       Math.cos(ang) * speed,
       Math.sin(ang) * speed,
-      12 + Math.floor(Math.random() * 10),
+      12 + Math.floor(rand() * 10),
       color,
       len
     );
     if (!p) return;
     p.rot = ang;
-    p.spin = (Math.random() - 0.5) * 0.9;
+    p.spin = (rand() - 0.5) * 0.9;
     p.gravity = 0.06;
     p.drag = 0.92;
   }
@@ -346,8 +355,8 @@ const Particles = (() => {
   function splinter(x, y, angleRad = 0, count = 4, color = '#b08a52') {
     const n = Math.max(1, Math.round(count * lodSpawnScale));
     for (let i = 0; i < n; i++) {
-      const ang = angleRad + Math.PI + (Math.random() - 0.5) * 1.8;
-      shard(x, y, ang, 1.6 + Math.random() * 2.4, i % 3 === 2 ? INK : color, 4 + Math.random() * 4);
+      const ang = angleRad + Math.PI + (rand() - 0.5) * 1.8;
+      shard(x, y, ang, 1.6 + rand() * 2.4, i % 3 === 2 ? INK : color, 4 + rand() * 4);
     }
   }
 
@@ -371,13 +380,13 @@ const Particles = (() => {
   }
 
   function lightning(x, y) {
-    const width = 30 + Math.random() * 20;
+    const width = 30 + rand() * 20;
     const p = put('bolt', x, 0, 0, 0, 10, BONE, 3);
     if (!p) return;
     if (!p.boltSeg) p.boltSeg = new Array(6);
     let cx = x;
     for (let i = 0; i < 6; i++) {
-      cx += (Math.random() - 0.5) * width;
+      cx += (rand() - 0.5) * width;
       p.boltSeg[i] = cx;
     }
     p.targetY = y;
@@ -406,23 +415,23 @@ const Particles = (() => {
   function deathBurst(x, y, team) {
     const n = Math.max(4, Math.round(11 * lodSpawnScale));
     for (let i = 0; i < n; i++) {
-      const ang = Math.random() * Math.PI * 2;
-      const speed = 1.4 + Math.random() * 3.6;
+      const ang = rand() * Math.PI * 2;
+      const speed = 1.4 + rand() * 3.6;
       drop(
         x,
         y,
         Math.cos(ang) * speed,
         Math.sin(ang) * speed * 0.8,
-        10 + Math.random() * 12,
-        1.2 + Math.random() * 1.3
+        10 + rand() * 12,
+        1.2 + rand() * 1.3
       );
     }
     const chip = team === 'enemy' ? '#3a3034' : BONE;
     for (let i = 0; i < 3; i++) {
-      shard(x, y, Math.random() * Math.PI * 2, 2 + Math.random() * 2, i ? chip : INK, 5);
+      shard(x, y, rand() * Math.PI * 2, 2 + rand() * 2, i ? chip : INK, 5);
     }
-    groundMark(x + (Math.random() - 0.5) * 8, y + 5, 4.5, 0);
-    groundMark(x + (Math.random() - 0.5) * 14, y + 2 + Math.random() * 6, 2.6, 0);
+    groundMark(x + (rand() - 0.5) * 8, y + 5, 4.5, 0);
+    groundMark(x + (rand() - 0.5) * 14, y + 2 + rand() * 6, 2.6, 0);
   }
 
   /**
@@ -434,8 +443,7 @@ const Particles = (() => {
     smoke(x, y, Math.round(2 + 3 * mult), 4 + mult * 3);
     ring(x, y, EMBER[0], 8 * mult, 16, 22 * mult);
     if (mult < 0.8) {
-      for (let i = 0; i < 4; i++)
-        shard(x, y, Math.random() * Math.PI * 2, 2.5 + Math.random() * 2, '#6a4a34', 4);
+      for (let i = 0; i < 4; i++) shard(x, y, rand() * Math.PI * 2, 2.5 + rand() * 2, '#6a4a34', 4);
     }
     groundMark(x, y + 2, 5 + mult * 5, 1, 900);
   }
@@ -443,7 +451,7 @@ const Particles = (() => {
   function strikeLightning(x, y, mult = 1) {
     const n = Math.round(8 * mult);
     for (let i = 0; i < n; i++) {
-      shard(x, y, Math.random() * Math.PI * 2, 3 + Math.random() * 3, i % 3 ? BONE : '#b9c6e0', 6);
+      shard(x, y, rand() * Math.PI * 2, 3 + rand() * 3, i % 3 ? BONE : '#b9c6e0', 6);
     }
     smoke(x, y, 2, 4);
     ring(x, y, BONE, 10 * mult, 12, 20);
@@ -452,7 +460,7 @@ const Particles = (() => {
   function strikeFrost(x, y, mult = 1) {
     const n = Math.round(12 * mult);
     for (let i = 0; i < n; i++) {
-      shard(x, y, (i / n) * Math.PI * 2, 2.5 + Math.random() * 2.5, i % 2 ? '#b9d6dc' : BONE, 7);
+      shard(x, y, (i / n) * Math.PI * 2, 2.5 + rand() * 2.5, i % 2 ? '#b9d6dc' : BONE, 7);
     }
   }
 
@@ -495,7 +503,7 @@ const Particles = (() => {
 
   function weatherRain(x, y) {
     if (live >= MAX_PARTICLES) return;
-    const p = put('streak', x, y, -0.8, 5 + Math.random() * 2, 18, 'rgba(160,200,255,0.55)', 1);
+    const p = put('streak', x, y, -0.8, 5 + rand() * 2, 18, 'rgba(160,200,255,0.55)', 1);
     if (p) {
       p.gravity = 0.1;
       p.drag = 1;
@@ -504,32 +512,14 @@ const Particles = (() => {
 
   function weatherAsh(x, y) {
     if (live >= MAX_PARTICLES) return;
-    const p = put(
-      'dot',
-      x,
-      y,
-      (Math.random() - 0.5) * 0.6,
-      0.4 + Math.random(),
-      35,
-      '#5a4640',
-      1.6
-    );
+    const p = put('dot', x, y, (rand() - 0.5) * 0.6, 0.4 + rand(), 35, '#5a4640', 1.6);
     if (p) p.gravity = -0.01;
   }
 
   /** Drifting snow: slow, no gravity, long life. */
   function weatherSnow(x, y) {
     if (live >= MAX_PARTICLES) return;
-    put(
-      'dot',
-      x,
-      y,
-      (Math.random() - 0.5) * 0.5,
-      0.5 + Math.random() * 0.6,
-      70,
-      '#eef4f8',
-      1 + Math.random() * 1.2
-    );
+    put('dot', x, y, (rand() - 0.5) * 0.5, 0.5 + rand() * 0.6, 70, '#eef4f8', 1 + rand() * 1.2);
   }
 
   function update() {
@@ -538,8 +528,8 @@ const Particles = (() => {
       p.life--;
       if (p.life <= 0) {
         // Blood that has finished flying lands and stays.
-        if (p.settle && Math.random() < 0.55 * Math.min(1, quality + 0.2)) {
-          groundMark(p.x, p.y, p.size * (0.9 + Math.random() * 0.8), 0);
+        if (p.settle && rand() < 0.55 * Math.min(1, quality + 0.2)) {
+          groundMark(p.x, p.y, p.size * (0.9 + rand() * 0.8), 0);
         }
         kill(i);
         continue;
@@ -743,6 +733,7 @@ const Particles = (() => {
     weatherAsh,
     weatherSnow,
     smoke,
+    rand,
     embers,
     shard,
     splinter,

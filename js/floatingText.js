@@ -110,6 +110,9 @@ const FloatingText = (() => {
     return py;
   }
 
+  // Deterministic sideways jitter: no random stream involved.
+  let jitterTick = 0;
+
   function push(kind, x, y, text, opts = {}) {
     const st = STYLE[kind] || STYLE.status;
     const calm = reducedMotion();
@@ -117,7 +120,7 @@ const FloatingText = (() => {
     const life = opts.life || st.life;
     const entry = {
       kind,
-      x: x + (opts.still ? 0 : (Math.random() - 0.5) * 4),
+      x: x + (opts.still ? 0 : (jitterTick++ % 5) - 2),
       y: stagger(x, y, size),
       text,
       base: opts.base || text,

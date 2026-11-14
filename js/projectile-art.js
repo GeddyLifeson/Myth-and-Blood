@@ -10,6 +10,10 @@
  * Purely visual. Nothing here touches the simulation.
  */
 const ProjectileArt = (() => {
+  // Visual stream from Particles, so effects never shift the seeded gameplay Math.random.
+  const vrand = () =>
+    typeof Particles !== 'undefined' && Particles.rand ? Particles.rand() : Math.random();
+
   const INK = '#07050a';
   const BONE = '#e4dcc4';
   const BLOOD_HI = '#c8141c';
@@ -433,12 +437,12 @@ const ProjectileArt = (() => {
   function stick(kind, unit, ang) {
     if (stuck.length >= STUCK_MAX) stuck.shift();
     // Lodged a little off-centre, on the side it came from.
-    const off = 3 + Math.random() * 3;
+    const off = 3 + vrand() * 3;
     stuck.push({
       kind,
       unit,
-      ox: -Math.cos(ang) * off + (Math.random() - 0.5) * 3,
-      oy: -Math.sin(ang) * off + (Math.random() - 0.5) * 3,
+      ox: -Math.cos(ang) * off + (vrand() - 0.5) * 3,
+      oy: -Math.sin(ang) * off + (vrand() - 0.5) * 3,
       ang,
       age: 0,
       life: kind === 'ballista' ? 110 : 70,

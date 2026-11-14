@@ -423,7 +423,8 @@ const GameFeedback = (() => {
     const g = c.getContext && c.getContext('2d');
     if (!g) return null;
     g.clearRect(0, 0, cw, ch);
-    const reach = Math.min(cw, ch) * (0.07 + 0.055 * level);
+    // Capped so the field centre stays readable even at the limit.
+    const reach = Math.min(cw, ch) * (0.05 + 0.028 * level);
     // Deterministic scatter, so the edge does not crawl between repaints.
     let seed = 7 + level * 13;
     const rnd = () => {
@@ -506,7 +507,7 @@ const GameFeedback = (() => {
     const m = lunge + beat;
     ctx.save();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.globalAlpha = Math.min(0.92, 0.3 + strength * 0.5 + breachPulse * 0.25);
+    ctx.globalAlpha = Math.min(0.8, 0.3 + strength * 0.4 + breachPulse * 0.2);
     // Drawing the edge art a little smaller pushes it inward from all four sides; the strip
     // it leaves at the border is filled with ink.
     const mx = (w * m) / 2;
