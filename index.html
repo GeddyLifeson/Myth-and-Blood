@@ -1008,7 +1008,7 @@
             <button
               id="speed-toggle"
               class="meta-btn cmd-top-btn"
-              title="Game speed — click to cycle 1× to 10× (hotkey ])"
+              title="Game speed — click to cycle 1× to 10×"
             >
               SPEED: 1×
             </button>
@@ -1439,11 +1439,11 @@
         <div id="hint-bar">
           <span class="hint-text"
             >Drag to pan · Shift+drag select · Right-click deselect · Night = prep (+35% build) · D
-            skip dawn · Tab log · Space pause · ] speed</span
+            skip dawn · Tab next soldier · Space pause · ? keys</span
           ><button
             id="hint-log-btn"
             class="hint-log-btn"
-            title="Message history (Tab)"
+            title="Message history (Shift+Tab)"
             aria-label="Open message log"
           >
             📜
@@ -1803,7 +1803,7 @@
             </p>
             <p>
               <strong>Bound Spirit Court</strong>: win after recruiting three evolved heroes and
-              keeping them on the field together for most waves — teamwork, stands, and bizarre
+              keeping them on the field together for most waves — teamwork, bound spirits and
               alliances.
             </p>
             <p>
@@ -1812,7 +1812,7 @@
             </p>
             <p>
               <strong>Skyburst Order</strong>: reach wave 200+, defeat the planetary threat boss,
-              and field a high-ki army when the Worldheart falls — protect the planet.
+              and field a skyburst army when the Worldheart falls — protect the planet.
             </p>
             <p>
               <strong>Crimson Legions & Rift Cult</strong>: win on Chad difficulty or higher while
@@ -2439,7 +2439,7 @@
         <div id="gameover-confetti" class="gameover-confetti" aria-hidden="true"></div>
         <div class="menu-content gameover-content">
           <div id="result-crest" class="result-crest" aria-hidden="true"></div>
-          <h2 id="result-title">VICTORY</h2>
+          <h2 id="result-title"></h2>
           <p id="result-subtitle" class="result-subtitle"></p>
           <div id="result-stats" class="result-stats-grid"></div>
           <div id="result-highlights" class="result-highlights"></div>
@@ -2521,6 +2521,8 @@
       </div>
     </div>
     <script src="js/html-util.js"></script>
+    <script src="js/dialog.js"></script>
+    <script src="js/hotkeys.js"></script>
     <script src="js/floatingText.js"></script>
     <script src="js/pathfinding-core.js"></script>
     <script src="js/pathfinding.js"></script>
@@ -2619,6 +2621,7 @@
     <script src="js/error-reporting.js"></script>
     <script src="js/analytics.js"></script>
     <script src="js/settings.js"></script>
+    <script src="js/availability.js"></script>
     <script src="js/tooltips.js"></script>
     <script src="js/ux.js"></script>
     <script src="js/ui.js"></script>

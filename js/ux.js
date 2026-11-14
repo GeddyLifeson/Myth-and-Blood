@@ -18,28 +18,24 @@ const UX = (() => {
   let lastUnitPanelKey = '';
   let lastUnitPanelStructure = '';
 
-  const PAUSE_SHORTCUTS = [
-    { keys: 'Space', label: 'Resume' },
-    { keys: 'Esc', label: 'Pause / cancel order' },
-    { keys: 'Tab', label: 'Message log' },
-    { keys: 'F', label: 'Focus selection' },
-    { keys: 'C', label: 'Clear selection' },
-    { keys: 'Right-click', label: 'Deselect / cancel order' },
-    { keys: 'H', label: 'Toggle hunt' },
-    { keys: 'D', label: 'Begin day (night)' },
-    { keys: ']', label: 'Cycle speed' },
-    { keys: 'I', label: 'Encyclopedia' },
-    { keys: 'F3', label: 'Perf monitor' },
-    { keys: '1–9', label: 'Deploy unit' },
-    { keys: '0', label: 'General' },
-    { keys: 'Shift+drag', label: 'Box select' },
+  /** Mouse and touch rows of the pause list. The key rows come from js/hotkeys.js. */
+  const PAUSE_POINTER_SHORTCUTS = [
     { keys: 'Drag (empty)', label: 'Box select' },
-    { keys: 'G', label: 'Reform selection' },
-    { keys: 'Alt+1–5', label: 'Formation presets' },
-    { keys: 'Pinch', label: 'Zoom map' },
-    { keys: 'Hold', label: 'Cancel armed order' },
-    { keys: 'Research btn', label: 'Tech tree' },
+    { keys: 'Right-click', label: 'Deselect / cancel order' },
+    { keys: 'Shift+click', label: 'Place more of the same' },
+    { keys: 'Wheel / pinch', label: 'Zoom the map' },
+    { keys: 'Hold (touch)', label: 'Cancel armed order' },
   ];
+
+  /** The pause list: the keys that work while paused, then how to see the rest. */
+  function pauseShortcuts() {
+    const rows = typeof Hotkeys !== 'undefined' ? Hotkeys.sheet('pause') : [];
+    return [
+      ...rows,
+      { keys: '?', label: 'In play: the keys for what you are doing' },
+      ...PAUSE_POINTER_SHORTCUTS,
+    ];
+  }
 
   const TUTORIAL_STEPS = [
     {
@@ -750,10 +746,10 @@ const UX = (() => {
         : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
       hint =
-        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab log · Space pause';
+        'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
     else
       hint =
-        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · C clear · Tab log';
+        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
       hint = `${gs.story.branchLabel}${gs.story.summary ? ` — ${gs.story.summary}` : ''} · ${hint}`;
@@ -768,7 +764,7 @@ const UX = (() => {
     const cancelBtn = showCancel
       ? '<button id="hint-cancel-btn" class="hint-cancel-btn" type="button" title="Cancel order (Esc)">Cancel</button>'
       : '';
-    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Tab)" aria-label="Open message log">📜</button>`;
+    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Shift+Tab)" aria-label="Open message log">📜</button>`;
     bindHintBarActions();
   }
 
@@ -830,13 +826,15 @@ const UX = (() => {
       shortcutsEl.innerHTML = `
         <div class="pause-shortcuts-title">Shortcuts</div>
         <div class="pause-shortcuts-items">
-          ${PAUSE_SHORTCUTS.map(
-            (s) => `
+          ${pauseShortcuts()
+            .map(
+              (s) => `
             <div class="pause-shortcut">
               <kbd>${escapeHtml(s.keys)}</kbd><span>${escapeHtml(s.label)}</span>
             </div>
           `
-          ).join('')}
+            )
+            .join('')}
         </div>`;
     }
     const qsBtn = document.getElementById('pause-quicksave');
@@ -1259,6 +1257,10 @@ const UX = (() => {
         crest.hidden = false;
       }
       if (confetti) confetti.innerHTML = '';
+    }
+
+    if (subtitle && typeof Game !== 'undefined' && Game.cheatsUsed?.()) {
+      subtitle.textContent += ' · Cheats used — run not recorded';
     }
 
     const losses = gs.playerDeaths ?? gs.misses ?? 0;

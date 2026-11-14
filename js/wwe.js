@@ -106,9 +106,11 @@ const WweAcademy = (() => {
     const panel = document.getElementById('wwe-screen');
     if (!panel) return;
     if (!MetaProgress.isWweUnlocked()) {
-      alert(
-        'Join the Iron Creed (316 achievements), win with Grand Coliseum champions dominating most waves — or discover the right cheat code — to access the Grand Coliseum.'
-      );
+      const text =
+        'Join the Iron Creed (316 achievements), win with Grand Coliseum champions dominating most waves — or discover the right cheat code — to access the Grand Coliseum.';
+      if (typeof InPageDialog !== 'undefined')
+        InPageDialog.message(text, 'Grand Coliseum — locked');
+      else if (typeof Game !== 'undefined') Game.showMessage?.(text, 420);
       return;
     }
     const open = panel.classList.toggle('active');
@@ -135,7 +137,8 @@ const WweAcademy = (() => {
       UI.updateHUD(true);
     });
     document.getElementById('wwe-build-btn')?.addEventListener('click', () => {
-      if (typeof Game !== 'undefined') Game.selectBuild('wwe_academy');
+      if (typeof Availability !== 'undefined') Availability.trySelect('build', 'wwe_academy');
+      else if (typeof Game !== 'undefined') Game.selectBuild('wwe_academy');
       togglePanel();
       UI.updateHUD(true);
     });

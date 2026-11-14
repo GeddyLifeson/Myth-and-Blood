@@ -419,6 +419,8 @@ const SiegeLoop = (() => {
     rings: [],
     tally: { runners: 0, crates: 0, earlyCalls: 0, ribbons: [], bosses: 0, bestVeteran: null },
     lastCombatTick: 0,
+    lastBloodTick: 0,
+    stormedAt: 0,
     lastEnemyCount: 0,
     nextId: 1,
     staged: false,
@@ -459,6 +461,20 @@ const SiegeLoop = (() => {
   }
 
   // ------------------------------------------------------------ run events
+  /**
+   * Does this run go on the record (ribbon progress, ribbons earned, best score)? Not in
+   * Creative mode, and not once a cheat has been used. A voided run keeps the ribbon perks
+   * it started with; it just earns nothing more.
+   */
+  function isRecorded() {
+    return !!run && run.counted && !run.voided;
+  }
+
+  /** A cheat was used: nothing from this run is recorded from here on. */
+  function voidRun() {
+    if (run) run.voided = true;
+  }
+
   /** Called once when a battle begins. Returns bonus starting TP. */
   function startRun(ctx) {
     run = freshRun();
@@ -547,6 +563,9 @@ const SiegeLoop = (() => {
   }
 
   /** True while an enemy is still forming up and should be left alone by auto-targeting. */
+  /** Ticks the stormed host is given to draw blood before the stragglers give up (20 s). */
+  const STORM_PATIENCE = 1200;
+
   function isMustering(foe) {
     return run.active && !run.creativeRun && foe.team === 'enemy' && !foe.mustered;
   }
@@ -560,6 +579,11 @@ const SiegeLoop = (() => {
     run.lastCombatTick = tick;
   }
 
+  /** A soldier of yours was hurt (the standoff rule above only counts enemy blood). */
+  function noteBlood(tick) {
+    run.lastBloodTick = tick;
+  }
+
   /**
    * A standoff cannot last. If the whole host is on the field and nobody has drawn
    * blood for about a minute, the enemy stops waiting and storms the line.
@@ -567,10 +591,42 @@ const SiegeLoop = (() => {
   function checkStandoff(ctx, enemies) {
     if (ctx.isNight || ctx.creative || enemies === 0 || ctx.queueLeft > 0) {
       run.lastCombatTick = ctx.tick;
+      run.stormedAt = 0;
       return;
     }
+    // The storm was ordered. If, twenty seconds on, nobody has been hurt on either side and
+    // no enemy has moved, whatever is left cannot or will not reach the line (wedged,
+    // hovering, idle). It quits the field, so a wave can never hang on an enemy the player
+    // has no way to get at. Any blood or movement starts the twenty seconds again.
+    if (run.stormedAt && run.lastCombatTick <= run.stormedAt) {
+      if (ctx.tick - run.stormedAt < STORM_PATIENCE) return;
+      let moving = run.lastBloodTick > run.stormedAt;
+      for (const u of ctx.units) {
+        if (u.team !== 'enemy' || u.hp <= 0) continue;
+        if (Math.hypot(u.x - (u.stormX ?? u.x), u.y - (u.stormY ?? u.y)) > 24) moving = true;
+        u.stormX = u.x;
+        u.stormY = u.y;
+      }
+      if (moving) {
+        run.stormedAt = ctx.tick;
+        run.lastCombatTick = ctx.tick;
+        return;
+      }
+      run.stormedAt = 0;
+      run.lastCombatTick = ctx.tick;
+      let gone = 0;
+      for (const u of ctx.units) {
+        if (u.team !== 'enemy' || u.hp <= 0) continue;
+        u.hp = 0;
+        gone++;
+      }
+      if (gone > 0) ctx.showMessage('The last of the host loses heart and quits the field.', 260);
+      return;
+    }
+    run.stormedAt = 0;
     if (ctx.tick - run.lastCombatTick < 1800 + ctx.worldH * 3) return;
     run.lastCombatTick = ctx.tick;
+    run.stormedAt = ctx.tick;
     let stormed = 0;
     for (const u of ctx.units) {
       if (u.team !== 'enemy' || u.hp <= 0 || u.fleeing || u.type === 'siege_tower') continue;
@@ -581,6 +637,11 @@ const SiegeLoop = (() => {
       u.pathTargetId = null;
       u.combatTargetId = null;
       stormed++;
+    }
+    for (const u of ctx.units) {
+      if (u.team !== 'enemy' || u.hp <= 0) continue;
+      u.stormX = u.x;
+      u.stormY = u.y;
     }
     if (stormed > 0) {
       ctx.showMessage('The enemy tires of waiting and storms the line!', 260);
@@ -682,8 +743,9 @@ const SiegeLoop = (() => {
   }
 
   function claimSpoils(index, ctx) {
+    if (!ctx && hudCtx) ctx = hudCtx();
     const draft = run.drafts[0];
-    if (!draft) return false;
+    if (!draft || !ctx) return false;
     const id = draft[index];
     const def = EDICTS[id];
     if (!def) return false;
@@ -691,7 +753,7 @@ const SiegeLoop = (() => {
     run.edicts.push(id);
     fx = computeFx();
     if (def.instantTp) ctx.addTp(def.instantTp);
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.edicts++;
       checkRibbons(ctx);
       saveStore();
@@ -807,7 +869,7 @@ const SiegeLoop = (() => {
     run.preview = buildPreview(ctx);
     ctx.ambience('night');
     run.crates = run.crates.filter((c) => !c.spent);
-    if (run.counted) {
+    if (isRecorded()) {
       const s = store.stats;
       s.maxWave = Math.max(s.maxWave, ctx.wave);
       s.bestCleanStreak = Math.max(s.bestCleanStreak, run.cleanStreak);
@@ -843,7 +905,7 @@ const SiegeLoop = (() => {
     if (base <= 0) return 0;
     const bonus = base * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
     run.tally.earlyCalls++;
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.earlyCalls++;
       checkRibbons(ctx);
       saveStore();
@@ -885,7 +947,7 @@ const SiegeLoop = (() => {
   function openCrate(crate, opener, ctx) {
     crate.spent = true;
     run.tally.crates++;
-    if (run.counted) {
+    if (isRecorded()) {
       store.stats.crates++;
       checkRibbons(ctx);
       saveStore();
@@ -1112,7 +1174,7 @@ const SiegeLoop = (() => {
     });
     if (unit.team === 'enemy') {
       if (killer) killer.kills = (killer.kills || 0) + 1;
-      if (run.counted) {
+      if (isRecorded()) {
         store.stats.kills++;
         if (unit.lineBreaker) store.stats.runnersKilled++;
         if (unit.isNamedBoss) store.stats.bosses++;
@@ -1335,7 +1397,7 @@ const SiegeLoop = (() => {
 
   /** Score the run that is ending. Creative runs are not scored. */
   function scoreRun(ctx) {
-    if (!ctx || ctx.creative || !run.counted) return null;
+    if (!ctx || ctx.creative || !isRecorded()) return null;
     return computeScore({
       // The wave in progress when the realm fell does not count as cleared.
       waves: Math.max(0, (ctx.wave || 0) - (ctx.isNight ? 0 : 1)),
@@ -1370,6 +1432,7 @@ const SiegeLoop = (() => {
       flawless: run.flawless,
       warband: run.warband,
       counted: run.counted,
+      voided: !!run.voided,
       fallen: run.fallen.slice(),
       stepsShown: [...run.stepsShown],
     };
@@ -1379,6 +1442,7 @@ const SiegeLoop = (() => {
     run = freshRun();
     run.active = true;
     run.counted = snap ? snap.counted !== false : !ctx.creative;
+    run.voided = !!(snap && snap.voided) || !!ctx.cheatsUsed;
     run.staged = !ctx.creative && !steps.veteran && !steps.skipped;
     // A loaded siege does not repeat lines the player has already been through.
     run.stepsShown = Array.isArray(snap?.stepsShown)
@@ -1418,6 +1482,10 @@ const SiegeLoop = (() => {
       lines.push(`Deadliest soldier: ${esc(t.bestVeteran.name)} — ${t.bestVeteran.kills} kills`);
     }
     let html = '';
+    // A cheat voids the run: no score, no ribbon progress, no achievements.
+    if (ctx && ctx.cheatsUsed) {
+      html += '<div class="result-cheats" id="result-cheats">Cheats used — run not recorded</div>';
+    }
     const score = run.score;
     if (score) {
       const n = (v) => v.toLocaleString('en-US');
@@ -1522,6 +1590,10 @@ const SiegeLoop = (() => {
       if (id === 'siege-warcry') castOrder('warCry', hudCtx());
       else if (id === 'siege-holdline') castOrder('holdLine', hudCtx());
     });
+    // A click on the backdrop does nothing, and does not take the focus off the cards.
+    spoils.addEventListener('mousedown', (e) => {
+      if (!(e.target && e.target.closest && e.target.closest('[data-spoil]'))) e.preventDefault();
+    });
     spoils.addEventListener('click', (e) => {
       const btn = e.target && e.target.closest ? e.target.closest('[data-spoil]') : null;
       if (btn && hudCtx) claimSpoils(Number(btn.dataset.spoil), hudCtx());
@@ -1616,32 +1688,93 @@ const SiegeLoop = (() => {
     }
   }
 
+  // The spoils choice is a modal: while it is on screen the siege waits for the player.
+  // "On screen" means a real page showed it. With no DOM (tests, headless sims) nothing is
+  // held and unclaimed spoils are still picked at dawn, as before.
+  let spoilsModalShown = false;
+  let spoilsModalForced = null;
+  let heldUpdates = 0;
+  // More sim steps than a rendered frame ever runs (10x speed plus catch-up): past this
+  // within one presented frame, something is stepping the game itself (a bot).
+  const HELD_UPDATES_BOT_LIMIT = 120;
+
+  function isSpoilsHeld() {
+    if (!run.active || !run.drafts.length) return false;
+    return spoilsModalForced != null ? spoilsModalForced : spoilsModalShown;
+  }
+
+  /** The render loop calls this once per presented frame. */
+  function notePresentationFrame() {
+    heldUpdates = 0;
+  }
+
+  /**
+   * Asked by Game.update() before it advances anything. True: the choice is pending in
+   * front of a player, do not advance. A caller stepping the sim without presenting frames
+   * (a bot driving a live page) gets the choice made for it instead of a stall.
+   */
+  function holdForSpoils(ctx) {
+    if (!isSpoilsHeld()) return false;
+    if (++heldUpdates > HELD_UPDATES_BOT_LIMIT) {
+      heldUpdates = 0;
+      while (run.drafts.length) claimSpoils(Math.floor(ctx.rng() * 3), ctx);
+      return false;
+    }
+    return true;
+  }
+
+  /** Tests: force the modal state on or off without a DOM (null restores detection). */
+  function setSpoilsModalForTest(v) {
+    spoilsModalForced = v == null ? null : !!v;
+    heldUpdates = 0;
+  }
+
+  let spoilsRenderedKey = '';
+
   function renderSpoilsDom() {
     const panel = el('spoils-panel') || (ensureHud() && el('spoils-panel'));
     if (!panel) return;
     const draft = run.active ? run.drafts[0] : null;
     if (!draft) {
-      panel.hidden = true;
-      panel.innerHTML = '';
+      hideSpoils();
       return;
     }
+    const key = `${run.edicts.length}:${draft.join(',')}`;
+    spoilsModalShown = panel.isConnected === true;
+    if (key === spoilsRenderedKey && !panel.hidden) return;
+    spoilsRenderedKey = key;
     panel.hidden = false;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', 'true');
+    panel.setAttribute('aria-label', 'Spoils of war — choose one');
+    const more = run.drafts.length > 1 ? ` (${run.drafts.length} to choose)` : '';
     panel.innerHTML =
-      '<div class="spoils-title">Spoils of war — choose one</div><div class="spoils-row">' +
+      '<div class="spoils-box"><div class="spoils-title">Spoils of war</div>' +
+      `<div class="spoils-sub">Choose one reward to keep for the rest of the siege${more}. The siege waits for you.</div>` +
+      '<div class="spoils-row">' +
       draft
         .map(
           (id, i) =>
-            `<button class="spoils-card" data-spoil="${i}"><strong>${EDICTS[id].name}</strong><span>${EDICTS[id].desc}</span></button>`
+            `<button type="button" class="spoils-card" data-spoil="${i}"><kbd class="spoils-key">${i + 1}</kbd><strong>${EDICTS[id].name}</strong><span>${EDICTS[id].desc}</span></button>`
         )
         .join('') +
-      '</div><div class="spoils-note">The siege does not wait. Unclaimed spoils are chosen for you at dawn.</div>';
+      '</div><div class="spoils-note">Press 1, 2 or 3 — or the arrow keys and Enter.</div></div>';
+    if (document.body && document.body.classList) document.body.classList.add('spoils-open');
+    const first = panel.querySelector ? panel.querySelector('[data-spoil]') : null;
+    if (first && first.focus) first.focus();
   }
 
   function hideSpoils() {
+    spoilsModalShown = false;
+    spoilsRenderedKey = '';
+    heldUpdates = 0;
     const panel = el('spoils-panel');
     if (panel) {
       panel.hidden = true;
       panel.innerHTML = '';
+    }
+    if (typeof document !== 'undefined' && document.body && document.body.classList) {
+      document.body.classList.remove('spoils-open');
     }
   }
 
@@ -1864,6 +1997,7 @@ const SiegeLoop = (() => {
     unopposedBreaks,
     isMustering,
     noteCombat,
+    noteBlood,
     breachGoal,
     onNightBegin,
     earlyCallBonus,
@@ -1878,6 +2012,12 @@ const SiegeLoop = (() => {
     castOrder,
     order: (kind) => (hudCtx ? castOrder(kind, hudCtx()) : false),
     claimSpoils,
+    isSpoilsHeld,
+    voidRun,
+    isRecorded,
+    holdForSpoils,
+    notePresentationFrame,
+    setSpoilsModalForTest,
     getRibbons,
     renderRibbonList,
     exportState,

@@ -190,7 +190,7 @@ const OperativeSkillTrees = (() => {
       nodes: {
         fellowship: {
           id: 'fellowship',
-          name: 'Fellowship',
+          name: 'Company',
           cost: 1,
           desc: '+3 max morale',
           bonus: { maxMorale: 3 },

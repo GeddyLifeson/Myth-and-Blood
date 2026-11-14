@@ -108,7 +108,7 @@ function buildVanillaAchievements() {
             : w === 100
               ? 'Academy Threshold'
               : w === 200
-                ? 'Doom Gate'
+                ? 'Hell Gate'
                 : w === 500
                   ? 'Eternal Siege'
                   : w === 1000
@@ -740,7 +740,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'lotr_morale_steadfast',
-        'Steadfast Fellowship',
+        'Steadfast Company',
         'End ten waves with every fighter holding high morale.',
         'morale_high_waves:10',
         'silver',
@@ -780,7 +780,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'halo_spartan_victory',
         'Never Leave a Man Behind',
-        'Sacrifice, leadership, never leave a man behind — win a campaign with your General alive after promoting five Footmen to command.',
+        'Sacrifice and leadership — win a campaign with your General alive after promoting five Footmen to command.',
         'run_spartan_command:5',
         'gold',
       ],
@@ -855,7 +855,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'doom_hero_deploy',
-        'Hell Walker',
+        'Hellstrider',
         'Deploy the Hellbane hero.',
         'deploy:doomslayer_hero',
         'bronze',
@@ -905,7 +905,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'doom_500',
-        'Hell Walker 500',
+        'Hellstrider 500',
         'Reach wave 500 on Hellbane difficulty.',
         'diff_wave:doomslayer:500',
         'gold',
@@ -922,7 +922,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'jojo_stand_victory',
         'This Is My Fighting Spirit!',
-        'Teamwork, stands, dramatic poses and alliances — win after recruiting three evolved heroes and keeping them on the field together for most of the campaign.',
+        'Teamwork, bound spirits and alliances — win after recruiting three evolved heroes and keeping them on the field together for most of the campaign.',
         'run_stand_alliance:8:0.55:3',
         'gold',
       ],
@@ -963,14 +963,14 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'dragonball_planet_victory',
         'Protect the Planet',
-        'Power level escalation — reach wave 200+, defeat the planetary threat boss with a high-ki army shielding the realm.',
+        'Reach wave 200+ and defeat the planetary threat boss with a skyburst army shielding the realm.',
         'run_dragonball_ki:200:0.55',
         'gold',
       ],
       [
         'dragonball_ki_surge',
         'Power Level Rising',
-        'Fell a named boss at wave 100 or later with at least 55% of your combat force channeling ki or energy.',
+        'Fell a named boss at wave 100 or later with at least 55% of your combat force channeling skyburst energy.',
         'planet_boss_high_ki',
         'silver',
       ],
@@ -999,7 +999,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       ],
       [
         'tes_dragon_slayer',
-        'Dragonrend',
+        'Wyrmfall',
         'Defeat a major boss with a voice shout strike or wyrmcaller-style hero ability.',
         'dragon_boss_slay',
         'silver',
@@ -1016,7 +1016,7 @@ function buildFactionAchievements(cfg, targetPerFaction) {
       [
         'warhammer_eternal_crusade',
         'The Eternal Crusade',
-        'Grimdark endurance — win on Chad or higher while holding eight fortifications at all times, repel three named boss waves, and keep your General alive.',
+        'Grim endurance — win on Chad or higher while holding eight fortifications at all times, repel three named boss waves, and keep your General alive.',
         'run_eternal_crusade:3:8',
         'gold',
       ],
@@ -1134,7 +1134,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'halo_unlock',
       name: 'Orbital Vanguard',
-      desc: 'Sacrifice, leadership, never leave a man behind — Vanguard Academy and orbital roster unlocked.',
+      desc: 'Sacrifice and leadership — Vanguard Academy and orbital roster unlocked.',
       cat: 'secrets',
       rule: 'unlock:halo',
       tier: 'gold',
@@ -1150,7 +1150,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'lotr_unlock',
       name: 'Ninefold March',
-      desc: 'Hope and fellowship — Ninefold Camp and the Fellowship roster unlocked.',
+      desc: 'Hope and comradeship — Ninefold Camp and the Ninefold March roster unlocked.',
       cat: 'secrets',
       rule: 'unlock:lotr',
       tier: 'gold',
@@ -1166,7 +1166,7 @@ function buildSynergyAndSecrets() {
     achEntry({
       id: 'jojo_unlock',
       name: 'Bound Spirit Court',
-      desc: 'This is my bound spirit — Spirit Arrow Shrine and Bound Spirit Court (Parts 1–7) unlocked.',
+      desc: 'Spirit Arrow Shrine and Bound Spirit Court (Cohorts 1–7) unlocked.',
       cat: 'secrets',
       rule: 'unlock:jojo',
       tier: 'gold',
@@ -1238,7 +1238,7 @@ function buildSynergyAndSecrets() {
     }),
     achEntry({
       id: 'synergy_modern',
-      name: 'Modern Warfare',
+      name: 'Trench Vanguard',
       desc: 'Field Orbital Vanguard and Iron Trench operatives together.',
       cat: 'secrets',
       rule: 'synergy:modern_warfare',
@@ -1304,7 +1304,7 @@ function buildSynergyAndSecrets() {
     }),
     achEntry({
       id: 'one_piece_real',
-      name: 'The One Piece Is Real',
+      name: 'Every Gate Open',
       desc: 'Unlock everything at once.',
       cat: 'secrets',
       rule: 'cheat:one_piece',

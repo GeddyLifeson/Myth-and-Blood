@@ -2472,6 +2472,9 @@ const Game = (() => {
     get creative() {
       return !!GS.creativeMode;
     },
+    get cheatsUsed() {
+      return !!GS.cheatsUsed;
+    },
     get modeId() {
       return getRunModeId();
     },
@@ -2911,6 +2914,7 @@ const Game = (() => {
 
   function beginPresentationFrame() {
     GS.presentationFrame++;
+    SiegeLoop.notePresentationFrame();
     GS.gsCtxFrame = -1;
     GS.igCtxFrame = -1;
   }
@@ -3195,6 +3199,7 @@ const Game = (() => {
 
   function beginDayPhase(manual = false) {
     if (!isNightPhase()) return;
+    if (SiegeLoop.isSpoilsHeld()) return;
     const secondsLeft = getNightSecondsRemaining();
     GS.timeOfDay = 'day';
     GS.nightTimer = 0;
@@ -4365,6 +4370,8 @@ const Game = (() => {
 
   function ach(type, data = {}) {
     if (GS.creativeMode && !GS.creativeSettings.enableAchievements) return;
+    // A run in which a cheat was used earns no achievements.
+    if (GS.cheatsUsed) return;
     if (svc('Achievements')) svc('Achievements').onEvent(type, data);
   }
 
@@ -7298,6 +7305,9 @@ const Game = (() => {
     GS.kills = 0;
     GS.misses = 0;
     GS.runPlayerDeaths = 0;
+    // A cheat code entered on the menu (unlock codes) marks the run it leads into.
+    GS.cheatsUsed = !!(svc('Cheats') && svc('Cheats').takePendingRunMark?.());
+    if (GS.cheatsUsed) SiegeLoop.voidRun();
     GS.playerCasualtiesThisWave = 0;
     GS.castleBreachWarned = false;
     GS.castleBreachRecorded = false;
@@ -7619,17 +7629,34 @@ const Game = (() => {
     'umbral_stalker',
     'cinderbound_juggernaut',
     'hellmortar_pack',
-    'boss_gorath',
-    'boss_morwen',
-    'boss_thokk',
-    'boss_grimm',
-    'boss_vexis',
-    'boss_karg',
-    'boss_sylvara',
-    'boss_rotfather',
-    'boss_volk',
-    'boss_malachar',
   ];
+
+  // Named bosses belong to boss waves (every 10th). They are not ordinary elites: listing
+  // them above let host-threat elite slots drop wave-100 bosses into wave 27.
+
+  /**
+   * Last step of building a wave: on an ordinary wave any named boss that an injector
+   * (faction sub-bosses, elite slots, events) put in the queue is swapped for a plain elite.
+   * On a boss wave it makes sure the wave's own boss is still in the queue.
+   */
+  function stripStrayNamedBosses(queue, waveNum) {
+    if (!Array.isArray(queue) || !queue.length) return queue;
+    const bossWave =
+      svc('GameDepth') && svc('GameDepth').isBossWave
+        ? svc('GameDepth').isBossWave(waveNum)
+        : waveNum > 0 && waveNum % 10 === 0;
+    if (bossWave) {
+      // The random elite/faction swaps above can overwrite the boss himself; put him back.
+      const own = GS.namedBossWave?.type;
+      if (own && EnemyDefs[own] && !queue.includes(own)) queue[0] = own;
+      return queue;
+    }
+    const standIns = ['dark_knight', 'troll', 'war_chief'].filter((t) => EnemyDefs[t]);
+    let n = 0;
+    return queue.map((t) =>
+      EnemyDefs[t]?.isNamedBoss ? standIns[n++ % Math.max(1, standIns.length)] || 'orc' : t
+    );
+  }
 
   /**
    * Hard difficulties send extra bodies, but the first two waves arrive before the player
@@ -7954,6 +7981,7 @@ const Game = (() => {
         GS.spawnQueue = svc('EnemyFactions').biasHordeQueue(GS.spawnQueue, GS.wave, gameRandom);
         GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
       }
+      GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
       GS.waveEnemyTotal = GS.spawnQueue.length;
       GS.waveProgress = 0;
       const towers = GS.spawnQueue.filter((t) => t === 'siege_tower').length;
@@ -8246,6 +8274,7 @@ const Game = (() => {
           elitePool[Math.floor(gameRandom() * elitePool.length)];
       }
     }
+    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
     GS.waveEnemyTotal = GS.spawnQueue.length;
     if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
       const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
@@ -8639,6 +8668,8 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
+    // getState() is cached per presented frame; the HUD must not read 'playing' from it.
+    invalidateStateCache();
     SiegeLoop.endRun(siegeCtx);
     if (!GS.creativeMode) {
       ach('game_end', {
@@ -8980,9 +9011,7 @@ const Game = (() => {
         showMessage(need, 320);
         // Still allow selection so the button highlights; map click re-checks.
       } else {
-        const costMult = getDeployCostMult();
-        const cost =
-          GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+        const cost = getDeployCost(type);
         const costLabel = cost > 0 ? `${cost} TP` : 'free';
         showMessage(
           `${def.name || type} ready — click map (${costLabel}). Hold Shift to place more without reselecting.`,
@@ -8993,6 +9022,17 @@ const Game = (() => {
     }
     syncInteractionState();
     playSfx('click');
+  }
+
+  /**
+   * The one price of a recruit: base cost times army upkeep (and Warband), rounded up.
+   * Buttons, tooltips, the "ready" banner and the charge itself all read this.
+   */
+  function getDeployCost(type) {
+    const def = getPlayerUnitDef(type) || UnitDefs[type];
+    if (!def || !Number.isFinite(def.cost)) return 0;
+    if (GS.creativeMode && GS.creativeSettings && GS.creativeSettings.freeResources) return 0;
+    return Math.ceil(def.cost * getDeployCostMult());
   }
 
   function selectAbility(a) {
@@ -10949,9 +10989,7 @@ const Game = (() => {
         showMessage(need, 280);
         return false;
       }
-      const costMult = getDeployCostMult();
-      const deployCost =
-        GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+      const deployCost = getDeployCost(GS.selectedDeploy);
       if (GS.tactical < deployCost) {
         showMessage('Not enough TP!');
         return false;
@@ -11013,7 +11051,8 @@ const Game = (() => {
       if (typeof MythicPathEvolution !== 'undefined') {
         MythicPathEvolution.recordDeploy(GS.selectedDeploy, GS.wave);
       }
-      // Shift-click (or selectSameType): keep deploy mode for rapid multi-place.
+      // A plain click places one and puts the troop away. Shift-click keeps it armed for
+      // the next one, as long as the next one (dearer, with upkeep) can still be paid for.
       const keepDeploy =
         !!(opts.shiftKey || opts.repeatDeploy || opts.selectSameType) &&
         GS.selectedDeploy !== 'general' &&
@@ -11021,11 +11060,11 @@ const Game = (() => {
       if (!keepDeploy) {
         GS.selectedDeploy = null;
       } else {
-        const nextCost =
-          GS.creativeMode && GS.creativeSettings.freeResources ? 0 : Math.ceil(def.cost * costMult);
+        refreshUnitCounts();
+        const nextCost = getDeployCost(GS.selectedDeploy);
         if (GS.tactical < nextCost) {
           GS.selectedDeploy = null;
-          showMessage('Not enough TP for another — deploy cleared.', 180);
+          showMessage(`The next one costs ${nextCost} TP — not enough. Recruiting ended.`, 200);
         }
       }
       return ackInteraction(true);
@@ -11135,7 +11174,21 @@ const Game = (() => {
     }
 
     if (GS.selectedBuild) {
-      return placeBuilding(pos.x, pos.y);
+      const buildType = GS.selectedBuild;
+      const placed = placeBuilding(pos.x, pos.y);
+      // Shift-click: keep the same building armed for the next one (a run of walls).
+      if (
+        placed &&
+        opts.shiftKey &&
+        !GS.selectedBuild &&
+        BuildDefs[buildType] &&
+        ((GS.creativeMode && GS.creativeSettings.freeResources) ||
+          GS.tactical >= BuildDefs[buildType].cost)
+      ) {
+        GS.selectedBuild = buildType;
+        syncInteractionState();
+      }
+      return placed;
     }
 
     return false;
@@ -12679,6 +12732,7 @@ const Game = (() => {
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
     // from out of reach must not hold a wave open forever.
     if (actual > 0 && unit.team === 'enemy') SiegeLoop.noteCombat(GS.updateTick);
+    else if (actual > 0 && unit.team === 'player') SiegeLoop.noteBlood(GS.updateTick);
     if (unit.team === 'player' && svc('CrownLegacies') && !GS.creativeMode) {
       actual *= svc('CrownLegacies').getCombinedEffects().damageTakenMult || 1;
     }
@@ -12889,7 +12943,7 @@ const Game = (() => {
           const kiSnap = sampleKiEnergyArmy(playerAlive);
           if (kiSnap?.high) {
             ach('planet_boss_ki_stand', { wave: GS.wave, bossType: unit.type, ...kiSnap });
-            showMessage('Power overwhelming — ki warriors break the warlord!', 380);
+            showMessage('Power overwhelming — skyburst warriors break the warlord!', 380);
           }
         }
         if (isMajorBossUnit(unit)) {
@@ -13453,6 +13507,21 @@ const Game = (() => {
           setUnitPath(unit, ap.x, ap.y);
         }
       }
+    } else if (unit.team === 'enemy') {
+      // Nobody to mend: an enemy healer follows the host down the field instead of
+      // standing where it spawned (which left a wave unfinishable once the rest had died).
+      unit.pathRecalc = (unit.pathRecalc || 0) - 1;
+      if (unit.pathRecalc <= 0 || !unit.path?.length) {
+        unit.pathRecalc = 45;
+        const alone = !GS.units.some(
+          (o) => o.team === 'enemy' && o.hp > 0 && o !== unit && o.combatType !== 'healer'
+        );
+        if (alone && SiegeLoop.unopposedBreaks(siegeCtx)) unit.lineBreaker = true;
+        const adv = unit.lineBreaker
+          ? SiegeLoop.breachGoal(unit, siegeCtx)
+          : getEnemyAdvancePoint(unit);
+        if (Math.hypot(adv.x - unit.x, adv.y - unit.y) > 12) setUnitPath(unit, adv.x, adv.y);
+      }
     } else if (!unit.manualOrder) {
       unit.path = [];
       unit.pathIndex = 0;
@@ -13796,6 +13865,8 @@ const Game = (() => {
     unit.animState = 'walk';
   }
 
+  const ENEMY_ENGINEER_WORKS = false;
+
   function updateEnemyAI(unit) {
     if (unit.hp <= 0) return;
     if (unit.flying && unit.combatType !== 'siege' && GS.state === 'playing' && !GS.creativeMode) {
@@ -13804,7 +13875,10 @@ const Game = (() => {
     }
     if (svc('ContentExpansion') && svc('ContentExpansion').updateEnemyAI(unit)) return;
     if (unit.type === 'siege_tower' && updateSiegeTower(unit)) return;
-    if (unit.combatType === 'healer' || unit.combatType === 'builder') return;
+    // Healers move in updateHealer. Enemy builders (Goblin Engineer) march with the host:
+    // they used to return here and stand at the map edge for good, so a wave whose last
+    // enemy was an engineer never ended.
+    if (unit.combatType === 'healer') return;
     if (unit.pinned) return;
 
     // An enemy storming the line does not stop to trade blows.
@@ -13877,7 +13951,9 @@ const Game = (() => {
 
     if (unit.attackAnimTimer > 0) return;
 
-    if (unit.type === 'goblin_engineer') {
+    // Engineer field works (barricades, raid trade posts) never ran while engineers stood
+    // still. They stay off until the owner decides whether enemy structures come back.
+    if (ENEMY_ENGINEER_WORKS && unit.type === 'goblin_engineer') {
       if (Math.random() < 0.004) {
         GS.decorations.push({
           type: 'barricade',
@@ -14200,6 +14276,8 @@ const Game = (() => {
       if (svc('VisualPolish')) svc('VisualPolish').update();
       return;
     }
+    // The spoils choice is a modal: nothing advances until the player has chosen.
+    if (GS.state === 'playing' && SiegeLoop.holdForSpoils(siegeCtx)) return;
     GS.updateTick++;
     if (GS.state === 'playing') {
       SiegeLoop.update(siegeCtx);
@@ -15675,8 +15753,18 @@ const Game = (() => {
     return true;
   }
 
+  /** Any cheat voids the run; the after-action report says "cheats used — run not recorded". */
+  function markCheatsUsed() {
+    if (GS.state !== 'playing') return false;
+    GS.cheatsUsed = true;
+    // Voided: no score, no ribbon progress, no achievements for the rest of this run.
+    SiegeLoop.voidRun();
+    return true;
+  }
+
   function applyCheatEffect(type, value) {
     if (GS.state !== 'playing') return;
+    markCheatsUsed();
     switch (type) {
       case 'tp':
         GS.tactical += value;
@@ -16101,12 +16189,39 @@ const Game = (() => {
     return out;
   }
 
+  // Save format. 1: original. 2: adds nextWavePlan (tomorrow's attack sides, rolled at
+  // nightfall) and the cheats-used flag. Loading accepts 1..SAVE_VERSION; anything else
+  // (a newer build's save, a damaged number) is refused before any state is touched.
+  const SAVE_VERSION = 2;
+
+  function isSupportedSaveVersion(v) {
+    return Number.isInteger(v) && v >= 1 && v <= SAVE_VERSION;
+  }
+
+  const SAVE_SIDES = ['north', 'east', 'west', 'south'];
+
+  /** A saved spawn plan is used only if it is for the coming wave and names real sides. */
+  function restoreNextWavePlan(plan, wave) {
+    if (!plan || plan.wave !== wave + 1 || !Array.isArray(plan.sides)) return null;
+    const sides = plan.sides.filter((x) => SAVE_SIDES.includes(x));
+    if (!sides.length || sides.length !== plan.sides.length) return null;
+    let multiFrontPlan = null;
+    try {
+      multiFrontPlan = plan.multiFrontPlan ? JSON.parse(JSON.stringify(plan.multiFrontPlan)) : null;
+    } catch (_) {
+      multiFrontPlan = null;
+    }
+    return { wave: plan.wave, sides, multiFrontPlan };
+  }
+
   function exportGameState() {
     if (GS.state !== 'playing') return null;
     return {
-      version: 1,
+      version: SAVE_VERSION,
       savedAt: Date.now(),
       wave: GS.wave,
+      nextWavePlan: restoreNextWavePlan(GS.nextWavePlan, GS.wave),
+      cheatsUsed: !!GS.cheatsUsed,
       tactical: GS.tactical,
       kills: GS.kills,
       misses: GS.misses,
@@ -16218,12 +16333,13 @@ const Game = (() => {
   }
 
   function importGameState(snap) {
-    if (!snap?.version) return false;
+    if (!snap || !isSupportedSaveVersion(snap.version)) return false;
     try {
       GS.state = 'playing';
       GS.paused = true;
       GS.wave = snap.wave;
       GS.nextWavePlan = null;
+      GS.cheatsUsed = !!snap.cheatsUsed;
       GS.tactical = snap.tactical;
       GS.kills = snap.kills;
       GS.misses = snap.misses;
@@ -16443,6 +16559,11 @@ const Game = (() => {
           }))
         : [];
       wireGameContext();
+      // Tomorrow's host: the saved plan, or for an older save made at night a fresh roll,
+      // so the field-edge markers still tell the truth.
+      GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
+      if (GS.cheatsUsed) SiegeLoop.voidRun();
+      if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
       if (svc('UX')) svc('UX').onPauseChanged(true);
       syncInteractionState({ refreshCounts: true });
       return true;
@@ -16575,7 +16696,15 @@ const Game = (() => {
   }
 
   function getState() {
-    if (GS.stateFrameId === GS.presentationFrame && GS.stateFrameCache) return GS.stateFrameCache;
+    // Cached per presented frame, but never across a change in TP: a snapshot showing a
+    // purse the player no longer has (or does not have yet) is worse than rebuilding it.
+    if (
+      GS.stateFrameId === GS.presentationFrame &&
+      GS.stateFrameCache &&
+      GS.stateFrameCache.tactical === GS.tactical
+    ) {
+      return GS.stateFrameCache;
+    }
     const army = unitCounts.player;
     const liveColony = getLiveColonyState();
     const displayColony = liveColony.colony || GS.colonySnapshot;
@@ -17035,6 +17164,8 @@ const Game = (() => {
     handleClick,
     isPlaying,
     selectDeploy,
+    getDeployCost,
+    getTactical: () => GS.tactical,
     selectAbility,
     useAbility,
     selectBuild,
@@ -17082,11 +17213,15 @@ const Game = (() => {
     quitToMenu,
     getSessionHighlights,
     exportGameState,
+    SAVE_VERSION,
+    isSupportedSaveVersion,
     importGameState,
     setDifficulty,
     recruitWweSuperstar,
     recruitCrossoverOperative,
     applyCheatEffect,
+    markCheatsUsed,
+    cheatsUsed: () => !!GS.cheatsUsed,
     getDifficultyPercent,
     beginDayPhase,
     isDayPhase,

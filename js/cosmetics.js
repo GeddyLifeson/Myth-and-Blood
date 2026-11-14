@@ -71,7 +71,7 @@ const Cosmetics = (() => {
       mark: '#c04040',
     },
     hell_walker: {
-      label: 'Hell Walker',
+      label: 'Hellstrider',
       unlock: 'creative_skin_doom',
       desc: 'Unlocked at Hellbane mastery tier IV.',
       body: '#1a3020',
@@ -97,7 +97,7 @@ const Cosmetics = (() => {
     imperium_herald: {
       label: 'Crimson Legions',
       unlock: 'creative_skin_imperium',
-      desc: 'Unlocked at Imperium mastery tier IV.',
+      desc: 'Unlocked at Crimson Legion mastery tier IV.',
       body: '#384858',
       accent: '#6080b0',
       mark: '#c04040',
