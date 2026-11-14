@@ -161,6 +161,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "SPECIALIST_LATE_ABILITY_GOLD_STARS",
   "SPECIALIST_RANKS",
   "STARTING_TP",
+  "SapperKit",
   "SaveManager",
   "SaveThumbnail",
   "Settings",

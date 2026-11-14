@@ -1102,6 +1102,7 @@ const Game = (() => {
     if (Array.isArray(GS.moveMarkers)) {
       for (const m of GS.moveMarkers) shiftOne(m);
     }
+    if (typeof SapperKit !== 'undefined') SapperKit.shift(dx, dy);
     GS.cameraWorldX += dx;
     GS.cameraWorldY += dy;
   }
@@ -2192,6 +2193,8 @@ const Game = (() => {
     ) {
       return false;
     }
+    // A Sapper's charges cannot reach flyers, so he neither chases nor "engages" them.
+    if (unit.type === 'sapper' && unit.team === 'player' && foe.flying) return false;
     return true;
   }
 
@@ -2546,13 +2549,26 @@ const Game = (() => {
     },
     unitName: (u) => (typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type),
     /** Secondary damage from traits (splash, thorns, poison). Never triggers traits again. */
-    hurt: (u, amount, attacker, echo) =>
+    hurt: (u, amount, attacker, echo, extra) =>
       takeDamage(u, amount, {
         attacker: attacker || null,
         attackerTeam: attacker ? attacker.team : u.team === 'player' ? 'enemy' : 'player',
         rosterEcho: !!echo,
         splash: true,
+        ...extra,
       }),
+    // For SapperKit: terrain test, enemy structures, and whose mines to ring.
+    blocked: (x, y, u) => isTerrainBlocked(x, y, u),
+    get buildings() {
+      return GS.buildings;
+    },
+    hurtBuilding: (b, amount, attacker) => damageBuilding(b, amount, attacker || null),
+    get selectedIds() {
+      return getSelectedUnitIds();
+    },
+    get paused() {
+      return !!GS.paused;
+    },
     defeat: () => {
       if (GS.state === 'playing') endGame(false);
     },
@@ -10779,6 +10795,14 @@ const Game = (() => {
     }
 
     if (getSelectedUnitIds().length) {
+      // Shift+click at night with a Sapper selected re-sites one of his mines.
+      if (
+        opts.shiftKey &&
+        typeof SapperKit !== 'undefined' &&
+        SapperKit.orderMine(getSelectedUnitIds(), pos.x, pos.y, siegeCtx)
+      ) {
+        return ackInteraction(true);
+      }
       moveSelectionToWorld(pos.x, pos.y);
       return true;
     }
@@ -12723,6 +12747,10 @@ const Game = (() => {
   function fireWeapon(unit, target) {
     const dist = unitDistance(unit, target);
     if (!inAttackRange(unit, target)) return;
+    // A Sapper throws a satchel charge instead of shooting; up close he falls through to a knife.
+    if (unit.type === 'sapper' && typeof SapperKit !== 'undefined') {
+      if (SapperKit.fire(unit, target, siegeCtx)) return;
+    }
 
     let hit = unit.accuracy;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -12779,9 +12807,6 @@ const Game = (() => {
           });
         }
         if (unit.combatType === 'cavalry') unit.chargeTimer = 0;
-        if (unit.type === 'sapper' && (target.type === 'siege_tower' || target.siegeDeployed)) {
-          svc('FloatingText').status(target.x, target.y, 'SIEGE!', '#ff8040');
-        }
       } else {
         // Miss swing whoosh — hit SFX is layered inside takeDamage on connect
         playSfx('whoosh');

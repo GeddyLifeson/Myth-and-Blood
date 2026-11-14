@@ -450,12 +450,7 @@ const GameCore = (() => {
   }
 
   function isMeleeCombat(unit) {
-    return (
-      unit.combatType === 'melee' ||
-      unit.combatType === 'rifle' ||
-      unit.type === 'sapper' ||
-      unit.type === 'general'
-    );
+    return unit.combatType === 'melee' || unit.combatType === 'rifle' || unit.type === 'general';
   }
 
   function getGeneralBuffStrengthLegacy(gen) {

@@ -105,6 +105,11 @@ export const CLAUSES = {
     `the first hit on each new target pins it for ${secs(v)} (not bosses, monsters or elites)`,
   expose: (v) =>
     `enemies hit take ${pct(v.pct)} more damage from every source for ${secs(v.ticks)}`,
+  // The Sapper's trade (js/sapper-kit.js).
+  mines: (v) =>
+    `buries ${v.perNight} mines a night, up to ${v.cap} live; each deals ${num(v.dmg)} damage to enemies within ${v.r}, and ${more(v.runner).slice(1)} more to line-breakers`,
+  satchel: (v) =>
+    `lobs a charge up to ${v.reach} away every ${secs(v.cd)} that deals ${num(v.dmg)} damage within ${v.r}`,
 };
 
 /** Mechanics whose clause is a weakness sentence rather than part of the trait. */

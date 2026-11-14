@@ -431,7 +431,12 @@ function buildVanillaAchievements() {
     ['spy_wave', 'Double Agent', 'Use 3 spy actions in one wave cycle.', 'spy_wave:3', 'silver'],
     ['mage_splash', 'Arcane Splash', 'Mage bolt hits 2+ foes.', 'mage_splash'],
     ['cavalry_charge', 'Thunder Hooves', 'Cavalry kill while charging.', 'cavalry_charge'],
-    ['sapper_siege', 'Breacher', 'Sapper destroys siege equipment.', 'sapper_siege'],
+    [
+      'sapper_siege',
+      'Breacher',
+      'A Sapper’s mine or satchel destroys a siege tower, iron colossus or hellmortar.',
+      'sapper_siege',
+    ],
     ['hunt_master', 'Hunt Master', 'Clear a wave with Hunt mode on.', 'hunt_wave'],
     [
       'last_stand',
