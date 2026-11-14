@@ -1546,7 +1546,7 @@ const UI = (() => {
       wweBtn.title = gs.wweUnlocked
         ? 'Grand Coliseum — arena champions'
         : 'Grand Coliseum — unlock via research or Iron Creed';
-      wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM 🔒';
+      wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM · LOCKED';
     }
     const crossBtn = hudEls['crossover-hub-open'];
     if (crossBtn) {
@@ -1556,7 +1556,7 @@ const UI = (() => {
       crossBtn.title = gs.crossoverUnlocked
         ? 'Legion Archive — faction barracks & operatives'
         : 'Legion Archive — unlock a crossover faction (meta or research) to open';
-      crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE 🔒';
+      crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE · LOCKED';
     }
     const perkSection = hudEls['perk-build-section'];
     if (perkSection) perkSection.style.display = gs.perksUnlocked ? '' : 'none';
@@ -2552,10 +2552,6 @@ const UI = (() => {
    */
   function buildNightPrepChips(gs) {
     const chips = [];
-    const tier = gs.colonyThreatTier;
-    if (tier && tier !== '—') {
-      chips.push({ label: tier, kind: 'threat' });
-    }
     const pressure = gs.colonyNextPressure || gs.colonyThreatMods;
     const countMult = pressure?.countMult || 1;
     const sizePct = Math.round((countMult - 1) * 100);
@@ -2806,9 +2802,7 @@ const UI = (() => {
         }
         if (tipEl) {
           const tip = (gs.feedback?.nightTips || []).find((t) => t?.text && t.id !== 'intel');
-          tipEl.textContent = tip?.text
-            ? `${tip.icon || '•'} ${tip.text}`
-            : '• Reposition · spend TP · D when ready';
+          tipEl.textContent = tip?.text || 'Reposition, spend TP, then begin the day.';
         }
         nightCard.classList.toggle('night-prep-urgent', sec <= 15);
       } else {

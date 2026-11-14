@@ -4739,3 +4739,83 @@ body.ui-v2 .wave-sum-progress {
 body.ui-v2 #achievement-toast {
   bottom: calc(var(--hint-bar-h) + var(--minimap-h) + 96px);
 }
+
+/* Locked rows: name on the left, the reason on the right, no glyphs from older rules. */
+body.ui-v2 .in-locked::before,
+body.ui-v2 .in-locked::after {
+  content: none !important;
+}
+body.ui-v2 .in-locked > span:not(.cost):not(.lock-reason):not(.wait) {
+  grid-column: 1;
+  grid-row: 1;
+  overflow: visible;
+}
+body.ui-v2 .in-locked > .lock-reason {
+  grid-column: 2;
+  grid-row: 1;
+  white-space: normal;
+  overflow: visible;
+}
+
+/* Top bar fits one row at 1366: tighter groups, slimmer pips. */
+body.ui-v2 #top-bar .stat-group {
+  padding: 5px 8px 8px;
+  gap: 6px;
+}
+body.ui-v2 .breach-pips {
+  gap: 2px;
+}
+body.ui-v2 .breach-pips .pip {
+  width: max(5px, calc(6px * var(--ui-scale)));
+}
+body.ui-v2 #top-bar .top-bar-actions .cmd-top-btn {
+  min-width: max(76px, calc(84px * var(--ui-scale)));
+  padding: 0 8px;
+}
+body.ui-v2 #top-bar .pause-top-btn {
+  min-width: max(36px, calc(40px * var(--ui-scale)));
+}
+
+/* Recovery overlay: the same modal. */
+body.ui-v2 .error-recovery-overlay {
+  background: rgba(4, 3, 4, 0.8);
+}
+body.ui-v2 .error-recovery-title {
+  margin: 0 0 8px;
+  font-family: var(--font-display);
+  font-size: var(--fs-5);
+  font-weight: 400;
+  color: var(--blood);
+  text-shadow: 2px 2px 0 #000;
+}
+body.ui-v2 .error-recovery-message,
+body.ui-v2 .error-recovery-degraded {
+  font-size: var(--fs-2);
+  line-height: 1.45;
+  color: var(--bone-dim);
+}
+body.ui-v2 .error-recovery-detail {
+  font-size: var(--fs-1);
+  color: var(--bone-dim);
+  background: #050405;
+  border: 1px solid var(--line);
+}
+body.ui-v2 .error-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+body.ui-v2 .error-recovery-actions .menu-btn {
+  width: auto;
+}
+body.ui-v2 .in-locked > .lock-reason {
+  max-width: none;
+  white-space: normal !important;
+  text-overflow: clip;
+  text-align: left;
+}
+body.ui-v2 .in-locked,
+body.ui-v2 .in-locked.disabled {
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+}
