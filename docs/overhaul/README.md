@@ -52,3 +52,8 @@ game is in:
 - Crossover hero factions: keep, rework into original characters, or cut.
 - Whether cheats void a run.
 - Real online play, or share codes only.
+
+## Reported by the owner
+
+- The scroll bar sometimes gets stuck.
+- The mouse wheel should scroll a side menu whenever the pointer is over it.
