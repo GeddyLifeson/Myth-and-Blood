@@ -475,8 +475,6 @@ const MobileUI = (() => {
 
   const FONT_FLOOR = 14;
   let floorObserver = null;
-  let floorQueue = [];
-  let floorTimer = null;
 
   function floorFonts(node) {
     const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
@@ -491,22 +489,17 @@ const MobileUI = (() => {
 
   function startFontFloor() {
     floorFonts(document.body);
+    // Runs as a microtask before the next paint, so panels rebuilt every tick never show small.
     floorObserver = new MutationObserver((records) => {
+      const batch = new Set();
       for (const r of records) {
         for (const n of r.addedNodes) {
           // New text in an old element (textContent =) arrives as a text node.
           const el = n.nodeType === 1 ? n : n.parentElement;
-          if (el) floorQueue.push(el);
+          if (el?.isConnected) batch.add(el);
         }
       }
-      if (floorTimer || !floorQueue.length) return;
-      // Batched: the HUD rebuilds parts of itself many times a second.
-      floorTimer = setTimeout(() => {
-        floorTimer = null;
-        const batch = floorQueue;
-        floorQueue = [];
-        for (const n of batch) if (n.isConnected) floorFonts(n);
-      }, 120);
+      for (const el of batch) floorFonts(el);
     });
     floorObserver.observe(document.body, { childList: true, subtree: true });
   }
@@ -514,7 +507,6 @@ const MobileUI = (() => {
   function stopFontFloor() {
     floorObserver?.disconnect();
     floorObserver = null;
-    floorQueue = [];
     for (const el of document.querySelectorAll('[data-m-floor]')) {
       el.style.removeProperty('font-size');
       delete el.dataset.mFloor;
