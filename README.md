@@ -56,14 +56,14 @@ Use normal deploy/build controls alongside the lab. Disarm spawn tools to intera
 - **Win condition:** Clear **wave 100** to win the campaign. That awards the victory achievements, faction trials and legacy unlocks. The siege itself never ends, so the run continues afterwards for score.
 - **Lose condition:** Enemies break through your line too many times, or you have no troops and no training halls left. Each enemy that gets through counts as a **breach**. Pass the breach limit and the realm falls.
 
-Clear every wave to earn TP, expand territory, unlock new systems, and push into the Academy and RTS eras.
+Clear every wave to earn TP, unlock new systems, and push into the Academy and RTS eras. The whole run is fought on one field.
 
 ---
 
 ## Core Loop
 
 1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring, and red chevrons on the edge of the field show where it will come from. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
-2. **Day combat** — waves spawn from unlocked flanks. Every soldier hunts from his post and walks back to it when the fight is over. Click to move him (the spot becomes his new post), or Shift+click to send him there to hold.
+2. **Day combat** — waves enter from the top edge, by the sectors the night markers showed. Every soldier hunts from his post and walks back to it when the fight is over. Click to move him (the spot becomes his new post), or Shift+click to send him there to hold.
 3. **Fight** — cast strikes, manage morale; with a med tent on the field the wounded walk to it on their own.
 4. **Clear the wave** — all enemies defeated.
 5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
@@ -435,27 +435,26 @@ One tonic reduces spy and courier costs by 1 TP.
 
 ---
 
-## Waves, Territory & Eras
+## Waves, Sectors & Eras
 
 ### Wave milestones
 
-| Wave      | Event                                                                    |
-| --------- | ------------------------------------------------------------------------ |
-| Every 5   | **Horde wave** — fast swarms (goblins, rats, orcs); weaker but numerous  |
-| Every 10  | Map expands (+90 wide, +110 deep); **named boss** leads (replaces horde) |
-| Every 15  | Horde wave includes embedded siege tower + sappers                       |
-| Every 25  | New attack flank unlocked (East → West → South)                          |
-| **100**   | **Academy Era** — no TP troop deploy; academies and settlements          |
-| **200**   | **Enemy RTS** — map widens; enemies build mirror settlements             |
-| **1001+** | **Hellscape** — even endgame heroes struggle                             |
+| Wave      | Event                                                                   |
+| --------- | ----------------------------------------------------------------------- |
+| Every 5   | **Horde wave** — fast swarms (goblins, rats, orcs); weaker but numerous |
+| Every 10  | **Named boss** leads (replaces horde)                                   |
+| Every 15  | Horde wave includes embedded siege tower + sappers                      |
+| **100**   | **Empire Ascendant** — heavier hosts; your field and army carry on      |
+| **200**   | **Planetary Dominion** — the late war; nothing is reset                 |
+| **1001+** | **Hellscape** — even endgame heroes struggle                            |
 
-### Era resets
+### One field, and the eras
 
-At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army, your veterans and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
+The field is the same size from the first wave to the last, and nothing ever wipes it. Waves **100** and **200** open new eras: a banner announces each one, your scholars receive a small science grant, and the host comes on heavier from then on. Your soldiers, veterans, buildings, mines and posts carry straight through. Jump-in modes and Creative skip the announcement.
 
-### Flank variety
+### Entry sectors
 
-Once multiple flanks are unlocked, each wave rolls a **random non-empty subset** — you will not face every direction every wave. Spy intel shows possible flanks.
+The host always comes from the **top edge**, which is split into three sectors: **left**, **centre** and **right**. Each wave uses one, two or three of them. The first two waves use one. Ordinary waves widen as the siege goes on, hordes come wide, and a boss comes on a narrow front with its guard. The main thrust is less likely to come where it came last time, so read the markers each night and shift soldiers sideways.
 
 ### Loadouts (Wave 100+)
 
@@ -490,7 +489,7 @@ From the first few waves: Night Raid (every 4th wave, wargs and goblins join the
 
 ### Line-breakers and the breach limit
 
-From wave 3, some enemies carry a **red pennant**. These are line-breakers: they ignore your troops and run for your line, faster than the rest of the host but with less health. One that reaches the bottom of the field (or your rally point, if it came from a flank) is a **breach**.
+From wave 3, some enemies carry a **red pennant**. These are line-breakers: they ignore your troops and run for your line, faster than the rest of the host but with less health. One that reaches the bottom of the field is a **breach**.
 
 - The breach counter sits at the top of the screen. The limit is 14 / 10 / 8 / 6 by difficulty.
 - Each breach shakes the morale of every soldier. Pass the limit and the realm falls.
@@ -507,9 +506,9 @@ A big host is hard to feed. Past 14 soldiers on the field, every new recruit cos
 
 ### How a wave arrives
 
-Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your hunting troops hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
+Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up at the top of the field first, in the third it entered by. Your hunting troops hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
 
-At night the next wave's flanks are already decided. Each edge it will use shows pulsing red chevrons pointing into the field, a rough head count for that side, the two most common enemy types, and a skull if a warlord is coming. Before wave 25 that is always the north; later, check all four edges before you place your line.
+At night the next wave's entry sectors are already decided. Each sector it will use is bracketed in red along the top edge, with chevrons pointing down the field and a label: how many come that way ("about N"), that sector's two most common enemy types, and a skull where the boss enters. The count is that sector's share of the host as scouted that night; a wave event or a late elite at dawn can change it by a few.
 
 ### Reading the battlefield
 
@@ -548,7 +547,7 @@ Enemy riders hit archers, mages, healers and bards harder, and pikemen take less
 
 ### Veterans
 
-The unit panel shows each soldier's kills and waves survived. When a veteran falls, the log names them and their record. At the wave 100 and 200 era resets, your General and up to ten of your most experienced soldiers march into the new era with you.
+The unit panel shows each soldier's kills and waves survived. When a veteran falls, the log names them and their record. Nothing resets them: a veteran who survives carries his record through waves 100 and 200 and beyond.
 
 ---
 
@@ -751,10 +750,10 @@ Open from the main menu **CHEATS** button or in-game with backtick. Codes are no
 3. **Med tents save troops** — every wounded soldier walks to one, so place it close behind the line and expect gaps while they heal.
 4. **Save TP before wave 100** — academies (40–100 TP) and settlements are expensive.
 5. **Train mentors first** — you need Immortal veterans on field to found academies.
-6. **Hunt and Hold** — soldiers hunt on their own, but click to reposition for flanks; not every wave hits every side. Where you send a soldier becomes his post, and he comes back to it. Shift+click the men who must not leave a gap or a doorway.
+6. **Hunt and Hold** — soldiers hunt on their own, but click to reposition for the sectors the night markers show; not every wave uses every sector. Where you send a soldier becomes his post, and he comes back to it. Shift+click the men who must not leave a gap or a doorway.
 7. **Scout with spy actions** — know what’s coming on siege and boss waves.
 8. **Lightning vs Fireball** — lightning is cheaper for precision; fireball for bigger blobs.
-9. **Zoom out on big maps** — pan to flanks as territory grows.
+9. **Read the top edge at night** — the markers say which sectors the host will use and how many come by each.
 10. **Read the Encyclopedia** — especially before building hamlets in the RTS era.
 
 ---

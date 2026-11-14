@@ -814,25 +814,34 @@ const SiegeLoop = (() => {
   }
 
   /**
-   * What the night shows on each edge the next wave will use: where to draw the marker,
-   * which way it points, and a rough share of the host. Null when the sides are not known.
+   * What the night shows along the top edge: one marker per entry sector the next wave
+   * will use, with that sector's head count, its two most common enemy types, and whether
+   * the boss comes that way. Null when the plan is not known.
    */
   function spawnMarkers(ctx) {
-    const sides = ctx && ctx.isNight ? ctx.nextSides : null;
-    if (!sides || !sides.length || !run.preview) return null;
-    const w = ctx.worldW;
-    const h = ctx.worldH;
-    const share = Math.max(1, Math.round(run.preview.count / sides.length));
-    const names = run.preview.names.slice(0, 2).map((n) => n.replace(' (new)', ''));
-    const at = {
-      north: { x: w / 2, y: 30, dx: 0, dy: 1 },
-      south: { x: w / 2, y: h - 30, dx: 0, dy: -1 },
-      east: { x: w - 30, y: h / 2, dx: -1, dy: 0 },
-      west: { x: 30, y: h / 2, dx: 1, dy: 0 },
-    };
-    return sides
-      .filter((side) => at[side])
-      .map((side) => ({ side, ...at[side], count: share, names, boss: !!run.preview.boss }));
+    const plan = ctx && ctx.isNight ? ctx.nextSectorPlan : null;
+    if (!plan || !Array.isArray(plan.sectors) || !plan.sectors.length) return null;
+    const order = ['left', 'centre', 'right'];
+    const third = ctx.worldW / order.length;
+    const nameOf = (t) => (typeof EnemyDefs !== 'undefined' && EnemyDefs[t]?.name) || t;
+    return plan.sectors
+      .filter((sector) => order.includes(sector))
+      .map((sector) => {
+        const i = order.indexOf(sector);
+        return {
+          side: 'north',
+          sector,
+          x: (i + 0.5) * third,
+          y: 30,
+          dx: 0,
+          dy: 1,
+          x0: i * third,
+          x1: (i + 1) * third,
+          count: (plan.counts && plan.counts[sector]) || 0,
+          names: ((plan.types && plan.types[sector]) || []).slice(0, 2).map(nameOf),
+          boss: plan.bossSector === sector,
+        };
+      });
   }
 
   function previewText(p) {
@@ -1834,7 +1843,11 @@ const SiegeLoop = (() => {
   const BONE = '#e4dcc4';
   const BLOOD = '#a01018';
 
-  /** Night: red chevrons on each edge the next wave will come from, with what to expect. */
+  /**
+   * Night: each entry sector the next wave will use is bracketed along the top edge, with
+   * red chevrons pointing down the field and a label saying how many come that way, the
+   * two commonest kinds, and a skull where the boss enters.
+   */
   function drawSpawnMarkers(ctx2d, tick) {
     const ctx = hudCtx ? hudCtx() : null;
     const marks = ctx ? spawnMarkers(ctx) : null;
@@ -1842,14 +1855,53 @@ const SiegeLoop = (() => {
     const k = 1 / Math.max(0.5, ctx.viewScale || 1);
     const pulse = (tick % 90) / 90;
     for (const m of marks) {
-      // perpendicular to the direction of advance
-      const px = -m.dy;
-      const py = m.dx;
+      // The sector's width, as a bracket on the edge itself.
+      const inset = 7;
+      const by = 6;
+      for (const [color, width] of [
+        [INK, 6 * k],
+        [BLOOD, 3 * k],
+      ]) {
+        ctx2d.strokeStyle = color;
+        ctx2d.lineWidth = width;
+        ctx2d.beginPath();
+        ctx2d.moveTo(m.x0 + inset, by + 9 * k);
+        ctx2d.lineTo(m.x0 + inset, by);
+        ctx2d.lineTo(m.x1 - inset, by);
+        ctx2d.lineTo(m.x1 - inset, by + 9 * k);
+        ctx2d.stroke();
+      }
+      const lines = m.names.slice(0, 2);
+      const head = `about ${m.count}`;
+      ctx2d.font = `bold ${Math.round(12 * k)}px Georgia, serif`;
+      ctx2d.textAlign = 'center';
+      let wide = ctx2d.measureText(head).width + (m.boss ? 26 * k : 0);
+      ctx2d.font = `${Math.round(10 * k)}px Georgia, serif`;
+      for (const line of lines) wide = Math.max(wide, ctx2d.measureText(line).width);
+      wide += 14 * k;
+      const tall = (20 + lines.length * 12) * k;
+      // The label sits inside the edge, clear of the HUD, and never leaves the field.
+      const lx = Math.max(wide / 2 + 3, Math.min(ctx.worldW - wide / 2 - 3, m.x));
+      const ly = m.y + 60 * k;
+      ctx2d.fillStyle = INK;
+      ctx2d.fillRect(lx - wide / 2, ly - tall / 2, wide, tall);
+      ctx2d.strokeStyle = BLOOD;
+      ctx2d.lineWidth = 1.5 * k;
+      ctx2d.strokeRect(lx - wide / 2, ly - tall / 2, wide, tall);
+      ctx2d.fillStyle = BONE;
+      ctx2d.font = `bold ${Math.round(12 * k)}px Georgia, serif`;
+      const headY = ly - tall / 2 + 14 * k;
+      ctx2d.fillText(head, lx + (m.boss ? 11 * k : 0), headY);
+      if (m.boss) {
+        const headW = ctx2d.measureText(head).width;
+        drawSkull(ctx2d, lx - headW / 2 - 3 * k, headY - 5 * k, k * 0.7);
+        ctx2d.fillStyle = BONE;
+      }
+      ctx2d.font = `${Math.round(10 * k)}px Georgia, serif`;
+      lines.forEach((line, i) => ctx2d.fillText(line, lx, headY + (i + 1) * 12 * k));
+      // Chevrons lead on from the label, down the field.
       for (let i = 0; i < 3; i++) {
-        // Past the label, so the top bar never covers them.
-        const lead = (88 + i * 13 + pulse * 13) * k;
-        const cx = m.x + m.dx * lead;
-        const cy = m.y + m.dy * lead;
+        const cy = ly + tall / 2 + (10 + i * 13 + pulse * 13) * k;
         const half = (16 - i * 3) * k;
         const back = 9 * k;
         ctx2d.globalAlpha = Math.max(0.15, 1 - (i + pulse) / 3);
@@ -1860,35 +1912,13 @@ const SiegeLoop = (() => {
           ctx2d.strokeStyle = color;
           ctx2d.lineWidth = width;
           ctx2d.beginPath();
-          ctx2d.moveTo(cx + px * half - m.dx * back, cy + py * half - m.dy * back);
-          ctx2d.lineTo(cx, cy);
-          ctx2d.lineTo(cx - px * half - m.dx * back, cy - py * half - m.dy * back);
+          ctx2d.moveTo(lx - half, cy - back);
+          ctx2d.lineTo(lx, cy);
+          ctx2d.lineTo(lx + half, cy - back);
           ctx2d.stroke();
         }
       }
       ctx2d.globalAlpha = 1;
-      // The label sits inside the edge, clear of the HUD; the chevrons lead on from it.
-      const lx = m.x + m.dx * 60 * k;
-      const ly = m.y + m.dy * 60 * k;
-      const head = `about ${m.count}`;
-      const sub = m.names.join(', ');
-      ctx2d.font = `bold ${Math.round(12 * k)}px Georgia, serif`;
-      ctx2d.textAlign = 'center';
-      const wide =
-        Math.max(ctx2d.measureText(head).width, sub ? ctx2d.measureText(sub).width : 0) + 16 * k;
-      const tall = (sub ? 34 : 20) * k;
-      ctx2d.fillStyle = INK;
-      ctx2d.fillRect(lx - wide / 2, ly - tall / 2, wide, tall);
-      ctx2d.strokeStyle = BLOOD;
-      ctx2d.lineWidth = 1.5 * k;
-      ctx2d.strokeRect(lx - wide / 2, ly - tall / 2, wide, tall);
-      ctx2d.fillStyle = BONE;
-      ctx2d.fillText(head, lx, ly + (sub ? -3 : 4) * k);
-      if (sub) {
-        ctx2d.font = `${Math.round(10 * k)}px Georgia, serif`;
-        ctx2d.fillText(sub, lx, ly + 11 * k);
-      }
-      if (m.boss) drawSkull(ctx2d, lx - px * (wide / 2 + 14 * k), ly - py * (tall / 2 + 14 * k), k);
     }
     ctx2d.textAlign = 'left';
   }

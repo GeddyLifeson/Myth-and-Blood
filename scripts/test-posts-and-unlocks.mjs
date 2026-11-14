@@ -289,39 +289,54 @@ const clearFoes = (GS) => {
 {
   const { Game, SiegeLoop, GameState: GS } = start(15, 'baby');
   ok(
-    SiegeLoop.spawnMarkers({ isNight: false, nextSides: ['north'] }) === null,
+    SiegeLoop.spawnMarkers({ isNight: false, nextSectorPlan: null }) === null,
     'no markers by day'
   );
   let t = 0;
   while (t++ < 9000 && GS.timeOfDay !== 'night') Game.update();
   Game.updatePresentation?.();
   const marks = Game.getState().siegeLoop.spawnMarkers;
+  const plan = GS.nextWavePlan;
+  ok(plan && plan.wave === GS.wave + 1, 'the next wave is planned at nightfall');
   ok(
-    GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1,
-    'the next wave is planned at nightfall'
+    marks.length === plan.sectors.length &&
+      marks.every((m) => m.side === 'north' && m.count === plan.counts[m.sector] && m.count > 0),
+    `night shows a marker per entry sector (${marks.map((m) => `${m.sector}: about ${m.count}`).join('; ')})`
   );
   ok(
-    marks.length === GS.nextWavePlan.sides.length &&
-      marks[0].side === 'north' &&
-      marks[0].count > 0,
-    `night shows a marker per attack side (${marks.map((m) => `${m.side}: about ${m.count}`).join('; ')})`
+    marks.every((m) => m.dy === 1 && m.y < 60 && m.x > m.x0 && m.x < m.x1),
+    'every marker sits on the top edge, inside its sector, and points down the field'
   );
-  ok(marks[0].dy === 1 && marks[0].y < 60, 'the north marker sits on the top edge and points in');
-  // The wave must use exactly the sides the night showed.
-  GS.nextWavePlan.sides = ['east'];
+  // The wave must use exactly the sectors the night showed.
+  const shown = plan.sectors.join();
   Game.beginDayPhase(true);
   run(Game, 2);
   ok(
-    GS.waveAttackSides.length === 1 && GS.waveAttackSides[0] === 'east' && !GS.nextWavePlan,
-    'the wave uses the stored sides, then the plan is spent'
+    GS.sectorPlan.sectors.join() === shown && !GS.nextWavePlan,
+    'the wave uses the planned sectors, then the plan is spent'
   );
   const many = SiegeLoop.spawnMarkers({
     isNight: true,
-    nextSides: ['north', 'east', 'west', 'south'],
-    worldW: 1000,
+    nextSectorPlan: {
+      wave: 9,
+      sectors: ['left', 'centre', 'right'],
+      counts: { left: 4, centre: 9, right: 5 },
+      types: { left: ['goblin'], centre: ['orc', 'goblin'], right: [] },
+      bossSector: 'centre',
+    },
+    worldW: 400,
     worldH: 600,
   });
-  ok(many === null || many.length === 4, 'four flanks give four markers');
+  ok(
+    many.length === 3 &&
+      many[0].x < many[1].x &&
+      many[1].x < many[2].x &&
+      many[1].boss &&
+      !many[0].boss &&
+      many[1].count === 9 &&
+      many[1].names.length === 2,
+    'three sectors give three markers, left to right, with the skull on the boss sector'
+  );
 }
 
 // --- 7. run score ------------------------------------------------------------------------

@@ -91,17 +91,28 @@ function toNight(Game, GS) {
   const { Game, GameState: GS } = start(23);
   ok(toNight(Game, GS), 'reached the first night');
   ok(
-    GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1 && GS.nextWavePlan.sides.length > 0,
-    'the night has a spawn plan for the coming wave'
+    GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1 && GS.nextWavePlan.sectors.length > 0,
+    'the night has an entry-sector plan for the coming wave'
   );
-  GS.nextWavePlan.sides = ['east'];
+  // Force a plan the dice would rarely give, so a fresh roll cannot pass for the saved one.
+  const total = GS.nextWavePlan.total;
+  Object.assign(GS.nextWavePlan, {
+    sectors: ['right'],
+    main: 'right',
+    shares: { right: 1 },
+    counts: { right: total },
+    types: { right: ['goblin'] },
+    byType: null,
+    bossSector: null,
+  });
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
   ok(snap.version === Game.SAVE_VERSION && snap.version === 2, `save version ${snap.version}`);
   ok(
     snap.nextWavePlan &&
       snap.nextWavePlan.wave === GS.wave + 1 &&
-      snap.nextWavePlan.sides[0] === 'east',
-    'the save holds the next-wave spawn plan'
+      snap.nextWavePlan.sectors.join() === 'right' &&
+      snap.nextWavePlan.counts.right === total,
+    'the save holds the next-wave entry-sector plan'
   );
   const wave = GS.wave;
   GS.nextWavePlan = null;
@@ -110,16 +121,29 @@ function toNight(Game, GS) {
     GS.wave === wave &&
       GS.nextWavePlan &&
       GS.nextWavePlan.wave === wave + 1 &&
-      GS.nextWavePlan.sides.length === 1 &&
-      GS.nextWavePlan.sides[0] === 'east',
+      GS.nextWavePlan.sectors.join() === 'right' &&
+      GS.nextWavePlan.counts.right === total &&
+      GS.nextWavePlan.types.right[0] === 'goblin',
     'loading restores the plan'
   );
+  // A save from before the three sectors named flanks here; it is rolled again, not trusted.
+  const legacy = JSON.parse(JSON.stringify(snap));
+  legacy.nextWavePlan = { wave: wave + 1, sides: ['east'], multiFrontPlan: null };
+  ok(Game.importGameState(legacy), 'a save with the old flank plan loads');
+  ok(
+    GS.nextWavePlan && GS.nextWavePlan.wave === wave + 1 && GS.nextWavePlan.sectors.length > 0,
+    'and gets a fresh entry-sector plan'
+  );
+  ok(Game.importGameState(JSON.parse(JSON.stringify(snap))), 'the save loads again');
   Game.togglePause?.();
   if (GS.paused) GS.paused = false;
   Game.beginDayPhase(true);
   ok(
-    GS.wave === wave + 1 && GS.waveAttackSides.length === 1 && GS.waveAttackSides[0] === 'east',
-    `the next wave comes from the saved side (${GS.waveAttackSides.join(',')})`
+    GS.wave === wave + 1 &&
+      GS.sectorPlan.sectors.join() === 'right' &&
+      GS.spawnSectors.length === GS.spawnQueue.length &&
+      GS.spawnSectors.every((x) => x === 'right'),
+    `the next wave enters by the saved sector (${GS.sectorPlan.sectors.join(',')})`
   );
 
   // Unknown versions are refused before anything is touched.
@@ -148,12 +172,14 @@ function toNight(Game, GS) {
     GS.timeOfDay === 'night' && GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1,
     'an old night save rolls a plan for the coming wave'
   );
-  // A plan for the wrong wave, or naming a side that does not exist, is dropped, not trusted.
+  // A plan for the wrong wave, or naming a sector that does not exist, is dropped, not trusted.
   const odd = JSON.parse(JSON.stringify(snap));
-  odd.nextWavePlan = { wave: 40, sides: ['up'] };
+  odd.nextWavePlan = { wave: 40, sectors: ['up'], counts: { up: 9 } };
   ok(Game.importGameState(odd), 'a save with a damaged plan loads');
   ok(
-    GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1 && GS.nextWavePlan.sides[0] !== 'up',
+    GS.nextWavePlan &&
+      GS.nextWavePlan.wave === GS.wave + 1 &&
+      !GS.nextWavePlan.sectors.includes('up'),
     'the damaged plan is replaced'
   );
 }

@@ -75,6 +75,7 @@ export const HEADLESS_FILES = [
   'living-planet.js',
   'asymmetric-warfare.js',
   'settlement-raids.js',
+  'progression-restarts.js',
   'multi-front-siege.js',
   'monster-bosses.js',
   'economy-rules.js',

@@ -21,8 +21,7 @@ const HAMLET_AURA_RADIUS = 130;
 const HAMLET_TP_PER_ROUND = 5;
 const RTS_MAP_EXPAND_W = 180;
 const RTS_MAP_EXPAND_H = 220;
-const ATTACK_SIDE_INTERVAL = 25;
-const ATTACK_SIDES = ['north', 'east', 'west', 'south'];
+const ATTACK_SIDES = ['north'];
 /** Highest veteran rank index (Immortal / Saint of the Realm). */
 const MAX_VETERAN_TIER = 6;
 /** Extra specialist abilities unlock after this many lifetime gold stars. */
@@ -487,34 +486,41 @@ function getTerritoryTier(waveNum) {
 }
 
 /**
- * Map growth steps — every MAP_EXPAND_EVERY waves the realm gains land on all sides.
- * Caps soft-limit runaway size pre-RTS; RTS era adds a larger bump.
+ * The field does not grow. This was the number of growth steps taken by a wave; it is
+ * kept, always 0, for callers and saves that still ask.
  */
-function getMapExpandTier(waveNum) {
-  const w = Math.max(0, waveNum | 0);
-  let t = Math.floor(w / MAP_EXPAND_EVERY);
-  if (w < RTS_ERA_WAVE) t = Math.min(ACADEMY_MAP_TIERS, t);
-  else t = Math.min(16, t);
-  return Math.max(0, t);
+function getMapExpandTier(_waveNum) {
+  return 0;
 }
 
 /**
- * Playfield size for the wave. Grows in width and height; callers shift existing
- * content so new strips appear on north, south, east, and west (not only south).
+ * Size of the field a save from before the fixed field was made on: it grew by
+ * MAP_EXPAND_W x MAP_EXPAND_H every MAP_EXPAND_EVERY waves, with a further bump at wave
+ * 200. Only used to fit such a save back onto the one field.
+ */
+function getLegacyWorldSize(waveNum) {
+  const w = Math.max(0, waveNum | 0);
+  let t = Math.floor(w / MAP_EXPAND_EVERY);
+  t = w < RTS_ERA_WAVE ? Math.min(ACADEMY_MAP_TIERS, t) : Math.min(16, t);
+  let width = BASE_FIELD_W + t * MAP_EXPAND_W;
+  let height = BASE_FIELD_H + t * MAP_EXPAND_H;
+  if (w >= RTS_ERA_WAVE) {
+    width += RTS_MAP_EXPAND_W;
+    height += RTS_MAP_EXPAND_H;
+  }
+  return { w: width, h: height };
+}
+
+/**
+ * The field: one size, BASE_FIELD_W x BASE_FIELD_H, from the first wave to the last. The
+ * wave only decides the land tier (hazards, wildlife and field features).
  */
 function getWorldSize(waveNum) {
-  const expandTier = getMapExpandTier(waveNum);
-  let w = BASE_FIELD_W + expandTier * MAP_EXPAND_W;
-  let h = BASE_FIELD_H + expandTier * MAP_EXPAND_H;
-  if (waveNum >= RTS_ERA_WAVE) {
-    w += RTS_MAP_EXPAND_W;
-    h += RTS_MAP_EXPAND_H;
-  }
   return {
-    w,
-    h,
+    w: BASE_FIELD_W,
+    h: BASE_FIELD_H,
     tier: getTerritoryTier(waveNum),
-    expandTier,
+    expandTier: 0,
     baseW: BASE_FIELD_W,
     baseH: BASE_FIELD_H,
     rtsEra: waveNum >= ACADEMY_ERA_WAVE,
@@ -685,13 +691,11 @@ function getPlayerUnitDef(type) {
 /** BuildDefs — loaded at init from data/buildings.json via GameData. */
 
 /**
- * Progressive flanks: North always → East @25 → West @50 → South @75.
- * Each dawn rolls which unlocked flanks are active for the assault.
+ * The host comes from the top edge only, for the whole run. Which of the three entry
+ * sectors along that edge a wave uses is decided in js/multi-front-siege.js.
  */
-function getUnlockedAttackSides(waveNum) {
-  const w = Math.max(0, waveNum | 0);
-  const unlocked = 1 + Math.floor(w / ATTACK_SIDE_INTERVAL);
-  return ATTACK_SIDES.slice(0, Math.min(ATTACK_SIDES.length, unlocked));
+function getUnlockedAttackSides(_waveNum) {
+  return ['north'];
 }
 
 function isAcademyEra(waveNum) {

@@ -931,42 +931,30 @@ function testMultiFrontSiege(exp) {
     console.log('  skip MultiFrontSiege (removed)');
     return;
   }
-  const { MultiFrontSiege, EnemyFactions, getUnlockedAttackSides, PlanetConquest } = exp;
-  assert(MultiFrontSiege, 'MultiFrontSiege module should exist');
-  assert(MultiFrontSiege.MULTI_FRONT_MIN_WAVE === 12, 'multi-front should start wave 12');
-  PlanetConquest?.resetRun?.({ forcedMode: false });
+  // The flanks are gone: the host enters by three sectors of the top edge. The planner is
+  // tested in full in scripts/test-onefield.mjs; this checks what other modules call.
+  const { MultiFrontSiege, getUnlockedAttackSides } = exp;
+  assert(MultiFrontSiege.SECTORS.join() === 'left,centre,right', 'three entry sectors');
+  assert(getUnlockedAttackSides(40).join() === 'north', 'only the top edge attacks');
+  assert(getUnlockedAttackSides(400).join() === 'north', 'at any wave');
   MultiFrontSiege.resetRun();
-  const solo = EnemyFactions.getActiveFactions(20).slice(0, 1);
+  assert(MultiFrontSiege.getCurrentPlan() === null, 'no plan before a wave');
+  const queue = Array(12).fill('goblin').concat(Array(8).fill('orc'));
+  const plan = MultiFrontSiege.buildPlan({ wave: 40, kind: 'horde', queue, rng: () => 0.9 });
+  assert(plan.sectors.length === 3, 'a wide roll uses all three sectors');
   assert(
-    !MultiFrontSiege.buildFrontPlan(20, solo, ['north', 'east'], () => 0.5),
-    'single faction should not build plan'
+    plan.sectors.reduce((a, s) => a + plan.counts[s], 0) === queue.length,
+    'sector counts add up to the host'
   );
-  const factions = EnemyFactions.getActiveFactions(40);
-  assert(factions.length >= 2, 'wave 40 should have multiple factions');
-  const plan = MultiFrontSiege.buildFrontPlan(40, factions, getUnlockedAttackSides(40), () => 0.1);
-  assert(plan && plan.assignments.length >= 2, 'should assign doctrines per faction');
-  assert(plan.waveSides.length >= 1, 'plan should expose wave sides');
-  assert(plan.intel.includes('·') || plan.assignments.length >= 2, 'intel should describe fronts');
-  const orcSide = MultiFrontSiege.pickSpawnSide('orc', plan, plan.waveSides, () => 0);
-  const goblinSide = MultiFrontSiege.pickSpawnSide('goblin', plan, plan.waveSides, () => 0);
-  const orcAssign = plan.assignments.find((a) => a.factionId === 'orc_warbands');
-  const gobAssign = plan.assignments.find((a) => a.factionId === 'goblin_hordes');
-  if (orcAssign && plan.mode === 'coordinated') {
-    assert(orcAssign.fronts.includes(orcSide), 'orc spawns should follow siege assignment');
-  }
-  if (gobAssign && plan.mode === 'coordinated' && gobAssign.doctrine === 'economy_raid') {
-    assert(
-      gobAssign.fronts.includes('south') || !getUnlockedAttackSides(40).includes('south'),
-      'goblins should prefer south economy raids when unlocked'
-    );
-  }
+  MultiFrontSiege.setCurrentPlan(plan);
+  assert(MultiFrontSiege.getCurrentPlan() === plan, 'the current plan can be asked for');
   const hamlet = {
     id: 'h1',
     owner: 'player',
     complete: true,
     hp: 100,
     isHamlet: true,
-    x: 200,
+    x: 60,
     y: 500,
   };
   const outpost = {
@@ -978,29 +966,20 @@ function testMultiFrontSiege(exp) {
     x: 200,
     y: 120,
   };
-  const ecoTarget = MultiFrontSiege.pickCounterRaidTarget('goblin_hordes', [hamlet, outpost], plan);
-  const siegeTarget = MultiFrontSiege.pickCounterRaidTarget(
-    'orc_warbands',
-    [hamlet, outpost],
-    plan
-  );
-  if (plan.assignments.find((a) => a.factionId === 'goblin_hordes')?.doctrine === 'economy_raid') {
-    assert(ecoTarget?.id === 'h1', 'economy raid should target southern hamlet');
-  }
-  if (plan.assignments.find((a) => a.factionId === 'orc_warbands')?.doctrine === 'siege_line') {
-    assert(siegeTarget?.y <= hamlet.y, 'siege line should prefer northern holds');
-  }
+  const target = MultiFrontSiege.pickCounterRaidTarget('goblin_hordes', [hamlet, outpost], plan);
+  assert(target?.id === 'h1', 'counter-raids prefer settlements');
   const spawn = MultiFrontSiege.resolveCounterRaidSpawn('goblin_hordes', hamlet, {
     worldW: 400,
     worldH: 600,
     rng: () => 0.5,
   });
-  assert(
-    spawn.side === 'south' || spawn.side === 'north',
-    'counter-raid should spawn from a flank'
-  );
-  const snap = MultiFrontSiege.getStateSnapshot(40, factions);
-  assert(snap.active && snap.assignments.length >= 2, 'snapshot should expose multi-front state');
+  assert(spawn.side === 'north' && spawn.y < 40, 'counter-raid enters at the top edge');
+  assert(spawn.sector === 'left' && spawn.x < 134, 'in the sector above its target');
+  assert(MultiFrontSiege.FRONT_LABELS.north, 'the top edge has a label for the raid message');
+  const snap = MultiFrontSiege.getStateSnapshot();
+  assert(snap.active && snap.sectors.length === 3, 'snapshot describes the plan');
+  assert(Array.isArray(snap.assignments), 'snapshot keeps the list older readers expect');
+  MultiFrontSiege.resetRun();
 }
 
 function testNeutralWildlife(exp) {

@@ -1,5 +1,5 @@
 /**
- * Map expansion (all sides) + pathfinding still works after growth.
+ * The field stays one size when the wave is set ahead, and pathfinding still works.
  * Faction barracks place + operative recruit in creative unlock-all.
  */
 import { readFileSync } from 'fs';
@@ -153,10 +153,9 @@ const s1 = getWorldSize(1);
 const s10 = getWorldSize(10);
 const s30 = getWorldSize(30);
 ok(s1.w === 400 && s1.h === 600, 'base size wave 1');
-ok(s10.w > s1.w && s10.h > s1.h, 'expands by wave 10');
-ok(s30.w > s10.w && s30.h > s10.h, 'expands further by wave 30');
-ok((s10.w - s1.w) % 2 === 0, 'width growth even for centered shift');
-ok((s10.h - s1.h) % 2 === 0, 'height growth even for centered shift');
+ok(s10.w === s1.w && s10.h === s1.h, 'the field is the same size at wave 10');
+ok(s30.w === s1.w && s30.h === s1.h, 'and at wave 30');
+ok(s30.tier > s1.tier, 'the land tier still rises');
 
 Game.init(cvs);
 Game.setDifficulty('normal');
@@ -202,8 +201,10 @@ const worldH = st.worldH || s30.h;
 // creativeSetWave should expand map with all-side shift + pathing
 Game.creativeSetWave?.(20);
 const st2 = Game.getState();
-ok(st2.worldW > 400 && st2.worldH > 600, `creativeSetWave expands map ${st2.worldW}x${st2.worldH}`);
-ok(st2.worldW === s30.w || st2.worldW >= s10.w, 'expanded width matches growth curve');
+ok(
+  st2.worldW === 400 && st2.worldH === 600,
+  `creativeSetWave keeps the field at ${st2.worldW}x${st2.worldH}`
+);
 
 // Path through game move API (uses terrain-blocked walk grids)
 const cx = Game.getWorldCenter();
@@ -249,9 +250,10 @@ for (const f of factions) {
   const [opId] = roster[0];
   // Nudge placement if a tree occupies the first attempt.
   let okPlace = false;
-  for (let attempt = 0; attempt < 12 && !okPlace; attempt++) {
+  // The field is 400 wide for the whole run, so the barracks stack upfield in rows.
+  for (let attempt = 0; attempt < 48 && !okPlace; attempt++) {
     const x = 70 + ((placed * 37 + attempt * 29) % Math.max(80, ww - 140));
-    const y = wh - 90 - (attempt % 4) * 28;
+    const y = wh - 90 - (attempt % 12) * 28;
     okPlace = !!Game.creativeSpawnPlayerBuildingAt?.(bid, x, y);
   }
   if (okPlace) {
@@ -267,11 +269,11 @@ ok(field.length >= 1, `crossover on field ${field.length}`);
 
 // Vanilla building place with retry (terrain can block a single cell)
 let outOk = false;
-for (let a = 0; a < 10 && !outOk; a++) {
+for (let a = 0; a < 60 && !outOk; a++) {
   outOk = !!Game.creativeSpawnPlayerBuildingAt?.(
     'outpost',
-    ww / 2 + a * 18,
-    wh - 100 - (a % 3) * 20
+    60 + ((a * 47) % (ww - 120)),
+    wh - 100 - (a % 15) * 24
   );
 }
 ok(outOk, `outpost place works (${outOk})`);
