@@ -262,6 +262,8 @@ const Game = (() => {
   const PATH_BUDGET_WARN_INTERVAL = 120;
   GS.spatialFrame = -1;
   const TP_SANITY_CAP = 500000;
+  /** Faction hazards on the field at once; a hazard wave adds at most two. */
+  const HAZARD_FIELD_CAP = 4;
   GS.spyNetwork = true;
   GS.waveModifiers = { ...GameRuntime.DEFAULT_WAVE_MODIFIERS };
   GS.pendingWaveMods = { ...GameRuntime.DEFAULT_PENDING_WAVE_MODS };
@@ -6520,27 +6522,28 @@ const Game = (() => {
           hooks: { showMessage, floatingText: fx },
         });
       }
-      if (svc('FactionHazards')) {
-        const graceOpts = {};
-        if (!p.hazards.length && p.territoryTier >= svc('FactionHazards').MIN_TERRITORY_TIER) {
-          p.hazards = svc('FactionHazards').spawnInitial(
-            GS.worldW,
-            GS.worldH,
-            p.territoryTier,
-            GS.rallyY,
-            p.wave,
-            graceOpts
-          );
-        } else if (p.hazards.length) {
-          const spreadResult = svc('FactionHazards').onWaveStart(p.hazards, p.wave, {
-            worldW: GS.worldW,
-            worldH: GS.worldH,
-            rallyY: GS.rallyY,
-            territoryTier: p.territoryTier,
-            showMessage,
-            ...graceOpts,
-          });
-          p.hazards = spreadResult.hazards;
+      // Hazards are laid and spread only on the event deck's hazard waves, and each is announced.
+      const FH = svc('FactionHazards');
+      if (FH && svc('DynamicMapEvents')?.eventSlot(p.wave) === 'hazard') {
+        // A full field gives up its oldest hazard, so every hazard wave lays something new.
+        if (p.hazards.length >= HAZARD_FIELD_CAP) p.hazards = p.hazards.slice(1 - HAZARD_FIELD_CAP);
+        const fresh = FH.spawnInitial(GS.worldW, GS.worldH, p.territoryTier, GS.rallyY, p.wave, {
+          maxHazards: Math.min(2, HAZARD_FIELD_CAP - p.hazards.length),
+          rng: gameRandom,
+        });
+        const res = FH.onWaveStart(p.hazards.concat(fresh), p.wave, {
+          worldW: GS.worldW,
+          worldH: GS.worldH,
+          rallyY: GS.rallyY,
+          territoryTier: p.territoryTier,
+          rng: gameRandom,
+          noTopUp: true,
+          showMessage,
+        });
+        p.hazards = res.hazards;
+        const names = [...new Set(fresh.map((h) => h.label))].join(' and ');
+        if (names) {
+          showMessage(`Field condition: ${names} laid across the field. Mages can dispel it.`, 340);
         }
       }
       if (svc('NeutralWildlife')) {
@@ -14465,6 +14468,12 @@ const Game = (() => {
           return;
         }
         const pos = tweak && tweak.x != null ? tweak : spawnPosForSector(sector);
+        // A dash lane still enters inside the sector the markers showed.
+        const mf = svc('MultiFrontSiege');
+        if (tweak && tweak.tag === 'dash' && mf && mf.isSector(sector)) {
+          const b = mf.sectorBounds(sector, GS.worldW);
+          pos.x = Math.max(b.x0 + 6, Math.min(b.x1 - 6, pos.x));
+        }
         const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: side });
         u.entrySector = sector;
         if (svc('EnemyFactions')) u.enemyFaction = svc('EnemyFactions').getUnitFaction(type);

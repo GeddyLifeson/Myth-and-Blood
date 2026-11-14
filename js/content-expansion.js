@@ -1317,6 +1317,20 @@ const ContentExpansion = (() => {
     return DynamicMapEvents.deckPick(live, wave, 23)?.id ?? null;
   }
 
+  /** What the event deck holds for a wave, by name, whichever system speaks. */
+  function heraldNews(wave) {
+    if (typeof DynamicMapEvents === 'undefined') return null;
+    const slot = DynamicMapEvents.eventSlot(wave);
+    if (slot === 'field') return WAVE_EVENTS[pickWaveEvent(wave)]?.label || null;
+    if (slot === 'planet') return DynamicMapEvents.pickEvent(wave)?.name || null;
+    if (slot === 'wildlife') {
+      return typeof NeutralWildlife !== 'undefined'
+        ? NeutralWildlife.pickWaveEvent(wave)?.label || null
+        : null;
+    }
+    return slot === 'hazard' ? 'enemy hazards laid on the field' : null;
+  }
+
   function applyWaveEvent(wave, spawnQueue) {
     waveEventId = pickWaveEvent(wave);
     if (!waveEventId || !ctx) return spawnQueue;
@@ -1785,9 +1799,8 @@ const ContentExpansion = (() => {
           u.morale = Math.min(u.maxMorale, u.morale + 4);
         }
       }
-      const nextEvt = pickWaveEvent(ctx.wave + 1);
-      if (nextEvt)
-        ctx.showMessage(`Herald proclaims: next wave may bring ${nextEvt.replace('_', ' ')}!`, 300);
+      const news = heraldNews(ctx.wave + 1);
+      if (news) ctx.showMessage(`Herald proclaims: the next wave brings ${news}!`, 300);
       else ctx.showMessage('Royal herald spreads courage across the ranks!');
       return true;
     }
@@ -2141,6 +2154,7 @@ const ContentExpansion = (() => {
     getWaveEvent,
     getEncyclopediaEntries,
     pickWaveEvent,
+    heraldNews,
   };
 })();
 

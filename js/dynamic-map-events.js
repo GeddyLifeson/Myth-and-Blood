@@ -4,6 +4,8 @@
  */
 const DynamicMapEvents = (() => {
   const WAVE_MIN = 12;
+  /** Territory tier 2, the first at which faction hazards can be placed. */
+  const HAZARD_WAVE = 22;
   const ERUPTION_TICK = 150;
 
   const EVENTS = {
@@ -175,14 +177,16 @@ const DynamicMapEvents = (() => {
 
   /**
    * One wave in every block of four carries an event, and the same slot says which system
-   * speaks: a planet choice, a field event or wildlife. Every picker reads this one deck.
-   * @returns {'planet'|'field'|'wildlife'|null}
+   * speaks: a planet choice, a field event, wildlife or faction hazards laid on the field.
+   * Every picker reads this one deck.
+   * @returns {'planet'|'field'|'wildlife'|'hazard'|null}
    */
   function eventSlot(wave) {
     if (wave < 3) return null;
     const h = mix(deckSeed, Math.floor(wave / 4));
     if (wave % 4 !== h % 4) return null;
     const kinds = wave >= WAVE_MIN ? ['planet', 'field', 'wildlife'] : ['field'];
+    if (wave >= HAZARD_WAVE) kinds.push('hazard');
     return kinds[(h >>> 2) % kinds.length];
   }
 

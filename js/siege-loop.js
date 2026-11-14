@@ -820,11 +820,8 @@ const SiegeLoop = (() => {
     }
     return {
       wave: next,
-      count: host
-        ? host.scouted || host.count < 10
-          ? host.count
-          : Math.round(host.count / 5) * 5
-        : count,
+      // The markers already show the planned count, so the line uses it too.
+      count: planned || (host ? host.count : count),
       names: host ? [host.factionName] : names,
       kind,
       boss: !!cfg.boss,

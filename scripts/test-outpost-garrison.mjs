@@ -157,6 +157,8 @@ Game.setCreativeSetting?.('unlockAll', true);
 Game.setCreativeSetting?.('freeResources', true);
 Game.setCreativeSetting?.('instantBuild', true);
 Game.creativeForceDay?.();
+// Seeded trees must not stand between the outpost and the tent.
+Game.creativeClearDecorations();
 const cx3 = Game.getWorldCenter();
 const opY3 = cx3.y - 100;
 Game.creativeSpawnPlayerBuildingAt('outpost', cx3.x, opY3);

@@ -114,7 +114,7 @@ function toNight(api, wave) {
   Game.warCampHooks.ctx().refreshPreview();
   const line = SiegeLoop.previewText(SiegeLoop.getPreview());
   ok(
-    /War camps — .+\(right\): /.test(line),
+    /War camps: .+\(right\): /.test(line),
     `the night preview names the camp and its bonus (${line})`
   );
 }
@@ -475,7 +475,8 @@ function toNight(api, wave) {
 // --- 8. events: about one wave in four ------------------------------------------------------
 {
   const { DynamicMapEvents: D, ContentExpansion: C, NeutralWildlife: N } = start(11);
-  const seen = { planet: 0, field: 0, wildlife: 0 };
+  const seen = { planet: 0, field: 0, wildlife: 0, hazard: 0 };
+  let heraldMissed = 0;
   let evWaves = 0;
   let total = 0;
   let worstGap = 0;
@@ -489,7 +490,9 @@ function toNight(api, wave) {
         D.pickEvent(wave) && 'planet',
         C.pickWaveEvent(wave) && 'field',
         N.pickWaveEvent(wave) && 'wildlife',
+        D.eventSlot(wave) === 'hazard' && 'hazard',
       ].filter(Boolean);
+      if (!C.heraldNews(wave) !== !hits.length) heraldMissed++;
       total++;
       if (
         hits.length > 1 ||
@@ -514,11 +517,44 @@ function toNight(api, wave) {
   ok(mismatched === 0, 'one event system speaks per event wave, and only in its own slot');
   ok(worstGap <= 8, `never more than ${worstGap} waves between events`);
   ok(
-    seen.planet > 0 && seen.field > 0 && seen.wildlife > 0,
-    `all three kinds appear (${JSON.stringify(seen)})`
+    seen.planet > 0 && seen.field > 0 && seen.wildlife > 0 && seen.hazard > 0,
+    `all four kinds appear (${JSON.stringify(seen)})`
+  );
+  ok(
+    heraldMissed === 0,
+    `the herald names the deck's event on every event wave, and only then (${heraldMissed} off)`
   );
   const planet = Object.values(D.EVENTS).every((e) => e.choices.length >= 2);
   ok(planet, 'every planet event offers a real choice');
+}
+
+// --- 9. faction hazards change only on the deck's hazard waves -------------------------------
+{
+  const api = start(13);
+  const { Game, GameState: GS, DynamicMapEvents: D } = api;
+  run(Game, 10);
+  D.resetRun('hazard-seed');
+  let changed = 0;
+  let offDeck = 0;
+  let hazardWaves = 0;
+  for (let wave = 20; wave <= 70; wave++) {
+    toNight(api, wave);
+    const before = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
+    Game.beginDayPhase(true);
+    const after = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
+    const due = D.eventSlot(GS.wave) === 'hazard';
+    if (due) hazardWaves++;
+    if (before !== after) {
+      changed++;
+      if (!due) offDeck++;
+    }
+  }
+  ok(
+    hazardWaves > 0 && changed === hazardWaves,
+    `every hazard wave lays hazards (${changed} of ${hazardWaves})`
+  );
+  ok(offDeck === 0, `no hazard appears or spreads off the deck (${offDeck} waves)`);
+  ok(GS.hazards.length <= 4, `at most four hazards on the field (${GS.hazards.length})`);
 }
 
 process.exit(failures() ? 1 : 0);

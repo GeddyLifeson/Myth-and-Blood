@@ -65,10 +65,11 @@ const waves = (api, last = LAST_WAVE) => {
     bad.length === 0,
     `the leading faction is 70-80% of the host on waves 4-${LAST_WAVE} (${rows.length} waves; off: ${bad.map((r) => `${r.wave}:${r.share.toFixed(2)}`).join(' ') || 'none'})`
   );
-  const kinds = rows.filter((r) => r.kinds < 4 || r.kinds > 7);
+  // The rebalanced opening fields hosts of five; four kinds in five bodies is a row of singles.
+  const kinds = rows.filter((r) => r.kinds < (r.queue.length < 8 ? 3 : 4) || r.kinds > 7);
   ok(
     kinds.length === 0,
-    `four to seven kinds of enemy on every wave (off: ${kinds.map((r) => `${r.wave}:${r.kinds}`).join(' ') || 'none'})`
+    `four to seven kinds of enemy on every wave, three in a host under eight (off: ${kinds.map((r) => `${r.wave}:${r.kinds}`).join(' ') || 'none'})`
   );
   const leads = new Set(rows.map((r) => r.plan.leadId));
   ok(leads.size >= 5, `at least five factions get to lead (${[...leads].join(', ')})`);
@@ -192,9 +193,25 @@ function killTwo(api, t) {
   Game.takeDamage(target, 60, { attacker: soldier, splash: t === 710 });
 }
 
+/**
+ * Cut down the shieldbearers while the wall advances. Four footmen no longer hold wave 24
+ * after the difficulty rebalance, so the test does the killing; what it checks is the break.
+ */
+function breakWall(api, t) {
+  const { Game, GameState: GS, HostTactics: HT } = api;
+  const fired = HT.getState().fired;
+  if (t % 20 || !(fired.wall >= 3) || fired.charge) return;
+  const soldier = GS.units.find((u) => u.team === 'player' && u.hp > 0) || null;
+  for (const u of GS.units) {
+    if (u.team !== 'enemy' || u.hp <= 0 || u.wallRole !== 'shield') continue;
+    u.hp = 1;
+    Game.takeDamage(u, 60, { attacker: soldier });
+  }
+}
+
 const CASES = [
   ['goblin_hordes', 'swarm', (f) => f.runners > 0, null],
-  ['orc_warbands', 'shield_wall', (f) => f.wall > 0 && f.broken > 0, null],
+  ['orc_warbands', 'shield_wall', (f) => f.wall > 0 && f.broken > 0, breakWall],
   ['wild_hunt', 'flank_dash', (f) => f.dash > 0, null],
   ['dark_legions', 'risen', (f) => f.rise > 0 && f.laidToRest > 0, killTwo],
   ['void_abyssal', 'unseen', (f) => f.rift > 0 && f.ambush > 0, null],
