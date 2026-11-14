@@ -6085,7 +6085,6 @@ const Game = (() => {
     }
   }
 
-
   /**
    * Rolls the plan for a wave: which of the three top-edge sectors the host uses, what
    * share each gets, and which enemies go where. Rolled at nightfall so the night markers
