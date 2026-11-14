@@ -16992,6 +16992,7 @@ const Game = (() => {
     const snap = {
       version: SAVE_VERSION,
       savedAt: Date.now(),
+      simTick: GS.updateTick,
       wave: GS.wave,
       nextWavePlan: restoreNextWavePlan(GS.nextWavePlan, GS.wave),
       cheatsUsed: !!GS.cheatsUsed,
@@ -17374,8 +17375,9 @@ const Game = (() => {
     if (svc('ContentExpansion')?.setLoadout && snap.loadout) {
       svc('ContentExpansion').setLoadout(snap.loadout, { silent: true });
     }
-    // Modules keep tick stamps with 0 meaning "never", so a stamp restored at tick 0 would be lost.
-    GS.updateTick = Math.max(1, GS.updateTick | 0);
+    // Modules keep tick stamps with 0 meaning "never": run the clock on from the saved tick so
+    // restored stamps stay above 0. Never wound back, so live stamps in other modules stay valid.
+    GS.updateTick = Math.max(GS.updateTick | 0, Number(snap.simTick) || 0, 1);
     // Every registered module section (siege loop, research, economy, factions, ...).
     const loaded = SaveRegistry.loadAll(snap.modules, siegeCtx);
     if (!loaded.ok) {

@@ -199,8 +199,8 @@ const SaveRegistry = (() => {
   }
 
   /**
-   * The game's current sim tick (0 without a game). The counter is NOT restored by a load,
-   * so a section that keeps tick stamps saves them as `stamp - SaveRegistry.tick()` and
+   * The game's current sim tick (0 without a game). A load only moves the counter forward
+   * (to at least the saved tick), so a section that keeps tick stamps saves them as `stamp - SaveRegistry.tick()` and
    * adds SaveRegistry.tick() back in load().
    */
   function tick() {
