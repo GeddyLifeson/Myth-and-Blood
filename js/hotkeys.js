@@ -33,8 +33,8 @@ const Hotkeys = (() => {
 
   const STATE_LABELS = {
     menu: 'Main menu',
-    night: 'Night — preparing',
-    day: 'Day — under attack',
+    night: 'Night: preparing',
+    day: 'Day: under attack',
     unit_selected: 'Soldiers selected',
     building_selected: 'Building picked up',
     placement: 'Placing or aiming',
