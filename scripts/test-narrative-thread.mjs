@@ -62,8 +62,8 @@ const messages = [];
 NarrativeThread.resetRun();
 NarrativeThread.onRunStart({ creative: false, showMessage: (m) => messages.push(m) });
 ok(
-  messages.some((m) => m.includes('Ancient Crown') || m.includes('cosmic time')),
-  'run start frames ancient crown'
+  messages.some((m) => m.includes('watch fire')),
+  'run start opens on the watch fire'
 );
 
 NarrativeThread.resetRun();
@@ -151,14 +151,14 @@ NarrativeThread.onWaveStart(150, {
   addHighlight: () => {},
 });
 ok(
-  messages.some((m) => m.includes('medieval kingdom') || m.includes('imperial')),
-  'wave 150 succession beat'
+  messages.some((m) => m.includes('first dawn')),
+  'wave 150 long-watch beat'
 );
 
 const intel = NarrativeThread.formatIntelNote({ wave: 150 });
 ok(
-  intel.toLowerCase().includes('legend') || intel.toLowerCase().includes('crown'),
-  'intel mentions crown legends'
+  intel.toLowerCase().includes('legend') || intel.toLowerCase().includes('names'),
+  'intel mentions the names kept'
 );
 
 if (failures()) {

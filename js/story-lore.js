@@ -1,37 +1,39 @@
 /**
- * Story / Lore — branching narratives from player choices, chronicles integration.
+ * Story / Lore — the name the men give your way of fighting, from the choices you make,
+ * and the lines spoken at the dawns that mark how long the line has stood.
  */
 const StoryLore = (() => {
   const STORAGE_KEY = 'myth-and-blood-story-v1';
   const MAX_LIFETIME_CHOICES = 80;
 
+  // Ids are stored in saves and the lifetime log; only the words change.
   const BRANCHES = {
     iron_crown: {
       id: 'iron_crown',
-      label: 'Iron Crown',
-      epithet: 'the Iron Crown path',
-      desc: 'Aggressive decrees, storm raids, and harnessed fury — the realm expands by force.',
+      label: 'The Iron Hand',
+      epithet: 'the iron hand',
+      desc: 'You answer the north with fire and steel. Nothing is spared, least of all your own.',
       color: '#c04040',
     },
     silver_diplomat: {
       id: 'silver_diplomat',
-      label: 'Silver Diplomat',
-      epithet: 'the Silver Diplomat path',
-      desc: 'Sealed rifts, fortified walls, and cautious evacuations — survival through restraint.',
+      label: 'The Shut Gate',
+      epithet: 'the shut gate',
+      desc: 'You wall, seal and wait. The north may starve before you do.',
       color: '#80a0c0',
     },
     arcane_scholar: {
       id: 'arcane_scholar',
-      label: 'Arcane Scholar',
-      epithet: 'the Arcane Scholar path',
-      desc: 'Channelled storms, tapped ley lines, and claimed relics — power bought with risk.',
+      label: 'The Borrowed Fire',
+      epithet: 'the borrowed fire',
+      desc: 'You take what the dark offers and count the cost later.',
       color: '#8060e0',
     },
     pragmatist: {
       id: 'pragmatist',
-      label: 'Pragmatist',
-      epithet: 'the Pragmatist path',
-      desc: 'Measured musters and weathered crises — no single doctrine, only what works.',
+      label: 'The Long Watch',
+      epithet: 'the long watch',
+      desc: 'No creed. You do what the day asks and bury who it takes.',
       color: '#c0a040',
     },
   };
@@ -58,115 +60,118 @@ const StoryLore = (() => {
     hellforge_decree: { iron_crown: 4 },
   };
 
+  /**
+   * Beats land where a run actually is: dawns ten, twenty-five, fifty and a hundred.
+   * They mark how long the line has stood. Nothing here says the siege is won.
+   */
   const BRANCH_BEATS = {
     iron_crown: {
-      31: {
-        title: 'Iron Proclamation',
-        hook: 'Wave thirty-one. The Crown rules by decree — your kingdom rises on martial law and veteran steel.',
-        sub: 'Scribes note a hard edge in your chronicle. The north will answer in blood.',
+      10: {
+        title: 'First Blood Paid',
+        hook: 'Ten dawns. You have answered every horn with steel.',
+        sub: 'The men have stopped asking for mercy. They have stopped giving it.',
+      },
+      25: {
+        title: 'No Quarter',
+        hook: 'The heads on the stakes face north. Your men put them there.',
+        sub: 'The enemy has learned your name. It comes anyway.',
+      },
+      50: {
+        title: 'The Red Road',
+        hook: 'Fifty dawns, and the field is red to the treeline.',
+        sub: 'You have made a slaughter yard and called it a border.',
       },
       100: {
-        title: 'Empire of Conquest',
-        hook: 'Wave one hundred. Empire Ascendant — your academies feed an army built to break, not bargain.',
-        sub: 'Settlement raids and imperial marches define this era in the royal ledger.',
-      },
-      200: {
-        title: 'Dominion by Fire',
-        hook: 'Wave two hundred. Planetary Dominion — you mirror the host’s cruelty and outpace their economy by razing first.',
-        sub: 'Counter-holds and couriers carry ultimatums, not petitions.',
-      },
-      500: {
-        title: 'Assault on the Host',
-        hook: 'Wave five hundred. The line advances at spearpoint — the endless host awakens to a crown that never kneels.',
-        sub: 'True victory demands shattering the tyrant; the chronicles already call this a war of annihilation.',
+        title: 'Iron and Ash',
+        hook: 'A hundred dawns. The Eternal has fallen once. He will come again, and so will you.',
+        sub: 'There is no peace to take here. Only the next horn.',
       },
     },
     silver_diplomat: {
-      31: {
-        title: 'Measured Rising',
-        hook: 'Wave thirty-one. Kingdom Rising — walls thicken, seals hold, and the Crown favors endurance over gambits.',
-        sub: 'Your scribes praise caution; the host must erode you — they cannot shock you.',
+      10: {
+        title: 'The Gate Holds',
+        hook: 'Ten dawns. The gate has not opened once.',
+        sub: 'Behind it they count the bread and the arrows. Both run short.',
+      },
+      25: {
+        title: 'Stone and Patience',
+        hook: 'The walls are thicker than the ranks behind them.',
+        sub: 'Wait, you tell them. The north is hungry too.',
+      },
+      50: {
+        title: 'The Narrow Light',
+        hook: 'Fifty dawns behind stone. The children here have never seen the far field.',
+        sub: 'What you sealed out still scratches at the seams.',
       },
       100: {
-        title: 'Fortress Empire',
-        hook: 'Wave one hundred. Empire Ascendant — hamlets and guilds behind layered defenses decide every dawn.',
-        sub: 'The chronicle speaks of a realm that trades ground only to reclaim it at dusk.',
-      },
-      200: {
-        title: 'Guarded Dominion',
-        hook: 'Wave two hundred. Planetary Dominion — you brace the north while couriers negotiate from strength.',
-        sub: 'Enemy mirror settlements rise, but your sealed lines and fortified holds buy time.',
-      },
-      500: {
-        title: 'Vigil Against the Host',
-        hook: 'Wave five hundred. Ground is taken methodically — the endless host finds no crack in your patience.',
-        sub: 'True victory will be recorded as discipline, not frenzy.',
+        title: 'Unbroken',
+        hook: 'A hundred dawns. The gate is scarred black and still shut.',
+        sub: 'Nothing was taken. Nothing was given up. That is the whole of it.',
       },
     },
     arcane_scholar: {
-      31: {
-        title: 'Arcane Ascension',
-        hook: 'Wave thirty-one. Kingdom Rising — relics claimed, ley lines tapped, and mages stride beside knights.',
-        sub: 'The Crown’s chronicle glows with storm-light; power is your currency.',
+      10: {
+        title: 'The First Bargain',
+        hook: 'Ten dawns. The storm came when you called it.',
+        sub: 'Nobody asks yet what it will want back.',
+      },
+      25: {
+        title: 'Strange Lights',
+        hook: 'Lights walk the line at night. The men no longer look at them.',
+        sub: 'The relics hum when the dead are counted.',
+      },
+      50: {
+        title: 'The Debt',
+        hook: 'Fifty dawns of borrowed fire. The mages have stopped sleeping.',
+        sub: 'Something in the north knows the words you use.',
       },
       100: {
-        title: 'Empire of Wonders',
-        hook: 'Wave one hundred. Empire Ascendant — science and sorcery steer colony value and assault composition.',
-        sub: 'Planet events answered with channelled fury echo in every wave report.',
-      },
-      200: {
-        title: 'Dominion of Relics',
-        hook: 'Wave two hundred. Planetary Dominion — mirrored rifts looted, storms ridden, ruins claimed.',
-        sub: 'The north burns with borrowed power; the ledger warns of debts yet unpaid.',
-      },
-      500: {
-        title: 'Channel Against the Host',
-        hook: 'Wave five hundred. You channel the planet’s pulse while realms crumble — the Tyrant faces a crown that speaks its language.',
-        sub: 'Field diverse unit types to pierce the ward; arcane reckoning awaits.',
+        title: 'What Answers',
+        hook: 'A hundred dawns. You speak to the dark, and the dark is fluent.',
+        sub: 'The line holds. Do not ask what holds it.',
       },
     },
     pragmatist: {
-      31: {
-        title: 'Kingdom Rising',
-        hook: 'Wave thirty-one. The Outpost Realm hardens into a kingdom — no single doctrine, only what survived.',
-        sub: 'Chronicles mark a commander who adapts faster than the host expects.',
+      10: {
+        title: 'Ten Dawns',
+        hook: 'Ten dawns. Fewer faces at the fire than there were.',
+        sub: 'Whatever works, you use. Whoever falls, you bury.',
+      },
+      25: {
+        title: 'The Tally',
+        hook: 'The tally sticks are notched through. Someone cuts new ones.',
+        sub: 'No banner flies over this line. Only the men on it.',
+      },
+      50: {
+        title: 'Half a Hundred',
+        hook: 'Fifty dawns. The oldest soldier here remembers three of them.',
+        sub: 'The north has not learned your pattern. You have none.',
       },
       100: {
-        title: 'Empire Ascendant',
-        hook: 'Wave one hundred. Full academy training and colony value steer assaults — you bend without breaking.',
-        sub: 'The royal ledger shows balanced choices; the north cannot read your pattern.',
-      },
-      200: {
-        title: 'Planetary Dominion',
-        hook: 'Wave two hundred. Mirror war at scale — raids when profitable, walls when necessary.',
-        sub: 'Economy purge or counter-holds: the chronicle says you chose what the wave demanded.',
-      },
-      500: {
-        title: 'The Long Siege',
-        hook: 'Wave five hundred. The north fractures — you eliminate realms pragmatically until the endless host stands alone.',
-        sub: 'True victory requires shattering the tyrant; your path remains uncommitted until the end.',
+        title: 'The Hundredth Dawn',
+        hook: 'A hundred dawns. The Eternal fell at the line, and the horn sounded again after.',
+        sub: 'The siege does not end. You are still here. That is the tally.',
       },
     },
   };
 
+  /** How a run is remembered. `victory` is a run left standing; `defeat` is a line that fell. */
   const RUN_OUTRO = {
     iron_crown: {
-      victory:
-        'The chronicles close on an iron reign — northern ash and a crown that brooks no rival.',
-      defeat: 'The iron crown slips — the host broke your momentum before the final decree.',
+      victory: 'You left the field with the stakes still standing.',
+      defeat: 'The line broke with its blades still wet. The north walks over what you burned.',
     },
     silver_diplomat: {
-      victory:
-        'The chronicles praise a patient crown — walls held until the north had nothing left.',
-      defeat: 'Caution could not outlast the tide — the silver ledger ends in retreat.',
+      victory: 'The gate was still shut when you set down the horn.',
+      defeat: 'The gate opened at last. Not from the inside.',
     },
     arcane_scholar: {
-      victory: 'Storms fade; the chronicles record a realm that bent ley lines to its will.',
-      defeat: 'Borrowed power exacted its price — the arcane thread snaps in the ledger.',
+      victory: 'The lights still walk the line. They no longer wait for your word.',
+      defeat: 'The fire you borrowed went home. It took the line with it.',
     },
     pragmatist: {
-      victory: 'No single myth — the chronicles say you did what was needed, wave by wave.',
-      defeat: 'Adaptation was not enough — the host found a pattern in your pragmatism.',
+      victory: 'The fire is banked. The watch passes to someone else.',
+      defeat: 'The day asked more than there was left to give.',
     },
   };
 
@@ -241,8 +246,8 @@ const StoryLore = (() => {
 
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
-        title: `Story Arc — ${BRANCHES[branch]?.label || branch}`,
-        summary: `${line} ${session.choices.length} recorded choices shaped ${BRANCHES[branch]?.epithet || branch}.`,
+        title: `How it ended — ${BRANCHES[branch]?.label || branch}`,
+        summary: line,
         branch,
         wave: ctx.wave,
         victory: ctx.victory,
@@ -307,7 +312,7 @@ const StoryLore = (() => {
     const shifted = prevBranch !== branch && session.choices.length >= 2;
     if (shifted && typeof Game !== 'undefined') {
       Game.showMessage?.(
-        `Chronicle — your choices bend toward ${BRANCHES[branch]?.label || branch}.`,
+        `The men have a name for how you fight: ${BRANCHES[branch]?.label || branch}.`,
         320
       );
     }
@@ -332,8 +337,9 @@ const StoryLore = (() => {
         type: 'branch_beat',
       });
     }
-    if (typeof Game !== 'undefined') {
-      Game.showMessage?.(`Chronicle — ${beat.hook}`, 400);
+    // The game speaks the beat itself when it asked for this wave's lines; do not say it twice.
+    if (typeof Game !== 'undefined' && session.narratedWave !== wave) {
+      Game.showMessage?.(beat.hook, 400);
       if (beat.sub) Game.showMessage?.(beat.sub, 340);
     }
     return beat;
@@ -342,6 +348,7 @@ const StoryLore = (() => {
   function getWaveNarrative(wave) {
     const branch = session ? getDominantBranch() : 'pragmatist';
     const branchBeat = BRANCH_BEATS[branch]?.[wave];
+    if (session) session.narratedWave = wave;
     if (branchBeat) return branchBeat;
     const framed =
       typeof LoreData !== 'undefined' ? LoreData.CAMPAIGN_NARRATIVE?.waves?.[wave] : null;
@@ -384,44 +391,34 @@ const StoryLore = (() => {
     };
   }
 
+  /** The player's own record, for the World and lore tab. */
   function getEncyclopediaEntries() {
     const entries = [];
     const life = getLifetimeSummary();
     const dom = BRANCHES[life.dominantLifetimeBranch] || BRANCHES.pragmatist;
+    const runs = life.branchTotals[life.dominantLifetimeBranch] || 0;
 
     entries.push({
       cat: 'story',
-      name: 'Your Story Arc',
-      body: `Lifetime tendency: ${dom.label} (${life.branchTotals[life.dominantLifetimeBranch] || 0} runs). ${dom.desc} Choices during planet events and kingdom doctrines shift the chronicle branch mid-campaign.`,
-      storyBranch: dom.id,
+      name: 'How you fight',
+      body: runs
+        ? `Most often: ${dom.label}. ${dom.desc}\n\nThe choices you make when the field offers one decide which of four names the men give you. Each has its own lines at dawns ten, twenty-five, fifty and a hundred.`
+        : 'The choices you make when the field offers one decide which of four names the men give you. Each has its own lines at dawns ten, twenty-five, fifty and a hundred. You have no record yet.',
+      storyBranch: runs ? dom.id : null,
     });
 
     for (const b of Object.values(BRANCHES)) {
-      entries.push({
-        cat: 'story',
-        name: `${b.label} Path`,
-        body: b.desc,
-        classified: `Recorded when planet responses and doctrines favor this style. Wave 31, 100, 200, and 500 chronicle beats branch based on your dominant path.`,
-        classifiedRule: 'wave:31',
-        storyBranch: b.id,
-      });
+      entries.push({ cat: 'story', name: b.label, body: b.desc, storyBranch: b.id });
     }
 
     for (const arc of life.recentArcs) {
       const br = BRANCHES[arc.branch] || BRANCHES.pragmatist;
+      const outro = RUN_OUTRO[arc.branch] || RUN_OUTRO.pragmatist;
       entries.push({
         cat: 'story',
-        name: `${br.label} — W${arc.wave} ${arc.victory ? 'Victory' : 'Defeat'}`,
-        body: `${arc.choiceCount} choices recorded. ${RUN_OUTRO[arc.branch]?.[arc.victory ? 'victory' : 'defeat'] || ''}`,
+        name: `${br.label} — ${arc.victory ? 'stood down at' : 'fell at'} wave ${arc.wave}`,
+        body: arc.victory ? outro.victory : outro.defeat,
         storyMeta: new Date(arc.at).toLocaleDateString(),
-      });
-    }
-
-    if (!life.recentArcs.length) {
-      entries.push({
-        cat: 'story',
-        name: 'Branching Chronicles',
-        body: 'Finish a campaign run with recorded choices — planet event responses and kingdom doctrines write alternate chronicle beats at waves 31, 100, 200, and 500.',
       });
     }
 
@@ -439,6 +436,8 @@ const StoryLore = (() => {
     load,
     save,
     BRANCHES,
+    BRANCH_BEATS,
+    RUN_OUTRO,
     onRunStart,
     onRunEnd,
     recordChoice,

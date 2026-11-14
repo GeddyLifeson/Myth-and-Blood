@@ -64,11 +64,12 @@ StoryLore.recordChoice({
 const branch = StoryLore.getDominantBranch();
 assert(branch === 'iron_crown', `expected iron_crown branch, got ${branch}`);
 
-const wave31 = StoryLore.getWaveNarrative(31);
-assert(wave31?.title === 'Iron Proclamation', 'branch-specific wave 31 narrative');
+const wave25 = StoryLore.getWaveNarrative(25);
+assert(wave25?.title === 'No Quarter', 'branch-specific wave 25 narrative');
+assert(StoryLore.getWaveNarrative(31)?.title === 'Default', 'other waves fall back to the shared beat');
 
 const snap = StoryLore.getSessionSnapshot();
-assert(snap?.branchLabel === 'Iron Crown', 'session snapshot branch label');
+assert(snap?.branchLabel === 'The Iron Hand', 'session snapshot branch label');
 assert(snap.choiceCount === 2, 'two choices recorded');
 
 const beforeChronicles = Chronicles.getAll().length;

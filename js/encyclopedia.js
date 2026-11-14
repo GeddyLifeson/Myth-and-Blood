@@ -1,1654 +1,1028 @@
 /**
  * Myth and Blood — encyclopedia (main menu, pause menu, in-game HUD).
+ *
+ * A reference a player uses during a siege: how the game works, what each soldier,
+ * building and enemy does, and how to beat what is coming.
+ *
+ * Almost every entry is built at open time from the game's own definitions (UnitDefs,
+ * BuildDefs, EnemyDefs, Roster, SiegeLoop, Research, Hotkeys, ...), so numbers, names and
+ * keys cannot drift from the game. Only two kinds of text are written here: the short
+ * rules in "How to play", and the one-line job of each building. No champion, operative
+ * or company name appears in this file; they are read from data when shown.
  */
 const Encyclopedia = (() => {
   let panelOpen = false;
   let returnToPause = false;
-  const COLISEUM_TEASE = {
-    stone_cold:
-      'The Stonebreaker — court records say elites fall to a sudden stunner and the crowd goes silent.',
-    the_rock: 'The Mountain King lays down the law; kill streaks get louder when he headlines.',
-    ric_flair: 'The Gilded Lord — allies near him fight with extra swagger. Woooo!',
-    hulk_hogan: 'The Titan — below half health he powers up and refuses to stay down.',
-    macho_man: 'Sky Elbow Ace drops elbows from the high ground. Snap into it.',
-    sting: 'The Crow Sentinel strikes from the shadows. Wounded prey rarely escape the deathlock.',
-    john_cena: 'The Patriot never gives up — damage seems to bounce off when the fight turns ugly.',
-    bautista: 'The Wild Lord — his bomb shakes everyone standing too close.',
-    roman_reigns: 'The Island Sovereign — the spear ends arguments and several orcs at once.',
-    shawn_michaels:
-      'Heartland Ace — a chin check rings out when the moment is right, usually a crit.',
-    bret_hart: 'The Technician — sharpshooter locks a single foe in misery.',
-    undertaker: 'The Grave Walker — tombstones spread dread; enemy morale withers nearby.',
-    kane: 'The Inferno Brother — chokeslams hit harder the bigger the target.',
-    andre_giant: 'The Colossus — footsteps cause splash damage; walls fear him.',
-    razor_ramon: 'The Bladed Duke — steady, stylish, inevitable edge damage.',
-    kevin_nash: 'The Freight Tower — power bombs echo through the ranks.',
-    roddy_piper: 'The Bagpipe Brawler — hot tag energy; when he scores, allies feel it.',
-    hacksaw_duggan: 'The Timber Patriot — rally pulses on wave start when he is signed.',
-    junkyard_dog: 'The Scrapyard Bruiser — headbutts stun on impact.',
-    rey_mysterio: 'The Luchador Phantom — too fast to pin, too clever to catch.',
-    eddie_guerrero: 'The Border Liege — lie, cheat, steal; maybe pick an elite pocket for TP.',
-    chris_benoit: 'The Submission Ace — surgical, cruel, single-target devastation.',
-    oba_femi: 'The Rising Champion — surrounded is when he hits hardest.',
-    brock_lesnar: 'The Beast Unchained — if you are wounded, you are gone.',
-    cm_punk: 'The Clean-Living Rebel — lights-out knee finishes anyone already hurting.',
-    seth_rollins: 'The Schemer — boot stomps from range at wounded targets.',
-    sheamus: 'The Gaelic Brawler — running boot leaves a line of bodies.',
-    bray_wyatt:
-      'The Lantern Prophet — his lantern dims enemy accuracy when dusk falls on the field.',
-    randy_orton: 'The Ambush Hunter — outta nowhere on anyone already hurting.',
-  };
 
   const CATEGORIES = [
-    { id: 'allies', label: 'Allies' },
-    { id: 'enemies', label: 'Enemies' },
-    { id: 'roles', label: 'Roles & Counters' },
-    { id: 'bestiary', label: 'Bestiary' },
+    { id: 'howto', label: 'How to play' },
+    { id: 'army', label: 'Your army' },
     { id: 'buildings', label: 'Buildings' },
-    { id: 'orders', label: 'Orders & Strikes' },
-    { id: 'stars', label: 'Star System' },
-    { id: 'eras', label: 'Eras & Economy' },
-    { id: 'colony', label: 'Kingdom Strength' },
     { id: 'research', label: 'Research' },
-    { id: 'loadouts', label: 'Loadouts' },
-    { id: 'bosses', label: 'Named Bosses' },
-    { id: 'campaign', label: 'Campaign' },
-    { id: 'honor', label: 'Honor & Veterans' },
-    { id: 'wwe', label: 'Grand Coliseum Champions' },
-    { id: 'doomslayer', label: 'Hellbane' },
-    { id: 'crossover_meta', label: 'Evolved Allies System' },
-    { id: 'crossover_ultimis', label: 'Void Residue' },
-    { id: 'crossover_primis', label: 'First Circle' },
-    { id: 'crossover_halo', label: 'Orbital Vanguard' },
-    { id: 'crossover_gears', label: 'Iron Trench Coalition' },
-    { id: 'crossover_lotr', label: 'Ninefold March' },
-    { id: 'crossover_baki', label: 'Iron Pit Guild' },
-    { id: 'crossover_jojo', label: 'Bound Spirit Court' },
-    { id: 'crossover_fotns', label: 'North Star Ascetics' },
-    { id: 'crossover_dragonball', label: 'Skyburst Order' },
-    { id: 'crossover_imperium', label: 'Crimson Legions' },
-    { id: 'crossover_crystal', label: 'Crystal Vanguard' },
-    { id: 'crossover_warp', label: 'Rift Cult' },
-    { id: 'crossover_tes', label: 'Voicebound Pact' },
-    { id: 'perks', label: 'Tonic Stations' },
-    { id: 'chronicles', label: 'Chronicles' },
-    { id: 'story', label: 'Story Arc' },
-    { id: 'legacy', label: 'Legacy' },
-    { id: 'creative', label: 'Creative Lab' },
+    { id: 'orders', label: 'Orders' },
+    { id: 'spoils', label: 'Spoils and edicts' },
+    { id: 'ribbons', label: 'Ribbons and score' },
+    { id: 'enemies', label: 'Enemies' },
+    { id: 'bosses', label: 'Bosses' },
+    { id: 'marks', label: 'Status marks' },
+    { id: 'champions', label: 'Champions' },
+    { id: 'world', label: 'World and lore' },
   ];
 
-  const BASE_ENTRIES = [
-    {
-      cat: 'allies',
-      name: 'Footman',
-      body: 'Cheap melee line-holder. Garrisons walls when a General commands the Keep. Earns bronze stars from kills; 3 gold stars may earn an honor name (e.g. Syr Gwyn).',
-    },
-    {
-      cat: 'allies',
-      name: 'Archer',
-      body: 'Long-range DPS. Garrison outposts for extended range. Fragile — keep behind cover.',
-    },
-    {
-      cat: 'allies',
-      name: 'Mage',
-      body: 'Arcane bolts with splash damage. Strong vs clustered foes.',
-    },
-    {
-      cat: 'allies',
-      name: 'Cavalry',
-      body: 'Fast melee with charge bonus. Excellent for hunting stragglers.',
-    },
-    {
-      cat: 'allies',
-      name: 'Healer',
-      body: 'Heals allies in range — including other healers. Ranks when healing (once per wave). On any damage, retreats to the nearest med tent until enemies stop targeting them. At ≤25% HP they also follow the standard wounded retreat.',
-    },
-    {
-      cat: 'allies',
-      name: 'Knight',
-      body: 'Heavy armored melee with damage resistance. Banner courier can summon one.',
-    },
-    {
-      cat: 'allies',
-      name: 'Sapper',
-      body: 'Field engineer. Buries mines at night that blow under the first enemy to step on them, and lobs satchel charges by day. Blasts ignore armour and shields. Only a knife up close — keep him behind the line.',
-    },
-    {
-      cat: 'allies',
-      name: 'General',
-      body: 'Global enemy priority target. Station in the castle Keep to grow a command aura and assign footmen to wall slots. Stars after promotion only buff aura.',
-    },
-    {
-      cat: 'allies',
-      name: 'Builder',
-      body: 'Erects structures (2 projects max). Required ×5 for Hamlets and Merchant Guilds. Ranks when building.',
-    },
-    {
-      cat: 'allies',
-      name: 'Courier',
-      body: 'Dispatches royal messages once per wave (twice with Twin Dispatch at 3 gold stars). Ranks when sending dispatches.',
-    },
+  const SUBTITLE = 'How the siege works, who fights in it, and what comes out of the north';
 
-    {
-      cat: 'enemies',
-      name: 'Enemy Faction Evolution',
-      body: 'Five hostile realms evolve on a 4-stage track (Grunts → Elites → Forts → Kingdom). Open the Enemies tab after the game loads for full per-faction stage pages with unit pools, northern builds, and counter-raid rules.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Horde Grunts',
-      body: 'Goblins, orcs, plague rats, and sappers scale slowly — filler that falls behind as waves climb. The host replaces them with evil operatives.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Evil Operatives',
-      body: 'Fantasy horrors that scale with waves like your evolved roster — hellbound legionnaires, grim revenants, cinderbound juggernauts, and more. Purple glow marks operatives.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Goblin',
-      body: 'Weak horde grunt. Appears from wave 1 — does not scale like operatives.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Orc',
-      body: 'Sturdy horde grunt. Backbone of early waves; obsolete filler late game.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Hellbound Legionnaire',
-      body: 'Wave 25+ operative. Infernal bolt-caster — fantasy mirror of modern rifle lines.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Grim Revenant',
-      body: 'Wave 45+ operative. Soul-harvest sniper with extreme range.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Cinderbound Juggernaut',
-      body: 'Wave 55+ operative. Walking furnace armor — counters your late-game walls.',
-    },
-    { cat: 'enemies', name: 'Orc Archer', body: 'Ranged pressure from the back line.' },
-    {
-      cat: 'enemies',
-      name: 'Dark Knight',
-      body: 'Elite armored knight — purple glow. High HP and damage.',
-    },
-    { cat: 'enemies', name: 'Warg Rider', body: 'Fast cavalry harasser.' },
-    { cat: 'enemies', name: 'Dark Mage', body: 'Ranged arcane attacker.' },
-    { cat: 'enemies', name: 'Troll', body: 'Elite bruiser with heavy wall damage.' },
-    { cat: 'enemies', name: 'Goblin Sapper', body: 'Demolishes walls and settlements.' },
-    { cat: 'enemies', name: 'Necromancer', body: 'Elite caster.' },
-    { cat: 'enemies', name: 'Berserker', body: 'Elite high-damage melee.' },
-    { cat: 'enemies', name: 'Assassin', body: 'Elite striker — hunts your General.' },
-    { cat: 'enemies', name: 'Shaman', body: 'Enemy healer supporting hordes.' },
-    {
-      cat: 'enemies',
-      name: 'Siege Tower',
-      body: 'Deploys against walls every 5 waves. Linked to a wall segment for sustained fire.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Goblin Engineer',
-      body: 'Drops barricades. After wave 200, enemy economy buildings mirror yours.',
-    },
-    {
-      cat: 'enemies',
-      name: 'War Chief',
-      body: 'Boss-tier elite. Appears in late pools when no named boss leads.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Named Bosses (Every 10 Waves)',
-      body: 'Waves 10, 20, 30… each field a unique warlord who leads the assault personally. See the Named Bosses tab for full lore, mechanics, and counters. Monster bosses evolve each return: Prime → Returned → Ascendant → Eternal — stronger stats plus a themed pack of minions and northern holds.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Abomination',
-      body: 'Huge flesh horror with tentacles and many eyes. Regenerates slowly — burst it down.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Behemoth',
-      body: 'Colossal elite bruiser. Slow, enormous on the battlefield, smashes walls. Enrages below 40% HP.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Iron Colossus',
-      body: 'Massive riveted siege construct. Highest structure damage in the horde.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Void Stalker',
-      body: 'Tall shadow assassin — always hunts your General. Kill it before it closes.',
-    },
-    {
-      cat: 'enemies',
-      name: 'Elder Wyrm',
-      body: 'Ancient flying dragon, larger than sky drakes. Boss-tier fire from above.',
-    },
-
-    {
-      cat: 'buildings',
-      name: 'Outpost',
-      body: 'Forward cover +1 garrison slot for ranged units. Extends archer range.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Wall',
-      body: '5 TP. Blocks movement and holds line-breakers: each wall stops up to 3 runners per wave that come within reach, and they have to stand and fight. 2 footman slots per wall when General commands Keep. Siege priority.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Castle Compound',
-      body: 'Large footprint: 4 walls, 4 outposts, Keep, med tent, mess hall. Center of command.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Medical Tent',
-      body: 'Wounded allies at ≤25% HP retreat to the globally nearest med tent. Healers flee here on any damage until safe. Units heal while garrisoned and rejoin the fight once restored. Stretcher bearers: once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health instead of dying.',
-    },
-    { cat: 'buildings', name: 'Mess Hall', body: 'Morale aura for nearby troops.' },
-    {
-      cat: 'buildings',
-      name: 'Academies',
-      body: 'Training halls unlocked through research. Each complete academy trains 1 free unit per round alongside normal TP deploy. Special cadence: Healer Academy every 5 waves, General Academy every 10 waves (needs a promotable Footman, not an active General), Builder/Courier Academies only while none of that type is on the field.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Academy Mentors (Immortal Veterans)',
-      body: 'You cannot found an academy until its mentor walks the field. Find an Immortal veteran first: promote a troop of the matching type to max rank (Immortal for combat troops; Saint of the Realm for specialists) using Veteran Doctrine research and TP promotions. Deploy that mentor alive, then place the academy — e.g. Footman Academy needs an Immortal Footman, Archer Academy needs an Immortal Archer. General Academy instead needs a Footman who completed a gold-star honor cycle. The mentor must stay alive; if they fall, the academy keeps training but you cannot rebuild that hall without a new mentor.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Quarry',
-      body: '14 TP, 1 Builder, needs Prospecting. +3 TP at dawn, shown over the building (counts toward 6-site cap with trade posts).',
-    },
-    {
-      cat: 'buildings',
-      name: 'Trade Outpost',
-      body: '10 TP, 1 Builder, no research. +2 TP at dawn, shown over the building, and a small morale aura. Same 6-site cap as quarries.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Hamlet',
-      body: '100 TP, 5 Builders, 5-wave build. +5 TP/round. First settlement tier — requires Settlement Charter research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Village',
-      body: '180 TP, 6 Builders, 6-wave build. +8 TP/round. Requires Village Rights research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Town',
-      body: '280 TP, 7 Builders, 7-wave build. +10 TP/round. Requires Town Charter research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'City',
-      body: '420 TP, 8 Builders, 8-wave build. +12 TP/round. Requires Urban Planning research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Metropolis',
-      body: '600 TP, 10 Builders, 10-wave build. +15 TP/round. Requires Imperial Metropolis research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Merchant Guild',
-      body: '150 TP, 5 Builders. +1 TP/round per guild within settlement aura. Requires Merchant Charter research.',
-    },
-    {
-      cat: 'buildings',
-      name: 'Enemy Settlements',
-      body: 'After wave 200, enemies raise hamlets and guilds in the north. Each completed enemy settlement adds +1 unit to their spawn count.',
-    },
-
-    {
-      cat: 'orders',
-      name: 'Fireball Barrage',
-      body: '9 TP — AoE fire damage at clicked location.',
-    },
-    {
-      cat: 'orders',
-      name: 'Lightning Strike',
-      body: '6 TP — focused storm damage in a smaller radius.',
-    },
-    { cat: 'orders', name: 'Healing Rain', body: '6 TP — heals allies in a large radius.' },
-    {
-      cat: 'orders',
-      name: 'Reinforcements',
-      body: '12 TP — spawns footmen + archer on the battlefield.',
-    },
-    {
-      cat: 'orders',
-      name: 'Battle Rally',
-      body: '6 TP — morale and damage boost army-wide. Snaps demoralized troops back to the fight.',
-    },
-    {
-      cat: 'orders',
-      name: 'Morale & Routing',
-      body: 'Troops witness fallen allies (line of sight) and lose morale. Too many casualties cause routing — enemies flee off-map; before wave 100 allies may desert; after wave 100 they give up fighting until rallied. The General auto-paths to demoralized soldiers for a wall-to-wall pep talk (global detection, melee delivery). While rallying, he hits harder and shrugs off blows.',
-    },
-    {
-      cat: 'orders',
-      name: 'Spy Network',
-      body: 'One action per wave: steal TP, disrupt spawns, assassinate elites, scout, poison, sabotage siege.',
-    },
-    {
-      cat: 'orders',
-      name: 'Courier Messages',
-      body: 'One per wave (two with Twin Dispatch): reinforcements, decree (+morale), tax levy (+TP), call banner (knight), supplies (heal all).',
-    },
-
-    {
-      cat: 'stars',
-      name: 'Bronze Stars',
-      body: 'Combat troops earn bronze from kills. 3 bronze → 1 silver → 1 gold → TP promotion eligibility (Veteran Doctrine research required).',
-    },
-    {
-      cat: 'stars',
-      name: 'Specialist Ranks',
-      body: 'Healers, Builders, and Couriers earn one star step per wave when they work (heal, build, dispatch).',
-    },
-    {
-      cat: 'stars',
-      name: 'Specialist Extra Abilities (3 gold stars)',
-      body: 'At 3 gold stars specialists unlock passive masteries — Mass Mend, Rapid Repair, and Twin Dispatch (two messages per wave). The selected unit panel shows gold-star progress, lock/unlock state, and promote hints.',
-    },
-    {
-      cat: 'stars',
-      name: 'Gold & Honor Names',
-      body: 'At 3 gold stars, the Crown grants a name (e.g. Syr Gwyn) and promotion eligibility. Research Veteran Doctrine, then spend TP to promote — core troops do not auto-scale with waves.',
-    },
-    {
-      cat: 'stars',
-      name: 'Immortal Mentors for Academies',
-      body: 'Max-rank veterans (Immortal / Saint of the Realm) are not just powerful fighters — they are the only commanders the Crown recognizes as academy founders. Without an Immortal mentor of the matching type deployed on the field, the build button stays locked and the map will refuse placement. Hover any academy in the build panel for the exact mentor required.',
-    },
-    {
-      cat: 'stars',
-      name: 'Evolved Ally Scaling',
-      body: 'Coliseum and evolved operatives scale with wave number automatically. Core footmen, archers, and knights stay viable longer through veteran promotions and field tenure — but after wave ~40, TP promotions under Veteran Doctrine are how you keep pace with evil operatives.',
-    },
-    {
-      cat: 'stars',
-      name: 'General Promotion',
-      body: 'A 3-gold-star Footman can be promoted via General Academy — stats kept, stars reset for aura growth.',
-    },
-
-    {
-      cat: 'eras',
-      name: 'Kingdom Strength (Colony Value)',
-      body: 'Your live kingdom score sums Army, Works, and Treasury ledgers. The STRENGTH HUD in the top bar (after WAVE) shows the current stage — Humble I, Rising II, Formidable III, Dominant IV, Empire V — your ratio vs baseline (1.00× at the gold tick), and a tooltip explaining threat level and next-wave host pressure. See the Kingdom Strength tab for full formulas. Above 1.00× swells the host; below eases assaults.',
-    },
-    {
-      cat: 'eras',
-      name: 'Wave Pressure from Kingdom Strength',
-      body: "Each night, kingdom strength feeds the next wave's adaptive pressure — host size, siege weight, elite slots, and faction counters. Full breakdown in Kingdom Strength tab. Core enemy hpScale/dmgScale still comes from wave number; kingdom strength layers on top.",
-    },
-    {
-      cat: 'eras',
-      name: 'Tactical Points',
-      body: 'TP is awarded each cleared wave (+8 base, scaling with wave & difficulty). Storage is uncapped. Settlements add bonus TP/round. Large TP stockpiles raise Treasury in kingdom strength and can slightly accelerate enemy spawn cadence.',
-    },
-    {
-      cat: 'eras',
-      name: 'Territory (Every 10 Waves)',
-      body: 'Every 10 waves the map expands +90 wide and +110 deep, centered so new land appears on north, south, east, and west. More room to build, hunt, and defend every flank.',
-    },
-    {
-      cat: 'eras',
-      name: 'Multi-Front (Every 25 Waves)',
-      body: 'New attack flank until all four sides assault: North → East (25) → West (50) → South (75). Each dawn rolls which unlocked flanks are active — glowing edge bands, marching chevrons, and the corner compass show assaulting sides; dim "quiet" badges mark flanks in the pool but resting this wave. THREAT HUD uses the same ▲▶◀▼ compass.',
-    },
-    {
-      cat: 'eras',
-      name: 'Academy Era (Wave 100)',
-      body: 'Advanced academies unlock free training each round. TP deploy stays available at normal cost.',
-    },
-    {
-      cat: 'eras',
-      name: 'RTS Era (Wave 100+)',
-      body: 'Enemy counts swell ~35%. The war becomes territory control — protect economy buildings and training halls.',
-    },
-    {
-      cat: 'eras',
-      name: 'Enemy RTS (Wave 200)',
-      body: 'Map widens again. Enemies build hamlets and guilds that mirror your bonuses (+spawns). Siege everything.',
-    },
-    {
-      cat: 'eras',
-      name: 'Horde Waves (Every 5)',
-      body: 'Waves 5, 15, 25… spawn faster swarms of goblins, rats, and orcs — slightly weaker individually but numerous. A pulsing red edge and intensity meter (Swarm → Heavy → Critical) telegraph how brutal the tide is; listen for the drum stomp as spawns accelerate. Every 15th horde (15, 45, 75…) embeds a siege tower and sappers. Waves 10, 20, 30… are named boss waves instead.',
-    },
-    {
-      cat: 'eras',
-      name: 'Day & Night Cycle',
-      body: "Day brings enemy assaults — visibility is best at dawn and fades toward dusk as the wave wears on. Night is prep: no spawns, +35% builder speed, and time to reposition. Lantern Prophet's lantern punishes enemy sight — especially in low light.",
-    },
-
-    {
-      cat: 'campaign',
-      name: 'Campaign Victory — Northern Purge',
-      body: 'Campaign and Academy Era runs end when all enemy northern holds (hamlets, guilds, academies) are razed after wave 40 — trade posts and quarries are outposts you can sack for tactical gain but they do not end the war alone. From wave 200 (Enemy RTS), every hostile economy site must fall for total purge victory. Survival, seed, timed, and challenge modes remain endless.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Campaign Chronicle Beats',
-      body: 'Major milestones trigger Chronicle messages: wave 10 (named warlords + enemy trade posts), wave 31 (Kingdom Rising), wave 100 (Empire Ascendant / Academy Era), wave 200 (Planetary Dominion — raids authorized). Your first named boss kill earns a special chronicle entry. Destroy all enemy northern holds to win.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Kingdom Evolution (Player Growth)',
-      body: 'Your force evolves in four stages shown in the Kingdom HUD: Stage 1 Outpost Realm (waves 1–30) — defensive line, basic troops, first veterans (+5% line HP). Stage 2 Kingdom Rising (31–99) — academies, settlements, evolved allies, +3% army damage. Stage 3 Empire Ascendant (100–199) — loadouts, fortress economy, colony value heavily steers wave pressure; wave 150+ unlocks Settlement Raid missions. Stage 4 Planetary Dominion (200+) — massive map, mirror settlements, Counter-Hold courier, +5% army / +10% siege.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Settlement Raid Missions (Wave 150+)',
-      body: 'After wave 150, enemy factions accelerate northern outposts and hamlets. The SETTLEMENT RAIDS panel lists active targets with TP and science rewards. Select 2+ hunters (archers, knights, sappers, etc.), then dispatch a strike force — they path north and siege the hold. Razing via strike force pays the full loot bonus (+10–32 TP, +1–4 science by tier); organic hunts pay a smaller scavenger cut. Spy Settlement Raid (wave 150+) still sabotages the weakest hold for 45% HP. Enemy counter-raids at Stage 4 kingdom tiers strike your hamlets — keep a home guard.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Multi-Front Siege Warfare',
-      body: 'From wave 12 with 2+ active hostile factions, the host runs coordinated or competing multi-front sieges. Each faction gets a doctrine: Siege Line (north — breaks your wall), Economy Raid (south — hits hamlets/guilds), Wide Flank (east/west), or Opportunist (competes anywhere). Coordinated waves split fronts — e.g. Orc sieges North while Goblins raid South. Competing waves may stack multiple factions on one flank. Spawns follow faction doctrine; Stage 4 counter-raids use the same fronts (north siege vs south economy raid). INTEL HUD shows the plan; THREAT compass highlights multi-front waves.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Asymmetric Warfare',
-      body: 'Opposing roles: YOU are the Kingdom Commander — macro (night builds, hamlets, academies, research, TP) plus micro (HUNT, rally, doctrines, spy/courier). The HOST is an Evolving Threat — auto-spawns, faction kingdoms, levels up (Threat Lv 1–25+), and pressures the whole map. COMMAND HUD shows macro authority vs micro orders; HOST HUD shows threat level; the Kingdom bar compares blue (you) vs red (host). High Commander Authority grants longer nights, faster builders, and bonus TP. High Host Threat adds spawns, faster assaults, multi-flank bias, and elite injections. Raze northern holds to push threat level down.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Player Counter-Evolution (Wave 15+)',
-      body: 'Strike the host before it fully evolves. COUNTER-OFFENSIVE doctrines (left panel, separate from kingdom doctrines) spend TP to debuff the weakest active faction — reduced effective stage, fewer spawns, skipped northern builds, and host threat reduction on higher tiers. One offensive doctrine per wave. From wave 25, night EXPEDITIONS (right panel) send 1–4 hunters off-map against a chosen faction; they return next wave with survivors and apply a heavier debuff. Weakened factions show in the HOST HUD tooltip. Probing Raid (wave 15) → Border Sortie (35) → Northern Campaign (60) → Dominion Offensive (120), each gated by kingdom evolution stage.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Living Planet (Map Biomes)',
-      body: 'Territory expansion reveals a living world — biomes unlock as Land tiers grow (every 10 waves). Plains (home rally) grant +5% march speed. Forest Reaches (Land II+) add +14% cover but −12% speed in expanded north/side bands. Mountain Frontier (Land V+) grants −22% damage taken but −26% speed on high ground. Corrupted Border (Land VIII+ / hostile creep after wave 200) punishes defenders (+10% damage taken, enemies hit harder). Wave 1001+ bleeds the Corrupted Hellscape across the northern realm. REALM HUD lists active biomes; the minimap tints regions. Position troops deliberately — mountains anchor defensive lines, forests ambush, plains rush reinforcements.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Faction Environmental Hazards',
-      body: 'From Land II onward, the battlefield fills with scaling faction hazards tied to active host realms. Goblin Plague Zones (green) slow troops, drain morale, and chip HP — goblins and plague rats are immune. Orc Fire Pits (ember rings) burn player units; orcs ignore the flames. Void Corruption (purple) wounds all non-void units and spreads each wave — radius grows during combat and may seed satellite blights in the north. Hazard count, radius, and damage scale with faction evolution stage, territory tier, and wave. INTEL HUD lists active zones when no spy report is showing. Route armies around hazards, or cast Arcane Dispel (Spells, 5 TP — requires a living Mage in cast range) to purge void, burn, plague, and other blight zones. Void creep also slows when you drive the host back.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Neutral Wildlife & Environmental Events',
-      body: 'From wave 8, neutral beasts roam the wilds (amber rings on the minimap). They attack whichever army is closest — player or host — and do not count toward wave clear. Slay them for TP and morale: Wild Boar (+2 TP), Harpy Flock (+3), Brush Stalker (+3), Awakened Treant (+5). Events: Beast Migration (wave 12+), Predator Circle (harpy waves), Ancient Grove (treant), Carrion Feed (after heavy casualties), Den Disturbed (combat near wild dens). Stats scale with wave and territory tier. Both sides can hunt neutrals — race the host to the kill or lure beasts into enemy lines.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Dynamic Map Events — Planet Fights Back',
-      body: 'From wave 12, the living world strikes on a cadence — volcanic eruptions, awakening ruins, geothermal surges, mana storms, and titan quakes. Each event site appears on the battlefield (pulsing marker). During night prep, the PLANET EVENT panel offers three responses (some cost TP): harness power for rewards, evacuate or seal for safety, or hold ground and weather the worst. Your choice applies at dawn — fewer enemy spawns, wall protection, mage damage, builder speed, eruption pulses, ruin guardians, or wild stalkers. PLANET HUD and INTEL show the active threat. Ignoring events is free but punishing. Events scale with wave; geothermal returns on long cycles after wave 20.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Faction Reputation & Hostility',
-      body: "From wave 6 each hostile realm tracks how aggressively you fight it. Kills, razing northern holds, counter-offensives, expeditions, settlement raids, and harsh spy work raise hostility — Cordial → Wary → Hostile → Vengeful → Blood Feud. High hostility pulls evolution forward (stronger tiers spawn earlier), thickens spawn weights, injects more sub-bosses, and keeps counter-raids likely. Low hostility from restraint or Courier Truce (−18 for the angriest faction, −8 for others) slows military evolution and shifts pressure toward economic probes — extra trade posts and quarries in the north, lighter spawns, fewer counter-raids. Quiet waves without fighting a faction ease hostility −2. HOST HUD tooltip lists each realm's stance and evolution offset. Truces last 1–2 waves and dampen hostility gains.",
-    },
-    {
-      cat: 'campaign',
-      name: 'Crown Legacies (Multi-Run)',
-      body: 'Past campaigns unlock permanent perks on the main menu — up to 3 active before each run. Milestones: win a run (Crowned Command +4 TP), 3 honor names (Honor Bloodline), wave 50 (Siege Memory walls), 400 kills (Northern Grudge damage), 25 waves cleared (Realm Mason builders), wave 30 (Veteran Line HP), 50 kills on favorite unit (Favorite Champion), evolved ally service (Evolved Echo morale), wave 100 (Deep Survivor mitigation), 8 honors (Blood Crown +1 heir slot). HONOR HEIRS: select up to 2 named veterans from your lifetime honor roll — they spawn at dawn with their title, +1 bronze star, +5% HP, and +4 morale. Legacies persist in local storage; Creative Mode ignores them.',
-    },
-    {
-      cat: 'campaign',
-      name: 'Kingdom Evolution Meter',
-      body: 'The banner beside the Kingdom label grows as you fill the evolution meter (0–100% within each stage). The meter blends four signals: Colony Value (35%) — kingdom strength vs wave baseline; Buildings (25%) — completed player structures; Veterans (25%) — stars, ranks, and honor names on the field; Research (15%) — completed research projects. Pennant → Crest → Empire Banner → Hell-Forged Banner as stages advance.',
-    },
-    {
-      cat: 'orders',
-      name: 'Kingdom Doctrines',
-      body: 'One kingdom doctrine per wave from the left panel (unlocks with evolution stage): Stage 1 Outpost Stand (4 TP) — 15% damage reduction 6 min. Stage 2 Royal Muster (5 TP) — +5 TP and +4 morale all allies. Stage 3 Imperial March (8 TP) — map-wide rally: +12 morale, clears routing, +15% damage 7 min. Stage 4 Hellforge Decree (10 TP) — map-wide +10 morale, +20% damage, +12% speed 6 min.',
-    },
-    {
-      cat: 'stars',
-      name: 'Field Tenure (All Troops)',
-      body: 'Units track spawn wave — each dawn survived adds tenure. Evolved operatives gain dual HP/DMG tenure bars (caps ×2.15 HP / ×1.75 DMG). Core troops show combat % vs wave and a combat-pace offset bar. Select any unit to read tenure in the unit info panel.',
-    },
-    {
-      cat: 'stars',
-      name: 'Selected Unit Panel',
-      body: 'Click a living ally to open the unit info panel: HP/morale bars, veteran stars, tenure scaling, specialist rank progress, late-ability status (locked or ACTIVE), perks, obsolete hints, and quick actions (Hunt, Focus, Promote). Multi-select shows a compact chip summary.',
-    },
-  ];
-
-  function buildWweEntries() {
-    const unlocked = typeof MetaProgress !== 'undefined' && MetaProgress.isWweUnlocked();
-    const entries = [
-      {
-        cat: 'wwe',
-        tease: !unlocked,
-        name: unlocked ? 'Grand Coliseum' : '??? Grand Coliseum',
-        body: unlocked
-          ? `Secret roster unlocked. Build the Academy: ${WWE_ACADEMY_COST} TP, ${WWE_ACADEMY_BUILDERS} Builders (${WWE_ACADEMY_RECOMMENDED_HAMLETS}+ hamlets & ${WWE_ACADEMY_RECOMMENDED_GUILDS}+ guilds recommended). Click the completed academy to recruit Champions.`
-          : 'Scribes whisper of a grand arena beyond the Iron Creed — or win a campaign while showmanship champions headline your army for most waves. Attitude, charisma, entertainment. Build costs are staggering: a thousand TP, ten builders. Until then, these names are only rumors...',
-      },
-    ];
-
-    if (typeof WweDefs === 'undefined') return entries;
-
-    for (const [id, def] of Object.entries(WweDefs)) {
-      entries.push({
-        cat: 'wwe',
-        tease: !unlocked,
-        name: unlocked ? def.name : `${def.name} (Rumor)`,
-        body: unlocked
-          ? `${def.abilityDesc} · Cost: ${def.cost} TP · HP ${def.hp} · DMG ${def.damage} · ACC ${def.accuracy} · SPD ${def.speed}`
-          : COLISEUM_TEASE[id] ||
-            `Travelers mention ${def.name}, but no living commander has signed them yet.`,
-      });
+  // ------------------------------------------------------------------ helpers
+  /**
+   * The game's definitions, looked up by name at call time. A top-level `const` in a
+   * classic script is not a property of globalThis, so each is tested by identifier; one
+   * that is not loaded (a test sandbox, a trimmed build) reads as null.
+   */
+  const SOURCES = {
+    UnitDefs: () => (typeof UnitDefs !== 'undefined' ? UnitDefs : null),
+    BuildDefs: () => (typeof BuildDefs !== 'undefined' ? BuildDefs : null),
+    EnemyDefs: () => (typeof EnemyDefs !== 'undefined' ? EnemyDefs : null),
+    Roster: () => (typeof Roster !== 'undefined' ? Roster : null),
+    SiegeLoop: () => (typeof SiegeLoop !== 'undefined' ? SiegeLoop : null),
+    Research: () => (typeof Research !== 'undefined' ? Research : null),
+    Hotkeys: () => (typeof Hotkeys !== 'undefined' ? Hotkeys : null),
+    EconomyRules: () => (typeof EconomyRules !== 'undefined' ? EconomyRules : null),
+    DIFFICULTIES: () => (typeof DIFFICULTIES !== 'undefined' ? DIFFICULTIES : null),
+    GameModes: () => (typeof GameModes !== 'undefined' ? GameModes : null),
+    LoreData: () => (typeof LoreData !== 'undefined' ? LoreData : null),
+    StoryLore: () => (typeof StoryLore !== 'undefined' ? StoryLore : null),
+    Chronicles: () => (typeof Chronicles !== 'undefined' ? Chronicles : null),
+    Abilities: () => (typeof Abilities !== 'undefined' ? Abilities : null),
+    SpyActions: () => (typeof SpyActions !== 'undefined' ? SpyActions : null),
+    CourierMessages: () => (typeof CourierMessages !== 'undefined' ? CourierMessages : null),
+    EnemyFactions: () => (typeof EnemyFactions !== 'undefined' ? EnemyFactions : null),
+    MonsterBosses: () => (typeof MonsterBosses !== 'undefined' ? MonsterBosses : null),
+    MetaProgress: () => (typeof MetaProgress !== 'undefined' ? MetaProgress : null),
+    WweDefs: () => (typeof WweDefs !== 'undefined' ? WweDefs : null),
+    CrossoverDefs: () => (typeof CrossoverDefs !== 'undefined' ? CrossoverDefs : null),
+    CrossoverFactions: () => (typeof CrossoverFactions !== 'undefined' ? CrossoverFactions : null),
+    AudioEngine: () => (typeof AudioEngine !== 'undefined' ? AudioEngine : null),
+    Legacy: () => (typeof Legacy !== 'undefined' ? Legacy : null),
+  };
+  const G = (name) => {
+    try {
+      return SOURCES[name]() ?? null;
+    } catch (_) {
+      return null;
     }
-    return entries;
-  }
-
-  function buildDoomslayerEntries() {
-    const unlocked = typeof MetaProgress !== 'undefined' && MetaProgress.isDoomslayerHeroUnlocked();
-    const def = typeof UnitDefs !== 'undefined' ? UnitDefs.doomslayer_hero : null;
-
-    return [
-      {
-        cat: 'doomslayer',
-        tease: !unlocked,
-        name: unlocked ? 'The Hellbane' : '??? The Hellbane',
-        body:
-          unlocked && def
-            ? `Deploy for ${def.cost} TP. HP ${def.hp} · near-unkillable damage reduction. Heals half his missing health every 2 waves. Auto-abilities: Rend & Ruin cleave when swarmed, Guardian heal when allies are pressed, mass cleave when hordes gather. His blade one-shots most foes — except in Hellscape.`
-            : "A figure in green armor, spoken of only after a commander survives wave 200 on Hellbane difficulty. Cost: ten thousand TP. They say he heals from the abyss, ripostes entire hordes alone, and carries a sword that ends wars in one swing. Unlock him — or don't — and find out if the legends lie.",
-      },
-      {
-        cat: 'doomslayer',
-        tease: true,
-        name: 'Rend & Ruin',
-        body: unlocked
-          ? 'When four or more enemies close on the Hellbane, he unleashes Rend & Ruin — AoE devastation. Cooldown applies.'
-          : '??? When the Slayer is surrounded, witnesses report... something. The reports stop mid-sentence.',
-      },
-      {
-        cat: 'doomslayer',
-        tease: true,
-        name: 'Guardian Protocol',
-        body: unlocked
-          ? 'When three or more enemies threaten allies, the Hellbane heals the army and grants a brief rally.'
-          : '??? Allies near him supposedly fight harder when the line breaks. No field manual confirms this.',
-      },
-      {
-        cat: 'doomslayer',
-        tease: true,
-        name: 'Hellscape (Wave 1001+)',
-        body: "Beyond wave 1000, reality thins. Even the Hellbane's legendary blade falters against hellscape-level threats — damage returns to mortal scale. Survive that far and you have seen the true endgame.",
-      },
-      {
-        cat: 'doomslayer',
-        tease: !unlocked,
-        name: unlocked ? 'How to Unlock' : '??? How to Unlock',
-        body: unlocked
-          ? 'Reach wave 200 on Hellbane difficulty in a single run — or discover another way in. The realm remembers how you unlocked him.'
-          : "Survive to wave 200 on the hardest named difficulty. Some say forbidden words exist somewhere outside the Crown's official records. The field manual does not say where.",
-      },
-    ];
-  }
-
-  const CROSSOVER_CAT = {
-    ultimis: 'crossover_ultimis',
-    primis: 'crossover_primis',
-    halo: 'crossover_halo',
-    gears: 'crossover_gears',
-    lotr: 'crossover_lotr',
-    baki: 'crossover_baki',
-    jojo: 'crossover_jojo',
-    fotns: 'crossover_fotns',
-    dragonball: 'crossover_dragonball',
-    imperium: 'crossover_imperium',
-    crystal: 'crossover_crystal',
-    warp: 'crossover_warp',
-    tes: 'crossover_tes',
   };
 
-  const CROSSOVER_FACTION_ORDER = [
-    'ultimis',
-    'primis',
-    'halo',
-    'gears',
-    'lotr',
-    'baki',
-    'jojo',
-    'fotns',
-    'dragonball',
-    'imperium',
-    'crystal',
-    'warp',
-    'tes',
-  ];
+  function entry(cat, name, body, extras = {}) {
+    return { cat, name, body, ...extras };
+  }
 
-  /** [classified tease, unlocked flavor, optional field tip] */
-  const CROSSOVER_HERO_LORE = {
-    tank_dempsey: [
-      'A gravel-voiced marine who solves every problem with frags first, questions never.',
-      'Splinter Vale is the Void Residue breacher — high morale, steady melee DPS, and Grenade Burst bonus damage when enemies cluster. Put him where the horde is thickest.',
-      'Lead assaults into packed waves; pair with walls so Dr. Volkov can work behind him.',
-    ],
-    richtofen: [
-      'Scribes mention a laughing doctor and green flashes that chain through elite ranks.',
-      'Dr. Volkov brings mad-science ranged DPS. resonance weapon chains lightning on elite hits — devastating from behind cover, fragile if caught in the open.',
-      'Garrison in outposts; never leave him exposed to assassins or warg riders.',
-    ],
-    nikolai: [
-      'A stocky soldier who drinks before battle and somehow gets harder to kill.',
-      'Brass Kozlov is the Void Residue anchor — huge HP pool and Iron Rage damage reduction when wounded. He outlasts waves other melee units cannot.',
-      'Place on the front line and let him soak siege pressure while allies heal.',
-    ],
-    takeo: [
-      'A disciplined swordsman said to strike faster after every star earned on the field.',
-      'Blade Sato is the Void Residue duelist — high speed and accuracy with Bushido crit scaling from veteran stars. Elite hunter and morale stabilizer.',
-      'Hunt dark knights and bosses; stars make him scarier over long campaigns.',
-    ],
+  /** The label of the key bound to an action, or the fallback when the map lacks it. */
+  function key(state, action, arg = null, fallback = '') {
+    const H = G('Hotkeys');
+    const k = H?.keyFor?.(state, action, arg);
+    return k ? H.keyLabel(k) : fallback;
+  }
 
-    primis_tank: [
-      'A harder, angrier version of a famous marine — reports end mid-grenade.',
-      'Splinter Vale (Ascended) hits harder than his Void Residue self. Void Slam cleaves on kill — excellent for cleaning up after wall breaks.',
-      'Push through breaches after sappers open lanes.',
-    ],
-    primis_nikolai: [
-      'Iron curtains and vodka — veterans swear he refuses to die.',
-      'Brass Kozlov (Ascended) is a premium tank with Iron Curtain — brief invulnerability below 35% HP. Best First Circle frontliner for long waves.',
-      'Anchor your First Circle line; let Curtain proc before pulling him back to heal.',
-    ],
-    primis_takeo: [
-      'Katana fury against wounded prey — same honor, sharper edge.',
-      'Blade Sato (Ascended) is faster and deadlier than Void Residue Sato. Blade Fury stacks rapid strikes on low-HP targets.',
-      'Finish elites and fleeing routed enemies.',
-    ],
-    primis_richtofen: [
-      'The doctor who steals life from elites to mend allies — classified.',
-      'Dr. Volkov (Ascended) is support-ranged: Void Key drains elite HP to heal nearby allies. Keep him behind Kozlov.',
-      'Focus fire elites in his lane to trigger sustain for your army.',
-    ],
-
-    master_chief: [
-      'A green-armored phantom who shields allies when the wave horn sounds.',
-      'Sentinel-7 is the orbital flagship — ranged DPS, high HP, Vanguard Rage shields allies on wave start. Build around him as your ranged core.',
-      'Open every wave near your line; pair with Wolf Pack buffs.',
-    ],
-    noble_six: [
-      'Lone wolf operative — stronger when the map around him is empty.',
-      'Lance Operative excels at isolated flanks. Lone Wolf bonus damage when no allies are nearby — send him on hunt missions.',
-      'Hunt stragglers and back-line archers away from the main blob.',
-    ],
-    sgt_johnson: [
-      'Oorah echoes before the charge — morale spikes wherever he stands.',
-      'Sergeant Ashford is melee support — Oorah rally pulse and morale on wave start. Your army fights braver with him on field.',
-      'Deploy at wave start beside demoralized troops.',
-    ],
-    noble_carter: [
-      'Wolf Pack leader — vanguard operatives near him shoot straighter and fight longer.',
-      'Wolf Leader buffs nearby vanguard operatives. Field him with Heavy Gunner, Cat Operative, and Ember Operative for Wolf Pack synergy.',
-      'Keep Wolf Leader mid-line so multiple vanguard operatives catch Wolf Leader.',
-    ],
-    noble_kat: [
-      'Tech specialist — enemy arrows miss more when she is on the battlefield.',
-      'Cat Operative debuffs enemy accuracy in her aura. Tech Ops shuts down orc archer lanes.',
-      'Place opposite enemy ranged spawns.',
-    ],
-    noble_emile: [
-      'Plasma blade, zero patience — melee finisher against wounded foes.',
-      'Ember Operative is fast melee with Plasma Blade executions on low HP. Screen him with Heavy Gunner or Sentinel-7.',
-      'Chase fleeing enemies and assassins; do not leave him alone in archer fire.',
-    ],
-    noble_jorge: [
-      'Heavy weapons never tire — every third shot splashes.',
-      'Heavy Gunner is slow but devastating — Grenadier splash every third shot. Your anti-cluster ranged platform.',
-      'Put behind walls facing the widest enemy approach.',
-    ],
-    noble_jun: [
-      'Sniper cover from extreme range — elites drop before they reach the wall.',
-      'Sniper Operative has the longest vanguard range and bonus vs elites. Sniper Cover deletes dark knights.',
-      'Garrison outposts for maximum range extension.',
-    ],
-    spartan_soldier: [
-      'Standard-issue Vanguard Trooper — reliable, affordable ranged line-holder.',
-      'Vanguard Trooper is the budget orbital recruit — steady ranged DPS without wolf-pack drama. Fill gaps in your gun line.',
-      'Cheap ranged filler when TP is tight.',
-    ],
-
-    marcus_fenix: [
-      'Gruff trench veteran — chainsaw screams mean someone is about to die.',
-      'Marek Ironhart is the trench captain — Burst Trenchsaw chainsaw finishers on low HP. Core of any trench roster.',
-      'Center your gun line; Calder heals him when paired.',
-    ],
-    dom_santiago: [
-      'Brothers in arms — Ironhart fights better when Calder is close.',
-      "Dane Calder heals Ironhart when nearby and brings Brothers in Arms sustain. Keep Calder within Ironhart's screen.",
-      'Never split Calder from Ironhart on hard waves.',
-    ],
-    damon_baird: [
-      'Sarcastic tech head — structures and siege towers fear him.',
-      'Darren Gearwright deals bonus damage vs siege and buildings. Tech Head makes him your anti-tower specialist.',
-      'Send Gearwright against siege towers and enemy hamlets.',
-    ],
-    augustus_cole: [
-      'The Iron Charge has no brakes — charges through enemy lines.',
-      'Augustus Thrash is heavy melee — Iron Charge charges through formations. Flank when the line stalls.',
-      'Use on open maps after walls pin the horde.',
-    ],
-    anthony_carmine: [
-      'The Ironhelm curse is real — cheap, fragile, beloved.',
-      'Anthony Ironhelm is budget burst support — fragile but affordable. Ironhelm Curse: do not expect him to survive focus fire.',
-      'Cheap ranged slot; replace when TP allows Clayton.',
-    ],
-    clayton_carmine: [
-      'Heavy weapons Ironhelm — suppression that shreds groups.',
-      'Clayton Ironhelm suppresses groups with heavy burst fire. Tankier than Anthony with real DPS.',
-      'Backline suppressor behind Ironhart.',
-    ],
-    benjamin_carmine: [
-      'Another Ironhelm — buffs his brothers when clustered.',
-      'Benjamin Ironhelm buffs other Ironhelms nearby. Ironhelm Brother synergy rewards fielding multiple Ironhelms.',
-      'Deploy with Anthony or Clayton for brotherhood buffs.',
-    ],
-    cog_soldier: [
-      'Standard trench recruit — burst drill and discipline.',
-      'Trench Trooper is the affordable trench line-holder — Burst Drill provides steady ranged DPS.',
-      'Fill the line when elites are handled elsewhere.',
-    ],
-
-    aragorn: [
-      'The king returned — Crownblade hunts dark knights and elite armor.',
-      'Crownless Ranger is elite-slaying melee with high morale. Crownblade bonus vs elites and dark knights — your boss-wave answer.',
-      'Send Crownless Ranger at war chiefs and dark knights.',
-    ],
-    legolas: [
-      'Elven archer — arrows from impossible range find fast prey.',
-      'Silvan Archer is extreme-range DPS with bonus vs fast foes. Garrison outposts and watch towers for absurd reach.',
-      'Counter warg riders and assassins from safety.',
-    ],
-    gimli: [
-      'Nobody throws a dwarf — axe cleave splashes siege targets.',
-      'Stone Axe Lord is siege melee — Axe Cleave splashes on siege targets. Put him on walls facing towers.',
-      'Pair with sappers on structure-heavy waves.',
-    ],
-    gandalf: [
-      'Grey Ward — terror radiates from the grey wanderer.',
-      'Grey Pilgrim is support caster — Grey Ward terrifies nearby enemies. Morale weapon and ranged bolt DPS.',
-      'Hold the center; enemies near him fight worse.',
-    ],
-    frodo: [
-      'Scout ring — small, evasive, lifts ally morale.',
-      'Halfling Scout evades and spreads morale aura. Burden Bearer keeps fragile lines from breaking — not a fighter.',
-      'Keep Halfling Scout behind the march company; let others tank.',
-    ],
-    boromir: [
-      'Shield Horn when surrounded — rally pulse turns desperation into steel.',
-      'Shield Captain rallies when surrounded — Shield Horn punishes enemies that blob on him.',
-      'Let him hold a choke; trigger rally when flanked.',
-    ],
-    eowyn: [
-      'Elite slayer — no quarter given with a grudge against bosses.',
-      'Shield Maiden is fast melee with Elite Slayer — devastating finisher vs elite foes. Send her at necromancers and war chiefs.',
-      'Hunt elites; she punches above her HP on finishers.',
-    ],
-
-    baki_hanma: [
-      'Fiend’s Back awakens below half health — the son of the Ogre.',
-      'Ironson Bakari spikes damage when wounded. Fiend’s Back turns a losing duel into a reversal — risky but explosive.',
-      'Let him take some damage before expecting peak output.',
-    ],
-    yujiro_hanma: [
-      'The Ogre himself — near-boss tier, terrifying TP cost.',
-      'The Ogre Patriarch is the Iron Pit nuke — near-boss HP and damage. The Ogre deletes melee targets; bankrupts careless commanders.',
-      'Save for boss waves; protect from ranged kiting.',
-    ],
-    doppo_orochi: [
-      'Karate precision — Iron Way finishes wounded targets cleanly.',
-      'Daigo Serpent punishes wounded foes with Iron Way precision strikes. Reliable second-line duelist.',
-      'Pair with Ironson Bakari — soften targets, Serpent executes.',
-    ],
-    jack_hanma: [
-      'Bite first, talk never — bonus damage vs larger enemies.',
-      'Jax Ironson chews through bruisers — Bite bonus vs larger enemies. Strong vs trolls and siege.',
-      'Send Jax at trolls and tall elites.',
-    ],
-    oliva_biscuit: [
-      'Iron Body — American heavyweight who barely moves, barely bleeds.',
-      'Olivar Granite is ultra-tank melee with Iron Body damage reduction. Slower than Ironson Bakari but nearly unmovable.',
-      'Hold a lane alone while strikers rotate.',
-    ],
-    kaku_kaioh: [
-      'Aiki counters reckless attackers — judo on a medieval map.',
-      'Kaku Seastorm counters reckless attackers with Aiki — punishes berserkers and warg riders.',
-      'Place where enemies charge your line.',
-    ],
-    pickle: [
-      'Primitive fury — prehistoric power, low morale, high carnage.',
-      'The Primal is a raw prehistoric bruiser — Primitive Fury trades morale for devastation. Chaos unit for emergency holds.',
-      'Emergency line plug when TP allows a monster.',
-    ],
-
-    jonathan_joestar: [
-      'Gentleman fighter — Solar Pulse purges undead elites.',
-      'Jonas Ashford is Cohort 1 melee — Solar Pulse bonus vs undead elites like necromancers.',
-      'Send at necromancer waves.',
-    ],
-    dio_brando_p1: [
-      'Crimson Chill — Cohort 1 crimson lord slows enemy morale.',
-      'Dorian Crimson is fast melee that saps enemy morale with Crimson Chill.',
-      'Disrupt enemy morale while Jonathan holds the line.',
-    ],
-    zeppeli: [
-      'Solar Heal heals allies when elites fall — solar teacher.',
-      'Will Zephyr is Cohort 1 support — Solar Heal heals allies on elite kill.',
-      'Keep near your kill lane to proc sustain.',
-    ],
-    joseph_joestar_p2: [
-      'Oh my God! Trick shots and Violet Snare debuffs.',
-      'Josiah Ashford is ranged trickster — Violet Snare scouting debuffs and unpredictable damage.',
-      'Ranged harass behind walls.',
-    ],
-    caesar_zeppeli: [
-      'Pressure Cutter crits from range — pressure bubbles find weak points.',
-      'Cassius Zephyr is Cohort 2 ranged crit — Pressure Cutter rewards accurate shots.',
-      'Outpost garrison for crit fishing.',
-    ],
-    stroheim: [
-      'Iron science — bonus damage vs siege units.',
-      'Rudolf Ironclad is heavy ranged anti-siege — Iron Science shreds towers.',
-      'Counter siege tower waves.',
-    ],
-    jotaro_kujo: [
-      'Spirit Rush — rapid finisher pins elites and shreds them.',
-      'Jiro Ashen is Cohort 3 melee powerhouse — Spirit Rush rapid finisher on pinned foes. Elite deletion.',
-      "Focus fire elites into Jiro Ashen's lane.",
-    ],
-    kakyoin: [
-      'Emerald Spray — emerald splash AoE from safety.',
-      'Nori Emerald provides Cohort 3 ranged AoE — Emerald Spray hits clusters.',
-      'Behind walls vs grouped spawns.',
-    ],
-    polnareff: [
-      'Silver Flurry flurries wounded foes — fast melee skirmisher.',
-      'Jean-Luc Silver is speedy Cohort 3 melee — Silver Flurry flurries low HP targets.',
-      'Chase wounded routed enemies.',
-    ],
-    avdol: [
-      'Crimson Flame — fire splash on every hit.',
-      'Mahmoud Flame is Cohort 3 support-ranged — Crimson Flame fire splash chips groups.',
-      'Mid-line fire support.',
-    ],
-    josuke_higashikata: [
-      'Restorative March — heals allies he passes on the march.',
-      'Jun Diamond is Cohort 4 support — Restorative March heals allies in his path. Move him through wounded troops.',
-      'March Jun through retreating allies.',
-    ],
-    okuyasu: [
-      'The Hand erases space — burst single-target deletion.',
-      'Oku Hand is Cohort 4 bruiser — The Hand erases space for burst damage. Simple, violent, effective.',
-      'Point at high-priority single targets.',
-    ],
-    rohan_kishibe: [
-      'Script Ward — debuffs enemy accuracy from range.',
-      'Ronan Artist is Cohort 4 ranged debuffer — Script Ward ruins enemy accuracy.',
-      'Opposite enemy archer lanes.',
-    ],
-    kira_yoshikage: [
-      'Quiet Erase — final toll on wounded prey.',
-      'Yoshi Quiet executes wounded foes with Quiet Erase — quiet, lethal Cohort 4 finisher.',
-      'Mop up after your line softens the wave.',
-    ],
-    giorno_giovanna: [
-      'Golden Pulse — heals allies on kill.',
-      'Gio Gold is Cohort 5 support — Golden Pulse heals on kill. gold-court sustain engine.',
-      'Keep in active kill zones.',
-    ],
-    bruno_bucciarati: [
-      'Zip Fingers — zip reposition and rally allies.',
-      'Bruno Clasp rallies and repositions with Zip Fingers — high morale leader.',
-      'Use for pep-talk positioning before pushes.',
-    ],
-    guido_mista: [
-      'Ricochet Pistols ricochet — one shot, several targets.',
-      "Guy Pistols's Ricochet Pistols ricochet hits multiple foes — Cohort 5 ranged multitarget.",
-      'Counter spread formations.',
-    ],
-    diavolo: [
-      'Crimson Erase — deletes wounded targets from time.',
-      'the Scarlet Regent is Cohort 5 assassin — Crimson Erase removes wounded enemies. Expensive but decisive.',
-      'Elite and assassin hunter.',
-    ],
-    jolyne_cujoh: [
-      'Unbound Thread strings slow enemies — Cohort 6 control melee.',
-      'Jolie String slows with Unbound Thread — Cohort 6 control fighter.',
-      'Hold chokepoints while allies DPS.',
-    ],
-    weather_report: [
-      'Storm Field — AoE lightning pressure from range.',
-      'Storm Caller is Cohort 6 ranged AoE — lightning pressure across lanes.',
-      'Wide map AoE supplement.',
-    ],
-    ermes_costello: [
-      'Kiss duplicates pressure — elite kills spawn more pain.',
-      'Erma Kiss stacks pressure with Kiss — elite kills duplicate harassment.',
-      'Elite-heavy waves.',
-    ],
-    johnny_joestar: [
-      'Infinite Spin — Gilded Derby cavalry with infinite rotation finisher.',
-      'Johan Rotation is derby cavalry — Infinite Spin charge finisher. Fastest bound spirit hunter on expanded maps.',
-      'Hunt on wide territory; needs open lanes.',
-    ],
-    gyro_zeppeli: [
-      'Iron Orb perfect spin — ranged cavalry cleave on charge.',
-      'Gyre Ballista is Cohort 7 ranged cavalry — Iron Orb cleave on charge. Tag-team with Johan Rotation.',
-      'Pair with Johan Rotation for golden ball hunt missions.',
-    ],
-    diego_brando: [
-      'Predator Form — predatory charge damage.',
-      'Diego Fang is Cohort 7 fast cavalry — Predator Form predatory charges. Aggressive hunter.',
-      'Flank and hunt; high speed, lower morale.',
-    ],
-    lucy_steel: [
-      'Borrowed Luck — support cavalry rally aura.',
-      'Lucia Ticket is Cohort 7 support cavalry — Borrowed Luck rally aura for mounted allies.',
-      'Ride with Johan Rotation and Gyre Ballista for morale.',
-    ],
-
-    kenshiro: [
-      'Fate was sealed — Seven Star Fist finisher legend.',
-      'Kenji Sevenstar is the North Star successor — rapid finisher on low HP. Elite and bruiser executioner.',
-      'Focus fire until finisher range.',
-    ],
-    raoh: [
-      'Conqueror — terror aura and siege bonus. The conqueror walks.',
-      'Rao is slow but terrifying — Conqueror aura and siege bonus. Boss-tier melee presence.',
-      'Boss waves and structure pushes.',
-    ],
-    toki: [
-      'Open Palm Burst heals allies in aura — gentle fist, iron will.',
-      'Tomo heals allies in aura with Open Palm Burst — mandatory North Star support.',
-      'Center your melee blob on Tomo.',
-    ],
-    rei: [
-      'Waterbird Fist — fast strikes hit multiple foes.',
-      'Ren is fast multi-hit melee — Waterbird Fist cleaves several targets.',
-      'Counter fast enemy swarms.',
-    ],
-    jaggi: [
-      'Dirty tricks — debuffs enemy morale on every hit.',
-      'Jago fights dirty — morale debuffs on hit. Chaos agent, low morale himself.',
-      'Disrupt enemy morale lines.',
-    ],
-    shin: [
-      'White Heron Fist — heavy single-target blows.',
-      'Shen delivers White Heron heavy single-target blows — mini-boss duelist.',
-      'Point at high-HP single targets.',
-    ],
-
-    goku: [
-      'Skyburst Wave when surrounded — skyburst finisher.',
-      'Kael Skyburst is balanced melee carry — Skyburst Wave burst when surrounded. Reliable skyburst fighter anchor.',
-      'Let him get surrounded for finisher proc.',
-    ],
-    vegeta: [
-      'Prince Beam pride — bonus vs elites when honor demands.',
-      'Prince Vex is elite-hunting melee — Prince Beam bonus vs elites. Pride damage spike.',
-      'Send Prince Vex at elite waves.',
-    ],
-    piccolo: [
-      'Piercing Beam pierces high-HP targets from range.',
-      'Verdant Sage is support-ranged — Piercing Beam pierces tanks. Beam sniper.',
-      'Focus fire high-HP targets in his lane.',
-    ],
-    gohan: [
-      'Hidden Potential — massive spike below 40% HP.',
-      'Scholar Burst explodes when wounded — Hidden Potential below 40% HP. Let him get low, then watch.',
-      'Risky anchor — heal after spike.',
-    ],
-    trunks: [
-      'Blazing Volley — ranged burst finisher from the future.',
-      'Future Blade is ranged burst — Blazing Volley finisher at distance.',
-      'Backline finisher behind tanks.',
-    ],
-    frieza: [
-      'Frost Lance — precision ranged execution.',
-      'Frost Tyrant is cold ranged execution — Frost Lance picks off wounded targets.',
-      'Sniper from outposts.',
-    ],
-    cell: [
-      'Perfect Form — heals on kill, sustains through long waves.',
-      'Perfect Hybrid heals on kill with Perfect Form — sustain melee that grows stronger.',
-      'Long waves where kills chain.',
-    ],
-    beerus: [
-      'Cataclysm — god-tier delete on wounded foes. Expensive annihilation.',
-      'Cataclysm Lord is the ultimate skyburst fighter — Cataclysm deletes wounded enemies. God-tier cost for god-tier waves.',
-      'Save for boss waves; protect from focus fire.',
-    ],
-
-    chapter_captain: [
-      'Volley discipline — legionnaires fight harder in formation.',
-      'Legion Captain is the crimson legions ranged core — Volley Discipline rewards clustering legionnaires on the line.',
-      'Center your gun line with Line Guardsmen and Rift Archivist support.',
-    ],
-    chaplain: [
-      'Litanies of hate shake enemy morale on every strike.',
-      'War Chaplain is melee support — Litany of Wrath debuffs foes in his aura. Morale weapon for breaking blobs.',
-      'Hold the front beside Heavy Bulwarks; let hate do the work.',
-    ],
-    librarian: [
-      'Smite arcs through necromancers and dark mages.',
-      'Rift Archivist brings psychic ranged DPS — Smite deletes casters and undead summoners.',
-      'Place opposite enemy mage lanes.',
-    ],
-    commissar: [
-      'Summary execution for cowards below a quarter health.',
-      'Field Enforcer is morale anchor and finisher — Summary Execution deletes routed low-HP foes.',
-      'Backline support; highest morale in the roster.',
-    ],
-    guardsman: [
-      'Rifle volleys — cheap, numerous, surprisingly effective.',
-      'Guardsman is budget ranged filler — Rifle Volley splashes every fourth shot.',
-      'Spam when TP is tight; pair with Captain for discipline.',
-    ],
-    terminator: [
-      'Storm shield pulses when the warsuit is wounded.',
-      'Heavy Bulwark is the crimson legions anchor — Storm Shield grants brief soak below 45% HP. Slow but unmovable.',
-      'Hold chokepoints; do not chase fast cavalry.',
-    ],
-    dreadnought: [
-      'Autocannon shreds siege towers and deployed engines.',
-      'Dreadnought is heavy siege ranged — Autocannon bonus vs structures. Walking artillery platform.',
-      'Send against siege towers and enemy hamlets in the northern war.',
-    ],
-
-    soldier_of_light: [
-      'Cross slash finishers punish wounded foes.',
-      'Soldier of Light is the Crystal frontliner — Cross Slash spikes vs enemies below half HP.',
-      'Lead the party; pair with White Mage sustain.',
-    ],
-    black_mage: [
-      'Greater Flame bursts when enemies cluster.',
-      'Black Mage is AoE ranged — Greater Flame fires when multiple foes are near the target.',
-      'Backline behind walls facing wide approaches.',
-    ],
-    white_mage: [
-      'Greater Mend heals allies in combat aura.',
-      'White Mage is support caster — Greater Mend trickle-heals nearby allies on every strike.',
-      'Keep mid-line near your melee core.',
-    ],
-    dragoon_knight: [
-      'Jump attack — sky piercer vs fast and flying prey.',
-      'Sky Lance is cavalry hunter — Jump Attack bonus vs harpies and warg riders. Can hunt on wide maps.',
-      'Hunt flyers after walls pin the ground horde.',
-    ],
-    summoner: [
-      'Aeon strike — extra damage vs elite enemies.',
-      'Summoner is elite-slaying ranged — Avatar Strike punishes bosses and dark knights.',
-      'Focus fire elites in the Summoner lane.',
-    ],
-    limit_striker: [
-      'Limit break — massive spike when wounded.',
-      'Limit Striker is risk-reward melee — Breaking Point doubles down below 40% HP. Let them take hits first.',
-      'Frontline finisher; heal after the burst window.',
-    ],
-    crystal_sentinel: [
-      'Aether shot — steady budget ranged DPS.',
-      'Crystal Sentinel is affordable line-holder — occasional bonus vs elites.',
-      'Fill gaps when TP cannot afford full party heroes.',
-    ],
-
-    chaos_champion: [
-      'Warp fury surges when the champion is bloodied.',
-      'Chaos Champion is melee carry — Warp Fury damage spikes below half HP. Aggressive frontliner.',
-      'Push when you can heal; thrives in long brawls.',
-    ],
-    plague_cultist: [
-      'Festering curse slows and breaks morale.',
-      'Plague Cultist debuffs with Festering Curse — slow and morale shred on every hit.',
-      'Aura support beside Daemon Knight.',
-    ],
-    warp_magus: [
-      'Warp bolt arcs to a second nearby foe.',
-      'Warp Magus is ranged chaos — Warp Bolt chains to adjacent enemies.',
-      'Backline vs clustered waves.',
-    ],
-    daemon_knight: [
-      'Unholy armor soaks damage below 40% HP.',
-      'Daemon Knight is heavy melee tank — Unholy Armor pulse when wounded. Slower than a Heavy Bulwark, meaner.',
-      'Anchor the cult; protect Magus behind.',
-    ],
-    heretic_acolyte: [
-      'Blood pact — heals on kill.',
-      'Heretic Acolyte is budget melee sustain — Blood Pact heals when finishing foes.',
-      'Cheap frontline fodder that grows through kills.',
-    ],
-    possessed_marine: [
-      'Daemon fire splashes elite targets.',
-      'Possessed Legionary is ranged chaos — Daemon Fire AoE vs elites.',
-      'Backline finisher for boss waves.',
-    ],
-
-    dragonborn: [
-      'A warrior whose voice shakes mountains — whispers of the Voice precede every boss fall.',
-      'Wyrmcaller is the Voicebound flagship — melee bruiser with Voice Shout cleave. Center your dragon-themed boss kills around them.',
-      'Pair with Mountain Hermit; hunt named warlords after softening with shouts.',
-    ],
-    greybeard_sage: [
-      'Ancient monks who teach the Voice — classified until prophecy awakens.',
-      'Mountain Hermit is support-ranged — Voice Echo buffs allies and terrifies foes on wave start.',
-      'Deploy at dawn beside Wyrmcaller for voice synergy.',
-    ],
-    nord_huscarl: [
-      'Shield-brothers who hold the line when dragons circle overhead.',
-      'Frost Huscarl is a durable melee anchor — Shield Wall procs when wounded.',
-      'Frontline for Martial path Immortal trials.',
-    ],
-    battlemage: [
-      'Storm-crowned mages who channel dragon aspect against elite prey.',
-      'Battlemage is ranged DPS — Dragon Aspect bonus vs elites and bosses (counts for legacy kills).',
-      'Backline finisher on war chiefs and named bosses.',
-    ],
-    nightingale: [
-      'Shadow blades from forgotten guilds — strike when the dragon sleeps.',
-      'Shadow Nightjar is fast melee — Shadow Strike executes wounded foes.',
-      'Flank assassins while huscarls hold the shout line.',
-    ],
-    restoration_saint: [
-      'Healers sworn to restoration saints who mend armies between dragon duels.',
-      'Restoration Saint is support — Restoration Blessing heals and steadies morale in aura.',
-      'Keep near your Immortal mentors during wave 100+ legacy push.',
-    ],
+  const unitName = (type) => G('UnitDefs')?.[type]?.name || type;
+  const buildName = (id) => G('BuildDefs')?.[id]?.name || id;
+  const enemyName = (type) => {
+    const d = G('EnemyDefs')?.[type];
+    return d?.bossName || d?.name || type;
   };
+  const list = (ids, namer) => ids.map(namer).join(', ');
+  const pct = (x) => `${Math.round(x * 100)}%`;
 
-  function crossoverFactionUnlocked(factionId) {
-    if (typeof MetaProgress === 'undefined') return false;
-    const checks = {
-      ultimis: () => MetaProgress.is115Unlocked(),
-      primis: () => MetaProgress.isPrimusUnlocked(),
-      halo: () => MetaProgress.isHaloUnlocked(),
-      gears: () => MetaProgress.isGearsUnlocked(),
-      lotr: () => MetaProgress.isLotrUnlocked(),
-      baki: () => MetaProgress.isBakiUnlocked(),
-      jojo: () => MetaProgress.isJojoUnlocked(),
-      fotns: () => MetaProgress.isFotnsUnlocked(),
-      dragonball: () => MetaProgress.isDragonballUnlocked(),
-      imperium: () => MetaProgress.isImperiumUnlocked(),
-      crystal: () => MetaProgress.isCrystalUnlocked(),
-      warp: () => MetaProgress.isWarpUnlocked(),
-      tes: () => MetaProgress.isTesUnlocked(),
-    };
-    return checks[factionId]?.() ?? false;
-  }
+  // -------------------------------------------------------------- how to play
+  function buildHowToEntries() {
+    const out = [];
+    const add = (name, body, extras) => out.push(entry('howto', name, body, extras));
+    const diffs = G('DIFFICULTIES') || {};
+    const limits = Object.values(diffs)
+      .map((d) => `${d.label} ${d.missLimit}`)
+      .join(', ');
+    const granary = G('EconomyRules')?.BUILDINGS?.granary;
+    const kBegin = key('night', 'beginDay', null, 'D');
+    const kHunt = key('day', 'hunt', null, 'H');
+    const kHold = key('day', 'holdHere', null, 'Shift+H');
+    const kPosts = key('unit_selected', 'backToPosts', null, 'B');
+    const kSheet = key('day', 'keySheet', null, '?');
 
-  function defaultHeroTip(def) {
-    if (def.type === 'cavalry' || def.jojoPart === 7)
-      return 'Cavalry — use hunt mode on wide maps after territory expands.';
-    if (def.combatTag === 'ranged') return 'Backline DPS — garrison outposts for extended range.';
-    if (def.combatTag === 'support')
-      return 'Support — keep near your core army for auras and procs.';
-    return 'Melee — screen with walls and pair with healers or med tent retreats.';
-  }
-
-  function formatCrossoverStats(def) {
-    const role = `${def.combatTag} ${def.type}`;
-    const part =
-      def.jojoPart === 7
-        ? ' · Gilded Derby cavalry'
-        : def.jojoPart
-          ? ` · Bound Spirit Cohort ${def.jojoPart}`
-          : '';
-    return `${role}${part} · ${def.cost} TP · HP ${def.hp} · DMG ${def.damage} · ACC ${def.accuracy} · SPD ${def.speed}`;
-  }
-
-  function buildCrossoverHeroBody(id, def, unlocked) {
-    const lore = CROSSOVER_HERO_LORE[id];
-    const tease =
-      lore?.[0] ||
-      `Travelers whisper of ${def.name}, but no signed contract exists in the Crown's ledgers.`;
-    const flavor = lore?.[1] || `${def.name} deploys as ${def.combatTag} ${def.type}.`;
-    const tip = lore?.[2] || defaultHeroTip(def);
-    if (!unlocked) return tease;
-    let body = `${flavor}\n\n${def.abilityDesc}\n\n${formatCrossoverStats(def)}\n\nTip: ${tip}`;
-    if (id === 'takeo')
-      body += '\n\nIn memory of a legendary blade-master — thank you for the laughs.';
-    return body;
-  }
-
-  function buildCrossoverFactionIntro(factionId) {
-    const cat = CROSSOVER_CAT[factionId];
-    const faction = typeof CrossoverFactions !== 'undefined' ? CrossoverFactions[factionId] : null;
-    const prof = typeof FactionDepth !== 'undefined' ? FactionDepth.PROFILES?.[factionId] : null;
-    const buildingKey = faction?.building;
-    const bdef = buildingKey && typeof BuildDefs !== 'undefined' ? BuildDefs[buildingKey] : null;
-    const unlocked = crossoverFactionUnlocked(factionId);
-    const label = faction?.label || prof?.label || factionId;
-
-    if (!unlocked) {
-      const ultimisTrial =
-        factionId === 'ultimis'
-          ? ' Survive to wave 150 on Hellbane without losing a single building to the endless horde — or discover another way in.'
-          : '';
-      const primisTrial =
-        factionId === 'primis'
-          ? ' Win a campaign with a castle compound and never let an enemy breach the inner keep — timeline integrity must hold — or discover another way in.'
-          : '';
-      const haloTrial =
-        factionId === 'halo'
-          ? ' Win a campaign without losing your General — promote five Footmen to command and crown one as General — or discover another way in.'
-          : '';
-      const gearsTrial =
-        factionId === 'gears'
-          ? ' Win a campaign after razing twelve enemy structures — hamlets, guilds, outposts, and academies — grind them down with siege focus — or discover another way in.'
-          : '';
-      const lotrTrial =
-        factionId === 'lotr'
-          ? ' Win a campaign while your entire fighting force holds high morale for most waves — hope against overwhelming darkness — or discover another way in.'
-          : '';
-      const bakiTrial =
-        factionId === 'baki'
-          ? ' Win on Chad difficulty or higher with a primarily melee army for most waves — pure martial arts dominance, one-on-one spirit — or discover another way in.'
-          : '';
-      const jojoTrial =
-        factionId === 'jojo'
-          ? ' Win a campaign after recruiting three evolved heroes and keeping them on the field together for most waves — teamwork, bound spirits and alliances — or discover another way in.'
-          : '';
-      const fotnsTrial =
-        factionId === 'fotns'
-          ? ' Win a campaign after a lone hero — and only that hero — lands the killing blow on a named warlord. One-man-army legend: Your fate was sealed before the strike — or discover another way in.'
-          : '';
-      const dragonballTrial =
-        factionId === 'dragonball'
-          ? ' Reach wave 200+, defeat the planetary threat boss, and field a skyburst army when the warlord falls — protecting the planet — or discover another way in.'
-          : '';
-      const warhammerTrial =
-        factionId === 'imperium' || factionId === 'warp'
-          ? ' Win on Chad difficulty or higher while maintaining eight active fortifications at all times — castles, walls, outposts, or upgraded hamlets — repel three named boss waves, and never lose your General. The Eternal March — hold the line against impossible odds — or discover another way in.'
-          : '';
-      const tesTrial =
-        factionId === 'tes'
-          ? ' Win after wave 100+ with one Immortal veteran from each Eternal Path — Martial, Arcane, Tech, and Mythic — and defeat a major boss using a voice shout strike or wyrmcaller-style hero ability. Wyrmcaller Legacy — heroic destiny across every school of power — or discover another way in.'
-          : '';
-      return {
-        cat,
-        tease: true,
-        name: `${label} (Classified)`,
-        body: prof?.lore
-          ? `${prof.lore}${ultimisTrial}${primisTrial}${haloTrial}${gearsTrial}${lotrTrial}${bakiTrial}${jojoTrial}${fotnsTrial}${dragonballTrial}${warhammerTrial}${tesTrial} Build the faction barracks, discover the unlock code, then recruit from Legion Archive. The Crown has redacted roster details until you sign them.`
-          : `Classified operatives from another world.${ultimisTrial}${primisTrial}${haloTrial}${gearsTrial}${lotrTrial}${bakiTrial}${jojoTrial}${fotnsTrial}${dragonballTrial}${warhammerTrial}${tesTrial} Unlock their roster, build their barracks on the field, then recruit via Legion Archive.`,
-      };
+    add(
+      'The siege',
+      'One field, one line, no end. The host comes from the top of the field; your line is the bottom edge. Each wave is a day. Clear it and night falls, you are paid, and you prepare for the next. Soldiers who die are gone for good. There is no final wave: the run is over when the line breaks, and what counts is how long it stood.'
+    );
+    add(
+      'Night and day',
+      `Night is for preparing: recruit, build, research, send the spy and the courier, and move soldiers to their posts. The top of the screen shows what the next wave is likely to bring. Press ${kBegin} to sound the horn when you are ready. Sounding it early pays 1 TP for every 10 seconds of night left, up to 5. Day is the fight; it ends when the last enemy is dead.`
+    );
+    add(
+      'Tactical Points (TP)',
+      'TP pays for everything: soldiers, buildings, spells, spy and courier work. You are paid when a wave is cleared, a little more each wave, and less on the harder difficulties. Trade outposts and quarries pay at dawn. Crates, spoils and early horns add more. There is no cap on what you can hold.'
+    );
+    add(
+      'Recruiting',
+      'Pick a troop on the left or press its number key, then click the field. One click places one soldier. Hold Shift while clicking to keep the same troop in hand and place several. A troop you cannot afford or have not researched is greyed out, and its tooltip says why.'
+    );
+    add(
+      'Army upkeep',
+      `The first 14 soldiers cost their listed price. Every soldier past that makes each new recruit 7% dearer. The price on the button is always the price you will pay. Builders and couriers do not count toward the 14.${
+        granary
+          ? ` Each ${buildName('outpost_granary')} feeds ${granary.freeArmy} more before the surcharge starts (the first ${granary.maxCounted} count).`
+          : ''
+      }`
+    );
+    add(
+      'Breaches',
+      `An enemy that crosses your line at the bottom of the field is a breach. The count is shown at the top. Reach the limit and the realm falls.${
+        limits ? ` Limit by difficulty: ${limits}.` : ''
+      } Some spoils and ribbons raise it.`
+    );
+    add(
+      'Line-breakers',
+      `From wave 3 some enemies carry a red pennant. They ignore your soldiers and run for the line. They are quicker than the rest and a little weaker. ${unitName('cavalry')} and ${unitName('scout')} hit them much harder, a ${buildName('wall')} stops a few each wave and makes them fight, and hunting soldiers go for them first.`
+    );
+    add(
+      'Sectors and the muster',
+      'The host enters from the top edge in three sectors: left, centre and right. At night, markers on the top edge show which sectors the next wave will use. Enemies form up near the top before they advance, and your soldiers wait for them to leave that muster ground, so the fight happens in the open field.'
+    );
+    add(
+      'War camps',
+      'The enemy raises war camps along the top edge. A camp still standing when the next wave forms makes that wave stronger. Send soldiers up to destroy it and the bonus is gone. A camp is far from your line: whoever you send is not holding it.'
+    );
+    add(
+      'Factions',
+      'One faction leads each wave and fights its own way. The night preview names it. See the Enemies tab for what each one does and what beats it.'
+    );
+    add(
+      'Posts',
+      `Every soldier has a post: the spot where you placed him or last sent him. He fights from it and walks back to it when the fight is over, so the line keeps its shape. Select soldiers and click the field to give them a new post. ${kPosts} sends the selection straight back to its posts.`
+    );
+    add(
+      'Hunt and Hold',
+      `Hunt is the default. A hunting soldier leaves his post to fight what comes near, on a leash: about 240 from the post for melee, about 140 for archers and mages, half as far again after a line-breaker. Hold is an order: Shift+click the field to send soldiers to a spot and hold it, or press ${kHold} to hold where they stand. A holding soldier does not chase; he strikes only what comes into reach. ${kHunt} releases Hold. With nothing selected, both keys apply to the whole army. The HUNT and HOLD buttons do the same.`
+    );
+    add(
+      'The med tent',
+      `With a ${buildName('medical_tent')} standing, a wounded soldier who is not fighting walks to it at once, heals to full and returns to his post. A soldier in a fight stays in it while above half health and breaks off below. A tent has four beds; the rest wait outside. Holding soldiers go too and come back to hold. The ${unitName('general')} does not go.`
+    );
+    add(
+      'Counters and rear attacks',
+      'Every troop is strong against something and weak against something; each page in Your army says what. Any blow from behind lands 25% harder, for both sides. Do not let the line be turned.'
+    );
+    add(
+      'Wave preview and the watchtower',
+      `Each night the top of the screen shows what the next wave is likely to bring. With a ${buildName('watchtower')} standing, or a Scout Report from the spy, it lists the wave by type and number.`
+    );
+    add(
+      'Supply crates',
+      'From wave 2, crates land on the field by day. Walk a soldier onto one to open it: TP, bandages for those nearby, or rations that lift morale. Now and then a crate is bait and goblins spring from it. Crates are a quick pickup; they never stop the game.'
+    );
+    add(
+      'Veterans',
+      'Soldiers earn experience from kills (healers, builders and couriers from their work) and rise through six ranks, each one tougher and deadlier. A soldier who lasts may be given a name by the line. A veteran lost is not replaced by a recruit.'
+    );
+    add(
+      'Morale',
+      'Soldiers who watch their comrades die lose heart, and a soldier with none left runs. A bard, a mess hall, the General, War Cry and Battle Rally all restore it. Breaches shake the whole line.'
+    );
+    if (Object.keys(diffs).length) {
+      add(
+        'Difficulty',
+        Object.values(diffs)
+          .map(
+            (d) =>
+              `${d.label} — start with ${d.startingTp} TP, breach limit ${d.missLimit}, enemy health ${pct(d.enemyHpMult)}, enemy numbers ${pct(d.enemyCountMult)}.`
+          )
+          .join('\n')
+      );
     }
+    const modes = G('GameModes')?.MODES;
+    if (modes) {
+      add(
+        'Modes',
+        `${Object.values(modes)
+          .map((m) => m.label)
+          .join(
+            ', '
+          )}. Each is described on the main menu. Warband halves the army: soldiers cost double and are far tougher.`
+      );
+    }
+    add(
+      'Saving',
+      'Save from the pause menu: a quick save, or one of three slots. Saves are kept in this browser. Ironman, daily and weekly runs, and Creative mode do not save.'
+    );
+    add(
+      'Cheats',
+      'Entering a cheat code voids the run: no score, no ribbons, no achievements. The after-action report says so.'
+    );
+    add(
+      'Keys',
+      `Press ${kSheet} at any time for the keys that work on the screen you are looking at. Every button shows its key. Space pauses, Tab selects the next soldier, Esc cancels.`
+    );
+    return out;
+  }
 
-    const buildLine = bdef
-      ? `Build ${bdef.name} (${bdef.cost} TP, ${bdef.requiresBuilders || 3} Builders) on the battlefield, then open Legion Archive to recruit.`
-      : 'Build the faction barracks on the field, then recruit from Legion Archive.';
-    const play = prof?.playstyle ? `Playstyle: ${prof.playstyle}` : '';
-    const weak = prof?.weakness ? `Weakness: ${prof.weakness}` : '';
-    return {
-      cat,
-      name: `${label} Roster`,
-      body: [
-        prof?.lore || `${label} operatives ready for deployment.`,
-        prof?.identity || '',
-        buildLine,
-        play,
-        weak,
+  // ---------------------------------------------------------------- your army
+  /** The troops a commander recruits, in panel order when the key map knows it. */
+  function troopTypes() {
+    const troops = G('Roster')?.TROOPS || {};
+    const order = G('Hotkeys')?.DEPLOY_ORDER || [];
+    const known = order.filter((t) => troops[t]);
+    for (const t of Object.keys(troops)) if (!known.includes(t)) known.push(t);
+    return known.filter((t) => G('UnitDefs')?.[t]);
+  }
+
+  function researchFor(kind, id) {
+    const nodes = G('Research')?.ALL_NODES || [];
+    const node = nodes.find((n) => (n[kind] || []).includes(id));
+    return node ? node.name : '';
+  }
+
+  function buildArmyEntries() {
+    const R = G('Roster');
+    if (!R) return [];
+    const notes = G('SiegeLoop')?.COUNTER_NOTES || {};
+    const lines = G('LoreData')?.TROOP_LINES || {};
+    const out = [];
+    for (const type of troopTypes()) {
+      const p = R.TROOPS[type];
+      const def = G('UnitDefs')[type];
+      const needs = researchFor('deploy', type);
+      const stats = [
+        `${def.cost} TP`,
+        `health ${def.hp}`,
+        def.damage ? `damage ${def.damage}` : '',
+        def.range > 60 ? `range ${def.range}` : '',
+        needs ? `needs ${needs}` : '',
       ]
         .filter(Boolean)
-        .join('\n\n'),
-    };
+        .join(' · ');
+      out.push(
+        entry('army', def.name, `${p.trait}\n\n${stats}`, {
+          unitId: type,
+          quote: lines[type] || '',
+          tags: [
+            { k: 'role', v: p.role },
+            { k: 'weak', v: p.weak },
+            notes[type] ? { k: 'counter', v: notes[type] } : null,
+          ].filter(Boolean),
+        })
+      );
+    }
+    return out;
   }
 
-  function buildCrossoverEntries() {
-    const entries = [
-      {
-        cat: 'crossover_meta',
-        name: 'Legion Archive',
-        body: 'Warriors from other worlds sign on through Legion Archive — your evolved allies. See Evolved Allies — Design Philosophy in this tab for early spikes, late-game armies, and Northern war operatives. Each faction needs its barracks completed before recruits deploy.',
-      },
-      {
-        cat: 'crossover_meta',
-        name: 'How to Recruit',
-        body: "1) Unlock the faction roster. 2) Build that faction's barracks with your Builder. 3) Open Legion Archive from the HUD. 4) Pay TP to deploy operatives onto the rally line. Signed operatives appear in your Legacy roll. Tonic Stations machines unlock after any secret roster (Coliseum, Hellbane, or evolved allies) is active.",
-      },
+  // ---------------------------------------------------------------- buildings
+  /**
+   * The one job of each building. Names and prices come from BuildDefs; an id the data
+   * no longer has is skipped.
+   */
+  const BUILDING_JOBS = {
+    outpost: () =>
+      `Cover for one soldier. An archer inside shoots further. Takes one upgrade, once: ${buildName('outpost_barracks')} or ${buildName('outpost_granary')}.`,
+    outpost_barracks: () => {
+      const r = G('EconomyRules')?.BUILDINGS?.barracks;
+      return `Outpost upgrade. A free ${unitName('footman')} musters here every ${r ? ordinal(r.musterEvery) : 'third'} dawn.${r ? ` The first ${r.maxCounted} count.` : ''} The choice is final for that Outpost.`;
+    },
+    outpost_granary: () => {
+      const r = G('EconomyRules')?.BUILDINGS?.granary;
+      return `Outpost upgrade. Feeds ${r ? r.freeArmy : 3} more soldiers before army upkeep starts.${r ? ` The first ${r.maxCounted} count.` : ''} The choice is final for that Outpost.`;
+    },
+    wall: () => {
+      const r = G('EconomyRules')?.BUILDINGS?.wall;
+      return `Blocks movement and holds line-breakers: each wall stops ${r ? `up to ${r.holdsPerWave}` : 'a few'} runners a wave that come close, and makes them fight. Turn it before placing.`;
+    },
+    watchtower: () =>
+      'While one stands, the night preview lists the next wave by type and number. Reveals hidden enemies near it.',
+    spike_trap: () => 'Wounds the first enemy to cross it, again and again.',
+    medical_tent: () =>
+      'The wounded walk here on their own, heal to full and go back to their posts. Four beds.',
+    mess_hall: () => 'Soldiers near it keep their morale.',
+    research_lab: () => {
+      const r = G('EconomyRules')?.BUILDINGS?.research_lab;
+      return `Pays science at every dawn${r ? ` (${r.dawnScience} per lab, first ${r.maxCounted} labs)` : ''}, and a little from kills. Science buys research.`;
+    },
+    trade_outpost: () => {
+      const d = G('BuildDefs')?.trade_outpost;
+      return `Pays ${d?.tpPerRound ?? 2} TP at dawn.`;
+    },
+    quarry: () => {
+      const d = G('BuildDefs')?.quarry;
+      return `Pays ${d?.tpPerRound ?? 3} TP at dawn.`;
+    },
+    castle: () =>
+      'A full compound in one order: walls, outposts, a keep, a med tent and a mess hall. A General in the keep commands the walls.',
+  };
+
+  function ordinal(n) {
+    return { 1: 'first', 2: 'second', 3: 'third', 4: 'fourth', 5: 'fifth' }[n] || `${n}th`;
+  }
+
+  function buildBuildingEntries() {
+    const defs = G('BuildDefs');
+    if (!defs) return [];
+    const out = [
+      entry(
+        'buildings',
+        'How building works',
+        `Every building needs a ${unitName('builder')} on the field; one builder runs two projects at a time. Open the Build tab or press a build key, then click the field. DEMOLISH removes a building for part of its price; MOVE relocates a finished one. Each building has one job.`
+      ),
     ];
+    for (const [id, job] of Object.entries(BUILDING_JOBS)) {
+      const def = defs[id];
+      if (!def) continue;
+      const needs = researchFor('build', id);
+      out.push(
+        entry('buildings', def.name, job(), {
+          buildId: id,
+          tags: [
+            { k: 'role', v: `${def.cost} TP` },
+            needs ? { k: 'weak', v: `needs ${needs}` } : null,
+          ].filter(Boolean),
+        })
+      );
+    }
+    const group = (name, intro, pick) => {
+      const members = Object.entries(defs).filter(([id, d]) => pick(id, d));
+      if (!members.length) return;
+      out.push(
+        entry(
+          'buildings',
+          name,
+          `${intro}\n\n${members.map(([, d]) => `${d.name} — ${d.cost} TP`).join('\n')}`
+        )
+      );
+    };
+    group(
+      'Academies',
+      'Late works, opened by research. An academy trains one kind of soldier each round while a veteran of that kind is on the field to teach.',
+      (id, d) => d.isAcademy && /^academy_/.test(id)
+    );
+    group(
+      'Settlements',
+      'Late works, opened by research. A settlement pays TP every round and can be grown, stage by stage.',
+      (id) =>
+        [
+          'hamlet',
+          'village',
+          'town',
+          'city',
+          'metropolis',
+          'merchant_guild',
+          'fortress_upgrade',
+        ].includes(id)
+    );
+    group(
+      'Tonic stands',
+      'Late works for commanders who have sworn a company of champions. Soldiers collect a tonic from a stand during the night.',
+      (id) => /^perk_/.test(id)
+    );
+    return out;
+  }
 
-    if (typeof CrossoverDefs === 'undefined') return entries;
+  // ----------------------------------------------------------------- research
+  function buildResearchEntries() {
+    const Rs = G('Research');
+    const out = [
+      entry(
+        'research',
+        'How research works',
+        `Build a ${buildName('research_lab')}. It pays science at every dawn, and kills add a little. Open the Research panel and choose a project; one runs at a time. A lab built early brings the first iron-armed troops around wave 6.`
+      ),
+    ];
+    const nodes = (Rs?.ALL_NODES || []).filter((n) => !n.faction && !n.crossover);
+    for (const n of nodes) {
+      const opens = [...(n.deploy || []).map(unitName), ...(n.build || []).map(buildName)];
+      out.push(
+        entry('research', n.name, n.desc || '', {
+          researchId: n.id,
+          refs: { units: n.deploy || [], builds: n.build || [] },
+          tags: [
+            { k: 'role', v: `${n.cost} science` },
+            n.wave ? { k: 'weak', v: `from wave ${n.wave}` } : null,
+            opens.length ? { k: 'counter', v: `opens ${opens.join(', ')}` } : null,
+          ].filter(Boolean),
+        })
+      );
+    }
+    return out;
+  }
 
-    for (const factionId of CROSSOVER_FACTION_ORDER) {
-      entries.push(buildCrossoverFactionIntro(factionId));
-      const cat = CROSSOVER_CAT[factionId];
-      const factionUnlocked = crossoverFactionUnlocked(factionId);
-      for (const [id, def] of Object.entries(CrossoverDefs)) {
-        if (def.faction !== factionId) continue;
-        entries.push({
-          cat,
-          tease: !factionUnlocked,
-          name: factionUnlocked ? def.name : `${def.name} (Classified)`,
-          body: buildCrossoverHeroBody(id, def, factionUnlocked),
-        });
+  // ------------------------------------------------------------------- orders
+  function describeAbility(a) {
+    if (a.desc) return a.desc;
+    const bits = [];
+    if (a.damage) bits.push(`${a.damage} damage`);
+    if (a.healAmount) bits.push(`heals ${a.healAmount}`);
+    if (a.moraleBoost) bits.push(`+${a.moraleBoost} morale to the whole army`);
+    if (a.mitigation) bits.push(`soldiers inside take ${pct(a.mitigation)} less damage`);
+    if (a.slowDuration) bits.push(`slows for ${Math.round(a.slowDuration / 60)} seconds`);
+    if (a.revealDuration) bits.push('reveals hidden enemies');
+    if (a.units) bits.push(`sends ${list(a.units, unitName)}`);
+    if (a.radius) bits.push(`radius ${a.radius}`);
+    const s = bits.join(' · ');
+    return s ? `${s.charAt(0).toUpperCase()}${s.slice(1)}.` : '';
+  }
+
+  function buildOrderEntries() {
+    const out = [];
+    const add = (name, body, extras) => out.push(entry('orders', name, body, extras));
+    const general = unitName('general');
+    add(
+      `The ${general}'s orders`,
+      `With a ${general} on the field, by day, two orders reach every soldier near him.\n\nWar Cry (${key('day', 'order', 'warCry', '[')}) — they strike 20% harder for 8 seconds and regain morale. Ready again after 45 seconds.\n\nHold the Line (${key('day', 'order', 'holdLine', ']')}) — they take 40% less damage for 7 seconds. Ready again after 60 seconds.`
+    );
+    add(
+      'Hunt, Hold and posts',
+      `${key('day', 'hunt', null, 'H')} — Hunt: release Hold.\n${key('day', 'holdHere', null, 'Shift+H')} — Hold here.\nShift+click the field — move there and hold.\n${key('unit_selected', 'backToPosts', null, 'B')} — back to posts (with soldiers selected).\n\nSee How to play for the rules.`
+    );
+    const abilities = G('Abilities') || {};
+    for (const [id, a] of Object.entries(abilities)) {
+      const k = key('day', 'ability', id);
+      add(`Spell: ${a.name}`, describeAbility(a), {
+        tags: [{ k: 'role', v: `${a.cost} TP` }, k ? { k: 'counter', v: `key ${k}` } : null].filter(
+          Boolean
+        ),
+      });
+    }
+    const rules = G('EconomyRules')?.ACTIONS || {};
+    const cooldown = (rule) =>
+      rule?.cooldown ? { k: 'weak', v: `once every ${rule.cooldown} waves` } : null;
+    add(
+      'The spy',
+      'The spy works on the next wave from the right-hand panel: thin it, weaken it, strip its siege engines, or learn what it is. Each action has a price, and the strongest have a cooldown shown on the button.'
+    );
+    // Actions tied to the far late game are left to their own buttons.
+    const early = (a) =>
+      !a.kingdomStage && !((a.waveMin || 0) >= 100) && !/Wave \d{3}\+/.test(a.desc || '');
+    for (const [id, a] of Object.entries(G('SpyActions') || {})) {
+      if (!early(a)) continue;
+      add(`Spy: ${a.name}`, a.desc || '', {
+        tags: [{ k: 'role', v: `${a.cost} TP` }, cooldown(rules[`spy:${id}`])].filter(Boolean),
+      });
+    }
+    add(
+      'The courier',
+      `A ${unitName('courier')} on the field carries one message a wave from the right-hand panel: gold, men or heart for the line.`
+    );
+    for (const [id, a] of Object.entries(G('CourierMessages') || {})) {
+      if (!early(a)) continue;
+      add(`Courier: ${a.name}`, a.desc || '', {
+        tags: [{ k: 'role', v: `${a.cost} TP` }, cooldown(rules[`courier:${id}`])].filter(Boolean),
+      });
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------- spoils and edicts
+  function buildSpoilsEntries() {
+    const out = [
+      entry(
+        'spoils',
+        'Spoils of war',
+        `Every fifth wave pays spoils. When that wave is cleared the field dims and three rewards are offered; nothing else happens until you take one (${key('spoils', 'spoilPick', 0, '1')}, ${key('spoils', 'spoilPick', 1, '2')}, ${key('spoils', 'spoilPick', 2, '3')}, or the arrow keys and Enter). What you take lasts for the rest of the run.`
+      ),
+      entry(
+        'spoils',
+        'Edicts',
+        'Most spoils are edicts: standing rules for your army. The same edict can be taken up to three times, and its effect adds up each time. After that it is no longer offered.'
+      ),
+    ];
+    for (const [id, e] of Object.entries(G('SiegeLoop')?.EDICTS || {})) {
+      out.push(entry('spoils', e.name, e.desc, { edictId: id }));
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------- ribbons and score
+  function buildRibbonEntries() {
+    const S = G('SiegeLoop');
+    const ribbons = S?.getRibbons?.() || [];
+    const out = [
+      entry(
+        'ribbons',
+        'Ribbons',
+        `${ribbons.length || 16} ribbons, each earned once by something the line has done, across all your runs. Each gives a small permanent bonus to every run after. Earned ribbons are marked below and listed on the main menu.`
+      ),
+    ];
+    if (S?.computeScore) {
+      const one = S.computeScore({ waves: 1, kills: 1, breaches: 0, lost: 0 });
+      const pen = S.computeScore({ waves: 100, kills: 0, breaches: 1, lost: 1 });
+      const diffs = Object.values(G('DIFFICULTIES') || {})
+        .map((d) => `${d.label} ×${S.computeScore({ waves: 1, difficulty: d.id }).difficultyMult}`)
+        .join(', ');
+      out.push(
+        entry(
+          'ribbons',
+          'Run score',
+          `Scored when the run ends: ${one.wavePoints} for each wave cleared and ${one.killPoints} for each kill, less ${pen.breachPenalty} for each breach and ${pen.lossPenalty} for each soldier lost. The total is multiplied for difficulty${diffs ? ` (${diffs})` : ''} and for each Advanced Difficulty modifier in play.`
+        ),
+        entry(
+          'ribbons',
+          'Best scores',
+          'Your best runs are kept in this browser and shown on the main menu and in the after-action report.'
+        )
+      );
+    }
+    out.push(
+      entry(
+        'ribbons',
+        'Voided runs',
+        'A run in which a cheat code was used is not scored and earns no ribbons or achievements. Creative mode is never scored.'
+      )
+    );
+    for (const r of ribbons) {
+      out.push(
+        entry('ribbons', r.name, r.how, {
+          ribbonId: r.id,
+          tags: [{ k: 'counter', v: r.perk }, r.earned ? { k: 'role', v: 'earned' } : null].filter(
+            Boolean
+          ),
+        })
+      );
+    }
+    return out;
+  }
+
+  // ------------------------------------------------------------------ enemies
+  /** Used only when the faction data carries no tactic of its own. Keyed by faction id. */
+  const FACTION_FALLBACK = {
+    goblin_hordes: {
+      tactic: 'Numbers. Many weak bodies, and more line-breakers than any other host.',
+      counter: 'Splash damage, walls to hold the runners, riders to cut them down.',
+    },
+    orc_warbands: {
+      tactic: 'Weight. Heavy infantry up the middle, riders on the edges, a chief to drive them.',
+      counter: 'Pikes against the riders, crossbows and mages against the armour. Kill the chief.',
+    },
+    dark_legions: {
+      tactic: 'Attrition. Hexes weaken your line while summoners refill theirs.',
+      counter: 'Reach the casters with cavalry and scouts. Kill the summoners first.',
+    },
+    void_abyssal: {
+      tactic: 'Murder. Stalkers go for the General and the back rank while brutes pin the front.',
+      counter: 'Guard the General. Ballistae and mages on the brutes.',
+    },
+  };
+
+  const isBoss = (type) => /^boss_/.test(type) || !!G('EnemyDefs')?.[type]?.bossName;
+
+  function factionMembers(f) {
+    const seen = new Set();
+    const push = (t) => {
+      if (t && G('EnemyDefs')?.[t] && !isBoss(t)) seen.add(t);
+    };
+    for (const t of f.units || []) push(t);
+    for (const tier of f.tiers || []) {
+      for (const t of tier.units || []) push(t);
+      for (const t of tier.elites || []) push(t);
+    }
+    return [...seen];
+  }
+
+  function enemyEntry(type) {
+    const p = G('Roster')?.ENEMIES?.[type];
+    const def = G('EnemyDefs')[type];
+    const stats = `health ${def.hp} · damage ${def.damage}${def.range > 60 ? ` · range ${def.range}` : ''}`;
+    return entry('enemies', def.name, `${p ? `${p.trait}\n\n` : ''}${stats}`, {
+      enemyId: type,
+      quote: G('LoreData')?.ENEMY_LINES?.[type] || '',
+      tags: p
+        ? [
+            { k: 'role', v: p.role },
+            { k: 'counter', v: p.weak },
+          ]
+        : [],
+    });
+  }
+
+  function buildEnemyEntries() {
+    const defs = G('EnemyDefs');
+    if (!defs) return [];
+    const out = [
+      entry(
+        'enemies',
+        'The host',
+        'One faction leads each wave. It brings its own troops and fights its own way; the others fill the ranks behind it. Each enemy below has one job, one trait, and one thing that beats it.'
+      ),
+    ];
+    const placed = new Set();
+    for (const f of Object.values(G('EnemyFactions')?.FACTIONS || {})) {
+      const members = factionMembers(f);
+      if (!members.length) continue;
+      const fb = FACTION_FALLBACK[f.id] || {};
+      const tactic = f.tactic?.desc || f.tacticDesc || f.tactic || fb.tactic || f.tagline || '';
+      const counter = f.counter || f.tactic?.counter || fb.counter || '';
+      out.push(
+        entry(
+          'enemies',
+          f.name,
+          `${typeof tactic === 'string' ? tactic : ''}\n\nIn its ranks: ${list(members, enemyName)}.`,
+          {
+            factionId: f.id,
+            refs: { enemies: members },
+            tags: [
+              f.waveMin > 1 ? { k: 'role', v: `from wave ${f.waveMin}` } : null,
+              typeof counter === 'string' && counter ? { k: 'counter', v: counter } : null,
+            ].filter(Boolean),
+          }
+        )
+      );
+      for (const t of members) {
+        if (placed.has(t)) continue;
+        placed.add(t);
+        out.push(enemyEntry(t));
       }
     }
-    return entries;
-  }
-
-  function buildPerkEntries() {
-    return [
-      {
-        cat: 'perks',
-        name: 'Tonic Stations System',
-        body: 'Build machines after unlocking a secret roster (Coliseum, Hellbane, or evolved heroes). Eligible units collect perks during night prep — up to 4 perks based on stars earned. Each perk favors melee, ranged, or support tags.',
-      },
-      { cat: 'perks', name: 'Ironbrew', body: 'Melee & support — +35% max HP.' },
-      {
-        cat: 'perks',
-        name: 'Field Revival',
-        body: 'Support — self-revive once per wave at 40% HP.',
-      },
-      { cat: 'perks', name: 'Swiftstep Tonic', body: 'Melee & ranged — faster attacks.' },
-      { cat: 'perks', name: 'Endurance Draft', body: 'Melee & ranged — faster movement.' },
-      { cat: 'perks', name: 'Deadeye Elixir', body: 'Ranged only — +22 accuracy.' },
-      { cat: 'perks', name: 'Storm Fizz', body: 'Ranged & melee — splash damage on hits.' },
-      { cat: 'perks', name: 'Impact Ward', body: 'Melee only — explosion immunity.' },
-      { cat: 'perks', name: 'Brawler’s Brew', body: 'Melee only — +28% melee damage.' },
-      {
-        cat: 'perks',
-        name: 'Scavenger’s Tonic',
-        body: 'Ranged & support — kills may grant +1 TP.',
-      },
-      {
-        cat: 'perks',
-        name: 'Last Stand Monument',
-        body: 'General only — each night resurrects fallen troops equal to total bronze-star count (3 gold stars = 27 resurrections per wave).',
-      },
-    ];
-  }
-
-  function buildResearchEntries() {
-    if (typeof Research !== 'undefined' && Research.getEncyclopediaEntries) {
-      return Research.getEncyclopediaEntries();
+    const rest = Object.keys(defs).filter((t) => !placed.has(t) && !isBoss(t));
+    if (rest.length && placed.size) {
+      out.push(
+        entry(
+          'enemies',
+          'Others in the host',
+          'These march with whichever faction leads the wave.',
+          { refs: { enemies: rest } }
+        )
+      );
     }
-    return [
-      {
-        cat: 'research',
-        name: 'Research Lab',
-        body: 'Build a Research Lab (18 TP, 1 Builder) to earn Science Points: +6 SP per lab at every dawn (first two labs), plus analysis of slain foes up to a per-wave cap (extra labs raise it). Iron Weapons costs 20 SP, so knights, sappers and crossbowmen arrive two or three waves after the lab stands. Open the Research tab in the encyclopedia after the game loads for all nodes, costs, prerequisites, and unlocks.',
-      },
-    ];
+    for (const t of rest) out.push(enemyEntry(t));
+    return out;
   }
 
-  function buildLoadoutEntries() {
-    if (typeof ContentExpansion !== 'undefined' && ContentExpansion.getLoadoutEncyclopediaEntries) {
-      return ContentExpansion.getLoadoutEncyclopediaEntries();
+  // ------------------------------------------------------------------- bosses
+  function buildBossEntries() {
+    const defs = G('EnemyDefs');
+    if (!defs) return [];
+    const roster = G('MonsterBosses')?.BOSS_ROSTER || [];
+    const out = [
+      entry(
+        'bosses',
+        'Warlords',
+        'Every tenth wave a named warlord leads the host, with a pack of his own. Ten have names. After the tenth, the first returns, stronger, and each one that comes back brings a larger pack. A warlord changes at half health: read its page before it arrives.'
+      ),
+    ];
+    const types = roster.length
+      ? roster.map((b) => b.type)
+      : Object.keys(defs).filter((t) => isBoss(t));
+    for (const type of types) {
+      const def = defs[type];
+      if (!def) continue;
+      const meta = roster.find((b) => b.type === type);
+      const p = G('Roster')?.ENEMIES?.[type];
+      const lines = G('LoreData')?.BOSS_LINES?.[type];
+      const stats = `health ${def.hp} · damage ${def.damage}${def.range > 60 ? ` · range ${def.range}` : ''}`;
+      out.push(
+        entry(
+          'bosses',
+          def.bossName || def.name,
+          `${p ? `${p.trait}\n\n` : ''}${stats}${lines?.fall ? `\n\nAt the end: ${lines.fall}` : ''}`,
+          {
+            enemyId: type,
+            quote: lines?.arrive || '',
+            tags: [
+              meta?.debutWave ? { k: 'role', v: `first at wave ${meta.debutWave}` } : null,
+              p ? { k: 'weak', v: p.role.replace(/^Boss — /, '') } : null,
+              p ? { k: 'counter', v: p.weak } : null,
+            ].filter(Boolean),
+          }
+        )
+      );
     }
-    return [
-      {
-        cat: 'loadouts',
-        name: 'Army Loadouts',
-        body: 'Kingdom loadouts unlock at wave 100+. Open the Loadouts tab after the game loads for full bonus tables and strategy notes.',
-      },
-    ];
+    return out;
   }
 
-  /** One page per troop, archetype and enemy: its job, its trait and how to beat it. */
+  // ------------------------------------------------------------- status marks
+  const MARK_MEANINGS = {
+    pin: ['Pinned', 'Nailed in place. Cannot move until it wears off.'],
+    burn: ['Burning', 'Takes fire damage every moment until it goes out.'],
+    hex: ['Hexed', 'Deals less damage for a few seconds.'],
+    plague: ['Plagued', 'A bite or a cloud that keeps hurting for several seconds.'],
+    frost: ['Slowed', 'Moves slowly: frost, mud or a snare.'],
+    expose: ['Exposed', 'Armour split. Takes more damage from every blow.'],
+    enrage: ['Enraged', 'Hits much harder. Usually a wounded brute or a warlord past half health.'],
+    guard: ['Guarded', 'A comrade is taking part of the damage meant for him.'],
+    bulwark: ['Bulwark', 'One of yours, taking less damage: fieldworks, an order or a zone.'],
+    ward: ['Warded', 'An enemy under a shaman or a shield. Takes less damage.'],
+    banner: ['Under a banner', 'An enemy near a chief. Hits harder until the chief is dead.'],
+    might: ['Might', 'A doctrine in force: more damage.'],
+    iron: ['Iron', 'A doctrine in force: less damage taken.'],
+    haste: ['Haste', 'A doctrine in force: moves faster.'],
+    prey: ['Hunting', 'Has chosen one target and hits it harder than any other.'],
+    ramp: ['Building', 'Hits harder with each blow on the same target. The strokes count how far.'],
+    omen: ['Omen', "A seer's word is on this one for a few seconds."],
+  };
+
+  function buildMarkEntries() {
+    const marks = G('Roster')?.STATUS_MARKS || [];
+    const out = [
+      entry(
+        'marks',
+        'Reading the marks',
+        'Small badges above a unit show what is acting on it. Up to six are shown at once. Bone and steel marks are protections; blood marks are threats.'
+      ),
+    ];
+    for (const m of marks) {
+      const [name, body] = MARK_MEANINGS[m] || [m, 'A condition acting on this unit.'];
+      out.push(entry('marks', name, body, { mark: m }));
+    }
+    return out;
+  }
+
+  // ---------------------------------------------- champions and companies
+  /**
+   * One page per troop, archetype, champion, operative and enemy: its job, its trait and
+   * how to beat it. Kept as a flat list for callers that check every profile is listed;
+   * the Champions tab folds the same profiles into one page per company.
+   */
   function buildRoleEntries() {
-    if (typeof Roster === 'undefined') return [];
+    const R = G('Roster');
+    if (!R) return [];
     const page = (name, p, weakLabel) => ({
       cat: 'roles',
       name: `${name} — ${p.role}`,
       body: `${p.trait}\n\n${weakLabel}: ${p.weak}`,
     });
-    const out = [
-      {
-        cat: 'roles',
-        name: 'How roles work',
-        body: 'Every soldier and every enemy has one job, one signature trait and one weakness. Pikes beat riders, cavalry beats archers and casters, arrows are weak against armour, and any blow from behind lands 25% harder. Champions and operatives each have their own role, trait and weakness, listed here by faction after the troops. Select a soldier to see his role in the unit panel.',
-      },
-    ];
-    for (const [type, p] of Object.entries(Roster.TROOPS)) {
-      const def = typeof UnitDefs !== 'undefined' ? UnitDefs[type] : null;
-      out.push(page(def?.name || type, p, 'Weakness'));
+    const out = [];
+    for (const [type, p] of Object.entries(R.TROOPS)) {
+      out.push(page(unitName(type), p, 'Weakness'));
     }
-    // Champions and operatives each have their own profile, listed faction by faction.
-    const profiles = Roster.PROFILES || {};
-    const group = (label, defs, keep) => {
-      const members = Object.entries(defs).filter(([id, def]) => profiles[id] && keep(def));
-      if (!members.length) return;
-      out.push({
-        cat: 'roles',
-        name: `${label} — ${members.length} profiles`,
-        body: members.map(([id, def]) => `${def.name} — ${profiles[id].role}`).join('\n'),
-      });
-      for (const [id, def] of members) {
-        const p = profiles[id];
+    for (const company of companies()) {
+      for (const m of company.members) {
         out.push({
           cat: 'roles',
-          name: `${def.name} — ${p.role}`,
-          body: `${label}\n\n${p.trait}\n\nWeakness: ${p.weak}`,
+          name: `${m.def.name} — ${m.profile.role}`,
+          body: `${company.label}\n\n${m.profile.trait}\n\nWeakness: ${m.profile.weak}`,
         });
       }
-    };
-    if (typeof WweDefs !== 'undefined') group('Grand Coliseum champions', WweDefs, () => true);
-    if (typeof CrossoverDefs !== 'undefined') {
-      const factions =
-        typeof CROSSOVER_FACTION_ORDER !== 'undefined'
-          ? CROSSOVER_FACTION_ORDER
-          : [...new Set(Object.values(CrossoverDefs).map((d) => d.faction))];
-      for (const fid of factions) {
-        const label =
-          (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[fid]?.label) || fid;
-        group(label, CrossoverDefs, (def) => def.faction === fid);
-      }
     }
-    for (const [type, p] of Object.entries(Roster.ENEMIES)) {
-      const def = typeof EnemyDefs !== 'undefined' ? EnemyDefs[type] : null;
-      out.push(page(def?.bossName || def?.name || type, p, 'How to beat it'));
+    for (const [type, p] of Object.entries(R.ENEMIES)) {
+      out.push(page(enemyName(type), p, 'How to beat it'));
     }
     return out;
   }
 
-  function buildNamedBossEntries() {
-    if (typeof MonsterBosses !== 'undefined' && MonsterBosses.getEncyclopediaEntries) {
-      return MonsterBosses.getEncyclopediaEntries();
+  /** Every company of champions, read from data: label, hall, members, whether sworn. */
+  function companies() {
+    const profiles = G('Roster')?.PROFILES || {};
+    const Meta = G('MetaProgress');
+    const out = [];
+    const members = (defs, keep) =>
+      Object.entries(defs)
+        .filter(([id, def]) => profiles[id] && keep(def))
+        .map(([id, def]) => ({ id, def, profile: profiles[id] }));
+    const arena = G('WweDefs');
+    if (arena) {
+      out.push({
+        id: 'arena',
+        label: buildName('wwe_academy'),
+        hall: 'wwe_academy',
+        sworn: !!Meta?.isWweUnlocked?.(),
+        members: members(arena, () => true),
+      });
     }
-    return [
-      {
-        cat: 'bosses',
-        name: 'Named Bosses',
-        body: 'Every 10th wave fields a named warlord with Monster Evolution tiers (Prime → Returned → Ascendant → Eternal). Open the Bosses tab after the game loads for full lore, packs, and counters.',
-      },
-    ];
+    const defs = G('CrossoverDefs');
+    const factions = G('CrossoverFactions');
+    if (defs) {
+      const ids = factions
+        ? Object.keys(factions)
+        : [...new Set(Object.values(defs).map((d) => d.faction))];
+      for (const fid of ids) {
+        const f = factions?.[fid] || {};
+        out.push({
+          id: fid,
+          label: f.label || fid,
+          hall: f.building || null,
+          sworn: !!Meta?.isCrossoverFactionUnlocked?.(fid),
+          members: members(defs, (def) => def.faction === fid),
+        });
+      }
+    }
+    return out.filter((c) => c.members.length);
   }
 
-  function buildColonyValueEntries() {
-    if (typeof ColonyValue !== 'undefined' && ColonyValue.getEncyclopediaEntries) {
-      return ColonyValue.getEncyclopediaEntries();
-    }
-    return [
-      {
-        cat: 'colony',
-        name: 'Kingdom Strength & Enemy Adaptation',
-        body: "Your kingdom's strength directly shapes the enemy's aggression and composition. Open the Kingdom Strength tab after the game loads for full ledger formulas, threat tiers, composition counters, and elite injection rules.",
-      },
+  function buildChampionEntries() {
+    const all = companies();
+    if (!all.length) return [];
+    const out = [
+      entry(
+        'champions',
+        'Champions and companies',
+        `Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company must first be sworn to your line (each has its own trial, listed under Achievements); then a ${unitName('builder')} raises its hall, and its fighters are recruited from the Legion Archive. Each has his own role, trait and weakness. ${all.filter((c) => c.sworn).length} of ${all.length} companies are sworn to you.`
+      ),
     ];
+    for (const c of all) {
+      const hall = c.hall && G('BuildDefs')?.[c.hall];
+      const head = hall ? `Hall: ${hall.name}, ${hall.cost} TP.` : '';
+      const refs = { units: c.members.map((m) => m.id), builds: hall ? [c.hall] : [] };
+      if (!c.sworn) {
+        out.push(
+          entry(
+            'champions',
+            c.label,
+            `Not yet sworn to your line. ${c.members.length} fighters keep this company's hall. Their names are not in your ledgers.`,
+            { companyId: c.id, refs, tease: true }
+          )
+        );
+        continue;
+      }
+      out.push(
+        entry(
+          'champions',
+          c.label,
+          `${head}\n\n${c.members
+            .map(
+              (m) =>
+                `${m.def.name} — ${m.profile.role}, ${m.def.cost} TP\n${m.profile.trait}\nWeakness: ${m.profile.weak}`
+            )
+            .join('\n\n')}`,
+          { companyId: c.id, refs }
+        )
+      );
+    }
+    return out;
   }
 
-  function buildCreativeEntries() {
-    return [
-      {
-        cat: 'creative',
-        name: 'Creative Lab',
-        body: 'Sandbox mode from the main menu. Press P in-game for the lab panel. Achievements are disabled by default; sandbox stats track separately in local storage. Toggle "campaign rules" to practice with real TP costs and miss limits.',
-      },
-      {
-        cat: 'creative',
-        name: 'Wave Composer',
-        body: 'Type enemy lists like goblin*10, orc*5, war_chief*1 then Queue and Launch. Custom intervals control spawn pacing for balance tests.',
-      },
-      {
-        cat: 'creative',
-        name: 'Scenario Templates',
-        body: 'Pre-built drills: Siege Drill, Boss Rush, Horde Stress, Wall Defense, Academy Era, and more. Load a template to populate allies, buildings, and custom waves instantly.',
-      },
-      {
-        cat: 'creative',
-        name: 'Stress & Perf',
-        body: 'Start Horde spawns enemies from map edges until a cap — pair with F3 perf overlay to profile FPS, pathfinding, and heap usage.',
-      },
-      {
-        cat: 'creative',
-        name: 'Export / Import',
-        body: 'Export scenarios or session replays as JSON. Paste into the import box to share setups with other designers or restore a snapshot.',
-      },
-    ];
+  // ------------------------------------------------------------ world and lore
+  function buildWorldEntries() {
+    const out = [];
+    const world = G('LoreData')?.buildWorldEntries?.() || [];
+    for (const e of world) out.push({ ...e, cat: 'world' });
+    const story = G('StoryLore')?.getEncyclopediaEntries?.() || [];
+    for (const e of story) out.push({ ...e, cat: 'world' });
+    // The player's own record: the latest reports only, newest first.
+    const chronicles = G('Chronicles')?.getEncyclopediaEntries?.() || [];
+    for (const e of chronicles.slice(0, 12)) out.push({ ...e, cat: 'world' });
+    return out;
   }
+
+  // ---------------------------------------------------------------- assemble
+  const BUILDERS = [
+    buildHowToEntries,
+    buildArmyEntries,
+    buildBuildingEntries,
+    buildResearchEntries,
+    buildOrderEntries,
+    buildSpoilsEntries,
+    buildRibbonEntries,
+    buildEnemyEntries,
+    buildBossEntries,
+    buildMarkEntries,
+    buildChampionEntries,
+    buildWorldEntries,
+  ];
 
   function getAllEntries() {
-    const loreExpanded =
-      typeof LoreData !== 'undefined' ? LoreData.getExpandedEntries() : [...BASE_ENTRIES];
-    const factionLore =
-      typeof FactionDepth !== 'undefined' ? FactionDepth.getEncyclopediaEntries() : [];
-    const chronicles = typeof Chronicles !== 'undefined' ? Chronicles.getEncyclopediaEntries() : [];
-    const story = typeof StoryLore !== 'undefined' ? StoryLore.getEncyclopediaEntries() : [];
-    const legacy = typeof Legacy !== 'undefined' ? Legacy.getLegacyEntries() : [];
-    const journey = [];
-    return [
-      ...journey,
-      ...loreExpanded,
-      ...factionLore,
-      ...buildResearchEntries(),
-      ...buildLoadoutEntries(),
-      ...buildNamedBossEntries(),
-      ...buildRoleEntries(),
-      ...buildColonyValueEntries(),
-      ...buildWweEntries(),
-      ...buildDoomslayerEntries(),
-      ...buildCrossoverEntries(),
-      ...buildPerkEntries(),
-      ...story,
-      ...chronicles,
-      ...legacy,
-      ...(typeof CrownLegacies !== 'undefined' ? CrownLegacies.getLegacyEntries() : []),
-      ...(typeof EternalLegacyTree !== 'undefined' ? EternalLegacyTree.getLegacyEntries() : []),
-      ...(typeof FoundationalMedievalLayer !== 'undefined'
-        ? FoundationalMedievalLayer.getLegacyEntries()
-        : []),
-      ...buildCreativeEntries(),
-    ];
+    const out = [];
+    for (const build of BUILDERS) {
+      try {
+        for (const e of build()) {
+          if (e && e.name) out.push({ ...e, name: String(e.name), body: String(e.body || '') });
+        }
+      } catch (err) {
+        // One broken section must not blank the whole reference.
+        if (typeof console !== 'undefined') console.warn('Encyclopedia section failed', err);
+      }
+    }
+    return out;
   }
 
-  function renderEntryBody(e) {
-    const bodyHtml = (e.body || '')
+  // ------------------------------------------------------------------ render
+  const esc = (s) =>
+    String(s ?? '')
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;')
-      .replace(/\n/g, '<br>');
-    const parts = [`<div class="ency-entry-body">${bodyHtml}</div>`];
-    if (e.bestiaryWeak) {
-      parts.push(`<div class="ency-bestiary-tags">
-        <span class="ency-btag threat">${e.bestiaryThreat || 'Threat'}</span>
-        <span class="ency-btag weak">Weak: ${e.bestiaryWeak}</span>
-        <span class="ency-btag counter">Counter: ${e.bestiaryCounter}</span>
-      </div>`);
+      .replace(/"/g, '&quot;');
+
+  const TAG_CLASS = { role: 'threat', weak: 'weak', counter: 'counter' };
+
+  function renderEntryBody(e) {
+    const parts = [];
+    if (e.quote) {
+      parts.push(`<div class="ency-entry-body"><em>${esc(e.quote)}</em></div>`);
     }
-    if (e.classified && typeof LoreData !== 'undefined') {
-      const unlocked = LoreData.checkUnlock(e.classifiedRule);
-      if (unlocked) {
-        parts.push(
-          `<div class="ency-classified"><span class="ency-classified-label">CLASSIFIED</span>${e.classified}</div>`
-        );
-      } else {
-        const hint = LoreData.getUnlockHint(e.classifiedRule);
-        parts.push(`<div class="ency-classified-locked">
-          <span class="ency-classified-label">CLASSIFIED</span>
-          <span class="ency-redacted">${'█'.repeat(36)}</span>
-          <span class="ency-unlock-hint">Unlock: ${hint}</span>
-        </div>`);
-      }
+    parts.push(`<div class="ency-entry-body">${esc(e.body).replace(/\n/g, '<br>')}</div>`);
+    if (e.tags && e.tags.length) {
+      parts.push(
+        `<div class="ency-bestiary-tags">${e.tags
+          .map((t) => `<span class="ency-btag ${TAG_CLASS[t.k] || 'threat'}">${esc(t.v)}</span>`)
+          .join('')}</div>`
+      );
     }
     if (e.chronicleMeta) {
-      const ctype =
+      const kind =
         e.chronicleType === 'run'
-          ? 'Campaign'
+          ? 'Run'
           : e.chronicleType === 'choice'
             ? 'Choice'
             : e.chronicleType === 'narrative'
-              ? 'Narrative'
+              ? 'Record'
               : 'Wave';
-      parts.push(`<div class="ency-chronicle-meta">${ctype} · ${e.chronicleMeta}</div>`);
+      parts.push(`<div class="ency-chronicle-meta">${kind} · ${esc(e.chronicleMeta)}</div>`);
     }
-    if (e.storyMeta) {
-      parts.push(`<div class="ency-chronicle-meta">Story Arc · ${e.storyMeta}</div>`);
-    }
-    if (e.storyBranch && typeof StoryLore !== 'undefined') {
-      const br = StoryLore.BRANCHES?.[e.storyBranch];
-      if (br) {
-        parts.push(
-          `<div class="ency-story-branch" style="color:${br.color}">Path: ${br.label}</div>`
-        );
-      }
-    }
-    if (e.campaignWave) {
-      parts.push(`<div class="ency-campaign-wave">Milestone · Wave ${e.campaignWave}</div>`);
-    }
-    if (e.tease) {
-      parts.push('<div class="ency-tease-tag">CLASSIFIED</div>');
-    }
+    if (e.storyMeta) parts.push(`<div class="ency-chronicle-meta">${esc(e.storyMeta)}</div>`);
     return parts.join('');
   }
 
-  let activeCat = 'allies';
+  function renderEntry(e) {
+    const mark = e.mark
+      ? `<canvas class="ency-mark" data-mark="${esc(e.mark)}" width="28" height="28" style="vertical-align:middle;margin-right:6px"></canvas>`
+      : '';
+    return `<div class="ency-entry ${e.tease ? 'ency-tease' : ''}">
+        <div class="ency-entry-name">${mark}${esc(e.name)}</div>
+        ${renderEntryBody(e)}
+      </div>`;
+  }
+
+  /** Draws each status mark beside its name, with the same code the field uses. */
+  function paintMarks(root) {
+    const draw = G('Roster')?.drawStatusMark;
+    if (!draw || !root.querySelectorAll) return;
+    root.querySelectorAll('canvas.ency-mark').forEach((cv) => {
+      try {
+        const c = cv.getContext('2d');
+        if (!c) return;
+        c.clearRect(0, 0, cv.width, cv.height);
+        c.save();
+        c.translate(cv.width / 2, cv.height / 2);
+        c.scale(2, 2);
+        draw(c, cv.dataset.mark, 0, 0, 0, cv.dataset.mark === 'ramp' ? 3 : 0);
+        c.restore();
+      } catch (_) {
+        /* a mark that cannot be drawn is left blank */
+      }
+    });
+  }
+
+  let activeCat = 'howto';
   let searchQuery = '';
 
+  function matches(e, q) {
+    if (e.name.toLowerCase().includes(q) || e.body.toLowerCase().includes(q)) return true;
+    if (e.quote && e.quote.toLowerCase().includes(q)) return true;
+    return (e.tags || []).some((t) => String(t.v).toLowerCase().includes(q));
+  }
+
+  /** Entries for a search, across every tab; the tab's label counts as a match too. */
+  function search(query, entries = getAllEntries()) {
+    const q = String(query || '')
+      .trim()
+      .toLowerCase();
+    if (!q) return [];
+    const label = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label.toLowerCase()]));
+    return entries.filter((e) => matches(e, q) || (label[e.cat] || '').includes(q));
+  }
+
   function renderPanel() {
+    if (typeof document === 'undefined') return;
     const tabs = document.getElementById('encyclopedia-tabs');
-    const list = document.getElementById('encyclopedia-list');
-    if (!tabs || !list) return;
+    const listEl = document.getElementById('encyclopedia-list');
+    if (!tabs || !listEl) return;
 
-    tabs.innerHTML = CATEGORIES.map(
-      (c) => `
-      <button class="ency-tab ${c.id === activeCat ? 'active' : ''}" data-cat="${c.id}">${c.label}</button>
-    `
-    ).join('');
+    const sub = document.querySelector?.('#encyclopedia-screen .ency-subtitle');
+    if (sub) sub.textContent = SUBTITLE;
 
+    const entries = getAllEntries();
+    const q = searchQuery.trim();
+    const counts = {};
+    for (const e of entries) counts[e.cat] = (counts[e.cat] || 0) + 1;
+
+    tabs.innerHTML = CATEGORIES.filter((c) => counts[c.id])
+      .map(
+        (c) =>
+          `<button class="ency-tab ${!q && c.id === activeCat ? 'active' : ''}" data-cat="${c.id}">${esc(c.label)}</button>`
+      )
+      .join('');
     tabs.querySelectorAll('.ency-tab').forEach((btn) => {
       btn.addEventListener('click', () => {
-        AudioEngine?.SFX?.click?.();
+        G('AudioEngine')?.SFX?.click?.();
         activeCat = btn.dataset.cat;
+        searchQuery = '';
+        const box = document.getElementById('encyclopedia-search');
+        if (box) box.value = '';
         renderPanel();
+        listEl.scrollTop = 0;
       });
     });
 
-    const entries = getAllEntries();
-    const q = searchQuery.trim().toLowerCase();
-    let filtered = entries.filter((e) => e.cat === activeCat);
-    if (q) {
-      filtered = entries.filter(
-        (e) =>
-          e.name.toLowerCase().includes(q) ||
-          e.body.toLowerCase().includes(q) ||
-          e.cat.toLowerCase().includes(q)
-      );
-    }
-    list.innerHTML = filtered.length
-      ? filtered
-          .map(
-            (e) => `
-      <div class="ency-entry ${e.tease ? 'ency-tease' : ''} ${e.cat === 'bestiary' ? 'ency-bestiary' : ''}">
-        <div class="ency-entry-name">${e.name}</div>
-        ${renderEntryBody(e)}
-      </div>
-    `
-          )
+    const shown = q ? search(q, entries) : entries.filter((e) => e.cat === activeCat);
+    const labelOf = Object.fromEntries(CATEGORIES.map((c) => [c.id, c.label]));
+    const head = q
+      ? `<p class="ency-empty">${shown.length} ${shown.length === 1 ? 'entry' : 'entries'} for "${esc(q)}"</p>`
+      : '';
+    listEl.innerHTML = shown.length
+      ? head +
+        shown
+          .map((e) => renderEntry(q ? { ...e, name: `${e.name} · ${labelOf[e.cat] || ''}` } : e))
           .join('')
-      : '<p class="ency-empty">No entries in this category.</p>';
+      : `<p class="ency-empty">${q ? `Nothing found for "${esc(q)}".` : 'No entries here.'}</p>`;
+    paintMarks(listEl);
   }
 
   function refreshData() {
-    if (typeof MetaProgress !== 'undefined') MetaProgress.load();
-    if (typeof Legacy !== 'undefined') Legacy.load();
-    if (typeof Chronicles !== 'undefined') Chronicles.load();
-    if (typeof StoryLore !== 'undefined') StoryLore.load();
+    G('MetaProgress')?.load?.();
+    G('Legacy')?.load?.();
+    G('Chronicles')?.load?.();
+    G('StoryLore')?.load?.();
     renderPanel();
   }
 
@@ -1661,10 +1035,11 @@ const Encyclopedia = (() => {
       Game.setPaused?.(true);
       returnToPause = true;
     }
+    if (opts.cat && CATEGORIES.some((c) => c.id === opts.cat)) activeCat = opts.cat;
     panelOpen = true;
     panel.classList.add('active');
     refreshData();
-    AudioEngine?.SFX?.click?.();
+    G('AudioEngine')?.SFX?.click?.();
   }
 
   function close() {
@@ -1672,7 +1047,7 @@ const Encyclopedia = (() => {
     if (!panel) return;
     panelOpen = false;
     panel.classList.remove('active');
-    AudioEngine?.SFX?.click?.();
+    G('AudioEngine')?.SFX?.click?.();
     if (returnToPause && Game.isPlaying?.() && Game.getState().paused) {
       returnToPause = false;
       if (typeof UX !== 'undefined') UX.openPauseMenu();
@@ -1703,7 +1078,19 @@ const Encyclopedia = (() => {
     });
   }
 
-  return { init, open, close, isOpen, togglePanel, renderPanel, buildRoleEntries };
+  return {
+    CATEGORIES,
+    init,
+    open,
+    close,
+    isOpen,
+    togglePanel,
+    renderPanel,
+    renderEntry,
+    getAllEntries,
+    search,
+    buildRoleEntries,
+  };
 })();
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a

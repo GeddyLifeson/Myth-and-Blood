@@ -1,829 +1,622 @@
-# Myth and Blood — Game Manual
+# Myth and Blood
 
-**Myth and Blood** is a browser-based fantasy tactical defense game. You command a growing army, spend Tactical Points (TP) on troops and structures, and hold the line against endless waves of enemies. Survive long enough and the campaign shifts from lane defense into territory control, academy training, settlement economy, crossover operatives, and late-game RTS-scale wars.
+A fantasy wave defense played on one field, in the manner of Mud and Blood 2. The enemy comes from the top. Your line is the bottom edge. You recruit soldiers, raise works and hold for as long as you can. Soldiers who die are gone for good, and the siege has no last wave.
 
-Everything is drawn with procedural pixel sprites — units animate in combat, strikes have battlefield FX, and buildings show HP bars when damaged.
+The game runs in a browser, on a laptop or a phone, and as a desktop app. Everything on screen is drawn in code in a hand-inked horror-comic style; there are no image files.
 
----
+This file is the player manual, followed by notes for developers. Each system has its own short section so it can be changed without touching the rest.
 
-## Quick Start
-
-| Method                    | How                                                          |
-| ------------------------- | ------------------------------------------------------------ |
-| **Desktop (recommended)** | Double-click `Play Myth and Blood.bat`                       |
-| **Browser**               | Open `index.html` in any modern browser                      |
-| **Install app**           | Run `Install Desktop App.bat`, then launch from the shortcut |
-
-No server is required. Sound is procedural (generated in the browser) — click **Begin Defense** or anywhere on the menu to unlock audio.
-
-### Game modes (main menu)
-
-| Mode                 | Summary                                                                     |
-| -------------------- | --------------------------------------------------------------------------- |
-| **Campaign**         | Standard endless run with chosen difficulty and optional advanced modifiers |
-| **Survival Endless** | Score-focused; leaderboard ranks wave × difficulty% + kills                 |
-| **Roguelike**        | Random advanced modifiers each run                                          |
-| **Warband**          | Small squad: soldiers cost double, and each is far tougher and hits harder  |
-| **Timed Blitz**      | Shorter night prep — race the clock                                         |
-| **Seed Run**         | Deterministic spawns from a shared seed                                     |
-| **Academy Era**      | Jump to wave 100 / 105 / 200 — skip the early grind                         |
+**Contents:** [Quick start](#quick-start) · [How a run goes](#how-a-run-goes) · [Controls](#controls) · [Tactical Points](#tactical-points-tp) · [Recruiting and army upkeep](#recruiting-and-army-upkeep) · [Troops](#troops) · [Posts, Hunt and Hold](#posts-hunt-and-hold) · [The med tent](#the-med-tent) · [Buildings](#buildings) · [Research](#research) · [The enemy](#the-enemy) · [Breaches and line-breakers](#breaches-and-line-breakers) · [Wave preview](#wave-preview-and-the-watchtower) · [Counters](#counters-and-rear-attacks) · [The Sapper](#the-sapper) · [The General's orders](#the-generals-orders) · [Spells](#spells) · [Spy and courier](#spy-and-courier) · [Spoils and edicts](#spoils-and-edicts) · [Supply crates](#supply-crates) · [Veterans and morale](#veterans-and-morale) · [Ribbons](#ribbons) · [Run score](#run-score) · [Difficulty](#difficulty) · [Modes](#modes) · [Champions](#champions-and-companies) · [The late siege](#the-late-siege) · [Saving](#saving) · [Cheats](#cheats) · [Encyclopedia and achievements](#encyclopedia-and-achievements) · [Developer notes](#developer-notes)
 
 ---
 
-## Creative Mode
+## Quick start
 
-A **practice sandbox** for playtesting builds, waves, and unit upgrades — no achievements and no game over.
+| How         | What to do                                                   |
+| ----------- | ------------------------------------------------------------ |
+| Browser     | Open `index.html` in a current browser. No server is needed. |
+| Desktop     | `npm install`, then `npm start`.                             |
+| Windows     | Double-click `Play Myth and Blood.bat`.                      |
+| Install app | Run `Install Desktop App.bat`, then use the shortcut.        |
 
-| How to start | Main menu → **CREATIVE MODE** (uses your selected difficulty) |
-| ------------ | ------------------------------------------------------------- |
-| Lab panel    | **P** or the 🧪 button in the top bar                         |
+Click **Begin Defense**. Sound starts on your first click or key press. Music and the set-piece cues are recordings; combat sounds are made in the browser.
 
-**Defaults:** 9,999 TP · free deploy/build/strikes · instant building · all rosters unlocked · manual day/night · miss limit disabled.
+Your first five minutes:
 
-| Lab section       | What you can do                                                                                 |
-| ----------------- | ----------------------------------------------------------------------------------------------- |
-| **Sandbox rules** | Toggle free TP, no game over, manual waves, instant build, unlock-all, academy-era troop deploy |
-| **Wave & cycle**  | Set wave number, add TP, force day/night, start or clear waves                                  |
-| **Spawn tools**   | Arm an enemy or enemy building type, click the map to place; clear all foes or enemy structures |
-| **Selected unit** | Click any unit — rank up, max stars, heal, kill, or promote a Footman to General                |
+1. Press `1`, click the field a few times to place Footmen in a row above the bottom edge. Press `2` and put Archers behind them.
+2. Press `D` to start the day. Your soldiers fight on their own and walk back to where you put them.
+3. After the wave, place a Builder, then a Wall (`L`) and a Medical Tent (`N`).
+4. On wave 3 or 4 build a Research Lab from the Build tab and start Iron Weapons.
+5. After wave 5 you are offered spoils. Take one.
 
-Use normal deploy/build controls alongside the lab. Disarm spawn tools to interact normally. Creative runs do not award achievements.
-
----
-
-## Objective
-
-- **Win condition:** Clear **wave 100** to win the campaign. That awards the victory achievements, faction trials and legacy unlocks. The siege itself never ends, so the run continues afterwards for score.
-- **Lose condition:** Enemies break through your line too many times, or you have no troops and no training halls left. Each enemy that gets through counts as a **breach**. Pass the breach limit and the realm falls.
-
-Clear every wave to earn TP, expand territory, unlock new systems, and push into the Academy and RTS eras.
+Press `?` at any time for the keys that work on the screen in front of you.
 
 ---
 
-## Core Loop
+## How a run goes
 
-1. **Night prep** — deploy troops, build, train academies, send spy/courier orders, and position defenses. The top of the screen shows what the next wave is likely to bring, and red chevrons on the edge of the field show where it will come from. Press **D** to begin the day when ready; sounding the horn early pays **+1 TP for every 10 seconds left** (up to +5).
-2. **Day combat** — waves spawn from unlocked flanks. Every soldier hunts from his post and walks back to it when the fight is over. Click to move him (the spot becomes his new post), or Shift+click to send him there to hold.
-3. **Fight** — cast strikes, manage morale; with a med tent on the field the wounded walk to it on their own.
-4. **Clear the wave** — all enemies defeated.
-5. **Earn TP** at round end (+7 base, scaling with wave, settlements, and difficulty).
-6. **Every 5 waves, claim spoils** — choose one of three rewards that last the rest of the run.
-7. **Repeat** with tougher, more numerous foes.
+- **One field for the whole run.** The field does not reset and does not change size. What you build stays until it is destroyed.
+- **Night.** You have about a minute to recruit, build, research and place soldiers. The top of the screen shows what the next wave is likely to bring, and markers on the top edge show where it will enter. Press `D` to sound the horn early: it pays 1 TP for every 10 seconds left, up to 5.
+- **Day.** The wave enters from the top edge in up to three sectors (left, centre, right), forms up, and advances. Your soldiers fight from their posts. The day ends when the last enemy is dead.
+- **Pay.** Clearing a wave pays TP. Buildings that earn pay at dawn.
+- **Every 5th wave** is a horde: more enemies, arriving faster. After it you choose one of three **spoils**.
+- **Every 10th wave** a named warlord leads the host in place of the horde.
+- **War camps.** The enemy raises camps along the top edge. A camp left standing makes the next wave stronger.
+- **The end.** The run ends when too many enemies have crossed your line (the breach limit), or when you have no soldiers left and nothing that can train one. There is no winning wave. Waves 10, 25, 50 and 100 are milestones with ribbons attached; the siege goes on past them and the run is scored when it ends.
 
----
-
-## Tactical Points (TP)
-
-- Awarded once per cleared wave.
-- Base income: **+7 TP**, plus scaling from wave number, difficulty, and late-game bonuses.
-- **Uncapped storage** — hoard as much as you need.
-- Early economy sites (max **6** quarries + trade posts combined; a seventh is refused before any TP is spent). Their income is paid at dawn and shown as a number over each building:
-  - **Trade Outpost (10 TP, 1 Builder, no research):** +2 TP/round and a small morale aura
-  - **Quarry (14 TP, 1 Builder, Prospecting research):** +3 TP/round
-- Settlement bonuses (late game):
-  - **Hamlet:** +5 TP/round each (when complete); Village 8, Town 10, City 12, Metropolis 15. Settlement income above 18 a round counts at 55%.
-  - **Merchant Guild:** +1 TP/round each, if built within a hamlet’s aura.
-  - **Fortress Upgrade** on a completed hamlet: +HP, cover, and +1 TP/round.
-
-Spend TP on troops, buildings, strikes, spy actions, and courier messages.
-
-The **TACTICAL PTS** number in the top bar is your purse, to the point, at all times (paused included). Its bar is full when you can pay for the dearest troop or strike on offer. Past fourteen soldiers every recruit costs 7% more per head (**army upkeep**); recruit buttons, their tooltips and the "Recruit cost +N%" chip all show the price you will actually be charged.
+On your first runs the game introduces one system per early wave with a line at the bottom of the screen. It stops for good once you have reached wave 10, and **Skip the introduction** in the pause menu turns it off at once.
 
 ---
 
 ## Controls
 
-Press **?** at any time for the keys that work on the screen you are looking at. Every panel button shows its key in the corner, and its tooltip names it. No key does two things on one screen; the lists below say which screen each belongs to.
+### Mouse and touch
 
-### Map navigation
+| Input                          | Action                                                            |
+| ------------------------------ | ----------------------------------------------------------------- |
+| Click a troop, then map        | Place one soldier                                                 |
+| Shift+click the map            | Place one and keep the same troop in hand (also repeats walls)    |
+| Click a soldier                | Select him. Drag across empty ground to select several            |
+| Click the map (selected)       | Move the selection; the spot becomes their post                   |
+| Shift+click (selected)         | Move there and hold                                               |
+| Right-click                    | Cancel what is in hand                                            |
+| Middle-button drag, arrow keys | Pan                                                               |
+| Mouse wheel                    | Over the field: zoom. Over a side panel: scroll that panel        |
+| Touch                          | Tap places one; long-press a spot to move and hold; pinch to zoom |
 
-| Input        | Action                                                                       |
-| ------------ | ---------------------------------------------------------------------------- |
-| Click + drag | Pan the map                                                                  |
-| Mouse wheel  | Over the field: zoom toward the cursor. Over a side panel: scroll that panel |
-| Arrow keys   | Pan the map                                                                  |
+A troop, building, spell or message you cannot use is greyed out and cannot be picked. Its tooltip gives the reason. Game speed has no key; use the SPEED button in the top bar.
 
-### Deployment
+### Keys
 
-Recruit keys follow what you have unlocked. The starting roster takes the first keys in panel order, and each troop you unlock takes the next free key and keeps it for the run.
+The game keeps one key map per screen, in `js/hotkeys.js`. No key does two things on the same screen. Space pauses, Tab selects the next soldier and Esc cancels, wherever they are bound. Recruit keys follow what you have unlocked: the starting troops take the first keys in panel order, and each new troop takes the next free key and keeps it for the run. Keys cannot be rebound yet.
 
-| Key       | Troop                                                                   |
-| --------- | ----------------------------------------------------------------------- |
-| 1 2 3 4 5 | Footman, Archer, Mage, Cavalry, Healer                                  |
-| 6 7       | Builder, Courier                                                        |
-| 8 9 0     | The next three unlocks (with Iron Weapons: Crossbowman, Knight, Sapper) |
-| Shift+1…  | Every unlock after the tenth (Scout, Bard, Ballista, Pikeman, General)  |
+The tables below are generated from the key maps. To regenerate them: `node scripts/gen-readme-keys.mjs --write`.
 
-Click a troop (or press its key), then click the field: that places one and puts the troop away. **Hold Shift and click** to place one and keep the same troop ready; keep clicking to place more. It ends when you let go of Shift, when you cannot pay for the next one, or on Esc or right-click. Each soldier past the fourteenth makes the next recruit dearer (army upkeep); the button shows the price you will be charged, with the base price struck through beside it, and a tag at the cursor shows the next price while you place. Shift-click repeats buildings the same way (a run of walls). The General is one of a kind and is never repeated. On a touch screen each tap places one.
+<!-- keys:start (generated by scripts/gen-readme-keys.mjs) -->
 
-A troop, building, spell or message you cannot use is dimmed and cannot be selected, by click or by key. Its tooltip says why ("needs Iron Weapons", "needs 5 TP, you have 3"). What you have selected is marked with a bone-white frame and corner on its button.
+**Night — preparing** (the full field map)
 
-### Posts, Hunt and Hold
+| Key                 | Action                                              |
+| ------------------- | --------------------------------------------------- |
+| ?                   | Show the keys for this screen                       |
+| V                   | Mute / unmute sound                                 |
+| A                   | Achievements                                        |
+| I                   | Encyclopedia                                        |
+| `` ` ``             | Cheat codes                                         |
+| F3                  | Performance overlay                                 |
+| F10                 | Bug report                                          |
+| Space               | Pause                                               |
+| Tab                 | Select the next soldier                             |
+| Shift+Tab           | Message log                                         |
+| H                   | Hunt: release Hold                                  |
+| Shift+H             | Hold here                                           |
+| [                   | War Cry (General)                                   |
+| ]                   | Hold the Line (General)                             |
+| Z                   | Balanced loadout                                    |
+| D                   | Begin the day (night only)                          |
+| ↑ ↓ ← →             | Pan the map                                         |
+| Q                   | Fireball                                            |
+| W                   | Lightning                                           |
+| E                   | Healing Rain                                        |
+| R                   | Reinforcements                                      |
+| T                   | Battle Rally                                        |
+| F                   | Meteor Shower                                       |
+| J                   | Frost Nova                                          |
+| K                   | Scout Flare                                         |
+| X                   | Fortify Zone                                        |
+| P                   | Arcane Dispel                                       |
+| S                   | Voice Shout                                         |
+| ;                   | Fire Breath                                         |
+| '                   | Ice Form                                            |
+| 1–0 Shift+1–Shift+0 | Recruit: one key per unlocked troop, in panel order |
+| O                   | Outpost                                             |
+| L                   | Wall                                                |
+| C                   | Castle                                              |
+| N                   | Medical Tent                                        |
+| M                   | Mess Hall                                           |
+| G                   | Hamlet                                              |
+| U                   | Merchant Guild                                      |
+| Y                   | Watchtower                                          |
+| B                   | Trade Outpost                                       |
+| Esc                 | Pause menu                                          |
 
-Every soldier has a **post**: the spot where you deployed him, or the place you last ordered him to.
+**Other screens**
 
-**Hunt is the default for every soldier.** He leaves his post to fight what comes near it, goes for line-breakers and anything that has got past him first, helps a comrade who is fighting close by, and walks back about two seconds after the last enemy is gone, so the line you drew keeps its shape from wave to wave. He is on a leash: a melee soldier goes about 240 px from his post, an archer or mage steps forward only as far as he needs to shoot (about 140 px), and both go half as far again after a line-breaker. Nobody chases across the field on his own. The one exception keeps a wave from dragging: when the whole host is on the field and formed up, and for ten seconds no enemy has been hurt or come any closer, the hunters nearest the enemy go out as a party (at least three, more against a boss) to finish them while the rest of the line stays.
+| Screen             | Keys                                                                                                                                                                                                                    | The rest                        |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Main menu          | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Begin the defense; `Esc` Close the open panel  | Nothing else works              |
+| Day — under attack | Same keys as the field                                                                                                                                                                                                  | Off: `D`                        |
+| Soldiers selected  | `F` Centre the view on the selection; `C` Clear the selection; `B` Send them back to their posts; `G` Reform the formation (two or more); `U` Promote the selected veteran; `Alt+1–5` Formation presets; `Esc` Deselect | Everything else as on the field |
+| Building picked up | `Esc` Put the building back                                                                                                                                                                                             | Everything else as on the field |
+| Placing or aiming  | `Esc` Cancel                                                                                                                                                                                                            | Everything else as on the field |
+| Placing a wall     | `R` Turn the wall before placing; `Esc` Cancel                                                                                                                                                                          | Everything else as on the field |
+| Paused             | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Space` Resume; `Esc` Resume; `Shift+Tab` Message log  | Nothing else works              |
+| Spoils of war      | `1` Take the first reward; `2` Take the second reward; `3` Take the third reward; `←` Previous reward; `↑` Previous reward; `→` Next reward; `↓` Next reward; `Tab` Next reward; `Enter` Take the highlighted reward    | Nothing else works              |
+| After the battle   | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Fight again; `Esc` Close the open panel        | Nothing else works              |
+| Creative mode      | `P` Creative Lab panel                                                                                                                                                                                                  | Everything else as on the field |
 
-**Hold is an order you give to chosen soldiers.** A held soldier stays exactly where you put him, strikes only what comes inside his weapon range, and neither chases nor goes to help. He keeps holding through saves, the med tent, a rout and rally and a new era, until you move him with a plain click or release him. A small planted shield at his feet, and on his selection card, shows who is holding. Hunting soldiers show nothing.
+<!-- keys:end -->
 
-| Input                         | Action                                                                                         |
-| ----------------------------- | ---------------------------------------------------------------------------------------------- |
-| Click the map                 | Move the selected soldiers; the destination is their new post, and they hunt from it           |
-| **Shift**+click the map       | Move them there and **hold** (on touch: long-press the spot, or use **Hold here** on the card) |
-| **Shift+H** / **HOLD** button | Hold here: the selection, or the whole army if nothing is selected                             |
-| **H** / **HUNT** button       | Release Hold: the selection, or the whole army, hunts again                                    |
-| **B** (with selection)        | Back to posts now, ignoring everything on the way                                              |
+---
 
-A selected soldier's post is drawn as a small bone-coloured diamond, with a dashed line to him while he is away from it. Soldiers who are on their way to a medical tent, garrisoned, routing or still marching on an order are not called back, and the General keeps his own counsel. Healers and builders follow their own work and take no Hunt or Hold order. A soldier sent to a spot he cannot reach takes the nearest ground he got to as his post. With nothing selected, **B** is still the Trade Outpost build key.
+## Tactical Points (TP)
 
-### Buildings
+TP pays for everything. There is no cap on what you can hold.
 
-| Key | Structure              |
-| --- | ---------------------- |
-| O   | Outpost                |
-| L   | Wall                   |
-| C   | Castle (full compound) |
-| N   | Medical Tent           |
-| M   | Mess Hall              |
-| Y   | Watchtower             |
-| B   | Trade Outpost          |
-| G   | Hamlet                 |
-| U   | Merchant Guild         |
+| Source          | Amount                                                                     |
+| --------------- | -------------------------------------------------------------------------- |
+| Clearing a wave | 7, rising slowly with the wave number; +3, 0, −1 or −2 by difficulty       |
+| Trade Outpost   | +2 at dawn                                                                 |
+| Quarry          | +3 at dawn (at most six Trade Outposts and Quarries together)              |
+| Early horn      | +1 for every 10 seconds of night left, up to +5                            |
+| Supply crates   | A few TP, more in later waves                                              |
+| Spoils, ribbons | War Levy and The Hundred add TP per wave; War Chest pays 15 at once        |
+| Settlements     | Late game. Hamlet: +5 TP/round; Village 8, Town 10, City 12, Metropolis 15 |
 
-Spike Trap, Quarry, Fortress Upgrade, and Academies are panel-only.
+The number in the top bar is what you have, to the point, at all times.
 
-### Strikes
+---
 
-| Key | Ability                                 |
-| --- | --------------------------------------- |
-| Q   | Fireball Barrage                        |
-| W   | Lightning Strike                        |
-| E   | Healing Rain                            |
-| R   | Reinforcements                          |
-| T   | Battle Rally                            |
-| F   | Meteor Shower                           |
-| J   | Frost Nova                              |
-| K   | Scout Flare                             |
-| X   | Fortify Zone                            |
-| P   | Arcane Dispel (needs a living Mage)     |
-| S   | Voice Shout (needs the Voicebound Pact) |
-| ; ' | Fire Breath, Ice Form (Voicebound Pact) |
+## Recruiting and army upkeep
 
-Select a strike, then click the map. A targeting ring and icon follow your cursor.
+One click places one soldier. Hold Shift to place several of the same troop; it stops when you release Shift, cannot pay, or press Esc. The General is one of a kind.
 
-### Structure tools
+The first 14 soldiers cost their listed price. Each soldier past 14 makes every new recruit 7% dearer, so the price has roughly doubled by the 28th. The price on a recruit button is always the price you will be charged, with the base price struck through beside it.
 
-| Button / key                 | Action                                            |
-| ---------------------------- | ------------------------------------------------- |
-| **DEMOLISH**                 | Click a building to remove it (partial TP refund) |
-| **MOVE**                     | Relocate a completed structure                    |
-| **ROTATE**                   | Reposition a wall segment                         |
-| **R** (while placing a wall) | Cycle wall facing before placement                |
-
-### General
-
-| Key          | Action                                                                                               |
-| ------------ | ---------------------------------------------------------------------------------------------------- |
-| ?            | Key sheet: the keys that work right now                                                              |
-| D            | Begin the day (at night)                                                                             |
-| H            | Hunt: release Hold for the selection, or the whole army (also the HUNT button)                       |
-| Shift+H      | Hold here: the selection, or the whole army, stays put (also the HOLD button)                        |
-| [            | War Cry, the General's order (needs a General on the field)                                          |
-| ]            | Hold the Line, the General's order (needs a General on the field)                                    |
-| Space        | Pause / resume                                                                                       |
-| Esc          | Cancel what is armed or selected; with nothing to cancel, the pause menu; closes an open panel first |
-| Tab          | Select the next soldier (and centre the view on him); Shift+Tab opens the message log                |
-| Z            | Balanced loadout (wave 100+)                                                                         |
-| V            | Mute/unmute sound                                                                                    |
-| A            | Achievements                                                                                         |
-| I            | Encyclopedia                                                                                         |
-| ` (backtick) | Cheat menu                                                                                           |
-| F3 / F10     | Performance overlay / bug report                                                                     |
-| Enter        | Main menu: begin the defense. After the battle: fight again                                          |
-
-Game speed has no key: use the SPEED button in the top bar.
-
-### Keys by screen
-
-The game keeps one key map per screen (`js/hotkeys.js`). Where a letter appears twice below, it is on different screens.
-
-| Screen               | What changes                                                                                                                                                                                                                                                                                           |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Night, day           | Everything above. D only at night                                                                                                                                                                                                                                                                      |
-| Soldiers selected    | Esc or C clears the selection, F centres the view, B sends them back to their posts, G reforms (two or more), U promotes a veteran, Alt+1–5 picks Line, Column, Wedge, Box or Spread. Meteor (F) and the Castle, Hamlet, Trade Outpost and Merchant Guild keys (C, G, B, U) are off until you deselect |
-| Placing or aiming    | Esc cancels. While placing a wall, R turns it instead of calling Reinforcements                                                                                                                                                                                                                        |
-| Building picked up   | Esc puts it back                                                                                                                                                                                                                                                                                       |
-| Paused               | Space or Esc resumes; Shift+Tab, V, A, I, `, ? still work; nothing else does                                                                                                                                                                                                                           |
-| Spoils of war        | 1, 2, 3 take a reward; arrow keys and Enter choose; nothing else works, Esc included                                                                                                                                                                                                                   |
-| Creative mode        | P opens the Creative Lab panel (Arcane Dispel has no key here)                                                                                                                                                                                                                                         |
-| Main menu, game over | Enter, Esc (closes an open panel), V, A, I, `, ?                                                                                                                                                                                                                                                       |
-
-Click the map to deploy, build, cast strikes, or move selected units. Hover UI buttons for tooltips.
+- Builders and couriers do not count toward the 14.
+- Each Granary feeds 3 more soldiers before the surcharge starts (the first three Granaries count).
+- Courier reinforcements and banner knights pay the same surcharge.
+- A larger army also draws more line-breakers.
 
 ---
 
 ## Troops
 
-| Unit     | Cost | Role                                                                                |
-| -------- | ---- | ----------------------------------------------------------------------------------- |
-| Footman  | 3    | Cheap melee; garrisons walls when General commands Keep                             |
-| Archer   | 4    | Ranged DPS; strong in outposts                                                      |
-| Crossbow | 5    | Slow, armour-piercing ranged; unlocks with Iron Weapons                             |
-| Mage     | 6    | Arcane bolts with splash damage                                                     |
-| Cavalry  | 7    | Fast melee; charge bonus                                                            |
-| Healer   | 5    | Heals allies in range (including other healers); retreats to med tents when wounded |
-| Knight   | 8    | Armored melee; damage resistant                                                     |
-| Sapper   | 5    | Buries mines at night, lobs satchel charges by day; blasts ignore armour            |
-| Scout    | 4    | Fast skirmisher; reveals stealth                                                    |
-| Bard     | 5    | Morale aura support                                                                 |
-| Ballista | 6    | Long-range siege; bonus vs flying foes                                              |
-| Pikeman  | 4    | Anti-cavalry and anti-air line holder                                               |
-| General  | 12   | Global enemy target; command aura from Keep; auto-rallies demoralized troops        |
-| Builder  | 5    | Constructs buildings (2 projects max); auto-repair toggle                           |
-| Courier  | 4    | Sends royal messages once per wave (twice at 3 gold stars — Twin Dispatch)          |
+Every troop has one role, one trait and one weakness. Select a soldier to see his in the unit panel.
 
-### Roles, traits and weaknesses
+| Troop       | TP  | Role           | Trait                                                                                     | Weakness                                     | Needs             |
+| ----------- | --- | -------------- | ----------------------------------------------------------------------------------------- | -------------------------------------------- | ----------------- |
+| Footman     | 3   | Line holder    | Shield Wall: 12% less damage for each footman or pikeman beside him, up to 36%            | Kills slowly                                 |                   |
+| Archer      | 4   | Ranged damage  | Volley: 20% more damage to targets far away                                               | 40% less damage when an enemy is in his face |                   |
+| Crossbowman | 5   | Armour piercer | Heavy Quarrel: 40% more damage to armoured enemies and siege engines                      | Reloads slowly; swarms overrun him           | Iron Weapons      |
+| Mage        | 6   | Area damage    | Arcane Burst: every fourth attack also hits everything near the target                    | The most fragile soldier on the field        |                   |
+| Cavalry     | 7   | Runner hunter  | Run Down: 60% more damage to line-breakers and routing enemies                            | Pikes and trolls stop a charge               |                   |
+| Healer      | 5   | Medic          | Field Dressing: soldiers near a healer slowly recover                                     | Cannot fight                                 |                   |
+| Knight      | 8   | Heavy infantry | Cleave: each swing also wounds a second enemy beside the target                           | Expensive; mages cut through the armour      | Iron Weapons      |
+| Sapper      | 5   | Field engineer | Demolitions: mines at night, satchel charges by day (see [The Sapper](#the-sapper))       | A knife up close; blasts cannot reach flyers | Iron Weapons      |
+| Scout       | 4   | Spotter        | Archers, mages and ballistae near a scout deal 12% more; he hits line-breakers 60% harder | Loses a straight fight                       | Advanced Infantry |
+| Bard        | 5   | Morale         | Marching Song: soldiers in earshot regain morale                                          | Weak in a fight                              | Morale Arts       |
+| Ballista    | 6   | Giant killer   | Heavy Bolt: 35% more damage to bosses, monsters and elites                                | Half damage at close range; slow to move     | Siege Engineering |
+| Pikeman     | 4   | Anti-cavalry   | Set Pikes: riders and beasts that strike him take 40% of the blow back                    | Arrows and magic                             | Advanced Infantry |
+| General     | 12  | Commander      | Orders: War Cry and Hold the Line; an aura strengthens everyone near him                  | Every enemy on the field wants him dead      | Command Theory    |
+| Builder     | 5   | Engineer       | Raises buildings, two projects at a time; soldiers near him take 10% less damage          | Barely armed                                 |                   |
+| Courier     | 4   | Messenger      | Carries one message a wave; dodges a third of arrows and bolts                            | Unarmed                                      |                   |
 
-Every soldier has one job, one signature trait and one weakness. The unit panel shows all three.
+The Crossbowman deals 44 damage a shot against the Archer's 28, and takes 1.8 times as long between shots. He is wasted on goblins and earns his pay against trolls, dark knights, war chiefs, shieldbearers and siege towers.
 
-| Troop    | Cost | Role           | Trait                                                                                                                                                                                                                                                                                                            | Weakness                                                                                                |
-| -------- | ---- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
-| Footman  | 3    | Line holder    | Shield Wall — takes 12% less damage for each footman or pikeman beside him, up to 36%.                                                                                                                                                                                                                           | Kills slowly.                                                                                           |
-| Archer   | 4    | Ranged damage  | Volley — 20% more damage to targets far away.                                                                                                                                                                                                                                                                    | Deals 40% less when an enemy is in his face.                                                            |
-| Crossbow | 5    | Armour piercer | Heavy Quarrel — 40% more damage to armoured enemies and siege engines; reloads slowly.                                                                                                                                                                                                                           | Slow rate of fire; swarms overrun him.                                                                  |
-| Mage     | 6    | Area damage    | Arcane Burst — every fourth attack also hits everything near the target.                                                                                                                                                                                                                                         | The most fragile soldier on the field.                                                                  |
-| Cavalry  | 7    | Runner hunter  | Run Down — 60% more damage to line-breakers and routing enemies.                                                                                                                                                                                                                                                 | Pikes and trolls stop a charge cold.                                                                    |
-| Healer   | 5    | Medic          | Field Dressing — soldiers standing near a healer slowly recover on their own.                                                                                                                                                                                                                                    | Cannot fight.                                                                                           |
-| Builder  | 5    | Engineer       | Fieldworks — soldiers near a builder take 10% less damage.                                                                                                                                                                                                                                                       | Barely armed.                                                                                           |
-| Courier  | 4    | Messenger      | Fleet — dodges a third of arrows and bolts.                                                                                                                                                                                                                                                                      | Unarmed.                                                                                                |
-| Scout    | 4    | Spotter        | Spotter — archers, mages and ballistae near a scout deal 12% more. Scouts hit line-breakers 60% harder.                                                                                                                                                                                                          | Light armour; loses a straight fight.                                                                   |
-| Bard     | 5    | Morale         | Marching Song — soldiers in earshot steadily regain morale.                                                                                                                                                                                                                                                      | Weak in a fight.                                                                                        |
-| Ballista | 6    | Giant killer   | Heavy Bolt — 35% more damage to bosses, monsters and elites.                                                                                                                                                                                                                                                     | Half damage at close range, and slow to move.                                                           |
-| Pikeman  | 4    | Anti-cavalry   | Set Pikes — riders and beasts that strike a pikeman take 40% of the blow back.                                                                                                                                                                                                                                   | Arrows and magic.                                                                                       |
-| Sapper   | 5    | Field engineer | Demolitions — Buries 2 mines a night, up to 4 live; each deals 80 damage to enemies within 46, and 25% more to line-breakers. By day he lobs a charge up to 110 away every 5 seconds that deals 46 damage within 40. Blasts ignore armour, shields and braced lines. A veteran buries one more and fuses faster. | Only a knife up close: he backs away from a brawl and dies if caught alone. Blasts cannot reach flyers. |
-| Knight   | 8    | Heavy infantry | Cleave — each swing also wounds a second enemy beside the target.                                                                                                                                                                                                                                                | Expensive, and mages cut through the armour.                                                            |
-| General  | 12   | Commander      | Orders — War Cry and Hold the Line. His aura strengthens everyone near him.                                                                                                                                                                                                                                      | Every enemy on the field wants him dead.                                                                |
+The numbers in this table come from `data/units.json` and `js/roster.js`. The in-game encyclopedia reads the same sources at run time and is the reference if the two ever differ.
 
-**Operatives and champions** each have their own profile: all 104 operatives and 29 champions carry an individual role, trait and weakness on top of their named ability, written to fit their stats and their faction. Within a faction no two play the same way. The trait text gives the real numbers, for example "+40% damage to targets below 30% health" or "takes on 20% of the damage dealt to allies within 50". Read them in the in-game encyclopedia under Roles & Counters, where they are listed faction by faction, or select a unit to see its profile in the unit panel. The profiles are data, in `data/roster-profiles.json`.
+---
 
-The **Crossbowman** hits hard (44 damage against an archer's 28) but takes 1.8 times as long between shots, so he is wasted on goblins and earns his pay against trolls, dark knights, war chiefs, shieldbearers, siege towers and the Iron Colossus. He is researched with Iron Weapons, alongside the Sapper and the Knight.
+## Posts, Hunt and Hold
 
-The **Sapper** is a field engineer. Each night he buries two mines a few steps in front of his post, on the side the next host will come from, and keeps up to four live. You see them as small inked studs; the enemy does not, and the first one to step on a mine sets it off under everyone around it. Mines stay in the ground from wave to wave and are saved with the siege. To choose the ground yourself, select a Sapper at night and **Shift+click** a spot within 190 of his post: one of his mines moves there. By day he lobs a satchel charge at the thickest knot of enemies within 110. It lands, burns its fuse for about half a second inside a dashed ring, and blows; there is no hit roll, so it is strongest against enemies that are held in place by your line. Blasts ignore armour, tower shields and braced lines, hit trolls, dark knights, war chiefs, shieldbearers and monsters half as hard again, do double damage to siege towers, iron colossi and hellmortars, and stagger what they catch (bosses only briefly). They never hurt your own soldiers or buildings, and they cannot reach flyers. In Hunt mode he follows the fight but stops a throw short of it, and he never chases flyers, which he cannot hurt. Up close he has only a knife: he backs away from anything that gets within 50 of him, and alone he dies. A Sapper who survives four nights or makes eight kills buries a third mine each night, keeps five live, and cuts a shorter fuse; nine nights or twenty kills adds one more.
+Every soldier has a **post**: the spot where you placed him, or the place you last sent him.
 
-**Hunt** is every combat soldier's standing order: he engages enemies within a leash of his post, then returns to it. Click the map to move him, Shift+click to move him and have him **hold**. See Posts, Hunt and Hold above.
+**Hunt is the default.** A hunting soldier leaves his post to fight what comes near it, goes for line-breakers first, helps a comrade fighting close by, and walks back when the fight is over. He is on a leash: about 240 from his post for a melee soldier, about 140 for an archer or mage, and half as far again after a line-breaker.
+
+**Hold is an order.** A holding soldier stays where you put him and strikes only what comes inside his reach. He keeps holding through saves and visits to the med tent until you move him with a plain click or release him. A small planted shield at his feet marks him.
+
+| Input                   | Action                                                           |
+| ----------------------- | ---------------------------------------------------------------- |
+| Click the map           | Move the selection; they hunt from the new post                  |
+| Shift+click the map     | Move there and hold                                              |
+| `Shift+H` / HOLD button | Hold here: the selection, or the whole army if nothing is picked |
+| `H` / HUNT button       | Release Hold: the selection, or the whole army                   |
+| `B` (with a selection)  | Back to posts now                                                |
+
+A selected soldier's post is drawn as a small bone-coloured diamond. Healers and builders follow their own work and take no Hunt or Hold order. The General keeps his own counsel.
+
+---
+
+## The med tent
+
+Build a Medical Tent (5 TP) close behind the line.
+
+- A wounded soldier who is **not fighting** walks to the nearest tent with a free bed at once, heals to full and returns to his post.
+- A soldier **in a fight** stays in it while above half health and breaks off below half.
+- A tent has **four beds**. The rest wait outside and still strike what comes in reach.
+- Holding soldiers go too, and come back to hold. The General does not go.
+- A red cross marks a soldier on his way; amber while he waits.
+
+Expect gaps in the line while men heal.
 
 ---
 
 ## Buildings
 
-Every building needs a Builder (5 TP, two projects at a time). Builders and couriers do not count toward the recruit surcharge. Each starter building has one job:
+Every building needs a Builder on the field. One Builder runs two projects at a time. Each building has one job.
 
-### Defensive
+| Building      | TP  | Job                                                                                | Needs             |
+| ------------- | --- | ---------------------------------------------------------------------------------- | ----------------- |
+| Outpost       | 4   | Cover for one soldier; an archer inside shoots further. Takes one upgrade, once    |                   |
+| Barracks      | 6   | Outpost upgrade: a free Footman every third dawn (first two Barracks count)        | Field Engineering |
+| Granary       | 6   | Outpost upgrade: 3 more soldiers before army upkeep starts (first three count)     | Field Engineering |
+| Wall          | 5   | Blocks movement; each wall holds up to 3 line-breakers a wave and makes them fight |                   |
+| Watchtower    | 4   | The night preview lists the next wave by type and number                           |                   |
+| Spike Trap    | 3   | 45 damage to the first enemy crossing, every 1.5 seconds                           | Field Engineering |
+| Medical Tent  | 5   | Heals the wounded (see above)                                                      |                   |
+| Mess Hall     | 5   | Soldiers near it keep their morale                                                 |                   |
+| Research Lab  | 18  | 6 science at every dawn (first two labs count), and a little from kills            |                   |
+| Trade Outpost | 10  | +2 TP at dawn                                                                      |                   |
+| Quarry        | 14  | +3 TP at dawn                                                                      | Prospecting       |
+| Castle        | 46  | A full compound: walls, outposts, a keep, a med tent and a mess hall               | Fortification     |
 
-- **Outpost (4 TP)** — Cover (50%), one garrison slot, +55 range for the archer inside. Takes one upgrade, once (see below).
-- **Wall (5 TP)** — Blocks movement and **holds line-breakers**: each wall stops up to 3 runners per wave that come within 64 of it. A held runner (marked HELD) stops running and has to fight. 2 footman slots per wall when General is in Keep. Rotate facing before placing.
-- **Watchtower (4 TP, no research)** — While one stands, the night preview lists the next wave **by type and number** ("Watchtower report: 9 Goblin, 6 Orc, ..."). Also reveals stealth and gives +35 range.
-- **Spike Trap (3 TP, Field Engineering)** — 45 damage to the first enemy crossing, every 1.5 seconds.
-- **Castle (50 TP, Fortification)** — Full compound: 4 walls, 4 outposts, central Keep, med tent, mess hall.
-
-### Support
-
-- **Medical Tent (5 TP)** — Once a tent is finished, any soldier below full health walks to the nearest tent with a free bed before anything else, heals to full, and goes back to his post to hunt (or to hold, if he was holding). A soldier with an enemy in weapon range, or one coming at him within 60 px, fights on while above 50% health and breaks off below it. A tent treats 4 at a time; the rest wait in line just outside and still strike what comes in reach. The walk bends round enemies where it can, and a red cross marks a soldier on his way (amber while he waits). A move order is finished first. The General, garrisoned soldiers and routing men are not sent; if the tent is destroyed everyone returns to duty. Without a tent nothing changes: soldiers fight on. **Stretcher bearers:** once per wave, a soldier struck down within 220 of a tent is carried in alive at a quarter health (marked SAVED) instead of dying. Generals are not carried.
-- **Mess Hall (5 TP)** — Morale aura (+4) for nearby troops.
-- **Research Lab (18 TP, 1 Builder)** — +6 Science at every dawn (first two labs count), plus science from kills. See Research below.
-
-### Economy (early)
-
-- **Trade Outpost (10 TP, 1 Builder)** — +2 TP at dawn and a morale aura. No research. Counts toward the 6-site cap.
-- **Quarry (14 TP, 1 Builder, Prospecting)** — +3 TP at dawn. Same cap.
-
-### Outpost upgrades: Barracks or Granary
-
-A finished Outpost takes **one** of two upgrades, once; the choice is final for that Outpost. Both cost 6 TP, need Field Engineering, and are placed from the Build tab by clicking the Outpost.
-
-| Upgrade      | Effect                                                                                                  |
-| ------------ | ------------------------------------------------------------------------------------------------------- |
-| **Barracks** | A free footman musters at the Outpost every third dawn (waves 3, 6, 9, ...). First two Barracks count.  |
-| **Granary**  | Feeds 3 more soldiers before the recruit surcharge starts (14 becomes 17). First three Granaries count. |
-
-This is the pattern for either/or upgrades: the upgrade is a short build placed on its host (`isOutpostUpgrade` in `data/buildings.json`), the host keeps its type and gains an `upgrade` tag, and the rules that read the tag live in `js/economy-rules.js`.
-
-### Research
-
-Science comes from a standing Research Lab: +6 at each dawn per lab (first two), plus a share from each kill up to a per-wave cap. One project runs at a time. Seven troop types start open (Footman, Archer, Mage, Cavalry, Healer, Builder, Courier); the other eight are researched:
-
-| Research          | Cost  | From wave | Opens                                              |
-| ----------------- | ----- | --------- | -------------------------------------------------- |
-| Iron Weapons      | 20 SP | 3         | Knight, Sapper, Crossbowman                        |
-| Field Engineering | 18 SP | 3         | Spike Trap, Outpost upgrades (Barracks or Granary) |
-| Morale Arts       | 18 SP | 4         | Bard                                               |
-| Command Theory    | 30 SP | 6         | General (after Iron Weapons)                       |
-| Fortification     | 30 SP | 6         | Castle                                             |
-| Advanced Infantry | 26 SP | 7         | Scout, Pikeman (after Iron Weapons)                |
-| Prospecting       | 30 SP | 8         | Quarry (after Field Engineering)                   |
-| Siege Engineering | 34 SP | 9         | Ballista (after Iron Weapons)                      |
-| Veteran Doctrine  | 34 SP | 10        | TP promotions (after Iron Weapons)                 |
-
-A lab built on wave 3 finishes Iron Weapons around wave 5, and each later tier is two or three waves of science.
-
-### Academies (Wave 100+)
-
-Each academy trains **1 free unit per round** when built. TP deployment of troops ends in the Academy Era — you must train through academies.
-
-**Mentor requirement:** You need a **max-rank veteran** (Immortal, tier 6) of that unit type **on the field** before you can found an academy. Hover an academy button for the exact block reason.
-
-| Academy                             | Cost   |
-| ----------------------------------- | ------ |
-| Footman / Scout / Courier / Pikeman | 40 TP  |
-| Archer / Sapper / Bard              | 45 TP  |
-| Healer / Builder                    | 48 TP  |
-| Cavalry                             | 60 TP  |
-| Knight                              | 65 TP  |
-| Mage / Ballista                     | 55 TP  |
-| General                             | 100 TP |
-
-Special rules:
-
-- **Healer Academy** — build only on waves divisible by 5.
-- **General Academy** — waves divisible by 10; requires a promotable veteran Footman and no General on field.
-- **Builder / Courier Academy** — blocked if two or more of that specialist are on field (one max-level mentor may still train).
-
-### Settlements (RTS Era, Wave 100+)
-
-| Structure        | Cost   | Requirements                    | Effect                                 |
-| ---------------- | ------ | ------------------------------- | -------------------------------------- |
-| Hamlet           | 100 TP | 5 Builders; builds over 5 waves | +5 TP/round                            |
-| Merchant Guild   | 150 TP | 5 Builders                      | +1 TP/round per guild in hamlet aura   |
-| Fortress Upgrade | 50 TP  | Completed hamlet nearby         | +HP, cover, +1 TP/round on that hamlet |
-
-All settlements have **large footprints**, **HP bars**, and are **siege targets**. Enemies will attack player and enemy structures. Recommended after wave 100 unless you are confident in your defenses.
+An Outpost becomes a Barracks **or** a Granary. The choice is final for that Outpost. DEMOLISH removes a building for part of its price, MOVE relocates a finished one, and `R` turns a wall before it is placed.
 
 ---
 
-## General & Command
+## Research
 
-- Enemies **prioritize** your General globally.
-- Station him in the castle **Keep** to grow a **command aura** (buffs nearby allies).
-- With a General in the Keep, **footmen auto-fill wall slots** inside the castle compound.
-- **Demoralized troops** (routing before wave 100, giving up after wave 100) are detected globally — the General paths to them for a pep talk.
-- On promotion from Footman, honor names are kept; combat stars reset and only improve aura.
-- **Orders** (buttons at the top of the screen while a General is on the field):
-  - **War Cry** (`[`) — soldiers near the General strike 20% harder for 8 seconds and regain morale. 45-second cooldown.
-  - **Hold the Line** (`]`) — soldiers near the General take 40% less damage for 7 seconds. 60-second cooldown.
+A Research Lab pays science at each dawn. Open the Research panel and pick a project; one runs at a time. Seven troops are open from the start (Footman, Archer, Mage, Cavalry, Healer, Builder, Courier). The rest are researched.
 
----
+| Research          | Science | From wave | Opens                          | After             |
+| ----------------- | ------- | --------- | ------------------------------ | ----------------- |
+| Iron Weapons      | 20      | 3         | Knight, Sapper, Crossbowman    |                   |
+| Field Engineering | 18      | 3         | Spike Trap, Barracks, Granary  |                   |
+| Morale Arts       | 18      | 4         | Bard                           |                   |
+| Command Theory    | 30      | 6         | General                        | Iron Weapons      |
+| Fortification     | 30      | 6         | Castle                         |                   |
+| Advanced Infantry | 26      | 7         | Scout, Pikeman                 | Iron Weapons      |
+| Prospecting       | 30      | 8         | Quarry                         | Field Engineering |
+| Siege Engineering | 34      | 9         | Ballista                       | Iron Weapons      |
+| Veteran Doctrine  | 34      | 10        | Paying TP to promote a veteran | Iron Weapons      |
 
-## Strikes, Spy & Courier
-
-All nine strikes have **animated icons** on the HUD and **battlefield FX** when cast.
-
-### Core strikes (fixed cost)
-
-| Strike         | Cost  | Effect                                              |
-| -------------- | ----- | --------------------------------------------------- |
-| Fireball       | 9 TP  | AoE fire damage                                     |
-| Lightning      | 6 TP  | Focused storm damage (smaller radius)               |
-| Heal Rain      | 6 TP  | Heals allies in a large radius                      |
-| Reinforcements | 12 TP | Spawns 2 footmen + 1 archer on the battlefield      |
-| Battle Rally   | 6 TP  | Army-wide morale boost, +12% damage, clears routing |
-
-### Advanced strikes (cost drops after wave 100; Meteor also drops at 200)
-
-| Strike        | Base cost | Effect                              |
-| ------------- | --------- | ----------------------------------- |
-| Meteor Shower | 14 TP     | Dual-impact fire devastation        |
-| Frost Nova    | 8 TP      | Damage + slow in a wide radius      |
-| Scout Flare   | 4 TP      | Reveals burrowed/hidden enemies     |
-| Fortify Zone  | 7 TP      | Allies in zone take 25% less damage |
-
-### Spy Network (one action per wave)
-
-Steal TP, assassinate elites, poison caches, bribe informant, **Muster Deserters**, **Tunnel Network**, and:
-
-| Action            | Cost                   | Effect                                                                                  | Limit              |
-| ----------------- | ---------------------- | --------------------------------------------------------------------------------------- | ------------------ |
-| Disrupt Lines     | 5 TP, +1 every 6 waves | Next wave has 25% fewer enemies, but they are 12% tougher and march 15% faster          | once every 3 waves |
-| Scout Report      | 2 TP                   | The night preview lists the next wave by type and number, as a Watchtower would         |                    |
-| Deep Infiltration | 3 TP                   | The first 30% of the next wave arrive at 60% health (marked AMBUSHED)                   |                    |
-| Sabotage Siege    | 5 TP                   | No siege towers or engineers next wave, and the host arrives 10 seconds late            |                    |
-| Forge Maps        | 3 TP                   | A marked supply crate lands at dawn: never an ambush, always TP                         |                    |
-| Raid War Chest    | 4 TP                   | +6 TP now, +2 enemies next wave                                                         | once every 3 waves |
-| Settlement Raid   | 7 TP                   | Needs an enemy hold. None stand in the current game, so it is refused and costs nothing | wave 150+          |
-
-### Courier Messages (one per wave; two with Twin Dispatch at 3 gold stars; Courier must be on field)
-
-Royal Decree (+morale), Supply Train (heal all), Offer Truce, Medical Evac, **Royal Herald**, **Emergency Muster**, and:
-
-| Message        | Cost                                        | Effect                                                | Limit              |
-| -------------- | ------------------------------------------- | ----------------------------------------------------- | ------------------ |
-| Tax Levy       | 1 TP                                        | +5 TP at the next wave clear; every soldier −2 morale | once every 3 waves |
-| Reinforcements | 4 TP × army surcharge                       | 2 footmen at the next dawn                            | once every 2 waves |
-| Call Banner    | 6 TP, +2 per earlier call, × army surcharge | 1 knight at once. Needs Iron Weapons                  | once every 4 waves |
-| Open War Chest | 2 TP                                        | +4 TP                                                 | once every 3 waves |
-
-An action on cooldown shows the waves left in place of its price.
-
-One tonic reduces spy and courier costs by 1 TP.
+A lab built on wave 3 or 4 finishes Iron Weapons around wave 6. Later projects open academies, settlements and the champions' halls; the Research tab of the encyclopedia lists all of them.
 
 ---
 
-## Morale & Routing
+## The enemy
 
-- Troops **witness fallen allies** (line of sight) and lose morale.
-- Too many casualties cause **routing** — enemies flee off-map; before wave 100 allies may desert; after wave 100 they stop fighting until rallied.
-- **Battle Rally**, courier decrees, bards, and the General’s pep talks restore the line.
+**Sectors.** The host enters from the top edge only, in three sectors: left, centre and right. At night the top edge shows which sectors the next wave will use, with a rough head count and a skull if a warlord is coming.
 
----
+**The muster.** Enemies arrive in squads and form up near the top before they advance. Your hunting soldiers wait for a squad to leave that ground, so the fight happens in the open field and your line keeps its shape.
 
-## Waves, Territory & Eras
+**Factions.** One faction leads each wave and fights its own way. The night preview names it, and the Enemies tab of the encyclopedia gives its tactic and what beats it.
 
-### Wave milestones
+**War camps.** Camps go up along the top edge. A camp still standing when the next wave forms makes that wave stronger. Destroy it and the bonus is gone. Soldiers sent that far north are not holding your line.
 
-| Wave      | Event                                                                    |
-| --------- | ------------------------------------------------------------------------ |
-| Every 5   | **Horde wave** — fast swarms (goblins, rats, orcs); weaker but numerous  |
-| Every 10  | Map expands (+90 wide, +110 deep); **named boss** leads (replaces horde) |
-| Every 15  | Horde wave includes embedded siege tower + sappers                       |
-| Every 25  | New attack flank unlocked (East → West → South)                          |
-| **100**   | **Academy Era** — no TP troop deploy; academies and settlements          |
-| **200**   | **Enemy RTS** — map widens; enemies build mirror settlements             |
-| **1001+** | **Hellscape** — even endgame heroes struggle                             |
+**Warlords.** Every tenth wave is led by a named warlord with a pack of his own. There are ten. After the tenth the first returns, stronger. Each changes at half health; the Bosses tab says how.
 
-### Era resets
-
-At waves **100** and **200** the battlefield is redrawn: your field is cleared and you start the new era with a prebuilt base, a fresh army, your veterans and part of your TP carried over. Legacies, research and unlocks carry through. Jump-in modes and Creative skip the resets.
-
-### Flank variety
-
-Once multiple flanks are unlocked, each wave rolls a **random non-empty subset** — you will not face every direction every wave. Spy intel shows possible flanks.
-
-### Loadouts (Wave 100+)
-
-Choose a passive army bonus: **Balanced**, **Shield Wall**, **Arrow Storm**, **Siege Crew**, or **Royal Court**.
-
-### Horde waves (every 5 waves — except boss waves)
-
-Swarm assaults spawn **~30% more foes** on a **faster timer**, mostly goblins, plague rats, and orcs at **slightly reduced HP/damage** — pressure without unfair spikes. Rotating flavors (Goblin Tide, Orc Pack, Warg Run, etc.) announce at dawn. Hunt mode and AoE strikes shine here. After wave 40, a single light elite may appear in the mob.
-
-### Named bosses (every 10 waves)
-
-Each boss wave fields one unique warlord with a title, tagline, crown sprite, and top-bar HP tracker. The roster cycles every 100 waves and scales stronger on return visits.
-
-| Wave | Boss                 | Title                        |
-| ---- | -------------------- | ---------------------------- |
-| 10   | Gorath the Breaker   | Warlord of the Ash March     |
-| 20   | Morwen the Pale      | Queen of the Bone Court      |
-| 30   | Thokk the Mountain   | Walker of Shattered Gates    |
-| 40   | Grimm Ashborne       | Knight of the Cinder Oath    |
-| 50   | Vexis the Hollow     | Shadow That Hungers          |
-| 60   | Iron Lord Karg       | Forge-Walker                 |
-| 70   | Sylvara Wyrm-Mother  | Matriarch of the Burning Sky |
-| 80   | The Rotfather        | Pustulent Patriarch          |
-| 90   | Dread Marshal Volk   | Hammer of the North Host     |
-| 100  | Malachar the Eternal | Voice of the Endless Siege   |
-
-Wave 110 brings Gorath back — tougher. Spy **Assassinate Captain** removes elites but not the named boss.
-
-### Wave events
-
-From the first few waves: Night Raid (every 4th wave, wargs and goblins join the host) and Village Tithe (+3 TP). Later: Blood Moon (flying predators), Supply Caravan (+TP), Siege Push (extra towers), and more.
-
-### Line-breakers and the breach limit
-
-From wave 3, some enemies carry a **red pennant**. These are line-breakers: they ignore your troops and run for your line, faster than the rest of the host but with less health. One that reaches the bottom of the field (or your rally point, if it came from a flank) is a **breach**.
-
-- The breach counter sits at the top of the screen. The limit is 14 / 10 / 8 / 6 by difficulty.
-- Each breach shakes the morale of every soldier. Pass the limit and the realm falls.
-- Enemies also go for the line when they have **nobody left to fight**, and when a **standoff** drags on for about a minute with no blood drawn.
-- Depth beats a single row: archers behind the line catch what runs past the front.
-
-### Spoils of war
-
-After every fifth wave you are offered three rewards and keep one for the rest of the run: more damage, less damage taken, extra TP per wave, a higher breach limit, night healing, and others. Each can be taken up to three times. The choice opens in the middle of the screen and the siege waits: the night clock stops and nothing else can be clicked or pressed until you take one (keys 1, 2, 3, or the arrow keys and Enter).
-
-### Army upkeep
-
-A big host is hard to feed. Past 14 soldiers on the field, every new recruit costs 7% more per soldier over that mark, so around the 28th soldier the price has doubled. Builders and couriers are not counted, and each Granary (an Outpost upgrade) raises the 14 by 3. Courier reinforcements and banner knights pay the same surcharge. The surcharge shows at the top left of the screen. A bigger host also draws more line-breakers.
-
-### How a wave arrives
-
-Enemies come in squads, a handful together with a lull between, and the squads grow as the siege goes on. A squad forms up on its side of the field first. Your hunting troops hold their ground until it crosses into your half, opens fire, or gets close, so the fight happens in the open field and your line keeps its shape. You can still order an attack by hand at any time. Flying enemies ignore terrain and go straight for their target.
-
-At night the next wave's flanks are already decided. Each edge it will use shows pulsing red chevrons pointing into the field, a rough head count for that side, the two most common enemy types, and a skull if a warlord is coming. Before wave 25 that is always the north; later, check all four edges before you place your line.
-
-### Reading the battlefield
-
-Traits are drawn on the field so you can see why a fight is going the way it is:
-
-- **Rings on the ground** show aura reach: red dashes for a war banner, green dashes for a shaman's ward, pale blue for a wraith's dirge, gold dashes for a bard's song.
-- **Marks over a unit's head:** purple diamond (hexed, deals less damage), flame (burning), green drop (poisoned), red flag (strengthened by a banner), green ring (warded).
-- **White chevrons** in front of a footman or pikeman show how many neighbours are bracing him; they flash when a blow is turned.
-- **A red pulse** under a boss means it is enraged. Orders from the General send a ring across the field.
-- **Deaths** show what killed: bodies are blown apart by blasts, cut in two by heavy blows, charred by fire, or left feathered with arrows. Fire and blasts leave scorch marks; the rest leave blood.
-- With one breach left before defeat, the edges of the screen stay red.
-
-The set-piece sounds (breach horn, muster drums, warlord's roar, the General's orders, spoils, wave clear, defeat, the wraith's wail and the night drone) are orchestral recordings made in MuseScore Studio with Muse Sounds; they live in `assets/sfx/` and `tools/sfx/` explains how to rebuild them. The music is recorded the same way: one loop for the menus, one for the battle and one that takes over while a warlord is on the field, plus short cues for nightfall, a runner breaking for the line, a horde warning, a fallen veteran, a new ribbon and victory. Combat sounds are synthesized in code, and every recording has a synthesized fallback.
-
-Sound follows the same events: a horn on a breach, drums as a wave forms up, a roar for a warlord, a shriek when a line-breaker joins the host, and wind and crows by day with a low drone at night.
-
-When the run ends, the game-over screen shows the siege in brief: breaches, line-breakers cut down, spoils taken, your deadliest soldier, the veterans who fell and any ribbons earned.
-
-### Supply crates
-
-From wave 2, crates land on the field during the day. Walk any soldier onto one to open it: TP, bandages for nearby troops, or rations that lift morale. Some are bait and spring a goblin ambush.
-
-### Counters and rear attacks
-
-| Troop                  | Strong against                                                   | Weak against                      |
-| ---------------------- | ---------------------------------------------------------------- | --------------------------------- |
-| Pikeman                | Riders (wargs, dark knights)                                     |                                   |
-| Cavalry, Knight, Scout | Archers and casters                                              |                                   |
-| Archer                 | Goblins and rats                                                 | Armour                            |
-| Mage, Ballista         | Armour (trolls, dark knights, war chiefs)                        |                                   |
-| Sapper                 | Armour, shields, siege engines, packed enemies and line-breakers | Flyers; anything that reaches him |
-| Crossbowman            | Armour and siege engines                                         | Swarms                            |
-| Footman                | Berserkers                                                       |                                   |
-
-Enemy riders hit archers, mages, healers and bards harder, and pikemen take less from them. Any attack that lands **from behind** does 25% more damage and shakes the target's morale; this applies to both sides.
-
-### Veterans
-
-The unit panel shows each soldier's kills and waves survived. When a veteran falls, the log names them and their record. At the wave 100 and 200 era resets, your General and up to ten of your most experienced soldiers march into the new era with you.
+**Status marks.** Small badges over a unit show what is acting on it (pinned, burning, hexed, under a banner, and so on). The Status marks tab of the encyclopedia draws each one beside its meaning.
 
 ---
 
-## Your first sieges
+## Breaches and line-breakers
 
-On your first runs the game introduces one system per early wave with a single line at the bottom of the screen, and keeps the rest of the HUD quiet until then:
+An enemy that crosses the bottom edge is a **breach**. The count sits at the top of the screen. Reach the limit and the run is over.
 
-| Wave | Introduced                                                  |
-| ---- | ----------------------------------------------------------- |
-| 1    | Deploying troops, Hunt, Hold (Shift+click) and posts        |
-| 2    | Supply crates, and calling the wave early with **D**        |
-| 3    | Line-breakers and the breach counter                        |
-| 4    | Builders, works and the Research Lab                        |
-| 5    | Spoils of war                                               |
-| 6    | Spells and strikes (the Spells tab is dimmed until then)    |
-| 8    | Spy and courier (the right-hand panel is dimmed until then) |
+| Difficulty | Breach limit |
+| ---------- | ------------ |
+| Baby       | 14           |
+| Normal     | 10           |
+| Chad       | 8            |
+| Hellbane   | 6            |
 
-The General's orders (War Cry, Hold the Line) are introduced from wave 6, but only once Command Theory is researched and a General can actually be recruited.
+From wave 3 some enemies carry a red pennant. These **line-breakers** ignore your soldiers and run for the line. They are 30% faster than the rest and have a little less health.
 
-Nothing is locked: a dimmed tab still works if you click it. Once you have reached wave 10 the introduction never appears again, and **Skip the introduction** in the pause menu turns it off at once. Creative mode always shows everything.
+- Cavalry and Scouts hit them 60% harder. Hunting soldiers go for them first.
+- A Wall holds up to three a wave.
+- Enemies also go for the line when nobody is left to fight them, or when a standoff drags on.
+- Each breach shakes the morale of every soldier. With one breach left, the edges of the screen stay red.
+- The Second Wall edict and two ribbons raise the limit.
+
+---
+
+## Wave preview and the watchtower
+
+Each night the top of the screen shows the next wave in rough terms. With a Watchtower standing, or a Scout Report from the spy, it lists the wave by type and number.
+
+---
+
+## Counters and rear attacks
+
+| Troop                  | Strong against                  | Weak against     |
+| ---------------------- | ------------------------------- | ---------------- |
+| Pikeman                | Riders                          | Arrows and magic |
+| Cavalry, Knight, Scout | Archers and casters             |                  |
+| Archer                 | Goblins and rats                | Armour           |
+| Crossbowman            | Armour and siege engines        | Swarms           |
+| Mage, Ballista         | Armour                          |                  |
+| Sapper                 | Armour, shields, packed enemies | Flyers           |
+| Footman                | Berserkers                      |                  |
+
+Enemy riders hit archers, mages, healers and bards harder, and pikemen take less from them. Any blow from behind lands 25% harder, for both sides.
+
+---
+
+## The Sapper
+
+The Sapper is a field engineer and needs Iron Weapons.
+
+- **At night** he buries 2 mines in front of his post, up to 4 live at once. A mine deals 80 damage to enemies within 46, and 25% more to line-breakers. With a Sapper selected at night, Shift+click re-sites a mine.
+- **By day** he lobs a satchel charge up to 110 away every 5 seconds. It deals 46 damage within 40.
+- Blasts ignore armour, shields and braced lines. They cannot reach flyers.
+- A veteran Sapper buries one more mine and fuses faster.
+- Up close he has only a knife. He backs away from a brawl and dies if caught alone.
+
+---
+
+## The General's orders
+
+The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy on the field goes for him. With him on the field, by day:
+
+| Order         | Key | Effect on soldiers within 190 of him               | Ready again |
+| ------------- | --- | -------------------------------------------------- | ----------- |
+| War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 seconds  |
+| Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 seconds  |
+
+He also walks to soldiers whose nerve has broken and steadies them. Stationed in a Castle keep, he fills the castle walls with footmen.
+
+---
+
+## Spells
+
+Spells are introduced on wave 6. Pick a spell, then click the map.
+
+| Spell            | Key | TP  | Effect                                                 |
+| ---------------- | --- | --- | ------------------------------------------------------ |
+| Fireball Barrage | `Q` | 9   | 80 damage in a radius of 60                            |
+| Lightning Strike | `W` | 6   | 55 damage in a radius of 50                            |
+| Healing Rain     | `E` | 6   | Heals 35 in a radius of 150                            |
+| Reinforcements   | `R` | 12  | Two Footmen and an Archer arrive                       |
+| Battle Rally     | `T` | 6   | Morale for the whole army; ends routing                |
+| Meteor Shower    | `F` | 14  | 110 damage in a radius of 75                           |
+| Frost Nova       | `J` | 8   | 35 damage and a slow, radius 90                        |
+| Scout Flare      | `K` | 4   | Reveals hidden enemies, radius 220                     |
+| Fortify Zone     | `X` | 7   | Soldiers inside take 25% less damage                   |
+| Arcane Dispel    | `P` | 5   | Clears burning ground, plague and blight; needs a Mage |
+
+Three more spells belong to one of the champion companies and appear when it is sworn.
+
+---
+
+## Spy and courier
+
+Both are introduced on wave 8, in the right-hand panel. An action on cooldown shows the waves left in place of its price.
+
+**Spy** (acts on the next wave):
+
+| Action               | TP                  | Effect                                                             | Limit              |
+| -------------------- | ------------------- | ------------------------------------------------------------------ | ------------------ |
+| Scout Report         | 2                   | The night preview lists the next wave by type and number           |                    |
+| Deep Infiltration    | 3                   | The first 30% of the next wave arrive at 60% health                |                    |
+| Forge Maps           | 3                   | A marked crate lands at dawn: never bait, always TP                |                    |
+| Raid War Chest       | 4                   | +6 TP now; 2 more enemies next wave                                | once every 3 waves |
+| Steal War Chest      | 4                   | +4 TP; 2 fewer enemies next wave                                   |                    |
+| Poison Caches        | 4                   | Next wave has 20% less health                                      |                    |
+| Disrupt Supply Lines | 5, +1 every 6 waves | 25% fewer enemies, but 12% tougher and 15% faster                  | once every 3 waves |
+| Sabotage Siege       | 5                   | No siege towers or engineers next wave; the host arrives 10 s late |                    |
+| Assassinate Captain  | 6                   | No elites next wave (a warlord still comes)                        |                    |
+
+**Courier** (needs a Courier on the field):
+
+| Message                | TP                       | Effect                                                | Limit              |
+| ---------------------- | ------------------------ | ----------------------------------------------------- | ------------------ |
+| Tax Levy               | 1                        | +5 TP at the next wave clear; every soldier −2 morale | once every 3 waves |
+| Open War Chest         | 2                        | +4 TP now                                             | once every 3 waves |
+| Royal Decree           | 2                        | +5 morale for every soldier                           |                    |
+| Supply Train           | 3                        | Heals every soldier 25                                |                    |
+| Request Reinforcements | 4 × upkeep               | 2 Footmen at the next dawn                            | once every 2 waves |
+| Medical Evac           | 4                        | The wounded fall back to the med tents                |                    |
+| Call the Banner        | 6, +2 per call, × upkeep | 1 Knight at once; needs Iron Weapons                  | once every 4 waves |
+
+Prices and cooldowns live in `data/strikes.json`, `js/units.js` and `js/economy-rules.js`.
+
+---
+
+## Spoils and edicts
+
+Every fifth wave pays spoils. When that wave is cleared the field dims and three rewards appear in the middle of the screen. Nothing else can be clicked or pressed until you take one: `1`, `2`, `3`, or the arrow keys and Enter. The night clock waits.
+
+Most rewards are **edicts**, standing rules that last the rest of the run. The same edict can be taken up to **three times** and adds up each time.
+
+| Edict            | Effect                                                           |
+| ---------------- | ---------------------------------------------------------------- |
+| Sharpened Steel  | Soldiers deal 10% more damage                                    |
+| Hardened Shields | Soldiers take 8% less damage                                     |
+| War Levy         | +2 TP for every wave cleared                                     |
+| Second Wall      | The breach limit rises by 2                                      |
+| Field Surgeons   | Soldiers recover an extra 15% health every nightfall             |
+| Steady Hearts    | +10 morale every nightfall; breaches shake soldiers half as much |
+| Veterans' Due    | Every kill earns one more point of experience                    |
+| Scavengers       | Crates land more often and are never bait                        |
+| Caltrops         | Line-breakers move 20% slower                                    |
+| Giant Killers    | +20% damage against bosses and elites                            |
+| War Chest        | +15 TP at once                                                   |
+| Flanking Drill   | Blows from behind land 20% harder still                          |
+| Early Horn       | Sounding the horn early pays double                              |
+
+---
+
+## Supply crates
+
+From wave 2, crates land on the field by day. Walk a soldier onto one. It holds TP, bandages for those nearby, or rations that lift morale. From wave 3 about one crate in seven is bait and goblins spring from it. Crates are a quick pickup and never stop the game.
+
+---
+
+## Veterans and morale
+
+**Veterans.** Soldiers earn experience from kills; healers, builders and couriers earn it from their work. There are six ranks, each tougher and deadlier. A soldier who lasts long enough is given a name. The unit panel shows each soldier's kills and waves survived, and when a veteran falls the log says who he was.
+
+**Morale.** Soldiers who watch comrades die lose heart, and a soldier with none left runs. A Bard, a Mess Hall, the General, War Cry and Battle Rally restore it. Every breach shakes the whole line. In waves 1 and 2 the opening garrison wavers but does not desert.
+
+---
 
 ## Ribbons
 
-Ribbons are earned across all your runs and listed on the main menu. There are 16, and each gives a small permanent bonus: starting TP, a higher breach limit, a little damage, slower line-breakers. Bonus starting TP from Ribbons, Crown Legacies and Crown of Ages together is capped at **+6**: all three still count, in that order, until the cap is reached. Examples: **Ten Dawns** (clear wave 10, +2 starting TP), **Unbroken Line** (10 waves in one run without a breach, +1 breach limit), **Gatekeeper** (cut down 100 line-breakers, they move 10% slower). Creative mode does not earn or use them.
+Sixteen ribbons are earned across all your runs and listed on the main menu. Each gives a small permanent bonus. Bonus starting TP from all sources together is capped at +6.
 
-## Score
-
-The game-over screen scores the run:
-
-- **+100** for every wave cleared and **+5** for every kill
-- **−40** for every breach conceded and **−15** for every soldier lost (never below zero)
-- multiplied by the difficulty: Baby ×0.5, Normal ×1, Chad ×1.5, Hellbane ×2
-- multiplied again by each active Advanced Difficulty modifier, by its own percentage: a modifier that adds 18% difficulty multiplies by 1.18, one that removes 12% by 0.88
-
-Your best score on each difficulty is kept and listed under **Best scores** on the main menu, next to the ribbons. Creative runs and runs abandoned from the pause menu are not scored.
-
----
-
-## Star System & Honor Names
-
-### Combat troops
-
-- Earn **bronze stars** from kills.
-- 3 bronze → 1 silver → 1 gold → **veteran upgrade** (+HP, damage, speed) up to **Immortal (tier 6)**.
-
-### Specialists (Healer, Builder, Courier)
-
-- Earn one star step per wave when they **work** (heal, build, dispatch).
-
-### Honor names
-
-At **3 gold stars**, the Crown grants a name (e.g. _Syr Gwyn_) plus a veteran upgrade. Generals keep their name on promotion; stars reset and only boost command aura.
+| Ribbon        | Earned by                                   | Bonus                            |
+| ------------- | ------------------------------------------- | -------------------------------- |
+| First Blood   | Clear wave 1                                | +1 starting TP                   |
+| Ten Dawns     | Clear wave 10                               | +2 starting TP                   |
+| Quarter Siege | Clear wave 25                               | +3 starting TP                   |
+| Half Siege    | Clear wave 50                               | +1 breach limit                  |
+| The Hundred   | Clear wave 100                              | +1 TP per cleared wave           |
+| Bosskiller    | Slay 5 warlords                             | +10% damage to bosses and elites |
+| Unbroken Line | 10 waves in one run without a breach        | +1 breach limit                  |
+| Clean Hands   | 5 waves in one run without losing a soldier | 3% less damage taken             |
+| Quartermaster | Recover 25 crates                           | Crates land more often           |
+| Early Riser   | Sound the horn early 20 times               | +1 TP on every early horn        |
+| Old Guard     | Keep one soldier alive for 20 waves         | Kills earn +1 experience         |
+| Butcher       | Kill 1,000 enemies                          | +3% damage                       |
+| Reaper        | Kill 10,000 enemies                         | +3% damage                       |
+| Gatekeeper    | Cut down 100 line-breakers                  | Line-breakers move 10% slower    |
+| Council Seat  | Claim 10 spoils                             | +2 starting TP                   |
+| Warband Oath  | Clear wave 15 in Warband mode               | 3% less damage taken             |
 
 ---
 
-## Enemies
+## Run score
 
-Standard foes include goblins, orcs, archers, mages, warg riders, harpies, burrowers, plague rats, and more. **Elite enemies glow purple** — dark knights, trolls, war chiefs, necromancers, berserkers, assassins, shamans, siege towers, bone summoners, sky drakes, and goblin engineers.
+The after-action report scores the run:
 
-**Big monsters** (red elite rings, larger sprites, spawn fanfare) appear from mid-late waves:
+- +100 for every wave cleared and +5 for every kill
+- −40 for every breach and −15 for every soldier lost (never below zero)
+- multiplied by the difficulty (see below)
+- multiplied again by each Advanced Difficulty modifier: one that adds 18% difficulty multiplies by 1.18, one that removes 12% by 0.88
 
-| Monster       | Wave | Threat                                      |
-| ------------- | ---- | ------------------------------------------- |
-| Abomination   | 20+  | Regenerating flesh horror                   |
-| Behemoth      | 25+  | Colossal wall-crusher; enrages when wounded |
-| Void Stalker  | 32+  | Shadow assassin — always hunts your General |
-| Iron Colossus | 40+  | Walking siege engine                        |
-| Elder Wyrm    | 50+  | Ancient dragon boss; bigger than sky drakes |
-
-### Enemy roles
-
-Every enemy has a job, a trait and a weakness. Named bosses carry two or three traits and change at half health.
-
-| Enemy                  | Role                 | Trait                                                                                         | How to beat it                                               |
-| ---------------------- | -------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| Goblin                 | Swarm                | Mob — hits harder for every goblin packed around it.                                          | Dies to anything; splash damage clears them.                 |
-| Orc                    | Line infantry        | Blood Rage — hits 25% harder once wounded below half.                                         | Slow.                                                        |
-| Orc Archer             | Skirmisher           | Loose Order — backs away when your soldiers close in.                                         | Cavalry.                                                     |
-| Dark Knight            | Armoured rider       | Plate — arrows do 30% less, and he cannot be pinned.                                          | Pikes and magic.                                             |
-| Warg Rider             | Raider               | Pounce — goes for archers, mages and healers; its first bite lands 80% harder.                | Pikes.                                                       |
-| Dark Mage              | Hexer                | Hex — soldiers it hits deal 20% less damage for a few seconds.                                | Fragile; cavalry reaches it fast.                            |
-| Troll                  | Wall breaker         | Regrowth — heals constantly, and heads for your buildings.                                    | Slow; focus fire outpaces the healing. Mages and ballistae.  |
-| Goblin Sapper          | Bomber               | Volatile — runs at your buildings and explodes when it dies.                                  | Kill it at range before it arrives.                          |
-| Necromancer            | Summoner             | Grave Call — keeps its distance and raises the dead.                                          | Fragile; kill it first.                                      |
-| Berserker              | Shock trooper        | Frenzy — hits 35% harder below half health and never routs.                                   | No armour; takes 15% more damage.                            |
-| Assassin               | General hunter       | Backstab — hunts your General; blows from behind land 50% harder still.                       | Dies to one solid hit.                                       |
-| Shaman                 | Healer               | Ward — heals the host, and enemies near it take 10% less damage.                              | Unarmed; kill it first.                                      |
-| Siege Tower            | Siege engine         | Rolling Tower — shrugs off arrows and batters walls.                                          | Sappers do double damage to it.                              |
-| Goblin Engineer        | Field engineer       | Barricades — throws up cover for the host as it advances.                                     | Barely fights.                                               |
-| War Chief              | Commander            | War Banner — enemies near the chief hit 15% harder.                                           | Kill him and the bonus is gone.                              |
-| Harpy                  | Flying raider        | Dive — flies for archers, mages and healers; its first strike lands 60% harder.               | Low health.                                                  |
-| Goblin Burrower        | Infiltrator          | Tunneller — always a line-breaker.                                                            | Cavalry and scouts run it down.                              |
-| Bone Summoner          | Summoner             | Bone Call — keeps its distance and raises the dead.                                           | Fragile; kill it first.                                      |
-| Orc Shieldbearer       | Shield wall          | Tower Shield — arrows and bolts do 55% less to it, and enemies beside it take 10% less.       | Mages, sappers, and anything that gets behind it.            |
-| Goblin Firebrand       | Arsonist             | Firebomb — its bombs splash, keep burning for several seconds, and it prefers your buildings. | Fragile; cavalry and archers kill it fast.                   |
-| Wailing Wraith         | Terror               | Dirge — soldiers near it steadily lose morale. It flies, and it never routs.                  | Low health. Bards and War Cry restore what it drains.        |
-| Sky Drake              | Flying artillery     | Fire Breath — every shot burns everything near the target.                                    | Ballistae.                                                   |
-| Plague Rat             | Swarm                | Plague — bites keep hurting for several seconds.                                              | Dies to anything.                                            |
-| Hellbound Legionnaire  | Suppressor           | Suppressing Fire — soldiers it hits deal 15% less damage for a few seconds.                   | Cavalry.                                                     |
-| Nightmare Strider      | Raider               | Pounce — goes for archers, mages and healers; its first strike lands 80% harder.              | Pikes.                                                       |
-| Dreadborn Champion     | Armoured commander   | Dread Banner — enemies near it hit 15% harder; arrows do 25% less to it.                      | Mages and ballistae.                                         |
-| Warp Prophet           | Hexer                | Curse — soldiers it hits deal 25% less damage for a few seconds.                              | Fragile; cavalry reaches it fast.                            |
-| Grim Revenant          | Sniper               | Dead Eye — 50% more damage at long range; prefers healers and mages.                          | Helpless up close.                                           |
-| Umbral Stalker         | Assassin             | Backstab — goes for archers, mages and healers; blows from behind land 50% harder still.      | Low health.                                                  |
-| Cinderbound Juggernaut | Burning brute        | Cinder Hide — soldiers who strike it in melee are burned.                                     | Ranged fire; it is very slow.                                |
-| Hellmortar Pack        | Artillery            | Mortar — every shell hits everything near the target.                                         | Cavalry and sappers.                                         |
-| Abomination            | Bloated brute        | Rupture — regrows flesh, and bursts when it dies.                                             | Kill it away from your line.                                 |
-| Behemoth               | Wall breaker         | Trample — every blow also hits soldiers beside the target; it heads for buildings.            | Ballistae and mages.                                         |
-| Iron Colossus          | Siege construct      | Iron Shell — arrows do 40% less and melee attackers are hurt.                                 | Sappers and mages.                                           |
-| Void Stalker           | General hunter       | Void Step — hunts your General; blows from behind land 50% harder still.                      | Bodyguards around the General.                               |
-| Elder Wyrm             | Flying siege         | Wyrmfire — every breath burns everything near the target; it regrows scales.                  | Ballistae.                                                   |
-| Gorath the Breaker     | Boss — warlord       | War Banner and Blood Rage. At half health he enrages.                                         | Kill his escort first; the banner only helps those near him. |
-| Morwen the Pale        | Boss — hexer         | Hex and Grave Call. At half health she raises a pack of plague rats.                          | Cavalry; she is fragile for a boss.                          |
-| Thokk the Mountain     | Boss — mountain      | Trample and Regrowth. At half health his regrowth doubles.                                    | Ballistae and mages; he is very slow.                        |
-| Grimm Ashborne         | Boss — cinder knight | Plate and Cinder Hide. At half health he enrages.                                             | Mages; keep melee off him.                                   |
-| Vexis the Hollow       | Boss — shadow        | Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder.  | Low health for a boss; pin it with a tight formation.        |
-| Iron Lord Karg         | Boss — forge walker  | Iron Shell; heads for your buildings. At half health it calls goblin sappers.                 | Sappers and mages.                                           |
-| Sylvara Wyrm-Mother    | Boss — wyrm mother   | Wyrmfire. At half health she calls a flight of harpies.                                       | Ballistae.                                                   |
-| The Rotfather          | Boss — plague lord   | Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him.                | Kill him far from your line.                                 |
-| Dread Marshal Volk     | Boss — dread marshal | War Banner and Suppressing Fire. At half health he enrages.                                   | Cavalry; break his escort and he is alone.                   |
-| Malachar the Eternal   | Boss — the eternal   | Hex, Regrowth and War Banner. At half health he enrages and calls dark knights.               | Everything you have, at once.                                |
-
-- **Sappers** demolish walls and settlements.
-- **Siege towers** deploy against walls every 5 waves.
-- **Assassins** hunt your General.
-- **Burrowers** hide underground — use Scout Flare, watchtowers, or scouts to surface them.
+Your best score on each difficulty is kept in this browser and listed on the main menu beside the ribbons. Creative runs, abandoned runs and runs with a cheat are not scored.
 
 ---
 
 ## Difficulty
 
-| Mode     | Effective % | Summary                           |
-| -------- | ----------- | --------------------------------- |
-| Baby     | 50%         | Forgiving — extra TP, weaker foes |
-| Normal   | 100%        | Balanced                          |
-| Chad     | 150%        | Harder, faster hordes             |
-| Hellbane | 200%        | Hell marches                      |
+| Difficulty | Start TP | TP per wave | Breach limit | Enemy health | Enemy damage | Enemy numbers | Score |
+| ---------- | -------- | ----------- | ------------ | ------------ | ------------ | ------------- | ----- |
+| Baby       | 10       | +3          | 14           | 72%          | 75%          | 78%           | ×0.5  |
+| Normal     | 7        | 0           | 10           | 100%         | 100%         | 100%          | ×1    |
+| Chad       | 5        | −1          | 8            | 130%         | 122%         | 122%          | ×1.5  |
+| Hellbane   | 4        | −2          | 6            | 170%         | 148%         | 150%          | ×2    |
 
-On Chad and Hellbane the extra enemies are phased in: a third of the surplus on wave 1, two thirds on wave 2, the full host from wave 3. And on every difficulty the opening garrison does not desert during waves 1 and 2: soldiers whose morale breaks waver but stand, so a run cannot end in its first minutes because the last men walked off the field. They can still be killed.
+On the two harder settings the extra enemies are phased in over the first three waves.
 
-The host grows with the siege. Before modifiers a wave brings about 16 foes on wave 6, 32 on wave 10, 52 on wave 15 and 72 on wave 20 (four more each wave from wave 7 to 20, two more a wave after that, up to 90), and their health and damage climb every wave: about ×1.5 health on wave 10 and ×1.8 on wave 15. Baby fields about a quarter fewer, at about 60% of that health. The threat chip at the top of the screen (Humble to Empire) then scales the host to what you field: a small army draws up to a quarter fewer foes, a rich one more.
-
-### Advanced Difficulty
-
-From the main menu, stack optional modifiers (ally/enemy buffs, spawn rates, elite frequency, enemy type weighting, TP income, morale, breakthrough limit). Each modifier adjusts your **effective difficulty %** shown on screen.
+**Advanced Difficulty**, on the main menu, stacks optional modifiers (ally and enemy strength, spawn rate, elite frequency, TP income, morale, breach limit). Each changes the effective difficulty shown on screen and the score multiplier.
 
 ---
 
-## Legion Archive, Grand Coliseum & Tonics
+## Modes
 
-### Legion Archive
+Chosen on the main menu.
 
-Unlock allied factions through the Research Lab, meta progress, or cheat codes. Build a faction's barracks, then recruit its operatives from **LEGION ARCHIVE** (under MORE in the left panel). Each operative has unique abilities and faction synergies. The same screen has each faction's **skill tree**: spend the points earned from recruits, waves and mastery on permanent bonuses for that faction's operatives.
+| Mode             | What changes                                                                             |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| Campaign         | The standard siege                                                                       |
+| Survival Endless | Leaderboard score: wave × difficulty % + kills × 2 + a time bonus                        |
+| Roguelike        | Random Advanced Difficulty modifiers each run                                            |
+| Warband          | Soldiers cost double and are far tougher (+70% health, +35% damage)                      |
+| Timed Blitz      | Half the night                                                                           |
+| Seed Run         | Spawns follow a seed you can share                                                       |
+| Academy Era      | Starts at wave 100 or later                                                              |
+| PvE Horde        | Every wave is a horde                                                                    |
+| Async Co-op      | Take turns on one siege with a friend by passing a share code                            |
+| PvP Endless      | Same seed, highest score wins; compared by share code                                    |
+| Daily, Weekly    | A fixed seed and modifiers for the day or the week                                       |
+| Ironman          | A toggle: no saving                                                                      |
+| Creative         | A sandbox: free TP, spawn tools, no game over, nothing recorded. `P` opens the lab panel |
 
-### Secret: Grand Coliseum
-
-- Unlocked at the **316 achievement milestone**, by researching Arena Warfare Doctrine, or by a cheat code (see appendix).
-- Build cost: **1000 TP**, **10 Builders**, **40 Hamlets**, **10 Merchant Guilds**.
-- Recruit 29 champions, each with unique stats and abilities. Click a completed Coliseum on the map to open the roster.
-
-### Tonic Stations
-
-Build tonic machines at night once they are researched or a roster is unlocked. Heroes collect up to **4 tonics** — Ironbrew, Field Revival, Swiftstep Tonic, Endurance Draft, Deadeye Elixir, and more.
-
-### Secret: The Hellbane Hero
-
-- Unlocked by surviving to **wave 200 on Hellbane difficulty**, or via cheat (see appendix).
-- Deploy cost: **10,000 TP**.
-- Near-unkillable; heals over time; auto-abilities based on battlefield pressure; one-hit sword (except in Hellscape at wave 1001+).
-
----
-
-## Encyclopedia, Achievements & Secrets
-
-### Encyclopedia (`I`)
-
-In-game lore for allies, enemies, buildings, orders, stars, eras — plus classified tabs for **Coliseum champions**, **Legion operatives**, and **The Hellbane** (teaser entries until unlocked).
-
-### Achievements (`A`)
-
-**1,450 total** across tiered Bronze / Silver / Gold challenges, lifetime and session tracking, and crossover sub-tabs per faction.
-
-| Milestone       | Achievement                               | Reward                   |
-| --------------- | ----------------------------------------- | ------------------------ |
-| **316 unlocks** | _316 Club_ + _And That's The Bottom Line_ | Grand Coliseum revealed  |
-| **999 unlocks** | _Millennium Legend_                       | Ultimate meta completion |
-
-Categories: Vanilla/Core, Waves/Eras, Combat, Army, Build, Specialists, Difficulty, Tactics, Economy, Crossovers (per faction), Secrets/Meta. Progress shows as **X/1450** in the top bar, achievement panel, and post-wave summary.
-
-### Cheat Menu (`` ` ``)
-
-Open from the main menu **CHEATS** button or in-game with backtick. Codes are not listed in the Encyclopedia — check the appendix at the bottom of this README if you want the full list. Any code voids the run it is used in (or, for a code entered on the menu, the next run): no best score, no ribbon progress or ribbons, and no achievements for the rest of that run, and the after-action report says **Cheats used — run not recorded**.
+There is no live networking. Co-op and PvP work by share codes only.
 
 ---
 
-## Tips for New Commanders
+## Champions and companies
 
-1. **Deploy a Builder early** — a wall holds three line-breakers a wave, a Trade Outpost pays for itself in five dawns, and a Research Lab on wave 3 brings knights and crossbowmen by wave 5 or 6.
-2. **Protect your General** — he draws all enemy attention; use the Keep.
-3. **Med tents save troops** — every wounded soldier walks to one, so place it close behind the line and expect gaps while they heal.
-4. **Save TP before wave 100** — academies (40–100 TP) and settlements are expensive.
-5. **Train mentors first** — you need Immortal veterans on field to found academies.
-6. **Hunt and Hold** — soldiers hunt on their own, but click to reposition for flanks; not every wave hits every side. Where you send a soldier becomes his post, and he comes back to it. Shift+click the men who must not leave a gap or a doorway.
-7. **Scout with spy actions** — know what’s coming on siege and boss waves.
-8. **Lightning vs Fireball** — lightning is cheaper for precision; fireball for bigger blobs.
-9. **Zoom out on big maps** — pan to flanks as territory grows.
-10. **Read the Encyclopedia** — especially before building hamlets in the RTS era.
+Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company is first sworn to your line by completing its trial (listed under Achievements), then a Builder raises its hall, and its fighters are recruited from the **Legion Archive** in the left panel. Each company also has a skill tree there.
+
+Every champion has his own role, trait and weakness. Names, prices and profiles are data (`data/champions.json`, `data/operatives.json`, `data/roster-profiles.json`), and the Champions tab of the encyclopedia renders them from that data, so this manual does not list them.
+
+Two things stay secret until earned: a grand arena with its own roster, and one hero who costs 10,000 TP.
 
 ---
 
-## File Structure
+## The late siege
+
+Past wave 100 the same field and the same rules continue, with more to build:
+
+- **Academies** train one kind of soldier each round while a veteran of that kind is on the field to teach.
+- **Settlements** (Hamlet, Village, Town, City, Metropolis) pay TP every round: a Hamlet pays +5 TP/round. A Merchant Guild beside one adds to it.
+- **Loadouts** give the whole army one passive bonus.
+- The ten warlords return in order, stronger each time.
+
+---
+
+## Saving
+
+Save from the pause menu: a quick save, or one of three slots. Saves are kept in the browser's local storage on this device, along with ribbons, best scores, achievements and settings. Clearing site data deletes them. Ironman, daily and weekly runs and Creative mode do not save.
+
+---
+
+## Cheats
+
+The cheat menu opens from the main menu or with `` ` `` in a run. Using any code voids that run: no score, no ribbon progress, no achievements, and the after-action report says so. A code entered on the menu voids the next run. The codes are in `js/cheats.js`.
+
+---
+
+## Encyclopedia and achievements
+
+- **Encyclopedia** (`I`): twelve tabs. How to play, Your army, Buildings, Research, Orders, Spoils and edicts, Ribbons and score, Enemies, Bosses, Status marks, Champions, World and lore. The search box looks across all tabs. Nearly every entry is built from the game's data when the panel opens.
+- **Achievements** (`A`): tracked across runs, with a tab per area.
+- **Bug report** (`F10`) and a performance overlay (`F3`).
+
+---
+
+## Developer notes
+
+### Building and testing
+
+| Task                         | Command                                     |
+| ---------------------------- | ------------------------------------------- |
+| Install                      | `npm install`                               |
+| Play (desktop)               | `npm start`                                 |
+| Lint, types, formatting      | `npm run check`                             |
+| All tests, with the long sim | `npm run test:all` (5 to 17 minutes)        |
+| Tests without the long sim   | `node scripts/run-all-tests.mjs --skip-sim` |
+| Honest playtest bot          | `npm run sim:honest`                        |
+| Production build to `dist/`  | `npm run build`                             |
+| Desktop installer            | `npm run dist`                              |
+| Regenerate the key tables    | `node scripts/gen-readme-keys.mjs --write`  |
+
+The build concatenates the scripts in `index.html` order and minifies them. A new `js/*.js` file needs a `<script>` tag in `index.html` at the right point, an entry in `scripts/build-manifest.mjs` (and `scripts/headless-manifest.mjs` if tests need it), and then `npm run gen:eslint-globals`. After editing `data/*.json`, run `node scripts/extract-game-data.mjs`.
+
+### How the code is laid out
+
+- Plain JavaScript, no framework. About 110 script files, loaded in order.
+- `js/game.js` is the simulation. Run state is `GS` (`js/game-state.js`); modules reach each other through `svc('Name')`.
+- `js/siege-loop.js` holds the loop described in this manual: breaches, line-breakers, spoils, crates, orders, ribbons, score.
+- `js/roster.js` holds every role, trait and weakness. `js/hotkeys.js` holds every key.
+- `js/encyclopedia.js` builds the reference from those at run time. `js/lore-data.js`, `js/story-lore.js` and `js/narrative-thread.js` hold the story text.
+- Content is JSON in `data/`.
+
+### Modding
+
+`mods/manifest.json` lists the mods to load. A mod is a folder with a `mod.json`, optional `units.json` and `buildings.json`, and an optional script that receives `ModAPI`. `mods/example-legion/` is a working example that adds one troop and one building.
+
+### Repo layout
 
 ```
-myth-and-blood/
-├── index.html          # Main game page; loads js/ in order
-├── js/                 # The game (game.js is the core simulation)
-├── css/                # style.css plus the theme-v2.css HUD layer
-├── data/               # Unit, building, enemy and strike definitions (JSON)
-├── assets/sfx/         # Recorded orchestral cues (OGG)
-├── tools/sfx/          # How the cues were made
-├── mods/               # Mod loader manifest and an example mod
-├── scripts/            # Build, tests and the headless simulation
-├── src/                # TypeScript sources for the service/event/data cores
-└── electron/           # Desktop wrapper
+index.html      the page; loads js/ in order
+js/             the game
+css/            style.css and the theme-v2.css HUD layer
+data/           units, buildings, enemies, spells, champions, profiles (JSON)
+assets/sfx/     recorded music and cues (OGG)
+tools/sfx/      how the recordings were made
+mods/           mod manifest and an example mod
+scripts/        build, tests, simulations, generators
+src/            TypeScript sources for the service, event and data cores
+electron/       desktop shell
+docs/           CHANGELOG.md and the overhaul audit and plan
 ```
 
-Developer commands: `npm run test:all`, `npm run check`, `npm run build`.
+### Licence
 
----
-
-## License
-
-MIT — see `package.json`.
-
----
-
-_Defend the realm. Spend wisely. The waves never end._
-
----
-
-## Appendix: Cheat Codes
-
-Open **CHEATS** on the main menu (or press `` ` `` in-game). Unlocks persist between runs. In-game-only codes must be entered during a battle.
-
-### Meta unlocks (persistent)
-
-| Code               | Effect                                          |
-| ------------------ | ----------------------------------------------- |
-| `iron creed`       | Unlock the Grand Coliseum                       |
-| `arena calls`      | Unlock the Grand Coliseum (alias)               |
-| `hell walks`       | Unlock the Hellbane hero                        |
-| `hellbane`         | Unlock the Hellbane hero (alias)                |
-| `void residue`     | Unlock the Void Residue Crew and its barracks   |
-| `first circle`     | Unlock the First Circle and its shrine          |
-| `orbital vanguard` | Unlock the Orbital Vanguard and its academy     |
-| `iron trench`      | Unlock the Iron Trench Coalition                |
-| `ninefold march`   | Unlock the Ninefold March and its camp          |
-| `iron pit`         | Unlock the Iron Pit Guild and its dojo          |
-| `bound spirit`     | Unlock the Bound Spirit Court and its shrine    |
-| `spirit court`     | Unlock the Bound Spirit Court (alias)           |
-| `north star`       | Unlock the North Star Ascetics and their dojo   |
-| `skyburst`         | Unlock the Skyburst Order and its base          |
-| `crimson legions`  | Unlock the Crimson Legions                      |
-| `crystal light`    | Unlock the Crystal Vanguard                     |
-| `rift cult`        | Unlock the Rift Cult                            |
-| `eternal crusade`  | Unlock the Crimson Legions trial reward (alias) |
-| `voicebound`       | Unlock the Voicebound Pact                      |
-| `open every gate`  | Unlock **all** cheat content at once            |
-
-### In-game only (start a battle first)
-
-| Code               | Effect                              |
-| ------------------ | ----------------------------------- |
-| `kings ransom`     | +500 TP and max army morale         |
-| `war chest`        | +1000 TP                            |
-| `clear the field`  | Eliminate all enemies on the field  |
-| `muster all`       | Deploy one of every troop type free |
-| `knights assemble` | Spawn 5 knights                     |
+`package.json` declares MIT. There is no LICENSE file in the repo yet.

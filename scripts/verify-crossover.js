@@ -102,26 +102,15 @@ for (const fid of factionIds) {
   if (!rosterByFaction[fid]) fail(`Faction ${fid} has zero operatives in CrossoverDefs`);
 }
 
-// --- Encyclopedia lore keys (parse crossover.js CROSSOVER_HERO_LORE via regex from encyclopedia.js) ---
+// --- Encyclopedia: champions are rendered from data, never named in the source ---
 const encSource = fs.readFileSync(path.join(jsDir, 'encyclopedia.js'), 'utf8');
-const loreMatch = encSource.match(/const CROSSOVER_HERO_LORE = \{([\s\S]*?)\n {2}\};/);
-if (!loreMatch) fail('Could not parse CROSSOVER_HERO_LORE from encyclopedia.js');
-else {
-  const loreKeys = [...loreMatch[1].matchAll(/^\s+([a-z0-9_]+):/gm)].map((m) => m[1]);
-  for (const id of crossoverUnitIds) {
-    if (!loreKeys.includes(id)) fail(`Encyclopedia missing CROSSOVER_HERO_LORE entry for ${id}`);
-  }
-  for (const key of loreKeys) {
-    if (!CrossoverDefs[key]) warn(`Encyclopedia lore key "${key}" has no CrossoverDefs entry`);
-  }
+if (!/CrossoverDefs/.test(encSource) || !/CrossoverFactions/.test(encSource)) {
+  fail('Encyclopedia no longer reads CrossoverDefs / CrossoverFactions at run time');
 }
-
-// --- Faction tabs in encyclopedia ---
-const catMatch = encSource.match(/const CROSSOVER_CAT = \{([\s\S]*?)\n {2}\};/);
-if (!catMatch) fail('Could not parse CROSSOVER_CAT from encyclopedia.js');
-else {
-  for (const fid of factionIds) {
-    if (!catMatch[1].includes(`${fid}:`)) fail(`Encyclopedia CROSSOVER_CAT missing ${fid}`);
+for (const id of crossoverUnitIds) {
+  const name = CrossoverDefs[id]?.name;
+  if (name && name.length >= 5 && encSource.includes(name)) {
+    fail(`Encyclopedia hardcodes the display name of ${id}; render it from data`);
   }
 }
 

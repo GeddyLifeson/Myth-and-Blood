@@ -1,68 +1,65 @@
 /**
- * Narrative Thread — the Ancient Crown endures across cosmic time.
- * Early heroes become mythic figures whose legends grant real power.
+ * Narrative Thread — the names the line remembers.
+ * Soldiers who last long enough become legends, and a legend strengthens everyone who
+ * serves after him. Also speaks the opening lines of a run and a few late milestones.
  */
 const NarrativeThread = (() => {
-  const KINGDOM_WAVE = 150;
-  const GALACTIC_WAVE = 400;
-  const APEX_WAVE = 500;
+  const LONG_WATCH_WAVE = 150;
+  const DEEP_SIEGE_WAVE = 400;
+  const LAST_LIGHT_WAVE = 500;
 
-  const CROWN_ERA_BEATS = {
+  /** Short, field-level lines. No numbers, no system names: this is what the watch sees. */
+  const SIEGE_BEATS = {
     1: {
-      title: 'The Ancient Crown',
-      hook: 'The Crown is older than memory — you do not replace the medieval kingdom, you evolve the same realm across cosmic time.',
-      sub: 'Every champion you field may become legend. Their deeds will grant real power to those who follow.',
-    },
-    31: {
-      title: 'Kingdom Unbroken',
-      hook: 'Wave thirty-one — the realm rises, but it is still the same Crown that held the first outpost.',
-      sub: 'Scribes already whisper of heroes whose names may outlive the stars.',
+      title: 'The Watch Fire',
+      hook: 'The watch fire is lit. North of it, nothing answers.',
+      sub: 'Learn their names while you can. The line remembers the ones who last.',
     },
     150: {
-      title: 'Succession of Ages',
-      hook: 'The realm widens — not a new empire, but the medieval kingdom stepping into its imperial inheritance.',
-      sub: 'Founding champions canonized in the chronicle now echo through edict, army, and fleet.',
+      title: 'The Long Watch',
+      hook: 'Nobody on the wall remembers the first dawn. The names are still read each night.',
+      sub: 'The dead are spoken of as if they stood here. Some nights it feels as if they do.',
     },
     400: {
-      title: 'Cosmic Inheritance',
-      hook: 'The galactic era begins — wizard-kings and honor legions inherit one unbroken Crown.',
-      sub: 'Mythic figures from the early war grant strength to fleets and veterans light-years from their first stand.',
+      title: 'The Deep Siege',
+      hook: 'The ground is more bone than soil now. The line stands on what it has killed.',
+      sub: 'Old names are cut into every shield. The young ones touch them before the horn.',
     },
     500: {
-      title: 'Eternal Chronicle',
-      hook: 'Apex war — the ancient realm faces the endless host as a civilization that never fell, only ascended.',
-      sub: 'Every legend sworn to the Crown sharpens the whole host.',
+      title: 'Last Light',
+      hook: 'The north has no end. Neither, it seems, does the watch.',
+      sub: 'Every name kept is a blade lent to the living.',
     },
   };
 
   const LEGEND_KINDS = {
     honored: {
       id: 'honored',
-      label: 'Crown-Honored',
+      label: 'Named',
       short: 'Honored',
       power: 1.35,
-      desc: 'Named by the Crown — their devotion becomes doctrine.',
+      desc: 'Given a name by the line. The rest stand straighter for it.',
     },
     champion: {
       id: 'champion',
-      label: 'Champion of the Host',
-      short: 'Champion',
+      label: 'Old Blood',
+      short: 'Old Blood',
       power: 1.15,
-      desc: 'Immortal veteran whose example hardens every rank.',
+      desc: 'A veteran who would not die. Every rank is harder for watching him.',
     },
     mythic: {
       id: 'mythic',
-      label: 'Mythic Figure',
-      short: 'Mythic',
+      label: 'Sworn Champion',
+      short: 'Champion',
       power: 1.45,
-      desc: 'Crossover champion whose legend breaches eras.',
+      desc: 'A champion from outside the realm, sworn to this line.',
     },
     ascended: {
       id: 'ascended',
-      label: 'Ascended Legend',
-      short: 'Ascended',
+      label: 'Beyond the Grave',
+      short: 'Unburied',
       power: 1.55,
-      desc: 'Ascended beyond mortality — the Crown records them as eternal.',
+      desc: 'Past dying. The watch counts him among its dead and its living both.',
     },
   };
 
@@ -71,7 +68,7 @@ const NarrativeThread = (() => {
 
   function defaultState() {
     return {
-      crownEpithet: 'the Ancient Crown',
+      crownEpithet: 'the line',
       era: 'founding',
       legends: [],
       legendPower: 0,
@@ -120,16 +117,16 @@ const NarrativeThread = (() => {
   function resolveCrownEpithet() {
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const snap = FoundationalMedievalLayer.getRunSnapshot?.();
-      if (snap?.leadingLabel) return `the Ancient Crown of ${snap.leadingLabel}`;
+      if (snap?.leadingLabel) return `the line of ${snap.leadingLabel}`;
     }
-    return 'the Ancient Crown';
+    return 'the line';
   }
 
   function tickEra(wave) {
     if (!state) return;
-    if (wave >= APEX_WAVE) state.era = 'apex';
-    else if (wave >= GALACTIC_WAVE) state.era = 'galactic';
-    else if (wave >= KINGDOM_WAVE) state.era = 'kingdom';
+    if (wave >= LAST_LIGHT_WAVE) state.era = 'apex';
+    else if (wave >= DEEP_SIEGE_WAVE) state.era = 'deep';
+    else if (wave >= LONG_WATCH_WAVE) state.era = 'long_watch';
     else if (wave >= 31) state.era = 'rising';
     else state.era = 'founding';
     state.crownEpithet = resolveCrownEpithet();
@@ -163,16 +160,16 @@ const NarrativeThread = (() => {
     };
     state.legends.unshift(entry);
     recomputeLegendPower();
-    const msg = `Mythic figure — ${entry.label} (${def?.short || kind}). ${def?.desc || ''}`;
+    const msg = `A name for the wall: ${entry.label} (${def?.short || kind}). ${def?.desc || ''}`;
     state.log.unshift({ at: Date.now(), text: msg });
     ctx.showMessage?.(msg, 360);
-    ctx.addHighlight?.('legend', `${entry.label} — legend of the Crown`);
+    ctx.addHighlight?.('legend', `${entry.label} — a name the line keeps`);
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'legend',
         wave,
-        title: `Legend Canonized — ${entry.label}`,
-        summary: `${entry.label} enters the eternal chronicle as ${def?.label || kind}. Their legend now grants real power to the realm.`,
+        title: `Name kept — ${entry.label}`,
+        summary: `${entry.label} is cut into the wall as ${def?.label || kind}. Those who serve after fight harder for it.`,
       });
     }
     return entry;
@@ -197,9 +194,9 @@ const NarrativeThread = (() => {
   }
 
   function getEraMult(wave = 0) {
-    if (wave >= APEX_WAVE) return 1.55;
-    if (wave >= GALACTIC_WAVE) return 1.35;
-    if (wave >= KINGDOM_WAVE) return 1.2;
+    if (wave >= LAST_LIGHT_WAVE) return 1.55;
+    if (wave >= DEEP_SIEGE_WAVE) return 1.35;
+    if (wave >= LONG_WATCH_WAVE) return 1.2;
     if (wave >= 31) return 1.08;
     return 1;
   }
@@ -217,7 +214,7 @@ const NarrativeThread = (() => {
       hpMult: 1 + scale * 0.72,
       morale: Math.min(12, Math.floor(n * 0.55 * era)),
       scienceGainMult: 1 + Math.min(0.12, n * 0.008 * era),
-      note: `${n} crown legend(s)`,
+      note: `${n} name${n > 1 ? 's' : ''} kept`,
     };
   }
 
@@ -260,15 +257,12 @@ const NarrativeThread = (() => {
   }
 
   function announceEraBeat(wave, ctx = {}) {
-    const beat = CROWN_ERA_BEATS[wave];
+    const beat = SIEGE_BEATS[wave];
     if (!beat || beatsShown.has(wave)) return;
     beatsShown.add(wave);
     ctx.showMessage?.(`Chronicle — ${beat.hook}`, 440);
     if (beat.sub) ctx.showMessage?.(beat.sub, 400);
-    ctx.addHighlight?.(
-      'milestone',
-      `${beat.title} — ${state?.crownEpithet || 'the Ancient Crown'}`
-    );
+    ctx.addHighlight?.('milestone', `${beat.title} — ${state?.crownEpithet || 'the line'}`);
     if (typeof Chronicles !== 'undefined') {
       Chronicles.appendNarrativeBeat({
         type: 'narrative',
@@ -282,8 +276,8 @@ const NarrativeThread = (() => {
   function onRunStart(ctx = {}) {
     resetRun();
     if (ctx.creative) return;
-    state.crownEpithet = 'the Ancient Crown';
-    const beat = CROWN_ERA_BEATS[1];
+    state.crownEpithet = 'the line';
+    const beat = SIEGE_BEATS[1];
     ctx.showMessage?.(beat.hook, 480);
     if (beat.sub) ctx.showMessage?.(beat.sub, 420);
   }
@@ -293,9 +287,9 @@ const NarrativeThread = (() => {
     if (ctx.creative) return null;
     tickEra(wave);
     announceEraBeat(wave, ctx);
-    if (wave % 25 === 0 || wave === KINGDOM_WAVE - 10) {
+    if (wave % 25 === 0 || wave === LONG_WATCH_WAVE - 10) {
       scanLegends(ctx.units || [], wave, ctx);
-    } else if (wave >= KINGDOM_WAVE) {
+    } else if (wave >= LONG_WATCH_WAVE) {
       scanLegends(ctx.units || [], wave, ctx);
     }
     return getStateSnapshot({ wave });
@@ -306,7 +300,7 @@ const NarrativeThread = (() => {
     tickEra(wave);
     const mods = getLegendPowerMods(wave);
     return {
-      crownEpithet: state?.crownEpithet || 'the Ancient Crown',
+      crownEpithet: state?.crownEpithet || 'the line',
       era: state?.era || 'founding',
       legendCount: state?.legends?.length || 0,
       legendPower: state?.legendPower || 0,
@@ -319,22 +313,22 @@ const NarrativeThread = (() => {
   function formatHudLine(ctx = {}) {
     const wave = ctx.wave | 0;
     const n = state?.legends?.length || 0;
-    if (n <= 0 && wave < 31) return 'Ancient Crown';
-    if (n <= 0) return 'Crown · 0 legends';
-    return `Crown · ${n} legend${n > 1 ? 's' : ''}`;
+    if (n <= 0 && wave < 31) return 'The watch';
+    if (n <= 0) return 'The watch · no names kept';
+    return `The watch · ${n} name${n > 1 ? 's' : ''} kept`;
   }
 
   function formatIntelNote(ctx = {}) {
     const wave = ctx.wave | 0;
     const n = state?.legends?.length || 0;
     if (n > 0) {
-      return `Crown legends: ${n} mythic figure(s)`;
+      return `Names kept: ${n}. The line fights harder for its legends.`;
     }
-    if (wave >= 31 && wave <= KINGDOM_WAVE) {
-      return 'Ancient Crown — heroes may become legend';
+    if (wave >= 31 && wave <= LONG_WATCH_WAVE) {
+      return 'No names kept yet. Veterans who last become legends.';
     }
-    if (wave > KINGDOM_WAVE) {
-      return 'Ancient Crown — legends echo across eras';
+    if (wave > LONG_WATCH_WAVE) {
+      return 'The old names are still read at dusk.';
     }
     return '';
   }
@@ -342,9 +336,9 @@ const NarrativeThread = (() => {
   resetRun();
 
   return {
-    KINGDOM_WAVE,
-    GALACTIC_WAVE,
-    APEX_WAVE,
+    LONG_WATCH_WAVE,
+    DEEP_SIEGE_WAVE,
+    LAST_LIGHT_WAVE,
     resetRun,
     onRunStart,
     onWaveStart,
