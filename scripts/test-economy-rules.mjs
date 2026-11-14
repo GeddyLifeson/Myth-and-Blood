@@ -577,22 +577,23 @@ function previewCtx(GS) {
 {
   const { getWaveConfig, DIFFICULTIES, ColonyValue } = start(19);
   const c = (w) => getWaveConfig(w);
-  ok(c(3).count === 8 && c(6).count === 16, 'the first six waves are the size they were');
+  // Retuned for capped veterans: the old surge was sized against uncapped attack speed.
+  ok(c(3).count === 8 && c(6).count === 12, `the opening waves stay small (${c(6).count} at 6)`);
   ok(
-    c(10).count === 32 && c(15).count === 52 && c(20).count === 72,
-    `the host grows by four a wave from wave 7 to 20: 32, 52, 72 (was 24, 34, 44); got ${c(10).count}, ${c(15).count}, ${c(20).count}`
+    c(10).count === 20 && c(15).count === 30 && c(20).count === 44,
+    `the host reaches 20, 30, 44 at waves 10, 15, 20; got ${c(10).count}, ${c(15).count}, ${c(20).count}`
   );
-  ok(c(25).count === 82 && c(30).count === 90, 'after wave 20 it grows by two again, capped at 90');
+  ok(c(25).count === 50 && c(30).count === 56, 'after wave 20 it grows by 1.25 a wave');
   ok(
-    Math.abs(c(15).hpScale - 1.84) < 0.02 && Math.abs(c(15).dmgScale - 1.64) < 0.02,
-    `wave 15 foes: health x${c(15).hpScale.toFixed(2)}, damage x${c(15).dmgScale.toFixed(2)} (was x1.58, x1.44)`
+    Math.abs(c(15).hpScale - 1.19) < 0.02 && Math.abs(c(15).dmgScale - 1.12) < 0.02,
+    `wave 15 foes: health x${c(15).hpScale.toFixed(2)}, damage x${c(15).dmgScale.toFixed(2)}`
   );
   let worst = 0;
   for (let w = 1; w < 60; w++) worst = Math.max(worst, c(w + 1).hpScale - c(w).hpScale);
   ok(worst < 0.1, `health never jumps more than ${worst.toFixed(3)} between waves`);
   ok(
-    Math.abs(c(40).hpScale - c(22).hpScale - (3.25 - 1.99)) < 0.03,
-    'the faster climb stops at wave 22; later waves keep their old slope'
+    Math.abs(c(40).hpScale - c(22).hpScale - 0.72) < 0.03,
+    'waves 22 to 40 climb on the academy curve alone'
   );
   const baby = DIFFICULTIES.baby;
   ok(

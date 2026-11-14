@@ -12996,7 +12996,7 @@ const Game = (() => {
       }
       const nightHealMult = isNightPhase() ? 1.55 : 1;
       const healAmt = unit.maxHp * (tent.healRate || 0.03) * 0.04 * nightHealMult;
-      if (healAmt > 0.3 && unit.hp < unit.maxHp) {
+      if (healAmt > 0 && unit.hp < unit.maxHp) {
         const applied = Math.min(healAmt, unit.maxHp - unit.hp);
         unit.hp += applied;
         if (unit.frame === 0) {
@@ -13004,8 +13004,8 @@ const Game = (() => {
           svc('Particles').heal(unit.x, unit.y);
         }
       }
-      // He leaves healed to full (a tent too weak to heal lets him go at once).
-      const healed = unit.hp >= unit.maxHp - 0.01 || healAmt <= 0.3;
+      // He leaves healed to full (a tent that cannot heal lets him go at once).
+      const healed = unit.hp >= unit.maxHp - 0.01 || healAmt <= 0;
       const healerSafe =
         unit.combatType === 'healer' && unit.healerFleeing && !isBeingTargeted(unit);
       if (healed && (!unit.healerFleeing || healerSafe)) {
