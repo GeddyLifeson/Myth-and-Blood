@@ -487,6 +487,7 @@ const SiegeLoop = (() => {
     // Let the opening announcements pass before the first line of the introduction.
     run.stepNextTick = (ctx.tick || 0) + 240;
     fx = computeFx();
+    if (typeof SapperKit !== 'undefined') SapperKit.reset();
     hideSpoils();
     syncHud(ctx);
     ctx.ambience(ctx.isNight ? 'night' : 'day');
@@ -867,6 +868,7 @@ const SiegeLoop = (() => {
       ctx.showMessage('Spoils of war — choose one reward before the next assault.', 260);
     }
     run.preview = buildPreview(ctx);
+    if (typeof SapperKit !== 'undefined') SapperKit.layForNight(ctx);
     ctx.ambience('night');
     run.crates = run.crates.filter((c) => !c.spent);
     if (isRecorded()) {
@@ -1076,7 +1078,7 @@ const SiegeLoop = (() => {
       if ((a === 'cavalry' || a === 'knight' || a === 'scout') && SHOOTERS[t]) return 1.4;
       if (a === 'archer' && SWARM[t]) return 1.25;
       if (a === 'archer' && ARMOURED[t]) return 0.8;
-      if ((a === 'mage' || a === 'ballista' || a === 'sapper') && ARMOURED[t]) return 1.35;
+      if ((a === 'mage' || a === 'ballista') && ARMOURED[t]) return 1.35;
       if (a === 'footman' && t === 'berserker') return 1.2;
       return 1;
     }
@@ -1099,7 +1101,7 @@ const SiegeLoop = (() => {
     crossbowman: 'Strong against armour',
     mage: 'Strong against armour',
     ballista: 'Strong against armour',
-    sapper: 'Strong against armour',
+    sapper: 'Blasts ignore armour and shields · cannot reach flyers',
     footman: 'Strong against berserkers',
   };
 
@@ -1435,6 +1437,7 @@ const SiegeLoop = (() => {
       voided: !!run.voided,
       fallen: run.fallen.slice(),
       stepsShown: [...run.stepsShown],
+      sapperKit: typeof SapperKit !== 'undefined' ? SapperKit.exportState() : null,
     };
   }
 
@@ -1459,6 +1462,7 @@ const SiegeLoop = (() => {
       run.fallen = Array.isArray(snap.fallen) ? snap.fallen : [];
     }
     fx = computeFx();
+    if (typeof SapperKit !== 'undefined') SapperKit.importState(snap ? snap.sapperKit : null);
     if (ctx.isNight) run.preview = buildPreview(ctx);
     renderSpoils(ctx);
     syncHud(ctx);
@@ -1805,7 +1809,10 @@ const SiegeLoop = (() => {
   // ----------------------------------------------------------------- drawing
   /** Blood and remains that stay on the field. Drawn under the units. */
   function drawGround(ctx2d) {
-    if (!run.active || !run.stains.length) return;
+    if (!run.active) return;
+    if (typeof SapperKit !== 'undefined')
+      SapperKit.drawGround(ctx2d, hudCtx ? hudCtx().selectedIds : null);
+    if (!run.stains.length) return;
     ctx2d.save();
     for (const s of run.stains) {
       ctx2d.globalAlpha = s.scorch ? 0.62 : 0.5;

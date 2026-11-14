@@ -105,11 +105,13 @@ const Roster = (() => {
       brace: true,
     },
     sapper: {
-      role: 'Demolition',
-      trait: 'Blast — every hit splashes nearby enemies. Double damage to siege towers.',
-      weak: 'Fragile and short-ranged.',
-      splashEvery: { n: 1, r: 36, pct: 0.4 },
-      vsType: { siege_tower: 2, iron_colossus: 1.5, hellmortar_pack: 1.5 },
+      role: 'Field engineer',
+      trait:
+        'Demolitions — Buries 2 mines a night, up to 4 live; each deals 80 damage to enemies within 46, and 25% more to line-breakers. By day he lobs a charge up to 110 away every 5 seconds that deals 46 damage within 40. Blasts ignore armour, shields and braced lines. A veteran buries one more and fuses faster.',
+      weak: 'Only a knife up close: he backs away from a brawl and dies if caught alone. Blasts cannot reach flyers.',
+      mines: { perNight: 2, cap: 4, r: 46, dmg: 80, runner: 1.25 },
+      satchel: { reach: 110, cd: 300, r: 40, dmg: 46 },
+      kite: true,
     },
     knight: {
       role: 'Heavy infantry',
@@ -174,6 +176,9 @@ const Roster = (() => {
     'ramp',
     'stagger',
     'expose',
+    // The Sapper's trade; the mechanics themselves live in js/sapper-kit.js.
+    'mines',
+    'satchel',
   ];
 
   const ARCHETYPES = {
@@ -883,6 +888,10 @@ const Roster = (() => {
     if (!(amount > 0)) return amount;
     const tick = ctx.tick;
     const attacker = opts && opts.attacker;
+    // A Sapper's blast goes through armour: no ward, brace, plate, shield or flat resistance.
+    if (opts && opts.demolition) {
+      return (unit.exposeUntil || 0) > tick ? amount * (1 + (unit.exposePct || 0)) : amount;
+    }
     const ranged = !!attacker && ((attacker.range || 0) > 60 || !!opts.projectile);
     let mult = 1;
     if (unit.team === 'enemy' && (unit.wardUntil || 0) > tick) mult *= 0.9;
@@ -950,7 +959,6 @@ const Roster = (() => {
     cinderbound_juggernaut: 1,
   };
   const BLAST_TYPES = {
-    sapper: 1,
     ballista: 1,
     hellmortar_pack: 1,
     goblin_sapper: 1,
@@ -1167,6 +1175,8 @@ const Roster = (() => {
 
   function update(ctx) {
     if (ctx.tick % SLOW_TICK === 0) slowTick(ctx);
+    // The Sapper's mines, charges and knife-range retreat (js/sapper-kit.js).
+    if (typeof SapperKit !== 'undefined') SapperKit.update(ctx);
   }
 
   // ---------------------------------------------------------------- overlays
@@ -1582,6 +1592,7 @@ const Roster = (() => {
       }
     }
     c.restore();
+    if (typeof SapperKit !== 'undefined') SapperKit.drawOver(c, tick);
   }
 
   // ---------------------------------------------------------------------- AI

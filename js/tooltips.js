@@ -52,7 +52,8 @@ const Tooltips = (() => {
     healer:
       'Heals allies in range — including other healers. At ≤25% HP, retreats to med tents on damage like all allies. Ranks when healing each wave.',
     knight: 'Heavy armored melee with damage resistance. Banner courier can summon one.',
-    sapper: 'Bonus siege damage (×2.5) vs walls and siege engines.',
+    sapper:
+      'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close — keep him behind the line.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
     bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
     ballista:

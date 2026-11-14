@@ -111,7 +111,7 @@ const Encyclopedia = (() => {
     {
       cat: 'allies',
       name: 'Sapper',
-      body: 'Demolishes walls and siege engines with bonus siege damage.',
+      body: 'Field engineer. Buries mines at night that blow under the first enemy to step on them, and lobs satchel charges by day. Blasts ignore armour and shields. Only a knife up close — keep him behind the line.',
     },
     {
       cat: 'allies',
