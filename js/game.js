@@ -12982,7 +12982,7 @@ const Game = (() => {
         continue;
       }
       const nightHealMult = isNightPhase() ? 1.55 : 1;
-      const healAmt = unit.maxHp * (tent.healRate || 0.14) * 0.04 * nightHealMult;
+      const healAmt = unit.maxHp * (tent.healRate || 0.03) * 0.04 * nightHealMult;
       if (healAmt > 0.3 && unit.hp < unit.maxHp) {
         const applied = Math.min(healAmt, unit.maxHp - unit.hp);
         unit.hp += applied;
