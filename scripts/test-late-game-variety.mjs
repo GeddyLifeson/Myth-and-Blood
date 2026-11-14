@@ -68,8 +68,21 @@ ok(
 );
 
 const DME = vm.runInContext(`${dynamic}\nDynamicMapEvents`, ctx);
-ok(!!DME.pickEvent(200), 'dynamic map event at wave 200');
-ok(DME.pickEvent(200)?.id === 'dominion_storm', 'wave 200 picks dominion storm');
+DME.resetRun(5);
+const lateWave = (id) => {
+  for (let w = 200; w < 4000; w++) if (DME.pickEvent(w)?.id === id) return w;
+  return -1;
+};
+ok(lateWave('dominion_storm') > 0, 'the event deck can pick dominion storm after wave 175');
+{
+  let early = 0;
+  for (let w = 1; w <= 400; w++) {
+    const e = DME.pickEvent(w);
+    if (e && w < e.waveMin) early++;
+  }
+  ok(early === 0, 'no event arrives before its wave');
+  ok(DME.pickEvent(100)?.id !== 'dominion_storm', 'dominion storm waits for wave 175');
+}
 ok(!!DME.EVENTS.worldheart_pulse, 'worldheart pulse event exists');
 
 const FH = vm.runInContext(`${hazards}\nFactionHazards`, ctx);

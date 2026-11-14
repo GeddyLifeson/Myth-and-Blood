@@ -110,56 +110,6 @@ const FactionIntel = (() => {
     return leaderLine(gs);
   }
 
-  function hexToRgba(hex, alpha = 1) {
-    const h = String(hex || '#888').replace('#', '');
-    const full =
-      h.length === 3
-        ? h
-            .split('')
-            .map((c) => c + c)
-            .join('')
-        : h;
-    const n = parseInt(full, 16);
-    if (Number.isNaN(n)) return `rgba(128,128,128,${alpha})`;
-    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
-  }
-
-  /** One bar per faction: how full its grudge is. A full bar means it leads a revenge wave. */
-  function drawGrudges(canvas, rows) {
-    const ctx = canvas?.getContext?.('2d');
-    if (!ctx) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-    const shown = rows.filter((r) => r.status !== 'dormant');
-    const cols = Math.max(1, shown.length);
-    const colW = w / cols;
-    ctx.font = '8px Cinzel';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(200, 160, 120, 0.7)';
-    ctx.fillText('GRUDGES', w / 2, 10);
-    const top = 18;
-    const barH = h - 36;
-    shown.forEach((row, i) => {
-      const x0 = colW * i + 4;
-      const barW = colW - 8;
-      ctx.fillStyle = 'rgba(20, 14, 10, 0.85)';
-      ctx.fillRect(x0, top, barW, barH);
-      const fill = (Math.max(0, Math.min(100, row.hostility)) / 100) * barH;
-      ctx.fillStyle = hexToRgba(row.color, 0.7);
-      ctx.fillRect(x0, top + barH - fill, barW, fill);
-      ctx.strokeStyle = hexToRgba(row.color, row.leadsTomorrow ? 1 : 0.5);
-      ctx.lineWidth = row.leadsTomorrow ? 2 : 1;
-      ctx.strokeRect(x0, top, barW, barH);
-      ctx.font = '7px Cinzel';
-      ctx.fillStyle = 'rgba(255, 230, 200, 0.9)';
-      ctx.fillText(String(row.hostility), colW * i + colW / 2, top + barH + 10);
-      ctx.font = '6px Cinzel';
-      ctx.fillStyle = hexToRgba(row.color, 0.95);
-      ctx.fillText(row.shortName.slice(0, 6).toUpperCase(), colW * i + colW / 2, h - 4);
-    });
-  }
-
   function renderFactionCard(row) {
     const focused = row.id && row.id === focusedFactionId;
     const badges = [];
@@ -196,6 +146,119 @@ const FactionIntel = (() => {
     );
   }
 
+  // ------------------------------------------------------------ what is true now
+  /**
+   * The Threat Map shows what exists: where the next wave enters, the war camps standing at
+   * the top edge and what each adds. The old stage bars and building counts described a
+   * northern kingdom that is never built, so they are gone from the panel.
+   */
+  const SECTOR_IDS = ['left', 'centre', 'right'];
+
+  function campState() {
+    if (typeof WarCamps === 'undefined' || typeof GameState === 'undefined') return null;
+    return WarCamps.getSnapshot({ buildings: GameState.buildings, wave: GameState.wave });
+  }
+
+  /** Sectors the coming (night) or current (day) wave uses; null when the plan has none. */
+  function activeSectors() {
+    if (typeof WarCamps === 'undefined' || typeof GameState === 'undefined') return null;
+    return WarCamps.planSectors(
+      GameState.timeOfDay === 'night' ? GameState.nextWavePlan : GameState.sectorPlan
+    );
+  }
+
+  function sectorLine(gs) {
+    const sectors = activeSectors();
+    const night = gs.timeOfDay === 'night';
+    if (sectors) {
+      return `${night ? 'The next wave enters' : 'This wave entered'} by the ${sectors.join(' and ')} of the top edge.`;
+    }
+    return `${night ? 'The next wave comes' : 'This wave came'} from the top edge.`;
+  }
+
+  function drawSectorMap(canvas, camps, sectors) {
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    const INK = '#07050a';
+    const BONE = '#e4dcc4';
+    const BLOOD = '#a01018';
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = '#14100f';
+    ctx.fillRect(0, 0, w, h);
+    const third = w / 3;
+    ctx.font = 'bold 11px Georgia, serif';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < 3; i++) {
+      const on = !sectors || sectors.includes(SECTOR_IDS[i]);
+      ctx.fillStyle = on ? 'rgba(160,16,24,0.34)' : 'rgba(228,220,196,0.05)';
+      ctx.fillRect(i * third + 2, 2, third - 4, h - 20);
+      ctx.strokeStyle = on ? BLOOD : '#4c4841';
+      ctx.lineWidth = on ? 2 : 1;
+      ctx.strokeRect(i * third + 2, 2, third - 4, h - 20);
+      ctx.fillStyle = on ? BONE : '#777266';
+      ctx.fillText(
+        `${SECTOR_IDS[i].toUpperCase()}${sectors ? (on ? ': host enters' : ': quiet') : ''}`,
+        i * third + third / 2,
+        h - 6
+      );
+      if (on) {
+        // chevrons pointing down the field
+        ctx.strokeStyle = BLOOD;
+        ctx.lineWidth = 2;
+        for (let c = 0; c < 2; c++) {
+          const cy = h - 40 + c * 8;
+          ctx.beginPath();
+          ctx.moveTo(i * third + third / 2 - 9, cy - 5);
+          ctx.lineTo(i * third + third / 2, cy);
+          ctx.lineTo(i * third + third / 2 + 9, cy - 5);
+          ctx.stroke();
+        }
+      }
+    }
+    const worldW = (typeof GameState !== 'undefined' && GameState.worldW) || 1;
+    for (const c of camps) {
+      const x = Math.max(34, Math.min(w - 34, (c.x / worldW) * w));
+      const y = 24;
+      ctx.fillStyle = INK;
+      ctx.beginPath();
+      ctx.moveTo(x - 11, y + 9);
+      ctx.lineTo(x, y - 10);
+      ctx.lineTo(x + 11, y + 9);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = BONE;
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.fillStyle = '#ff8a30';
+      ctx.beginPath();
+      ctx.arc(x, y + 4, 3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = BONE;
+      ctx.fillText(c.name, x, y + 24);
+      ctx.fillStyle = INK;
+      ctx.fillRect(x - 20, y + 29, 40, 5);
+      ctx.fillStyle = BLOOD;
+      ctx.fillRect(x - 20, y + 29, 40 * (c.maxHp ? c.hp / c.maxHp : 0), 5);
+    }
+    ctx.textAlign = 'left';
+  }
+
+  function renderCampCard(c) {
+    const line = c.sabotaged ? 'sabotaged: no bonus this wave' : c.line;
+    return (
+      `<div class="intel-faction-card intel-card-active" style="border-left-color:#a01018">` +
+      `<div class="intel-card-head"><span class="intel-faction-name">${c.name}</span>` +
+      `<span class="intel-faction-stage" style="color:#e4dcc4">${c.sector} of the top edge</span></div>` +
+      `<p class="intel-tagline">Next wave: ${line}.</p>` +
+      `<p class="intel-meta">Health ${c.hp}/${c.maxHp} · ${c.guards} guard${c.guards === 1 ? '' : 's'} · ` +
+      `bounty ${c.bounty} TP · ${c.wavesLeft > 0 ? `stands ${c.wavesLeft} more wave${c.wavesLeft === 1 ? '' : 's'}` : 'packs up after this wave'}</p>` +
+      `</div>`
+    );
+  }
+
   /** Tactic, silhouette and counter for tomorrow's host, or what is known of today's. */
   function hostDetail(gs) {
     const host = gs.nextHost;
@@ -219,26 +282,64 @@ const FactionIntel = (() => {
   function renderPanel(gs) {
     const rows = buildIntelRows(gs);
     const summary = leaderLine(gs);
+    const camps = campState();
+    const list = camps ? camps.camps : [];
     const set = (id, text) => {
       const el = document.getElementById(id);
       if (el) el.textContent = text;
     };
     set('faction-intel-summary', summary);
-    set('faction-intel-host', hostDetail(gs));
+    set('faction-intel-host', `${hostDetail(gs)} ${sectorLine(gs)}`);
     set('faction-intel-roster', makeupLine(gs));
+    const legendEl = document.querySelector?.('.faction-intel-map-legend');
+    if (legendEl) {
+      legendEl.textContent =
+        'The top edge in three sectors. Red: the host enters there. A tent with a fire: a war camp.';
+    }
+    const fromWave = camps ? camps.fromWave : 6;
+    const none =
+      (gs.wave || 0) + 1 < fromWave
+        ? `No war camps yet. From wave ${fromWave} the enemy may raise one at nightfall.`
+        : 'No war camp stands tonight.';
+    const how =
+      'A camp is attacked only on your order: select soldiers and move them onto it (cavalry get there first, Sappers hit hardest), land a strike on it, or send the spy’s raid. Burn it before dawn and its bonus is gone.';
+    const live =
+      camps && camps.active.length
+        ? ` In force this wave: ${camps.active.map((a) => `${a.name}: ${a.line}`).join('; ')}.`
+        : '';
+    const raid =
+      camps && camps.raid
+        ? camps.raid.waiting
+          ? ' A raid rides at nightfall.'
+          : ' Raiders are on their way.'
+        : '';
     const listEl = document.getElementById('faction-intel-list');
-    if (listEl) listEl.innerHTML = rows.map(renderFactionCard).join('');
-    drawGrudges(document.getElementById('faction-intel-map'), rows);
+    if (listEl) {
+      listEl.innerHTML =
+        (list.length ? list.map(renderCampCard).join('') : `<p class="intel-tagline">${none}</p>`) +
+        `<p class="intel-meta">${how}${live}${raid}</p>` +
+        rows.map(renderFactionCard).join('');
+    }
+    drawSectorMap(document.getElementById('faction-intel-map'), list, activeSectors());
 
     const section = document.getElementById('faction-intel-section');
     if (section) section.style.display = (gs.wave || 0) >= WAVE_MIN ? '' : 'none';
     set('faction-intel-compact-summary', summary);
     const compactList = document.getElementById('faction-intel-compact-list');
     if (compactList) {
-      compactList.innerHTML = rows
-        .filter((r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 6)
-        .map(renderCompactRow)
-        .join('');
+      compactList.innerHTML =
+        list
+          .map(
+            (c) =>
+              `<div class="intel-compact-row intel-compact-active"><span class="intel-compact-dot" style="background:#a01018"></span>` +
+              `<span class="intel-compact-name">${c.name} (${c.sector})</span>` +
+              `<span class="intel-compact-stage">${c.sabotaged ? 'sabotaged' : c.line}</span></div>`
+          )
+          .join('') +
+        rows
+          .filter((r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 6)
+          .map(renderCompactRow)
+          .join('');
     }
   }
 

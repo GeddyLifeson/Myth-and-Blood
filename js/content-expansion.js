@@ -1310,18 +1310,11 @@ const ContentExpansion = (() => {
   };
 
   function pickWaveEvent(wave) {
-    let best = null;
-    let bestPri = -1;
-    for (const evt of Object.values(WAVE_EVENTS)) {
-      if (evt.waveMin && wave < evt.waveMin) continue;
-      if (evt.waveMod && wave % evt.waveMod !== 0) continue;
-      const pri = evt.priority ?? 0;
-      if (pri > bestPri) {
-        bestPri = pri;
-        best = evt.id;
-      }
+    if (typeof DynamicMapEvents === 'undefined' || DynamicMapEvents.eventSlot(wave) !== 'field') {
+      return null;
     }
-    return best;
+    const live = Object.values(WAVE_EVENTS).filter((e) => !e.waveMin || wave >= e.waveMin);
+    return DynamicMapEvents.deckPick(live, wave, 23)?.id ?? null;
   }
 
   function applyWaveEvent(wave, spawnQueue) {

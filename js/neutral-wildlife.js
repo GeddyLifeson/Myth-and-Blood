@@ -249,14 +249,16 @@ const NeutralWildlife = (() => {
 
   function pickWaveEvent(wave) {
     if (wave < WAVE_MIN) return null;
-    for (const evt of Object.values(EVENTS)) {
-      if (evt.deathTriggered || evt.denTriggered) continue;
-      if (wave < evt.waveMin) continue;
-      if (evt.waveMod && wave % evt.waveMod !== 0) continue;
-      return evt;
+    if (
+      typeof DynamicMapEvents === 'undefined' ||
+      DynamicMapEvents.eventSlot(wave) !== 'wildlife'
+    ) {
+      return null;
     }
-    if (wave >= 15 && wave % 19 === 0) return EVENTS.beast_migration;
-    return null;
+    const live = Object.values(EVENTS).filter(
+      (e) => !e.deathTriggered && !e.denTriggered && wave >= e.waveMin
+    );
+    return DynamicMapEvents.deckPick(live, wave, 37);
   }
 
   function runEvent(evt, wave, ctx) {

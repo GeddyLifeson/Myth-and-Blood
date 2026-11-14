@@ -985,10 +985,14 @@ function testNeutralWildlife(exp) {
   assert(NeutralWildlife, 'NeutralWildlife module should exist');
   NeutralWildlife.resetRun();
   assert(NeutralWildlife.pickWaveEvent(7) === null, 'inactive before wave 8');
-  const evt = NeutralWildlife.pickWaveEvent(22);
-  assert(evt?.id === 'beast_migration', 'wave 22 should trigger beast migration');
+  const evtWave = eventWave(
+    exp,
+    'wildlife',
+    (w) => NeutralWildlife.pickWaveEvent(w)?.id === 'beast_migration'
+  );
+  assert(evtWave > 0, 'the event deck reaches a beast migration');
   const spawned = [];
-  NeutralWildlife.onWaveStart(22, {
+  NeutralWildlife.onWaveStart(evtWave, {
     worldW: 500,
     worldH: 820,
     rallyY: 720,
@@ -1221,6 +1225,13 @@ function testFactionReputation(exp) {
   assert(snap.factions.length >= 1, 'snapshot should list faction reputations');
 }
 
+/** First wave on the fixed test deck where `hit` holds; the deck decides which waves carry events. */
+function eventWave(exp, _kind, hit) {
+  exp.DynamicMapEvents.resetRun(5);
+  for (let w = 8; w < 3000; w++) if (hit(w)) return w;
+  return -1;
+}
+
 function testDynamicMapEvents(exp) {
   if (!exp.DynamicMapEvents) {
     console.log('  skip DynamicMapEvents');
@@ -1228,11 +1239,14 @@ function testDynamicMapEvents(exp) {
   }
   const { DynamicMapEvents } = exp;
   assert(DynamicMapEvents, 'DynamicMapEvents module should exist');
-  DynamicMapEvents.resetRun();
+  DynamicMapEvents.resetRun(5);
   assert(DynamicMapEvents.pickEvent(10) === null, 'inactive before wave 12');
-  const geo = DynamicMapEvents.pickEvent(14);
-  assert(geo?.id === 'geothermal_surge', 'wave 14 should trigger geothermal surge');
-  const pending = DynamicMapEvents.prepareNextEvent(14, {
+  const planetWave = (id) =>
+    eventWave(exp, 'planet', (w) => DynamicMapEvents.pickEvent(w)?.id === id);
+  const geoWave = planetWave('geothermal_surge');
+  const volcanoWave = planetWave('volcanic_eruption');
+  assert(geoWave > 0 && volcanoWave > 0, 'the event deck reaches both geothermal and volcanic');
+  const pending = DynamicMapEvents.prepareNextEvent(geoWave, {
     worldW: 500,
     rallyY: 720,
     hooks: {},
@@ -1244,7 +1258,7 @@ function testDynamicMapEvents(exp) {
   assert(evac.ok, 'should accept vent choice');
 
   const waveMods = { countMult: 1, hpMult: 1, noElites: false, stealReduction: 0 };
-  DynamicMapEvents.applyForWave(14, {
+  DynamicMapEvents.applyForWave(geoWave, {
     worldW: 500,
     rallyY: 720,
     territoryTier: 2,
@@ -1254,10 +1268,10 @@ function testDynamicMapEvents(exp) {
   });
   assert(waveMods.countMult === 0.9, 'vent should reduce enemy spawns');
 
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(32, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('evacuate', { tactical: 10, spendTp: () => {} });
-  const volcano = DynamicMapEvents.applyForWave(32, {
+  const volcano = DynamicMapEvents.applyForWave(volcanoWave, {
     worldW: 500,
     rallyY: 720,
     units: [{ team: 'player', hp: 100, maxHp: 100, morale: 50, maxMorale: 100 }],
@@ -1265,8 +1279,8 @@ function testDynamicMapEvents(exp) {
   });
   assert(volcano?.mods.playerDamageTakenMult === 0.95, 'evacuate should reduce damage taken');
 
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(14, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(geoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('tap', { tactical: 10, spendTp: () => {} });
   assert(
     DynamicMapEvents.getActiveMods().nightBuildMult === 1.35,
@@ -1275,10 +1289,10 @@ function testDynamicMapEvents(exp) {
 
   let tp = 0;
   let science = 0;
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(32, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('harness', { tactical: 10, spendTp: () => {} });
-  DynamicMapEvents.applyForWave(32, {
+  DynamicMapEvents.applyForWave(volcanoWave, {
     grantTp: (n) => {
       tp += n;
     },
@@ -1289,7 +1303,7 @@ function testDynamicMapEvents(exp) {
   });
   assert(tp >= 6 && science >= 2, 'harness should grant TP and science');
 
-  const snap = DynamicMapEvents.getStateSnapshot(32, 20, false);
+  const snap = DynamicMapEvents.getStateSnapshot(volcanoWave, 20, false);
   assert(snap.activeSummary, 'snapshot should expose active summary after apply');
 }
 

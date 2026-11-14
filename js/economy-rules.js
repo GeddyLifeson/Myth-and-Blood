@@ -31,7 +31,11 @@ const EconomyRules = (() => {
       countMult: 0.75,
       hpMult: 1.12,
       speedMult: 1.15,
+      // Half of the foes cut off on the road catch up as a follow-up squad late in the wave.
+      rejoinShare: 0.5,
     },
+    // The raid on a war camp (WarCamps.orderRaid): refused at no cost when no camp stands.
+    'spy:settlement_raid': { cost: 6, cooldown: 2, waveStep: 10 },
     'spy:war_chest': { cost: 4, cooldown: 3 },
     'spy:infiltrate': { cost: 3, softenShare: 0.3, softenHp: 0.6 },
     'spy:sabotage': { cost: 5, delayTicks: 600 },
@@ -183,6 +187,45 @@ const EconomyRules = (() => {
     return cut;
   }
 
+  /**
+   * Disrupt cuts the host on the road; it does not make the stragglers vanish. A share of
+   * the foes it removed are added to the end of the queue and arrive as a second squad.
+   * @returns {number} how many were added
+   */
+  function rejoinSquad(queue, countMult) {
+    const r = ACTIONS['spy:disrupt'];
+    if (!queue || !queue.length || !(countMult > 0) || countMult >= 1) return 0;
+    const cut = Math.round(queue.length * (1 / countMult - 1));
+    const n = Math.max(1, Math.round(cut * r.rejoinShare));
+    const defs = typeof EnemyDefs !== 'undefined' ? EnemyDefs : null;
+    const pool = queue.filter((t) => !(defs && defs[t] && defs[t].isNamedBoss));
+    if (!pool.length) return 0;
+    const step = Math.max(1, Math.floor(pool.length / n));
+    for (let i = 0; i < n; i++) queue.push(pool[(i * step) % pool.length]);
+    return n;
+  }
+
+  /** Text and gates of the camp actions; the shared tables are rebuilt when data reloads. */
+  function patchCampActions() {
+    const spy = typeof SpyActions !== 'undefined' ? SpyActions : null;
+    const raid = spy && spy.settlement_raid;
+    if (raid && !raid.campRaid) {
+      raid.campRaid = true;
+      raid.name = 'Raid the War Camp';
+      raid.baseDesc = null;
+      raid.desc =
+        'Raiders ride for the weakest war camp and strike within seconds (by day: at nightfall). 55% it burns, 35% it loses most of its health, 10% they are driven off. Unless it burns, half the time 2 to 4 more foes follow them into the next wave. Refused at no cost when no camp stands.';
+      delete raid.kingdomStage;
+      raid.waveMin = 5;
+    }
+    const sab = spy && spy.sabotage;
+    if (sab && !sab.campNote) {
+      sab.campNote = true;
+      sab.baseDesc = null;
+      sab.desc = `${sab.desc} A standing war camp (Siege yard first) gives no bonus that wave.`;
+    }
+  }
+
   // ------------------------------------------------------------- buildings
   function liveOwn(b) {
     return !!b && (b.owner || 'player') === 'player' && b.complete !== false && b.hp > 0;
@@ -282,6 +325,7 @@ const EconomyRules = (() => {
   function syncActionDefs(ctx = {}) {
     const spy = typeof SpyActions !== 'undefined' ? SpyActions : null;
     const courier = typeof CourierMessages !== 'undefined' ? CourierMessages : null;
+    patchCampActions();
     for (const key of Object.keys(ACTIONS)) {
       const [kind, id] = key.split(':');
       const table = kind === 'spy' ? spy : courier;
@@ -331,6 +375,8 @@ const EconomyRules = (() => {
     softenCountFor,
     onEnemySpawn,
     stripSiege,
+    rejoinSquad,
+    patchCampActions,
     freeArmyBonus,
     barracksMuster,
     dawnScience,
