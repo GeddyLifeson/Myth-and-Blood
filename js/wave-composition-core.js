@@ -140,7 +140,12 @@ const WaveCompositionCore = (() => {
     const ally = (o.ally || []).filter((e) => e && e.w > 0);
     const maxShare = o.maxAllyShare > 0 ? Math.min(0.9, o.maxAllyShare) : 0.4;
     const share = ally.length ? Math.max(0, Math.min(maxShare, Number(o.allyShare) || 0)) : 0;
-    const allyCount = Math.min(total, Math.round((o.count | 0) * share));
+    let allyCount = Math.round((o.count | 0) * share);
+    // A small host rounds badly: keep the ally between a fifth and three tenths when it can.
+    const lo = Math.ceil((o.count | 0) * 0.2);
+    const hi = Math.floor((o.count | 0) * 0.3);
+    if (share >= 0.2 && share <= 0.3 && lo <= hi) allyCount = Math.max(lo, Math.min(hi, allyCount));
+    allyCount = Math.min(total, allyCount);
     const leadCount = total - allyCount;
     const leadN = apportion(o.lead, leadCount);
     const allyN = apportion(ally, allyCount);

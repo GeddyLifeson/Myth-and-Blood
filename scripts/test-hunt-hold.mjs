@@ -173,6 +173,8 @@ function tent(api, x, y) {
 
   // What walks into his reach, he hits.
   const close = dummy(api, spot.x + 6, spot.y - 16);
+  // Accuracy is a dice roll, and the dice are seeded: take luck out of a test about reach.
+  a.accuracy = 100;
   let struck = false;
   run(Game, 300, () => {
     if (close.hp < close.maxHp) struck = true;

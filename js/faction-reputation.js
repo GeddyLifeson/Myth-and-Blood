@@ -165,7 +165,7 @@ const FactionReputation = (() => {
     const h = addHostility(fid, killGain(unit, wave), wave);
     if (before < GRUDGE_MAX && h >= GRUDGE_MAX) {
       ctx.hooks?.showMessage?.(
-        `${factionName(fid)} swear a blood feud — their avenger will lead a wave against you.`,
+        `${factionName(fid)} swear a blood feud. Their avenger will lead a wave against you.`,
         320
       );
     }
@@ -178,7 +178,7 @@ const FactionReputation = (() => {
     if (!fid) return null;
     const h = addHostility(fid, 20, wave);
     ctx.hooks?.showMessage?.(
-      `${factionName(fid)} will remember the razing — grudge ${h}/100 (${getStance(fid).label}).`,
+      `${factionName(fid)} will remember the razing. Grudge ${h}/100 (${getStance(fid).label}).`,
       280
     );
     return { factionId: fid, hostility: h, gain: 20 };
@@ -202,7 +202,7 @@ const FactionReputation = (() => {
   function onSpyAggression(wave, ctx = {}) {
     if (!isActive(wave)) return;
     for (const fid of getActiveFactionIds(wave)) addHostility(fid, 4, wave);
-    ctx.hooks?.showMessage?.('The host notes your spies — every grudge rises by 4.', 240);
+    ctx.hooks?.showMessage?.('The host notes your spies, and every grudge rises by 4.', 240);
   }
 
   /** A Truce halves the worst grudge and holds off any revenge wave for two waves. */
@@ -216,7 +216,7 @@ const FactionReputation = (() => {
     grudge[primary] = clamp(before / 2);
     for (const fid of active) truceUntil[fid] = wave + 2;
     ctx.hooks?.showMessage?.(
-      `Truce reaches ${factionName(primary)} — grudge ${before} → ${getHostility(primary)}. No revenge wave for two waves.`,
+      `Truce reaches ${factionName(primary)}: grudge ${before} → ${getHostility(primary)}. No revenge wave for two waves.`,
       360
     );
     ctx.hooks?.floatingText?.(ctx.worldW / 2, 88, 'TRUCE', '#80c8a0');
@@ -258,7 +258,7 @@ const FactionReputation = (() => {
     grudge[factionId] = 0;
     avenger = { factionId, wave, name: revenge?.name || 'The Avenger', slain: false };
     ctx.hooks?.showMessage?.(
-      `REVENGE — ${factionName(factionId)} come for blood under ${avenger.name}. Kill the avenger and they will keep away for ${BAR_WAVES} waves.`,
+      `REVENGE: ${factionName(factionId)} come for blood under ${avenger.name}. Kill the avenger and they will keep away for ${BAR_WAVES} waves.`,
       420
     );
   }

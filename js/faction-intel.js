@@ -103,7 +103,7 @@ const FactionIntel = (() => {
     const awake = getAllFactionDefs()
       .filter((f) => (gs.wave || 0) >= f.waveMin)
       .map((f) => f.shortName);
-    return awake.length ? `Awake: ${awake.join(', ')}` : '—';
+    return awake.length ? `Awake: ${awake.join(', ')}` : 'None';
   }
 
   function formatSummary(gs) {
@@ -188,7 +188,7 @@ const FactionIntel = (() => {
   function renderCompactRow(row) {
     const tag = row.status === 'dormant' ? `W${row.waveMin}` : row.leadsTomorrow ? 'next' : '';
     return (
-      `<div class="intel-compact-row intel-compact-${row.status}" title="${row.name} — ${row.tacticName}\n${row.tacticDesc}">` +
+      `<div class="intel-compact-row intel-compact-${row.status}" title="${row.name}: ${row.tacticName}\n${row.tacticDesc}">` +
       `<span class="intel-compact-dot" style="background:${row.color}"></span>` +
       `<span class="intel-compact-name">${row.shortName}</span>` +
       `<span class="intel-compact-stage" style="color:${row.color}">${tag}</span>` +

@@ -766,6 +766,8 @@ const EnemyFactions = (() => {
       label: 'Orc Pack',
       tagline: 'No shield wall and no waiting: the whole warband comes at a run.',
       faction: 'orc_warbands',
+      // An all-orc rush is the heaviest horde; at wave 5 it out-leaks the old horde.
+      from: 8,
       needs: ['orc'],
       mix: [
         { type: 'orc', w: 6 },
@@ -929,8 +931,9 @@ const EnemyFactions = (() => {
     history = [];
     lastHorde = null;
     // Unseeded runs should not all meet the same factions in the same order.
-    // The clock, not Math.random: tests seed that, and drawing from it shifts every later roll.
-    runSalt = Date.now() & 0x7fffffff;
+    // Not Math.random: tests seed it and a draw here shifts every later roll. Headless has no crypto, so 0.
+    const c = globalThis.crypto;
+    runSalt = c?.getRandomValues ? c.getRandomValues(new Uint32Array(1))[0] & 0x7fffffff : 0;
   }
 
   function getEvolutionStageDef(stage) {
@@ -1578,7 +1581,7 @@ const EnemyFactions = (() => {
     if (!d) return '';
     const parts = [];
     let who = `${d.factionName} lead`;
-    if (d.kind === 'boss') who = `${d.factionName} — boss wave`;
+    if (d.kind === 'boss') who = `${d.factionName} boss wave`;
     else if (d.kind === 'horde') who = `${d.horde} (${d.factionName} horde)`;
     else if (d.revenge) who = `${d.factionName} come for revenge under ${d.revenge.name}`;
     parts.push(who);
@@ -1808,7 +1811,7 @@ const EnemyFactions = (() => {
       const tactic = getFactionTactic(f.id);
       addHighlight?.('host', `${f.name} take the field`);
       showMessage?.(
-        `${f.name} have joined the war${tactic ? ` — ${tactic.name}: ${tactic.sign}` : '.'}`,
+        `${f.name} have joined the war${tactic ? `. ${tactic.name}: ${tactic.sign}` : '.'}`,
         400
       );
       floatingText?.(worldW / 2, 72, f.name.toUpperCase(), f.color);
@@ -1842,7 +1845,7 @@ const EnemyFactions = (() => {
     return [
       `${f.name} can lead a wave from wave ${f.waveMin}. When they lead they are about three quarters of the host, with at most one other faction in support.`,
       '',
-      `Tactic — ${tactic.name}: ${tactic.desc}`,
+      `Tactic (${tactic.name}): ${tactic.desc}`,
       `Counter: ${tactic.counter}`,
       `On the field: ${tactic.sign}`,
       '',
@@ -1879,7 +1882,7 @@ const EnemyFactions = (() => {
         body: [
           'A horde is more bodies, weaker each, arriving faster. Each flavour is a different host that plays differently:',
           '',
-          ...HORDES.map((h) => `${h.label} — ${h.tagline} Counter: ${h.counter}`),
+          ...HORDES.map((h) => `${h.label}: ${h.tagline} Counter: ${h.counter}`),
         ].join('\n'),
         campaignWave: 5,
       },
@@ -1900,7 +1903,7 @@ const EnemyFactions = (() => {
       if (!HOSTS[f.id]) continue;
       entries.push({
         cat: 'enemies',
-        name: `${f.name} — ${TACTICS[HOSTS[f.id].tactic].name}`,
+        name: `${f.name}: ${TACTICS[HOSTS[f.id].tactic].name}`,
         body: formatFactionBody(f),
         campaignWave: f.waveMin,
       });

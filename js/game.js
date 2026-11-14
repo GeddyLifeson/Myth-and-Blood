@@ -8478,22 +8478,22 @@ const Game = (() => {
         flavor,
         hasSiege: GS.spawnQueue.includes('siege_tower'),
       };
-      addHighlight('horde', `Horde wave ${GS.wave} — ${flavor.label}`);
-      showMessage(`HORDE WAVE ${GS.wave}! ${flavor.label} — ${flavor.tagline}`, 360);
+      addHighlight('horde', `Horde wave ${GS.wave}: ${flavor.label}`);
+      showMessage(`HORDE WAVE ${GS.wave}! ${flavor.label}. ${flavor.tagline}`, 360);
       const hordeI = GS.currentHordeWave.intensity ?? 0.5;
       const hordeColor = hordeI >= 0.72 ? '#ff4840' : hordeI >= 0.48 ? '#ff8040' : '#ff9040';
       svc('FloatingText').status(GS.worldW / 2, 48, 'HORDE INCOMING', hordeColor);
       svc('FloatingText').status(GS.worldW / 2, 62, flavor.label.toUpperCase(), '#ffc060');
     } else if (isBoss && GS.namedBossWave) {
-      const assassinNote = hp.noElites ? ' (guard assassinated — boss remains)' : '';
+      const assassinNote = hp.noElites ? ' (guard assassinated, boss remains)' : '';
       const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
       const hostNote = lead ? ` · ${lead.name}` : '';
       addHighlight(
         'boss',
-        `Boss wave ${GS.wave} — ${GS.namedBossWave.name} leads the assault${assassinNote}`
+        `Boss wave ${GS.wave}: ${GS.namedBossWave.name} leads the assault${assassinNote}`
       );
       showMessage(
-        `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name} — ${GS.namedBossWave.tagline}${hostNote}${packNote}`,
+        `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name}. ${GS.namedBossWave.tagline}${hostNote}${packNote}`,
         380
       );
       svc('FloatingText').status(GS.worldW / 2, 44, GS.namedBossWave.name.toUpperCase(), '#ffd040');
@@ -8513,8 +8513,8 @@ const Game = (() => {
       }
       playSfx('bossWarn');
     } else if (lead && tactic && GS.wave >= 4) {
-      addHighlight('host', `Wave ${GS.wave} — ${lead.name} lead (${tactic.name})`);
-      showMessage(`${lead.name} lead today — ${tactic.name}. ${tactic.counter}`, 380);
+      addHighlight('host', `Wave ${GS.wave}: ${lead.name} lead (${tactic.name})`);
+      showMessage(`${lead.name} lead today: ${tactic.name}. ${tactic.counter}`, 380);
       svc('FloatingText').status(GS.worldW / 2, 48, lead.name.toUpperCase(), lead.color);
     }
     if (typeof GameFeedback !== 'undefined') {

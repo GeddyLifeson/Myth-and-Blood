@@ -240,8 +240,8 @@ const HostTactics = (() => {
           'ambush',
           ctx,
           rift.style === 'tunnel'
-            ? 'Burrowers are digging up behind your line — watch the tunnel mouth!'
-            : 'Shadows gather behind your line — a rift is opening!',
+            ? 'Burrowers are digging up behind your line. Watch the tunnel mouth!'
+            : 'Shadows gather behind your line. A rift is opening!',
           320
         );
       }
@@ -309,7 +309,7 @@ const HostTactics = (() => {
       u.mustered = true;
       u.speed = u.tacBase * st.dash.speed;
       fire('dash');
-      sayOnce('dash', ctx, 'Riders are breaking down both edges of the field — cover your flanks!');
+      sayOnce('dash', ctx, 'Riders are breaking down both edges of the field. Cover your flanks!');
       return true;
     }
     if (!lead) return false;
@@ -438,7 +438,7 @@ const HostTactics = (() => {
     cx = members.length ? cx / members.length : ctx.worldW / 2;
     if (w.hadHorn && !horn && why !== 'boss') {
       endWall(members);
-      ctx.float?.(cx, w.lineY - 18, 'NO HORN — THE WALL FALTERS', BONE);
+      ctx.float?.(cx, w.lineY - 18, 'NO HORN, THE WALL FALTERS', BONE);
       ctx.showMessage?.(
         'Their War Chief is dead: no horn sounds, and the shield wall breaks up.',
         300
@@ -452,7 +452,7 @@ const HostTactics = (() => {
     ctx.float?.(cx, w.lineY - 18, 'CHARGE!', BLOOD);
     ctx.playSfx?.('bossRoar');
     ctx.shake?.(4);
-    sayOnce('charge', ctx, 'The horn sounds — the shield wall charges!', 260);
+    sayOnce('charge', ctx, 'The horn sounds and the shield wall charges!', 260);
     fire('charge');
   }
 
@@ -472,7 +472,7 @@ const HostTactics = (() => {
         endWall(members);
         ctx.float?.(members[0].x, members[0].y - 18, 'THE WALL IS BROKEN', BONE);
         ctx.showMessage?.(
-          'Every shieldbearer is down — the wall is broken and they come on piecemeal.',
+          'Every shieldbearer is down. The wall is broken and they come on piecemeal.',
           280
         );
         fire('broken');
@@ -504,7 +504,7 @@ const HostTactics = (() => {
     }
     if (w.state === 'forming') {
       w.state = 'advance';
-      sayOnce('wall', ctx, 'A shield wall is forming — arrows will not stop it.', 280);
+      sayOnce('wall', ctx, 'A shield wall is forming. Arrows will not stop it.', 280);
     }
     let front = Infinity;
     for (const p of ctx.units) {
@@ -589,7 +589,7 @@ const HostTactics = (() => {
     sayOnce(
       'burn',
       ctx,
-      'Their fire is leaving burning ground — move your soldiers off the embers.'
+      'Their fire is leaving burning ground. Move your soldiers off the embers.'
     );
     return p;
   }

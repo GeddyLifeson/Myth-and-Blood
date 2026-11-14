@@ -308,7 +308,7 @@ const MonsterBosses = (() => {
     if (!pack) return '';
     const minions = buildMinionList(bossType, evolution).length;
     const evoNote = evolution.label ? `${evolution.label} ` : '';
-    return `${evoNote}${pack.packName} — a guard of ${minions}`;
+    return `${evoNote}${pack.packName}, a guard of ${minions}`;
   }
 
   function prepareBossWave(bossType, wave, baseScale = 1) {

@@ -15,6 +15,9 @@
  * - modifyBuildingDamage / isPlanetSiegeSpecialist — the northern war hooks
  * - getEncyclopediaEntries / auditFairRepresentation — content & balance
  */
+// The run's dice, so a Seed Run plays its combat procs the same way twice.
+const depthRoll = () => (globalThis.GameModes ? globalThis.GameModes.random() : Math.random());
+
 class FactionDepthSystem {
   static FIELD_SOFT_CAP = 14;
 
@@ -1029,7 +1032,7 @@ class FactionDepthSystem {
     if (
       typeof MetaProgress !== 'undefined' &&
       MetaProgress.isTesUnlocked?.() &&
-      Math.random() < 0.08
+      depthRoll() < 0.08
     ) {
       for (const u of units) {
         if (u.team !== 'player' || u.hp <= 0) continue;
@@ -1193,7 +1196,7 @@ class FactionDepthSystem {
       !unit.projectile &&
       target?.maxHp > 0 &&
       target.hp / target.maxHp < 0.4 &&
-      Math.random() < unit.synergyCrit
+      depthRoll() < unit.synergyCrit
     ) {
       d = Math.round(d * 1.5);
     }
@@ -1359,7 +1362,7 @@ class FactionDepthSystem {
         this.procAbilityVfx(unit, 'NONE SHALL PASS', '#c0c0e0');
       },
       ring_bearer() {
-        if (Math.random() < 0.2) return;
+        if (depthRoll() < 0.2) return;
         this.ctx.units
           .filter((a) => a.team === 'player' && this.ctx.unitDistance(unit, a) < 70)
           .forEach((a) => {
@@ -1409,10 +1412,10 @@ class FactionDepthSystem {
         }
       },
       hermit_purple() {
-        if (Math.random() < 0.15) target.lanternBlind = Math.max(target.lanternBlind || 0, 25);
+        if (depthRoll() < 0.15) target.lanternBlind = Math.max(target.lanternBlind || 0, 25);
       },
       bubble_cutter() {
-        if (Math.random() < 0.2) this.ctx.takeDamage(target, Math.round(dmg * 0.6), { crit: true });
+        if (depthRoll() < 0.2) this.ctx.takeDamage(target, Math.round(dmg * 0.6), { crit: true });
       },
       german_science() {
         if (target?.type === 'siege_tower') this.ctx.takeDamage(target, Math.round(dmg * 0.45));
@@ -1549,7 +1552,7 @@ class FactionDepthSystem {
           this.ctx.takeDamage(target, Math.max(dmg * 2, target.hp * 0.6), { crit: true });
       },
       carmine_curse() {
-        if (unit.hp / unit.maxHp < 0.3 && Math.random() < 0.1) unit.hp = Math.max(1, unit.hp - 10);
+        if (unit.hp / unit.maxHp < 0.3 && depthRoll() < 0.1) unit.hp = Math.max(1, unit.hp - 10);
       },
       heavy_lancer() {
         const nearby = this.ctx.units.filter(
@@ -1565,7 +1568,7 @@ class FactionDepthSystem {
       },
       bushido() {
         const stars = this.ctx.getStarCount?.(unit) ?? 0;
-        if (stars >= 3 && Math.random() < 0.25)
+        if (stars >= 3 && depthRoll() < 0.25)
           this.ctx.takeDamage(target, Math.round(dmg * 0.6), { crit: true });
       },
       katana_fury() {
@@ -1731,7 +1734,7 @@ class FactionDepthSystem {
           this.ctx.takeDamage(target, Math.round(dmg * 0.65), { crit: true });
       },
       aether_shot() {
-        if (isEliteEnemy?.(target) && Math.random() < 0.15)
+        if (isEliteEnemy?.(target) && depthRoll() < 0.15)
           this.ctx.takeDamage(target, Math.round(dmg * 0.35));
       },
       warp_fury() {
