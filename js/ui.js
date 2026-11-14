@@ -1806,12 +1806,16 @@ const UI = (() => {
       const ef = gs.enemyFactions;
       const asymHost = gs.asymmetricWarfare;
       if (asymHost || ef?.activeSummary) {
-        const summary = asymHost?.hostSummary || ef.activeSummary;
+        const summary = ef?.leadLine || asymHost?.hostSummary || ef.activeSummary;
         hostEl.textContent = summary.slice(0, 44) + (summary.length > 44 ? '…' : '');
         const tips = (ef?.activeFactions || [])
           .map((f) => {
-            const raid = f.counterRaids ? ' · counter-raids active' : '';
-            return `${f.name} Stage ${f.stage} — ${f.tierLabel} (${f.buildingCount} sites${raid})\n${f.tagline}`;
+            const when = f.leadsTomorrow
+              ? ' (leads tomorrow)'
+              : f.leadsToday
+                ? ' (leads today)'
+                : '';
+            return `${f.name}${when}: ${f.tacticName}\nCounter: ${f.counter}`;
           })
           .join('\n\n');
         const raidNote = ef?.counterRaidFactions?.length
@@ -1855,7 +1859,7 @@ const UI = (() => {
             ? ' host-raiding'
             : '') +
           ((ef?.hostKingdomTotal || 0) >= 40 ? ' host-high' : '');
-        hostEl.title = (hostEl.title || '') + '\n\nClick HOST or 🗺 to open Threat Map.';
+        hostEl.title = (hostEl.title || '') + "\n\nClick HOST for tomorrow's host.";
       } else {
         hostEl.textContent = '—';
         hostEl.title = 'Evolving host — auto-escalates; you build and command to push back';

@@ -1,9 +1,9 @@
 /**
- * Threat Map / Faction Intel — active hostile realms, evolution stages, and pressure.
+ * Host intel: who leads tomorrow's wave and how they fight, and each faction's grudge.
+ * It reads only what the wave builder decided, so everything it says is true.
  */
 const FactionIntel = (() => {
   const WAVE_MIN = 4;
-  const STAGE_LABELS = ['Grunts', 'Elites', 'Forts', 'Kingdom'];
 
   function isPanelOpen() {
     return document.getElementById('faction-intel-panel')?.classList.contains('open');
@@ -25,14 +25,13 @@ const FactionIntel = (() => {
     else openPanel();
   }
 
-  /** Highlight a realm card when opened from planet map intel verb (§6). */
+  /** Highlight a faction's card when opened from elsewhere. */
   function focusFaction(factionId) {
     focusedFactionId = factionId || null;
     openPanel();
     if (typeof Game !== 'undefined' && Game.getState) {
       renderPanel(Game.getState());
     }
-    // Scroll to matching card after render.
     if (typeof document !== 'undefined' && factionId) {
       const card =
         document.querySelector(`[data-faction-intel="${factionId}"]`) ||
@@ -48,186 +47,67 @@ const FactionIntel = (() => {
     return Object.values(EnemyFactions.FACTIONS).sort((a, b) => a.waveMin - b.waveMin);
   }
 
-  function isEliminated(factionId, gs) {
-    return false;
+  /** The night preview's host report: the plan's description plus the lead's grudge. */
+  function hostReport(plan, comp, scouted) {
+    const d = EnemyFactions.describeHost(plan, comp, scouted);
+    if (!d) return null;
+    const rep = typeof FactionReputation !== 'undefined' ? FactionReputation : null;
+    d.grudge = rep ? rep.getHostility(plan.leadId) : 0;
+    d.stance = rep ? rep.getStance(plan.leadId).label : '';
+    return d;
   }
 
+  /** One row per faction for the panel: when it wakes, how it fights, how angry it is. */
   function buildIntelRows(gs) {
     const wave = gs.wave || 0;
-    const activeMap = new Map((gs.enemyFactions?.activeFactions || []).map((f) => [f.id, f]));
-    const conquestMap = new Map([].map((s) => [s.factionId, s]));
-    const counterMap = new Map((gs.counterEvolution?.targets || []).map((t) => [t.factionId, t]));
-    const frontMap = new Map((gs.multiFrontSiege?.assignments || []).map((a) => [a.factionId, a]));
+    const snap = gs.enemyFactions || {};
+    const activeMap = new Map((snap.activeFactions || []).map((f) => [f.id, f]));
     const repMap = new Map((gs.factionReputation?.factions || []).map((f) => [f.factionId, f]));
-
     return getAllFactionDefs().map((def) => {
       const active = activeMap.get(def.id);
-      const eliminated = isEliminated(def.id, gs);
-      const dormant = wave < def.waveMin;
-      const tier = active
-        ? {
-            stage: active.stage,
-            tierLabel: active.tierLabel,
-            tagline: active.tagline,
-            counterRaids: active.counterRaids,
-            buildingCount: active.buildingCount,
-          }
-        : !dormant && !eliminated && typeof EnemyFactions !== 'undefined'
-          ? (() => {
-              const t = EnemyFactions.getFactionTier(def.id, wave);
-              return t
-                ? {
-                    stage: t.stage,
-                    tierLabel: t.stageLabel || t.label,
-                    tagline: t.tagline,
-                    counterRaids: t.counterRaids,
-                    buildingCount: 0,
-                  }
-                : null;
-            })()
-          : null;
-
-      const counter = counterMap.get(def.id);
-      const front = frontMap.get(def.id);
       const rep = repMap.get(def.id);
-      const conquest = conquestMap.get(def.id);
-      const baseStage = tier?.stage || 0;
-      const effectiveStage = counter?.effectiveStage ?? baseStage;
-
-      let status = 'dormant';
-      if (eliminated) status = 'eliminated';
-      else if (dormant) status = 'dormant';
-      else if (active || tier) status = counter?.debuffed ? 'weakened' : 'active';
-
+      const tactic =
+        typeof EnemyFactions !== 'undefined' ? EnemyFactions.getFactionTactic(def.id) : null;
+      const dormant = wave < def.waveMin;
       return {
         id: def.id,
         name: def.name,
         shortName: def.shortName,
         color: def.color,
         waveMin: def.waveMin,
-        status,
-        stage: baseStage,
-        effectiveStage,
-        maxStage: 4,
-        tierLabel: tier?.tierLabel || '—',
-        tagline: tier?.tagline || '',
-        buildingCount: tier?.buildingCount ?? 0,
-        counterRaids: !!tier?.counterRaids,
-        debuffed: !!counter?.debuffed,
-        debuffNote: counter?.debuffNote || '',
-        hostility: rep?.hostility ?? active?.hostility,
-        stanceLabel: rep?.stanceLabel ?? active?.stanceLabel,
-        stanceColor: rep?.stanceColor ?? active?.stanceColor,
-        evolutionOffset: rep?.evolutionOffset ?? active?.evolutionOffset ?? 0,
-        economicFocus: !!(rep?.economicFocus ?? active?.economicFocus),
-        conquestPct: conquest?.playerControl,
-        conquestEliminated: !!conquest?.eliminated,
-        frontLabel: front?.frontLabel || null,
-        doctrineLabel: front?.doctrineLabel || null,
-        multiFrontMode: gs.multiFrontSiege?.mode || null,
+        status: dormant ? 'dormant' : 'active',
+        tacticName: tactic?.name || '',
+        tacticDesc: tactic?.desc || '',
+        counter: tactic?.counter || '',
+        leadsToday: !!active?.leadsToday,
+        leadsTomorrow: !!active?.leadsTomorrow,
+        hostility: rep?.hostility ?? active?.hostility ?? 0,
+        stanceLabel: rep?.stanceLabel ?? active?.stanceLabel ?? '',
+        stanceColor: rep?.stanceColor ?? active?.stanceColor ?? '',
       };
     });
   }
 
-  function formatSummary(gs) {
-    const rows = buildIntelRows(gs);
-    const active = rows.filter((r) => r.status === 'active' || r.status === 'weakened');
-    if (!active.length) {
-      const next = rows.find((r) => r.status === 'dormant');
-      return next
-        ? `Host dormant — ${next.shortName} at wave ${next.waveMin}`
-        : 'No hostile factions';
+  function leaderLine(gs) {
+    const host = gs.nextHost;
+    if (host) {
+      const ally = host.allyName ? `, ${host.allyName} in support` : '';
+      return `Tomorrow: ${host.factionName} lead${ally} · ${host.countText} foes`;
     }
-    const peak = active.reduce((best, r) => (!best || r.stage > best.stage ? r : best), null);
-    const weakened = active.filter((r) => r.debuffed).length;
-    const raids = active.filter((r) => r.counterRaids).map((r) => r.shortName);
-    let s = active
-      .map((r) => `${r.shortName} S${r.debuffed ? r.effectiveStage : r.stage}`)
-      .join(' · ');
-    if (weakened) s += ` · ${weakened} weakened`;
-    if (raids.length) s += ` · Raids: ${raids.join(', ')}`;
-    if (peak?.stage >= 4) s = `Kingdom host — ${s}`;
-    return s;
+    const today = gs.enemyFactions?.leadToday;
+    const def =
+      today && typeof EnemyFactions !== 'undefined'
+        ? EnemyFactions.getFactionDef(today.leadId)
+        : null;
+    if (def) return `Today: ${def.name} lead`;
+    const awake = getAllFactionDefs()
+      .filter((f) => (gs.wave || 0) >= f.waveMin)
+      .map((f) => f.shortName);
+    return awake.length ? `Awake: ${awake.join(', ')}` : 'None';
   }
 
-  function drawThreatMap(canvas, rows, gs) {
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    const w = canvas.width;
-    const h = canvas.height;
-    ctx.clearRect(0, 0, w, h);
-
-    const visible = rows.filter((r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 8);
-    const cols = Math.max(1, visible.length);
-    const colW = w / cols;
-    const mapTop = 18;
-    const mapH = h - 36;
-
-    ctx.font = '8px Cinzel';
-    ctx.textAlign = 'center';
-    ctx.fillStyle = 'rgba(200, 160, 120, 0.7)';
-    ctx.fillText('— NORTH / HOST SECTORS —', w / 2, 10);
-
-    for (let i = 0; i < visible.length; i++) {
-      const row = visible[i];
-      const cx = colW * i + colW / 2;
-      const x0 = colW * i + 4;
-      const barW = colW - 8;
-
-      ctx.fillStyle = 'rgba(20, 14, 10, 0.85)';
-      ctx.fillRect(x0, mapTop, barW, mapH);
-      ctx.strokeStyle =
-        row.status === 'eliminated'
-          ? 'rgba(120, 255, 160, 0.5)'
-          : hexToRgba(row.color, row.status === 'dormant' ? 0.25 : 0.55);
-      ctx.lineWidth = row.counterRaids ? 2 : 1;
-      ctx.strokeRect(x0, mapTop, barW, mapH);
-
-      const stage = row.status === 'eliminated' ? 4 : row.debuffed ? row.effectiveStage : row.stage;
-      const segH = mapH / 4;
-      for (let s = 0; s < 4; s++) {
-        const sy = mapTop + mapH - (s + 1) * segH;
-        const filled = s < stage;
-        ctx.fillStyle = filled
-          ? hexToRgba(row.color, row.status === 'dormant' ? 0.2 : 0.55 + s * 0.08)
-          : 'rgba(30, 24, 18, 0.6)';
-        ctx.fillRect(x0 + 2, sy + 1, barW - 4, segH - 2);
-        if (filled && s === 3 && row.counterRaids) {
-          ctx.fillStyle = 'rgba(255, 80, 60, 0.35)';
-          ctx.fillRect(x0 + 2, sy + 1, barW - 4, segH - 2);
-        }
-      }
-
-      if (row.status === 'eliminated') {
-        ctx.strokeStyle = 'rgba(120, 255, 160, 0.8)';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(x0 + 6, mapTop + 8);
-        ctx.lineTo(x0 + barW - 6, mapTop + mapH - 8);
-        ctx.moveTo(x0 + barW - 6, mapTop + 8);
-        ctx.lineTo(x0 + 6, mapTop + mapH - 8);
-        ctx.stroke();
-      }
-
-      ctx.font = '7px Cinzel';
-      ctx.fillStyle =
-        row.status === 'dormant' ? 'rgba(120, 110, 100, 0.8)' : 'rgba(255, 230, 200, 0.9)';
-      const stageText =
-        row.status === 'dormant'
-          ? `W${row.waveMin}`
-          : row.status === 'eliminated'
-            ? 'FALLEN'
-            : row.debuffed
-              ? `S${row.effectiveStage}/${row.stage}`
-              : `S${row.stage}`;
-      ctx.fillText(stageText, cx, mapTop + mapH + 10);
-
-      ctx.font = '6px Cinzel';
-      ctx.fillStyle = hexToRgba(row.color, 0.95);
-      const label = row.shortName.slice(0, 6).toUpperCase();
-      ctx.fillText(label, cx, h - 4);
-    }
+  function formatSummary(gs) {
+    return leaderLine(gs);
   }
 
   function hexToRgba(hex, alpha = 1) {
@@ -244,132 +124,121 @@ const FactionIntel = (() => {
     return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
   }
 
-  function renderStageBar(stage, effectiveStage, debuffed, color) {
-    const s = debuffed ? effectiveStage : stage;
-    const cells = [];
-    for (let i = 1; i <= 4; i++) {
-      const on = i <= s;
-      const peak = i <= stage && debuffed && i > effectiveStage;
-      cells.push(
-        `<span class="intel-stage-cell${on ? ' on' : ''}${peak ? ' peak' : ''}"` +
-          ` style="${on ? `background:${color}88;border-color:${color}` : ''}"` +
-          ` title="${STAGE_LABELS[i - 1] || `Stage ${i}`}"></span>`
-      );
-    }
-    return `<div class="intel-stage-bar">${cells.join('')}</div>`;
+  /** One bar per faction: how full its grudge is. A full bar means it leads a revenge wave. */
+  function drawGrudges(canvas, rows) {
+    const ctx = canvas?.getContext?.('2d');
+    if (!ctx) return;
+    const w = canvas.width;
+    const h = canvas.height;
+    ctx.clearRect(0, 0, w, h);
+    const shown = rows.filter((r) => r.status !== 'dormant');
+    const cols = Math.max(1, shown.length);
+    const colW = w / cols;
+    ctx.font = '8px Cinzel';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(200, 160, 120, 0.7)';
+    ctx.fillText('GRUDGES', w / 2, 10);
+    const top = 18;
+    const barH = h - 36;
+    shown.forEach((row, i) => {
+      const x0 = colW * i + 4;
+      const barW = colW - 8;
+      ctx.fillStyle = 'rgba(20, 14, 10, 0.85)';
+      ctx.fillRect(x0, top, barW, barH);
+      const fill = (Math.max(0, Math.min(100, row.hostility)) / 100) * barH;
+      ctx.fillStyle = hexToRgba(row.color, 0.7);
+      ctx.fillRect(x0, top + barH - fill, barW, fill);
+      ctx.strokeStyle = hexToRgba(row.color, row.leadsTomorrow ? 1 : 0.5);
+      ctx.lineWidth = row.leadsTomorrow ? 2 : 1;
+      ctx.strokeRect(x0, top, barW, barH);
+      ctx.font = '7px Cinzel';
+      ctx.fillStyle = 'rgba(255, 230, 200, 0.9)';
+      ctx.fillText(String(row.hostility), colW * i + colW / 2, top + barH + 10);
+      ctx.font = '6px Cinzel';
+      ctx.fillStyle = hexToRgba(row.color, 0.95);
+      ctx.fillText(row.shortName.slice(0, 6).toUpperCase(), colW * i + colW / 2, h - 4);
+    });
   }
 
   function renderFactionCard(row) {
-    const fid = row.factionId || row.id;
-    const focused = fid && fid === focusedFactionId;
-    const statusClass = `intel-card-${row.status}${focused ? ' intel-focused' : ''}`;
+    const focused = row.id && row.id === focusedFactionId;
     const badges = [];
-    if (row.debuffed) badges.push('<span class="intel-badge intel-badge-weak">WEAKENED</span>');
-    if (row.counterRaids)
-      badges.push('<span class="intel-badge intel-badge-raid">COUNTER-RAIDS</span>');
-    if (row.economicFocus)
-      badges.push('<span class="intel-badge intel-badge-eco">ECO FOCUS</span>');
-    if (row.status === 'eliminated')
-      badges.push('<span class="intel-badge intel-badge-fallen">ELIMINATED</span>');
-    if (row.conquestPct != null && row.status !== 'eliminated') {
-      badges.push(`<span class="intel-badge intel-badge-conquest">${row.conquestPct}% SEC</span>`);
-    }
-
-    const meta = [];
-    if (row.status === 'dormant') {
-      meta.push(`Awakens wave ${row.waveMin}`);
-    } else if (row.status !== 'eliminated') {
-      if (row.buildingCount)
-        meta.push(`${row.buildingCount} northern site${row.buildingCount > 1 ? 's' : ''}`);
-      if (row.stanceLabel) {
-        meta.push(
-          `<span style="color:${row.stanceColor || '#c0a060'}">${row.stanceLabel}` +
-            `${row.hostility != null ? ` (${row.hostility})` : ''}</span>`
-        );
-      }
-      if (row.evolutionOffset) {
-        meta.push(`evo ${row.evolutionOffset > 0 ? '+' : ''}${row.evolutionOffset}`);
-      }
-      if (row.frontLabel) meta.push(`Front: ${row.frontLabel}`);
-      if (row.doctrineLabel) meta.push(row.doctrineLabel);
-    }
-
-    const stageTitle =
+    if (row.leadsTomorrow)
+      badges.push('<span class="intel-badge intel-badge-raid">TOMORROW</span>');
+    else if (row.leadsToday) badges.push('<span class="intel-badge intel-badge-raid">TODAY</span>');
+    const meta =
       row.status === 'dormant'
-        ? 'Not yet active'
-        : row.debuffed
-          ? `Effective Stage ${row.effectiveStage} (was ${row.stage}) — ${row.tierLabel}`
-          : `Stage ${row.stage} — ${row.tierLabel}`;
-
+        ? `Wakes at wave ${row.waveMin}`
+        : `<span style="color:${row.stanceColor || '#c0a060'}">${row.stanceLabel} (grudge ${row.hostility})</span>`;
     return (
-      `<div class="intel-faction-card ${statusClass}" data-faction-intel="${fid || ''}" style="border-left-color:${row.color}">` +
+      `<div class="intel-faction-card intel-card-${row.status}${focused ? ' intel-focused' : ''}" data-faction-intel="${row.id}" style="border-left-color:${row.color}">` +
       `<div class="intel-card-head">` +
       `<span class="intel-faction-name">${row.name}</span>` +
-      `<span class="intel-faction-stage" style="color:${row.color}">${stageTitle}</span>` +
+      `<span class="intel-faction-stage" style="color:${row.color}">${row.tacticName}</span>` +
       `</div>` +
-      (row.status !== 'dormant' && row.status !== 'eliminated'
-        ? renderStageBar(row.stage, row.effectiveStage, row.debuffed, row.color)
-        : '') +
       (badges.length ? `<div class="intel-badges">${badges.join('')}</div>` : '') +
-      (row.tagline && row.status !== 'dormant'
-        ? `<p class="intel-tagline">${row.tagline}</p>`
+      (row.status !== 'dormant' && row.counter
+        ? `<p class="intel-tagline">Counter: ${row.counter}</p>`
         : '') +
-      (meta.length ? `<p class="intel-meta">${meta.join(' · ')}</p>` : '') +
+      `<p class="intel-meta">${meta}</p>` +
       `</div>`
     );
   }
 
   function renderCompactRow(row) {
-    const stage = row.debuffed ? row.effectiveStage : row.stage;
-    const cls = `intel-compact-row intel-compact-${row.status}`;
-    const extra = row.counterRaids ? ' ⚔' : row.debuffed ? ' ↓' : '';
-    const dorm = row.status === 'dormant' ? `W${row.waveMin}` : `S${stage}${extra}`;
+    const tag = row.status === 'dormant' ? `W${row.waveMin}` : row.leadsTomorrow ? 'next' : '';
     return (
-      `<div class="${cls}" title="${row.name} — ${row.tierLabel}\n${row.tagline || ''}">` +
+      `<div class="intel-compact-row intel-compact-${row.status}" title="${row.name}: ${row.tacticName}\n${row.tacticDesc}">` +
       `<span class="intel-compact-dot" style="background:${row.color}"></span>` +
       `<span class="intel-compact-name">${row.shortName}</span>` +
-      `<span class="intel-compact-stage" style="color:${row.color}">${dorm}</span>` +
+      `<span class="intel-compact-stage" style="color:${row.color}">${tag}</span>` +
       `</div>`
     );
   }
 
+  /** Tactic, silhouette and counter for tomorrow's host, or what is known of today's. */
+  function hostDetail(gs) {
+    const host = gs.nextHost;
+    if (!host) {
+      return 'The host is picked at nightfall. Build a Watchtower or buy a Scout Report to learn its tactic and head count.';
+    }
+    const how = host.scouted
+      ? `${host.tacticName}: ${host.tacticDesc}`
+      : `Unscouted: ${host.silhouette}. A Watchtower or a Scout Report names the tactic.`;
+    return host.counter ? `${how} Counter: ${host.counter}` : how;
+  }
+
+  function makeupLine(gs) {
+    const host = gs.nextHost;
+    if (host && host.scouted && host.makeup.length) {
+      return host.makeup.map((m) => `${m.n} ${m.name}`).join(', ');
+    }
+    return host ? 'Exact head count by kind needs a Watchtower or a Scout Report.' : '';
+  }
+
   function renderPanel(gs) {
     const rows = buildIntelRows(gs);
-    const summary = formatSummary(gs);
-    const hostLevel = gs.asymmetricWarfare?.hostThreatLevel;
-    const hostLabel = gs.asymmetricWarfare?.hostLevelLabel;
-    const roster = gs.enemyFactions?.rosterIntel || gs.nextWaveIntel || '';
-
-    const summaryEl = document.getElementById('faction-intel-summary');
+    const summary = leaderLine(gs);
+    const set = (id, text) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = text;
+    };
+    set('faction-intel-summary', summary);
+    set('faction-intel-host', hostDetail(gs));
+    set('faction-intel-roster', makeupLine(gs));
     const listEl = document.getElementById('faction-intel-list');
-    const mapCanvas = document.getElementById('faction-intel-map');
-    const hostEl = document.getElementById('faction-intel-host');
-    const rosterEl = document.getElementById('faction-intel-roster');
-    const compactSummary = document.getElementById('faction-intel-compact-summary');
-    const compactList = document.getElementById('faction-intel-compact-list');
+    if (listEl) listEl.innerHTML = rows.map(renderFactionCard).join('');
+    drawGrudges(document.getElementById('faction-intel-map'), rows);
 
-    if (summaryEl) summaryEl.textContent = summary;
-    if (hostEl) {
-      hostEl.textContent = hostLevel
-        ? `Host Threat Lv${hostLevel} — ${hostLabel || 'Evolving'}`
-        : 'Host threat escalates as factions evolve and build in the north.';
-    }
-    if (rosterEl)
-      rosterEl.textContent = roster || 'Roster reveals at dawn or via Scout/Infiltrate.';
-    if (listEl) {
-      listEl.innerHTML = rows.map(renderFactionCard).join('');
-    }
-    if (mapCanvas) drawThreatMap(mapCanvas, rows, gs);
-
-    const showCompact = (gs.wave || 0) >= WAVE_MIN || rows.some((r) => r.status !== 'dormant');
     const section = document.getElementById('faction-intel-section');
-    if (section) section.style.display = showCompact ? '' : 'none';
-    if (compactSummary) compactSummary.textContent = summary;
+    if (section) section.style.display = (gs.wave || 0) >= WAVE_MIN ? '' : 'none';
+    set('faction-intel-compact-summary', summary);
+    const compactList = document.getElementById('faction-intel-compact-list');
     if (compactList) {
-      const compactRows = rows.filter(
-        (r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 6
-      );
-      compactList.innerHTML = compactRows.map(renderCompactRow).join('');
+      compactList.innerHTML = rows
+        .filter((r) => r.status !== 'dormant' || (gs.wave || 0) >= r.waveMin - 6)
+        .map(renderCompactRow)
+        .join('');
     }
   }
 
@@ -378,17 +247,29 @@ const FactionIntel = (() => {
     return {
       active: (gs.wave || 0) >= WAVE_MIN,
       waveMin: WAVE_MIN,
-      summary: formatSummary(gs),
+      summary: leaderLine(gs),
       factions: rows,
-      activeCount: rows.filter((r) => r.status === 'active' || r.status === 'weakened').length,
-      peakStage: rows.reduce((m, r) => Math.max(m, r.stage || 0), 0),
-      kingdomHostCount: rows.filter(
-        (r) => r.stage >= 4 && r.status !== 'dormant' && r.status !== 'eliminated'
-      ).length,
+      activeCount: rows.filter((r) => r.status === 'active').length,
     };
   }
 
+  /** The panel's fixed labels live in index.html; this renames them to what the panel now shows. */
+  function relabel() {
+    const text = (sel, value) => {
+      const el = document.querySelector(sel);
+      if (el) el.textContent = value;
+    };
+    text('.faction-intel-title', "TOMORROW'S HOST");
+    text(
+      '.faction-intel-map-legend',
+      'Bars show each faction’s grudge. A full bar means it leads a revenge wave.'
+    );
+    text('#faction-intel-section .panel-header', 'TOMORROW');
+    text('#faction-intel-open-btn', 'HOST DETAILS');
+  }
+
   function init() {
+    relabel();
     document.getElementById('faction-intel-btn')?.addEventListener('click', () => {
       togglePanel();
       if (isPanelOpen() && typeof Game !== 'undefined') {
@@ -420,6 +301,7 @@ const FactionIntel = (() => {
     focusFaction,
     buildIntelRows,
     formatSummary,
+    hostReport,
     renderPanel,
     getStateSnapshot,
   };

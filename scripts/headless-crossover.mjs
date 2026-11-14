@@ -794,8 +794,8 @@ function testEnemyFactions(exp) {
   const queue = ['goblin', 'goblin', 'orc', 'orc'];
   const withBoss = EnemyFactions.injectSubBosses(queue, 15, () => 0);
   assert(
-    withBoss.includes('boss_gorath') || withBoss.includes('boss_thokk'),
-    'injectSubBosses should add orc sub-boss at wave 15'
+    withBoss.length === queue.length && !withBoss.some((t) => t.startsWith('boss_')),
+    'named bosses stay out of ordinary waves'
   );
   const buildings = [
     {
@@ -1177,7 +1177,7 @@ function testFactionReputation(exp) {
     10,
     {}
   );
-  assert(FactionReputation.getHostility('goblin_hordes') > 22, 'kills should raise hostility');
+  assert(FactionReputation.getHostility('goblin_hordes') > 0, 'kills should raise the grudge');
 
   FactionReputation.onEnemyStructureDestroyed(
     {
@@ -1189,7 +1189,7 @@ function testFactionReputation(exp) {
     { hooks: {} }
   );
   const hAfterRaze = FactionReputation.getHostility('goblin_hordes');
-  assert(hAfterRaze >= 30, 'razing should spike hostility');
+  assert(hAfterRaze >= 20, 'razing should spike the grudge');
 
   const offsetHigh = FactionReputation.getEvolutionWaveOffset('goblin_hordes');
   assert(offsetHigh >= 0, 'high hostility should not delay evolution');
@@ -1204,8 +1204,8 @@ function testFactionReputation(exp) {
   FactionReputation.reduceHostility('orc_warbands', 10, 20);
   const lowMods = FactionReputation.getFactionModifiers('orc_warbands', 20);
   assert(
-    lowMods.economicFocus || lowMods.buildingIntervalMult < 1,
-    'low hostility should favor economy'
+    !lowMods.economicFocus && lowMods.spawnMult === 1 && lowMods.eliteChanceMult === 1,
+    'a grudge has no hidden effect on spawns'
   );
 
   FactionReputation.resetRun();
@@ -1213,8 +1213,8 @@ function testFactionReputation(exp) {
   FactionReputation.addHostility('orc_warbands', 58, 14);
   const tierBoosted = EnemyFactions.getFactionTier('orc_warbands', 14);
   assert(
-    (tierBoosted?.stage || 0) > (tierBase?.stage || 0),
-    'hostility should pull evolution forward'
+    (tierBoosted?.stage || 0) === (tierBase?.stage || 0),
+    'a grudge does not move a faction up its tiers'
   );
 
   const snap = FactionReputation.getStateSnapshot(20);
@@ -1524,9 +1524,15 @@ function testFactionIntel(exp) {
   const active = rows.filter((r) => r.status === 'active' || r.status === 'weakened');
   assert(active.length >= 2, 'wave 20 should have multiple active factions');
   const goblin = rows.find((r) => r.id === 'goblin_hordes');
-  assert(goblin && goblin.stage >= 1, 'goblin should have evolution stage');
+  assert(goblin && goblin.tacticName === 'Swarm and Sappers', 'goblin should name its tactic');
+  assert(goblin.counter.length > 10, 'goblin should give a counter');
   const summary = FactionIntel.formatSummary(gs);
-  assert(summary.includes('S'), 'summary should mention stages');
+  assert(summary.includes('Goblin'), 'summary should name the factions that are awake');
+  const night = { ...gs, nextHost: { factionName: 'Orc Warbands', countText: 'about 40' } };
+  assert(
+    FactionIntel.formatSummary(night).includes('Tomorrow: Orc Warbands lead'),
+    'summary should name the lead for tomorrow'
+  );
   const snap = FactionIntel.getStateSnapshot(gs);
   assert(snap.activeCount >= 2, 'snapshot should count active factions');
 }
@@ -1800,23 +1806,18 @@ function testEnemyFactionEncyclopedia(EnemyFactions) {
   }
   const entries = EnemyFactions.getEncyclopediaEntries();
   assert(
-    entries.length >= 23,
-    'faction encyclopedia should have overviews + tracks + 20 stage pages'
+    entries.length >= 9,
+    'faction encyclopedia should have the overview, hordes, grudges and one page per host'
   );
-  const overview = entries.find((e) => e.name === 'Enemy Faction Evolution System');
-  assert(overview?.body?.includes('Stage 4 Kingdom'), 'overview should describe kingdom stage');
-  const goblinS2 = entries.find((e) => e.name === 'Goblin Hordes — Stage 2: Organized');
-  assert(
-    goblinS2?.body?.includes('goblin_sapper') || goblinS2?.body?.includes('Sapper'),
-    'goblin stage 2 should list sappers'
-  );
-  assert(goblinS2?.campaignWave === 8, 'goblin stage 2 should gate at wave 8');
-  const darkS4 = entries.find(
-    (e) => e.name?.includes('Dark Legions') && e.name?.includes('Stage 4')
-  );
-  assert(darkS4?.body?.includes('Counter-raids: ACTIVE'), 'dark stage 4 should flag counter-raids');
-  const mirror = entries.find((e) => e.name === 'Mirror Empires — Evolution Track');
-  assert(mirror?.body?.includes('Wave 200'), 'mirror track should cite debut wave');
+  const overview = entries.find((e) => e.name === 'Enemy Factions');
+  assert(overview?.body?.includes('One faction leads each wave'), 'overview should say who leads');
+  const goblin = entries.find((e) => e.name?.startsWith('Goblin Hordes'));
+  assert(goblin?.body?.includes('Sapper'), 'goblin page should list sappers');
+  assert(goblin?.campaignWave === 1, 'goblin page should open at wave 1');
+  const dark = entries.find((e) => e.name?.startsWith('Dark Legions'));
+  assert(dark?.body?.includes('Counter:'), 'dark legions page should give the counter');
+  const mirror = entries.find((e) => e.name?.startsWith('Mirror Empires'));
+  assert(mirror?.campaignWave === 200, 'mirror page should cite its debut wave');
 }
 
 function testColonyValueEncyclopedia(ColonyValue) {

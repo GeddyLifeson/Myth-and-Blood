@@ -64,6 +64,7 @@ export const HEADLESS_FILES = [
   'strategy-counterplay.js',
   'faction-reputation.js',
   'enemy-factions.js',
+  'host-tactics.js',
   // Macro layers removed (GS, IG, planet map, layer-design, hybrid-moments…)
   'foundational-medieval-layer.js',
   'eternal-path-framework.js',
