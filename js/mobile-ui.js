@@ -10,7 +10,8 @@
  */
 const MobileUI = (() => {
   /** Must match the media query that wraps every rule in css/mobile.css. */
-  const QUERY = '(max-width: 820px), (max-height: 520px), (pointer: coarse) and (max-width: 1100px)';
+  const QUERY =
+    '(max-width: 820px), (max-height: 520px), (pointer: coarse) and (max-width: 1100px)';
   /** Short landscape: the strip and the bar move to the sides, the field keeps the height. */
   const SHORT_QUERY = '(max-height: 520px) and (orientation: landscape)';
   const SYNC_MS = 200;
@@ -94,11 +95,8 @@ const MobileUI = (() => {
     els.hold = button('m-hold', 'HOLD', 'Hold: the selection, or everyone, stays put', () =>
       forward('hold-here')
     );
-    els.select = button(
-      'm-select',
-      'SELECT',
-      'Drag a box on the field to select soldiers',
-      () => setSelectMode(!selectMode)
+    els.select = button('m-select', 'SELECT', 'Drag a box on the field to select soldiers', () =>
+      setSelectMode(!selectMode)
     );
     els.select.setAttribute('aria-pressed', 'false');
     els.opsBtn = button('m-open-right', 'OPS', 'Spies, couriers and intel', () =>
