@@ -128,13 +128,19 @@ const GameModes = (() => {
   }
 
   function mulberry32(a) {
-    return function next() {
+    function next() {
       a |= 0;
       a = (a + 0x6d2b79f5) | 0;
       let t = Math.imul(a ^ (a >>> 15), 1 | a);
       t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
       return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    }
+    // Position in the stream, so a save can carry on where a seeded run left off.
+    next.getState = () => a | 0;
+    next.setState = (v) => {
+      a = v | 0;
     };
+    return next;
   }
 
   function createRng(seed) {
@@ -145,6 +151,17 @@ const GameModes = (() => {
   function random() {
     if (rng) return rng();
     return Math.random();
+  }
+
+  /** Seeded stream position for saves; null when the run is not seeded. */
+  function getRngState() {
+    return rng && rng.getState ? rng.getState() : null;
+  }
+
+  function setRngState(state) {
+    if (!rng || !rng.setState || !Number.isInteger(state)) return false;
+    rng.setState(state);
+    return true;
   }
 
   function todayKey() {
@@ -802,6 +819,8 @@ const GameModes = (() => {
     recordResult,
     getScalingAdvice,
     random,
+    getRngState,
+    setRngState,
     createRng,
     setMenuMode,
     getMenu,

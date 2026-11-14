@@ -360,6 +360,22 @@ const FactionReputation = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('FactionReputation', {
+      save: () => ({ hostility, engagedThisWave, truceUntil, announced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.hostility && typeof data.hostility === 'object') hostility = data.hostility;
+        if (data.engagedThisWave && typeof data.engagedThisWave === 'object')
+          engagedThisWave = data.engagedThisWave;
+        if (data.truceUntil && typeof data.truceUntil === 'object') truceUntil = data.truceUntil;
+        announced = !!data.announced;
+      },
+    });
+  }
+
   return {
     WAVE_MIN,
     STANCES,

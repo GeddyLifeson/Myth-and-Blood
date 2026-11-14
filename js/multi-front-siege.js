@@ -318,6 +318,19 @@ const MultiFrontSiege = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('MultiFrontSiege', {
+      save: () => ({ currentPlan, announcedMultiFront }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        currentPlan = data.currentPlan ?? null;
+        announcedMultiFront = !!data.announcedMultiFront;
+      },
+    });
+  }
+
   return {
     MULTI_FRONT_MIN_WAVE,
     FRONT_LABELS,

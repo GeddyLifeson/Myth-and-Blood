@@ -527,6 +527,21 @@ const NeutralWildlife = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('NeutralWildlife', {
+      save: () => ({ activeEvent, waveDeaths, carrionTriggered, announced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        activeEvent = data.activeEvent ?? null;
+        if (Number.isFinite(data.waveDeaths)) waveDeaths = data.waveDeaths;
+        carrionTriggered = !!data.carrionTriggered;
+        announced = !!data.announced;
+      },
+    });
+  }
+
   return {
     WAVE_MIN,
     EVENTS,

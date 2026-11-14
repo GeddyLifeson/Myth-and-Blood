@@ -420,6 +420,18 @@ const FoundationalMedievalLayer = (() => {
 
   load();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('FoundationalMedievalLayer', {
+      save: () => ({ run }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.run && typeof data.run === 'object') run = { ...run, ...data.run };
+      },
+    });
+  }
+
   return {
     PATHS,
     resetRun,

@@ -250,12 +250,13 @@ function tent(api, x, y) {
   GS.paused = false;
   const b = GS.units.find((u) => u.id === id);
   clearFoes(GS);
-  ok(b.huntMode && !b.manualOrder, 'after the load he is hunting, not stuck with hunt off');
+  ok(b.manualOrder && !b.huntMode, 'after the load he is still on his order, as saved');
   run(Game, 700);
   ok(
     dist(b, dest) < 24,
     `and walks on to the post he was sent to (${Math.round(dist(b, dest))} away)`
   );
+  ok(b.huntMode && !b.manualOrder, 'there he hunts, not stuck with hunt off');
 
   // Rout and rally.
   b.demoralized = true;

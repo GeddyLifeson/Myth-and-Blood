@@ -384,6 +384,18 @@ const LivingPlanet = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('LivingPlanet', {
+      save: () => ({ announced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.announced && typeof data.announced === 'object') announced = data.announced;
+      },
+    });
+  }
+
   return {
     FOREST_UNLOCK_TIER,
     HELLSCAPE_WAVE,

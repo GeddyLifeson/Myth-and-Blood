@@ -534,6 +534,21 @@ const MonsterBosses = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('MonsterBosses', {
+      save: () => ({ appearances, kills, currentWavePack }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.appearances && typeof data.appearances === 'object')
+          appearances = data.appearances;
+        if (data.kills && typeof data.kills === 'object') kills = data.kills;
+        currentWavePack = data.currentWavePack ?? null;
+      },
+    });
+  }
+
   return {
     BOSS_PACKS,
     resetRun,

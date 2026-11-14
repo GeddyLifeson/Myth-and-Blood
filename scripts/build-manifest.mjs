@@ -13,6 +13,7 @@ export const GAME_SCRIPTS = [
   // scripts/check-manifest-sync.mjs enforces this.
   'touch-input.js',
   'html-util.js',
+  'save-registry.js',
   'dialog.js',
   'hotkeys.js',
   'floatingText.js',

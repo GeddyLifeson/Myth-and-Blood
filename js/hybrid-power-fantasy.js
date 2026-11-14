@@ -350,6 +350,19 @@ const HybridPowerFantasy = (() => {
 
   resetRun();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('HybridPowerFantasy', {
+      save: () => ({ state, apexAnnounced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+        apexAnnounced = !!data.apexAnnounced;
+      },
+    });
+  }
+
   return {
     KINGDOM_WAVE,
     GALACTIC_WAVE,

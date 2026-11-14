@@ -497,6 +497,20 @@ const ThematicEraSynergies = (() => {
 
   resetRun();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('ThematicEraSynergies', {
+      save: () => ({ state, kingdomAnnounced, galacticAnnounced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+        kingdomAnnounced = !!data.kingdomAnnounced;
+        galacticAnnounced = !!data.galacticAnnounced;
+      },
+    });
+  }
+
   return {
     ECHO_DEFS,
     KINGDOM_WAVE,
