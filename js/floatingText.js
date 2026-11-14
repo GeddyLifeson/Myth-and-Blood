@@ -33,6 +33,7 @@ const FloatingText = (() => {
 
   // A Sapper's blast: every wound it deals in one tick is collected here.
   let blast = null;
+  let summing = false;
 
   function setBudget(unitsOnField, qualityMult = 1, spriteLod = 0) {
     const base = unitsOnField > 80 ? 40 : unitsOnField > 50 ? 64 : 96;
@@ -173,7 +174,7 @@ const FloatingText = (() => {
     const py = Number(y);
     if (!Number.isFinite(px) || !Number.isFinite(py)) return;
 
-    if (opts && opts.demolition) {
+    if ((opts && opts.demolition) || summing) {
       if (!blast) blast = { sum: 0, n: 0, x: 0, y: 0 };
       blast.sum += shown;
       blast.n++;
@@ -370,6 +371,16 @@ const FloatingText = (() => {
   return {
     add,
     damage,
+    /** Run `fn` with every wound it deals folded into one number for the blast. */
+    summed(fn) {
+      const was = summing;
+      summing = true;
+      try {
+        return fn();
+      } finally {
+        summing = was;
+      }
+    },
     heal,
     miss,
     status,

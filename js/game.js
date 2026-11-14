@@ -13698,14 +13698,20 @@ const Game = (() => {
 
   function damageInRadius(x, y, radius, damage, team, opts = {}) {
     const radius2 = radius * radius;
-    for (const u of GS.units) {
-      if (u.team === team || u.hp <= 0) continue;
-      const d2 = posDistSq(u.x, u.y, x, y);
-      if (d2 < radius2) {
-        const dist = Math.sqrt(d2);
-        takeDamage(u, damage * (1 - (dist / radius) * 0.5), opts);
+    const hurtAll = () => {
+      for (const u of GS.units) {
+        if (u.team === team || u.hp <= 0) continue;
+        const d2 = posDistSq(u.x, u.y, x, y);
+        if (d2 < radius2) {
+          const dist = Math.sqrt(d2);
+          takeDamage(u, damage * (1 - (dist / radius) * 0.5), opts);
+        }
       }
-    }
+    };
+    // One summed number per blast.
+    const ft = svc('FloatingText');
+    if (ft?.summed) ft.summed(hurtAll);
+    else hurtAll();
   }
 
   function doomslayerDamage(target) {
