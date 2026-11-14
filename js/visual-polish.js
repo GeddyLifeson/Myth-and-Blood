@@ -19,7 +19,7 @@ const VisualPolish = (() => {
     dragonball: { ring: '#e06040', pattern: 'ki' },
   };
 
-  let deathCorpses = [];
+  const deathCorpses = [];
   let titleTick = 0;
   let weather = { type: 'clear', seed: Math.random() * 1000 };
   let screenShake = { mag: 0, decay: 0.86, trauma: 0 };
@@ -151,33 +151,77 @@ const VisualPolish = (() => {
     return { x, y, zoom };
   }
 
-  function registerDeath(unit) {
+  // ── Corpses ──────────────────────────────────────────────────────────────
+  // A death plays eight drawn frames (SpriteGen 'die_<cause>'), then the body lies
+  // where it fell for a good while and finally sinks into the ground stain.
+  const CORPSE_TICKS_PER_FRAME = 5;
+  const BOSS_TICKS_PER_FRAME = 17;
+  const CORPSE_SINK = 220;
+  /** How long a body lies, and how many are kept, by graphics tier. */
+  function corpseBudget() {
+    const tier = typeof GfxQuality !== 'undefined' ? GfxQuality.getTier?.() : 'normal';
+    if (tier === 'high') return { linger: 2100, max: 150 };
+    if (tier === 'normal') return { linger: 1300, max: 90 };
+    return { linger: 500, max: 36 };
+  }
+
+  const CRUSHERS =
+    /^(troll|behemoth|iron_colossus|abomination|cinderbound_juggernaut|siege_tower|boss_)/;
+
+  /** The drawn cause of death: cut, shot, burn, crush, hex or blast. */
+  function corpseCause(unit, attacker) {
+    const c = unit.deathCause || 'fall';
+    if (c === 'burn') return 'burn';
+    if (c === 'blast') return 'blast';
+    if (c === 'arrow') return 'shot';
+    const tick = typeof GameState !== 'undefined' ? GameState.updateTick || 0 : 0;
+    if ((unit.hexUntil || 0) > tick || (unit.poisonUntil || 0) > tick) return 'hex';
+    const by = attacker ? attacker.spriteType || attacker.type || '' : '';
+    if (CRUSHERS.test(by) || (attacker && attacker.isNamedBoss)) return 'crush';
+    return 'cut';
+  }
+
+  function registerDeath(unit, attacker) {
     if (!unit) return;
     const drawCorpses = typeof GfxQuality === 'undefined' || GfxQuality.get().drawCorpses !== false;
-    const isBig =
-      unit.isNamedBoss ||
-      unit.isPlanetBoss ||
-      (typeof isEliteEnemy === 'function' && isEliteEnemy(unit));
+    const isBoss = !!(unit.isNamedBoss || unit.isPlanetBoss);
+    const isBig = isBoss || (typeof isEliteEnemy === 'function' && isEliteEnemy(unit));
     const allowGore = typeof GameFeedback === 'undefined' || GameFeedback.allowGore?.() !== false;
     if (drawCorpses && allowGore) {
+      const type = unit.spriteType || unit.type;
+      const monster =
+        /^boss_/.test(type) || (typeof isMonsterEnemy === 'function' && isMonsterEnemy(unit));
       const dir = unit.team === 'player' ? -1 : 1;
+      const budget = corpseBudget();
+      const facing = unit.rotation ?? (unit.team === 'player' ? -90 : 90);
       deathCorpses.push({
         x: unit.x,
         y: unit.y,
-        type: unit.spriteType || unit.type,
+        type,
         team: unit.team,
-        rotation: unit.rotation ?? (unit.team === 'player' ? -90 : 90),
-        timer: isBig ? 72 : 52,
-        max: isBig ? 72 : 52,
+        // Monsters are drawn in one facing; everyone else falls along the way he faced.
+        angle: monster ? 0 : ((facing + 90) * Math.PI) / 180 + (Math.random() - 0.5) * 0.7,
+        age: 0,
+        tpf: isBoss ? BOSS_TICKS_PER_FRAME : CORPSE_TICKS_PER_FRAME,
+        linger: budget.linger * (isBoss ? 2 : isBig ? 1.4 : 0.8 + Math.random() * 0.4),
+        scale: unit.spriteScale || 1,
         isElite: isBig,
-        cause: unit.deathCause || 'fall',
-        seed: Math.random(),
-        tumble: (Math.random() - 0.5) * 1.4,
-        knockX: dir * (5 + Math.random() * 8),
-        knockY: 2 + Math.random() * 5,
-        bloodR: isBig ? 8 : 5,
+        isBoss,
+        cause: corpseCause(unit, attacker),
+        knockX: monster ? 0 : dir * (2 + Math.random() * 4) * (Math.random() < 0.5 ? -1 : 1),
+        knockY: monster ? 0 : dir * (3 + Math.random() * 5),
       });
-      if (deathCorpses.length > 48) deathCorpses.shift();
+      // Over budget: the oldest body that is still lying starts to sink now.
+      if (deathCorpses.length > budget.max) {
+        for (const c of deathCorpses) {
+          const lieUntil = c.tpf * 8 + c.linger;
+          if (c.age < lieUntil) {
+            c.linger = Math.max(0, c.age - c.tpf * 8);
+            break;
+          }
+        }
+      }
+      if (deathCorpses.length > budget.max + 24) deathCorpses.shift();
     }
     if (isBig) {
       addKillPunch(unit.isNamedBoss || unit.isPlanetBoss ? 0.55 : 0.38);
@@ -222,136 +266,94 @@ const VisualPolish = (() => {
     if (typeof AudioEngine !== 'undefined') AudioEngine.SFX.honorChime?.();
   }
 
+  let lastCorpseTick = 0;
+
   function update() {
-    deathCorpses = deathCorpses.filter((c) => {
-      c.timer--;
-      return c.timer > 0;
-    });
+    // A new run starts its clock again: the last run's dead do not carry over.
+    const tick = typeof GameState !== 'undefined' ? GameState.updateTick || 0 : 0;
+    if (tick < lastCorpseTick) deathCorpses.length = 0;
+    lastCorpseTick = tick;
+    let keep = 0;
+    for (let i = 0; i < deathCorpses.length; i++) {
+      const c = deathCorpses[i];
+      c.age++;
+      if (c.isBoss && c.age < c.tpf * 8) {
+        // A warlord dies slowly: the ground shakes as he reels and again as he lands.
+        if (c.age % c.tpf === 0) addScreenShake(c.age === c.tpf * 5 ? 9 : 2.5);
+        if (
+          c.age % 9 === 0 &&
+          typeof Particles !== 'undefined' &&
+          (typeof GfxQuality === 'undefined' || GfxQuality.allowDeathFx())
+        ) {
+          Particles.blood(c.x + Math.sin(c.age) * 12, c.y + Math.cos(c.age * 1.3) * 9, {
+            mult: 1.2,
+          });
+        }
+      }
+      if (c.age < c.tpf * 8 + c.linger + CORPSE_SINK) deathCorpses[keep++] = c;
+    }
+    deathCorpses.length = keep;
     titleTick++;
   }
 
   function drawDeathCorpses(ctx) {
-    for (const c of deathCorpses) {
-      const prog = 1 - c.timer / c.max;
-      const a = c.timer / c.max;
-      const knock = Math.min(1, prog * 6);
-      const tumble = prog * Math.PI * 0.55 * (c.tumble || 1);
-      const flatten = Math.min(1, Math.max(0, (prog - 0.12) * 2.2));
-      const poolR = (c.bloodR || 5) + prog * (c.isElite ? 18 : 12);
-
-      ctx.save();
-      ctx.translate(c.x + (c.knockX || 0) * knock, c.y + (c.knockY || 0) * knock);
-
-      ctx.globalAlpha = a * 0.42;
-      ctx.fillStyle = c.team === 'enemy' ? 'rgba(110,22,22,0.55)' : 'rgba(70,28,48,0.5)';
-      ctx.beginPath();
-      ctx.ellipse(0, 7, poolR, poolR * 0.32, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      const img = SpriteGen.getUnitCanvas(c.type, c.rotation, c.team, 0, 1, 'death');
-      const iw = img.width;
-      const ih = img.height;
-      const seed = c.seed || 0.5;
-      if (c.cause === 'blast') {
-        // Blown apart: four pieces of the body thrown outward, tumbling as they land.
-        const fly = Math.min(1, prog * 3.2);
-        for (let q = 0; q < 4; q++) {
-          const qx = q % 2;
-          const qy = q >> 1;
-          const ang = seed * 6.28 + q * 1.57 + 0.6;
-          const dist = (14 + seed * 16 + q * 3) * fly;
-          ctx.save();
-          ctx.translate(
-            Math.cos(ang) * dist,
-            Math.sin(ang) * dist * 0.7 - Math.sin(fly * Math.PI) * 10
-          );
-          ctx.rotate(fly * (q % 2 ? 2.6 : -2.2));
-          ctx.globalAlpha = a * 0.9;
-          ctx.drawImage(img, (qx * iw) / 2, (qy * ih) / 2, iw / 2, ih / 2, -15, -15, 31, 31);
-          ctx.restore();
-        }
-        ctx.globalAlpha = a * 0.5;
-        ctx.fillStyle = '#141012';
-        ctx.beginPath();
-        ctx.ellipse(0, 6, 10 + prog * 14, 4 + prog * 5, 0, 0, Math.PI * 2);
-        ctx.fill();
-      } else if (c.cause === 'cleave') {
-        // Cut in two: the halves part and a line of blood opens between them.
-        const part = Math.min(1, prog * 4) * (8 + seed * 6);
-        for (const sd of [-1, 1]) {
-          ctx.save();
-          ctx.translate(sd * part, sd * part * 0.25);
-          ctx.rotate(tumble * 0.4 + sd * Math.min(1, prog * 3) * 0.5);
-          ctx.globalAlpha = a * 0.9;
-          ctx.scale(1, 1 - flatten * 0.45);
-          ctx.drawImage(img, sd < 0 ? 0 : iw / 2, 0, iw / 2, ih, sd < 0 ? -31 : 0, -31, 31, 62);
-          ctx.restore();
-        }
-        ctx.globalAlpha = a * 0.8;
-        ctx.strokeStyle = '#a01018';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.moveTo(-part * 0.6, -14);
-        ctx.lineTo(part * 0.6, 16);
-        ctx.stroke();
-      } else {
-        ctx.save();
-        ctx.rotate(tumble);
-        ctx.globalAlpha = a * 0.9;
-        ctx.scale(1 - flatten * 0.12, 1 - flatten * 0.58);
-        ctx.drawImage(img, -31, -31, 62, 62);
-        if (c.cause === 'burn') {
-          // Charred: the body blackens as it falls.
-          ctx.globalAlpha = Math.min(0.85, prog * 2.2) * a;
-          ctx.fillStyle = '#0c0a0c';
-          ctx.beginPath();
-          ctx.ellipse(0, 0, 15, 13, 0, 0, Math.PI * 2);
-          ctx.fill();
-        } else if (c.cause === 'arrow') {
-          // Feathered: shafts standing out of the body.
-          ctx.globalAlpha = a;
-          for (let k = 0; k < 3; k++) {
-            const ax = (seed * 3 + k * 0.37) % 1;
-            const sx = -8 + ax * 16;
-            const sy = -6 + ((seed * 7 + k * 0.53) % 1) * 12;
-            ctx.strokeStyle = '#07050a';
-            ctx.lineWidth = 2.2;
-            ctx.beginPath();
-            ctx.moveTo(sx, sy);
-            ctx.lineTo(sx + 5 - k * 3, sy - 15);
-            ctx.stroke();
-            ctx.strokeStyle = '#e4dcc4';
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(sx + 4 - k * 2.4, sy - 12);
-            ctx.lineTo(sx + 5 - k * 3, sy - 15);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-        if (c.cause === 'burn' && prog < 0.8) {
-          // Embers lifting off the body.
-          ctx.fillStyle = '#ff7a20';
-          for (let k = 0; k < 5; k++) {
-            const ex = -10 + ((seed * 11 + k * 0.23) % 1) * 20;
-            const rise = ((prog * 2 + k * 0.2) % 1) * 26;
-            ctx.globalAlpha = (1 - rise / 26) * a;
-            ctx.fillRect(ex, -4 - rise, 1.8, 1.8);
-          }
-        }
+    if (typeof SpriteGen === 'undefined') return;
+    const size = SpriteGen.UNIT_DRAW_SIZE || 62;
+    for (let i = 0; i < deathCorpses.length; i++) {
+      const c = deathCorpses[i];
+      const animEnd = c.tpf * 8;
+      const frame = Math.min(7, Math.floor(c.age / c.tpf));
+      const fall = Math.min(1, c.age / (c.tpf * 3));
+      const sink = Math.max(0, (c.age - animEnd - c.linger) / CORPSE_SINK);
+      const img = SpriteGen.getUnitCanvas(c.type, 0, c.team, frame, c.scale, 'die_' + c.cause);
+      const sz = size * c.scale;
+      let x = c.x + c.knockX * fall;
+      let y = c.y + c.knockY * fall;
+      if (c.isBoss && frame < 5) {
+        // The death throes: a shudder that grows until the fall.
+        x += Math.sin(c.age * 1.9) * (0.8 + frame * 0.5);
+        y += Math.cos(c.age * 2.3) * 0.6;
       }
-
-      if (c.isElite && prog < 0.35) {
-        ctx.globalAlpha = (1 - prog / 0.35) * 0.35;
-        ctx.strokeStyle = '#ffd700';
+      if (c.isBoss && frame >= 5 && c.age < animEnd + 40) {
+        // The shock of the body landing spreads across the ground.
+        const k = (c.age - c.tpf * 5) / (c.tpf * 3 + 40);
+        ctx.globalAlpha = (1 - k) * 0.7;
+        ctx.strokeStyle = '#a01018';
+        ctx.lineWidth = 4 * (1 - k) + 1;
+        ctx.beginPath();
+        ctx.ellipse(
+          c.x,
+          c.y + 4,
+          24 + k * 70 * c.scale,
+          (24 + k * 70 * c.scale) * 0.62,
+          0,
+          0,
+          Math.PI * 2
+        );
+        ctx.stroke();
+      }
+      // Sinking: the body fades and flattens into the stain it leaves.
+      ctx.globalAlpha = 1 - sink;
+      if (c.angle || sink > 0) {
+        ctx.save();
+        ctx.translate(x, y + sink * 3);
+        if (c.angle) ctx.rotate(c.angle);
+        if (sink > 0) ctx.scale(1 - sink * 0.12, 1 - sink * 0.12);
+        ctx.drawImage(img, -sz / 2, -sz / 2, sz, sz);
+        ctx.restore();
+      } else {
+        ctx.drawImage(img, x - sz / 2, y - sz / 2, sz, sz);
+      }
+      if (c.isElite && c.age < 22) {
+        ctx.globalAlpha = (1 - c.age / 22) * 0.4;
+        ctx.strokeStyle = '#e4dcc4';
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.arc(0, 0, 20 + prog * 16, 0, Math.PI * 2);
+        ctx.arc(c.x, c.y, 20 + c.age * 0.9, 0, Math.PI * 2);
         ctx.stroke();
       }
-      ctx.restore();
-      ctx.globalAlpha = 1;
     }
+    ctx.globalAlpha = 1;
   }
 
   function drawBiomeRegions(ctx, worldW, mapH, bands = []) {
