@@ -55,14 +55,32 @@ const SpriteLod = (() => {
     return 0.3;
   }
 
+  // Sprites are drawn once and cached, so the nearer tiers keep the real figure and
+  // only thin out what multiplies cache entries: idle variations, then the extra states.
+  function isKeyAnim(animState) {
+    return (
+      animState === 'attack' ||
+      animState === 'hurt' ||
+      animState === 'death' ||
+      (typeof animState === 'string' && animState.startsWith('die_'))
+    );
+  }
+
   function cacheFrameForLod(lod, frame, animState = 'idle') {
-    if (animState === 'attack' || animState === 'hurt' || animState === 'death') return frame;
-    return lod >= LOD.LOW ? 0 : frame;
+    if (isKeyAnim(animState)) return frame;
+    if (lod >= LOD.MINIMAL) return 0;
+    if (lod >= LOD.LOW) return animState === 'walk' || animState === 'rout' ? frame : 0;
+    return frame;
   }
 
   function cacheAnimForLod(lod, animState) {
-    if (animState === 'attack' || animState === 'hurt' || animState === 'death') return animState;
-    return lod >= LOD.LOW ? 'idle' : animState;
+    if (isKeyAnim(animState)) return animState;
+    if (lod >= LOD.MINIMAL) return 'idle';
+    if (lod >= LOD.LOW) {
+      // A crowd still walks and still routs; work poses and cheering fall back to idle.
+      return animState === 'walk' || animState === 'rout' ? animState : 'idle';
+    }
+    return animState;
   }
 
   return {

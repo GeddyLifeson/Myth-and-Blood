@@ -7014,6 +7014,7 @@ const Game = (() => {
     // Wave summary banner (kills / TP / casualties) — richer than a single toast
     if (typeof GameFeedback !== 'undefined') {
       const fbStats = GameFeedback.getWaveStats?.() || {};
+      svc('SpriteGen').celebrate?.(GS.updateTick);
       const summary = GameFeedback.onWaveClear({
         wave: GS.wave,
         tpGained: gained,
@@ -12603,7 +12604,7 @@ const Game = (() => {
         }
       }
       if (!quickRevived) {
-        if (svc('VisualPolish')) svc('VisualPolish').registerDeath(unit);
+        if (svc('VisualPolish')) svc('VisualPolish').registerDeath(unit, opts?.attacker);
         applyWitnessDeath(unit);
       }
     } else if (unit.team === 'player' && unit.hp > 0) {
@@ -14066,6 +14067,9 @@ const Game = (() => {
     markUpdatePhase('unit-ai', String(GS.units.length));
     for (const unit of GS.units) {
       if (unit.hp <= 0) continue;
+      // Hit flash and honor glow count down here, once per tick, not in draw().
+      if (unit.hitFlash > 0) unit.hitFlash--;
+      if (unit.honorGlowTimer > 0) unit.honorGlowTimer--;
       const tier = throttleCtx ? svc('UpdateThrottle').getUnitTier(unit, throttleCtx) : 'full';
       const throttle = svc('UpdateThrottle');
       if (throttle?.shouldRunUnitAIMinimal(unit, tier, GS.updateTick)) {
@@ -14715,7 +14719,6 @@ const Game = (() => {
           GS.ctx.fill();
         }
         if (drawOverlays && gfxQ?.honorGlow !== false && (u.honorGlowTimer || 0) > 0) {
-          u.honorGlowTimer--;
           const glow = u.honorGlowTimer / 240;
           GS.ctx.fillStyle = `rgba(255, 215, 0, ${0.15 + glow * 0.25})`;
           GS.ctx.beginPath();
@@ -14733,18 +14736,15 @@ const Game = (() => {
         // spriteType is derived from type at spawn and should always be a string; fall back
         // to u.type if it ever desyncs (see sprites.js drawUnitTopDown for the last-resort
         // guard) so a bad unit renders as itself instead of a hardcoded placeholder.
+        // State and frame (gait, idle variation, rout, celebrate, work) come from the sprite clock.
+        const anim = svc('SpriteGen').animFor(u, GS.updateTick);
         const img = svc('SpriteGen').getUnitCanvas(
           u.spriteType || u.type,
           drawRot,
           u.team,
-          // An attack plays its four frames across the swing, not on the walk clock.
-          u.animState === 'attack'
-            ? Math.max(0, Math.min(3, 3 - Math.floor((u.attackAnimTimer || 0) / 4)))
-            : u.frame,
+          anim.frame,
           sprScale,
-          (u.hitFlash || 0) > 0 && u.animState !== 'attack' && u.animState !== 'death'
-            ? 'hurt'
-            : u.animState,
+          anim.state,
           unitLod
         );
         // Micro hit recoil offset
@@ -14779,7 +14779,6 @@ const Game = (() => {
             GS.ctx.stroke();
           }
           GS.ctx.restore();
-          u.hitFlash--;
         }
         if (
           u.id === GS.selectedUnitId ||

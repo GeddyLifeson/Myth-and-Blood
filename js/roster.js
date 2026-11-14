@@ -1172,6 +1172,303 @@ const Roster = (() => {
   // ---------------------------------------------------------------- overlays
   const rings = [];
 
+  // ── Status marks ─────────────────────────────────────────────────────────
+  const INK = '#07050a';
+  const BONE = '#e4dcc4';
+  const BLOOD = '#c0202a';
+  const EMBER = '#f08024';
+  const VIOLET = '#a070d8';
+  const SICK = '#8cc048';
+  const FROST = '#cfe6f0';
+  const STEEL = '#7f9fc4';
+  const MARK_GAP = 10;
+  const MARK_MAX = 6;
+  /** Every mark the overlay can draw, in the order they are shown. */
+  const STATUS_MARKS = [
+    'pin',
+    'burn',
+    'hex',
+    'plague',
+    'frost',
+    'expose',
+    'enrage',
+    'guard',
+    'bulwark',
+    'ward',
+    'banner',
+    'might',
+    'iron',
+    'haste',
+    'prey',
+    'ramp',
+    'omen',
+  ];
+  const markBuf = [];
+  const markArg = [];
+
+  /** Fills markBuf with the marks a unit shows this tick; returns how many. */
+  function collectMarks(u, tick) {
+    let n = 0;
+    const add = (kind, arg) => {
+      if (n >= MARK_MAX) return;
+      markBuf[n] = kind;
+      markArg[n] = arg || 0;
+      n++;
+    };
+    if (u.pinned && (u.pinTimer || 0) > 0) add('pin');
+    if ((u.burnUntil || 0) > tick) add('burn');
+    if ((u.hexUntil || 0) > tick) add('hex');
+    if ((u.poisonUntil || 0) > tick) add('plague');
+    if ((u.frostTimer || 0) > 0 || (u.hazardSlow || 1) < 0.95) add('frost');
+    if ((u.exposeUntil || 0) > tick) add('expose');
+    if (u.enraged) add('enrage');
+    if (u.guardBy && (u.guardUntil || 0) > tick) add('guard');
+    if (u.team === 'player' && (u.bulwarkUntil || 0) > tick) add('bulwark');
+    if (u.team === 'enemy' && (u.wardUntil || 0) > tick) add('ward');
+    if (u.team === 'enemy' && (u.warAuraUntil || 0) > tick) add('banner');
+    if ((u.doctrineDmgTimer || 0) > 0) add('might');
+    if ((u.doctrineMitTimer || 0) > 0) add('iron');
+    if ((u.doctrineSpeedTimer || 0) > 0) add('haste');
+    if ((u.preyUntil || 0) > tick && u.preyId) add('prey');
+    if ((u.rampN || 0) > 0) add('ramp', Math.min(3, u.rampN));
+    if ((u.prophecyTimer || 0) > 0) add('omen');
+    return n;
+  }
+
+  function markPath(c, pts) {
+    c.beginPath();
+    c.moveTo(pts[0], pts[1]);
+    for (let k = 2; k < pts.length; k += 2) c.lineTo(pts[k], pts[k + 1]);
+    c.closePath();
+  }
+  function markFill(c, fill) {
+    c.lineJoin = 'round';
+    c.strokeStyle = INK;
+    c.lineWidth = 2.2;
+    c.stroke();
+    c.fillStyle = fill;
+    c.fill();
+  }
+  /** A line glyph: drawn twice, heavy black under the colour. */
+  function markLine(c, color, lw) {
+    c.lineCap = 'round';
+    c.strokeStyle = INK;
+    c.lineWidth = lw + 2;
+    c.stroke();
+    c.strokeStyle = color;
+    c.lineWidth = lw;
+    c.stroke();
+  }
+
+  /**
+   * One status badge, about 9px across, centred on (x, y).
+   * pin: bone nail · burn: ember flame · hex: violet diamond · plague: green drop ·
+   * frost: pale star · expose: split blood shield · enrage: blood spiked burst ·
+   * guard: steel shield · bulwark: bone battlement · ward: green ring · banner: blood flag ·
+   * might: blood blade · iron: bone plate · haste: double chevron · prey: reticle ·
+   * ramp: tally strokes · omen: eye.
+   */
+  function drawStatusMark(c, kind, x, y, tick = 0, arg = 0) {
+    c.save();
+    c.translate(x, y);
+    switch (kind) {
+      case 'pin': {
+        // A nail driven down through him.
+        markPath(c, [-4, -4.5, 4, -4.5, 4, -2.2, 1.3, -2.2, 0, 5, -1.3, -2.2, -4, -2.2]);
+        markFill(c, BONE);
+        break;
+      }
+      case 'burn': {
+        const fl = Math.sin(tick / 3) * 1.1;
+        markPath(c, [
+          0,
+          -5.5 - fl,
+          2.2,
+          -1.5,
+          4,
+          -2.5,
+          3.6,
+          2.4,
+          1.6,
+          4.5,
+          -1.6,
+          4.5,
+          -3.6,
+          2.4,
+          -3.2,
+          -1,
+          -1.6,
+          0.2,
+        ]);
+        markFill(c, EMBER);
+        markPath(c, [0, -0.8, 1.5, 2.2, 0, 3.8, -1.5, 2.2]);
+        c.fillStyle = '#ffd860';
+        c.fill();
+        break;
+      }
+      case 'hex': {
+        markPath(c, [0, -5, 4, 0, 0, 5, -4, 0]);
+        markFill(c, VIOLET);
+        c.fillStyle = INK;
+        c.fillRect(-0.9, -0.9, 1.8, 1.8);
+        break;
+      }
+      case 'plague': {
+        // A hanging drop, with a bubble beside it.
+        c.beginPath();
+        c.moveTo(0, -5);
+        c.quadraticCurveTo(4.6, 1.2, 0, 4.6);
+        c.quadraticCurveTo(-4.6, 1.2, 0, -5);
+        c.closePath();
+        markFill(c, SICK);
+        c.beginPath();
+        c.arc(3.6, -3.2 + Math.sin(tick / 6) * 0.7, 1.2, 0, Math.PI * 2);
+        markFill(c, SICK);
+        break;
+      }
+      case 'frost': {
+        c.beginPath();
+        for (let k = 0; k < 3; k++) {
+          const a = (k * Math.PI) / 3 + Math.PI / 2;
+          c.moveTo(Math.cos(a) * 4.6, Math.sin(a) * 4.6);
+          c.lineTo(-Math.cos(a) * 4.6, -Math.sin(a) * 4.6);
+        }
+        markLine(c, FROST, 1.3);
+        break;
+      }
+      case 'expose': {
+        // A shield split down the middle, the halves apart.
+        markPath(c, [-4.8, -4, -1, -4, -2.2, -0.6, -0.8, 1, -1.6, 4.6, -4.8, 1.4]);
+        markFill(c, BLOOD);
+        markPath(c, [4.8, -4, 1.4, -4, 0.4, -0.8, 1.8, 0.8, 1, 4.6, 4.8, 1.4]);
+        markFill(c, BLOOD);
+        break;
+      }
+      case 'enrage': {
+        const s = 1 + Math.abs(Math.sin(tick / 8)) * 0.18;
+        c.beginPath();
+        for (let k = 0; k < 12; k++) {
+          const a = (k * Math.PI) / 6 - Math.PI / 2;
+          const rad = (k % 2 ? 2.3 : 5.4) * s;
+          if (k) c.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+          else c.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+        }
+        c.closePath();
+        markFill(c, BLOOD);
+        break;
+      }
+      case 'guard': {
+        markPath(c, [-4, -4.4, 4, -4.4, 4, 0.6, 0, 5, -4, 0.6]);
+        markFill(c, STEEL);
+        c.fillStyle = BONE;
+        c.fillRect(-0.9, -2.6, 1.8, 4.4);
+        c.fillRect(-2.4, -1.2, 4.8, 1.6);
+        break;
+      }
+      case 'bulwark': {
+        markPath(
+          c,
+          [
+            -4.6, 4, -4.6, -4.4, -2.2, -4.4, -2.2, -2, -1, -2, -1, -4.4, 1, -4.4, 1, -2, 2.2, -2,
+            2.2, -4.4, 4.6, -4.4, 4.6, 4,
+          ]
+        );
+        markFill(c, BONE);
+        break;
+      }
+      case 'ward': {
+        c.beginPath();
+        c.arc(0, 0, 3.6, 0, Math.PI * 2);
+        markLine(c, SICK, 1.6);
+        break;
+      }
+      case 'banner': {
+        markPath(c, [-2.6, -4.6, 4.6, -3, 1.8, -1.4, 4.6, 0.4, -2.6, 1]);
+        markFill(c, BLOOD);
+        c.beginPath();
+        c.moveTo(-3, -5);
+        c.lineTo(-3, 5);
+        markLine(c, BONE, 1);
+        break;
+      }
+      case 'might': {
+        // A blade, point up.
+        markPath(
+          c,
+          [
+            0, -5.6, 1.7, -2.6, 1.7, 1.4, 3.6, 1.4, 3.6, 2.8, 1, 2.8, 1, 5, -1, 5, -1, 2.8, -3.6,
+            2.8, -3.6, 1.4, -1.7, 1.4, -1.7, -2.6,
+          ]
+        );
+        markFill(c, BLOOD);
+        break;
+      }
+      case 'iron': {
+        // A riveted plate.
+        markPath(c, [-4.4, -3.6, 4.4, -3.6, 4.4, 3.6, -4.4, 3.6]);
+        markFill(c, BONE);
+        c.fillStyle = INK;
+        c.fillRect(-3, -2.2, 1.3, 1.3);
+        c.fillRect(1.7, -2.2, 1.3, 1.3);
+        c.fillRect(-3, 0.9, 1.3, 1.3);
+        c.fillRect(1.7, 0.9, 1.3, 1.3);
+        break;
+      }
+      case 'haste': {
+        c.beginPath();
+        c.moveTo(-4, -3.6);
+        c.lineTo(-0.6, 0);
+        c.lineTo(-4, 3.6);
+        c.moveTo(0.6, -3.6);
+        c.lineTo(4, 0);
+        c.lineTo(0.6, 3.6);
+        markLine(c, BONE, 1.5);
+        break;
+      }
+      case 'prey': {
+        c.beginPath();
+        c.arc(0, 0, 3.2, 0, Math.PI * 2);
+        c.moveTo(0, -5.4);
+        c.lineTo(0, -1.6);
+        c.moveTo(0, 5.4);
+        c.lineTo(0, 1.6);
+        c.moveTo(-5.4, 0);
+        c.lineTo(-1.6, 0);
+        c.moveTo(5.4, 0);
+        c.lineTo(1.6, 0);
+        markLine(c, BLOOD, 1.2);
+        break;
+      }
+      case 'ramp': {
+        const count = Math.max(1, Math.min(3, arg || 1));
+        c.beginPath();
+        for (let k = 0; k < count; k++) {
+          const px = (k - (count - 1) / 2) * 3.2;
+          c.moveTo(px + 0.8, -4);
+          c.lineTo(px - 0.8, 4);
+        }
+        markLine(c, BONE, 1.3);
+        break;
+      }
+      case 'omen': {
+        c.beginPath();
+        c.moveTo(-5, 0);
+        c.quadraticCurveTo(0, -5.6, 5, 0);
+        c.quadraticCurveTo(0, 5.6, -5, 0);
+        c.closePath();
+        markFill(c, BONE);
+        c.beginPath();
+        c.arc(0, 0, 1.7, 0, Math.PI * 2);
+        c.fillStyle = INK;
+        c.fill();
+        break;
+      }
+      default:
+        break;
+    }
+    c.restore();
+  }
+
   function auraRing(c, u, radius, rgb, tick, dashed) {
     c.strokeStyle = `rgba(${rgb},${0.28 + Math.sin(tick / 14 + u.x) * 0.08})`;
     c.lineWidth = 1.6;
@@ -1213,11 +1510,12 @@ const Roster = (() => {
       }
       // Enraged bosses pulse red.
       if (u.enraged) {
-        const pulse = 0.25 + Math.abs(Math.sin(tick / 9)) * 0.3;
-        c.fillStyle = `rgba(255,30,20,${pulse})`;
+        c.globalAlpha = 0.2 + Math.abs(Math.sin(tick / 9)) * 0.25;
+        c.fillStyle = BLOOD;
         c.beginPath();
-        c.arc(u.x, u.y, 26, 0, Math.PI * 2);
+        c.arc(u.x, u.y, 26 * (u.spriteScale || 1), 0, Math.PI * 2);
         c.fill();
+        c.globalAlpha = 1;
       }
       // War Cry and Hold the Line.
       if ((u.warCryUntil || 0) > tick) {
@@ -1256,59 +1554,31 @@ const Roster = (() => {
         c.arc(u.x, u.y, 13, 0, Math.PI * 2);
         c.stroke();
       }
-      // Status marks above the head: hex, poison, fire, banner, ward.
-      let mx = u.x - 10;
-      const my = u.y - 30;
-      if ((u.hexUntil || 0) > tick) {
-        c.fillStyle = '#b060ff';
-        c.strokeStyle = '#07050a';
+      // Status marks: one row of small ink badges above the head. Each status has its
+      // own shape as well as its own colour, so it reads without colour too.
+      const n = collectMarks(u, tick);
+      if (n > 0) {
+        const big = (u.spriteScale || 1) - 1;
+        const my = u.y - 38 - big * 14 - (u.isNamedBoss ? 14 : 0);
+        let mx = u.x - ((n - 1) * MARK_GAP) / 2;
+        for (let k = 0; k < n; k++) {
+          drawStatusMark(c, markBuf[k], mx, my, tick + i * 7, markArg[k]);
+          mx += MARK_GAP;
+        }
+      }
+      // A guarded soldier is tied to his guardian by a dashed bone thread.
+      const g = u.guardBy;
+      if (g && g.hp > 0 && (u.guardUntil || 0) > tick) {
+        c.strokeStyle = BONE;
+        c.globalAlpha = 0.55;
         c.lineWidth = 1;
+        c.setLineDash([3, 3]);
         c.beginPath();
-        c.moveTo(mx, my - 4);
-        c.lineTo(mx + 4, my);
-        c.lineTo(mx, my + 4);
-        c.lineTo(mx - 4, my);
-        c.closePath();
-        c.fill();
+        c.moveTo(u.x, u.y);
+        c.lineTo(g.x, g.y);
         c.stroke();
-        mx += 10;
-      }
-      if ((u.burnUntil || 0) > tick) {
-        const fl = Math.sin(tick / 3 + i) * 1.5;
-        c.fillStyle = '#ff7a20';
-        c.beginPath();
-        c.moveTo(mx - 4, my + 4);
-        c.lineTo(mx, my - 6 - fl);
-        c.lineTo(mx + 4, my + 4);
-        c.closePath();
-        c.fill();
-        c.fillStyle = '#ffd040';
-        c.fillRect(mx - 1, my, 2, 3);
-        mx += 10;
-      } else if ((u.poisonUntil || 0) > tick) {
-        c.fillStyle = '#80c040';
-        c.strokeStyle = '#07050a';
-        c.lineWidth = 1;
-        c.beginPath();
-        c.arc(mx, my + 1, 3.5, 0, Math.PI * 2);
-        c.fill();
-        c.stroke();
-        c.fillRect(mx - 0.8, my - 6, 1.6, 4);
-        mx += 10;
-      }
-      if (u.team === 'enemy' && (u.warAuraUntil || 0) > tick) {
-        c.fillStyle = '#c8202a';
-        c.fillRect(mx - 3, my - 4, 6, 5);
-        c.fillStyle = '#07050a';
-        c.fillRect(mx - 4, my - 5, 1.5, 10);
-        mx += 10;
-      }
-      if (u.team === 'enemy' && (u.wardUntil || 0) > tick) {
-        c.strokeStyle = '#80e080';
-        c.lineWidth = 1.5;
-        c.beginPath();
-        c.arc(mx, my, 3.5, 0, Math.PI * 2);
-        c.stroke();
+        c.setLineDash([]);
+        c.globalAlpha = 1;
       }
     }
     c.restore();
@@ -1350,6 +1620,8 @@ const Roster = (() => {
     blocksPin,
     deathCause,
     drawOverlays,
+    drawStatusMark,
+    STATUS_MARKS,
     onDeath,
     update,
     preference,
