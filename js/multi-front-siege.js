@@ -244,6 +244,7 @@ const MultiFrontSiege = (() => {
       bossSector: kind === 'boss' ? roll.main : null,
       total: 0,
       forecast: false,
+      assigned: false,
     };
     if (Array.isArray(opts.queue) && opts.queue.length) {
       const a = allocate(opts.queue, roll, opts.isBossType);
@@ -436,6 +437,18 @@ const MultiFrontSiege = (() => {
       intel: p ? formatIntel(p) : null,
       summary: p ? `Host enters on ${describeSectors(p.sectors)}` : null,
     };
+  }
+
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('MultiFrontSiege', {
+      save: () => ({ currentPlan }),
+      load(data) {
+        resetRun();
+        const plan = data && data.currentPlan;
+        currentPlan = plan ? restorePlan(plan, plan.wave) : null;
+      },
+    });
   }
 
   return {

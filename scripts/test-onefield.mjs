@@ -16,14 +16,18 @@ ok(HEADLESS_FILES.includes('multi-front-siege.js'), 'the sector module runs in h
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 
+// A save edited by hand needs its checksum made again, or the load refuses it.
+let seal = (snap) => snap;
+
 function start(seed, diff = 'normal') {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
     `${code}\n({ Game, SpriteGen, SiegeLoop, GameState, MultiFrontSiege, ProgressionRestarts,
-      createBuilding, getWorldSize, getLegacyWorldSize, getUnlockedAttackSides, EnemyDefs })`,
+      createBuilding, getWorldSize, getLegacyWorldSize, getUnlockedAttackSides, EnemyDefs, SaveFormat })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
+  seal = (snap) => api.SaveFormat.seal(snap);
   api.Game.init(cvs);
   api.Game.setDifficulty(diff);
   api.Game.start();
@@ -242,7 +246,7 @@ const rngOf = (seed) => {
     if (!GS.nextWavePlan || GS.nextWavePlan.wave !== GS.wave + 1) {
       // The wave number was set by hand; let the game roll the plan as nightfall would.
       Game.importGameState(
-        JSON.parse(JSON.stringify({ ...Game.exportGameState(), nextWavePlan: null }))
+        seal(JSON.parse(JSON.stringify({ ...Game.exportGameState(), nextWavePlan: null })))
       );
       GS.paused = false;
     }
@@ -388,7 +392,7 @@ const rngOf = (seed) => {
     postY: 30,
   };
   snap.units.push(stray);
-  ok(Game.importGameState(snap), 'a save from a grown map loads');
+  ok(Game.importGameState(seal(snap)), 'a save from a grown map loads');
   ok(GS.worldW === 400 && GS.worldH === 600, 'onto the one field');
   let back = true;
   let inField = true;
@@ -570,24 +574,27 @@ for (const era of [100, 200]) {
     );
     // A save from before eras were recorded, already past the boundary.
     const legacy = JSON.parse(JSON.stringify(Game.exportGameState()));
-    delete legacy.progressionRestarts;
+    delete legacy.modules.ProgressionRestarts;
     ok(
-      Game.importGameState(legacy) && PR.getSnapshot().fired.includes(era),
+      Game.importGameState(seal(legacy)) && PR.getSnapshot().fired.includes(era),
       `era ${era}: an older save past the boundary counts the era as met`
     );
     // And one that carries the old wipe's record.
-    legacy.progressionRestarts = {
-      fired: [era],
-      lastRestart: {
-        wave: era,
-        id: 'x',
-        name: 'Old',
-        shortName: 'Old',
-        imported: { tp: 150, science: 9 },
+    legacy.modules.ProgressionRestarts = {
+      v: 1,
+      data: {
+        fired: [era],
+        lastRestart: {
+          wave: era,
+          id: 'x',
+          name: 'Old',
+          shortName: 'Old',
+          imported: { tp: 150, science: 9 },
+        },
       },
     };
     ok(
-      Game.importGameState(legacy) && PR.getSnapshot().lastEra?.science === 9,
+      Game.importGameState(seal(legacy)) && PR.getSnapshot().lastEra?.science === 9,
       `era ${era}: the old restart record is read`
     );
   } catch (e) {

@@ -28,6 +28,7 @@ globalThis.localStorage = {
     this._data[k] = v;
   },
 };
+loadScript('save-registry.js');
 loadScript('game-modes.js');
 loadScript('online-multiplayer.js');
 
@@ -48,14 +49,32 @@ assert(room.seed === 'test-coop-seed', 'coop room seed');
 const invite = OnlineMultiplayer.exportCoopInvite(room);
 assert(invite?.startsWith('COOP:'), 'coop invite prefix');
 
-const fakeState = { version: 1, wave: 7, tactical: 40, kills: 12, units: [], buildings: [] };
+const fakeState = {
+  version: 1,
+  wave: 7,
+  tactical: 40,
+  kills: 12,
+  timeOfDay: 'day',
+  units: [],
+  buildings: [],
+};
 const handoff = OnlineMultiplayer.handoffKingdom(fakeState);
 assert(handoff.ok, 'handoff should succeed');
 assert(handoff.code?.startsWith('KINGDOM:'), 'kingdom code prefix');
 
-const importKingdom = OnlineMultiplayer.importShareCode(handoff.code);
+// The partner takes the code in their own browser; your own code is refused by design.
+const partner = vm.createContext({
+  console,
+  document: globalThis.document,
+  localStorage: { ...globalThis.localStorage, _data: {} },
+});
+for (const f of ['save-registry.js', 'game-modes.js', 'online-multiplayer.js']) {
+  vm.runInContext(readFileSync(join(JS, f), 'utf8'), partner, { filename: f });
+}
+const partnerMp = vm.runInContext('GameModes.init(); OnlineMultiplayer', partner);
+const importKingdom = partnerMp.importShareCode(handoff.code);
 assert(importKingdom.ok && importKingdom.type === 'kingdom', 'kingdom import');
-assert(OnlineMultiplayer.hasPendingImport(), 'pending kingdom import');
+assert(partnerMp.hasPendingImport(), 'pending kingdom import');
 
 const match = OnlineMultiplayer.createPvpMatch({ seed: 'pvp-test-seed' });
 assert(match.id.startsWith('PVP-'), 'pvp match id');

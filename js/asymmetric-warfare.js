@@ -264,6 +264,20 @@ const AsymmetricWarfare = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('AsymmetricWarfare', {
+      save: () => ({ hostThreatXp, announcedHostLevels, lastWavePushback }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Number.isFinite(data.hostThreatXp)) hostThreatXp = data.hostThreatXp;
+        if (data.announcedHostLevels instanceof Set) announcedHostLevels = data.announcedHostLevels;
+        if (Number.isFinite(data.lastWavePushback)) lastWavePushback = data.lastWavePushback;
+      },
+    });
+  }
+
   return {
     resetRun,
     getHostThreatLevel,

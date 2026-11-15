@@ -288,6 +288,22 @@ const SettlementRaids = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('SettlementRaids', {
+      save: () => ({ missions, raidsAnnounced, totalRaidsCompleted, totalLootTp }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Array.isArray(data.missions)) missions = data.missions;
+        raidsAnnounced = !!data.raidsAnnounced;
+        if (Number.isFinite(data.totalRaidsCompleted))
+          totalRaidsCompleted = data.totalRaidsCompleted;
+        if (Number.isFinite(data.totalLootTp)) totalLootTp = data.totalLootTp;
+      },
+    });
+  }
+
   return {
     SETTLEMENT_RAID_WAVE_MIN,
     MIN_STRIKE_FORCE,

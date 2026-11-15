@@ -325,6 +325,23 @@ const FactionReputation = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('FactionReputation', {
+      save: () => ({ grudge, truceUntil, barredUntil, avenger, announced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        const map = (x) => (x && typeof x === 'object' ? { ...x } : {});
+        grudge = map(data.grudge);
+        truceUntil = map(data.truceUntil);
+        barredUntil = map(data.barredUntil);
+        avenger = data.avenger && typeof data.avenger === 'object' ? { ...data.avenger } : null;
+        announced = !!data.announced;
+      },
+    });
+  }
+
   return {
     WAVE_MIN,
     STANCES,

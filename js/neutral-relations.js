@@ -297,6 +297,22 @@ const NeutralRelations = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('NeutralRelations', {
+      save: () => ({ reputation, pactUntil, huntedThisWave, announced, lastDiplomacyWave }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Number.isFinite(data.reputation)) reputation = data.reputation;
+        if (Number.isFinite(data.pactUntil)) pactUntil = data.pactUntil;
+        if (Number.isFinite(data.huntedThisWave)) huntedThisWave = data.huntedThisWave;
+        announced = !!data.announced;
+        if (Number.isFinite(data.lastDiplomacyWave)) lastDiplomacyWave = data.lastDiplomacyWave;
+      },
+    });
+  }
+
   return {
     WAVE_MIN,
     STANCES,

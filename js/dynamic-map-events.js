@@ -569,6 +569,38 @@ const DynamicMapEvents = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('DynamicMapEvents', {
+      save: () => ({
+        pending,
+        choiceId,
+        activeMods,
+        activeEvent,
+        eventSite,
+        announced,
+        deckSeed,
+        // A tick stamp, saved as an offset from now (the tick counter is not restored).
+        eruptionAgo: lastEruptionTick ? SaveRegistry.tick() - lastEruptionTick : null,
+      }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        pending = data.pending ?? null;
+        choiceId = data.choiceId ?? null;
+        activeMods = data.activeMods ?? null;
+        activeEvent = data.activeEvent ?? null;
+        eventSite = data.eventSite ?? null;
+        announced = !!data.announced;
+        // Older saves have no deck seed: keep the one resetRun picked.
+        if (Number.isInteger(data.deckSeed)) deckSeed = data.deckSeed >>> 0;
+        lastEruptionTick = Number.isFinite(data.eruptionAgo)
+          ? SaveRegistry.tick() - data.eruptionAgo
+          : 0;
+      },
+    });
+  }
+
   return {
     WAVE_MIN,
     EVENTS,

@@ -88,7 +88,7 @@ function toNight(Game, GS) {
 
 // --- 2. saves: version check and the next-wave plan ----------------------------------------
 {
-  const { Game, GameState: GS } = start(23);
+  const { Game, GameState: GS, SaveFormat } = start(23, 'SaveFormat');
   ok(toNight(Game, GS), 'reached the first night');
   ok(
     GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1 && GS.nextWavePlan.sectors.length > 0,
@@ -106,7 +106,7 @@ function toNight(Game, GS) {
     bossSector: null,
   });
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
-  ok(snap.version === Game.SAVE_VERSION && snap.version === 2, `save version ${snap.version}`);
+  ok(snap.version === Game.SAVE_VERSION && snap.version === 3, `save version ${snap.version}`);
   ok(
     snap.nextWavePlan &&
       snap.nextWavePlan.wave === GS.wave + 1 &&
@@ -129,7 +129,7 @@ function toNight(Game, GS) {
   // A save from before the three sectors named flanks here; it is rolled again, not trusted.
   const legacy = JSON.parse(JSON.stringify(snap));
   legacy.nextWavePlan = { wave: wave + 1, sides: ['east'], multiFrontPlan: null };
-  ok(Game.importGameState(legacy), 'a save with the old flank plan loads');
+  ok(Game.importGameState(SaveFormat.seal(legacy)), 'a save with the old flank plan loads');
   ok(
     GS.nextWavePlan && GS.nextWavePlan.wave === wave + 1 && GS.nextWavePlan.sectors.length > 0,
     'and gets a fresh entry-sector plan'
@@ -149,7 +149,7 @@ function toNight(Game, GS) {
   // Unknown versions are refused before anything is touched.
   const tp = GS.tactical;
   const w2 = GS.wave;
-  for (const v of [99, 3, 0, -1, 1.5, '2', null, undefined, NaN]) {
+  for (const v of [99, 4, 0, -1, 1.5, '2', null, undefined, NaN]) {
     const bad = { ...JSON.parse(JSON.stringify(snap)), version: v, wave: 77, tactical: 1 };
     if (v === undefined) delete bad.version;
     ok(
@@ -167,6 +167,8 @@ function toNight(Game, GS) {
   v1.version = 1;
   delete v1.nextWavePlan;
   delete v1.cheatsUsed;
+  // Version 1 saves had no checksum.
+  delete v1.checksum;
   ok(Game.importGameState(v1), 'a version 1 save still loads');
   ok(
     GS.timeOfDay === 'night' && GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1,
@@ -175,6 +177,7 @@ function toNight(Game, GS) {
   // A plan for the wrong wave, or naming a sector that does not exist, is dropped, not trusted.
   const odd = JSON.parse(JSON.stringify(snap));
   odd.nextWavePlan = { wave: 40, sectors: ['up'], counts: { up: 9 } };
+  SaveFormat.seal(odd);
   ok(Game.importGameState(odd), 'a save with a damaged plan loads');
   ok(
     GS.nextWavePlan &&

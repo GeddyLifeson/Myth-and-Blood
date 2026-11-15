@@ -553,6 +553,20 @@ const AscensionSystem = (() => {
   loadMeta();
   resetRun();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('AscensionSystem', {
+      save: () => ({ run, kingdomAnnounced, galacticAnnounced }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.run && typeof data.run === 'object') run = { ...run, ...data.run };
+        kingdomAnnounced = !!data.kingdomAnnounced;
+        galacticAnnounced = !!data.galacticAnnounced;
+      },
+    });
+  }
+
   return {
     UNIT_CHAINS,
     resetRun,

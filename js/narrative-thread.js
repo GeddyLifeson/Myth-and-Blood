@@ -335,6 +335,19 @@ const NarrativeThread = (() => {
 
   resetRun();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('NarrativeThread', {
+      save: () => ({ state, beatsShown }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.state && typeof data.state === 'object') state = { ...state, ...data.state };
+        if (data.beatsShown instanceof Set) for (const id of data.beatsShown) beatsShown.add(id);
+      },
+    });
+  }
+
   return {
     LONG_WATCH_WAVE,
     DEEP_SIEGE_WAVE,

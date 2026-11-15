@@ -551,8 +551,8 @@ quietDay();
   ok(before.length >= M.perNight, `mines are live before saving (${before.length})`);
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
   ok(
-    Array.isArray(snap.siegeLoop?.sapperKit?.mines) &&
-      snap.siegeLoop.sapperKit.mines.length === before.length,
+    Array.isArray(snap.modules?.SiegeLoop?.data?.sapperKit?.mines) &&
+      snap.modules.SiegeLoop.data.sapperKit.mines.length === before.length,
     'the save holds every live mine'
   );
   SapperKit.reset();

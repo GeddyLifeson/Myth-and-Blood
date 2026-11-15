@@ -1969,6 +1969,22 @@ const EnemyFactions = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('EnemyFactions', {
+      save: () => ({ announcedTiers, plans, history, runSalt, lastHorde }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (data.announcedTiers instanceof Set) announcedTiers = data.announcedTiers;
+        if (data.plans && typeof data.plans === 'object') plans = data.plans;
+        if (Array.isArray(data.history)) history = data.history;
+        if (Number.isFinite(data.runSalt)) runSalt = data.runSalt;
+        lastHorde = data.lastHorde ?? null;
+      },
+    });
+  }
+
   return {
     FACTIONS,
     EVOLUTION_STAGES,

@@ -246,6 +246,23 @@ const Legacy = (() => {
 
   load();
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('Legacy', {
+      // The run being tracked for the legacy record (not the lasting record itself).
+      save: () => ({ currentRun }),
+      load(data) {
+        if (!data || !data.currentRun || typeof data.currentRun !== 'object') return;
+        const r = data.currentRun;
+        currentRun = {
+          ...r,
+          honorNames: Array.isArray(r.honorNames) ? r.honorNames : [],
+          factions: r.factions instanceof Set ? r.factions : new Set(),
+        };
+      },
+    });
+  }
+
   return {
     load,
     save,

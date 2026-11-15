@@ -14,7 +14,7 @@ function start(seed) {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
     `${code}\n({ Game, SpriteGen, SiegeLoop, GameState, UnitDefs, BuildDefs, EnemyDefs, SpyActions,
-      EconomyRules, WarCamps, DynamicMapEvents, ContentExpansion, NeutralWildlife })`,
+      EconomyRules, WarCamps, DynamicMapEvents, ContentExpansion, NeutralWildlife, SaveFormat })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -328,7 +328,8 @@ function toNight(api, wave) {
     'and its bonus still pending'
   );
   ok(
-    Game.importGameState({ ...snap, warCamps: undefined }) !== false && camps(GS, W).length === 0,
+    Game.importGameState(api.SaveFormat.seal({ ...snap, warCamps: undefined })) !== false &&
+      camps(GS, W).length === 0,
     'an older save without camps loads with none'
   );
 }

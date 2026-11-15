@@ -509,6 +509,18 @@ const FactionHazards = (() => {
     };
   }
 
+  // Run state in saves: see js/save-registry.js.
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('FactionHazards', {
+      save: () => ({ spreadMessages }),
+      load(data) {
+        resetRun();
+        if (!data) return;
+        if (Number.isFinite(data.spreadMessages)) spreadMessages = data.spreadMessages;
+      },
+    });
+  }
+
   return {
     MIN_TERRITORY_TIER,
     HAZARD_TYPES,
