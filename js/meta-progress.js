@@ -1,5 +1,5 @@
 /**
- * Persistent unlocks — Bloodsand Pit, Hellbane hero, cheat flags.
+ * Persistent unlocks — Champions’ Hall, Hellbane hero, cheat flags.
  */
 const MetaProgress = (() => {
   const STORAGE_KEY = 'myth-and-blood-meta-v1';

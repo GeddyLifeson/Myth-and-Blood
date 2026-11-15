@@ -367,12 +367,12 @@ const Tooltips = (() => {
         footer: 'No key - use this button · Paused always runs 1×',
       },
       'wwe-academy-open': {
-        title: 'Bloodsand Pit',
+        title: 'Champions’ Hall',
         body: 'Recruit squared-circle champions from your academy roster.',
-        footer: 'Requires Bloodsand Pit on field',
+        footer: 'Requires Champions’ Hall on field',
       },
       'crossover-hub-open': {
-        title: 'Company Roll',
+        title: 'Free Companies',
         body: 'Recruit operatives from unlocked evolved factions.',
         footer: 'Requires evolved barracks on field',
       },

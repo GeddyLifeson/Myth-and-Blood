@@ -528,7 +528,7 @@
     "isEnemySettlement": true
   },
   "champions_hall": {
-    "name": "Bloodsand Pit",
+    "name": "Champions’ Hall",
     "cost": 1000,
     "hp": 1200,
     "cover": 0.5,

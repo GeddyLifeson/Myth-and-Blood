@@ -10687,7 +10687,7 @@ const Game = (() => {
         (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts()));
       if (!wweOk) {
         showMessage(
-          'Research Arena Warfare Doctrine or swear the Quarryman’s Oath to unlock the Bloodsand Pit!',
+          'Research Arena Warfare Doctrine or swear the Quarryman’s Oath to unlock the Champions’ Hall!',
           300
         );
         return false;
@@ -10696,12 +10696,12 @@ const Game = (() => {
       const recGuilds = def.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Bloodsand Pit tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Champions’ Hall tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Bloodsand Pit tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Champions’ Hall tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -10882,12 +10882,12 @@ const Game = (() => {
       const recGuilds = bdef.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Bloodsand Pit tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Champions’ Hall tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Bloodsand Pit tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Champions’ Hall tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -11588,7 +11588,7 @@ const Game = (() => {
       ensureWallSlots(b);
     }
     if (b.isWweAcademy) {
-      showMessage('Bloodsand Pit complete! Click it to recruit Champions.', 320);
+      showMessage('Champions’ Hall complete! Click it to recruit Champions.', 320);
       svc('FloatingText').status(b.x, b.y - 20, 'GC', '#c04040');
     }
     if (b.isCrossoverBarracks && isCrossoverBarracksType(b.type)) {
@@ -16100,7 +16100,7 @@ const Game = (() => {
     const def = WweDefs[id];
     if (!def) return false;
     if (!hasWweAcademy()) {
-      showMessage('Complete a Bloodsand Pit on the field first!');
+      showMessage('Complete a Champions’ Hall on the field first!');
       return false;
     }
     if (GS.tactical < def.cost) {

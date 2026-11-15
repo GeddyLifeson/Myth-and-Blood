@@ -143,7 +143,7 @@ const Research = (() => {
       cost: 160,
       wave: 1,
       tier: 5,
-      desc: 'The grand arena goes to war — unlock Bloodsand Pit.',
+      desc: 'The grand arena goes to war — unlock Champions’ Hall.',
     },
     {
       id: 'xf_tes',
@@ -892,7 +892,7 @@ const Research = (() => {
     if (node.faction) {
       const label =
         node.faction === 'champions'
-          ? 'Bloodsand Pit'
+          ? 'Champions’ Hall'
           : `${(typeof CrossoverFactions !== 'undefined' && CrossoverFactions[node.faction]?.label) || 'Faction'} barracks`;
       return `Unlocks ${label} construction`;
     }

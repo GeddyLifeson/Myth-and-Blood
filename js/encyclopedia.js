@@ -886,7 +886,7 @@ const Encyclopedia = (() => {
       entry(
         'champions',
         'Champions and companies',
-        `Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company must first be sworn to your line (each has its own trial, listed under Achievements); then a ${unitName('builder')} raises its hall, and its fighters are recruited from the Company Roll. Each has his own role, trait and weakness. ${all.filter((c) => c.sworn).length} of ${all.length} companies are sworn to you.`
+        `Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company must first be sworn to your line (each has its own trial, listed under Achievements); then a ${unitName('builder')} raises its hall, and its fighters are recruited from the Free Companies. Each has his own role, trait and weakness. ${all.filter((c) => c.sworn).length} of ${all.length} companies are sworn to you.`
       ),
     ];
     for (const c of all) {

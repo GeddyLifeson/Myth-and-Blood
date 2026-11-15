@@ -215,8 +215,8 @@ function toNight(Game, GS) {
   );
   for (const code of ['quarry oath', 'Iron  Creed']) {
     ok(
-      Cheats.submit(code) === true && /Bloodsand Pit unlocked/.test(Cheats.getLastMessage()),
-      `"${code}" opens the Bloodsand Pit`
+      Cheats.submit(code) === true && /Champions’ Hall unlocked/.test(Cheats.getLastMessage()),
+      `"${code}" opens the Champions’ Hall`
     );
   }
   const hints = Cheats.getCodeHints().join(' ');

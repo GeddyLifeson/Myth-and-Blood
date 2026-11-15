@@ -5,7 +5,7 @@ const Cheats = (() => {
   const CODES = {
     'quarry oath': {
       id: 'austin',
-      message: 'THE QUARRYMAN’S OATH HOLDS — Bloodsand Pit unlocked!',
+      message: 'THE QUARRYMAN’S OATH HOLDS — Champions’ Hall unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
       },
@@ -77,7 +77,7 @@ const Cheats = (() => {
     },
     'arena calls': {
       id: 'wwe',
-      message: 'THE ARENA CALLS — Bloodsand Pit unlocked!',
+      message: 'THE ARENA CALLS — Champions’ Hall unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
       },
@@ -212,7 +212,7 @@ const Cheats = (() => {
     'open every gate': {
       id: 'onepiece',
       message:
-        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Bloodsand Pit, Hellbane, every evolved roster!',
+        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Champions’ Hall, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
         Achievements?.tryUnlock('doom_hero_unlock');

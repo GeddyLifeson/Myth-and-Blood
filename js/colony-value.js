@@ -628,7 +628,7 @@ class ColonyValueSystem {
           '',
           'Works — completed player structures by build cost × HP ratio × type mult:',
           '• Hamlet ×1.85 · Merchant guild ×2.05 · Academy ×1.45',
-          '• Evolved barracks ×1.55 · Bloodsand Pit ×1.65',
+          '• Evolved barracks ×1.55 · Champions’ Hall ×1.65',
           '• Castle/keep ×1.25 · Wall ×0.82',
           '',
           'Treasury — liquid TP ×0.38 + settlement TP bonus ×9.5 + wave TP income ×2.',

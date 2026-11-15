@@ -5518,7 +5518,7 @@ body.game-playing #night-prep-card:not([hidden]) {
   display: none;
 }
 
-/* Operative skill trees (Company Roll / Bloodsand Pit) */
+/* Operative skill trees (Free Companies / Champions’ Hall) */
 .operative-skills-panel {
   margin: 12px 0;
   text-align: left;

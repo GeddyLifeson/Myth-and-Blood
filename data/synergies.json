@@ -89,7 +89,7 @@
       "champions"
     ],
     "name": "Bloodsand Guest",
-    "desc": "Any Bloodsand Pit + second faction: +6 morale on wave start.",
+    "desc": "Any Champions’ Hall + second faction: +6 morale on wave start.",
     "bonus": {
       "waveMorale": 6
     },
@@ -126,7 +126,7 @@
       "sawtooth"
     ],
     "name": "Arena Siege",
-    "desc": "Bloodsand Pit + Sawtooth: +12% siege damage from evolved units.",
+    "desc": "Champions’ Hall + Sawtooth: +12% siege damage from evolved units.",
     "bonus": {
       "siegeDmg": 0.12
     },
