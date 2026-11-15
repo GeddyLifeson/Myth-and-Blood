@@ -3,9 +3,9 @@
  */
 const Cheats = (() => {
   const CODES = {
-    'iron creed': {
+    'quarry oath': {
       id: 'austin',
-      message: 'THE IRON CREED HOLDS — Grand Coliseum unlocked!',
+      message: 'THE QUARRYMAN’S OATH HOLDS — Champions’ Hall unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
       },
@@ -77,7 +77,7 @@ const Cheats = (() => {
     },
     'arena calls': {
       id: 'wwe',
-      message: 'THE ARENA CALLS — Grand Coliseum unlocked!',
+      message: 'THE ARENA CALLS — Champions’ Hall unlocked!',
       apply() {
         MetaProgress.unlockWweAcademy();
       },
@@ -212,13 +212,15 @@ const Cheats = (() => {
     'open every gate': {
       id: 'onepiece',
       message:
-        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Coliseum, Hellbane, every evolved roster!',
+        'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Champions’ Hall, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
         Achievements?.tryUnlock('doom_hero_unlock');
       },
     },
   };
+  // Codes renamed with their places; players who learned the old words can still type them.
+  const OLD_CODES = { 'iron creed': 'quarry oath' };
 
   let lastMessage = '';
   let pendingRunMark = false;
@@ -235,8 +237,8 @@ const Cheats = (() => {
   }
 
   function submit(code) {
-    const key = normalize(code);
-    const cheat = CODES[key];
+    const typed = normalize(code);
+    const cheat = CODES[OLD_CODES[typed] || typed];
     if (!cheat) {
       lastMessage = 'Unknown cheat code.';
       return false;

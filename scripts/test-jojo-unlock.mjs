@@ -27,9 +27,9 @@ function loadModules() {
     WweDefs: {},
     CrossoverDefs: {},
     getCrossoverDef: (id) => {
-      if (id === 'master_chief') return { faction: 'halo' };
-      if (id === 'marcus_fenix') return { faction: 'gears' };
-      if (id === 'baki_hanma') return { faction: 'baki' };
+      if (id === 'torvald_greyhame') return { faction: 'greywatch' };
+      if (id === 'hale_brandreth') return { faction: 'sawtooth' };
+      if (id === 'kell_splitlip') return { faction: 'knucklebone' };
       return { faction: 'crossover' };
     },
   };
@@ -72,7 +72,7 @@ function sample(allied, wave, multiFaction = false) {
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-recruit('master_chief', 'marcus_fenix', 'baki_hanma');
+recruit('torvald_greyhame', 'hale_brandreth', 'kell_splitlip');
 for (let w = 1; w <= 10; w++) sample(w <= 7, w, w % 2 === 0);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
 ok(MetaProgress.isJojoUnlocked(), 'victory with stand alliance unlocks JoJo');
@@ -81,7 +81,7 @@ ok(Achievements.evaluateRule('run_stand_alliance:8:0.55:3'), 'stand alliance rul
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-recruit('master_chief', 'marcus_fenix', 'baki_hanma');
+recruit('torvald_greyhame', 'hale_brandreth', 'kell_splitlip');
 for (let w = 1; w <= 10; w++) sample(w <= 3, w);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
 ok(!MetaProgress.isJojoUnlocked(), 'low alliance wave majority blocks JoJo unlock');
@@ -89,7 +89,7 @@ ok(!MetaProgress.isJojoUnlocked(), 'low alliance wave majority blocks JoJo unloc
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-recruit('master_chief', 'marcus_fenix');
+recruit('torvald_greyhame', 'hale_brandreth');
 for (let w = 1; w <= 10; w++) sample(true, w);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
 ok(!MetaProgress.isJojoUnlocked(), 'fewer than three recruits blocks JoJo unlock');
@@ -97,7 +97,7 @@ ok(!MetaProgress.isJojoUnlocked(), 'fewer than three recruits blocks JoJo unlock
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-recruit('master_chief', 'marcus_fenix', 'baki_hanma');
+recruit('torvald_greyhame', 'hale_brandreth', 'kell_splitlip');
 for (let w = 1; w <= 10; w++) sample(true, w);
 Achievements.onEvent('game_end', { victory: false, wave: 80 });
 ok(!MetaProgress.isJojoUnlocked(), 'defeat with good alliance does not unlock');
@@ -105,7 +105,7 @@ ok(!MetaProgress.isJojoUnlocked(), 'defeat with good alliance does not unlock');
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-recruit('master_chief', 'marcus_fenix', 'baki_hanma');
+recruit('torvald_greyhame', 'hale_brandreth', 'kell_splitlip');
 for (let w = 1; w <= 10; w++) sample(true, w, w <= 5);
 ok(Achievements.evaluateRule('stand_alliance_waves:10'), 'ten stand alliance wave milestone');
 ok(Achievements.evaluateRule('stand_multi_faction_waves:5'), 'five multi-faction pose milestone');

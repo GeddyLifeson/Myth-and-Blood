@@ -1609,7 +1609,7 @@ function resolvePlayerSpriteType(type) {
     const cdef = getCrossoverDef(type);
     if (cdef?.faction) return `roster_${cdef.faction}`;
   }
-  if (typeof isWweUnit === 'function' && isWweUnit(type)) return 'roster_wwe';
+  if (typeof isWweUnit === 'function' && isWweUnit(type)) return 'roster_champions';
   return type;
 }
 

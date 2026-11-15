@@ -241,43 +241,52 @@ const Roster = (() => {
 
   // Each operative faction adds one small signature on top of the archetype.
   const FACTION_SIGNATURES = {
-    ultimis: {
+    powderhorn: {
       note: 'Horde breakers: +20% damage to goblins and rats.',
       fx: { vsType: { goblin: 1.2, plague_rat: 1.2, goblin_sapper: 1.2 } },
     },
-    primis: { note: 'Drilled: takes 6% less damage.', fx: { flatResist: 0.06 } },
-    halo: { note: 'Marksmanship: +10% damage at range.', fx: { farShot: { min: 120, mult: 1.1 } } },
-    gears: {
+    pale_vigil: { note: 'Drilled: takes 6% less damage.', fx: { flatResist: 0.06 } },
+    greywatch: {
+      note: 'Marksmanship: +10% damage at range.',
+      fx: { farShot: { min: 120, mult: 1.1 } },
+    },
+    sawtooth: {
       note: 'Close-quarters: enemies that strike them in melee are hurt.',
       fx: { thorns: 3 },
     },
-    lotr: {
+    thornroad: {
       note: 'Giant slayers: +15% damage to bosses, monsters and elites.',
       fx: { bossBane: 1.15 },
     },
-    baki: { note: 'Fighting spirit: hit 20% harder below half health.', fx: { bloodRage: 1.2 } },
-    jojo: {
+    knucklebone: {
+      note: 'Fighting spirit: hit 20% harder below half health.',
+      fx: { bloodRage: 1.2 },
+    },
+    marrow_choir: {
       note: 'Opening move: the first strike on each new target lands 25% harder.',
       fx: { pounceEach: 1.25 },
     },
-    fotns: {
+    quiet_hand: {
       note: 'Pressure points: blows from behind land 25% harder still.',
       fx: { backstab: 1.25 },
     },
-    dragonball: {
+    emberblood: {
       note: 'Pursuit: +30% damage to line-breakers and routing enemies.',
       fx: { runDown: 1.3 },
     },
-    imperium: { note: 'Power armour: arrows and bolts do 15% less.', fx: { armourVsRanged: 0.85 } },
-    crystal: {
+    iron_psalm: {
+      note: 'Power armour: arrows and bolts do 15% less.',
+      fx: { armourVsRanged: 0.85 },
+    },
+    saltglass: {
       note: 'Mending light: soldiers beside them slowly recover.',
       fx: { dressing: { r: 50, pct: 0.006 } },
     },
-    warp: {
+    open_wound: {
       note: 'Dread: enemies they hit deal 10% less damage for a moment.',
       fx: { hex: { pct: 0.1, ticks: 120 } },
     },
-    tes: {
+    rimehowl: {
       note: 'Renown: each kill lifts the morale of soldiers nearby.',
       fx: { killCheer: { r: 90, morale: 2 } },
     },

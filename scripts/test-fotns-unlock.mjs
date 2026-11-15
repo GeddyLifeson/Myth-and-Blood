@@ -48,7 +48,7 @@ ok(hokutoAch && hokutoAch.rule === 'run_hokuto_solo', 'fotns hokuto victory achi
 function soloKill(bossType = 'boss_gorath') {
   Achievements.onEvent('solo_hero_boss_kill', {
     solo: true,
-    heroType: 'master_chief',
+    heroType: 'torvald_greyhame',
     bossType,
     bossName: 'Gorath the Breaker',
     wave: 50,

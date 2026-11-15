@@ -6,17 +6,17 @@ const VisualPolish = (() => {
   const BASE_H = 600;
 
   const FACTION_ACCENT = {
-    wwe: { ring: '#ffd700', pattern: 'star' },
+    champions: { ring: '#ffd700', pattern: 'star' },
     doom: { ring: '#40ff40', pattern: 'pulse' },
-    ultimis: { ring: '#c06030', pattern: 'zigzag' },
-    primis: { ring: '#d07040', pattern: 'zigzag' },
-    halo: { ring: '#80c0ff', pattern: 'shield' },
-    gears: { ring: '#c04040', pattern: 'gear' },
-    lotr: { ring: '#c0a040', pattern: 'leaf' },
-    baki: { ring: '#c04040', pattern: 'fist' },
-    jojo: { ring: '#e0c040', pattern: 'ora' },
-    fotns: { ring: '#4080c0', pattern: 'fist' },
-    dragonball: { ring: '#e06040', pattern: 'ki' },
+    powderhorn: { ring: '#c06030', pattern: 'zigzag' },
+    pale_vigil: { ring: '#d07040', pattern: 'zigzag' },
+    greywatch: { ring: '#80c0ff', pattern: 'shield' },
+    sawtooth: { ring: '#c04040', pattern: 'gear' },
+    thornroad: { ring: '#c0a040', pattern: 'leaf' },
+    knucklebone: { ring: '#c04040', pattern: 'fist' },
+    marrow_choir: { ring: '#e0c040', pattern: 'ora' },
+    quiet_hand: { ring: '#4080c0', pattern: 'fist' },
+    emberblood: { ring: '#e06040', pattern: 'ki' },
   };
 
   const deathCorpses = [];
@@ -913,7 +913,7 @@ const VisualPolish = (() => {
   function drawFactionAccent(ctx, u) {
     if (!u || u.hp <= 0) return;
     let fid = null;
-    if (u.isWwe) fid = 'wwe';
+    if (u.isWwe) fid = 'champions';
     else if (u.isDoomslayer) fid = 'doom';
     else if (u.isCrossover && typeof getCrossoverDef === 'function') {
       fid = getCrossoverDef(u.type)?.faction;
@@ -929,7 +929,7 @@ const VisualPolish = (() => {
     ctx.arc(u.x, u.y, 17, 0, Math.PI * 2);
     ctx.stroke();
 
-    if (acc.pattern === 'star' && fid === 'wwe') {
+    if (acc.pattern === 'star' && fid === 'champions') {
       ctx.fillStyle = acc.ring;
       ctx.font = '7px sans-serif';
       ctx.textAlign = 'center';

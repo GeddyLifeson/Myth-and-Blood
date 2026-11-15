@@ -338,7 +338,7 @@ const Achievements = (() => {
   }
 
   function getUnitFaction(unitType) {
-    if (typeof isWweUnit === 'function' && isWweUnit(unitType)) return 'wwe';
+    if (typeof isWweUnit === 'function' && isWweUnit(unitType)) return 'champions';
     if (unitType === 'doomslayer_hero') return 'doom';
     const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(unitType) : null;
     return def?.faction || null;
@@ -783,7 +783,7 @@ const Achievements = (() => {
       case 'wwe_recruit':
         if (data.wweId) session.crossoverHeroRecruits.add(data.wweId);
         MetaProgress.recordWweRecruit(data.wweId);
-        addMastery('wwe', 15);
+        addMastery('champions', 15);
         break;
 
       case 'crossover_mastery_challenge':
@@ -926,7 +926,10 @@ const Achievements = (() => {
       case 'dragon_boss_slay':
         return s.flags.has(kind);
       case 'unlock': {
-        const name = { ultimis: '115', 115: '115', primis: 'Primus', primus: 'Primus' }[rest[0]];
+        // Company ids no longer match the unlock getter names, so ask by id first.
+        if (rest[0] === 'champions') return !!MetaProgress.isWweUnlocked?.();
+        if (MetaProgress.isCrossoverFactionUnlocked?.(rest[0])) return true;
+        const name = { 115: '115', primus: 'Primus' }[rest[0]];
         const key = name || rest[0].replace(/(^|_)(\w)/g, (_, _u, c) => c.toUpperCase());
         const fn = key === 'DoomHero' ? 'isDoomslayerHeroUnlocked' : `is${key}Unlocked`;
         return !!MetaProgress[fn]?.();

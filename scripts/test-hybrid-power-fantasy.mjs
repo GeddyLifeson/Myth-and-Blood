@@ -49,7 +49,7 @@ function loadModules() {
     StoryLore: { getDominantBranch: () => null },
     MetaProgress: { isCrossoverType: () => false },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     MAX_VETERAN_TIER: 6,
     isValidHonorName: (n) => !!n && n.length > 2,
   };
@@ -87,7 +87,7 @@ function seedMixed(FML) {
   FML.onRunStart({ creative: false });
   for (let i = 0; i < 10; i++) FML.recordDeploy('archer', 20);
   for (let i = 0; i < 10; i++) FML.recordDeploy('mage', 50);
-  FML.recordDeploy('goku', 60);
+  FML.recordDeploy('tavish_coalheart', 60);
 }
 
 const { FoundationalMedievalLayer, ThematicEraSynergies, HybridPowerFantasy, GrandStrategy } =

@@ -675,10 +675,10 @@ const GameBuildings = (() => {
       const wweOk =
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isWweUnlocked() ||
-        (svc('Research') && svc('Research').isFactionUnlocked('wwe', getResearchOpts()));
+        (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts()));
       if (!wweOk) {
         showMessage(
-          'Research Arena Warfare Doctrine or join the Iron Creed to unlock the Grand Coliseum!',
+          'Research Arena Warfare Doctrine or swear the Quarryman’s Oath to unlock the Champions’ Hall!',
           300
         );
         return false;
@@ -687,12 +687,12 @@ const GameBuildings = (() => {
       const recGuilds = def.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Grand Coliseum tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Champions’ Hall tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Grand Coliseum tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Champions’ Hall tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -861,24 +861,24 @@ const GameBuildings = (() => {
     const research = svc('Research');
     if (bdef?.isWweAcademy) {
       // Same rule finalizeBuild uses: a Research Lab unlock counts, not just the cheat.
-      const coliseumOk =
+      const pitOk =
         unlockAll ||
         svc('MetaProgress').isWweUnlocked() ||
-        (research && research.isFactionUnlocked('wwe', getResearchOpts()));
-      if (!coliseumOk) {
-        showMessage('Research Arena Warfare Doctrine or join the Iron Creed first!');
+        (research && research.isFactionUnlocked('champions', getResearchOpts()));
+      if (!pitOk) {
+        showMessage('Research Arena Warfare Doctrine or swear the Quarryman’s Oath first!');
         return false;
       }
       const recHamlets = bdef.recommendedHamlets ?? 2;
       const recGuilds = bdef.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Grand Coliseum tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Champions’ Hall tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Grand Coliseum tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Champions’ Hall tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -978,7 +978,7 @@ const GameBuildings = (() => {
       ensureWallSlots(b);
     }
     if (b.isWweAcademy) {
-      showMessage('Grand Coliseum complete! Click it to recruit Champions.', 320);
+      showMessage('Champions’ Hall complete! Click it to recruit Champions.', 320);
       svc('FloatingText').status(b.x, b.y - 20, 'GC', '#c04040');
     }
     if (b.isCrossoverBarracks && isCrossoverBarracksType(b.type)) {

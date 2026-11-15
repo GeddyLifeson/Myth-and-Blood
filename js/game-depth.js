@@ -628,7 +628,7 @@ class GameDepthSystem {
     return unit;
   }
 
-  /** Evolved / Coliseum / Hellbane scale with wave progression; vanilla troops do not. */
+  /** Evolved / Bloodsand / Hellbane scale with wave progression; vanilla troops do not. */
   getIpWaveScale(wave) {
     const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(wave) : 0;

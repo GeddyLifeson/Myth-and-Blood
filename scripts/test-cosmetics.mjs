@@ -70,7 +70,7 @@ const copy = Cosmetics.resolveVictoryCopy('default', {
 });
 assert(copy.crest === '◇', 'theme should override crest');
 
-assert(!Cosmetics.isUnlockMet('creative_skin_wwe'), 'mastery skin locked without progress');
+assert(!Cosmetics.isUnlockMet('creative_skin_champions'), 'mastery skin locked without progress');
 
 Cosmetics.setUnitSkin('royal_gold');
 Cosmetics.save();

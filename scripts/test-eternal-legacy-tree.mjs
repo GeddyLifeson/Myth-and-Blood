@@ -32,7 +32,7 @@ function loadEternalLegacy(extra = {}) {
     totalKills: 500,
     totalWavesCleared: 40,
     honorCount: 3,
-    factionsUsed: ['gears'],
+    factionsUsed: ['sawtooth'],
     favoriteUnitType: 'archer',
     unitKills: { archer: 60 },
     unitDeploys: { mage: 20, healer: 25 },

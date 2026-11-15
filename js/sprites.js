@@ -94,20 +94,20 @@ const SpriteGen = (() => {
     boss_malachar: { body: '#2a2026', accent: '#50404a', mark: '#ff2080', size: 22 },
     // Evolved allies: bone and steel like the rest of the line; each is told apart by
     // its silhouette (see ROSTER_LOOK), not by a tint.
-    roster_ultimis: { body: '#8a8170', accent: STEEL, mark: '#5a4a38', size: 10 },
-    roster_primis: { body: '#b8ad90', accent: STEEL, mark: '#5d564a', size: 10 },
-    roster_halo: { body: '#aab0b0', accent: STEEL, mark: '#57534e', size: 10 },
-    roster_gears: { body: '#77705f', accent: '#57534e', mark: STEEL, size: 10 },
-    roster_lotr: { body: '#857c6a', accent: '#6a6254', mark: STEEL, size: 10 },
-    roster_baki: { body: '#d9b08c', accent: '#d9b08c', mark: '#e4dcc4', size: 10 },
-    roster_jojo: { body: '#c4baa0', accent: STEEL, mark: '#bcd6e4', size: 10 },
-    roster_fotns: { body: '#9c9078', accent: '#d9b08c', mark: STEEL, size: 10 },
-    roster_dragonball: { body: '#d8d0b8', accent: '#b8ad90', mark: STEEL, size: 10 },
-    roster_imperium: { body: '#cfc5a8', accent: '#aab4c0', mark: STEEL, size: 10 },
-    roster_crystal: { body: '#b4bcc0', accent: '#bcd6e4', mark: STEEL, size: 10 },
-    roster_warp: { body: '#6e6a70', accent: '#57534e', mark: STEEL, size: 10 },
-    roster_tes: { body: '#8d8270', accent: '#8f9aa8', mark: STEEL, size: 10 },
-    roster_wwe: { body: '#d9b08c', accent: '#d9b08c', mark: STEEL, size: 10 },
+    roster_powderhorn: { body: '#8a8170', accent: STEEL, mark: '#5a4a38', size: 10 },
+    roster_pale_vigil: { body: '#b8ad90', accent: STEEL, mark: '#5d564a', size: 10 },
+    roster_greywatch: { body: '#aab0b0', accent: STEEL, mark: '#57534e', size: 10 },
+    roster_sawtooth: { body: '#77705f', accent: '#57534e', mark: STEEL, size: 10 },
+    roster_thornroad: { body: '#857c6a', accent: '#6a6254', mark: STEEL, size: 10 },
+    roster_knucklebone: { body: '#d9b08c', accent: '#d9b08c', mark: '#e4dcc4', size: 10 },
+    roster_marrow_choir: { body: '#c4baa0', accent: STEEL, mark: '#bcd6e4', size: 10 },
+    roster_quiet_hand: { body: '#9c9078', accent: '#d9b08c', mark: STEEL, size: 10 },
+    roster_emberblood: { body: '#d8d0b8', accent: '#b8ad90', mark: STEEL, size: 10 },
+    roster_iron_psalm: { body: '#cfc5a8', accent: '#aab4c0', mark: STEEL, size: 10 },
+    roster_saltglass: { body: '#b4bcc0', accent: '#bcd6e4', mark: STEEL, size: 10 },
+    roster_open_wound: { body: '#6e6a70', accent: '#57534e', mark: STEEL, size: 10 },
+    roster_rimehowl: { body: '#8d8270', accent: '#8f9aa8', mark: STEEL, size: 10 },
+    roster_champions: { body: '#d9b08c', accent: '#d9b08c', mark: STEEL, size: 10 },
   };
   // Other modules still write their own colours into UNIT_STYLE at start-up. The ink
   // palette is kept apart from that table so the roster stays on one palette; a type
@@ -983,20 +983,20 @@ const SpriteGen = (() => {
     harpy: { w: 'none', h: 'bare' },
     sky_drake: { w: 'none', h: 'bare' },
     // Evolved allies: one archetype each, told apart by hat, weapon and build.
-    roster_ultimis: { w: 'musket', h: 'flatcap' },
-    roster_primis: { w: 'twinblades', h: 'brimhat' },
-    roster_halo: { w: 'carbine', h: 'visor', plates: 1 },
-    roster_gears: { w: 'sawblade', h: 'bandana', brute: 1 },
-    roster_lotr: { w: 'bow', h: 'hood', cloak: 1 },
-    roster_baki: { w: 'fists', h: 'cropped', brute: 1, bare: 1 },
-    roster_jojo: { w: 'fists', h: 'tallcap', spirit: 1 },
-    roster_fotns: { w: 'fists', h: 'headband', bare: 1, cloak: 1 },
-    roster_dragonball: { w: 'orb', h: 'topknot', sash: 1 },
-    roster_imperium: { w: 'mace', h: 'crest', bigPauldrons: 1 },
-    roster_crystal: { w: 'crystalspear', h: 'shards', shards: 1 },
-    roster_warp: { w: 'jaggedaxe', h: 'onehorn', tentacle: 1 },
-    roster_tes: { w: 'axe', h: 'hornhelm', shield: 1 },
-    roster_wwe: { w: 'fists', h: 'mask', bare: 1, belt: 1 },
+    roster_powderhorn: { w: 'musket', h: 'flatcap' },
+    roster_pale_vigil: { w: 'twinblades', h: 'brimhat' },
+    roster_greywatch: { w: 'carbine', h: 'visor', plates: 1 },
+    roster_sawtooth: { w: 'sawblade', h: 'bandana', brute: 1 },
+    roster_thornroad: { w: 'bow', h: 'hood', cloak: 1 },
+    roster_knucklebone: { w: 'fists', h: 'cropped', brute: 1, bare: 1 },
+    roster_marrow_choir: { w: 'fists', h: 'tallcap', spirit: 1 },
+    roster_quiet_hand: { w: 'fists', h: 'headband', bare: 1, cloak: 1 },
+    roster_emberblood: { w: 'orb', h: 'topknot', sash: 1 },
+    roster_iron_psalm: { w: 'mace', h: 'crest', bigPauldrons: 1 },
+    roster_saltglass: { w: 'crystalspear', h: 'shards', shards: 1 },
+    roster_open_wound: { w: 'jaggedaxe', h: 'onehorn', tentacle: 1 },
+    roster_rimehowl: { w: 'axe', h: 'hornhelm', shield: 1 },
+    roster_champions: { w: 'fists', h: 'mask', bare: 1, belt: 1 },
   };
   const DEFAULT_KIT = { w: 'sword', h: 'bare' };
   const GUN_WEAPONS = new Set(['musket', 'carbine']);
@@ -1888,7 +1888,7 @@ const SpriteGen = (() => {
 
   function drawInkFigure(ctx, type, rotation, team, frame, animState) {
     const style = resolveUnitStyle(type, team, 'footman');
-    const kit = KIT[type] || (type.startsWith('roster_') ? KIT.roster_ultimis : DEFAULT_KIT);
+    const kit = KIT[type] || (type.startsWith('roster_') ? KIT.roster_powderhorn : DEFAULT_KIT);
     const r = style.size * 1.3;
     const enemy = team === 'enemy';
     const fam = familyOf(type, team);
@@ -3094,7 +3094,7 @@ const SpriteGen = (() => {
   /** A body on the ground. `down` runs 0 (just folding) to 1 (flat). */
   function drawFallenBody(ctx, type, team, cause, down, f) {
     const style = resolveUnitStyle(type, team, 'footman');
-    const kit = KIT[type] || (type.startsWith('roster_') ? KIT.roster_ultimis : DEFAULT_KIT);
+    const kit = KIT[type] || (type.startsWith('roster_') ? KIT.roster_powderhorn : DEFAULT_KIT);
     const r = style.size * 1.3;
     const enemy = team === 'enemy';
     const fam = familyOf(type, team);
@@ -5712,11 +5712,11 @@ const SpriteGen = (() => {
       'abomination',
       'behemoth',
       'war_chief',
-      'roster_ultimis',
-      'roster_halo',
-      'roster_jojo',
-      'roster_dragonball',
-      'roster_wwe',
+      'roster_powderhorn',
+      'roster_greywatch',
+      'roster_marrow_choir',
+      'roster_emberblood',
+      'roster_champions',
     ];
     // Each side is warmed only in the facing it starts in: soldiers look north,
     // the enemy comes south.
@@ -6339,18 +6339,18 @@ const SpriteGen = (() => {
     } else if (b.isCrossoverBarracks) {
       const hqPal =
         {
-          ultimis: '#c06030',
-          primis: '#d07040',
-          halo: '#408040',
-          gears: '#506080',
-          lotr: '#406050',
-          baki: '#c04040',
-          jojo: '#8040a0',
-          fotns: '#4080c0',
-          dragonball: '#e06040',
-          imperium: '#4060a0',
-          crystal: '#5080c0',
-          warp: '#802040',
+          powderhorn: '#c06030',
+          pale_vigil: '#d07040',
+          greywatch: '#408040',
+          sawtooth: '#506080',
+          thornroad: '#406050',
+          knucklebone: '#c04040',
+          marrow_choir: '#8040a0',
+          quiet_hand: '#4080c0',
+          emberblood: '#e06040',
+          iron_psalm: '#4060a0',
+          saltglass: '#5080c0',
+          open_wound: '#802040',
         }[b.crossoverFaction] || '#60a0c0';
       const r = b.radius || 48;
       ctx.fillStyle = '#2a2830';
@@ -6372,7 +6372,7 @@ const SpriteGen = (() => {
           CrossoverFactions[b.crossoverFaction]?.label) ||
         'HQ';
       ctx.fillText(factionLabel.toUpperCase(), b.x, b.y + 4);
-    } else if (b.type === 'wwe_academy') {
+    } else if (b.type === 'champions_hall') {
       ctx.fillStyle = '#202028';
       ctx.fillRect(b.x - 48, b.y - 8, 96, 36);
       ctx.fillStyle = '#c04040';
