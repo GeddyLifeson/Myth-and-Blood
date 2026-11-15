@@ -50,6 +50,7 @@ export const GAME_SCRIPTS = [
   'advanced-difficulty.js',
   'game-modes.js',
   'onboarding.js',
+  'how-to-play.js',
   'legacy.js',
   'siege-loop.js',
   'crown-legacies.js',
@@ -115,9 +116,11 @@ export const GAME_SCRIPTS = [
   'analytics.js',
   'settings.js',
   'availability.js',
+  'panels.js',
   'tooltips.js',
   'ux.js',
   'ui.js',
+  'mobile-ui.js',
   'main.js',
 ];
 

@@ -1,0 +1,388 @@
+/**
+ * Teaching: the introduction's prompt card and ring (js/onboarding.js), and the
+ * How to Play screen (js/how-to-play.js). Bone, blood red and black, hard shadows.
+ */
+
+/* ── The prompt card ─────────────────────────────────────────── */
+#teach-prompt {
+  position: fixed;
+  top: var(--teach-top, 56px);
+  right: var(--teach-right, 140px);
+  z-index: 45;
+  box-sizing: border-box;
+  width: min(300px, calc(100vw - 24px));
+  padding: 10px 12px 10px;
+  background: #0b0809;
+  border: 2px solid #c8202a;
+  box-shadow: 4px 4px 0 #000;
+  color: #ece4d0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  font-size: calc(14px * var(--font-scale, 1));
+  line-height: 1.4;
+}
+#teach-prompt[hidden] {
+  display: none;
+}
+#teach-prompt.teach-in {
+  animation: teach-in 0.25s ease-out;
+}
+@keyframes teach-in {
+  from {
+    transform: translateY(-6px);
+    opacity: 0;
+  }
+  to {
+    transform: none;
+    opacity: 1;
+  }
+}
+.teach-prompt-tag {
+  margin-bottom: 4px;
+  color: #ff4a3a;
+  font-family: 'Cinzel', serif;
+  font-size: calc(11px * var(--font-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.teach-prompt-text {
+  margin: 0 0 9px;
+}
+#teach-prompt kbd,
+#how-to-play kbd {
+  display: inline-block;
+  min-width: 1.1em;
+  padding: 0 5px;
+  background: #ece4d0;
+  border: 1px solid #000;
+  box-shadow: 1px 1px 0 #000;
+  color: #0b0809;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+  font-size: 0.9em;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: center;
+}
+.teach-prompt-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.teach-prompt-ok {
+  padding: 4px 14px;
+  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  border: 1px solid #c8202a;
+  box-shadow: 2px 2px 0 #000;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: calc(12px * var(--font-scale, 1));
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.teach-prompt-ok:hover,
+.teach-prompt-ok:focus-visible {
+  background: linear-gradient(180deg, #b0181e 0%, #5c0a10 100%);
+}
+.teach-prompt-skip {
+  padding: 2px 0;
+  background: none;
+  border: 0;
+  color: #a89c88;
+  cursor: pointer;
+  font: inherit;
+  font-size: calc(12px * var(--font-scale, 1));
+  text-decoration: underline;
+}
+.teach-prompt-skip:hover,
+.teach-prompt-skip:focus-visible {
+  color: #ece4d0;
+}
+
+/* Narrow screens have no gap beside the field: the card goes to the bottom, above the
+   message line. With the selection card open there it moves to the top instead. */
+@media (max-width: 900px) {
+  #teach-prompt {
+    top: auto;
+    right: auto;
+    bottom: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  #teach-prompt.teach-in {
+    animation: none;
+  }
+}
+#teach-prompt.teach-dodge {
+  top: var(--teach-top, 56px);
+  bottom: auto;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  animation: none;
+}
+
+/* ── The ring round a button ─────────────────────────────────── */
+#teach-ring {
+  position: fixed;
+  z-index: 46;
+  box-sizing: border-box;
+  border: 2px solid #ece4d0;
+  outline: 2px solid #000;
+  pointer-events: none;
+  animation: teach-ring 1s ease-out infinite;
+}
+#teach-ring[hidden] {
+  display: none;
+}
+@keyframes teach-ring {
+  from {
+    box-shadow:
+      0 0 0 0 rgba(255, 58, 42, 0.95),
+      0 0 0 2px #000;
+  }
+  to {
+    box-shadow:
+      0 0 0 12px rgba(255, 58, 42, 0),
+      0 0 0 2px #000;
+  }
+}
+
+/* ── How to Play ─────────────────────────────────────────────── */
+#how-to-play {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 16px;
+  background: rgba(4, 3, 4, 0.82);
+  color: #ece4d0;
+  font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
+}
+#how-to-play[hidden] {
+  display: none;
+}
+.htp-box {
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  width: min(980px, 100%);
+  max-height: 100%;
+  background: #0b0809;
+  border: 2px solid #c8202a;
+  box-shadow: 6px 6px 0 #000;
+}
+.htp-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px 10px;
+  border-bottom: 1px solid #3a2a2a;
+}
+.htp-title {
+  margin: 0;
+  color: #ece4d0;
+  font-family: 'Pirata One', 'Cinzel', serif;
+  font-size: 30px;
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.htp-title b {
+  color: #e0241c;
+  font-weight: 400;
+}
+.htp-close {
+  padding: 4px 12px;
+  background: #1c1416;
+  border: 1px solid #6a5a3a;
+  box-shadow: 2px 2px 0 #000;
+  color: #ece4d0;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.htp-close:hover,
+.htp-close:focus-visible {
+  border-color: #ece4d0;
+}
+.htp-body {
+  display: flex;
+  min-height: 0;
+  flex: 1 1 auto;
+}
+.htp-tabs {
+  display: flex;
+  flex: 0 0 190px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 0 12px 12px;
+  border-right: 1px solid #3a2a2a;
+  overflow-y: auto;
+}
+.htp-tab {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 7px 10px;
+  background: none;
+  border: 1px solid transparent;
+  border-right: 0;
+  color: #a89c88;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-align: left;
+}
+.htp-tab i {
+  color: #6a5a4a;
+  font-size: 11px;
+  font-style: normal;
+}
+.htp-tab:hover,
+.htp-tab:focus-visible {
+  color: #ece4d0;
+}
+.htp-tab[aria-selected='true'] {
+  background: #1c1012;
+  border-color: #c8202a;
+  color: #fff;
+}
+.htp-tab[aria-selected='true'] i {
+  color: #ff4a3a;
+}
+.htp-page {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 14px 20px 16px;
+  overflow-y: auto;
+}
+.htp-art {
+  display: block;
+  width: 100%;
+  max-width: 720px;
+  height: auto;
+  margin: 0 auto 12px;
+  background: #171112;
+  border: 1px solid #3a2a2a;
+  box-shadow: 3px 3px 0 #000;
+  image-rendering: pixelated;
+}
+.htp-section-title {
+  max-width: 720px;
+  margin: 0 auto 6px;
+  color: #ff4a3a;
+  font-family: 'Cinzel', serif;
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.htp-page p {
+  max-width: 720px;
+  margin: 0 auto 8px;
+  font-size: 15px;
+  line-height: 1.45;
+}
+.htp-page p b {
+  color: #fff;
+}
+.htp-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 18px 10px;
+  border-top: 1px solid #3a2a2a;
+  color: #a89c88;
+  font-size: 13px;
+}
+.htp-nav {
+  display: flex;
+  gap: 8px;
+}
+.htp-nav button {
+  padding: 4px 14px;
+  background: linear-gradient(180deg, #8a1014 0%, #4a080c 100%);
+  border: 1px solid #c8202a;
+  box-shadow: 2px 2px 0 #000;
+  color: #fff;
+  cursor: pointer;
+  font-family: 'Cinzel', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.htp-nav button:disabled {
+  background: #1c1416;
+  border-color: #3a2a2a;
+  color: #8a7f74;
+  cursor: default;
+}
+
+@media (max-width: 700px) {
+  #how-to-play {
+    padding: 6px;
+  }
+  .htp-body {
+    flex-direction: column;
+  }
+  .htp-tabs {
+    flex: 0 0 auto;
+    flex-direction: row;
+    padding: 6px;
+    border-right: 0;
+    border-bottom: 1px solid #3a2a2a;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .htp-tab {
+    flex: 0 0 auto;
+    border-right: 1px solid transparent;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .htp-tab[aria-selected='true'] {
+    border-right-color: #c8202a;
+  }
+  .htp-page {
+    padding: 10px 12px 12px;
+  }
+  .htp-foot-note {
+    display: none;
+  }
+}
+
+/* The link the How to Play module adds to the key sheet and the pause menu. */
+.htp-link {
+  margin-left: 8px;
+  padding: 2px 10px;
+  background: #1c1416;
+  border: 1px solid #c8202a;
+  color: #ece4d0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.htp-link:hover,
+.htp-link:focus-visible {
+  background: #4a080c;
+  color: #fff;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #teach-prompt.teach-in,
+  #teach-ring {
+    animation: none;
+  }
+}
