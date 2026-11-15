@@ -100,4 +100,5 @@ export const HEADLESS_FILES = [
   'game.js',
   'hotkeys.js',
   'availability.js',
+  'panels.js',
 ];

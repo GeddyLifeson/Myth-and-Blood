@@ -66,10 +66,13 @@ const SpriteLod = (() => {
     );
   }
 
+  /** States a crowd-tier sprite still shows: they say what the unit is doing. */
+  const CROWD_ANIMS = new Set(['walk', 'rout', 'yield', 'throw', 'lay']);
+
   function cacheFrameForLod(lod, frame, animState = 'idle') {
     if (isKeyAnim(animState)) return frame;
     if (lod >= LOD.MINIMAL) return 0;
-    if (lod >= LOD.LOW) return animState === 'walk' || animState === 'rout' ? frame : 0;
+    if (lod >= LOD.LOW) return CROWD_ANIMS.has(animState) ? frame : 0;
     return frame;
   }
 
@@ -78,7 +81,7 @@ const SpriteLod = (() => {
     if (lod >= LOD.MINIMAL) return 'idle';
     if (lod >= LOD.LOW) {
       // A crowd still walks and still routs; work poses and cheering fall back to idle.
-      return animState === 'walk' || animState === 'rout' ? animState : 'idle';
+      return CROWD_ANIMS.has(animState) ? animState : 'idle';
     }
     return animState;
   }

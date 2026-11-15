@@ -2829,6 +2829,10 @@ const Game = (() => {
     get freeArmyBonus() {
       return unitCounts.freeArmyBonus || 0;
     },
+    /** The purse, for the introduction: a prompt waits until its subject can be paid for. */
+    get tp() {
+      return GS.tactical;
+    },
     /** Complete player walls: each holds a few line-breakers per wave. */
     get walls() {
       return GS.buildings;
@@ -9010,6 +9014,10 @@ const Game = (() => {
 
   function endGame(victory) {
     GS.state = victory ? 'victory' : 'defeat';
+    globalThis.BannerArt?.show?.(victory ? 'victory' : 'defeat', {
+      title: victory ? 'The Line Held' : 'The Realm Falls',
+      sub: `Wave ${GS.wave}`,
+    });
     // getState() is cached per presented frame; the HUD must not read 'playing' from it.
     invalidateStateCache();
     SiegeLoop.endRun(siegeCtx);
@@ -11671,14 +11679,19 @@ const Game = (() => {
     ach('ability', { ability });
     if (ability === 'fireball') {
       playSfx('fireball');
-      StrikeFX?.play?.('fireball', wx, wy, ab.radius);
-      strikeImpactFx('fireball', wx, wy, ab.radius, coolFx);
-      damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      // The damage lands with the blast, when the wind-up ends.
+      const land = () => {
+        strikeImpactFx('fireball', wx, wy, ab.radius, coolFx);
+        damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      };
+      if (!StrikeFX?.cast?.('fireball', wx, wy, ab.radius, land)) land();
     } else if (ability === 'lightning') {
       playSfx('lightning');
-      StrikeFX?.play?.('lightning', wx, wy, ab.radius);
-      strikeImpactFx('lightning', wx, wy, ab.radius, coolFx);
-      damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      const land = () => {
+        strikeImpactFx('lightning', wx, wy, ab.radius, coolFx);
+        damageInRadius(wx, wy, ab.radius, ab.damage, 'player');
+      };
+      if (!StrikeFX?.cast?.('lightning', wx, wy, ab.radius, land)) land();
     } else if (ability === 'heal') {
       playSfx('heal');
       StrikeFX?.play?.('heal', wx, wy, ab.radius);
@@ -13425,7 +13438,7 @@ const Game = (() => {
     const allowShake = !fb || fb.allowShake();
     const allowHitStop = !fb || fb.allowHitStop();
 
-    if (showNums) svc('FloatingText').damage(unit.x, unit.y, actual, crit);
+    if (showNums) svc('FloatingText').damage(unit.x, unit.y, actual, crit, unit, opts);
     const bloodMult = crit ? 1.6 : willDie ? 1.4 : Math.min(1.8, 0.7 + actual / 30);
     if (allowGore && svc('Particles')) {
       if (opts.attacker && svc('Particles').bloodSpray) {
@@ -13682,14 +13695,20 @@ const Game = (() => {
 
   function damageInRadius(x, y, radius, damage, team, opts = {}) {
     const radius2 = radius * radius;
-    for (const u of GS.units) {
-      if (u.team === team || u.hp <= 0) continue;
-      const d2 = posDistSq(u.x, u.y, x, y);
-      if (d2 < radius2) {
-        const dist = Math.sqrt(d2);
-        takeDamage(u, damage * (1 - (dist / radius) * 0.5), opts);
+    const hurtAll = () => {
+      for (const u of GS.units) {
+        if (u.team === team || u.hp <= 0) continue;
+        const d2 = posDistSq(u.x, u.y, x, y);
+        if (d2 < radius2) {
+          const dist = Math.sqrt(d2);
+          takeDamage(u, damage * (1 - (dist / radius) * 0.5), opts);
+        }
       }
-    }
+    };
+    // One summed number per blast.
+    const ft = svc('FloatingText');
+    if (ft?.summed) ft.summed(hurtAll);
+    else hurtAll();
   }
 
   function doomslayerDamage(target) {
@@ -14136,6 +14155,7 @@ const Game = (() => {
           unit.animState = 'attack';
           unit.attackAnimTimer = 12;
           playSfx('heal');
+          globalThis.ProjectileArt?.mote?.('heal', unit.x, unit.y, target.x, target.y);
           CombatFX.healPulse(target.x, target.y);
           if (healed > 0) {
             svc('FloatingText').heal(target.x, target.y, healed);
@@ -15334,6 +15354,7 @@ const Game = (() => {
     if (GS.buildings.length !== prevBuildings) invalidateObstacles();
 
     markUpdatePhase('projectiles', String(GS.projectiles.length));
+    StrikeFX?.simTick?.();
     for (let pi = GS.projectiles.length - 1; pi >= 0; pi--) {
       const p = GS.projectiles[pi];
       const dx = p.tx - p.x;
@@ -15346,7 +15367,8 @@ const Game = (() => {
           !svc('GfxQuality') || svc('GfxQuality').allowProjectileTrails(GS.projectiles.length);
         const trailEvery = gfxQ?.trailEveryN ?? 1;
         if (trailOk && GS.updateTick % trailEvery === 0) {
-          svc('Particles').trail(p.x, p.y, p.type === 'arrow' ? '#8a6030' : '#a060ff');
+          if (globalThis.ProjectileArt) globalThis.ProjectileArt.trail(p, GS.updateTick);
+          else svc('Particles').trail(p.x, p.y, p.type === 'arrow' ? '#8a6030' : '#a060ff');
         }
         if (dist < p.speed) {
           const hit = getUnitById(p.targetId);
@@ -15356,6 +15378,7 @@ const Game = (() => {
               ? Math.max(4, p.accuracy - getSightPenaltyForUnit(shooter))
               : p.accuracy;
           if (hit?.hp > 0 && Math.random() * 100 <= projHit) {
+            p.landed = true;
             // Prefer live shooter so vet/aura/crossover/WWE modifiers apply (not a bare damage stub).
             const src =
               shooter && shooter.hp > 0
@@ -15415,6 +15438,7 @@ const Game = (() => {
               takeDamage(hit, Math.round(dmg * 0.55), { attackerTeam: p.team });
             }
           }
+          globalThis.ProjectileArt?.impact?.(p, hit);
           remove = true;
         } else {
           p.x += (dx / dist) * p.speed;
@@ -15496,6 +15520,7 @@ const Game = (() => {
       GameFeedback.update();
       GameFeedback.updateDanger(GS.units, GS.worldH, GS.rallyY);
     }
+    globalThis.BannerArt?.observe?.(GS, siegeCtx);
     if (svc('VisualPolish')) {
       svc('VisualPolish').update();
       svc('VisualPolish').updateAudioMix({
@@ -15532,6 +15557,7 @@ const Game = (() => {
     const light = getDayLightLevel();
     const fieldArt = typeof FieldArt !== 'undefined' ? FieldArt : null;
     const buildingArt = typeof BuildingArt !== 'undefined' ? BuildingArt : null;
+    const propArt = typeof PropArt !== 'undefined' ? PropArt : null;
     sanitizeCameraState();
     syncCameraTransform();
     if (!isMapOverlappingViewport()) clampCameraToBounds();
@@ -15579,6 +15605,7 @@ const Game = (() => {
         );
       }
       SiegeLoop.drawGround(GS.ctx);
+      svc('Particles')?.drawGround?.(GS.ctx, getVisibleBounds(140));
       if (svc('VisualPolish') && gfxQ?.drawBorders !== false) {
         svc('VisualPolish').drawTerritoryBorders(
           GS.ctx,
@@ -15615,6 +15642,7 @@ const Game = (() => {
       if (gfxQ?.drawHazards !== false) {
         for (const h of GS.hazards) {
           if (!isInView(h.x, h.y, h.radius || 30)) continue;
+          if (propArt && propArt.drawHazard(GS.ctx, h, GS.updateTick)) continue;
           svc('SpriteGen').drawHazard?.(GS.ctx, h);
         }
       }
@@ -15639,9 +15667,11 @@ const Game = (() => {
       }
 
       if (gfxQ?.drawDecor !== false) {
+        if (propArt) propArt.drawWrecks(GS.ctx, GS.updateTick, isInView);
         for (const d of GS.decorations) {
           if (!isInView(d.x, d.y, d.size || 16)) continue;
           if (fieldArt && fieldArt.drawDecor(GS.ctx, d)) continue;
+          if (propArt && propArt.drawDecor(GS.ctx, d, GS.updateTick)) continue;
           if (d.type === 'tree') svc('SpriteGen').drawTree(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'rock') svc('SpriteGen').drawRock(GS.ctx, d.x, d.y, d.size);
           else if (d.type === 'barricade') svc('SpriteGen').drawBarricade(GS.ctx, d.x, d.y);
@@ -15835,17 +15865,6 @@ const Game = (() => {
           GS.ctx.arc(u.x, u.y, 17 + u.vetTier * 2, 0, Math.PI * 2);
           GS.ctx.stroke();
         }
-        if (u.type === 'siege_tower') {
-          GS.ctx.fillStyle = 'rgba(160,80,40,0.35)';
-          GS.ctx.fillRect(u.x - 14, u.y - 20, 28, 32);
-          GS.ctx.strokeStyle = '#c06030';
-          GS.ctx.lineWidth = 2;
-          GS.ctx.strokeRect(u.x - 14, u.y - 20, 28, 32);
-          GS.ctx.fillStyle = '#e0a060';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('SIEGE', u.x, u.y - 24);
-        }
         if (
           drawOverlays &&
           gfxQ?.chargeGlow !== false &&
@@ -15906,7 +15925,9 @@ const Game = (() => {
           GS.ctx.globalAlpha = Math.min(0.75, flashT * 0.7);
           GS.ctx.fillStyle = flashT > 0.55 ? '#ffffff' : u.team === 'enemy' ? '#ff5050' : '#ffc080';
           GS.ctx.beginPath();
-          GS.ctx.arc(drawX, drawY, drawSz * 0.32, 0, Math.PI * 2);
+          // Sized to the body, not to the sprite canvas (which is mostly empty margin).
+          const bodyR = svc('SpriteGen').bodyRadius(u.spriteType || u.type, u.team) * sprScale;
+          GS.ctx.arc(drawX, drawY, bodyR, 0, Math.PI * 2);
           GS.ctx.fill();
           // Brief outline punch
           if (flashT > 0.4) {
@@ -15914,7 +15935,7 @@ const Game = (() => {
             GS.ctx.lineWidth = 2;
             GS.ctx.globalAlpha = flashT * 0.55;
             GS.ctx.beginPath();
-            GS.ctx.arc(drawX, drawY, drawSz * 0.38, 0, Math.PI * 2);
+            GS.ctx.arc(drawX, drawY, bodyR * 1.18, 0, Math.PI * 2);
             GS.ctx.stroke();
           }
           GS.ctx.restore();
@@ -15952,18 +15973,6 @@ const Game = (() => {
         ) {
           svc('SpriteGen').drawMoraleBar(GS.ctx, u.x, u.y - 27, 20, u.morale / u.maxMorale);
         }
-        if (u.demoralized && u.hp > 0) {
-          GS.ctx.fillStyle = '#a080c0';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('GAVE UP', u.x, u.y - 32);
-        }
-        if (u.fleeing && u.hp > 0) {
-          GS.ctx.fillStyle = '#c06040';
-          GS.ctx.font = '7px Cinzel';
-          GS.ctx.textAlign = 'center';
-          GS.ctx.fillText('ROUT', u.x, u.y - 32);
-        }
         if (
           u.team === 'enemy' &&
           u.isNamedBoss &&
@@ -16000,14 +16009,8 @@ const Game = (() => {
         if (svc('VisualPolish')) {
           if (gfxOverlayFor(u, gfxQ?.drawAccent ?? true))
             svc('VisualPolish').drawFactionAccent(GS.ctx, u);
-          if (gfxQ?.drawAccessibility !== false) {
-            // Hunting is the default and shows nothing. The cue still draws a red "H"
-            // on every hunter, so it is asked about a soldier who is not hunting.
-            const hunting = u.huntMode;
-            if (u.team === 'player') u.huntMode = false;
+          if (gfxQ?.drawAccessibility !== false)
             svc('VisualPolish').drawAccessibilityCue(GS.ctx, u);
-            u.huntMode = hunting;
-          }
         } else if (u.isWwe && u.wweColor) {
           GS.ctx.strokeStyle = u.wweColor;
           GS.ctx.lineWidth = 2;
@@ -16080,8 +16083,10 @@ const Game = (() => {
       }
       CombatFX.draw(GS.ctx, vBounds);
       for (const p of GS.projectiles) {
-        if (isInView(p.x, p.y, 20, 0)) svc('SpriteGen').drawProjectile(GS.ctx, p);
+        if (isInView(p.x, p.y, 20, 0))
+          (globalThis.ProjectileArt || svc('SpriteGen')).drawProjectile(GS.ctx, p, GS.updateTick);
       }
+      globalThis.ProjectileArt?.drawOver?.(GS.ctx, vBounds, GS.updateTick);
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
@@ -16154,6 +16159,9 @@ const Game = (() => {
         GS.ctx.fillRect(0, 0, GS.worldW, getMapViewH());
       }
 
+      // Status marks go over the night and weather layers so they read in the dark.
+      Roster.drawMarks(GS.ctx, GS.units, GS.updateTick, getDayLightLevel());
+
       GS.ctx.globalAlpha = 1;
       GS.ctx.setLineDash([]);
     } catch (drawErr) {
@@ -16189,7 +16197,7 @@ const Game = (() => {
       GS.ctx.fillStyle = 'rgba(140,160,220,0.92)';
       GS.ctx.font = '13px Cinzel';
       GS.ctx.textAlign = 'center';
-      GS.ctx.fillText('NIGHT — PREPARE DEFENSES', GS.canvas.width / 2, 52);
+      GS.ctx.fillText('NIGHT: PREPARE DEFENSES', GS.canvas.width / 2, 52);
       GS.ctx.font = '10px Cinzel';
       GS.ctx.fillStyle = 'rgba(180,190,230,0.75)';
       GS.ctx.fillText(

@@ -76,64 +76,75 @@ The tables below are generated from the key maps. To regenerate them: `node scri
 
 **Night: preparing** (the full field map)
 
-| Key                 | Action                                              |
-| ------------------- | --------------------------------------------------- |
-| ?                   | Show the keys for this screen                       |
-| V                   | Mute / unmute sound                                 |
-| A                   | Achievements                                        |
-| I                   | Encyclopedia                                        |
-| `` ` ``             | Cheat codes                                         |
-| F3                  | Performance overlay                                 |
-| F10                 | Bug report                                          |
-| Space               | Pause                                               |
-| Tab                 | Select the next soldier                             |
-| Shift+Tab           | Message log                                         |
-| H                   | Hunt: release Hold                                  |
-| Shift+H             | Hold here                                           |
-| [                   | War Cry (General)                                   |
-| ]                   | Hold the Line (General)                             |
-| Z                   | Balanced loadout                                    |
-| D                   | Begin the day (night only)                          |
-| ↑ ↓ ← →             | Pan the map                                         |
-| Q                   | Fireball                                            |
-| W                   | Lightning                                           |
-| E                   | Healing Rain                                        |
-| R                   | Reinforcements                                      |
-| T                   | Battle Rally                                        |
-| F                   | Meteor Shower                                       |
-| J                   | Frost Nova                                          |
-| K                   | Scout Flare                                         |
-| X                   | Fortify Zone                                        |
-| P                   | Arcane Dispel                                       |
-| S                   | Voice Shout                                         |
-| ;                   | Fire Breath                                         |
-| '                   | Ice Form                                            |
-| 1–0 Shift+1–Shift+0 | Recruit: one key per unlocked troop, in panel order |
-| O                   | Outpost                                             |
-| L                   | Wall                                                |
-| C                   | Castle                                              |
-| N                   | Medical Tent                                        |
-| M                   | Mess Hall                                           |
-| G                   | Hamlet                                              |
-| U                   | Merchant Guild                                      |
-| Y                   | Watchtower                                          |
-| B                   | Trade Outpost                                       |
-| Esc                 | Pause menu                                          |
+| Key                 | Action                                                                           |
+| ------------------- | -------------------------------------------------------------------------------- |
+| ?                   | Show the keys for this screen                                                    |
+| V                   | Mute / unmute sound                                                              |
+| A                   | Achievements                                                                     |
+| I                   | Encyclopedia                                                                     |
+| `` ` ``             | Cheat codes                                                                      |
+| F3                  | Performance overlay                                                              |
+| F10                 | Bug report                                                                       |
+| Space               | Pause                                                                            |
+| Tab                 | Select the next soldier                                                          |
+| Shift+Tab           | Select the previous soldier                                                      |
+| Shift+M             | Message log                                                                      |
+| Ctrl+A              | Select every soldier                                                             |
+| Shift+G             | Centre on the General                                                            |
+| Shift+B             | Centre on the last breach                                                        |
+| +                   | Game speed up                                                                    |
+| −                   | Game speed down                                                                  |
+| F6                  | Quick save                                                                       |
+| F9                  | Quick load                                                                       |
+| Del                 | Demolish a building                                                              |
+| \                   | Move a building                                                                  |
+| H                   | Hunt: release Hold                                                               |
+| Shift+H             | Hold here                                                                        |
+| [                   | War Cry (General)                                                                |
+| ]                   | Hold the Line (General)                                                          |
+| Z                   | Balanced loadout                                                                 |
+| D                   | Begin the day (night only)                                                       |
+| ↑ ↓ ← →             | Pan the map                                                                      |
+| Q                   | Fireball                                                                         |
+| W                   | Lightning                                                                        |
+| E                   | Healing Rain                                                                     |
+| R                   | Reinforcements                                                                   |
+| T                   | Battle Rally                                                                     |
+| F                   | Meteor Shower                                                                    |
+| J                   | Frost Nova                                                                       |
+| K                   | Scout Flare                                                                      |
+| X                   | Fortify Zone                                                                     |
+| P                   | Arcane Dispel                                                                    |
+| S                   | Voice Shout                                                                      |
+| ;                   | Fire Breath                                                                      |
+| '                   | Ice Form                                                                         |
+| 1–0 Shift+1–Shift+0 | Recruit: one key per unlocked troop, in panel order                              |
+| O                   | Outpost                                                                          |
+| L                   | Wall                                                                             |
+| C                   | Castle                                                                           |
+| N                   | Medical Tent                                                                     |
+| M                   | Mess Hall                                                                        |
+| G                   | Hamlet                                                                           |
+| U                   | Merchant Guild                                                                   |
+| Y                   | Watchtower                                                                       |
+| B                   | Trade Outpost                                                                    |
+| Ctrl+1–9            | Save the selection as a group (the digit then recalls it; save nothing to clear) |
+| Esc                 | Pause menu                                                                       |
 
 **Other screens**
 
-| Screen             | Keys                                                                                                                                                                                                                    | The rest                        |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
-| Main menu          | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Begin the defense; `Esc` Close the open panel  | Nothing else works              |
-| Day: under attack  | Same keys as the field                                                                                                                                                                                                  | Off: `D`                        |
-| Soldiers selected  | `F` Centre the view on the selection; `C` Clear the selection; `B` Send them back to their posts; `G` Reform the formation (two or more); `U` Promote the selected veteran; `Alt+1–5` Formation presets; `Esc` Deselect | Everything else as on the field |
-| Building picked up | `Esc` Put the building back                                                                                                                                                                                             | Everything else as on the field |
-| Placing or aiming  | `Esc` Cancel                                                                                                                                                                                                            | Everything else as on the field |
-| Placing a wall     | `R` Turn the wall before placing; `Esc` Cancel                                                                                                                                                                          | Everything else as on the field |
-| Paused             | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Space` Resume; `Esc` Resume; `Shift+Tab` Message log  | Nothing else works              |
-| Spoils of war      | `1` Take the first reward; `2` Take the second reward; `3` Take the third reward; `←` Previous reward; `↑` Previous reward; `→` Next reward; `↓` Next reward; `Tab` Next reward; `Enter` Take the highlighted reward    | Nothing else works              |
-| After the battle   | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Fight again; `Esc` Close the open panel        | Nothing else works              |
-| Creative mode      | `P` Creative Lab panel                                                                                                                                                                                                  | Everything else as on the field |
+| Screen             | Keys                                                                                                                                                                                                                                                                 | The rest                        |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| Main menu          | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Begin the defense; `Esc` Close the open panel                                               | Nothing else works              |
+| Day: under attack  | Same keys as the field                                                                                                                                                                                                                                               | Off: `D`                        |
+| Soldiers selected  | `Shift+A` Select every soldier of this type; `F` Centre the view on the selection; `C` Clear the selection; `B` Send them back to their posts; `G` Reform the formation (two or more); `U` Promote the selected veteran; `Alt+1–5` Formation presets; `Esc` Deselect | Everything else as on the field |
+| Building picked up | `Esc` Put the building back                                                                                                                                                                                                                                          | Everything else as on the field |
+| Placing or aiming  | `Esc` Cancel                                                                                                                                                                                                                                                         | Everything else as on the field |
+| Placing a wall     | `R` Turn the wall before placing; `Esc` Cancel                                                                                                                                                                                                                       | Everything else as on the field |
+| Paused             | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Space` Resume; `Esc` Resume; `Shift+M` Message log; `F6` Quick save; `F9` Quick load               | Nothing else works              |
+| Spoils of war      | `1` Take the first reward; `2` Take the second reward; `3` Take the third reward; `←` Previous reward; `↑` Previous reward; `→` Next reward; `↓` Next reward; `Tab` Next reward; `Enter` Take the highlighted reward                                                 | Nothing else works              |
+| After the battle   | `?` Show the keys for this screen; `V` Mute / unmute sound; `A` Achievements; `I` Encyclopedia; `` ` `` Cheat codes; `F3` Performance overlay; `F10` Bug report; `Enter` Fight again; `Esc` Close the open panel                                                     | Nothing else works              |
+| Creative mode      | `P` Creative Lab panel                                                                                                                                                                                                                                               | Everything else as on the field |
 
 <!-- keys:end -->
 
