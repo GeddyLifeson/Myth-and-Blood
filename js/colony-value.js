@@ -298,7 +298,7 @@ class ColonyValueSystem {
     }
 
     const activeCrossoverFactions = new Set(Object.keys(signals.crossoverFactions || {}));
-    if (signals.wweCount > 0) activeCrossoverFactions.add('wwe');
+    if (signals.wweCount > 0) activeCrossoverFactions.add('champions');
     const factionDepth = this._svc('FactionDepth');
     if (activeCrossoverFactions.size > 0 && factionDepth) {
       const armyUnits = this.ctx?.units ?? [];
@@ -576,7 +576,7 @@ class ColonyValueSystem {
       'Army ledger ≥ 42% of baseline: berserker (1.9), dark_knight (1.7), war_chief (1.5), assassin (1.4)',
       'Academies (2+): dark_mage (1.35), shaman (1.3)',
       'Academies (4+): + necromancer (1.6)',
-      'Evolved/Coliseum (2+ field): troll (1.75), berserker, assassin; wave 20+ abomination; wave 35+ void_stalker',
+      'Evolved/Bloodsand (2+ field): troll (1.75), berserker, assassin; wave 20+ abomination; wave 35+ void_stalker',
       'Hamlets + guilds (2+ total): goblin_engineer (1.55), orc ×2',
       'Wall garrisons (4+): siege_tower, goblin_sapper, warg_rider (1.35)',
     ];
@@ -623,12 +623,12 @@ class ColonyValueSystem {
           '• Deploy cost (Hellbane capped)',
           '• HP factor: 0.55 + 0.45 × (current HP ÷ max HP)',
           '• Star mult: +42% gold, +24% silver, +10% bronze per star',
-          '• Role mult: General ×2.4, evolved ×2.1, coliseum ×1.9, knight ×1.35',
+          '• Role mult: General ×2.4, evolved ×2.1, bloodsand ×1.9, knight ×1.35',
           '• Damage factor: 0.88–1.0 vs base; morale factor up to +12%',
           '',
           'Works — completed player structures by build cost × HP ratio × type mult:',
           '• Hamlet ×1.85 · Merchant guild ×2.05 · Academy ×1.45',
-          '• Evolved barracks ×1.55 · Grand Coliseum ×1.65',
+          '• Evolved barracks ×1.55 · Champions’ Hall ×1.65',
           '• Castle/keep ×1.25 · Wall ×0.82',
           '',
           'Treasury — liquid TP ×0.38 + settlement TP bonus ×9.5 + wave TP income ×2.',
@@ -696,7 +696,7 @@ class ColonyValueSystem {
         cat: 'colony',
         name: 'Faction Counter Weights',
         body: [
-          'When evolved or coliseum operatives are on the field, the host scans active factions against FactionDepth.ENEMY_COUNTERS. Matching weakFactions add counter types to the pool with weight = max(existing, 1.2 + 0.15 per matching faction):',
+          'When evolved or Bloodsand champions are on the field, the host scans active factions against FactionDepth.ENEMY_COUNTERS. Matching weakFactions add counter types to the pool with weight = max(existing, 1.2 + 0.15 per matching faction):',
           '',
           this.formatFactionCounterTable(),
           '',

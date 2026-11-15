@@ -50,6 +50,7 @@
  *   2  + nextWavePlan, cheatsUsed
  *   3  + checksum, terrain, rng, sim tick, generic unit/building fields, `modules` sections
  *      (siegeLoop / economyRules / research / progressionRestarts moved into `modules`)
+ *   4  roster ids renamed (js/renamed-ids.js)
  * Loading: prepare() checks the version (a newer one is refused), the checksum, then runs
  * the migration chain 1 -> 2 -> ... -> VERSION one step at a time, then validates the shape.
  * To change the format: bump VERSION and add MIGRATIONS[<old version>].
@@ -251,7 +252,7 @@ const SaveRegistry = (() => {
 })();
 
 const SaveFormat = (() => {
-  const VERSION = 3;
+  const VERSION = 4;
   const TEXT_PREFIX = 'MBSAVE1.';
   const B64 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
 
@@ -414,6 +415,9 @@ const SaveFormat = (() => {
       if (!('rng' in s)) s.rng = null;
       s.legacy = true;
       return s;
+    },
+    3(s) {
+      return typeof RenamedIds !== 'undefined' ? RenamedIds.migrateSave(s) : s;
     },
   };
 

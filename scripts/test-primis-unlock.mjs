@@ -82,7 +82,7 @@ Achievements.onEvent('building_complete', { buildType: 'castle', compound: true 
 Achievements.onEvent('game_end', { victory: true, hasCastleCompound: true, wave: 80 });
 ok(MetaProgress.isPrimusUnlocked(), 'victory with intact sanctum unlocks Primis');
 ok(Achievements.evaluateRule('run_sanctum_victory'), 'sanctum victory rule passes');
-ok(Achievements.evaluateRule('unlock:primis'), 'primis unlock rule passes');
+ok(Achievements.evaluateRule('unlock:pale_vigil'), 'pale vigil unlock rule passes');
 
 MetaProgress.reset();
 Achievements.resetSession();

@@ -36,9 +36,9 @@ class FactionDepthSystem {
   static STANDARD_BARRACKS_BUILDERS = 2;
 
   static PROFILES = {
-    wwe: {
+    champions: {
       label: 'Bloodsand Champions',
-      building: 'wwe_academy',
+      building: 'champions_hall',
       palette: ['#c04040', '#ffd700'],
       identity:
         'Pit champions: morale for the line, finishing blows for elites, and strength in pairs.',
@@ -46,7 +46,7 @@ class FactionDepthSystem {
       weaknessMods: { vsFlying: 0.9, damageTakenRanged: 1.12 },
       playstyle: 'Deploy 2–4 for morale; save finishing blows for elite waves.',
       lore: 'Every champion in the hall won freedom on the bloodsand and sold it again for a better price. They fight for the name carved on the wall, and the siege is one more bout.',
-      sfx: 'wwe',
+      sfx: 'champions',
       requiresWave: 0,
       requiresBuilders: 10,
       masteryTitle: ['Pit Hand', 'Crowd Favourite', 'Name on the Wall', 'First of the Hall'],
@@ -63,9 +63,9 @@ class FactionDepthSystem {
       sfx: 'doom',
       masteryTitle: ['Walker', 'Abyss Hunter', 'Hellbreaker', 'Wrath Unburied'],
     },
-    ultimis: {
+    powderhorn: {
       label: 'Powderhorn Company',
-      building: 'element_barracks',
+      building: 'powderhorn_magazine',
       palette: ['#c06030', '#8040a0'],
       identity:
         'Four powder-men: fused pots for crowds, bottled lightning for elites, and a cooper who will not fall.',
@@ -75,14 +75,14 @@ class FactionDepthSystem {
       playstyle:
         'The cooper anchors the front; the storm-bottler stays behind walls; the fencer hunts elites.',
       lore: 'Four sellswords who learned black powder from a mine that killed everyone else in it. They hire out to any wall that can pay, and leave before the smoke clears.',
-      sfx: 'ultimis',
+      sfx: 'powderhorn',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Powder Monkey', 'Fuse-Cutter', 'Mine Veteran', 'Master of the Horn'],
     },
-    primis: {
+    pale_vigil: {
       label: 'The Pale Vigil',
-      building: 'primis_shrine',
+      building: 'pale_vigil_shrine',
       palette: ['#d07040', '#9040c0'],
       identity:
         'Barrow knights: sweeping blows, a bulwark who hardens when hurt, and a leech who heals from the enemy.',
@@ -90,15 +90,15 @@ class FactionDepthSystem {
       weaknessMods: { vsArcane: 0.9, vsUndead: 0.92 },
       playstyle: 'The bulwark anchors the line; the leech mends the others from what he drains.',
       lore: 'An order of knights sworn to watch the old barrows so that nothing climbs out. When the dead began to march anyway, the Vigil came down to meet them.',
-      sfx: 'primis',
+      sfx: 'pale_vigil',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       recommendedHamlets: 1,
       masteryTitle: ['Vigil Novice', 'Barrow Keeper', 'Tomb Scholar', 'Warden of the Last Door'],
     },
-    halo: {
+    greywatch: {
       label: 'The Greywatch',
-      building: 'spartan_academy',
+      building: 'greywatch_hall',
       palette: ['#408040', '#80c0ff'],
       identity: 'Armoured crossbow wardens: a shield line, called targets, and hobbling bolts.',
       weakness: 'Its melee heroes must be screened; the citadel hall is expensive.',
@@ -106,14 +106,14 @@ class FactionDepthSystem {
       playstyle:
         'Springald and marksman at the back; the lieutenant calls targets; the serjeant rallies at wave start.',
       lore: 'The Greywatch has held one mountain citadel for three hundred years and has never opened its gate to an enemy. Its wardens come down only when a wall elsewhere is about to fail.',
-      sfx: 'halo',
+      sfx: 'greywatch',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Recruit', 'Warden', 'Watch-Serjeant', 'Warden-Captain'],
     },
-    gears: {
+    sawtooth: {
       label: 'Sawtooth Company',
-      building: 'cog_academy',
+      building: 'sawtooth_camp',
       palette: ['#506080', '#c04040'],
       identity:
         'Ditch-fighting crossbowmen: saw-edged finishers, shield-mates, and engine-breaking.',
@@ -122,14 +122,14 @@ class FactionDepthSystem {
       playstyle:
         'Captain and shield-mate at the core; the artificer for towers; the battering man on the flank.',
       lore: 'A mercenary company that has fought every war from the bottom of a ditch. Its saw-backed glaives were made for cutting stakes and turned out to cut goblins as well.',
-      sfx: 'gears',
+      sfx: 'sawtooth',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Ditcher', 'Tunnel Killer', 'Siege Veteran', 'Last in the Ditch'],
     },
-    lotr: {
+    thornroad: {
       label: 'Thornroad Company',
-      building: 'rivendell_camp',
+      building: 'thornroad_camp',
       palette: ['#406050', '#c0a040'],
       identity:
         'Road-wardens: a priest who breaks nerve, a longbow for range, and a captain who kills elites.',
@@ -137,14 +137,14 @@ class FactionDepthSystem {
       weaknessMods: { vsAssassin: 0.88, damageTakenStealth: 1.12, vsFlying: 0.92 },
       playstyle: 'Priest in the middle; longbow in the garrison; axeman on siege waves.',
       lore: 'Seven guards-for-hire who keep the pilgrim road through the thorn country. The shrines they were paid to protect are burning, so they have come to the source.',
-      sfx: 'lotr',
+      sfx: 'thornroad',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Wayfarer', 'Road-Sworn', 'Shrine Keeper', 'Warden of the Road'],
     },
-    baki: {
+    knucklebone: {
       label: 'Knucklebone Lodge',
-      building: 'hanma_dojo',
+      building: 'knucklebone_lodge',
       palette: ['#c04040', '#606060'],
       identity:
         'Bare-handed melee: stronger when hurt, bodies like iron, and a master who cannot be stopped.',
@@ -153,14 +153,14 @@ class FactionDepthSystem {
       playstyle:
         'Prodigy and instructor in the line; the Anvil soaks; keep the master for boss waves.',
       lore: 'A fighting guild that settles rank by bouts and marks it in knucklebones worn at the belt. The lodge treats your siege as one more bout, and it does not forfeit.',
-      sfx: 'baki',
+      sfx: 'knucklebone',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Pit Novice', 'Fighter', 'Knucklebone Holder', 'Ogre Breaker'],
     },
-    jojo: {
+    marrow_choir: {
       label: 'The Marrow Choir',
-      building: 'stand_arrow_shrine',
+      building: 'marrow_reliquary',
       palette: ['#8040a0', '#e0c040'],
       identity:
         'Relic-singers of every trade: hymns that burn the dead, snares, finishers, and four outriders.',
@@ -169,14 +169,14 @@ class FactionDepthSystem {
       weaknessMods: { vsUndead: 0.85, vsNecromancer: 0.88, damageTakenRanged: 1.1 },
       playstyle: 'Mix their trades; the enforcer pins elites; the outriders hunt on open ground.',
       lore: "A cult that carries its saints' bones into battle and sings over them. The hymns work, which is the only reason the church has not burned the choir.",
-      sfx: 'jojo',
+      sfx: 'marrow_choir',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Bone Carrier', 'Choir Acolyte', 'Cantor', 'Voice of the Reliquary'],
     },
-    fotns: {
+    quiet_hand: {
       label: 'Order of the Quiet Hand',
-      building: 'north_star_dojo',
+      building: 'quiet_hand_cloister',
       palette: ['#4080c0', '#c0c0e0'],
       identity:
         'Monks who kill bare-handed: fast finishers, a healer, and an abbot who breaks nerve.',
@@ -185,14 +185,14 @@ class FactionDepthSystem {
       playstyle:
         'The order’s Hand on elites; the infirmarian’s aura; the sweeping monk chases fast foes.',
       lore: 'An ascetic order that gave up weapons and then found it did not need them. Its monks speak rarely and strike once.',
-      sfx: 'fotns',
+      sfx: 'quiet_hand',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Novice', 'Brother', 'Master', 'Abbot-Militant'],
     },
-    dragonball: {
+    emberblood: {
       label: 'Emberblood Warband',
-      building: 'capsule_corp',
+      building: 'emberblood_hearth',
       palette: ['#e06040', '#4060c0'],
       identity:
         'Fire in the blood: burst finishers, fury when wounded, and a flame that feeds on kills.',
@@ -201,14 +201,14 @@ class FactionDepthSystem {
       playstyle:
         'Champion and rival at the core; seers throw from the rear; save the Pyre for bosses.',
       lore: 'A hill warband whose blood runs hot enough to scorch. They follow whoever burns brightest, and they came south because the cold was leaving them.',
-      sfx: 'dragonball',
+      sfx: 'emberblood',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Kindling', 'Emberblood', 'Flame-Bearer', 'The Pyre'],
     },
-    imperium: {
+    iron_psalm: {
       label: 'Order of the Iron Psalm',
-      building: 'astartes_chapel',
+      building: 'iron_psalm_chapel',
       palette: ['#4060a0', '#802030'],
       identity:
         'A militant church order: ordered volleys, a provost for the routed, tower shields, and a bombard.',
@@ -218,14 +218,14 @@ class FactionDepthSystem {
       playstyle:
         'Castellan and hex-finder at the back; tower shields in front; the provost for morale.',
       lore: 'A church order that sings its psalms in armour and counts every enemy an unbeliever. It tithes its levies from villages that would rather not be asked.',
-      sfx: 'imperium',
+      sfx: 'iron_psalm',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Initiate', 'Brother', 'Castellan', 'Master of the Order'],
     },
-    crystal: {
+    saltglass: {
       label: 'Saltglass Guild',
-      building: 'crystal_sanctum',
+      building: 'saltglass_furnace',
       palette: ['#5080c0', '#c04060'],
       identity:
         'Glassmakers at war: kiln-fire, a physic, a vaulting lancer, and a blade that peaks when breaking.',
@@ -235,14 +235,14 @@ class FactionDepthSystem {
       playstyle:
         'Guild Blade in front; physic in the middle; Kiln-Witch and Lens-Caller at the back.',
       lore: 'The glassmakers of the salt coast guard their furnace secrets with hired blades and their own burned hands. A lens that can light a ship at a mile lights a goblin just as well.',
-      sfx: 'crystal',
+      sfx: 'saltglass',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Apprentice', 'Journeyman', 'Guild Master', 'Master of the Furnace'],
     },
-    warp: {
+    open_wound: {
       label: 'Cult of the Open Wound',
-      building: 'warp_shrine',
+      building: 'open_wound_shrine',
       palette: ['#802040', '#6040c0'],
       identity:
         'A blood cult: forked curses, weeping sores, burning bolts, and healing on the kill.',
@@ -251,14 +251,14 @@ class FactionDepthSystem {
       playstyle:
         'The Chosen and the Healed-Over in front; the Wound-Seer behind; the Pox-Sister for her aura.',
       lore: 'The cult believes the world has a wound that must be kept open, and that it bleeds power for those who tend it. It fights beside you because the host would close the wound for good.',
-      sfx: 'warp',
+      sfx: 'open_wound',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Cultist', 'Wound-Tender', 'Chosen', 'Mouth of the Wound'],
     },
-    tes: {
+    rimehowl: {
       label: 'Rimehowl Warband',
-      building: 'dragon_moot',
+      building: 'rimehowl_longhouse',
       palette: ['#4068a0', '#a06040'],
       identity:
         'Northern raiders: a war-howl that breaks crowds, a cairn-chanter, and a storm-seer.',
@@ -267,7 +267,7 @@ class FactionDepthSystem {
       playstyle:
         'The Voice and the cairn-chanter at the core; diversify Eternal Paths for the legacy trial.',
       lore: 'A warband from the ice coast whose war-skalds howl before the charge. The howl carries a mile over snow, and what hears it tends not to wait.',
-      sfx: 'tes',
+      sfx: 'rimehowl',
       requiresWave: 0,
       requiresBuilders: FactionDepthSystem.STANDARD_BARRACKS_BUILDERS,
       masteryTitle: ['Wanderer', 'Howl-Sworn', 'Skald', 'Voice of the Warband'],
@@ -277,132 +277,132 @@ class FactionDepthSystem {
   static PLANET_WARFARE_WAVE = typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200;
 
   static PLANET_WARFARE_OPERATIVES = {
-    tech_head: {
+    pry_and_spike: {
       label: 'Pry and Spike',
       operative: 'Pell Rivetson',
-      faction: 'gears',
+      faction: 'sawtooth',
       siegeMult: 2.25,
       settlementMult: 1.45,
       desc: 'Finds the weak joint — bonus damage vs enemy settlements and siege engines.',
     },
-    axe_cleave: {
+    splitting_stroke: {
       label: 'Splitting Stroke',
       operative: 'Dorn Quarrykin',
-      faction: 'lotr',
+      faction: 'thornroad',
       siegeMult: 2.15,
       settlementMult: 1.35,
       splashRadius: 55,
       splashMult: 0.28,
       desc: "Quarryman's demolition — cleave splashes to nearby enemy holds.",
     },
-    german_science: {
+    rams_canticle: {
       label: "Ram's Canticle",
       operative: 'Gaunt Ironrib',
-      faction: 'jojo',
+      faction: 'marrow_choir',
       siegeMult: 1.95,
       outpostMult: 1.55,
       desc: 'Walks through walls — devastates trade posts, quarries, and siege towers.',
     },
-    lancer_burst: {
+    sawback_glaive: {
       label: 'Sawback Glaive',
       operative: 'Hale Brandreth',
-      faction: 'gears',
+      faction: 'sawtooth',
       siegeMult: 2.05,
       finisherHp: 0.35,
       finisherMult: 2.15,
       desc: 'Saws through the timbers — finishes wounded enemy structures in the north.',
     },
-    hokuto_kaioh: {
+    heavy_tread: {
       label: 'Heavy Tread',
       operative: 'Gorhame the Unbowed',
-      faction: 'fotns',
+      faction: 'quiet_hand',
       siegeMult: 1.88,
       hamletMult: 1.42,
       desc: 'Settlements empty ahead of him — extra damage vs enemy hamlets and guilds.',
     },
-    kamehameha: {
+    ember_burst: {
       label: 'Ember Burst',
       operative: 'Tavish Coalheart',
-      faction: 'dragonball',
+      faction: 'emberblood',
       siegeMult: 1.78,
       splashRadius: 72,
       splashMult: 0.34,
       desc: 'A burst of fire — area damage to buildings when striking northern holds.',
     },
-    hakai: {
+    pyres_end: {
       label: "Pyre's End",
       operative: 'Mother Scoria',
-      faction: 'dragonball',
+      faction: 'emberblood',
       siegeMult: 1.65,
       deleteHp: 0.25,
       deleteMult: 2.6,
       desc: 'What she touches burns down — destroys structures below 25% HP.',
     },
-    weather_stand: {
+    thunder_response: {
       label: 'Thunder Response',
       operative: 'Harrow Cloudcall',
-      faction: 'jojo',
+      faction: 'marrow_choir',
       siegeMult: 1.72,
       splashRadius: 62,
       splashMult: 0.24,
       desc: 'Storm front — lightning arcs to adjacent enemy economy sites.',
     },
-    grenadier: {
+    springald_shot: {
       label: 'Springald Shot',
       operative: 'Hulbrand Oxbow',
-      faction: 'halo',
+      faction: 'greywatch',
       siegeMult: 1.92,
       everyNth: 3,
       splashRadius: 52,
       splashMult: 0.32,
       desc: 'A bolt the size of a fence post — every third strike splashes clustered outposts.',
     },
-    special_beam: {
+    lancing_ember: {
       label: 'Lancing Ember',
       operative: 'Varrow Cindersight',
-      faction: 'dragonball',
+      faction: 'emberblood',
       siegeMult: 1.88,
       heavyHp: 300,
       heavyMult: 1.48,
       desc: 'A coal thrown like a lance — bonus vs high-HP enemy fortifications.',
     },
-    energy_sword: {
+    scaling_knife: {
       label: 'Scaling Knife',
       operative: 'Rask Notchblade',
-      faction: 'halo',
+      faction: 'greywatch',
       siegeMult: 1.82,
       academyMult: 1.52,
       desc: 'First over the wall — bonus damage vs shadow and war academies.',
     },
-    cole_train: {
+    downhill_charge: {
       label: 'Downhill Charge',
       operative: 'Jorram Brakeless',
-      faction: 'gears',
+      faction: 'sawtooth',
       siegeMult: 1.76,
       chargeBonus: 0.28,
       desc: 'Run-through demolition — bonus while charging enemy lines in the north.',
     },
-    autocannon: {
+    bronze_bombard: {
       label: 'Bronze Bombard',
       operative: 'Tobiah Bronzeback',
-      faction: 'imperium',
+      faction: 'iron_psalm',
       siegeMult: 2.1,
       settlementMult: 1.4,
       desc: 'A church bell recast as a gun — bonus damage vs enemy settlements and siege engines.',
     },
-    firaga: {
+    kiln_burst: {
       label: 'Kiln Burst',
       operative: 'Obsidia Kiln',
-      faction: 'crystal',
+      faction: 'saltglass',
       siegeMult: 1.82,
       splashRadius: 58,
       splashMult: 0.3,
       desc: 'Furnace heat in a bottle — area damage to buildings when striking northern holds.',
     },
-    warp_bolt: {
+    forked_curse: {
       label: 'Forked Curse',
       operative: 'Ezrin Splitveil',
-      faction: 'warp',
+      faction: 'open_wound',
       siegeMult: 1.7,
       splashRadius: 48,
       splashMult: 0.26,
@@ -412,67 +412,67 @@ class FactionDepthSystem {
 
   static ENEMY_COUNTERS = {
     necromancer: {
-      weakFactions: ['jojo', 'primis', 'ultimis'],
+      weakFactions: ['marrow_choir', 'pale_vigil', 'powderhorn'],
       mult: 1.22,
       note: 'The dead resist hymns and powder — field walls!',
     },
     shaman: {
-      weakFactions: ['fotns', 'baki'],
+      weakFactions: ['quiet_hand', 'knucklebone'],
       mult: 1.16,
       note: 'Enemy healers blunt martial burst.',
     },
     harpy: {
-      weakFactions: ['baki', 'fotns', 'wwe', 'halo', 'lotr'],
+      weakFactions: ['knucklebone', 'quiet_hand', 'champions', 'greywatch', 'thornroad'],
       mult: 1.14,
       note: 'Flyers kite melee-heavy rosters.',
     },
     sky_drake: {
-      weakFactions: ['gears', 'lotr', 'baki', 'fotns'],
+      weakFactions: ['sawtooth', 'thornroad', 'knucklebone', 'quiet_hand'],
       mult: 1.14,
       note: 'Free companies that shoot help here (Greywatch, Emberblood).',
     },
     war_chief: {
-      weakFactions: ['ultimis'],
+      weakFactions: ['powderhorn'],
       mult: 1.1,
       note: 'Boss elites punish a reckless rush.',
     },
     assassin: {
-      weakFactions: ['halo', 'dragonball', 'lotr', 'tes'],
+      weakFactions: ['greywatch', 'emberblood', 'thornroad', 'rimehowl'],
       mult: 1.14,
       note: 'Stealth elites pressure ranged carries.',
     },
     dark_mage: {
-      weakFactions: ['dragonball', 'primis', 'jojo'],
+      weakFactions: ['emberblood', 'pale_vigil', 'marrow_choir'],
       mult: 1.12,
       note: 'Arcane shields blunt ember and kiln bursts.',
     },
     troll: {
-      weakFactions: ['ultimis', 'primis'],
+      weakFactions: ['powderhorn', 'pale_vigil'],
       mult: 1.12,
       note: 'Brute hordes overwhelm the powder-men.',
     },
     berserker: {
-      weakFactions: ['gears', 'lotr', 'halo'],
+      weakFactions: ['sawtooth', 'thornroad', 'greywatch'],
       mult: 1.12,
       note: 'Berserkers rush disciplined lines.',
     },
     goblin_sapper: {
-      weakFactions: ['halo', 'gears'],
+      weakFactions: ['greywatch', 'sawtooth'],
       mult: 1.1,
       note: 'Sappers go for crossbow lines and engines.',
     },
     warg_rider: {
-      weakFactions: ['baki', 'fotns', 'lotr', 'wwe'],
+      weakFactions: ['knucklebone', 'quiet_hand', 'thornroad', 'champions'],
       mult: 1.1,
       note: 'Fast cavalry flanks melee-only rosters.',
     },
     bone_summoner: {
-      weakFactions: ['crystal', 'imperium'],
+      weakFactions: ['saltglass', 'iron_psalm'],
       mult: 1.12,
       note: 'Undead summoners resist psalms and curses alike.',
     },
     dark_knight: {
-      weakFactions: ['warp', 'crystal', 'imperium'],
+      weakFactions: ['open_wound', 'saltglass', 'iron_psalm'],
       mult: 1.1,
       note: 'Elite armour tests every finishing blow.',
     },
@@ -480,16 +480,16 @@ class FactionDepthSystem {
 
   static MASTERY_CHALLENGES = [
     {
-      id: 'wwe_show',
-      faction: 'wwe',
+      id: 'champions_four_on_the_sand',
+      faction: 'champions',
       name: 'Four on the Sand',
       desc: 'Clear wave 30 with 4+ champions on the field.',
       wave: 30,
       minField: 4,
     },
     {
-      id: 'halo_noble',
-      faction: 'halo',
+      id: 'greywatch_unbroken_watch',
+      faction: 'greywatch',
       name: 'Unbroken Watch',
       desc: 'Clear wave 40 with 3+ Greywatch heroes and no allies lost.',
       wave: 40,
@@ -497,43 +497,43 @@ class FactionDepthSystem {
       flawless: true,
     },
     {
-      id: 'lotr_fellowship',
-      faction: 'lotr',
+      id: 'thornroad_full_company',
+      faction: 'thornroad',
       name: 'Full Company',
       desc: 'Field 5+ Thornroad heroes at once.',
       minField: 5,
     },
     {
-      id: 'jojo_sbr',
-      faction: 'jojo',
+      id: 'marrow_choir_outriders',
+      faction: 'marrow_choir',
       name: 'Outriders',
       desc: 'Field 2+ Marrow Choir outriders.',
       flag: 'jojo_cavalry',
     },
     {
       id: 'db_zenkai',
-      faction: 'dragonball',
+      faction: 'emberblood',
       name: 'Burning Tally',
       desc: 'Score 200 lifetime Emberblood kills.',
       kills: 200,
     },
     {
       id: '115_moon',
-      faction: 'ultimis',
+      faction: 'powderhorn',
       name: 'Spent Powder',
       desc: 'Trigger 50 Powderhorn abilities (lifetime).',
       abilities: 50,
     },
     {
       id: 'primis_cycle',
-      faction: 'primis',
+      faction: 'pale_vigil',
       name: 'Three at the Door',
       desc: 'Field 3+ Pale Vigil heroes at once.',
       minField: 3,
     },
     {
       id: 'cog_last_stand',
-      faction: 'gears',
+      faction: 'sawtooth',
       name: 'Last in the Ditch',
       desc: 'Clear wave 35 with 3+ Sawtooth heroes on the field.',
       wave: 35,
@@ -541,21 +541,21 @@ class FactionDepthSystem {
     },
     {
       id: 'dojo_champion',
-      faction: 'baki',
+      faction: 'knucklebone',
       name: 'Knucklebones Won',
       desc: 'Score 150 lifetime Knucklebone Lodge kills.',
       kills: 150,
     },
     {
       id: 'hokuto_successor',
-      faction: 'fotns',
+      faction: 'quiet_hand',
       name: 'The Quiet Hand',
       desc: 'Trigger 40 Quiet Hand abilities (lifetime).',
       abilities: 40,
     },
     {
       id: 'astartes_line',
-      faction: 'imperium',
+      faction: 'iron_psalm',
       name: 'Psalm Line',
       desc: 'Clear wave 45 with 3+ Iron Psalm heroes on the field.',
       wave: 45,
@@ -563,21 +563,21 @@ class FactionDepthSystem {
     },
     {
       id: 'crystal_hero',
-      faction: 'crystal',
+      faction: 'saltglass',
       name: 'Guild Honours',
       desc: 'Score 150 lifetime Saltglass Guild kills.',
       kills: 150,
     },
     {
       id: 'warp_ritual',
-      faction: 'warp',
+      faction: 'open_wound',
       name: 'Tending the Wound',
       desc: 'Trigger 35 Open Wound abilities (lifetime).',
       abilities: 35,
     },
     {
       id: 'tes_dragonborn',
-      faction: 'tes',
+      faction: 'rimehowl',
       name: 'Howl at the Gate',
       desc: 'Clear wave 38 with 2+ Rimehowl heroes on the field.',
       wave: 38,
@@ -590,7 +590,7 @@ class FactionDepthSystem {
       id: 'moon_rounds',
       months: [1],
       name: 'Spent Powder',
-      factions: ['ultimis'],
+      factions: ['powderhorn'],
       bonus: { abilityDmg: 0.08 },
       desc: 'Powderhorn Company abilities +8% in January.',
     },
@@ -598,7 +598,7 @@ class FactionDepthSystem {
       id: 'primis_ascension',
       months: [2],
       name: 'Barrow Vigil',
-      factions: ['primis'],
+      factions: ['pale_vigil'],
       bonus: { dmg: 0.08 },
       desc: 'Pale Vigil damage +8% in February.',
     },
@@ -606,7 +606,7 @@ class FactionDepthSystem {
       id: 'wrestlemania',
       months: [3, 4],
       name: 'Bloodsand Season',
-      factions: ['wwe'],
+      factions: ['champions'],
       bonus: { morale: 8 },
       desc: 'Bloodsand Champions morale +8 on recruit.',
     },
@@ -614,7 +614,7 @@ class FactionDepthSystem {
       id: 'cog_siegebreak',
       months: [5],
       name: 'Ditch Season',
-      factions: ['gears'],
+      factions: ['sawtooth'],
       bonus: { siegeDmg: 0.1 },
       desc: 'Sawtooth Company siege damage +10% in May.',
     },
@@ -622,7 +622,7 @@ class FactionDepthSystem {
       id: 'stand_summer',
       months: [6, 7],
       name: 'High Summer Hymn',
-      factions: ['jojo'],
+      factions: ['marrow_choir'],
       bonus: { abilityDmg: 0.1 },
       desc: 'Marrow Choir abilities +10% Jun–Jul.',
     },
@@ -630,7 +630,7 @@ class FactionDepthSystem {
       id: 'saiyan_saga',
       months: [8],
       name: 'Dog-Day Fires',
-      factions: ['dragonball', 'crystal'],
+      factions: ['emberblood', 'saltglass'],
       bonus: { dmg: 0.1 },
       desc: 'Emberblood Warband and Saltglass Guild damage +10% in August.',
     },
@@ -638,7 +638,7 @@ class FactionDepthSystem {
       id: 'fellowship_march',
       months: [9],
       name: 'Pilgrim Month',
-      factions: ['lotr'],
+      factions: ['thornroad'],
       bonus: { moraleRegen: 3 },
       desc: 'Thornroad Company grants +3 morale/round in September.',
     },
@@ -646,7 +646,7 @@ class FactionDepthSystem {
       id: 'hanma_open',
       months: [10],
       name: 'Lodge Bouts',
-      factions: ['baki'],
+      factions: ['knucklebone'],
       bonus: { meleeDmg: 0.1 },
       desc: 'Knucklebone Lodge melee damage +10% in October.',
     },
@@ -654,7 +654,7 @@ class FactionDepthSystem {
       id: 'spartan_day',
       months: [11],
       name: 'Muster of the Walls',
-      factions: ['halo', 'imperium'],
+      factions: ['greywatch', 'iron_psalm'],
       bonus: { acc: 8 },
       desc: 'Greywatch and Iron Psalm accuracy +8 during November.',
     },
@@ -662,7 +662,7 @@ class FactionDepthSystem {
       id: 'hokuto_winter',
       months: [12],
       name: 'Fasting Winter',
-      factions: ['fotns', 'warp'],
+      factions: ['quiet_hand', 'open_wound'],
       bonus: { abilityDmg: 0.08 },
       desc: 'Quiet Hand and Open Wound abilities +8% in December.',
     },
@@ -670,7 +670,7 @@ class FactionDepthSystem {
       id: 'dragons_dawn',
       months: [7],
       name: 'Thaw Raid',
-      factions: ['tes', 'lotr'],
+      factions: ['rimehowl', 'thornroad'],
       bonus: { abilityDmg: 0.09 },
       desc: 'Rimehowl Warband and Thornroad Company abilities +9% in July.',
     },
@@ -782,7 +782,7 @@ class FactionDepthSystem {
 
   getUnitFaction(unit) {
     if (!unit) return null;
-    if (unit.isWwe) return 'wwe';
+    if (unit.isWwe) return 'champions';
     if (unit.isDoomslayer) return 'doom';
     return getCrossoverDef?.(unit.type)?.faction || null;
   }
@@ -838,7 +838,11 @@ class FactionDepthSystem {
       if (u.team !== 'player' || u.hp <= 0) continue;
       if (!u.isCrossover && !u.isWwe && !u.isDoomslayer) continue;
       n++;
-      const f = u.isWwe ? 'wwe' : u.isDoomslayer ? 'doom' : getCrossoverDef?.(u.type)?.faction;
+      const f = u.isWwe
+        ? 'champions'
+        : u.isDoomslayer
+          ? 'doom'
+          : getCrossoverDef?.(u.type)?.faction;
       if (f) byFaction[f] = (byFaction[f] || 0) + 1;
     }
     return { total: n, byFaction };
@@ -855,7 +859,7 @@ class FactionDepthSystem {
         continue;
       }
       if (syn.requiresOtherFaction || syn.requiresWwe) {
-        if (byFaction.wwe && present.size >= 2) active.push(syn);
+        if (byFaction.champions && present.size >= 2) active.push(syn);
         continue;
       }
       if (needs.every((f) => present.has(f))) active.push(syn);
@@ -959,15 +963,15 @@ class FactionDepthSystem {
   applyWarhammerDuty(unit) {
     if (typeof MetaProgress === 'undefined' || !MetaProgress.isWarhammerUnlocked?.()) return;
     const faction = getCrossoverDef?.(unit.type)?.faction;
-    if (faction !== 'imperium' && faction !== 'warp') return;
+    if (faction !== 'iron_psalm' && faction !== 'open_wound') return;
     if (this.isHoldingDefensivePosition(unit)) {
       unit.dutyStacks = Math.min(8, (unit.dutyStacks || 0) + 1);
       unit.faithFuryActive =
         unit.dutyStacks >= 2 &&
-        (unit.wweAbility === 'litany_of_hate' ||
-          unit.wweAbility === 'warp_fury' ||
-          unit.wweAbility === 'lasgun_volley' ||
-          unit.wweAbility === 'bolter_discipline');
+        (unit.wweAbility === 'psalm_of_wrath' ||
+          unit.wweAbility === 'red_frenzy' ||
+          unit.wweAbility === 'levy_volley' ||
+          unit.wweAbility === 'ordered_volley');
     } else {
       unit.dutyStacks = Math.max(0, (unit.dutyStacks || 0) - 1);
       unit.faithFuryActive = false;
@@ -986,7 +990,7 @@ class FactionDepthSystem {
     const syns = this.computeSynergies(armyUnits || this.ctx?.units || []);
     this.applySynergyToUnit(unit, syns);
     const faction = unit.isWwe
-      ? 'wwe'
+      ? 'champions'
       : unit.isDoomslayer
         ? 'doom'
         : getCrossoverDef?.(unit.type)?.faction;
@@ -1040,7 +1044,7 @@ class FactionDepthSystem {
       if (event.bonus.morale) {
         for (const u of units) {
           if (u.team !== 'player' || u.hp <= 0) continue;
-          const f = u.isWwe ? 'wwe' : getCrossoverDef?.(u.type)?.faction;
+          const f = u.isWwe ? 'champions' : getCrossoverDef?.(u.type)?.faction;
           if (f && event.factions.includes(f))
             u.morale = Math.min(u.maxMorale, u.morale + event.bonus.morale);
         }
@@ -1048,7 +1052,7 @@ class FactionDepthSystem {
       if (event.bonus.moraleRegen) {
         for (const u of units) {
           if (u.team !== 'player' || u.hp <= 0) continue;
-          const f = u.isWwe ? 'wwe' : getCrossoverDef?.(u.type)?.faction;
+          const f = u.isWwe ? 'champions' : getCrossoverDef?.(u.type)?.faction;
           if (f && event.factions.includes(f))
             u.morale = Math.min(u.maxMorale, u.morale + event.bonus.moraleRegen);
         }
@@ -1085,7 +1089,7 @@ class FactionDepthSystem {
         typeof coolAbilityInt === 'function'
           ? coolAbilityInt(n, min)
           : Math.max(min, Math.round(n * cool));
-      if (ab === 'spartan_rage' || ab === 'oorah') {
+      if (ab === 'pavise_line' || ab === 'barrack_roar') {
         units
           .filter(
             (a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(u, a) < coolInt(100)
@@ -1097,32 +1101,32 @@ class FactionDepthSystem {
         FloatingText?.status(
           u.x,
           u.y,
-          ab === 'oorah' ? 'ROAR!' : 'PAVISES UP',
-          this.PROFILES.halo?.palette?.[0] || '#408040'
+          ab === 'barrack_roar' ? 'ROAR!' : 'PAVISES UP',
+          this.PROFILES.greywatch?.palette?.[0] || '#408040'
         );
-        this.playFactionSfx('halo');
+        this.playFactionSfx('greywatch');
       }
-      if (ab === 'noble_leader') {
+      if (ab === 'call_the_mark') {
         units
           .filter(
             (a) =>
               a.team === 'player' &&
               a.isCrossover &&
-              getCrossoverDef?.(a.type)?.faction === 'halo' &&
+              getCrossoverDef?.(a.type)?.faction === 'greywatch' &&
               this.ctx.unitDistance(u, a) < coolInt(90)
           )
           .forEach((a) => {
             a.damage = Math.floor(a.damage * (1 + 0.08 * cool));
           });
       }
-      if (ab === 'tech_ops') {
+      if (ab === 'hobbling_bolt') {
         for (const e of units) {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(u, e) < coolInt(110))
             e.lanternBlind = Math.max(e.lanternBlind || 0, coolInt(30));
         }
       }
-      if (ab === 'hokuto_kaioh') {
+      if (ab === 'heavy_tread') {
         for (const e of units) {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(u, e) < coolInt(100))
@@ -1197,7 +1201,7 @@ class FactionDepthSystem {
   procAbilityVfx(unit, label, color) {
     if (!unit) return;
     FloatingText?.status(unit.x, unit.y - 10, label, color || '#ffd700');
-    const f = unit.isWwe ? 'wwe' : getCrossoverDef?.(unit.type)?.faction;
+    const f = unit.isWwe ? 'champions' : getCrossoverDef?.(unit.type)?.faction;
     if (f) this.playFactionSfx(f);
   }
 
@@ -1232,36 +1236,39 @@ class FactionDepthSystem {
       if (counter.weakFactions.includes(f)) d = Math.round(d / counter.mult);
     }
 
-    if (unit.wweAbility === 'lone_wolf') {
+    if (unit.wweAbility === 'far_from_the_fire') {
       const allies = this.ctx.units.filter(
         (a) =>
           a.team === 'player' && a.hp > 0 && a.id !== unit.id && this.ctx.unitDistance(unit, a) < 80
       ).length;
       if (allies === 0) d = Math.round(d * 1.35);
     }
-    if (unit.wweAbility === 'demon_back' && unit.hp / unit.maxHp < 0.5) d = Math.round(d * 1.4);
-    if (unit.wweAbility === 'galick_gun' && isEliteEnemy?.(target)) d = Math.round(d * 1.25);
-    if (unit.wweAbility === 'warp_fury' && unit.hp / unit.maxHp < 0.5) d = Math.round(d * 1.3);
+    if (unit.wweAbility === 'blooded' && unit.hp / unit.maxHp < 0.5) d = Math.round(d * 1.4);
+    if (unit.wweAbility === 'banked_fury' && isEliteEnemy?.(target)) d = Math.round(d * 1.25);
+    if (unit.wweAbility === 'red_frenzy' && unit.hp / unit.maxHp < 0.5) d = Math.round(d * 1.3);
     if (unit.faithFuryActive) d = Math.round(d * (1 + (unit.dutyStacks || 0) * 0.05));
     if (unit.dutyStacks > 0) d = Math.round(d * (1 + unit.dutyStacks * 0.03));
-    if (unit.wweAbility === 'limit_break' && unit.hp / unit.maxHp < 0.4) d = Math.round(d * 1.35);
-    if (unit.wweAbility === 'bolter_discipline') {
+    if (unit.wweAbility === 'shatter_point' && unit.hp / unit.maxHp < 0.4) d = Math.round(d * 1.35);
+    if (unit.wweAbility === 'ordered_volley') {
       const allies = this.ctx.units.filter(
         (a) =>
           a.team === 'player' &&
           a.hp > 0 &&
           a.id !== unit.id &&
-          getCrossoverDef?.(a.type)?.faction === 'imperium' &&
+          getCrossoverDef?.(a.type)?.faction === 'iron_psalm' &&
           this.ctx.unitDistance(unit, a) < 90
       ).length;
       if (allies >= 1) d = Math.round(d * 1.12);
     }
-    if (unit.wweAbility === 'jump_attack' && (target?.flying || target?.speed > 1.05))
+    if (unit.wweAbility === 'vaulting_lance' && (target?.flying || target?.speed > 1.05))
       d = Math.round(d * 1.25);
-    if (unit.wweAbility === 'aeon_strike' && isEliteEnemy?.(target)) d = Math.round(d * 1.2);
-    if (unit.wweAbility === 'anduril' && (target?.type === 'dark_knight' || isEliteEnemy?.(target)))
+    if (unit.wweAbility === 'burning_lens' && isEliteEnemy?.(target)) d = Math.round(d * 1.2);
+    if (
+      unit.wweAbility === 'riders_bane' &&
+      (target?.type === 'dark_knight' || isEliteEnemy?.(target))
+    )
       d = Math.round(d * 1.3);
-    if (unit.wweAbility === 'elven_archer' && (target?.speed > 1 || target?.flying))
+    if (unit.wweAbility === 'long_draw' && (target?.speed > 1 || target?.flying))
       d = Math.round(d * 1.2);
     return d;
   }
@@ -1317,7 +1324,7 @@ class FactionDepthSystem {
     }
 
     const handlers = {
-      frag_out() {
+      fused_pot() {
         const orbital = !!unit.cosmicOrbitalStrike;
         const splashMult = orbital ? 0.85 : 0.35;
         const radius = orbital ? 200 : 50;
@@ -1337,7 +1344,7 @@ class FactionDepthSystem {
           );
         }
       },
-      apothicon_slam() {
+      barrow_sweep() {
         if (target.hp <= 0) {
           for (const e of this.ctx.units) {
             if (e.team !== 'enemy' || e.hp <= 0) continue;
@@ -1347,46 +1354,46 @@ class FactionDepthSystem {
           this.procAbilityVfx(unit, 'SLAM', '#d07040');
         }
       },
-      iron_curtain() {
+      sealed_door() {
         if (unit.hp / unit.maxHp < 0.35 && (unit.ironCurtainCd || 0) <= 0) {
           unit.ironCurtainCd = 200;
           unit.rallyTimer = 90;
           this.procAbilityVfx(unit, 'SEALED', '#5080a0');
         }
       },
-      energy_sword() {
+      scaling_knife() {
         if (target.hp / target.maxHp < 0.45)
           this.ctx.takeDamage(target, Math.round(dmg * 0.8), { crit: true });
       },
-      grenadier() {
+      springald_shot() {
         unit.grenadeCount = (unit.grenadeCount || 0) + 1;
         if (unit.grenadeCount % 3 === 0) {
           this.ctx.damageInRadius(target.x, target.y, 45, Math.round(dmg * 0.5), 'player');
           this.procAbilityVfx(unit, 'SPLASH', '#705030');
         }
       },
-      sniper_cover() {
+      held_breath() {
         if (isEliteEnemy?.(target)) this.ctx.takeDamage(target, Math.round(dmg * 0.45));
       },
-      tech_head() {
+      pry_and_spike() {
         if (target?.type === 'siege_tower' || target?.siegeDeployed)
           this.ctx.takeDamage(target, Math.round(dmg * 0.5));
       },
-      cole_train() {
+      downhill_charge() {
         if (unit.chargeTimer > 30) this.ctx.takeDamage(target, Math.round(dmg * 0.35));
       },
-      axe_cleave() {
+      splitting_stroke() {
         if (target?.type === 'siege_tower')
           this.ctx.damageInRadius(target.x, target.y, 40, Math.round(dmg * 0.4), 'player');
       },
-      you_shall_not_pass() {
+      ward_of_salt() {
         for (const e of this.ctx.units) {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
           if (this.ctx.unitDistance(unit, e) < 80) e.morale = Math.max(0, e.morale - 3);
         }
         this.procAbilityVfx(unit, 'WARDED', '#c0c0e0');
       },
-      ring_bearer() {
+      underfoot() {
         if (depthRoll() < 0.2) return;
         this.ctx.units
           .filter((a) => a.team === 'player' && this.ctx.unitDistance(unit, a) < 70)
@@ -1394,7 +1401,7 @@ class FactionDepthSystem {
             a.morale = Math.min(a.maxMorale, a.morale + 1);
           });
       },
-      horn_of_gondor() {
+      hold_the_gate() {
         const foes = this.ctx.units.filter(
           (e) => e.team === 'enemy' && e.hp > 0 && this.ctx.unitDistance(unit, e) < 60
         ).length;
@@ -1403,28 +1410,28 @@ class FactionDepthSystem {
           this.procAbilityVfx(unit, 'HORN!', '#704030');
         }
       },
-      no_man() {
+      hamstring_thrust() {
         if (isEliteEnemy?.(target) && target.hp / target.maxHp < 0.5)
           this.ctx.takeDamage(target, Math.round(dmg * 1.2), { crit: true });
       },
-      ogre() {
+      bare_handed_ruin() {
         if (target.maxHp > 200) this.ctx.takeDamage(target, Math.round(dmg * 0.4));
       },
-      bite() {
+      gnaw() {
         if (target.maxHp > unit.maxHp * 1.2) this.ctx.takeDamage(target, Math.round(dmg * 0.35));
       },
-      iron_body() {
+      anvil_flesh() {
         if (unit.hp / unit.maxHp < 0.6) unit.rallyTimer = Math.max(unit.rallyTimer || 0, 30);
       },
-      hamon_overdrive() {
+      dawn_hymn() {
         if (target?.type === 'necromancer' || target?.type === 'bone_summoner')
           this.ctx.takeDamage(target, Math.round(dmg * 0.55));
       },
-      vaporization_freeze() {
+      cold_antiphon() {
         target.hazardSlow = Math.min(target.hazardSlow || 1, 0.6);
         target.morale = Math.max(0, target.morale - 2);
       },
-      sunlight_yellow() {
+      mending_verse() {
         if (target.hp <= 0 && isEliteEnemy?.(target)) {
           const ally = this.ctx.units.find(
             (a) =>
@@ -1436,29 +1443,29 @@ class FactionDepthSystem {
           if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + 20);
         }
       },
-      hermit_purple() {
+      snare_verse() {
         if (depthRoll() < 0.15) target.lanternBlind = Math.max(target.lanternBlind || 0, 25);
       },
-      bubble_cutter() {
+      whistling_stone() {
         if (depthRoll() < 0.2) this.ctx.takeDamage(target, Math.round(dmg * 0.6), { crit: true });
       },
-      german_science() {
+      rams_canticle() {
         if (target?.type === 'siege_tower') this.ctx.takeDamage(target, Math.round(dmg * 0.45));
       },
-      star_platinum() {
+      hammered_verse() {
         if (target.pinned) this.ctx.takeDamage(target, Math.round(dmg * 0.7), { crit: true });
       },
-      hierophant_green() {
+      shard_rain() {
         this.ctx.damageInRadius(target.x, target.y, 35, Math.round(dmg * 0.3), 'player');
       },
-      silver_chariot() {
+      needle_verse() {
         if (target.hp / target.maxHp < 0.4) this.ctx.takeDamage(target, Math.round(dmg * 0.5));
       },
-      magicians_red() {
+      burning_censer() {
         Particles?.explosion(target.x, target.y);
         this.ctx.damageInRadius(target.x, target.y, 30, Math.round(dmg * 0.25), 'player');
       },
-      crazy_diamond() {
+      knitting_hymn() {
         const ally = this.ctx.units.find(
           (a) =>
             a.team === 'player' &&
@@ -1468,17 +1475,17 @@ class FactionDepthSystem {
         );
         if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + 6);
       },
-      the_hand() {
+      tolling_blow() {
         this.ctx.takeDamage(target, Math.round(dmg * 0.25));
       },
-      heavens_door() {
+      written_curse() {
         target.lanternBlind = Math.max(target.lanternBlind || 0, 35);
       },
-      killer_queen() {
+      unsung_end() {
         if (target.hp / target.maxHp < 0.35)
           this.ctx.takeDamage(target, Math.round(dmg * 0.9), { crit: true });
       },
-      gold_experience() {
+      alms_of_blood() {
         if (target.hp <= 0) {
           const ally = this.ctx.units.find(
             (a) => a.team === 'player' && a.hp > 0 && a.hp < a.maxHp
@@ -1486,10 +1493,10 @@ class FactionDepthSystem {
           if (ally) ally.hp = Math.min(ally.maxHp, ally.hp + 12);
         }
       },
-      sticky_fingers() {
+      leading_voice() {
         unit.rallyTimer = Math.max(unit.rallyTimer || 0, 40);
       },
-      sex_pistols() {
+      skipping_stone() {
         const extra = this.ctx.units.find(
           (e) =>
             e.team === 'enemy' &&
@@ -1499,41 +1506,41 @@ class FactionDepthSystem {
         );
         if (extra) this.ctx.takeDamage(extra, Math.round(dmg * 0.35));
       },
-      king_crimson() {
+      final_amen() {
         if (target.hp / target.maxHp < 0.3)
           this.ctx.takeDamage(target, target.hp * 0.5, { crit: true });
       },
-      stone_free() {
+      gut_string_snare() {
         target.hazardSlow = Math.min(target.hazardSlow || 1, 0.5);
       },
-      weather_stand() {
+      thunder_response() {
         this.ctx.damageInRadius(target.x, target.y, 50, Math.round(dmg * 0.35), 'player');
         Particles?.lightning(target.x, target.y);
       },
-      kiss() {
+      refrain() {
         if (target.hp <= 0 && isEliteEnemy?.(target)) unit.damage = Math.floor(unit.damage * 1.05);
       },
-      tusk_act4() {
+      couched_lance() {
         if (unit.chargeTimer > 40)
           this.ctx.takeDamage(target, Math.round(dmg * 1.1), { crit: true });
       },
-      steel_ball() {
+      wheeling_flail() {
         if (unit.chargeTimer > 25)
           this.ctx.damageInRadius(target.x, target.y, 35, Math.round(dmg * 0.4), 'player');
       },
-      scary_monsters() {
+      run_to_ground() {
         if (unit.chargeTimer > 20) this.ctx.takeDamage(target, Math.round(dmg * 0.45));
       },
-      hidan_shinken() {
+      stopped_breath() {
         if (target.hp / target.maxHp < 0.35)
           this.ctx.takeDamage(target, Math.round(dmg * 1.5), { crit: true });
       },
-      hakke_shou() {
+      laying_on_of_hands() {
         this.ctx.units
           .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 90)
           .forEach((a) => (a.hp = Math.min(a.maxHp, a.hp + 2)));
       },
-      nanto_suicho() {
+      scything_step() {
         const extra = this.ctx.units.filter(
           (e) =>
             e.team === 'enemy' &&
@@ -1543,10 +1550,10 @@ class FactionDepthSystem {
         );
         if (extra.length) extra.forEach((e) => this.ctx.takeDamage(e, Math.round(dmg * 0.2)));
       },
-      dirty_tricks() {
+      grit_in_the_eye() {
         target.morale = Math.max(0, target.morale - 3);
       },
-      kamehameha() {
+      ember_burst() {
         const foes = this.ctx.units.filter(
           (e) => e.team === 'enemy' && e.hp > 0 && this.ctx.unitDistance(unit, e) < 70
         ).length;
@@ -1555,56 +1562,56 @@ class FactionDepthSystem {
           this.procAbilityVfx(unit, 'EMBER BURST', '#e06040');
         }
       },
-      special_beam() {
+      lancing_ember() {
         if (target.maxHp > 180) this.ctx.takeDamage(target, Math.round(dmg * 0.5));
       },
-      hidden_potential() {
+      slow_burn() {
         if (unit.hp / unit.maxHp < 0.4)
           this.ctx.takeDamage(target, Math.round(dmg * 0.5), { crit: true });
       },
-      burning_attack() {
+      thrown_coals() {
         if (target.hp / target.maxHp < 0.4)
           this.ctx.takeDamage(target, Math.round(dmg * 0.55), { crit: true });
       },
-      death_beam() {
+      ashen_needle() {
         if (target.hp / target.maxHp < 0.5) this.ctx.takeDamage(target, Math.round(dmg * 0.65));
       },
-      perfect_form() {
+      feeding_fire() {
         if (target.hp <= 0) unit.hp = Math.min(unit.maxHp, unit.hp + Math.floor(unit.maxHp * 0.08));
       },
-      hakai() {
+      pyres_end() {
         if (target.hp / target.maxHp < 0.25)
           this.ctx.takeDamage(target, Math.max(dmg * 2, target.hp * 0.6), { crit: true });
       },
-      carmine_curse() {
+      flag_bolt() {
         if (unit.hp / unit.maxHp < 0.3 && depthRoll() < 0.1) unit.hp = Math.max(1, unit.hp - 10);
       },
-      heavy_lancer() {
+      bolt_storm() {
         const nearby = this.ctx.units.filter(
           (e) => e.team === 'enemy' && e.hp > 0 && this.ctx.unitDistance(target, e) < 45
         ).length;
         if (nearby >= 2) this.ctx.takeDamage(target, Math.round(dmg * 0.25));
       },
-      vodka_rage() {
+      hooped_iron() {
         if (unit.hp / unit.maxHp < 0.45) unit.rallyTimer = Math.max(unit.rallyTimer || 0, 40);
       },
-      wunderwaffe() {
+      bottled_storm() {
         if (isEliteEnemy?.(target)) this.ctx.takeDamage(target, Math.round(dmg * 0.4 * synMult));
       },
-      bushido() {
+      first_cut() {
         const stars = this.ctx.getStarCount?.(unit) ?? 0;
         if (stars >= 3 && depthRoll() < 0.25)
           this.ctx.takeDamage(target, Math.round(dmg * 0.6), { crit: true });
       },
-      katana_fury() {
+      mercy_stroke() {
         if (target.hp / target.maxHp < 0.5) this.ctx.takeDamage(target, Math.round(dmg * 0.5));
       },
-      summoning_key() {
+      candle_and_lancet() {
         if (isEliteEnemy?.(target) && target.hp > 0) {
           unit.hp = Math.min(unit.maxHp, unit.hp + Math.floor(dmg * 0.5));
         }
       },
-      spartan_rage() {
+      pavise_line() {
         if (target.team === 'enemy') {
           this.ctx.units
             .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 90)
@@ -1613,7 +1620,7 @@ class FactionDepthSystem {
             });
         }
       },
-      oorah() {
+      barrack_roar() {
         if (target.team === 'enemy') {
           this.ctx.units
             .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 110)
@@ -1622,17 +1629,17 @@ class FactionDepthSystem {
             });
         }
       },
-      lancer_burst() {
+      sawback_glaive() {
         if (target.hp / target.maxHp < 0.3)
           this.ctx.takeDamage(target, Math.round(target.hp * 0.7), { crit: true });
       },
-      brothers_in_arms() {
+      stand_with_me() {
         const marcus = this.ctx.units.find(
-          (u) => u.type === 'marcus_fenix' && u.hp > 0 && this.ctx.unitDistance(unit, u) < 100
+          (u) => u.type === 'hale_brandreth' && u.hp > 0 && this.ctx.unitDistance(unit, u) < 100
         );
         if (marcus) marcus.hp = Math.min(marcus.maxHp, marcus.hp + 8);
       },
-      carmine_brother() {
+      spotters_whistle() {
         this.ctx.units
           .filter(
             (u) => u.type?.includes('carmine') && u.hp > 0 && this.ctx.unitDistance(unit, u) < 90
@@ -1641,37 +1648,37 @@ class FactionDepthSystem {
             c.accuracy = Math.min(95, c.accuracy + 2);
           });
       },
-      stunner() {
+      keystone_blow() {
         if (isEliteEnemy?.(target)) this.ctx.takeDamage(target, Math.round(dmg * 0.5));
       },
-      f5() {
+      carcass_throw() {
         if (target.hp / target.maxHp < 0.35) this.ctx.takeDamage(target, target.hp);
       },
-      go_to_sleep() {
+      last_word() {
         if (target.hp / target.maxHp < 0.3)
           this.ctx.takeDamage(target, Math.round(target.hp * 0.8));
       },
-      lie_cheat_steal() {
+      magpies_due() {
         if (isEliteEnemy?.(target) && target.hp <= 0) this.ctx.addTactical?.(3);
       },
-      woo() {
+      heralds_boast() {
         this.ctx.units
           .filter((u) => u.team === 'player' && u.hp > 0 && this.ctx.unitDistance(unit, u) < 100)
           .forEach((a) => {
             a.morale = Math.min(a.maxMorale, a.morale + 1);
           });
       },
-      hulk_up() {
+      stubborn_blood() {
         if (unit.hp / unit.maxHp < 0.4) unit.hp = Math.min(unit.maxHp, unit.hp + 30);
       },
-      rko() {
+      sudden_fall() {
         if (target.team === 'enemy' && target.hp > 0 && target.hp / target.maxHp < 0.45) {
           this.ctx.takeDamage(target, Math.max(target.hp * 0.85, dmg * 2.2), { crit: true });
           FloatingText?.status(target.x, target.y, 'AMBUSH!', '#5080c0');
           AudioEngine?.SFX?.factionFinisher?.();
         }
       },
-      lantern() {
+      corpse_candle_omen() {
         if (target.team === 'enemy') {
           const light = this.ctx.getDayLight?.() ?? 1;
           target.lanternBlind = Math.max(
@@ -1680,18 +1687,18 @@ class FactionDepthSystem {
           );
         }
       },
-      bolter_discipline() {
+      ordered_volley() {
         const allies = this.ctx.units.filter(
           (a) =>
             a.team === 'player' &&
             a.hp > 0 &&
             a.id !== unit.id &&
-            getCrossoverDef?.(a.type)?.faction === 'imperium' &&
+            getCrossoverDef?.(a.type)?.faction === 'iron_psalm' &&
             this.ctx.unitDistance(unit, a) < 90
         ).length;
         if (allies >= 2) this.ctx.takeDamage(target, Math.round(dmg * 0.2));
       },
-      litany_of_hate() {
+      psalm_of_wrath() {
         const terror = unit.faithFuryActive ? 4 : 2;
         for (const e of this.ctx.units) {
           if (e.team !== 'enemy' || e.hp <= 0) continue;
@@ -1699,7 +1706,7 @@ class FactionDepthSystem {
         }
         this.procAbilityVfx(unit, unit.faithFuryActive ? 'PSALM AND IRON' : 'PSALM', '#303848');
       },
-      smite() {
+      unbinding() {
         if (
           target?.type === 'necromancer' ||
           target?.type === 'dark_mage' ||
@@ -1707,33 +1714,33 @@ class FactionDepthSystem {
         )
           this.ctx.takeDamage(target, Math.round(dmg * 0.55));
       },
-      summary_execution() {
+      deserters_wage() {
         if (target.hp / target.maxHp < 0.25)
           this.ctx.takeDamage(target, Math.round(target.hp * 0.85), { crit: true });
       },
-      lasgun_volley() {
+      levy_volley() {
         unit.lasgunCount = (unit.lasgunCount || 0) + 1;
         if (unit.lasgunCount % 4 === 0) {
           this.ctx.damageInRadius(target.x, target.y, 40, Math.round(dmg * 0.35), 'player');
           this.procAbilityVfx(unit, 'VOLLEY', '#506050');
         }
       },
-      storm_shield() {
+      tower_shield() {
         if (unit.hp / unit.maxHp < 0.45 && (unit.stormShieldCd || 0) <= 0) {
           unit.stormShieldCd = 180;
           unit.rallyTimer = 100;
           this.procAbilityVfx(unit, 'SHIELD', '#384858');
         }
       },
-      autocannon() {
+      bronze_bombard() {
         if (target?.type === 'siege_tower' || target?.siegeDeployed)
           this.ctx.takeDamage(target, Math.round(dmg * 0.55));
       },
-      cross_slash() {
+      crosswise_cut() {
         if (target.hp / target.maxHp < 0.5)
           this.ctx.takeDamage(target, Math.round(dmg * 0.55), { crit: true });
       },
-      firaga() {
+      kiln_burst() {
         const foes = this.ctx.units.filter(
           (e) => e.team === 'enemy' && e.hp > 0 && this.ctx.unitDistance(target, e) < 55
         ).length;
@@ -1742,36 +1749,36 @@ class FactionDepthSystem {
           this.procAbilityVfx(unit, 'KILN BURST', '#802040');
         }
       },
-      curaga() {
+      clear_glass() {
         this.ctx.units
           .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 85)
           .forEach((a) => (a.hp = Math.min(a.maxHp, a.hp + 3)));
       },
-      jump_attack() {
+      vaulting_lance() {
         if (unit.chargeTimer > 20 && (target?.flying || target?.speed > 1.05))
           this.ctx.takeDamage(target, Math.round(dmg * 0.5), { crit: true });
       },
-      aeon_strike() {
+      burning_lens() {
         if (isEliteEnemy?.(target)) this.ctx.takeDamage(target, Math.round(dmg * 0.45));
       },
-      limit_break() {
+      shatter_point() {
         if (unit.hp / unit.maxHp < 0.4)
           this.ctx.takeDamage(target, Math.round(dmg * 0.65), { crit: true });
       },
-      aether_shot() {
+      shard_bolt() {
         if (isEliteEnemy?.(target) && depthRoll() < 0.15)
           this.ctx.takeDamage(target, Math.round(dmg * 0.35));
       },
-      warp_fury() {
+      red_frenzy() {
         const mult = unit.faithFuryActive ? 0.55 : 0.35;
         if (unit.hp / unit.maxHp < 0.5) this.ctx.takeDamage(target, Math.round(dmg * mult));
         if (unit.faithFuryActive) this.procAbilityVfx(unit, 'FAITH & FURY', '#802040');
       },
-      festering_curse() {
+      weeping_sore() {
         target.hazardSlow = Math.min(target.hazardSlow || 1, 0.65);
         target.morale = Math.max(0, target.morale - 3);
       },
-      warp_bolt() {
+      forked_curse() {
         const extra = this.ctx.units.find(
           (e) =>
             e.team === 'enemy' &&
@@ -1781,21 +1788,21 @@ class FactionDepthSystem {
         );
         if (extra) this.ctx.takeDamage(extra, Math.round(dmg * 0.4));
       },
-      unholy_armor() {
+      scabbed_plate() {
         if (unit.hp / unit.maxHp < 0.4 && (unit.unholyArmorCd || 0) <= 0) {
           unit.unholyArmorCd = 200;
           unit.rallyTimer = 90;
           this.procAbilityVfx(unit, 'SCABBED', '#302030');
         }
       },
-      blood_pact() {
+      blood_tithe() {
         if (target.hp <= 0) unit.hp = Math.min(unit.maxHp, unit.hp + Math.floor(unit.maxHp * 0.06));
       },
-      daemon_fire() {
+      wound_fire_bolts() {
         if (isEliteEnemy?.(target))
           this.ctx.damageInRadius(target.x, target.y, 38, Math.round(dmg * 0.3), 'player');
       },
-      fus_ro_dah() {
+      breaking_howl() {
         let splash = 0;
         for (const e of this.ctx.units) {
           if (e.team !== 'enemy' || e.hp <= 0 || e.id === target.id) continue;
@@ -1806,7 +1813,7 @@ class FactionDepthSystem {
         }
         if (splash >= 2) this.procAbilityVfx(unit, 'BREAKING HOWL', '#4068a0');
       },
-      thuum_echo() {
+      echoing_chant() {
         this.ctx.units
           .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 95)
           .forEach((a) => {
@@ -1819,24 +1826,24 @@ class FactionDepthSystem {
         }
         this.procAbilityVfx(unit, 'THE CHANT', '#708090');
       },
-      shield_wall() {
+      hold_fast() {
         if (unit.hp / unit.maxHp < 0.55 && (unit.shieldWallCd || 0) <= 0) {
           unit.shieldWallCd = 200;
           unit.rallyTimer = 90;
           this.procAbilityVfx(unit, 'SHIELD WALL', '#506878');
         }
       },
-      dragon_aspect() {
+      hail_call() {
         if (isEliteEnemy?.(target) || target?.isNamedBoss || target?.type === 'war_chief') {
           this.ctx.takeDamage(target, Math.round(dmg * 0.45), { dragonStrike: true, crit: true });
           this.procAbilityVfx(unit, 'HAIL CALL', '#6040a8');
         }
       },
-      shadow_strike() {
+      knife_in_the_dark() {
         if (target.hp / target.maxHp < 0.45)
           this.ctx.takeDamage(target, Math.round(dmg * 0.7), { crit: true });
       },
-      mara_blessing() {
+      hearth_blessing() {
         this.ctx.units
           .filter((a) => a.team === 'player' && a.hp > 0 && this.ctx.unitDistance(unit, a) < 85)
           .forEach((a) => {
@@ -1876,7 +1883,7 @@ class FactionDepthSystem {
       if (!prof.building || typeof BuildDefs === 'undefined') continue;
       const def = BuildDefs[prof.building];
       if (!def) continue;
-      if (fid !== 'wwe') {
+      if (fid !== 'champions') {
         def.cost = this.STANDARD_BARRACKS_COST;
         def.requiresBuilders = prof.requiresBuilders || this.STANDARD_BARRACKS_BUILDERS;
       }
@@ -2123,7 +2130,7 @@ class FactionDepthSystem {
       },
     ];
     for (const [id, prof] of Object.entries(this.PROFILES)) {
-      if (id === 'doom' || id === 'wwe') continue;
+      if (id === 'doom' || id === 'champions') continue;
       const planetOps = Object.values(this.PLANET_WARFARE_OPERATIVES)
         .filter((op) => op.faction === id)
         .map((op) => op.operative);
@@ -2140,9 +2147,9 @@ class FactionDepthSystem {
       cat: 'crossover_meta',
       name: 'Champions’ Hall & Hellbane — Secret Rosters',
       body: [
-        `${this.PROFILES.wwe?.lore || 'The Bloodsand Champions bring the fighting pit to your siege.'}`,
+        `${this.PROFILES.champions?.lore || 'The Bloodsand Champions bring the fighting pit to your siege.'}`,
         '',
-        `Champions’ Hall — ${this.PROFILES.wwe?.identity || 'Morale for the line and finishing blows.'} ${this.PROFILES.wwe?.playstyle || ''}`,
+        `Champions’ Hall — ${this.PROFILES.champions?.identity || 'Morale for the line and finishing blows.'} ${this.PROFILES.champions?.playstyle || ''}`,
         '',
         `${this.PROFILES.doom?.lore || 'The Hellbane walks from Hell.'}`,
         '',

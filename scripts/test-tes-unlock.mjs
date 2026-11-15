@@ -69,7 +69,7 @@ for (let w = 1; w <= 110; w++) Achievements.onEvent('wave_complete', { wave: w }
 immortal('martial', 'footman');
 immortal('arcane', 'mage');
 immortal('tech', 'sapper');
-immortal('mythic', 'dragonborn');
+immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaHero: true });
 Achievements.onEvent('game_end', { victory: true, wave: 110 });
 ok(MetaProgress.isTesUnlocked(), 'victory with four path immortals unlocks TES');
@@ -93,7 +93,7 @@ for (let w = 1; w <= 90; w++) Achievements.onEvent('wave_complete', { wave: w })
 immortal('martial', 'footman');
 immortal('arcane', 'mage');
 immortal('tech', 'sapper');
-immortal('mythic', 'dragonborn');
+immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaHero: true });
 Achievements.onEvent('game_end', { victory: true, wave: 90 });
 ok(!MetaProgress.isTesUnlocked(), 'wave below 100 blocks TES unlock');
@@ -105,7 +105,7 @@ for (let w = 1; w <= 110; w++) Achievements.onEvent('wave_complete', { wave: w }
 immortal('martial', 'footman');
 immortal('arcane', 'mage');
 immortal('tech', 'sapper');
-immortal('mythic', 'dragonborn');
+immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('game_end', { victory: true, wave: 110 });
 ok(!MetaProgress.isTesUnlocked(), 'missing dragon boss slay blocks unlock');
 
@@ -116,7 +116,7 @@ for (let w = 1; w <= 110; w++) Achievements.onEvent('wave_complete', { wave: w }
 immortal('martial', 'footman');
 immortal('arcane', 'mage');
 immortal('tech', 'sapper');
-immortal('mythic', 'dragonborn');
+immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaStrike: true });
 ok(Achievements.evaluateRule('dragon_boss_slay'), 'dragon boss slay milestone');
 

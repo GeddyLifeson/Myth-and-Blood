@@ -106,7 +106,7 @@ function toNight(Game, GS) {
     bossSector: null,
   });
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
-  ok(snap.version === Game.SAVE_VERSION && snap.version === 3, `save version ${snap.version}`);
+  ok(snap.version === Game.SAVE_VERSION && snap.version === 4, `save version ${snap.version}`);
   ok(
     snap.nextWavePlan &&
       snap.nextWavePlan.wave === GS.wave + 1 &&
@@ -213,6 +213,14 @@ function toNight(Game, GS) {
     Cheats.submit('not a code') === false && Game.cheatsUsed() === false,
     'a wrong code marks nothing'
   );
+  for (const code of ['quarry oath', 'Iron  Creed']) {
+    ok(
+      Cheats.submit(code) === true && /Champions’ Hall unlocked/.test(Cheats.getLastMessage()),
+      `"${code}" opens the Champions’ Hall`
+    );
+  }
+  const hints = Cheats.getCodeHints().join(' ');
+  ok(hints.includes('quarry oath') && !hints.includes('iron creed'), 'only the new code is listed');
 }
 
 // --- 4. a cheat voids the run: no score, no ribbon progress, no achievements ------------------

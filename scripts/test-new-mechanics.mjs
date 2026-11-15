@@ -80,9 +80,9 @@ const biased = BS.biasSpawnPosition({ x: 200, y: 10 }, 'north', 400, 600, ctx);
 ok(biased.y > 10, 'spawn position biased by biome depth');
 
 OST.resetRun();
-OST.grantSkillPoint('ultimis', 2);
-ok(OST.getAvailablePoints('ultimis') >= 1, 'skill tree budget readable');
-const buy = OST.purchaseNode('ultimis', 'frag_drill');
+OST.grantSkillPoint('powderhorn', 2);
+ok(OST.getAvailablePoints('powderhorn') >= 1, 'skill tree budget readable');
+const buy = OST.purchaseNode('powderhorn', 'fuse_drill');
 ok(buy.ok, 'purchase first skill node');
 const unit = {
   team: 'player',
@@ -95,7 +95,7 @@ const unit = {
   projectile: null,
   combatType: 'melee',
 };
-vmCtx.getCrossoverDef = () => ({ faction: 'ultimis' });
+vmCtx.getCrossoverDef = () => ({ faction: 'powderhorn' });
 OST.applyToUnit(unit, [unit]);
 ok((unit.skillAcc || 0) >= 6, 'skill tree applies accuracy bonus');
 const dmg = OST.modifyDamage(

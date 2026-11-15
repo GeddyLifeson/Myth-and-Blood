@@ -58,12 +58,12 @@ const GameCore = (() => {
   const MARTIAL_MELEE_FOCUS_RATIO = 0.65;
 
   const DRAGON_THEMED_ABILITIES = new Set([
-    'fus_ro_dah',
+    'breaking_howl',
     'fire_breath',
     'ice_form',
     'thuum',
-    'thuum_echo',
-    'dragon_aspect',
+    'echoing_chant',
+    'hail_call',
   ]);
 
   const STAND_ALLIANCE_MIN_HEROES = 3;
@@ -75,17 +75,17 @@ const GameCore = (() => {
   const SHOWMANSHIP_HEAVY_RATIO = 0.35;
 
   const KI_ENERGY_ABILITIES = new Set([
-    'kamehameha',
-    'galick_gun',
-    'special_beam',
-    'burning_attack',
-    'death_beam',
-    'hidden_potential',
-    'perfect_form',
-    'hakai',
+    'ember_burst',
+    'banked_fury',
+    'lancing_ember',
+    'thrown_coals',
+    'ashen_needle',
+    'slow_burn',
+    'feeding_fire',
+    'pyres_end',
     'sunbreath',
-    'sunlight_yellow',
-    'energy_sword',
+    'mending_verse',
+    'scaling_knife',
   ]);
 
   const tacticalFoeCap = 36;
@@ -254,7 +254,7 @@ const GameCore = (() => {
     const role = getUnitCombatRole(unit);
     if (!role || role === 'support') return false;
     const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(unit.type) : null;
-    if (def?.combatTag === 'ki' || def?.faction === 'dragonball') return true;
+    if (def?.combatTag === 'ember' || def?.faction === 'emberblood') return true;
     if (unit.type === 'mage' || unit.projectile === 'bolt') return true;
     if (def?.ability && KI_ENERGY_ABILITIES.has(def.ability)) return true;
     return false;
@@ -316,7 +316,7 @@ const GameCore = (() => {
     if (!unit || unit.team !== 'player') return false;
     if (unit.wweAbility && DRAGON_THEMED_ABILITIES.has(unit.wweAbility)) return true;
     const def = getCrossoverDef?.(unit.type);
-    if (def?.combatTag === 'dragon' || def?.faction === 'tes') return true;
+    if (def?.combatTag === 'skald' || def?.faction === 'rimehowl') return true;
     return false;
   }
 
@@ -328,7 +328,7 @@ const GameCore = (() => {
       if (!u.isCrossover && !u.isWwe) continue;
       heroCount++;
       if (typeof isWweUnit === 'function' && isWweUnit(u.type)) {
-        factions.add('wwe');
+        factions.add('champions');
         continue;
       }
       const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(u.type) : null;

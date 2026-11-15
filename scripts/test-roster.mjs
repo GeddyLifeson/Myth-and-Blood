@@ -68,7 +68,7 @@ const notOwn = everyone.filter((t) => {
 });
 ok(notOwn.length === 0, `profileOf returns the unit's own profile ${notOwn.join(',')}`);
 ok(
-  Roster.describeType('kenshiro', 'player')?.role === own('kenshiro').role,
+  Roster.describeType('sevrin_palmquiet', 'player')?.role === own('sevrin_palmquiet').role,
   'describeType finds an operative by type'
 );
 
@@ -131,9 +131,9 @@ ok(twins.length === 0, `no two faction-mates share the same mechanics ${twins.jo
 
 // A unit with no profile of its own (a modded operative) falls back to archetype plus signature.
 const stranger = { ...opUnit(Object.keys(CrossoverDefs)[0]), type: 'modded_operative' };
-stranger.faction = 'ultimis';
+stranger.faction = 'powderhorn';
 ok(
-  Roster.describe(stranger)?.trait.includes(Roster.FACTION_SIGNATURES.ultimis.note),
+  Roster.describe(stranger)?.trait.includes(Roster.FACTION_SIGNATURES.powderhorn.note),
   'an operative without its own profile falls back to archetype and faction signature'
 );
 ok(
@@ -271,7 +271,7 @@ ctx.units = [];
 ctx.tick = 1000;
 
 // execute: marcus_fenix deals +40% to targets below 30% health.
-const marcus = hero('marcus_fenix');
+const marcus = hero('hale_brandreth');
 ok(
   Roster.modifyDamage(marcus, foe(0, -40, { hp: 29 }), 100, ctx) === 140 &&
     Roster.modifyDamage(marcus, foe(0, -40, { hp: 31 }), 100, ctx) === 100,
@@ -279,15 +279,15 @@ ok(
 );
 
 // lifesteal: primis_richtofen heals for 10% of the damage dealt, never above full health.
-const medic = hero('primis_richtofen', 0, 0, { hp: 50 });
+const medic = hero('brother_odrin_wick', 0, 0, { hp: 50 });
 Roster.modifyDamage(medic, foe(0, -40), 100, ctx);
-const healthy = hero('primis_richtofen', 0, 0, { hp: 99 });
+const healthy = hero('brother_odrin_wick', 0, 0, { hp: 99 });
 Roster.modifyDamage(healthy, foe(0, -40), 100, ctx);
 ok(medic.hp === 60 && healthy.hp === 100, `lifesteal: heals a share of damage dealt (${medic.hp})`);
 
 // lastStand: nikolai takes 30% less below 40% health.
-const wall = hero('nikolai', 0, 0, { hp: 39 });
-const fresh = hero('nikolai', 0, 0, { hp: 41 });
+const wall = hero('otmar_caskwright', 0, 0, { hp: 39 });
+const fresh = hero('otmar_caskwright', 0, 0, { hp: 41 });
 const blow = { attacker: foe(0, 20) };
 ok(
   Roster.modifyDamageTaken(wall, 100, blow, ctx) === 70 &&
@@ -296,13 +296,13 @@ ok(
 );
 
 // killHeal: giorno_giovanna restores 8% of own health on a kill.
-const giver = hero('giorno_giovanna', 0, 0, { hp: 50, maxHp: 200 });
+const giver = hero('aurel_thornbloom', 0, 0, { hp: 50, maxHp: 200 });
 ctx.units = [giver];
 Roster.onDeath(foe(0, -20, { hp: 0 }), giver, ctx);
 ok(giver.hp === 66, `killHeal: a kill restores health (${giver.hp})`);
 
 // ramp: chris_benoit gains 10% per consecutive hit on one target, up to +50%, and resets.
-const ace = mk('chris_benoit', 'player', 0, 0, { isWwe: true });
+const ace = mk('orrin_clampjaw', 'player', 0, 0, { isWwe: true });
 const dummy = foe(0, -20, { id: 'dummy' });
 const hits = [];
 for (let i = 0; i < 8; i++) hits.push(Roster.modifyDamage(ace, dummy, 100, ctx));
@@ -313,7 +313,7 @@ ok(
 );
 
 // stagger: jolyne_cujoh pins each new target once for 1.5 seconds; never a boss.
-const snare = hero('jolyne_cujoh');
+const snare = hero('wren_catgut');
 const pinned = foe(0, -20, { id: 'p1' });
 Roster.modifyDamage(snare, pinned, 10, ctx);
 const firstPin = pinned.pinned === true && pinned.pinTimer === 90;
@@ -330,7 +330,7 @@ ok(
 );
 
 // expose: enemies hit by roddy_piper take 10% more from every source for 3 seconds.
-const piper = mk('roddy_piper', 'player', 0, 0, { isWwe: true });
+const piper = mk('fenrick_barbtongue', 'player', 0, 0, { isWwe: true });
 const marked = foe(0, -20, { id: 'm1' });
 Roster.modifyDamage(piper, marked, 10, ctx);
 const during = Roster.modifyDamageTaken(marked, 100, { attacker: archer }, ctx);
@@ -342,7 +342,7 @@ ok(
 );
 
 // guard: dom_santiago takes on 20% of the damage dealt to allies within 50.
-const dom = hero('dom_santiago', 100, 100);
+const dom = hero('derrow_fenn', 100, 100);
 const ward = mk('archer', 'player', 130, 100);
 const farAlly = mk('archer', 'player', 300, 100);
 ctx.units = [dom, ward, farAlly];
@@ -356,7 +356,7 @@ ok(
   wardTook === 80 &&
     farTook === 100 &&
     hurtLog.length === 1 &&
-    hurtLog[0][0] === 'dom_santiago' &&
+    hurtLog[0][0] === 'derrow_fenn' &&
     hurtLog[0][1] === 20,
   `guard: a share of a nearby ally's damage lands on the guardian (${wardTook}, ${JSON.stringify(hurtLog)})`
 );

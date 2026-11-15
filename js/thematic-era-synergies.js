@@ -52,8 +52,8 @@ const ThematicEraSynergies = (() => {
   };
 
   const ECHO_DEFS = {
-    goku: {
-      id: 'goku',
+    tavish_coalheart: {
+      id: 'tavish_coalheart',
       label: 'Echo of the Coalheart Champion',
       short: 'Coalheart Echo',
       role: 'fleet_commander',
@@ -62,8 +62,8 @@ const ThematicEraSynergies = (() => {
       fleetReadiness: 8,
       morale: 4,
     },
-    tank_dempsey: {
-      id: 'tank_dempsey',
+    dunmar_fusewick: {
+      id: 'dunmar_fusewick',
       label: 'Echo of the Siege Legend',
       short: 'Vale Echo',
       role: 'advisor',

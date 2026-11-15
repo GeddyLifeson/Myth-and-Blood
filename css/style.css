@@ -2455,7 +2455,7 @@ body.menu-dismissed #menu-screen,
   background: rgba(36, 32, 20, 0.9);
 }
 
-.ency-tab[data-cat='wwe'].active {
+.ency-tab[data-cat='champions'].active {
   border-color: #c04040;
   color: #ffd0d0;
   background: rgba(48, 20, 24, 0.9);
@@ -5518,7 +5518,7 @@ body.game-playing #night-prep-card:not([hidden]) {
   display: none;
 }
 
-/* Operative skill trees (Legion Archive / Grand Coliseum) */
+/* Operative skill trees (Free Companies / Champions’ Hall) */
 .operative-skills-panel {
   margin: 12px 0;
   text-align: left;

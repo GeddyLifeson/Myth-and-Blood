@@ -45,21 +45,21 @@ const ACHIEVEMENT_FAMILIES = [
 
 /** The allied hero groups. Display names come from the game data, never from here. */
 const CROSSOVER_ACH_FACTIONS = [
-  { key: 'wwe', build: 'wwe_academy' },
+  { key: 'champions', build: 'champions_hall' },
   { key: 'doom', build: null },
-  { key: 'ultimis', build: 'element_barracks' },
-  { key: 'primis', build: 'primis_shrine' },
-  { key: 'halo', build: 'spartan_academy' },
-  { key: 'gears', build: 'cog_academy' },
-  { key: 'lotr', build: 'rivendell_camp' },
-  { key: 'baki', build: 'hanma_dojo' },
-  { key: 'jojo', build: 'stand_arrow_shrine' },
-  { key: 'fotns', build: 'north_star_dojo' },
-  { key: 'dragonball', build: 'capsule_corp' },
-  { key: 'imperium', build: 'astartes_chapel' },
-  { key: 'crystal', build: 'crystal_sanctum' },
-  { key: 'warp', build: 'warp_shrine' },
-  { key: 'tes', build: 'dragon_moot' },
+  { key: 'powderhorn', build: 'powderhorn_magazine' },
+  { key: 'pale_vigil', build: 'pale_vigil_shrine' },
+  { key: 'greywatch', build: 'greywatch_hall' },
+  { key: 'sawtooth', build: 'sawtooth_camp' },
+  { key: 'thornroad', build: 'thornroad_camp' },
+  { key: 'knucklebone', build: 'knucklebone_lodge' },
+  { key: 'marrow_choir', build: 'marrow_reliquary' },
+  { key: 'quiet_hand', build: 'quiet_hand_cloister' },
+  { key: 'emberblood', build: 'emberblood_hearth' },
+  { key: 'iron_psalm', build: 'iron_psalm_chapel' },
+  { key: 'saltglass', build: 'saltglass_furnace' },
+  { key: 'open_wound', build: 'open_wound_shrine' },
+  { key: 'rimehowl', build: 'rimehowl_longhouse' },
 ];
 
 /** Mastery points for the two steps of an order's ladder (FactionDepth tiers 2 and 4). */
@@ -67,11 +67,11 @@ const ACHIEVEMENT_MASTERY_STEPS = [150, 500];
 
 /** Orders whose top mastery step unlocks a unit skin (js/cosmetics.js). */
 const ACHIEVEMENT_MASTERY_SKINS = {
-  wwe: 'ring_champion',
+  champions: 'ring_champion',
   doom: 'hell_walker',
-  crystal: 'crystal_vanguard',
-  warp: 'warp_legion',
-  imperium: 'imperium_herald',
+  saltglass: 'crystal_vanguard',
+  open_wound: 'warp_legion',
+  iron_psalm: 'imperium_herald',
 };
 
 const ACHIEVEMENT_ENEMY_FACTIONS = [
@@ -1094,8 +1094,8 @@ function buildAchievementList() {
     one('allies', id, name, desc, 'x', rule, 1, { tier });
   trial(
     'wwe_showmanship_victory',
-    'Trial of the {order:wwe}',
-    'Win the campaign with two or more of your showmen leading the army for most of it. Opens the {order:wwe}.',
+    'Trial of the {order:champions}',
+    'Win the campaign with two or more of your showmen leading the army for most of it. Opens the {order:champions}.',
     'run_wwe_showmanship:8:0.55'
   );
   trial(
@@ -1106,68 +1106,68 @@ function buildAchievementList() {
   );
   trial(
     'ultimis_horde_150',
-    'Trial of the {order:ultimis}',
-    'Clear wave 150 on {diff:doomslayer} without losing a building to horde grunts. Opens the {order:ultimis}.',
+    'Trial of the {order:powderhorn}',
+    'Clear wave 150 on {diff:doomslayer} without losing a building to horde grunts. Opens the {order:powderhorn}.',
     'diff_zombie_fortress:doomslayer:150'
   );
   trial(
     'primis_sanctum_victory',
-    'Trial of the {order:primis}',
-    'Win the campaign with a {build:castle} whose inner ward no enemy has entered. Opens the {order:primis}.',
+    'Trial of the {order:pale_vigil}',
+    'Win the campaign with a {build:castle} whose inner ward no enemy has entered. Opens the {order:pale_vigil}.',
     'run_sanctum_victory'
   );
   trial(
     'halo_spartan_victory',
-    'Trial of the {order:halo}',
-    'Win the campaign with your {unit:general} alive, after raising five {unit:footman} soldiers to command. Opens the {order:halo}.',
+    'Trial of the {order:greywatch}',
+    'Win the campaign with your {unit:general} alive, after raising five {unit:footman} soldiers to command. Opens the {order:greywatch}.',
     'run_spartan_command:5'
   );
   trial(
     'gears_siege_victory',
-    'Trial of the {order:gears}',
-    'Win the campaign after destroying twelve enemy war camps or structures. Opens the {order:gears}.',
+    'Trial of the {order:sawtooth}',
+    'Win the campaign after destroying twelve enemy war camps or structures. Opens the {order:sawtooth}.',
     'run_siege_victory:12'
   );
   trial(
     'lotr_fellowship_victory',
-    'Trial of the {order:lotr}',
-    'Win the campaign with army morale high at the end of most waves. Opens the {order:lotr}.',
+    'Trial of the {order:thornroad}',
+    'Win the campaign with army morale high at the end of most waves. Opens the {order:thornroad}.',
     'run_fellowship_morale:8:0.55'
   );
   trial(
     'baki_martial_victory',
-    'Trial of the {order:baki}',
-    'Win the campaign on {diff:chad} or harder with a mostly melee army. Opens the {order:baki}.',
+    'Trial of the {order:knucklebone}',
+    'Win the campaign on {diff:chad} or harder with a mostly melee army. Opens the {order:knucklebone}.',
     'run_martial_melee:8:0.55'
   );
   trial(
     'jojo_stand_victory',
-    'Trial of the {order:jojo}',
-    'Win the campaign with three or more allied heroes recruited and fielded together for most of it. Opens the {order:jojo}.',
+    'Trial of the {order:marrow_choir}',
+    'Win the campaign with three or more allied heroes recruited and fielded together for most of it. Opens the {order:marrow_choir}.',
     'run_stand_alliance:8:0.55:3'
   );
   trial(
     'fotns_hokuto_victory',
-    'Trial of the {order:fotns}',
-    'Win the campaign after a lone hero kills a named warlord. Opens the {order:fotns}.',
+    'Trial of the {order:quiet_hand}',
+    'Win the campaign after a lone hero kills a named warlord. Opens the {order:quiet_hand}.',
     'run_hokuto_solo'
   );
   trial(
     'dragonball_planet_victory',
-    'Trial of the {order:dragonball}',
-    'Past wave 200, bring down a warlord with an army of mostly high-energy fighters. Opens the {order:dragonball}.',
+    'Trial of the {order:emberblood}',
+    'Past wave 200, bring down a warlord with an army of mostly high-energy fighters. Opens the {order:emberblood}.',
     'run_dragonball_ki:200:0.55'
   );
   trial(
     'warhammer_eternal_crusade',
-    'Trial of the {order:imperium}',
-    'Win the campaign on {diff:chad} or harder holding eight fortifications throughout, with three boss waves beaten and your {unit:general} alive. Opens the {order:imperium}, {order:crystal} and {order:warp}.',
+    'Trial of the {order:iron_psalm}',
+    'Win the campaign on {diff:chad} or harder holding eight fortifications throughout, with three boss waves beaten and your {unit:general} alive. Opens the {order:iron_psalm}, {order:saltglass} and {order:open_wound}.',
     'run_eternal_crusade:3:8'
   );
   trial(
     'tes_dragonborn_victory',
-    'Trial of the {order:tes}',
-    'Win the campaign with a top-rank veteran on each of the four paths and a dragon-kind warlord slain. Opens the {order:tes}.',
+    'Trial of the {order:rimehowl}',
+    'Win the campaign with a top-rank veteran on each of the four paths and a dragon-kind warlord slain. Opens the {order:rimehowl}.',
     'run_dragonborn_legacy:100'
   );
   for (const f of CROSSOVER_ACH_FACTIONS) {

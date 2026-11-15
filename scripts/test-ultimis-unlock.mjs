@@ -73,7 +73,7 @@ for (let w = 1; w <= 150; w++) {
 }
 ok(MetaProgress.is115Unlocked(), 'wave 150 doomslayer unlocks Element 115');
 ok(Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'), 'horde fortress rule passes');
-ok(Achievements.evaluateRule('unlock:ultimis'), 'ultimis unlock rule passes');
+ok(Achievements.evaluateRule('unlock:powderhorn'), 'powderhorn unlock rule passes');
 
 MetaProgress.reset();
 Achievements.resetSession();

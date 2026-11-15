@@ -9,7 +9,7 @@
  * Internal ids are deliberately left alone here: saves, unlock flags and achievements key on
  * them. The mapping for the later one-step rename is docs/overhaul's id-migration list.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
@@ -18,6 +18,15 @@ import { ok, failures, boot } from './lib/harness.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (p) => JSON.parse(readFileSync(join(root, p), 'utf8'));
+// Ids from before the rename. The current ids are made from the names, so a name must not echo
+// the old id instead ("master_chief" -> "Master Chief").
+const RENAMED = vm.runInNewContext(
+  `${readFileSync(join(root, 'js', 'renamed-ids.js'), 'utf8')}\nRenamedIds.TABLE`
+);
+const flip = (t) => Object.fromEntries(Object.entries(t).map(([o, n]) => [n, o]));
+const OLD_UNIT = flip(RENAMED.unit);
+const OLD_FACTION = flip(RENAMED.faction);
+const oldId = (id) => OLD_UNIT[id] || OLD_FACTION[id] || id;
 const champions = readJson('data/champions.json');
 const operatives = readJson('data/operatives.json');
 const profiles = readJson('data/roster-profiles.json');
@@ -549,7 +558,7 @@ ok(clashes.length === 0, `display names are unique ${clashes.join(',')}`);
 const titles = Object.values(everyone).map((d) => d.title.toLowerCase());
 ok(new Set(titles).size === titles.length, 'titles are unique');
 
-// A name must not be its id in disguise ("master_chief" -> "Master Chief").
+// A name must not be its old id in disguise.
 const idWords = (id) =>
   id
     .replace(/_p\d$/, '')
@@ -557,7 +566,7 @@ const idWords = (id) =>
     .filter((w) => w.length > 2 && w !== 'the');
 const echoes = Object.entries(everyone).filter(([id, d]) => {
   const shown = `${d.displayName} ${d.title}`.toLowerCase();
-  return idWords(id).some((w) => new RegExp(`(?<![a-z])${esc(w)}(?![a-z])`).test(shown));
+  return idWords(oldId(id)).some((w) => new RegExp(`(?<![a-z])${esc(w)}(?![a-z])`).test(shown));
 });
 ok(
   echoes.length === 0,
@@ -643,8 +652,8 @@ const looksLikeId = (text, id) => {
   return (
     t === id ||
     t.includes('_') ||
-    t === id.replace(/_/g, ' ') ||
-    idWords(id).some((w) => new RegExp(`(?<![a-z])${esc(w)}(?![a-z])`).test(t))
+    t === oldId(id).replace(/_/g, ' ') ||
+    idWords(oldId(id)).some((w) => new RegExp(`(?<![a-z])${esc(w)}(?![a-z])`).test(t))
   );
 };
 const raw = [];
@@ -689,9 +698,14 @@ ok(
   ),
   'an unknown id falls back to a plain word, never to the id'
 );
-for (const id of Object.keys(CrossoverFactions).concat('wwe')) {
+for (const id of Object.keys(CrossoverFactions).concat('champions')) {
   const label = HeroCast.factionLabel(id);
-  if (label.toLowerCase().split(/\W+/).includes(id))
+  if (
+    label
+      .toLowerCase()
+      .split(/\W+/)
+      .includes(OLD_FACTION[id] || id)
+  )
     ok(false, `company label shows its key: ${id}`);
 }
 
@@ -718,7 +732,7 @@ const scan = (where, html, ids) => {
   for (const id of ids) {
     if (
       id.includes('_') &&
-      (text.includes(id) || text.toLowerCase().includes(id.replace(/_/g, ' ')))
+      (text.includes(id) || text.toLowerCase().includes(oldId(id).replace(/_/g, ' ')))
     ) {
       screenHits.push(`${where}: id ${id}`);
     }
@@ -850,8 +864,8 @@ ok(
 // The encyclopedia rumours about each champion are written against their ids; they must use the new titles.
 const teaseSrc = readFileSync(join(JS, 'encyclopedia.js'), 'utf8');
 const teaseBlock = teaseSrc.slice(
-  teaseSrc.indexOf('const COLISEUM_TEASE = {'),
-  teaseSrc.indexOf('};', teaseSrc.indexOf('const COLISEUM_TEASE = {'))
+  teaseSrc.indexOf('const CHAMPION_TEASE = {'),
+  teaseSrc.indexOf('};', teaseSrc.indexOf('const CHAMPION_TEASE = {'))
 );
 const teaseHits = (teaseBlock.match(/'[^'\n]*'|"[^"\n]*"/g) || [])
   .map((l) => blocked(l))
@@ -893,5 +907,20 @@ ok(
   staleScreens.length === 0,
   `no old name in encyclopedia, cheats, legacy, lore or synergy text ${staleScreens.map(([f, h]) => `${f}:${h}`).join(',')}`
 );
+
+// The three old place names, anywhere a player could read them. The old cheat words stay typeable.
+const PLACES = /coliseum|legion archive|iron creed/i;
+const placeHits = [];
+for (const f of readdirSync(JS).filter((n) => n.endsWith('.js') && n !== 'game-data-bundle.js')) {
+  readFileSync(join(JS, f), 'utf8')
+    .split('\n')
+    .forEach((line, i) => {
+      if (PLACES.test(line) && !/OLD_CODES = /.test(line)) placeHits.push(`${f}:${i + 1}`);
+    });
+}
+for (const f of ['index.html', 'data/buildings.json', 'data/synergies.json', 'README.md']) {
+  if (PLACES.test(readFileSync(join(root, f), 'utf8'))) placeHits.push(f);
+}
+ok(placeHits.length === 0, `no old place name left ${placeHits.slice(0, 8).join(' ')}`);
 
 process.exit(failures() ? 1 : 0);
