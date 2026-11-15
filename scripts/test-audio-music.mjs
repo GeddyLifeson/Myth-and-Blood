@@ -70,6 +70,7 @@ class FakeContext {
 }
 
 let missing = new Set();
+let pressure = 0;
 const sb = {
   console,
   Date,
@@ -94,15 +95,16 @@ const sb = {
       ? Promise.resolve({ ok: false, status: 404 })
       : Promise.resolve({ ok: true, arrayBuffer: () => Promise.resolve({ name: file }) });
   },
-  GameFeedback: { breachPressure: () => 0 },
 };
 sb.window = { AudioContext: FakeContext };
 const flush = () => new Promise((r) => setImmediate(r));
 
 async function engine(absentFiles = []) {
   missing = new Set(absentFiles);
-  const box = vm.createContext({ ...sb });
+  const box = vm.createContext({ ...sb, pressureOf: () => pressure });
   box.globalThis = box;
+  // In the page GameFeedback is a top-level const: reachable by name, not on globalThis.
+  vm.runInContext('const GameFeedback = { breachPressure: () => pressureOf() };', box);
   vm.runInContext(code, box);
   const eng = box.AudioEngine;
   eng.init();
@@ -124,13 +126,13 @@ ok(scene(eng, { era: 'rts' }) === 'musicSiegeLate', 'late eras play the late loo
 ok(scene(eng, { phase: 'night', era: 'rts' }) === 'musicNight', 'night plays the night loop');
 ok(scene(eng, { horde: true }) === 'musicHorde', 'a horde plays the horde loop');
 ok(scene(eng, { boss: true, horde: true }) === 'musicBoss', 'a boss outranks a horde');
-sb.GameFeedback.breachPressure = () => 0.8;
+pressure = 0.8;
 ok(
   scene(eng, { horde: true }) === 'musicLastStand',
   'three quarters of the breaches play the last stand'
 );
 ok(scene(eng, { boss: true }) === 'musicBoss', 'a boss outranks the last stand');
-sb.GameFeedback.breachPressure = () => 0;
+pressure = 0;
 
 started.length = 0;
 ok(eng.factionArrival('orc_warbands') === true, 'a new lead faction plays its theme');

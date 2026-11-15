@@ -325,7 +325,8 @@ const AudioEngine = (() => {
   function sceneMusic() {
     if (musicContext === 'menu') return 'musicMenu';
     if (mixState.boss) return 'musicBoss';
-    const pressure = globalThis.GameFeedback?.breachPressure?.() || 0;
+    const feedback = typeof GameFeedback !== 'undefined' ? GameFeedback : null;
+    const pressure = feedback?.breachPressure?.() || 0;
     if (pressure >= 0.75) return 'musicLastStand';
     if (mixState.phase === 'night') return 'musicNight';
     if (mixState.horde) return 'musicHorde';

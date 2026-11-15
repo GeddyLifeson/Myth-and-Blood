@@ -431,6 +431,9 @@ const BannerArt = (() => {
   let siegeCtx = null;
   let bossCard = null;
 
+  // GameFeedback is a top-level const in its script, so it is not a property of globalThis.
+  const feedback = () => (typeof GameFeedback !== 'undefined' ? GameFeedback : null);
+
   function observe(GS, ctx) {
     if (!GS) return;
     siegeCtx = ctx || siegeCtx;
@@ -487,10 +490,10 @@ const BannerArt = (() => {
               ? 'One more and the realm falls'
               : `The realm can bear ${left} more`,
       });
-      globalThis.GameFeedback?.onBreach?.();
+      feedback()?.onBreach?.();
     }
     seen.breaches = hud.breaches || 0;
-    globalThis.GameFeedback?.setBreachState?.(seen.breaches, limit);
+    feedback()?.setBreachState?.(seen.breaches, limit);
 
     const spoils = hud.pendingSpoils || 0;
     if (primed && spoils > seen.spoils) {
