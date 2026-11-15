@@ -137,7 +137,8 @@ function tent(api, x, y) {
 
 // --- 2. shift-move holds: no chase, no assist, no drift; survives save/load; release ------
 {
-  const api = start(8);
+  // Seed 3: the first strike depends on the random stream, which the art group shifted.
+  const api = start(3);
   const { Game, GameState: GS } = api;
   const W = GS.worldW;
   const H = GS.worldH;
