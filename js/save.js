@@ -1,5 +1,6 @@
 /**
- * Multi-slot save/load with checksum validation and error recovery.
+ * Save slots with checksum validation, and the Save / Load screen (open()): slot details,
+ * confirmations before overwrite, load and delete, and export / import as text.
  */
 const SaveManager = (() => {
   // Shared helper — see js/html-util.js (loaded first).
@@ -155,61 +156,357 @@ const SaveManager = (() => {
     return true;
   }
 
+  // ponytail: stand-ins with the names and return shapes of claude/p3-saves (saveBlockReason,
+  // exportSlot, importString). That branch owns the data layer; on merge take its versions.
+  const TEXT_PREFIX = 'MYTHBLOOD1:';
+
+  function saveBlockReason() {
+    if (typeof Game === 'undefined' || !Game.exportGameState) return 'Saving is not available.';
+    if (Game.getSaveBlockReason) return Game.getSaveBlockReason();
+    if (!Game.isPlaying?.()) return 'There is no battle to save.';
+    if (Game.isCreativeMode?.()) return 'Creative mode is not saved.';
+    if (typeof GameModes !== 'undefined' && GameModes.canQuickSave && !GameModes.canQuickSave()) {
+      return 'Ironman and challenge runs cannot be saved.';
+    }
+    return null;
+  }
+
+  function exportSlot(index) {
+    const slot = loadStore().slots?.[index | 0];
+    const v = validateSlot(slot);
+    if (!v.ok) return v;
+    const data = { ...slot.data };
+    // The preview picture would double the length of the text.
+    delete data.thumbnail;
+    const bytes = new TextEncoder().encode(JSON.stringify(data));
+    let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) {
+      bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    }
+    return { ok: true, text: TEXT_PREFIX + btoa(bin) };
+  }
+
+  function importString(text, opts = {}) {
+    const clean = String(text || '').replace(/\s+/g, '');
+    if (!clean.startsWith(TEXT_PREFIX)) {
+      return { ok: false, error: 'That is not a Myth and Blood save.' };
+    }
+    let snap;
+    try {
+      const bin = atob(clean.slice(TEXT_PREFIX.length));
+      snap = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, (c) => c.charCodeAt(0))));
+    } catch (_) {
+      return { ok: false, error: 'The save text is damaged or cut short.' };
+    }
+    if (!snap || typeof snap !== 'object') {
+      return { ok: false, error: 'The save text is damaged or cut short.' };
+    }
+    const entry = wrapSnapshot(snap, opts.label || `Imported, wave ${snap.wave ?? '?'}`, null);
+    const v = validateSlot(entry);
+    if (!v.ok) return v;
+    const idx = opts.slot | 0;
+    if (idx < 0 || idx >= SLOT_COUNT) return { ok: false, error: 'There is no such save slot.' };
+    const store = loadStore();
+    while (store.slots.length < SLOT_COUNT) store.slots.push(null);
+    store.slots[idx] = entry;
+    if (!writeStore(store)) return { ok: false, error: 'Storage is full or blocked.' };
+    return { ok: true, slot: idx, wave: snap.wave };
+  }
+
+  // ---- the Save / Load screen ---------------------------------------------------------------
+  // Autosave rows appear once claude/p3-saves adds listAutosaves and its partners.
+  const hasAutosaves = () => typeof listAutosaves === 'function';
+  const pretty = (id) =>
+    String(id ?? '')
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+
+  let screenOpen = false;
+  let returnToPause = false;
+  /** { mode: 'export'|'import', kind: 'slot'|'auto', index, text? } */
+  let textBox = null;
+  let statusNote = { text: '', kind: '' };
+
+  function say(text, kind = '') {
+    statusNote = { text, kind };
+  }
+
+  function ask(message, opts) {
+    return typeof InPageDialog !== 'undefined'
+      ? InPageDialog.confirm(message, opts)
+      : Promise.resolve(true);
+  }
+
+  function titleOf(kind, index) {
+    return kind === 'auto' ? `Autosave ${index + 1}` : `Slot ${index + 1}`;
+  }
+
+  function whenOf(s) {
+    return typeof SaveThumbnail !== 'undefined'
+      ? SaveThumbnail.formatSavedAt(s.savedAt)
+      : new Date(s.savedAt).toLocaleString();
+  }
+
+  function cardHtml(s, kind) {
+    const auto = kind === 'auto';
+    const title = titleOf(kind, s.index);
+    const blocked = saveBlockReason();
+    const btn = (action, text, extra = '', disabledWhy = '') =>
+      `<button type="button" class="save-btn${extra}" data-save-act="${action}" data-kind="${kind}" data-slot="${s.index}"${
+        disabledWhy ? ` disabled title="${escapeHtml(disabledWhy)}"` : ''
+      }>${text}</button>`;
+    const facts = (rows) =>
+      '<dl class="save-card-facts">' +
+      rows.map(([k, v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('') +
+      '</dl>';
+    if (s.empty) {
+      return (
+        `<div class="save-card empty">` +
+        '<div class="save-card-thumb none"><span>Empty</span></div>' +
+        `<div class="save-card-title">${title}</div>` +
+        facts([
+          ['Wave', '-'],
+          ['Difficulty', '-'],
+          ['Saved', '-'],
+        ]) +
+        '<div class="save-card-btns">' +
+        btn('save', 'Save here', ' primary', blocked) +
+        btn('import', 'Import') +
+        '</div></div>'
+      );
+    }
+    const thumb = s.thumbnail
+      ? `<div class="save-card-thumb"><img src="${escapeHtml(s.thumbnail)}" alt="${title}: the field when it was saved" /></div>`
+      : '<div class="save-card-thumb none"><span>No picture</span></div>';
+    const rows = [
+      ['Wave', s.wave],
+      ['Difficulty', pretty(s.difficulty)],
+    ];
+    if (s.timeOfDay) rows.push(['Time', pretty(s.timeOfDay)]);
+    rows.push(['Saved', whenOf(s)]);
+    return (
+      `<div class="save-card">` +
+      thumb +
+      `<div class="save-card-title">${title}<span class="save-card-label">${escapeHtml(s.label || '')}</span></div>` +
+      facts(rows) +
+      '<div class="save-card-btns">' +
+      btn('load', 'Load', ' primary') +
+      (auto ? '' : btn('save', 'Overwrite', '', blocked)) +
+      btn('export', 'Export') +
+      (auto ? '' : btn('import', 'Import')) +
+      btn('delete', 'Delete', ' danger') +
+      '</div></div>'
+    );
+  }
+
+  function textBoxHtml() {
+    if (!textBox) return '';
+    const title = titleOf(textBox.kind, textBox.index);
+    if (textBox.mode === 'export') {
+      return (
+        '<div class="save-text">' +
+        `<div class="save-text-head">${title} as text. Copy all of it and keep it somewhere safe; paste it into Import to bring the save back.</div>` +
+        `<textarea id="save-text-area" class="save-text-area" readonly spellcheck="false" aria-label="${title} as text">${escapeHtml(textBox.text || '')}</textarea>` +
+        '<div class="save-text-btns">' +
+        '<button type="button" class="save-btn primary" data-save-act="copy">Copy</button>' +
+        '<button type="button" class="save-btn" data-save-act="text-close">Done</button>' +
+        '</div></div>'
+      );
+    }
+    return (
+      '<div class="save-text">' +
+      `<div class="save-text-head">Paste a save exported from this game, then import it into ${title}.</div>` +
+      `<textarea id="save-text-area" class="save-text-area" spellcheck="false" placeholder="${TEXT_PREFIX}..." aria-label="Save text to import"></textarea>` +
+      '<div class="save-text-btns">' +
+      `<button type="button" class="save-btn primary" data-save-act="import-go">Import into ${title}</button>` +
+      '<button type="button" class="save-btn" data-save-act="text-close">Cancel</button>' +
+      '</div></div>'
+    );
+  }
+
+  function ensureScreen() {
+    let root = document.getElementById('save-screen');
+    if (root) return root;
+    root = document.createElement('div');
+    root.id = 'save-screen';
+    root.className = 'screen save-screen';
+    root.setAttribute('role', 'dialog');
+    root.setAttribute('aria-modal', 'true');
+    root.setAttribute('aria-label', 'Save and load');
+    (document.getElementById('settings-screen')?.parentNode || document.body).appendChild(root);
+    root.addEventListener('click', onScreenClick);
+    return root;
+  }
+
+  function renderScreen() {
+    const root = ensureScreen();
+    const blocked = saveBlockReason();
+    const autos = hasAutosaves() ? listAutosaves() : [];
+    const keep = textBox?.mode === 'import' ? root.querySelector('#save-text-area')?.value : null;
+    root.innerHTML =
+      '<div class="save-panel">' +
+      '<h2 class="save-title">SAVE AND LOAD</h2>' +
+      `<p class="save-sub">${blocked ? escapeHtml(blocked) : 'Three slots are yours. Export a save to keep it as text.'}</p>` +
+      `<div class="save-cards">${listSlots()
+        .map((s) => cardHtml(s, 'slot'))
+        .join('')}${autos.map((s) => cardHtml(s, 'auto')).join('')}</div>` +
+      `<div class="save-status ${escapeHtml(statusNote.kind)}" role="status" aria-live="polite">${escapeHtml(statusNote.text)}</div>` +
+      textBoxHtml() +
+      '<div class="save-actions"><button type="button" class="save-btn close" data-save-act="close">Close</button></div>' +
+      '</div>';
+    const area = root.querySelector('#save-text-area');
+    if (area && keep != null) area.value = keep;
+  }
+
+  async function onScreenClick(e) {
+    const el = e.target.closest('[data-save-act]');
+    if (!el) return;
+    const act = el.dataset.saveAct;
+    const kind = el.dataset.kind || 'slot';
+    const index = parseInt(el.dataset.slot, 10);
+    const title = titleOf(kind, index);
+    const auto = kind === 'auto';
+    AudioEngine?.SFX?.click?.();
+    if (act === 'close') return close();
+    if (act === 'text-close') {
+      textBox = null;
+    } else if (act === 'save') {
+      if (!listSlots()[index]?.empty) {
+        const yes = await ask(`Overwrite ${title}? The save in it now is lost.`, {
+          title: `Overwrite ${title}`,
+          okLabel: 'Overwrite',
+          danger: true,
+        });
+        if (!yes) return;
+      }
+      const r = saveToSlot(index);
+      say(r.ok ? `Saved to ${title}.` : r.error, r.ok ? 'ok' : 'bad');
+    } else if (act === 'load') {
+      if (typeof Game !== 'undefined' && Game.isPlaying?.()) {
+        const yes = await ask(`Load ${title}? The battle you are in now ends unsaved.`, {
+          title: `Load ${title}`,
+          okLabel: 'Load',
+        });
+        if (!yes) return;
+      }
+      const r = auto ? loadAutosave(index) : loadFromSlot(index);
+      if (r.ok) {
+        say('');
+        close({ loaded: true });
+        return;
+      }
+      say(r.error, 'bad');
+    } else if (act === 'delete') {
+      const yes = await ask(`Delete ${title}? This cannot be undone.`, {
+        title: `Delete ${title}`,
+        okLabel: 'Delete',
+        danger: true,
+      });
+      if (!yes) return;
+      if (auto) deleteAutosave(index);
+      else deleteSlot(index);
+      if (textBox?.kind === kind && textBox.index === index) textBox = null;
+      say(`${title} deleted.`, 'ok');
+    } else if (act === 'export') {
+      const r = auto ? exportAutosave(index) : exportSlot(index);
+      textBox = r.ok ? { mode: 'export', kind, index, text: r.text } : null;
+      say(r.ok ? '' : r.error, r.ok ? '' : 'bad');
+    } else if (act === 'import') {
+      textBox = { mode: 'import', kind: 'slot', index };
+      say('');
+    } else if (act === 'copy') {
+      const area = document.getElementById('save-text-area');
+      area?.focus();
+      area?.select();
+      let copied;
+      try {
+        await navigator.clipboard.writeText(area?.value || '');
+        copied = true;
+      } catch (_) {
+        copied = false;
+      }
+      say(copied ? 'Copied.' : 'Select the text and copy it by hand (Ctrl+C).', copied ? 'ok' : '');
+      const note = document.querySelector('#save-screen .save-status');
+      if (note) {
+        note.textContent = statusNote.text;
+        note.className = `save-status ${statusNote.kind}`;
+      }
+      return;
+    } else if (act === 'import-go') {
+      const target = textBox?.index;
+      const text = document.getElementById('save-text-area')?.value || '';
+      if (!text.trim()) {
+        say('Paste the save text first.', 'bad');
+        renderScreen();
+        return;
+      }
+      if (!listSlots()[target]?.empty) {
+        const yes = await ask(
+          `Import over ${titleOf('slot', target)}? The save in it now is lost.`,
+          { title: `Overwrite ${titleOf('slot', target)}`, okLabel: 'Import', danger: true }
+        );
+        if (!yes) return;
+      }
+      const r = importString(text, { slot: target });
+      if (r.ok) textBox = null;
+      say(r.ok ? `Imported into ${titleOf('slot', target)}.` : r.error, r.ok ? 'ok' : 'bad');
+    }
+    renderScreen();
+    const area = document.getElementById('save-text-area');
+    if (area && (act === 'export' || act === 'import')) {
+      area.focus();
+      if (act === 'export') area.select();
+    }
+    renderPauseSlots();
+  }
+
+  /** Open the Save / Load screen. From the pause menu it returns there on close. */
+  function open(opts = {}) {
+    returnToPause = !!opts.fromPause;
+    if (returnToPause && typeof UX !== 'undefined') UX.suppressPauseForOverlay?.();
+    screenOpen = true;
+    textBox = null;
+    say('');
+    renderScreen();
+    const root = ensureScreen();
+    root.classList.add('active');
+    root.querySelector('.save-btn:not([disabled])')?.focus();
+  }
+
+  function close(opts = {}) {
+    if (!screenOpen) return;
+    screenOpen = false;
+    document.getElementById('save-screen')?.classList.remove('active');
+    const playing = typeof Game !== 'undefined' && Game.isPlaying?.();
+    if (opts.loaded) {
+      if (typeof UX !== 'undefined') UX.closePauseMenu?.(false);
+      if (typeof UI !== 'undefined') UI.updateHUD?.(true);
+    } else if (returnToPause && playing && Game.getState().paused) {
+      if (typeof UX !== 'undefined') UX.openPauseMenu?.();
+    }
+    returnToPause = false;
+  }
+
+  function isOpen() {
+    return screenOpen;
+  }
+
+  /** The pause menu's save area: one line per slot and the button that opens the screen. */
   function renderPauseSlots() {
     const host = document.getElementById('save-slots');
     if (!host) return;
-    const slots = listSlots();
-    host.innerHTML = slots
-      .map((s) => {
-        if (s.empty) {
-          return `<div class="save-slot empty" data-slot="${s.index}"><span>Slot ${s.index + 1}</span><span>Empty</span>
-        <div class="save-slot-btns">
-          <button class="save-slot-btn" data-action="save" data-slot="${s.index}">Save</button>
-        </div>
-      </div>`;
-        }
-        const when =
-          typeof SaveThumbnail !== 'undefined'
-            ? SaveThumbnail.formatSavedAt(s.savedAt)
-            : new Date(s.savedAt).toLocaleString();
-        const thumb = s.thumbnail
-          ? `<img class="save-slot-thumb" src="${escapeHtml(s.thumbnail)}" alt="Slot ${s.index + 1} preview" />`
-          : `<div class="save-slot-thumb empty">—</div>`;
-        return `<div class="save-slot" data-slot="${s.index}">
-        ${thumb}
-        <div class="save-slot-info"><strong>Slot ${s.index + 1}</strong> — ${escapeHtml(s.label)}<br>
-        <span class="save-slot-meta">W${escapeHtml(s.wave)} · ${escapeHtml(s.difficulty)} · ${escapeHtml(when)}</span></div>
-        <div class="save-slot-btns">
-          <button class="save-slot-btn" data-action="load" data-slot="${s.index}">Load</button>
-          <button class="save-slot-btn" data-action="save" data-slot="${s.index}">Save</button>
-          <button class="save-slot-btn danger" data-action="delete" data-slot="${s.index}">Del</button>
-        </div>
-      </div>`;
-      })
-      .join('');
-
-    host.querySelectorAll('.save-slot-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.dataset.slot, 10);
-        const action = btn.dataset.action;
-        AudioEngine?.SFX?.click?.();
-        if (action === 'save') {
-          const r = saveToSlot(idx);
-          if (r.ok) {
-            if (typeof UX !== 'undefined') UX.onMessage(`Saved to slot ${idx + 1}.`, 'system');
-            renderPauseSlots();
-          } else if (typeof UX !== 'undefined') UX.onMessage(r.error, 'system');
-        } else if (action === 'load') {
-          const r = loadFromSlot(idx);
-          if (r.ok) {
-            if (typeof UX !== 'undefined') UX.closePauseMenu(false);
-            UI.updateHUD(true);
-          } else if (typeof UX !== 'undefined') UX.onMessage(r.error, 'system');
-        } else if (action === 'delete') {
-          deleteSlot(idx);
-          renderPauseSlots();
-        }
-      });
+    const line = (s) => {
+      const name = titleOf('slot', s.index);
+      if (s.empty)
+        return `<div class="save-line empty"><strong>${name}</strong><span>Empty</span></div>`;
+      return `<div class="save-line"><strong>${name}</strong><span>Wave ${escapeHtml(s.wave)} · ${escapeHtml(pretty(s.difficulty))} · ${escapeHtml(whenOf(s))}</span></div>`;
+    };
+    host.innerHTML =
+      `<div class="save-lines">${listSlots().map(line).join('')}</div>` +
+      '<button type="button" class="save-btn primary save-open-btn" data-save-open>SAVE / LOAD</button>';
+    host.querySelector('[data-save-open]').addEventListener('click', () => {
+      AudioEngine?.SFX?.click?.();
+      open({ fromPause: true });
     });
   }
 
@@ -219,12 +516,18 @@ const SaveManager = (() => {
 
   return {
     init,
+    open,
+    close,
+    isOpen,
     renderPauseSlots,
     listSlots,
     saveToSlot,
     loadFromSlot,
     deleteSlot,
     validateSlot,
+    saveBlockReason,
+    exportSlot,
+    importString,
   };
 })();
 

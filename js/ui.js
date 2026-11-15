@@ -1,5 +1,5 @@
 /**
- * UI controller — panels, HUD, specialists.
+ * UI controller - panels, HUD, specialists.
  */
 const UI = (() => {
   const OVERLAY_SCREEN_IDS = [
@@ -55,18 +55,18 @@ const UI = (() => {
     if (!Game.isPlaying?.()) return;
     setPlayingUi(true);
     dismissMenuScreen();
-    // Do not strip pause/settings/encyclopedia — those are opened intentionally during play.
+    // Do not strip pause/settings/encyclopedia - those are opened intentionally during play.
   }
 
   function hideMenusForPlay(opts = {}) {
     const showLaunch = opts.showLaunch !== false;
-    // Hide menu before closing overlays — Settings/Encyclopedia close must not block dismissal.
+    // Hide menu before closing overlays - Settings/Encyclopedia close must not block dismissal.
     setPlayingUi(true);
     dismissMenuScreen();
     for (const id of OVERLAY_SCREEN_IDS) {
       document.getElementById(id)?.classList.remove('active');
     }
-    document.getElementById('howto-panel')?.classList.add('hidden');
+    closeMenuSheets();
     try {
       if (typeof Settings !== 'undefined' && Settings.isOpen?.()) Settings.close?.();
       if (typeof Encyclopedia !== 'undefined' && Encyclopedia.isOpen?.()) Encyclopedia.close?.();
@@ -151,6 +151,8 @@ const UI = (() => {
     build: [],
     spy: [],
     courier: [],
+    doctrine: [],
+    counterDoctrine: [],
     loadout: [],
     formation: [],
   };
@@ -164,6 +166,7 @@ const UI = (() => {
     const tagline = document.getElementById('diff-tagline');
     if (tagline && def) tagline.textContent = def.tagline;
     Game.setDifficulty(id);
+    refreshSetupSummary();
     if (typeof AdvancedDifficulty !== 'undefined') {
       const pct = AdvancedDifficulty.getDifficultyPercent(id);
       const advPct = document.getElementById('advanced-diff-pct');
@@ -175,69 +178,65 @@ const UI = (() => {
   let lastHudEarly = null;
 
   /**
-   * Side-panel section nav (UI v2).
-   * All sections stay visible and scrollable — tabs jump to a section (nothing is hidden).
+   * Side-panel tabs. One pane of a panel is shown at a time; the others carry `hidden`.
+   * Left/Right arrows move between tabs, Home/End jump to the first and last.
    */
   function initSidePanelTabs() {
     document.querySelectorAll('.side-panel').forEach((panel) => {
-      const tabs = panel.querySelectorAll('.side-tab[data-side-tab]');
-      const panes = panel.querySelectorAll('.side-tab-pane[data-side-pane]');
+      const tabEls = [...panel.querySelectorAll('.side-tab[data-side-tab]')];
+      const panes = [...panel.querySelectorAll('.side-tab-pane[data-side-pane]')];
       const scroller = panel.querySelector('.side-panel-scroll');
-      if (!tabs.length || !panes.length) return;
+      if (!tabEls.length || !panes.length) return;
+      const ids = tabEls.map((t) => t.dataset.sideTab);
+      const tabs = PanelModel.createTabs(ids, ids[0]);
 
-      // Always show every section — the hide-by-tab model buried Build/Spells/Academies.
-      panes.forEach((pane) => {
-        pane.removeAttribute('hidden');
-        pane.classList.add('active');
-      });
-
-      function setActiveTab(id) {
-        tabs.forEach((tab) => {
-          const on = tab.dataset.sideTab === id;
+      function render() {
+        const shown = tabs.panes();
+        tabEls.forEach((tab) => {
+          const on = !!shown[tab.dataset.sideTab];
           tab.classList.toggle('active', on);
           tab.setAttribute('aria-selected', on ? 'true' : 'false');
+          tab.tabIndex = on ? 0 : -1;
+        });
+        panes.forEach((pane) => {
+          const on = !!shown[pane.dataset.sidePane];
+          pane.hidden = !on;
+          pane.classList.toggle('active', on);
         });
       }
 
-      function scrollToPane(id) {
-        const pane = panel.querySelector(`.side-tab-pane[data-side-pane="${id}"]`);
-        if (!pane || !scroller) return;
-        setActiveTab(id);
-        const top = pane.offsetTop - scroller.offsetTop - 4;
-        scroller.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+      function showTab(id, opts = {}) {
+        const changed = tabs.select(id);
+        render();
+        if (changed && scroller) scroller.scrollTop = 0;
+        if (opts.focus) tabEls.find((t) => t.dataset.sideTab === tabs.active)?.focus();
+        return changed;
       }
 
-      tabs.forEach((tab) => {
+      tabEls.forEach((tab) => {
         tab.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          const id = tab.dataset.sideTab;
-          if (!id) return;
-          scrollToPane(id);
-          if (typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+          if (showTab(tab.dataset.sideTab) && typeof AudioEngine !== 'undefined') {
+            AudioEngine.SFX?.click?.();
+          }
+        });
+        tab.addEventListener('keydown', (e) => {
+          let to = null;
+          if (e.key === 'ArrowRight' || e.key === 'ArrowDown') to = tabs.step(1);
+          else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') to = tabs.step(-1);
+          else if (e.key === 'Home') to = ids[0];
+          else if (e.key === 'End') to = ids[ids.length - 1];
+          if (!to) return;
+          e.preventDefault();
+          e.stopPropagation();
+          showTab(to, { focus: true });
         });
       });
 
-      // Highlight the nav chip for whichever section is most visible while scrolling.
-      if (scroller && typeof IntersectionObserver !== 'undefined') {
-        const io = new IntersectionObserver(
-          (entries) => {
-            let best = null;
-            let bestRatio = 0;
-            for (const ent of entries) {
-              if (ent.isIntersecting && ent.intersectionRatio > bestRatio) {
-                bestRatio = ent.intersectionRatio;
-                best = ent.target;
-              }
-            }
-            if (best?.dataset?.sidePane) setActiveTab(best.dataset.sidePane);
-          },
-          { root: scroller, threshold: [0.15, 0.35, 0.55] }
-        );
-        panes.forEach((pane) => io.observe(pane));
-      }
-
-      panel._scrollToSidePane = scrollToPane;
+      render();
+      panel._showTab = showTab;
+      panel._activeTab = () => tabs.active;
 
       // Remember when the player is scrolling, so nothing scrolls the panel under them.
       if (scroller) {
@@ -265,6 +264,241 @@ const UI = (() => {
     });
   }
 
+  /**
+   * Keyboard way into the HUD. Tab cycles soldiers (a fixed key) while nothing is focused, so
+   * F6 moves focus to the open tab of each panel in turn; once a control has focus, Tab walks
+   * the page as usual. A mouse click lets go of focus so Tab goes back to soldiers.
+   */
+  function initKeyboardReach() {
+    const inHud = (el) =>
+      !!el && !!el.closest?.('#ui-overlay') && !el.closest('[role="dialog"], .screen');
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (e.key === 'Tab' && inHud(document.activeElement)) {
+          e.stopPropagation();
+          return;
+        }
+        if (e.key !== 'F6' || typeof Game === 'undefined' || !Game.isPlaying()) return;
+        const stops = ['#left-panel', '#right-panel'].map((sel) =>
+          document.querySelector(`${sel} .side-tab[aria-selected="true"]`)
+        );
+        const at = stops.indexOf(document.activeElement?.closest?.('.side-tab'));
+        const next = stops[(at + 1) % stops.length];
+        if (!next) return;
+        e.preventDefault();
+        e.stopPropagation();
+        next.focus();
+      },
+      true
+    );
+    document.addEventListener('click', (e) => {
+      if (e.detail > 0) e.target.closest?.('#left-panel button, #right-panel button')?.blur();
+    });
+  }
+
+  /**
+   * Whichever modal is showing owns the keyboard: focus moves into it when it opens, Tab stays
+   * inside it, and focus goes back to where it was when it closes.
+   */
+  function initModalFocus() {
+    // aria-modal catches modals other modules build later, such as How to Play.
+    const SELECTOR =
+      '.screen, #spoils-panel, #key-sheet, .menu-sheet, .research-panel, .faction-intel-panel, [aria-modal="true"]';
+    const FOCUSABLE =
+      'button, a[href], input, select, textarea, summary, [tabindex]:not([tabindex="-1"])';
+    const shown = (el) =>
+      el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true }) &&
+      getComputedStyle(el).pointerEvents !== 'none';
+    const topModal = () => [...document.querySelectorAll(SELECTOR)].filter(shown).pop() || null;
+    const stops = (modal) =>
+      [...modal.querySelectorAll(FOCUSABLE)].filter(
+        (el) => !el.disabled && el.tabIndex >= 0 && shown(el)
+      );
+    let current = null;
+    let returnTo = null;
+    let queued = false;
+
+    function sync() {
+      queued = false;
+      const modal = topModal();
+      if (modal === current) return;
+      if (modal) {
+        if (!current) returnTo = document.activeElement;
+        const list = stops(modal);
+        (modal.querySelector('.menu-btn.primary') || list[0])?.focus({ preventScroll: true });
+      } else if (returnTo?.isConnected && shown(returnTo)) {
+        returnTo.focus({ preventScroll: true });
+        returnTo = null;
+      } else {
+        document.activeElement?.blur?.();
+        returnTo = null;
+      }
+      current = modal;
+    }
+
+    new MutationObserver(() => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(sync);
+    }).observe(document.body, {
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'hidden', 'style'],
+    });
+
+    window.addEventListener(
+      'keydown',
+      (e) => {
+        if (
+          e.key !== 'Tab' ||
+          !current ||
+          (typeof InPageDialog !== 'undefined' && InPageDialog.isOpen())
+        )
+          return;
+        const list = stops(current);
+        if (!list.length) return;
+        const at = list.indexOf(document.activeElement);
+        const step = e.shiftKey ? -1 : 1;
+        const to =
+          at < 0 ? (e.shiftKey ? list.length - 1 : 0) : (at + step + list.length) % list.length;
+        e.preventDefault();
+        e.stopPropagation();
+        list[to].focus();
+      },
+      true
+    );
+  }
+
+  // ---- open list and "Locked" group of each pane ------------------------------------------
+  /** Every panel button the model places: { btn, kind, id, marker, reasonEl, at, want }. */
+  const panelItems = [];
+  /** tab id -> { root, toggle, list, title, next, sig } */
+  const lockedGroups = {};
+  const LOCKED_TABS = ['troops', 'build', 'strike', 'cmd', 'spy', 'courier'];
+  /** Sections whose heading goes when every button under it is in a Locked group. */
+  const managedSections = new Set();
+
+  function makeLockedGroup(tab) {
+    const pane = document.getElementById(`pane-${tab}`);
+    if (!pane) return;
+    const root = document.createElement('div');
+    root.className = 'locked-group';
+    root.hidden = true;
+    root.innerHTML =
+      `<button type="button" class="locked-toggle" aria-expanded="false" aria-controls="locked-${tab}">` +
+      '<span class="locked-caret" aria-hidden="true">+</span>' +
+      '<span class="locked-title">Locked</span>' +
+      '<span class="locked-next"></span></button>' +
+      `<div class="locked-list" id="locked-${tab}" hidden></div>`;
+    pane.appendChild(root);
+    const group = {
+      root,
+      toggle: root.querySelector('.locked-toggle'),
+      list: root.querySelector('.locked-list'),
+      title: root.querySelector('.locked-title'),
+      next: root.querySelector('.locked-next'),
+      caret: root.querySelector('.locked-caret'),
+      sig: '',
+    };
+    group.toggle.addEventListener('click', () => {
+      const open = group.list.hidden;
+      group.list.hidden = !open;
+      group.toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      group.caret.textContent = open ? '−' : '+';
+      if (typeof AudioEngine !== 'undefined') AudioEngine.SFX?.click?.();
+    });
+    lockedGroups[tab] = group;
+  }
+
+  function indexPanelItems() {
+    const add = (selector, kind, attr) => {
+      document.querySelectorAll(selector).forEach((btn) => {
+        const id = btn.dataset[attr];
+        if (!id || btn._item) return;
+        const marker = document.createComment(`${kind}:${id}`);
+        btn.before(marker);
+        const reasonEl = document.createElement('span');
+        reasonEl.className = 'lock-reason';
+        btn.appendChild(reasonEl);
+        const item = {
+          btn,
+          kind,
+          id,
+          marker,
+          reasonEl,
+          section: btn.closest('.pane-section'),
+          name: btn.querySelector('span:not(.cost)')?.textContent?.trim() || id,
+          at: null,
+          want: null,
+        };
+        if (item.section?.dataset.section) managedSections.add(item.section);
+        btn._item = item;
+        panelItems.push(item);
+      });
+    };
+    add('#left-panel .deploy-btn', 'deploy', 'unit');
+    add('#left-panel .build-btn', 'build', 'build');
+    add('#left-panel .ability-btn', 'ability', 'ability');
+    add('#left-panel .doctrine-btn', 'doctrine', 'doctrine');
+    add('#left-panel .counter-doctrine-btn', 'counterDoctrine', 'counterDoctrine');
+    add('#right-panel .spy-btn', 'spy', 'spy');
+    add('#right-panel .courier-btn', 'courier', 'courier');
+    LOCKED_TABS.forEach(makeLockedGroup);
+  }
+
+  /** Note where a button belongs after its availability was worked out. */
+  function notePlace(btn, avail) {
+    const item = btn._item;
+    if (!item) return;
+    const reason = avail.ok ? '' : avail.reason || '';
+    if (item.reasonEl.textContent !== reason) item.reasonEl.textContent = reason;
+    // A button the game keeps out of sight (a secret troop, a section not yet open) stays put.
+    const outOfSight =
+      btn.style.display === 'none' || (item.section && item.section.style.display === 'none');
+    const at = PanelModel.place(item.kind, item.id, avail);
+    item.want = at.locked && !outOfSight ? at.tab : null;
+  }
+
+  /** Move buttons between their own place and the Locked group of a pane. */
+  function syncLockedGroups() {
+    const byTab = {};
+    for (const item of panelItems) {
+      if (item.want) (byTab[item.want] = byTab[item.want] || []).push(item);
+      if (item.at && item.at !== item.want && !item.want) {
+        item.marker.after(item.btn);
+        item.btn.classList.remove('in-locked');
+        item.at = null;
+      }
+    }
+    for (const tab of LOCKED_TABS) {
+      const group = lockedGroups[tab];
+      if (!group) continue;
+      const rows = byTab[tab] || [];
+      const sig = rows.map((it) => `${it.kind}:${it.id}`).join(',');
+      if (sig !== group.sig) {
+        group.sig = sig;
+        for (const it of rows) {
+          group.list.appendChild(it.btn);
+          it.btn.classList.add('in-locked');
+          it.at = tab;
+        }
+        group.root.hidden = rows.length === 0;
+        group.title.textContent = PanelModel.lockedLabel(rows.length);
+      }
+      const first = rows[0];
+      const next = first ? `Next: ${first.name}, ${first.reasonEl.textContent}` : '';
+      if (group.next.textContent !== next) group.next.textContent = next;
+    }
+    // A heading with nothing left under it is not shown.
+    for (const sec of managedSections) {
+      const any = [...sec.children].some(
+        (n) => n.tagName === 'BUTTON' && n.style.display !== 'none' && !n.hidden
+      );
+      if (sec.hidden === any) sec.hidden = !any;
+    }
+  }
+
   /** Largest price on offer: what a full TP bar stands for (set by updateButtonStates). */
   let tpBarMax = 24;
   let lastTpSeen = null;
@@ -272,6 +506,12 @@ const UI = (() => {
   /** The key bound to a spell or building while nothing is selected, or null. */
   function keyFor(action, id) {
     return typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', action, id) : null;
+  }
+
+  /** Text cut at n characters with an ellipsis, never mid-word silently. */
+  function clip(text, n) {
+    const t = String(text);
+    return t.length > n ? `${t.slice(0, n - 1).trimEnd()}…` : t;
   }
 
   function shortKey(key) {
@@ -288,6 +528,9 @@ const UI = (() => {
     btn.setAttribute('aria-pressed', selected ? 'true' : 'false');
     btn.setAttribute('aria-disabled', !avail.ok && !selected ? 'true' : 'false');
     btn.dataset.reason = avail.ok ? '' : avail.reason || '';
+    // Too dear is said in words on the price ("need 5 TP"), not by dimming alone.
+    btn.classList.toggle('cant-afford', !avail.ok && !!avail.tp && !selected);
+    notePlace(btn, avail);
     const label = shortKey(key);
     let k = btn._keyEl;
     if (!k && label) {
@@ -301,6 +544,16 @@ const UI = (() => {
       if (k.textContent !== label) k.textContent = label;
       k.hidden = !label;
     }
+  }
+
+  /**
+   * The spoken name of a panel button: what it is, then its price or why it cannot be used.
+   * The rich hover tooltip carries the same text, so no `title` is set (it used to show a
+   * second, browser-drawn tooltip on top of ours).
+   */
+  function setLabel(btn, text) {
+    if (btn.getAttribute('aria-label') !== text) btn.setAttribute('aria-label', text);
+    if (btn.title) btn.removeAttribute('title');
   }
 
   const USER_SCROLL_QUIET_MS = 1500;
@@ -322,7 +575,10 @@ const UI = (() => {
     const panel = el.closest?.('.side-panel');
     const scroller = el.closest?.('.side-panel-scroll');
     if (!panel || !scroller) return false;
-    if (userIsScrolling(panel)) return false;
+    // The button may be on a tab that is not open: open it.
+    const pane = el.closest('.side-tab-pane');
+    const switched = !!(pane && pane.hidden && panel._showTab?.(pane.dataset.sidePane));
+    if (userIsScrolling(panel) && !switched) return false;
     const box = scroller.getBoundingClientRect();
     const r = el.getBoundingClientRect();
     if (r.top >= box.top + 2 && r.bottom <= box.bottom - 2) return false;
@@ -491,11 +747,119 @@ const UI = (() => {
     cursorTag.style.transform = `translate(${Math.round(cursorPos.x + 16)}px, ${Math.round(cursorPos.y + 18)}px)`;
   }
 
+  // ---- main-menu sheets (New siege, Records) ---------------------------------
+  let openSheetEl = null;
+  let sheetOpener = null;
+
+  function closeMenuSheets() {
+    document.querySelectorAll('.menu-sheet').forEach((sh) => {
+      sh.hidden = true;
+    });
+    if (openSheetEl) {
+      openSheetEl = null;
+      try {
+        sheetOpener?.focus?.();
+      } catch (_) {
+        /* the opener may be gone */
+      }
+      sheetOpener = null;
+    }
+    refreshSetupSummary();
+  }
+
+  function openMenuSheet(id, opener) {
+    const sheet = document.getElementById(id);
+    if (!sheet) return;
+    closeMenuSheets();
+    sheet.hidden = false;
+    openSheetEl = sheet;
+    sheetOpener = opener || document.activeElement;
+    (sheet.querySelector('.modal-close') || sheet).focus?.();
+  }
+
+  /** "Normal · Campaign": what BEGIN DEFENSE will start. */
+  function refreshSetupSummary() {
+    const el = document.getElementById('menu-setup-summary');
+    if (!el) return;
+    const diff = getDifficultyDef(selectedDifficulty);
+    const parts = [diff?.label || diff?.name || selectedDifficulty];
+    if (typeof GameModes !== 'undefined') {
+      const m = GameModes.getMenu();
+      if (m.challengeType) {
+        parts.push(m.challengeType === 'weekly' ? 'Weekly challenge' : 'Daily challenge');
+      } else {
+        parts.push(GameModes.MODES.find((x) => x.id === m.modeId)?.label || m.modeId);
+      }
+      if (m.ironman) parts.push('Ironman');
+    }
+    const text = parts.filter(Boolean).join(' · ');
+    if (el.textContent !== text) el.textContent = text;
+  }
+
+  function bindMenuSheets() {
+    const openers = {
+      'menu-setup-btn': 'menu-setup-sheet',
+      'menu-records-btn': 'menu-records-sheet',
+    };
+    for (const [btnId, sheetId] of Object.entries(openers)) {
+      document.getElementById(btnId)?.addEventListener('click', (e) => {
+        AudioEngine?.SFX?.click?.();
+        openMenuSheet(sheetId, e.currentTarget);
+      });
+    }
+    document.querySelectorAll('.menu-sheet').forEach((sheet) => {
+      sheet.addEventListener('click', (e) => {
+        // The backdrop and any Close / Done button put the sheet away.
+        if (e.target === sheet || e.target.closest?.('[data-sheet-close]')) closeMenuSheets();
+        else if (sheet.id === 'menu-setup-sheet') setTimeout(refreshSetupSummary, 0);
+      });
+      sheet.addEventListener('change', () => setTimeout(refreshSetupSummary, 0));
+    });
+    document.getElementById('menu-setup-start')?.addEventListener('click', () => {
+      closeMenuSheets();
+      document.getElementById('start-btn')?.click();
+    });
+    // Escape closes the open sheet and goes no further.
+    document.addEventListener(
+      'keydown',
+      (e) => {
+        if (!openSheetEl || e.key !== 'Escape') return;
+        // A screen opened from the sheet (Advanced Difficulty, Cheats) is on top: it goes first.
+        if (document.querySelector('.screen.active:not(#menu-screen)')) return;
+        e.preventDefault();
+        e.stopPropagation();
+        closeMenuSheets();
+      },
+      true
+    );
+    refreshSetupSummary();
+  }
+
+  // ---- the sound button -------------------------------------------------------------------
+  /** Other modules write a speaker glyph into the button; the look and the name follow it. */
+  function syncSoundButton() {
+    const btn = document.getElementById('sound-toggle');
+    if (!btn) return;
+    const muted = btn.textContent.includes('🔇');
+    btn.classList.toggle('is-muted', muted);
+    btn.setAttribute('aria-pressed', muted ? 'true' : 'false');
+    btn.setAttribute('aria-label', muted ? 'Sound is off. Turn sound on' : 'Sound is on. Mute');
+  }
+
+  function watchSoundButton() {
+    const btn = document.getElementById('sound-toggle');
+    if (!btn) return;
+    syncSoundButton();
+    if (typeof MutationObserver !== 'undefined') {
+      new MutationObserver(syncSoundButton).observe(btn, { childList: true, characterData: true });
+    }
+  }
+
   function init() {
     document.body.classList.add('ui-v2');
-    // Ensure no pane stays HTML-hidden before wiring nav (legacy tab markup).
-    document.querySelectorAll('.side-tab-pane[hidden]').forEach((p) => p.removeAttribute('hidden'));
     initSidePanelTabs();
+    initKeyboardReach();
+    initModalFocus();
     MetaProgress.load();
     if (typeof Achievements !== 'undefined') Achievements.init();
     if (typeof Encyclopedia !== 'undefined') Encyclopedia.init();
@@ -509,7 +873,7 @@ const UI = (() => {
     if (typeof CreativeMode !== 'undefined') CreativeMode.init();
     if (typeof Tooltips !== 'undefined') Tooltips.init();
     if (typeof FactionIntel !== 'undefined') FactionIntel.init();
-    // Grand Strategy / Intergalactic removed — pure wave defense.
+    // Grand Strategy / Intergalactic removed - pure wave defense.
 
     const titleCanvas = document.getElementById('title-art');
     function paintTitleArt() {
@@ -618,6 +982,8 @@ const UI = (() => {
       if (defenseStartInFlight) return;
       defenseStartInFlight = true;
       gameOverShown = false;
+      // Every way in (Tutorial, online lobby, setup sheet) leaves no menu sheet open behind the run.
+      closeMenuSheets();
       if (typeof Onboarding !== 'undefined') Onboarding.prepareCampaignStart();
       Game.setDifficulty(selectedDifficulty);
       hideMenusForPlay({ showLaunch: true });
@@ -632,13 +998,13 @@ const UI = (() => {
           if (Game.isPlaying?.()) {
             ensureMenuDismissedForPlay();
             Game.showMessage?.(
-              `Run started with errors — ${err?.message || 'unknown error'}. Press F10 to report if gameplay is wrong.`,
+              `Run started with errors - ${err?.message || 'unknown error'}. Press F10 to report if gameplay is wrong.`,
               480
             );
           } else {
             showMainMenu();
             Game.showMessage?.(
-              `Could not start — ${err?.message || 'unknown error'}. Check the console for details.`,
+              `Could not start - ${err?.message || 'unknown error'}. Check the console for details.`,
               420
             );
             AudioEngine.resume().then((ok) => {
@@ -672,6 +1038,7 @@ const UI = (() => {
         AudioEngine.resume();
         const muted = AudioEngine.toggleMute();
         soundBtn.textContent = muted ? '🔇' : '🔊';
+        syncSoundButton();
         if (typeof Settings !== 'undefined') Settings.set('muted', muted);
         if (!muted) {
           AudioEngine.SFX.click();
@@ -681,9 +1048,8 @@ const UI = (() => {
       });
     }
 
-    document.getElementById('howto-btn').addEventListener('click', () => {
-      document.getElementById('howto-panel').classList.toggle('hidden');
-    });
+    bindMenuSheets();
+    watchSoundButton();
 
     document.getElementById('begin-day-btn')?.addEventListener('click', () => {
       AudioEngine.SFX.click();
@@ -721,6 +1087,13 @@ const UI = (() => {
         updateHUD(true);
         Game.draw?.();
       });
+    });
+
+    document.getElementById('gameover-menu-btn')?.addEventListener('click', () => {
+      if (restartInFlight) return;
+      AudioEngine.SFX.click?.();
+      hideGameOverScreen();
+      Game.quitToMenu?.();
     });
 
     // Every panel button goes through Availability.trySelect: an item that cannot be used
@@ -793,7 +1166,7 @@ const UI = (() => {
       if (!btn || btn.classList.contains('planet-event-chosen')) return;
       const choiceId = btn.dataset.mapChoice;
       if (!choiceId) return;
-      // Always attempt respond — Game shows why it failed (day / TP / none pending).
+      // Always attempt respond - Game shows why it failed (day / TP / none pending).
       // Soft-lock styles must not swallow clicks with a silent return.
       const ok = Game.respondMapEvent?.(choiceId);
       if (ok) AudioEngine.SFX?.click?.();
@@ -922,7 +1295,7 @@ const UI = (() => {
             const typeLabel =
               typeof formatUnitTypeName === 'function' ? formatUnitTypeName(h.type) : h.type;
             return (
-              `<button type="button" class="${cls}" data-heir="${h.key}" title="${h.name} — ${typeLabel}">` +
+              `<button type="button" class="${cls}" data-heir="${h.key}" title="${h.name} - ${typeLabel}">` +
               `<span>${h.name}</span><span class="crown-heir-status">${status}</span>` +
               `<span class="crown-heir-wave">${typeLabel} · crowned W${h.wave}</span></button>`
             );
@@ -1023,7 +1396,7 @@ const UI = (() => {
     const missions = raids?.missions || [];
     if (!missions.length) {
       list.innerHTML =
-        '<p class="panel-hint">No enemy holds spotted — factions build in the north after wave 150.</p>';
+        '<p class="panel-hint">No enemy holds spotted - factions build in the north after wave 150.</p>';
       return;
     }
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1062,7 +1435,7 @@ const UI = (() => {
     const freeTp = gs.creativeMode && gs.creativeSettings?.freeResources;
 
     if (me?.pending && me?.event?.prep) {
-      summary.textContent = `${me.event.name} — ${me.event.prep}${
+      summary.textContent = `${me.event.name} - ${me.event.prep}${
         nightOk ? '' : ' (night prep only)'
       }`;
     } else if (me?.activeSummary) {
@@ -1076,8 +1449,8 @@ const UI = (() => {
 
     if (!choices.length) {
       list.innerHTML = chosen
-        ? '<p class="panel-hint">Response locked — effects apply at dawn.</p>'
-        : '<p class="panel-hint">No planet event pending — check again after a wave clears at night.</p>';
+        ? '<p class="panel-hint">Response locked - effects apply at dawn.</p>'
+        : '<p class="panel-hint">No planet event pending - check again after a wave clears at night.</p>';
       return;
     }
 
@@ -1092,7 +1465,7 @@ const UI = (() => {
           cls = 'planet-event-chosen';
         } else if (!nightOk) {
           cls = 'planet-event-softlock';
-          lockHint = ' Night prep only — wait for night.';
+          lockHint = ' Night prep only - wait for night.';
         } else if (!canRespond) {
           cls = 'planet-event-softlock';
           lockHint = ' Already answered or no pending event.';
@@ -1118,7 +1491,6 @@ const UI = (() => {
     const summary = document.getElementById('counter-summary-text');
     const list = document.getElementById('expedition-list');
     const wave = gs.wave || 0;
-    const kingdomStage = gs.kingdomStage || 1;
     const counterDoctrines =
       typeof PlayerCounterEvolution !== 'undefined' ? PlayerCounterEvolution.COUNTER_DOCTRINES : {};
 
@@ -1126,25 +1498,16 @@ const UI = (() => {
       const showDoctrine = !!(ce?.active || wave >= (ce?.waveMin || 15) - 2);
       doctrineSection.style.display = showDoctrine ? '' : 'none';
       if (showDoctrine) {
-        document.querySelectorAll('.counter-doctrine-btn').forEach((btn) => {
+        hudBtns.counterDoctrine.forEach((btn) => {
           const id = btn.dataset.counterDoctrine;
           const def = counterDoctrines[id];
-          const cost = def?.cost ?? 99;
-          const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-          const waveReq = def?.waveMin || 0;
-          const stageLocked = stageReq > 0 && kingdomStage < stageReq;
-          const waveLocked = waveReq > 0 && wave < waveReq;
-          const locked = stageLocked || waveLocked;
-          const costEl = btn.querySelector('.cost');
-          if (costEl) costEl.textContent = String(cost);
-          btn.classList.toggle(
-            'disabled',
-            gs.tactical < cost || gs.counterDoctrineUsedThisWave || locked
-          );
-          btn.classList.toggle('kingdom-locked', locked);
-          btn.title = locked
-            ? `${def?.name || id} — wave ${waveReq}+, stage ${stageReq}+`
-            : def?.desc || '';
+          const avail = PanelModel.counterDoctrine(id, gs);
+          const costEl = btn._costEl;
+          if (costEl && Number.isFinite(avail.cost)) costEl.textContent = String(avail.cost);
+          markButton(btn, avail, false, null);
+          btn.classList.toggle('kingdom-locked', !!avail.locked);
+          const name = def?.name || id;
+          setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
         });
       }
     }
@@ -1168,7 +1531,7 @@ const UI = (() => {
     const targets = ce?.targets || [];
     if (!targets.length) {
       list.innerHTML =
-        '<p class="panel-hint">No host factions active yet — expeditions target evolving enemy realms.</p>';
+        '<p class="panel-hint">No host factions active yet - expeditions target evolving enemy realms.</p>';
       return;
     }
 
@@ -1222,7 +1585,7 @@ const UI = (() => {
         : parseFloat(speed) || 1;
     const speedBtn = document.getElementById('speed-toggle');
     if (speedBtn) {
-      speedBtn.textContent = `SPEED: ${n}×`;
+      speedBtn.textContent = `Speed ${n}×`;
       speedBtn.classList.toggle('speed-active', n > 1);
     }
     document.querySelectorAll('.settings-speed-control .speed-btn').forEach((btn) => {
@@ -1276,9 +1639,12 @@ const UI = (() => {
       markButton(btn, avail, selected, Hotkeys.deployKey(type));
       btn.classList.toggle('research-locked', !!avail.research);
       if (def?.name) {
-        btn.title = avail.ok
-          ? `${def.name} — ${Availability.deployPriceText(type, gs)} · click, then click the field (hold Shift to place more)`
-          : `${def.name} — ${avail.reason}`;
+        setLabel(
+          btn,
+          avail.ok
+            ? `${def.name}, ${Availability.deployPriceText(type, gs)}`
+            : `${def.name}, ${avail.reason}`
+        );
       }
     });
 
@@ -1290,9 +1656,9 @@ const UI = (() => {
       wweBtn.style.display = '';
       wweBtn.classList.toggle('disabled', !gs.wweUnlocked);
       wweBtn.title = gs.wweUnlocked
-        ? 'Grand Coliseum — arena champions'
-        : 'Grand Coliseum — unlock via research or Iron Creed';
-      wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM 🔒';
+        ? 'Grand Coliseum - arena champions'
+        : 'Grand Coliseum - unlock via research or Iron Creed';
+      wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM · LOCKED';
     }
     const crossBtn = hudEls['crossover-hub-open'];
     if (crossBtn) {
@@ -1300,9 +1666,9 @@ const UI = (() => {
       crossBtn.style.display = '';
       crossBtn.classList.toggle('disabled', !gs.crossoverUnlocked);
       crossBtn.title = gs.crossoverUnlocked
-        ? 'Legion Archive — faction barracks & operatives'
-        : 'Legion Archive — unlock a crossover faction (meta or research) to open';
-      crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE 🔒';
+        ? 'Legion Archive - faction barracks & operatives'
+        : 'Legion Archive - unlock a crossover faction (meta or research) to open';
+      crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE · LOCKED';
     }
     const perkSection = hudEls['perk-build-section'];
     if (perkSection) perkSection.style.display = gs.perksUnlocked ? '' : 'none';
@@ -1316,15 +1682,13 @@ const UI = (() => {
       if (!avail.locked && Number.isFinite(avail.cost)) prices.push(avail.cost);
       markButton(btn, avail, id === gs.selectedAbility, keyFor('ability', id));
       const name = Abilities[id]?.name || id;
-      btn.title = avail.ok
-        ? `${name} — ${avail.cost} TP · click, then click the field`
-        : `${name} — ${avail.reason}`;
+      setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
     });
     hudBtns.build.forEach((btn) => {
       const buildType = btn.dataset.build;
       const def = BuildDefs[buildType];
       const costEl = btn._costEl;
-      // Prefer live def; if BuildDefs was wiped mid-boot, keep HTML label — never fake 99 TP.
+      // Prefer live def; if BuildDefs was wiped mid-boot, keep HTML label - never fake 99 TP.
       if (costEl && Number.isFinite(def?.cost) && costEl.textContent !== String(def.cost)) {
         costEl.textContent = String(def.cost);
       }
@@ -1335,9 +1699,7 @@ const UI = (() => {
       btn.classList.toggle('research-locked', !!avail.research && !avail.mentor);
       btn.classList.toggle('mentor-ready', !!avail.mentorReady);
       if (def?.name) {
-        btn.title = avail.ok
-          ? `${def.name} — ${avail.cost} TP · click, then click the field (hold Shift to place more)`
-          : `${def.name} — ${avail.reason}`;
+        setLabel(btn, avail.ok ? `${def.name}, ${avail.cost} TP` : `${def.name}, ${avail.reason}`);
       }
     });
     // The "Recruit cost +N%" chip reads the same price function as the buttons.
@@ -1350,20 +1712,39 @@ const UI = (() => {
     }
     // A full bar: enough for the dearest troop or strike on offer.
     tpBarMax = Availability.tpBarMax(prices);
-    hudBtns.spy.forEach((btn) => {
-      const def = SpyActions[btn.dataset.spy];
-      const avail = Availability.spy(btn.dataset.spy, gs);
-      markButton(btn, avail, false, null);
-      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
-      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Spy action'} — ${avail.reason}`;
-    });
-    hudBtns.courier.forEach((btn) => {
-      const def = CourierMessages[btn.dataset.courier];
-      const avail = Availability.courier(btn.dataset.courier, gs);
-      markButton(btn, avail, btn.dataset.courier === gs.selectedCourierMsg, null);
-      btn.classList.toggle('kingdom-locked', !!avail.kingdom);
-      btn.title = avail.ok ? def?.desc || '' : `${def?.name || 'Message'} — ${avail.reason}`;
-    });
+    // Spy actions and messages: the price the game will charge, and waves left to wait.
+    const markAction = (btn, kind, id, selected) => {
+      const def = kind === 'spy' ? SpyActions[id] : CourierMessages[id];
+      const act = PanelModel.action(kind, id, gs);
+      markButton(btn, act, selected, null);
+      btn.classList.toggle('kingdom-locked', act.locked);
+      btn.classList.toggle('on-cooldown', act.state === 'cooldown');
+      const costEl = btn._costEl;
+      if (costEl && costEl.textContent !== String(act.cost)) costEl.textContent = String(act.cost);
+      let wait = btn._waitEl;
+      if (!wait) {
+        wait = document.createElement('span');
+        wait.className = 'wait';
+        btn.appendChild(wait);
+        btn._waitEl = wait;
+      }
+      if (wait.textContent !== act.waitText) wait.textContent = act.waitText;
+      wait.hidden = !act.waitText;
+      const name = def?.name || id;
+      setLabel(btn, act.ok ? `${name}, ${act.costText}` : `${name}, ${act.reason}`);
+    };
+    hudBtns.spy.forEach((btn) => markAction(btn, 'spy', btn.dataset.spy, false));
+    hudBtns.courier.forEach((btn) =>
+      markAction(btn, 'courier', btn.dataset.courier, btn.dataset.courier === gs.selectedCourierMsg)
+    );
+    for (const kind of ['spy', 'courier']) {
+      const badge = document.getElementById(`${kind}-uses`);
+      if (!badge) continue;
+      const left = PanelModel.usesLeft(kind, gs);
+      const text = left > 0 ? `${left} left this wave` : 'used this wave';
+      if (badge.textContent !== text) badge.textContent = text;
+      badge.classList.toggle('spent', left <= 0);
+    }
 
     const loadoutSection = hudEls['loadout-section'];
     if (loadoutSection) {
@@ -1469,12 +1850,12 @@ const UI = (() => {
     const stageEl = document.getElementById('kingdom-stage-text');
     const evo = gs.kingdomEvolution;
     if (stageEl && evo) {
-      stageEl.textContent = evo.shortName || '—';
+      stageEl.textContent = evo.shortName || '-';
       stageEl.style.color = evo.color || '';
       const prog = evo.progress != null ? ` · ${Math.round(evo.progress * 100)}%` : '';
       stageEl.title = `${evo.name} (waves ${evo.waveMin}–${evo.waveMax ?? '∞'})${prog}\n${evo.tagline || ''}`;
     } else if (stageEl) {
-      stageEl.textContent = '—';
+      stageEl.textContent = '-';
       stageEl.title = 'Kingdom evolution stage';
     }
 
@@ -1492,10 +1873,10 @@ const UI = (() => {
       const bd = evoMeter.breakdown || {};
       const evoBar = evoFill.parentElement;
       if (evoBar) {
-        evoBar.title = `Evolution meter — Colony ${bd.colonyPct ?? 0}% · Buildings ${bd.buildingPct ?? 0}% (${bd.buildingCount ?? 0}) · Veterans ${bd.veteranPct ?? 0}% (${bd.veteranUnits ?? 0} named) · Research ${bd.researchPct ?? 0}% (${bd.researchCompleted ?? 0}/${bd.researchTotal ?? 0})`;
+        evoBar.title = `Evolution meter - Colony ${bd.colonyPct ?? 0}% · Buildings ${bd.buildingPct ?? 0}% (${bd.buildingCount ?? 0}) · Veterans ${bd.veteranPct ?? 0}% (${bd.veteranUnits ?? 0} named) · Research ${bd.researchPct ?? 0}% (${bd.researchCompleted ?? 0}/${bd.researchTotal ?? 0})`;
       }
     } else if (evoPct) {
-      evoPct.textContent = '—';
+      evoPct.textContent = '-';
     }
     if (bannerCanvas && typeof VisualPolish !== 'undefined' && VisualPolish.drawKingdomBanner) {
       const ctx = bannerCanvas.getContext('2d');
@@ -1512,7 +1893,7 @@ const UI = (() => {
         bannerOpts
       );
       const tierNames = ['Small Pennant', 'Kingdom Crest', 'Empire Banner', 'Hell-Forged Banner'];
-      bannerCanvas.title = `${tierNames[stage - 1] || 'Banner'} — stage ${stage} · ${evoMeter?.stageProgress ?? 0}% growth`;
+      bannerCanvas.title = `${tierNames[stage - 1] || 'Banner'} - stage ${stage} · ${evoMeter?.stageProgress ?? 0}% growth`;
     }
 
     refreshRaidPanel(gs);
@@ -1531,12 +1912,12 @@ const UI = (() => {
       const show = !!line || !!fmSnap?.inFoundationalEra;
       fmHud.style.display = show ? '' : 'none';
       if (show) {
-        fmText.textContent = line || '—';
+        fmText.textContent = line || '-';
         if (fmSnap?.leadingColor) {
           fmHud.style.borderColor = fmSnap.leadingColor;
         }
         fmHud.title = fmSnap?.leadingLabel
-          ? `Foundational DNA — ${fmSnap.leadingLabel} (waves 1–150)`
+          ? `Foundational DNA - ${fmSnap.leadingLabel} (waves 1–150)`
           : 'Lay your empire cultural DNA through archers, academies, or evolved heroes';
       }
     }
@@ -1553,9 +1934,9 @@ const UI = (() => {
       ascHud.style.display = show ? '' : 'none';
       if (show) {
         ascText.textContent =
-          line || (ascSnap?.legacyPoints ? `${ascSnap.legacyPoints} Legacy` : '—');
+          line || (ascSnap?.legacyPoints ? `${ascSnap.legacyPoints} Legacy` : '-');
         ascHud.title = ascSnap?.eraLabel
-          ? `Ascension — ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
+          ? `Ascension - ${ascSnap.legacyPoints} Legacy Points (${ascSnap.eraLabel})`
           : 'Ascend max veterans at Kingdom (150) and Galactic (400) era gates';
       }
     }
@@ -1571,11 +1952,11 @@ const UI = (() => {
       const show = !!thematicSynSnap?.active || !!line;
       thematicSynHud.style.display = show ? '' : 'none';
       if (show) {
-        thematicSynText.textContent = line || thematicSynSnap?.pathLabel || '—';
+        thematicSynText.textContent = line || thematicSynSnap?.pathLabel || '-';
         if (thematicSynSnap?.pathColor)
           thematicSynHud.style.borderColor = thematicSynSnap.pathColor;
         thematicSynHud.title = thematicSynSnap?.pathDesc
-          ? `${thematicSynSnap.pathLabel} — ${thematicSynSnap.pathDesc}`
+          ? `${thematicSynSnap.pathLabel} - ${thematicSynSnap.pathDesc}`
           : 'Cross-era synergy from your medieval foundation path';
       }
     }
@@ -1589,15 +1970,15 @@ const UI = (() => {
           ? EternalPathFramework.formatHudLine({ wave: gs.wave })
           : epfSnap?.hudLine || '';
       // Only surface once the framework itself has something to say (it returns '' pre-wave-50
-      // with no dominant path). A blanket `wave >= 1` forced this into view — and its bare '?'
-      // fallback text — from turn one, before any path exists to report on.
+      // with no dominant path). A blanket `wave >= 1` forced this into view - and its bare '?'
+      // fallback text - from turn one, before any path exists to report on.
       const show = !!line || !!epfSnap?.dominantPathId;
       epfHud.style.display = show ? '' : 'none';
       if (show) {
         epfText.textContent = line || 'Path ?';
         if (epfSnap?.dominantColor) epfHud.style.borderColor = epfSnap.dominantColor;
         epfHud.title = epfSnap?.dominantLabel
-          ? `${epfSnap.dominantLabel} — investment strengthens every era`
+          ? `${epfSnap.dominantLabel} - investment strengthens every era`
           : 'Four Eternal Paths evolve Medieval → Kingdom → Galactic';
       }
     }
@@ -1615,8 +1996,8 @@ const UI = (() => {
       if (show) {
         crownText.textContent = line || 'Ancient Crown';
         crownHud.title = crownSnap?.crownEpithet
-          ? `${crownSnap.crownEpithet} — ${crownSnap.legendCount || 0} legend(s) grant real power`
-          : 'The Ancient Crown endures — heroes become mythic figures';
+          ? `${crownSnap.crownEpithet} - ${crownSnap.legendCount || 0} legend(s) grant real power`
+          : 'The Ancient Crown endures - heroes become mythic figures';
       }
     }
 
@@ -1634,7 +2015,7 @@ const UI = (() => {
         techText.textContent = line || techSnap?.rootLabel || 'Root ?';
         if (techSnap?.rootColor) techHud.style.borderColor = techSnap.rootColor;
         techHud.title = techSnap?.techTreeLabel
-          ? `${techSnap.rootLabel} — ${techSnap.techTreeLabel}`
+          ? `${techSnap.rootLabel} - ${techSnap.techTreeLabel}`
           : 'Martial / Arcane / Mythic / Tech root locks wave 50';
       }
     }
@@ -1650,10 +2031,10 @@ const UI = (() => {
       const show = !!pfSnap?.active || !!pfSnap?.pending || !!line;
       pfHud.style.display = show ? '' : 'none';
       if (show) {
-        pfText.textContent = line || pfSnap?.fantasyLabel || '—';
+        pfText.textContent = line || pfSnap?.fantasyLabel || '-';
         if (pfSnap?.fantasyColor) pfHud.style.borderColor = pfSnap.fantasyColor;
         pfHud.title = pfSnap?.fantasyDesc
-          ? `${pfSnap.fantasyLabel} — ${pfSnap.fantasyDesc}`
+          ? `${pfSnap.fantasyLabel} - ${pfSnap.fantasyDesc}`
           : 'Pure medieval DNA unlocks apex power fantasy at wave 500';
       }
     }
@@ -1670,10 +2051,10 @@ const UI = (() => {
       elHud.style.display = show ? '' : 'none';
       if (show) {
         elText.textContent =
-          line || (elSnap?.investedCount ? `Crown ${elSnap.investedCount}` : '—');
+          line || (elSnap?.investedCount ? `Crown ${elSnap.investedCount}` : '-');
         elHud.title =
           elSnap?.investedCount > 0
-            ? `Echoes of the Past — ${elSnap.investedCount} node(s) invested`
+            ? `Echoes of the Past - ${elSnap.investedCount} node(s) invested`
             : 'Invest Echo Shards in Crown of Ages on the main menu';
       }
     }
@@ -1693,9 +2074,9 @@ const UI = (() => {
         ptText.textContent = line;
         ptHud.classList.toggle('pacing-tools-paused', !!gs.paused);
         ptHud.title = ptSnap?.strongPauseReason
-          ? `Strong pause — ${ptSnap.strongPauseReason}${q ? ` · ${q} queued` : ''}`
+          ? `Strong pause - ${ptSnap.strongPauseReason}${q ? ` · ${q} queued` : ''}`
           : q > 0
-            ? `${q} notification(s) queued — will drain on resume`
+            ? `${q} notification(s) queued - will drain on resume`
             : `Simulation running at ${gs.gameSpeed ?? 1}×`;
       }
     }
@@ -1713,33 +2094,28 @@ const UI = (() => {
       if (show) {
         prText.textContent =
           line ||
-          (prSnap?.nextGate ? `Next w${prSnap.nextGate.wave}: ${prSnap.nextGate.shortName}` : '—');
+          (prSnap?.nextGate ? `Next w${prSnap.nextGate.wave}: ${prSnap.nextGate.shortName}` : '-');
         prHud.title = prSnap?.lastRestart
-          ? `Escalation restart — ${prSnap.lastRestart.name}. Legacies, research, and TP imported.`
+          ? `Escalation restart - ${prSnap.lastRestart.name}. Legacies, research, and TP imported.`
           : prSnap?.nextGate
             ? `Wave ${prSnap.nextGate.wave} resets the tactical map but imports legacies and tech.`
             : 'Major escalation restarts import legacies, tech, and bonuses';
       }
     }
 
-    document.querySelectorAll('.doctrine-btn').forEach((btn) => {
+    hudBtns.doctrine.forEach((btn) => {
       const id = btn.dataset.doctrine;
       const def = gs.kingdomDoctrines?.[id];
-      const cost = def?.cost ?? 99;
-      const stageReq = parseInt(btn.dataset.kingdomStage || def?.kingdomStage || '0', 10);
-      const stageLocked = stageReq > 0 && (gs.kingdomStage || 1) < stageReq;
-      const costEl = btn.querySelector('.cost');
-      if (costEl) costEl.textContent = String(cost);
-      btn.classList.toggle(
-        'disabled',
-        gs.tactical < cost || gs.doctrineUsedThisWave || stageLocked
-      );
-      btn.classList.toggle('kingdom-locked', stageLocked);
-      btn.title =
-        stageLocked && typeof KINGDOM_EVOLUTION_STAGES !== 'undefined'
-          ? `Unlocks in ${KINGDOM_EVOLUTION_STAGES[stageReq]?.name || 'later stage'} — ${def?.desc || ''}`
-          : def?.desc || '';
+      const avail = PanelModel.doctrine(id, gs);
+      const costEl = btn._costEl;
+      if (costEl && Number.isFinite(avail.cost)) costEl.textContent = String(avail.cost);
+      markButton(btn, avail, false, null);
+      btn.classList.toggle('kingdom-locked', !!avail.locked);
+      const name = def?.name || id;
+      setLabel(btn, avail.ok ? `${name}, ${avail.cost} TP` : `${name}, ${avail.reason}`);
     });
+    // Every button now knows its place: fill the Locked groups.
+    syncLockedGroups();
 
     const strengthWrap = document.getElementById('strength-meter-wrap');
     const strengthStage = document.getElementById('strength-stage-text');
@@ -1749,7 +2125,7 @@ const UI = (() => {
     const strengthHud = document.getElementById('strength-hud');
     const cv = gs.colonyValue || 0;
     const ratio = gs.colonyThreatRatio || 1;
-    const tier = gs.colonyThreatTier || '—';
+    const tier = gs.colonyThreatTier || '-';
     const tierColor = gs.colonyThreatColor || '#88cc88';
     const nextP = gs.colonyNextPressure;
     const barPct = Math.max(0, Math.min(100, ((ratio - 0.5) / 1.75) * 100));
@@ -1770,7 +2146,7 @@ const UI = (() => {
     const threatTooltip =
       typeof ColonyValue !== 'undefined' && ColonyValue.formatThreatTooltip
         ? ColonyValue.formatThreatTooltip(colonySnap, nextP, gs.wave || 0)
-        : gs.colonyThreatTooltip || 'Kingdom strength vs next wave baseline — hover for details.';
+        : gs.colonyThreatTooltip || 'Kingdom strength vs next wave baseline - hover for details.';
     if (strengthFill) {
       strengthFill.style.width = cv > 0 ? `${barPct}%` : '0%';
       strengthFill.style.background = `linear-gradient(90deg, ${tierColor}77, ${tierColor})`;
@@ -1781,13 +2157,13 @@ const UI = (() => {
         typeof ColonyValue !== 'undefined' && ColonyValue.getThreatStageIndex
           ? ColonyValue.THREAT_TIERS[ColonyValue.getThreatStageIndex(ratio)]?.short
           : null;
-      strengthStage.textContent = cv > 0 ? stageShort || tier.slice(0, 4) : '—';
+      strengthStage.textContent = cv > 0 ? stageShort || tier.slice(0, 4) : '-';
       strengthStage.style.color = tierColor;
       strengthStage.style.borderColor = `${tierColor}88`;
-      strengthStage.title = cv > 0 ? `${tier} — Kingdom strength stage` : '';
+      strengthStage.title = cv > 0 ? `${tier} - Kingdom strength stage` : '';
     }
     if (strengthRatio) {
-      strengthRatio.textContent = cv > 0 ? `${ratio.toFixed(2)}×` : '—';
+      strengthRatio.textContent = cv > 0 ? `${ratio.toFixed(2)}×` : '-';
       strengthRatio.style.color = tierColor;
     }
     if (strengthWrap) {
@@ -1839,10 +2215,10 @@ const UI = (() => {
               .join(' · ')}`
           : '';
         const hostRole = asymHost
-          ? `\n\n${asymHost.hostRole.name} Lv${asymHost.hostThreatLevel} — ${asymHost.hostLevelLabel}\n${asymHost.hostRole.macro}`
+          ? `\n\n${asymHost.hostRole.name} Lv${asymHost.hostThreatLevel} - ${asymHost.hostLevelLabel}\n${asymHost.hostRole.macro}`
           : '';
         hostEl.title =
-          (tips || 'Evolving host — levels up and threatens the map') +
+          (tips || 'Evolving host - levels up and threatens the map') +
           raidNote +
           debuffNote +
           repNote +
@@ -1861,8 +2237,8 @@ const UI = (() => {
           ((ef?.hostKingdomTotal || 0) >= 40 ? ' host-high' : '');
         hostEl.title = (hostEl.title || '') + "\n\nClick HOST for tomorrow's host.";
       } else {
-        hostEl.textContent = '—';
-        hostEl.title = 'Evolving host — auto-escalates; you build and command to push back';
+        hostEl.textContent = '-';
+        hostEl.title = 'Evolving host - auto-escalates; you build and command to push back';
         hostEl.style.color = '';
         hostEl.className = 'stat-value host-value';
       }
@@ -1903,14 +2279,14 @@ const UI = (() => {
       if (show) {
         const label =
           me?.activeSummary ||
-          (me?.pending && me?.event?.name ? `${me.event.name} — respond` : null) ||
+          (me?.pending && me?.event?.name ? `${me.event.name} - respond` : null) ||
           me?.event?.name ||
           'Planet';
-        planetEl.textContent = (label || '—').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
+        planetEl.textContent = (label || '-').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
         planetEl.title =
           me?.event?.prep ||
           me?.activeSummary ||
-          'Dynamic map events — volcanic eruptions, awakening ruins, ley storms';
+          'Dynamic map events - volcanic eruptions, awakening ruins, ley storms';
         planetEl.className =
           'stat-value planet-event-value' + (me?.pending ? ' planet-event-active' : '');
         planetEl.style.color = me?.event?.color || '';
@@ -1932,19 +2308,19 @@ const UI = (() => {
       // Prefer short structured brief over nextWaveIntel (which piles meta notes).
       const briefParts = [];
       if (gs.namedBoss) briefParts.push(String(gs.namedBoss));
-      else if (bossPack) briefParts.push(String(bossPack).slice(0, 28));
-      if (mfNote) briefParts.push(String(mfNote).slice(0, 28));
-      else if (mapNote) briefParts.push(String(mapNote).slice(0, 28));
-      else if (repNote) briefParts.push(String(repNote).slice(0, 28));
+      else if (bossPack) briefParts.push(clip(bossPack, 60));
+      if (mfNote) briefParts.push(clip(mfNote, 60));
+      else if (mapNote) briefParts.push(clip(mapNote, 60));
+      else if (repNote) briefParts.push(clip(repNote, 60));
       else if (pactNote || biomeNote || hazNote || wildNote) {
-        briefParts.push(String(pactNote || biomeNote || hazNote || wildNote).slice(0, 28));
+        briefParts.push(clip(pactNote || biomeNote || hazNote || wildNote, 60));
       }
       if (!briefParts.length && gs.nextWaveIntel) {
         // Fallback: first clause only (before meta · soup)
-        briefParts.push(String(gs.nextWaveIntel).split(' · ')[0].slice(0, 40));
+        briefParts.push(clip(String(gs.nextWaveIntel).split(' · ')[0], 60));
       }
       const intel = briefParts.filter(Boolean).join(' · ');
-      intelEl.textContent = intel ? intel.slice(0, 48) + (intel.length > 48 ? '…' : '') : '—';
+      intelEl.textContent = intel ? clip(intel, 140) : '-';
       intelEl.title = intel || '';
       if (mf?.mode) {
         intelEl.className =
@@ -2088,6 +2464,10 @@ const UI = (() => {
       'tp-text',
       'tp-round-text',
       'army-text',
+      'upkeep-text',
+      'breach-hud',
+      'breach-text',
+      'breach-pips',
       'wave-text',
       'wave-fill',
       'cycle-text',
@@ -2127,8 +2507,11 @@ const UI = (() => {
     hudBtns.deploy = bindCost('.deploy-btn');
     hudBtns.ability = bindCost('.ability-btn');
     hudBtns.build = bindCost('.build-btn');
-    hudBtns.spy = [...document.querySelectorAll('.spy-btn')];
-    hudBtns.courier = [...document.querySelectorAll('.courier-btn')];
+    hudBtns.spy = bindCost('.spy-btn');
+    hudBtns.courier = bindCost('.courier-btn');
+    hudBtns.doctrine = bindCost('.doctrine-btn');
+    hudBtns.counterDoctrine = bindCost('.counter-doctrine-btn');
+    indexPanelItems();
     const loadoutSection = hudEls['loadout-section'];
     hudBtns.loadout = loadoutSection ? [...loadoutSection.querySelectorAll('.loadout-btn')] : [];
     const formSection = hudEls['formation-section'];
@@ -2152,7 +2535,11 @@ const UI = (() => {
       gs.moveBuildingTarget,
       gs.paused,
       gs.heldCount,
+      gs.siegeLoop?.breaches,
+      gs.siegeLoop?.breachLimit,
       gs.courierUsedThisWave,
+      gs.courierMessagesUsedThisWave,
+      gs.hasCourier,
       gs.spyUsedThisWave,
       gs.doctrineUsedThisWave,
       gs.counterDoctrineUsedThisWave,
@@ -2281,10 +2668,6 @@ const UI = (() => {
    */
   function buildNightPrepChips(gs) {
     const chips = [];
-    const tier = gs.colonyThreatTier;
-    if (tier && tier !== '—') {
-      chips.push({ label: tier, kind: 'threat' });
-    }
     const pressure = gs.colonyNextPressure || gs.colonyThreatMods;
     const countMult = pressure?.countMult || 1;
     const sizePct = Math.round((countMult - 1) * 100);
@@ -2397,42 +2780,96 @@ const UI = (() => {
         const sec = gs.nightSecondsLeft ?? 0;
         const m = Math.floor(sec / 60);
         const s = String(sec % 60).padStart(2, '0');
-        cycleText.textContent = `NIGHT ${m}:${s}`;
+        cycleText.textContent = `Night ${m}:${s}`;
         cycleText.className = 'stat-value cycle-night' + (sec <= 15 ? ' cycle-urgent' : '');
         cycleText.title =
-          'Night prep — no enemy spawns, +35% build speed. Press D to begin day early.';
+          'Night prep - no enemy spawns, +35% build speed. Press D to begin day early.';
       } else {
         const light = gs.dayLight ?? 1;
-        cycleText.textContent = light < 0.72 ? 'DUSK' : 'DAY';
+        cycleText.textContent = light < 0.72 ? 'Dusk' : 'Day';
         cycleText.className = light < 0.72 ? 'stat-value cycle-dusk' : 'stat-value cycle-day';
       }
     }
     if (beginDayBtn) {
-      beginDayBtn.style.display = gs.timeOfDay === 'night' ? '' : 'none';
-      if (gs.timeOfDay === 'night') {
+      const night = gs.timeOfDay === 'night';
+      beginDayBtn.style.display = night ? '' : 'none';
+      if (night) {
         const sec = gs.nightSecondsLeft ?? 0;
         const m = Math.floor(sec / 60);
-        const s = String(sec % 60).padStart(2, '0');
-        beginDayBtn.textContent = `BEGIN DAY (${m}:${s})`;
-        beginDayBtn.title = 'Start the assault now (D)';
+        const t = `${m}:${String(sec % 60).padStart(2, '0')}`;
+        if (!beginDayBtn._timeEl) {
+          beginDayBtn.innerHTML =
+            '<span class="bd-label">Begin Day</span><span class="bd-time"></span>' +
+            '<kbd class="bd-key" aria-hidden="true"></kbd>' +
+            '<span class="night-prep-bar" aria-hidden="true"></span>';
+          beginDayBtn._timeEl = beginDayBtn.querySelector('.bd-time');
+          beginDayBtn._keyEl = beginDayBtn.querySelector('.bd-key');
+          beginDayBtn._barEl = beginDayBtn.querySelector('.night-prep-bar');
+        }
+        if (beginDayBtn._timeEl.textContent !== t) beginDayBtn._timeEl.textContent = t;
+        const key = shortKey(
+          typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', 'beginDay') : 'd'
+        );
+        if (beginDayBtn._keyEl.textContent !== key) beginDayBtn._keyEl.textContent = key;
+        beginDayBtn.setAttribute('aria-label', `Begin the day now. The night ends in ${t}`);
         beginDayBtn.classList.toggle('begin-day-urgent', sec <= 15);
         beginDayBtn.classList.toggle('begin-day-ready', sec > 15);
-        // Night prep progress (how much of the night remains)
-        let bar = beginDayBtn.querySelector('.night-prep-bar');
-        if (!bar) {
-          bar = document.createElement('span');
-          bar.className = 'night-prep-bar';
-          bar.setAttribute('aria-hidden', 'true');
-          beginDayBtn.appendChild(bar);
-        }
         const maxSec = Math.max(
           1,
           gs.nightPrepSeconds || Math.ceil((gs.nightPrepTicks || 3600) / 60) || 60
         );
         const pct = Math.max(0, Math.min(100, (sec / maxSec) * 100));
-        bar.style.width = `${pct}%`;
+        beginDayBtn._barEl.style.width = `${pct}%`;
       } else {
         beginDayBtn.classList.remove('begin-day-urgent', 'begin-day-ready');
+      }
+    }
+
+    // Army upkeep and breaches: the two numbers that decide what a recruit costs and
+    // whether the realm falls.
+    const upkeepEl = hudEls['upkeep-text'];
+    if (upkeepEl) {
+      const pct = Availability.deployPrice('footman', gs).upkeepPct;
+      const text = pct > 0 ? `recruits +${pct}%` : 'no upkeep';
+      if (upkeepEl.textContent !== text) upkeepEl.textContent = text;
+      upkeepEl.classList.toggle('raised', pct > 0);
+    }
+    const breachHud = hudEls['breach-hud'];
+    if (breachHud) {
+      const sl = gs.siegeLoop || {};
+      const n = sl.breaches || 0;
+      const limit = Math.max(1, sl.breachLimit || 10);
+      const chip = document.getElementById('siege-breaches');
+      const show = chip ? !chip.hidden : !gs.creativeMode && (gs.wave || 0) >= 2;
+      breachHud.hidden = !show || gs.state !== 'playing';
+      const key = `${n}/${limit}`;
+      if (breachHud.dataset.key !== key) {
+        const changed = breachHud.dataset.key != null && n > (breachHud._n || 0);
+        breachHud.dataset.key = key;
+        breachHud._n = n;
+        hudEls['breach-text'].textContent = key;
+        const pips = hudEls['breach-pips'];
+        if (limit <= 14) {
+          let html = '';
+          for (let i = 0; i < limit; i++) {
+            html += `<span class="pip${i < n ? ' on' : ''}"></span>`;
+          }
+          pips.innerHTML = html;
+          pips.hidden = false;
+        } else {
+          pips.hidden = true;
+        }
+        const left = limit - n;
+        breachHud.classList.toggle('danger', n > 0 && left <= 1);
+        breachHud.setAttribute(
+          'aria-label',
+          `Breaches ${n} of ${limit}. ${left <= 0 ? 'The realm has fallen.' : `${left} more and the realm falls.`}`
+        );
+        if (changed) {
+          breachHud.classList.remove('hit');
+          void breachHud.offsetWidth;
+          breachHud.classList.add('hit');
+        }
       }
     }
 
@@ -2451,7 +2888,7 @@ const UI = (() => {
       }
     }
 
-    // Night prep card — short scannable brief (no intel wall-of-text)
+    // Night prep card - short scannable brief (no intel wall-of-text)
     const nightCard = document.getElementById('night-prep-card');
     if (nightCard) {
       if (gs.state === 'playing' && gs.timeOfDay === 'night' && !gs.paused) {
@@ -2481,9 +2918,7 @@ const UI = (() => {
         }
         if (tipEl) {
           const tip = (gs.feedback?.nightTips || []).find((t) => t?.text && t.id !== 'intel');
-          tipEl.textContent = tip?.text
-            ? `${tip.icon || '•'} ${tip.text}`
-            : '• Reposition · spend TP · D when ready';
+          tipEl.textContent = tip?.text || 'Reposition, spend TP, then begin the day.';
         }
         nightCard.classList.toggle('night-prep-urgent', sec <= 15);
       } else {
@@ -2508,17 +2943,17 @@ const UI = (() => {
               : asym.balance === 'host_advantage'
                 ? ' cmd-pressured'
                 : '');
-          cmdText.title = `${asym.playerRole.name} — Macro: ${asym.playerRole.macro}\nMicro: ${asym.playerRole.micro}`;
+          cmdText.title = `${asym.playerRole.name} - Macro: ${asym.playerRole.macro}\nMicro: ${asym.playerRole.micro}`;
         } else if (gs.generalBuff > 0) {
           cmdText.textContent = `${gs.generalBuff}%`;
           cmdText.className = 'stat-value cmd-value cmd-active';
           cmdText.title = '';
         } else if (gs.hasGeneral) {
-          cmdText.textContent = gs.generalStationed ? '—' : '→ KEEP';
+          cmdText.textContent = gs.generalStationed ? '-' : '→ KEEP';
           cmdText.className = 'stat-value cmd-value cmd-march';
           cmdText.title = '';
         } else {
-          cmdText.textContent = '—';
+          cmdText.textContent = '-';
           cmdText.className = 'stat-value cmd-value';
           cmdText.title = '';
         }

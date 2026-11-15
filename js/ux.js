@@ -17,6 +17,7 @@ const UX = (() => {
   let lastHintKey = '';
   let lastUnitPanelKey = '';
   let lastUnitPanelStructure = '';
+  let unitMoreOpen = false;
 
   /** Mouse and touch rows of the pause list. The key rows come from js/hotkeys.js. */
   const PAUSE_POINTER_SHORTCUTS = [
@@ -42,7 +43,7 @@ const UX = (() => {
     {
       maxWave: 1,
       title: 'Welcome, Commander',
-      body: 'Deploy Footmen with <kbd>1</kbd> or the left panel, then click the map to position them. Enemies march from the north — survive as long as you can.',
+      body: 'Deploy Footmen with <kbd>1</kbd> or the left panel, then click the map to position them. Enemies march from the north - survive as long as you can.',
       highlight: 'left-panel',
     },
     {
@@ -66,13 +67,13 @@ const UX = (() => {
     {
       maxWave: 8,
       title: 'Spy Network',
-      body: 'One spy action per wave from the right panel. Scout reveals the exact next roster — invaluable before big waves.',
+      body: 'One spy action per wave from the right panel. Scout reveals the exact next roster - invaluable before big waves.',
       highlight: 'right-panel',
     },
     {
       maxWave: 10,
       title: 'Territory Grows',
-      body: 'Every 10 waves the realm expands. The minimap shows biomes, your view box, and (from wave 25+) a <strong>flank compass</strong> — glowing edges mark active assault directions.',
+      body: 'Every 10 waves the realm expands. The minimap shows biomes, your view box, and (from wave 25+) a <strong>flank compass</strong> - glowing edges mark active assault directions.',
       highlight: 'minimap-panel',
     },
     {
@@ -84,19 +85,19 @@ const UX = (() => {
     {
       maxWave: 15,
       title: 'Veteran Stars',
-      body: 'Core troops earn stars from kills — three gold makes them eligible for a <strong>TP promotion</strong> (research Veteran Doctrine). Evolved operatives scale with waves automatically; footmen do not.',
+      body: 'Core troops earn stars from kills - three gold makes them eligible for a <strong>TP promotion</strong> (research Veteran Doctrine). Evolved operatives scale with waves automatically; footmen do not.',
       highlight: 'unit-info-panel',
     },
     {
       maxWave: 18,
       title: 'Box Select & Formations',
-      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel — Line, Column, Wedge, Box, or Spread — then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
+      body: 'Drag empty map to box-select allies (or <kbd>Shift</kbd>+drag anywhere). <kbd>Ctrl</kbd>+drag adds to selection. With two or more selected, pick a <strong>FORMATION</strong> under MORE in the left panel - Line, Column, Wedge, Box, or Spread - then click to move. <kbd>G</kbd> reforms the group; <kbd>Alt+1–5</kbd> quick presets.',
       highlight: 'left-panel',
     },
     {
       maxWave: 20,
       title: 'Night Prep',
-      body: 'After each cleared wave, night falls for 1 minute: no spawns, +35% build speed. Press D or BEGIN DAY to start early — or wait for auto dawn.',
+      body: 'After each cleared wave, night falls for 1 minute: no spawns, +35% build speed. Press D or BEGIN DAY to start early - or wait for auto dawn.',
       highlight: 'begin-day-btn',
     },
     {
@@ -104,7 +105,7 @@ const UX = (() => {
       maxWave: 35,
       when: (gs) => gs.wave >= 8,
       title: 'Neutral Wildlife',
-      body: 'Wild beasts roam from wave 8 — they attack whichever army is nearest. Slay them for TP, but over-hunting turns them <strong>feral</strong>. Dispatch a <strong>Hunt Pact</strong> courier message to ally with wildlife instead.',
+      body: 'Wild beasts roam from wave 8 - they attack whichever army is nearest. Slay them for TP, but over-hunting turns them <strong>feral</strong>. Dispatch a <strong>Hunt Pact</strong> courier message to ally with wildlife instead.',
       highlight: 'right-panel',
     },
     {
@@ -112,19 +113,19 @@ const UX = (() => {
       maxWave: 60,
       when: (gs) => gs.hasResearchLab || (gs.sciencePoints ?? 0) > 0,
       title: 'Science & Research',
-      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks — each node gates new power.',
+      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks - each node gates new power.',
       highlight: 'research-open',
     },
     {
       when: (gs) => gs.wweUnlocked,
       title: 'Grand Coliseum',
-      body: 'The grand arena is yours — open <strong>GRAND COLISEUM</strong>, build the hall on the field, then sign champions. They scale with waves and bring morale bombs and finishers.',
+      body: 'The grand arena is yours - open <strong>GRAND COLISEUM</strong>, build the hall on the field, then sign champions. They scale with waves and bring morale bombs and finishers.',
       highlight: 'wwe-academy-open',
     },
     {
       when: (gs) => gs.crossoverUnlocked,
       title: 'Legion Operatives',
-      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field — combine tags (melee, ranged, support) for research perks.',
+      body: 'Open <strong>LEGION ARCHIVE</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field - combine tags (melee, ranged, support) for research perks.',
       highlight: 'crossover-hub-open',
     },
     {
@@ -134,65 +135,65 @@ const UX = (() => {
         (gs.wweOnField?.length ?? 0) > 0 ||
         gs.operativeSkills?.active,
       title: 'Operative Skill Trees',
-      body: 'Recruiting operatives earns <strong>skill points</strong> each run — spend them on faction skill nodes (accuracy, damage, morale). Lifetime mastery from achievements raises your budget. Watch the <strong>SYN</strong> chip for unlocked nodes.',
-      highlight: 'syn-hud',
+      body: 'Recruiting operatives earns <strong>skill points</strong> each run - spend them on faction skill nodes (accuracy, damage, morale). Lifetime mastery from achievements raises your budget. Watch the <strong>SYN</strong> chip for unlocked nodes.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 22,
       when: (gs) => (gs.factionSynergies?.length ?? 0) > 0,
       title: 'Faction Synergies',
-      body: 'Field operatives from matching factions to activate <strong>synergy bonuses</strong> — extra damage, accuracy, morale, and siege power. Too many factions at once triggers soup penalties; anchor with 2–4 core tags.',
-      highlight: 'syn-hud',
+      body: 'Field operatives from matching factions to activate <strong>synergy bonuses</strong> - extra damage, accuracy, morale, and siege power. Too many factions at once triggers soup penalties; anchor with 2–4 core tags.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 20,
       when: (gs) => gs.livingPlanet?.active || (gs.territoryTier ?? 0) >= 2,
       title: 'Living Planet Biomes',
       body: 'Expanded territory unlocks <strong>forest, mountain, and corrupted</strong> bands. Biomes change cover, speed, and which enemies spawn where. Check the <strong>REALM</strong> chip as your borders grow.',
-      highlight: 'realm-hud',
+      highlight: 'tab-ops',
     },
     {
       minWave: 6,
       when: (gs) => gs.factionReputation?.active,
       title: 'Faction Reputation',
-      body: 'Host realms track hostility from wave 6 — aggressive kills and raids raise evolution pressure. <strong>Truce</strong> couriers and quiet waves ease threats toward economic probes instead of military surges.',
-      highlight: 'host-faction-text',
+      body: 'Host realms track hostility from wave 6 - aggressive kills and raids raise evolution pressure. <strong>Truce</strong> couriers and quiet waves ease threats toward economic probes instead of military surges.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 25,
       maxWave: 40,
       title: 'Multi-Front Sieges',
-      body: 'New flanks open every 25 waves — East, West, then South. Wave intel shows coordinated vs competing assaults. Split garrisons or lean on hunt mode and strikes per front.',
-      highlight: 'wave-intel-text',
+      body: 'New flanks open every 25 waves - East, West, then South. Wave intel shows coordinated vs competing assaults. Split garrisons or lean on hunt mode and strikes per front.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 12,
       maxWave: 18,
       title: 'Dynamic Planet Events',
-      body: 'Volcanic eruptions, ley storms, and ruin awakenings appear on the map. Respond during night prep — ignore them and both armies suffer; exploit them for TP and tempo.',
-      highlight: 'planet-event-hud',
+      body: 'Volcanic eruptions, ley storms, and ruin awakenings appear on the map. Respond during night prep - ignore them and both armies suffer; exploit them for TP and tempo.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 30,
       maxWave: 80,
       when: (gs) => gs.kingdomRaidsUnlocked || (gs.hamletCount ?? 0) > 0 || gs.hasResearchLab,
       title: 'Settlement Economy',
-      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in — enemy settlement raids (wave 150+) and northern holds target economy sites first.',
+      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in - enemy settlement raids (wave 150+) and northern holds target economy sites first.',
       highlight: 'left-panel',
     },
     {
       minWave: 100,
       when: (gs) => gs.wave >= 100 || gs.rtsEra,
       title: 'RTS Escalation',
-      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling — promote core veterans or field more operatives to keep pace.',
-      highlight: 'wave-intel-text',
+      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling - promote core veterans or field more operatives to keep pace.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 150,
       when: (gs) => gs.settlementRaids?.active,
       title: 'Settlement Raids',
-      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes — keep builders repairing and footmen garrisoned on economy tiles.',
-      highlight: 'wave-intel-text',
+      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes - keep builders repairing and footmen garrisoned on economy tiles.',
+      highlight: 'tab-ops',
     },
     {
       minWave: 80,
@@ -323,7 +324,7 @@ const UX = (() => {
         `<span class="star-gold" title="Gold">${'♛'.repeat(Math.min(3, u.vetGold))}</span>`
       );
     if (u.vetTier) parts.push(`<span class="vet-tier">V${u.vetTier}</span>`);
-    return parts.join(' ') || '<span class="star-none">—</span>';
+    return parts.join(' ') || '<span class="star-none">-</span>';
   }
 
   function formatPerks(u) {
@@ -384,14 +385,14 @@ const UX = (() => {
     if (s.kind === 'doomslayer') {
       return `<div class="unit-info-scaling">
         <span class="scaling-title">Scaling</span>
-        <span class="scaling-chip doom">Hellwalker — fixed blade; heals 50% missing HP every 2 waves</span>
+        <span class="scaling-chip doom">Hellwalker - fixed blade; heals 50% missing HP every 2 waves</span>
       </div>`;
     }
     if (s.kind === 'ip') {
       const tenureLine =
         s.tenure > 0
           ? `<span class="scaling-chip tenure">Tenure ${s.tenure}w · HP ×${formatPctMult(s.tenureHpPct)} · DMG ×${formatPctMult(s.tenureDmgPct)}</span>`
-          : `<span class="scaling-chip tenure-dim">New deploy (W${s.spawnWave ?? '?'}) — tenure bonus grows each survived wave</span>`;
+          : `<span class="scaling-chip tenure-dim">New deploy (W${s.spawnWave ?? '?'}) - tenure bonus grows each survived wave</span>`;
       return `<div class="unit-info-scaling">
         <span class="scaling-title">Tenure &amp; Wave Scaling</span>
         <span class="scaling-chip wave">Wave HP ×${formatPctMult(s.waveHpPct)} · DMG ×${formatPctMult(s.waveDmgPct)}</span>
@@ -406,7 +407,7 @@ const UX = (() => {
       const tenure =
         s.tenure > 0
           ? `<span class="scaling-chip tenure">Field ${s.tenure} wave${s.tenure > 1 ? 's' : ''}${s.tenureCombatBonus ? ` (+${s.tenureCombatBonus}% eff.)` : ''}</span>`
-          : '<span class="scaling-chip tenure-dim">Fresh deploy — tenure softens obsolete pressure over time</span>';
+          : '<span class="scaling-chip tenure-dim">Fresh deploy - tenure softens obsolete pressure over time</span>';
       const vet = s.vetOffsetPct
         ? `<span class="scaling-chip vet">Vet −${s.vetOffsetPct}% pressure</span>`
         : '';
@@ -435,8 +436,8 @@ const UX = (() => {
           <span class="tenure-meter-label">Rank progress to V${s.maxRankTier || 6}</span>
           <div class="tenure-bar-track"><div class="tenure-bar-fill specialist" style="width:${rankPct}%"></div></div>
         </div>
-        ${s.tenureNote ? `<span class="scaling-chip tenure">${escapeHtml(s.tenureNote)}</span>` : '<span class="scaling-chip tenure-dim">Fresh deploy — work each wave to earn ranks.</span>'}
-        <span class="scaling-chip tenure-dim">Heal, build, or dispatch once per wave — or promote with TP after Veteran Doctrine.</span>
+        ${s.tenureNote ? `<span class="scaling-chip tenure">${escapeHtml(s.tenureNote)}</span>` : '<span class="scaling-chip tenure-dim">Fresh deploy - work each wave to earn ranks.</span>'}
+        <span class="scaling-chip tenure-dim">Heal, build, or dispatch once per wave - or promote with TP after Veteran Doctrine.</span>
         ${lateHint}
       </div>`;
     }
@@ -451,7 +452,7 @@ const UX = (() => {
     if (a.unlocked) {
       return `<div class="unit-info-ability unlocked">
         ${header}
-        <span class="ability-chip unlocked active" title="${escapeHtml(a.desc)}">✦ ${escapeHtml(a.name)} — ACTIVE</span>
+        <span class="ability-chip unlocked active" title="${escapeHtml(a.desc)}">✦ ${escapeHtml(a.name)} - ACTIVE</span>
         <span class="ability-desc">${escapeHtml(a.desc)}</span>
         <span class="scaling-chip tenure-dim">Unlocked at ${escapeHtml(a.unlockRank || `${needStars} gold stars`)}</span>
       </div>`;
@@ -461,8 +462,8 @@ const UX = (() => {
       a.rankNeeded === 1 ? '1 gold star to unlock' : `${a.rankNeeded} gold stars to unlock`;
     const prog = needStars > 0 ? Math.min(100, Math.round((earned / needStars) * 100)) : 0;
     const promoteHint = u.canVetUpgrade
-      ? ' — eligible for TP promotion now'
-      : ' — work each wave (gold-star credit) or earn gold stars in battle';
+      ? ' - eligible for TP promotion now'
+      : ' - work each wave (gold-star credit) or earn gold stars in battle';
     return `<div class="unit-info-ability locked">
       ${header}
       <span class="ability-chip locked">◇ ${escapeHtml(a.name)} · ${needStars} gold stars</span>
@@ -519,7 +520,7 @@ const UX = (() => {
           // Keep combat chips in sync when damage rises from star bumps.
           const dmgChip = body.querySelector('.unit-info-combat .combat-chip');
           if (dmgChip && dmgChip.textContent.startsWith('DMG')) {
-            dmgChip.textContent = `DMG ${u.damage == null ? '—' : Math.round(u.damage)}`;
+            dmgChip.textContent = `DMG ${u.damage == null ? '-' : Math.round(u.damage)}`;
           }
           lastUnitPanelKey = barKey;
           return;
@@ -545,7 +546,7 @@ const UX = (() => {
           <span class="combat-chip">Σ DMG ${Math.round(totalDmg)}</span>
           ${wounded ? `<span class="combat-chip warn">${wounded} wounded</span>` : ''}
         </div>
-        <div class="unit-info-row">Drag-select · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation · G reform · click map to move · Shift+click to move and hold</div>
+        <div class="unit-info-stance"><strong>${info.filter((x) => x.holding).length ? `HOLD ${info.filter((x) => x.holding).length}` : 'HUNT'}</strong> ${info.filter((x) => x.holding).length} holding, ${info.length - info.filter((x) => x.holding).length} hunting · ${escapeHtml(Game.getState?.()?.selectionFormationLabel || 'Box')} formation</div>
         <div class="unit-info-chips">${info
           .slice(0, 8)
           .map((u) => `<span class="unit-chip">${escapeHtml(u.displayName)}</span>`)
@@ -562,7 +563,7 @@ const UX = (() => {
         <div class="unit-info-actions">
           <button class="unit-quick-btn" data-action="form-reform" title="Reform in place (G)">Reform</button>
           <button class="unit-quick-btn" data-action="hunt-on" title="Hunt from their posts again (H)">Hunt</button>
-          <button class="unit-quick-btn" data-action="hunt-off" title="Hold here: stay put, fight only what comes in reach (Shift+H)">Hold here${info.some((x) => x.holding) ? ` ⛨${info.filter((x) => x.holding).length}` : ''}</button>
+          <button class="unit-quick-btn" data-action="hunt-off" title="Hold here: stay put, fight only what comes in reach (Shift+H)">Hold here</button>
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
         </div>
@@ -571,96 +572,148 @@ const UX = (() => {
       const u = info[0];
       const hpPct = Math.round((u.hp / u.maxHp) * 100);
       const moralePct = u.maxMorale > 0 ? Math.round((u.morale / u.maxMorale) * 100) : 0;
+      const stance = !u.canHold
+        ? ''
+        : u.holding
+          ? 'Holding: stays put, fights what comes in reach'
+          : 'Hunting: fights from his post and walks back';
+      const extra = [
+        formatScaling(u),
+        formatLateAbility(u),
+        u.counterNote
+          ? `<div class="unit-info-row counter-row">${escapeHtml(u.counterNote)}</div>`
+          : '',
+        u.roster
+          ? `<div class="unit-info-row roster-row">${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>`
+          : '',
+        `<div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>`,
+        u.scaling?.kind === 'vanilla' && u.obsoletePct != null && u.obsoletePct < 90
+          ? `<div class="unit-info-status obsolete-hint">${escapeHtml(
+              u.obsoletePct < 85
+                ? 'Below wave pace: promote with TP or deploy evolved operatives.'
+                : `Combat ${u.obsoletePct}%: promote to close the gap.`
+            )}</div>`
+          : '',
+        u.scaling?.kind === 'specialist' && u.lateAbility && !u.lateAbility.unlocked
+          ? (() => {
+              const need = u.lateAbility.unlockGoldStars || u.lateAbility.unlockTier || 3;
+              const earned = u.lateAbility.goldStarsEarned || 0;
+              const hint = u.canVetUpgrade
+                ? `Promote now (${u.vetUpgradeCost} TP). ${u.lateAbility.name} unlocks at ${need} gold stars.`
+                : `Earn ${need} gold stars to unlock ${u.lateAbility.name} (${earned}/${need}).`;
+              return `<div class="unit-info-status specialist-hint">${escapeHtml(hint)}</div>`;
+            })()
+          : '',
+        u.ascensionLabel
+          ? `<div class="unit-info-status ascension-badge">${escapeHtml(u.ascensionLabel)}${u.ascensionWeapon ? ` · ${escapeHtml(u.ascensionWeapon)}` : ''}</div>`
+          : '',
+        u.ancestralWeapon
+          ? '<div class="unit-info-status ancestral-badge">Ancestral Arms</div>'
+          : '',
+        u.wizardKing ? '<div class="unit-info-status wizard-king-badge">Wizard-King</div>' : '',
+        u.honorLegion
+          ? `<div class="unit-info-status honor-legion-badge">Honor Legion${u.honorMeleeOnly ? ' · sword & shield' : ''}</div>`
+          : '',
+        u.crownLegend
+          ? `<div class="unit-info-status crown-legend-badge">Legend: ${escapeHtml(u.crownLegend)}</div>`
+          : '',
+      ].join('');
       body.innerHTML = `
         <div class="unit-info-head">
           <canvas class="unit-info-icon" data-sprite="${u.spriteType}" width="32" height="32"></canvas>
           <div>
             <div class="unit-info-name">${escapeHtml(u.displayName)}${u.honorName ? ' <span class="honor-badge">Honor</span>' : ''}</div>
-            <div class="unit-info-role">${escapeHtml(u.roleLabel || u.type)}</div>
+            <div class="unit-info-role">${escapeHtml(u.roster?.role || u.roleLabel || u.type)}</div>
           </div>
         </div>
-        <div class="unit-info-stars">${formatStars(u)}</div>
+        <div class="unit-info-facts">
+          <div class="unit-fact"><span>Rank</span><strong>${escapeHtml(rankName(u))}</strong> <span class="unit-info-stars" aria-hidden="true">${formatStars(u)}</span></div>
+          <div class="unit-fact"><span>Kills</span><strong>${u.kills || 0}</strong> <em>${u.wavesSurvived || 0} wave${u.wavesSurvived === 1 ? '' : 's'} served</em></div>
+        </div>
         <div class="unit-info-bars">
-          <div class="unit-bar"><span>HP</span><div class="unit-bar-track"><div class="unit-bar-fill hp" style="width:${hpPct}%"></div></div><span>${Math.ceil(u.hp)}/${u.maxHp}</span></div>
-          ${u.maxMorale > 0 ? `<div class="unit-bar"><span>MR</span><div class="unit-bar-track"><div class="unit-bar-fill morale" style="width:${moralePct}%"></div></div><span>${Math.ceil(u.morale)}</span></div>` : ''}
+          <div class="unit-bar"><span>Health</span><div class="unit-bar-track"><div class="unit-bar-fill hp" style="width:${hpPct}%"></div></div><span>${Math.ceil(u.hp)}/${u.maxHp}</span></div>
+          ${u.maxMorale > 0 ? `<div class="unit-bar"><span>Morale</span><div class="unit-bar-track"><div class="unit-bar-fill morale" style="width:${moralePct}%"></div></div><span>${Math.ceil(u.morale)}</span></div>` : ''}
         </div>
-        <div class="unit-info-combat">
-          <span class="combat-chip" title="Damage per hit">DMG ${u.damage == null ? '—' : Math.round(u.damage)}</span>
-          <span class="combat-chip" title="Attack range">${(u.combatType || '') === 'ranged' || (u.range || 0) > (u.meleeRange || 0) + 2 ? 'RNG' : 'MEL'} ${u.range ?? u.meleeRange ?? '—'}</span>
-          <span class="combat-chip" title="Accuracy">ACC ${u.accuracy ?? '—'}%</span>
-          <span class="combat-chip" title="Move speed">SPD ${u.speed ?? '—'}</span>
-          ${u.experience > 0 ? `<span class="combat-chip" title="Combat experience">XP ${u.experience}</span>` : ''}
-        </div>
-        ${formatScaling(u)}
-        ${formatLateAbility(u)}
-        <div class="unit-info-row service-row"><span>Service</span> ${u.kills || 0} kill${u.kills === 1 ? '' : 's'} · ${u.wavesSurvived || 0} wave${u.wavesSurvived === 1 ? '' : 's'} survived</div>
-        ${u.counterNote ? `<div class="unit-info-row counter-row">${escapeHtml(u.counterNote)}</div>` : ''}
-        ${u.roster ? `<div class="unit-info-row roster-row"><strong>${escapeHtml(u.roster.role)}</strong> — ${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>` : ''}
-        <div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>
+        ${stance ? `<div class="unit-info-stance ${u.holding ? 'holding' : 'hunting'}"><strong>${u.holding ? 'HOLD' : 'HUNT'}</strong> ${escapeHtml(stance.replace(/^[A-Za-z]+: /, ''))}</div>` : ''}
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
-        ${
-          u.scaling?.kind === 'vanilla' && u.obsoletePct != null && u.obsoletePct < 90
-            ? (() => {
-                let hint =
-                  u.obsoletePct < 85
-                    ? 'Below wave pace — promote with TP or deploy evolved operatives.'
-                    : `Combat ${u.obsoletePct}% — promote to close the gap.`;
-                return `<div class="unit-info-status obsolete-hint">${escapeHtml(hint)}</div>`;
-              })()
-            : ''
-        }
-        ${
-          u.scaling?.kind === 'specialist' && u.lateAbility && !u.lateAbility.unlocked
-            ? (() => {
-                const need = u.lateAbility.unlockGoldStars || u.lateAbility.unlockTier || 3;
-                const earned = u.lateAbility.goldStarsEarned || 0;
-                let hint = `Earn ${need} gold stars to unlock ${u.lateAbility.name} (${earned}/${need}).`;
-                if (u.canVetUpgrade)
-                  hint = `Promote now (${u.vetUpgradeCost} TP). ${u.lateAbility.name} unlocks at ${need} gold stars.`;
-                else hint += ' Work each wave for a gold-star credit toward the ability.';
-                return `<div class="unit-info-status specialist-hint">${escapeHtml(hint)}</div>`;
-              })()
-            : ''
-        }
+        <div class="unit-info-combat">
+          <span class="combat-chip" title="Damage per hit">DMG ${u.damage == null ? '-' : Math.round(u.damage)}</span>
+          <span class="combat-chip" title="Attack range">${(u.combatType || '') === 'ranged' || (u.range || 0) > (u.meleeRange || 0) + 2 ? 'RNG' : 'MEL'} ${u.range ?? u.meleeRange ?? '-'}</span>
+          <span class="combat-chip" title="Accuracy">ACC ${u.accuracy ?? '-'}%</span>
+          <span class="combat-chip" title="Move speed">SPD ${u.speed ?? '-'}</span>
+        </div>
         <div class="unit-info-actions">
-          ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? '⛨ Holding · Release' : 'Hold here'}</button>` : ''}
+          ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? 'Release hold' : 'Hold here'}</button>` : ''}
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
-          ${u.ascensionLabel ? `<div class="unit-info-status ascension-badge">${escapeHtml(u.ascensionLabel)}${u.ascensionWeapon ? ` · ${escapeHtml(u.ascensionWeapon)}` : ''}</div>` : ''}
-          ${u.ancestralWeapon ? '<div class="unit-info-status ancestral-badge">Ancestral Arms</div>' : ''}
-          ${u.wizardKing ? '<div class="unit-info-status wizard-king-badge">Wizard-King</div>' : ''}
-          ${
-            u.honorLegion
-              ? `<div class="unit-info-status honor-legion-badge">Honor Legion${u.honorMeleeOnly ? ' · sword & shield' : ''}</div>`
-              : ''
-          }
-          ${u.crownLegend ? `<div class="unit-info-status crown-legend-badge">Legend: ${escapeHtml(u.crownLegend)}</div>` : ''}
           ${
             u.ascensionOffer
-              ? `<button class="unit-quick-btn ascension-btn" data-action="ascend" title="${escapeHtml(u.ascensionOffer.stage.desc || u.ascensionOffer.stage.label)}">Ascend — ${escapeHtml(u.ascensionOffer.stage.label)} (${u.ascensionOffer.cost} Legacy)</button>`
+              ? `<button class="unit-quick-btn ascension-btn" data-action="ascend" title="${escapeHtml(u.ascensionOffer.stage.desc || u.ascensionOffer.stage.label)}">Ascend: ${escapeHtml(u.ascensionOffer.stage.label)} (${u.ascensionOffer.cost} Legacy)</button>`
               : ''
           }
           ${
             u.echoOffer
-              ? `<button class="unit-quick-btn echo-btn" data-action="recruit-echo" title="${escapeHtml(u.echoOffer.label)}">Echo — ${escapeHtml(u.echoOffer.short)} (${u.echoOffer.cost} LP)</button>`
+              ? `<button class="unit-quick-btn echo-btn" data-action="recruit-echo" title="${escapeHtml(u.echoOffer.label)}">Echo: ${escapeHtml(u.echoOffer.short)} (${u.echoOffer.cost} LP)</button>`
               : ''
           }
           ${
             u.canVetUpgrade
               ? `<button class="unit-quick-btn vet-upgrade-btn" data-action="vet-upgrade" title="Spend TP to promote (U)">Promote (${u.vetUpgradeCost} TP)</button>`
               : u.vetUpgradeEligible
-                ? `<button class="unit-quick-btn vet-upgrade-btn locked" data-action="vet-upgrade" title="Research Veteran Doctrine (wave 12+) to spend TP">Promote — need Veteran Doctrine</button>`
+                ? `<button class="unit-quick-btn vet-upgrade-btn locked" data-action="vet-upgrade" title="Research Veteran Doctrine (wave 12+) to spend TP">Promote: needs Veteran Doctrine</button>`
                 : ''
           }
           ${u.canPromote ? '<button class="unit-quick-btn" data-action="promote" title="Promote to General">General</button>' : ''}
         </div>
+        <details class="unit-info-more"${unitMoreOpen ? ' open' : ''}><summary>Service record and traits</summary>${extra}</details>
       `;
+      body.querySelector('.unit-info-more')?.addEventListener('toggle', (e) => {
+        unitMoreOpen = e.currentTarget.open;
+        keepCardClear();
+      });
       const icon = body.querySelector('.unit-info-icon');
       if (icon && SpriteGen?.UNIT_STYLE?.[u.spriteType]) {
         SpriteGen.drawIcon(icon.getContext('2d'), u.spriteType);
       }
     }
     bindUnitQuickActions();
+    keepCardClear();
+  }
+
+  /** "Bronze 2", "Silver 1", "Gold 3" or "Recruit": the rank in words. */
+  function rankName(u) {
+    const tier = u.vetTier ? ` · Veteran ${u.vetTier}` : '';
+    if (u.vetGold) return `Gold ${u.vetGold}${tier}`;
+    if (u.vetSilver) return `Silver ${u.vetSilver}${tier}`;
+    if (u.vetBronze) return `Bronze ${u.vetBronze}${tier}`;
+    return `Recruit${tier}`;
+  }
+
+  /**
+   * The selection card never covers the message banner (where the introduction lines
+   * appear) or the tutorial card: if its box meets theirs it is lifted above them.
+   */
+  function keepCardClear() {
+    const panel = document.getElementById('unit-info-panel');
+    if (!panel || !panel.classList.contains('visible')) return;
+    panel.style.bottom = '';
+    const card = panel.getBoundingClientRect();
+    let lift = 0;
+    for (const id of ['message-box', 'tutorial-callout']) {
+      const other = document.getElementById(id);
+      if (!other) continue;
+      const shown = other.classList.contains('show') || other.classList.contains('visible');
+      if (!shown) continue;
+      const r = other.getBoundingClientRect();
+      if (r.width === 0 || r.height === 0) continue;
+      const meets =
+        card.left < r.right && card.right > r.left && card.top < r.bottom && card.bottom > r.top;
+      if (meets) lift = Math.max(lift, card.bottom - r.top + 8);
+    }
+    if (lift > 0) {
+      const base = parseFloat(getComputedStyle(panel).bottom) || 0;
+      panel.style.bottom = `${Math.round(base + lift)}px`;
+    }
   }
 
   function bindUnitQuickActions() {
@@ -723,28 +776,28 @@ const UX = (() => {
     if (!bar || gs.creativeMode) return;
     if (Settings?.get('showHintBar') === false) return;
     let hint = '';
-    if (gs.paused) hint = 'PAUSED — Space or Resume to continue · Esc for pause menu';
+    if (gs.paused) hint = 'PAUSED - Space or Resume to continue · Esc for pause menu';
     else if (gs.selectedDeploy)
-      hint = `Deploy ${getPlayerUnitDef(gs.selectedDeploy)?.name || gs.selectedDeploy} — click map · Shift+click place more · Esc/Cancel`;
+      hint = `Deploy ${getPlayerUnitDef(gs.selectedDeploy)?.name || gs.selectedDeploy} - click map · Shift+click place more · Esc/Cancel`;
     else if (gs.selectedBuild === 'wall')
-      hint = `Build Wall (facing ${gs.pendingWallFacing || 'north'}) — R rotate · click map · Esc/Cancel`;
+      hint = `Build Wall (facing ${gs.pendingWallFacing || 'north'}) - R rotate · click map · Esc/Cancel`;
     else if (gs.selectedBuild)
-      hint = `Build ${BuildDefs[gs.selectedBuild]?.name || gs.selectedBuild} — click map · Esc/Cancel`;
+      hint = `Build ${BuildDefs[gs.selectedBuild]?.name || gs.selectedBuild} - click map · Esc/Cancel`;
     else if (gs.selectedAbility)
-      hint = `Strike: ${Abilities[gs.selectedAbility]?.name || gs.selectedAbility} — click target · Esc/Cancel`;
+      hint = `Strike: ${Abilities[gs.selectedAbility]?.name || gs.selectedAbility} - click target · Esc/Cancel`;
     else if (gs.selectedDemolish)
-      hint = 'Demolish — click your structure (50% TP refund) · Esc/Cancel';
+      hint = 'Demolish - click your structure (50% TP refund) · Esc/Cancel';
     else if (gs.selectedMoveBuilding)
       hint = gs.moveBuildingType
-        ? `Move ${BuildDefs[gs.moveBuildingType]?.name || 'structure'} — click destination · Esc/Cancel`
-        : 'Move building — click structure, then destination (free) · Esc/Cancel';
+        ? `Move ${BuildDefs[gs.moveBuildingType]?.name || 'structure'} - click destination · Esc/Cancel`
+        : 'Move building - click structure, then destination (free) · Esc/Cancel';
     else if (gs.selectedRotateWall)
-      hint = 'Rotate wall — click a wall to turn 90° (free) · Esc/Cancel';
+      hint = 'Rotate wall - click a wall to turn 90° (free) · Esc/Cancel';
     else if (gs.timeOfDay === 'night') {
       const tip = gs.feedback?.nightTips?.[0]?.text;
       hint = tip
-        ? `Night (${gs.nightSecondsLeft ?? 60}s) — ${tip} · D begins day`
-        : `Night prep (${gs.nightSecondsLeft ?? 60}s) — D or BEGIN DAY · builders +35% · Shift+drag select`;
+        ? `Night (${gs.nightSecondsLeft ?? 60}s) - ${tip} · D begins day`
+        : `Night prep (${gs.nightSecondsLeft ?? 60}s) - D or BEGIN DAY · builders +35% · Shift+drag select`;
     } else if ((gs.territoryTier ?? 0) > 0)
       hint =
         'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
@@ -753,7 +806,7 @@ const UX = (() => {
         'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
-      hint = `${gs.story.branchLabel}${gs.story.summary ? ` — ${gs.story.summary}` : ''} · ${hint}`;
+      hint = `${gs.story.branchLabel}${gs.story.summary ? ` - ${gs.story.summary}` : ''} · ${hint}`;
     } else if (gs.online?.statusLine) {
       hint = `${gs.online.statusLine} · ${hint}`;
     }
@@ -765,7 +818,7 @@ const UX = (() => {
     const cancelBtn = showCancel
       ? '<button id="hint-cancel-btn" class="hint-cancel-btn" type="button" title="Cancel order (Esc)">Cancel</button>'
       : '';
-    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Shift+Tab)" aria-label="Open message log">📜</button>`;
+    bar.innerHTML = `<span class="hint-text">${hint}</span>${cancelBtn}<button id="hint-log-btn" class="hint-log-btn" title="Message history (Shift+Tab)" aria-label="Open message log">Log</button>`;
     bindHintBarActions();
   }
 
@@ -777,55 +830,55 @@ const UX = (() => {
     AudioEngine?.SFX?.click?.();
   }
 
+  let pauseSlotsDrawn = false;
+
   function updatePauseMenu(gs) {
     const screen = document.getElementById('pause-screen');
     if (!screen) return;
     const shouldShow = gs.state === 'playing' && gs.paused && pauseOpen && !pauseOverlayHidden;
     screen.classList.toggle('active', shouldShow);
-    if (!shouldShow) return;
+    if (!shouldShow) {
+      pauseSlotsDrawn = false;
+      return;
+    }
 
-    if (typeof SaveManager !== 'undefined') SaveManager.renderPauseSlots();
+    // Drawn once per opening: redrawing every tick drops the focus from a slot button.
+    if (!pauseSlotsDrawn && typeof SaveManager !== 'undefined') {
+      SaveManager.renderPauseSlots();
+      pauseSlotsDrawn = true;
+    }
 
     const stats = document.getElementById('pause-stats');
     if (stats) {
       const fb = gs.feedback || {};
       const last = fb.lastSummary;
       const losses = gs.playerDeaths ?? gs.misses ?? 0;
-      const kd = losses > 0 ? ((gs.kills || 0) / losses).toFixed(1) : String(gs.kills ?? 0);
+      const sl = gs.siegeLoop || {};
       stats.innerHTML = `
         <div class="pause-stat"><span>Wave</span><strong>${gs.wave}</strong></div>
+        <div class="pause-stat"><span>Phase</span><strong>${gs.timeOfDay === 'night' ? 'Night' : 'Day'}</strong></div>
         <div class="pause-stat"><span>TP</span><strong>${Math.floor(gs.tactical)}</strong></div>
-        <div class="pause-stat"><span>Kills</span><strong>${gs.kills ?? 0}</strong></div>
-        <div class="pause-stat"><span>K/D</span><strong>${kd}</strong></div>
         <div class="pause-stat"><span>Army</span><strong>${gs.army}</strong></div>
-        <div class="pause-stat"><span>Training</span><strong>${gs.unitProducers ?? 0}</strong></div>
-        <div class="pause-stat"><span>Land</span><strong>${gs.territoryTier || 0}</strong></div>
-        <div class="pause-stat"><span>Best streak</span><strong>${fb.bestStreak || 0}</strong></div>
-        <div class="pause-stat"><span>Clean sweeps</span><strong>${fb.cleanSweeps || 0}</strong></div>
-        <div class="pause-stat wide"><span>Difficulty</span><strong>${gs.difficultyLabel} ${gs.difficultyPercent}%</strong></div>
-        <div class="pause-stat wide"><span>Cycle</span><strong>${gs.timeOfDay === 'night' ? 'Night prep' : 'Day assault'}</strong></div>
+        <div class="pause-stat"><span>Breaches</span><strong>${sl.breaches ?? 0}/${sl.breachLimit ?? 10}</strong></div>
+        <div class="pause-stat"><span>Kills</span><strong>${gs.kills ?? 0}</strong></div>
+        <div class="pause-stat"><span>Lost</span><strong>${losses}</strong></div>
         <div class="pause-stat"><span>Speed</span><strong>${gs.gameSpeed ?? 1}×</strong></div>
+        <div class="pause-stat wide"><span>Difficulty</span><strong>${escapeHtml(gs.difficultyLabel ?? 'Normal')} ${gs.difficultyPercent}%${gs.gameMode ? ` · ${escapeHtml(gs.gameMode.challengeLabel || gs.gameMode.modeId)}${gs.gameMode.ironman ? ' · Ironman' : ''}` : ''}</strong></div>
         ${
           last
-            ? `<div class="pause-stat wide"><span>Last clear</span><strong>W${last.wave}: +${last.tp} TP · ${last.kills}k / ${last.deaths}d${last.perfect ? ' · CLEAN' : ''}</strong></div>`
-            : ''
-        }
-        ${gs.gameMode ? `<div class="pause-stat wide"><span>Mode</span><strong>${gs.gameMode.challengeLabel || gs.gameMode.modeId}${gs.gameMode.ironman ? ' · Ironman' : ''}</strong></div>` : ''}
-        ${
-          gs.timeOfDay === 'night' && gs.nextWaveIntel
-            ? `<div class="pause-stat wide"><span>Next wave</span><strong>${escapeHtml(String(gs.nextWaveIntel).slice(0, 120))}</strong></div>`
+            ? `<div class="pause-stat wide"><span>Last wave</span><strong>Wave ${last.wave}: +${last.tp} TP, ${last.kills} kills, ${last.deaths} lost</strong></div>`
             : ''
         }
       `;
     }
     const tipsEl = document.getElementById('pause-scaling-tips');
+    if (tipsEl) tipsEl.closest('details').hidden = !gs.scalingTips?.length;
     if (tipsEl && gs.scalingTips?.length) {
-      tipsEl.innerHTML = `<div class="pause-tips-title">Recommended path</div><ul>${gs.scalingTips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
+      tipsEl.innerHTML = `<ul>${gs.scalingTips.map((t) => `<li>${escapeHtml(t)}</li>`).join('')}</ul>`;
     }
     const shortcutsEl = document.getElementById('pause-shortcuts');
     if (shortcutsEl) {
       shortcutsEl.innerHTML = `
-        <div class="pause-shortcuts-title">Shortcuts</div>
         <div class="pause-shortcuts-items">
           ${pauseShortcuts()
             .map(
@@ -923,7 +976,7 @@ const UX = (() => {
       AudioEngine?.SFX?.click?.();
       if (typeof SiegeLoop !== 'undefined') SiegeLoop.skipIntroduction();
       e.currentTarget.hidden = true;
-      onMessage('Introduction skipped — every command is on the HUD.', 'system');
+      onMessage('Introduction skipped - every command is on the HUD.', 'system');
       UI.updateHUD(true);
     });
     document.getElementById('pause-menu')?.addEventListener('click', () => {
@@ -1024,12 +1077,12 @@ const UX = (() => {
         const active = sides.join(', ');
         const quiet = unlocked.filter((s) => !sides.includes(s));
         panel.title =
-          `Minimap — active: ${active}` +
+          `Minimap - active: ${active}` +
           (quiet.length ? ` · quiet: ${quiet.join(', ')}` : '') +
           (data.multiFront?.intel ? ` · ${data.multiFront.intel}` : '') +
-          ' — click to pan';
+          ' - click to pan';
       } else {
-        panel.title = 'Strategic overview — assaults from the north — click to pan';
+        panel.title = 'Strategic overview - assaults from the north - click to pan';
       }
     }
   }
@@ -1097,7 +1150,10 @@ const UX = (() => {
   }
 
   function updateTutorial(gs) {
+    // Retired: the staged introduction (SiegeLoop first steps, drawn by Onboarding) is the
+    // one in-run teacher. The callout stays hidden.
     if (
+      typeof SiegeLoop !== 'undefined' ||
       !Settings?.get('tutorialEnabled') ||
       tutorialDismissed ||
       !Game.isPlaying?.() ||
@@ -1158,29 +1214,15 @@ const UX = (() => {
     if (typeof Onboarding !== 'undefined') Onboarding.onGuidedTutorialDismissed?.();
   }
 
-  function bindHowToInteractive() {
-    document.getElementById('howto-interactive-btn')?.addEventListener('click', () => {
-      resetTutorial();
-      Settings?.set('tutorialEnabled', true);
-      document.getElementById('howto-panel')?.classList.add('hidden');
-      AudioEngine?.SFX?.click?.();
-      if (!Game.isPlaying?.()) {
-        document.getElementById('start-btn')?.click();
-      } else {
-        UI.updateHUD(true);
-      }
-    });
-  }
-
   const VICTORY_COPY = {
     economy: {
       title: 'CAMPAIGN WON!',
-      subtitle: 'The northern host is broken — their war economy lies in ruins.',
+      subtitle: 'The northern host is broken - their war economy lies in ruins.',
       crest: '⚔',
     },
     planet_conquest: {
       title: 'TRUE VICTORY!',
-      subtitle: 'Wave one hundred is cleared — the realm stands and the campaign is won.',
+      subtitle: 'Wave one hundred is cleared - the realm stands and the campaign is won.',
       crest: '☀',
     },
     default: {
@@ -1261,26 +1303,20 @@ const UX = (() => {
     }
 
     if (subtitle && typeof Game !== 'undefined' && Game.cheatsUsed?.()) {
-      subtitle.textContent += ' · Cheats used — run not recorded';
+      subtitle.textContent += ' · Cheats used - run not recorded';
     }
 
     const losses = gs.playerDeaths ?? gs.misses ?? 0;
     const ach = gs.achievements || { unlocked: 0, total: 316 };
-    const kd = losses > 0 ? (gs.kills / losses).toFixed(1) : gs.kills;
     const fb = gs.feedback || {};
     stats.innerHTML = `
-      <div class="result-stat-card"><span>Difficulty</span><strong>${escapeHtml(gs.difficultyLabel ?? 'Normal')}</strong><em>${gs.difficultyPercent ?? 100}%</em></div>
-      <div class="result-stat-card"><span>Waves</span><strong>${gs.wave - 1}</strong><em>survived</em></div>
-      <div class="result-stat-card"><span>Kills</span><strong>${gs.kills ?? 0}</strong><em>${kd} ratio</em></div>
-      <div class="result-stat-card"><span>Losses</span><strong>${losses}</strong><em>fallen allies</em></div>
-      <div class="result-stat-card"><span>Best streak</span><strong>${fb.bestStreak || 0}</strong><em>chain kills</em></div>
-      <div class="result-stat-card"><span>Clean sweeps</span><strong>${fb.cleanSweeps || 0}</strong><em>0-casualty clears</em></div>
-      <div class="result-stat-card wide"><span>Achievements</span><strong>${ach.unlocked} / ${ach.total}</strong><em>Iron Creed</em></div>
-      ${
-        gs.tpPerRound
-          ? `<div class="result-stat-card wide"><span>Peak economy</span><strong>+${gs.tpPerRound} TP/round</strong><em>settlements ${gs.settlementTpBonus || 0}</em></div>`
-          : ''
-      }
+      <div class="result-stat-card"><span>Waves held</span><strong>${Math.max(0, gs.wave - 1)}</strong></div>
+      <div class="result-stat-card"><span>Kills</span><strong>${gs.kills ?? 0}</strong></div>
+      <div class="result-stat-card"><span>Soldiers lost</span><strong>${losses}</strong></div>
+      <div class="result-stat-card"><span>Best streak</span><strong>${fb.bestStreak || 0}</strong></div>
+      <div class="result-stat-card"><span>Clean waves</span><strong>${fb.cleanSweeps || 0}</strong></div>
+      <div class="result-stat-card"><span>Difficulty</span><strong>${escapeHtml(gs.difficultyLabel ?? 'Normal')}</strong></div>
+      <div class="result-stat-card wide"><span>Achievements</span><strong>${ach.unlocked} / ${ach.total}</strong></div>
     `;
 
     renderPostGameHighlights(gs);
@@ -1292,10 +1328,11 @@ const UX = (() => {
     const highlights = Game.getSessionHighlights?.() || [];
     if (!highlights.length) {
       el.innerHTML = '<p class="result-highlights-empty">No recorded highlights this run.</p>';
+      el.closest('details')?.setAttribute('hidden', '');
       return;
     }
+    el.closest('details')?.removeAttribute('hidden');
     el.innerHTML = `
-      <div class="result-highlights-title">Key Moments</div>
       <ul class="result-highlights-list">${highlights
         .slice(-12)
         .reverse()
@@ -1306,6 +1343,7 @@ const UX = (() => {
 
   function onGameUpdate(gs) {
     updateUnitPanel(gs);
+    keepCardClear();
     updateHintBar(gs);
     updatePauseMenu(gs);
     updateTutorial(gs);
@@ -1325,7 +1363,6 @@ const UX = (() => {
     bindPauseMenu();
     bindMinimap();
     bindTutorial();
-    bindHowToInteractive();
     document.getElementById('message-log-close')?.addEventListener('click', () => {
       document.getElementById('message-log-panel')?.classList.remove('open');
     });

@@ -3,6 +3,13 @@
  * All audio generated via Web Audio API — no external sound files.
  */
 const AudioEngine = (() => {
+  // Sound draws its own random numbers: its cooldowns run on wall-clock time, so sharing
+  // Math.random with the simulation made seeded runs play out differently.
+  let randState = 0x2f6b9d1;
+  const rand = () => {
+    randState = (randState * 1103515245 + 12345) >>> 0;
+    return randState / 4294967296;
+  };
   let ctx = null;
   let masterGain = null;
   let musicGain = null;
@@ -340,7 +347,7 @@ const AudioEngine = (() => {
       const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
       const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
       const data = buffer.getChannelData(0);
-      for (let i = 0; i < bufferSize; i++) data[i] = Math.random() * 2 - 1;
+      for (let i = 0; i < bufferSize; i++) data[i] = rand() * 2 - 1;
       const source = ctx.createBufferSource();
       source.buffer = buffer;
       const filter = ctx.createBiquadFilter();
@@ -391,8 +398,8 @@ const AudioEngine = (() => {
     swordHit() {
       if (!canPlayHit(22)) return;
       hitVariant = (hitVariant + 1) % 3;
-      const base = 170 + hitVariant * 28 + Math.random() * 20;
-      playNoise(0.06 + Math.random() * 0.03, 0.32 + Math.random() * 0.1, 2800 + hitVariant * 400);
+      const base = 170 + hitVariant * 28 + rand() * 20;
+      playNoise(0.06 + rand() * 0.03, 0.32 + rand() * 0.1, 2800 + hitVariant * 400);
       playTone(base, 0.08, 'square', 0.24);
       playTone(base * 0.72, 0.12, 'sawtooth', 0.16);
     },
@@ -410,7 +417,7 @@ const AudioEngine = (() => {
       if (!canPlayHit(t === 'heavy' ? 32 : 20)) return;
       if (t === 'light') {
         playNoise(0.04, 0.18, 4200);
-        playTone(260 + Math.random() * 40, 0.06, 'square', 0.14);
+        playTone(260 + rand() * 40, 0.06, 'square', 0.14);
       } else if (t === 'heavy') {
         playNoise(0.1, 0.42, 1800);
         playTone(120, 0.12, 'square', 0.3);
@@ -418,7 +425,7 @@ const AudioEngine = (() => {
         sweep(180, 60, 0.12, 'sawtooth', 0.12);
       } else {
         playNoise(0.07, 0.34, 2600);
-        playTone(190 + Math.random() * 30, 0.09, 'square', 0.22);
+        playTone(190 + rand() * 30, 0.09, 'square', 0.22);
         playTone(140, 0.12, 'sawtooth', 0.14);
       }
     },
@@ -485,7 +492,7 @@ const AudioEngine = (() => {
         sweep(300, 60, 0.28, 'sawtooth', 0.26);
         playNoise(0.2, 0.18, 380);
       } else {
-        const base = 340 + Math.random() * 120;
+        const base = 340 + rand() * 120;
         sweep(base, 70, 0.3, 'sawtooth', 0.24);
         playNoise(0.15, 0.2, 480);
       }
@@ -631,7 +638,7 @@ const AudioEngine = (() => {
       later(60, () => playNoise(0.2, 0.06, 400));
     },
     uiHover() {
-      playTone(720 + Math.random() * 40, 0.03, 'sine', 0.06);
+      playTone(720 + rand() * 40, 0.03, 'sine', 0.06);
     },
     uiConfirm() {
       playTone(520, 0.06, 'triangle', 0.12);
@@ -673,7 +680,7 @@ const AudioEngine = (() => {
     },
     click() {
       // Slight pitch variance so UI feels less mechanical
-      playTone(760 + Math.random() * 80, 0.045, 'square', 0.18);
+      playTone(760 + rand() * 80, 0.045, 'square', 0.18);
     },
     horseCharge() {
       playNoise(0.28, 0.22, 600);
@@ -1030,11 +1037,11 @@ const AudioEngine = (() => {
     if (ambMode === 'off' || !ctx || !ambGain) return;
     const t = ctx.currentTime;
     const night = ambMode === 'night';
-    const level = (night ? 0.028 : 0.04) * (0.6 + Math.random() * 0.8);
+    const level = (night ? 0.028 : 0.04) * (0.6 + rand() * 0.8);
     ambGain.gain.setTargetAtTime(muted ? 0 : level, t, 1.6);
-    ambFilter.frequency.setTargetAtTime((night ? 260 : 520) + Math.random() * 380, t, 2.2);
-    if (!night && !muted && Math.random() < 0.3) SFX.crowCaw();
-    ambTimer = setTimeout(ambienceGust, 3500 + Math.random() * 5000);
+    ambFilter.frequency.setTargetAtTime((night ? 260 : 520) + rand() * 380, t, 2.2);
+    if (!night && !muted && rand() < 0.3) SFX.crowCaw();
+    ambTimer = setTimeout(ambienceGust, 3500 + rand() * 5000);
   }
 
   /** mode: 'day', 'night' or 'off'. */
@@ -1055,7 +1062,7 @@ const AudioEngine = (() => {
         let last = 0;
         for (let i = 0; i < len; i++) {
           // Brown-ish noise: smoother than white, closer to wind.
-          last = (last + (Math.random() * 2 - 1) * 0.08) * 0.985;
+          last = (last + (rand() * 2 - 1) * 0.08) * 0.985;
           data[i] = last * 3;
         }
         ambSource = ctx.createBufferSource();

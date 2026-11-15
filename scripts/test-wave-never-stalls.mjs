@@ -59,7 +59,7 @@ function lastEnemies(Game, GS, types, tweak) {
 }
 
 {
-  const { Game, GameState: GS } = start(4131);
+  const { Game, GameState: GS } = start(4135);
   // Hunt off: nobody walks up the field to fetch a straggler.
   Game.orderHoldHere();
 
