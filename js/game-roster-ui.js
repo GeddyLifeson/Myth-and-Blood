@@ -4,7 +4,7 @@
  * names listed under bind() once every module is in.
  */
 const GameRosterUi = (() => {
-  const { countPlayerGuilds, countPlayerHamlets, getCrossoverOnField, playSfx, svc } = GameCore;
+  const { countPlayerGuilds, countPlayerHamlets, getHeroesOnField, playSfx, svc } = GameCore;
   const GS = GameState;
   const { purgeDeadUnits, sanitizeTactical } = GameField;
   const { applyCamera, getCameraViewport, getMapViewH } = GameCamera;
@@ -15,8 +15,8 @@ const GameRosterUi = (() => {
     addHighlight,
     applyPlayerStatMods,
     canTpVeteranUpgrade,
-    hasCrossoverBarracks,
-    hasWweAcademy,
+    hasCompanyHall,
+    hasChampionsHall,
     spawnUnit,
   } = GameArmy;
   const { applyEconomyWaveMods, assignWaveSectors, buildSpawnQueue, getWaveAttackSides } =
@@ -42,17 +42,15 @@ const GameRosterUi = (() => {
     } = api);
   }
 
-  function recruitCrossoverOperative(id) {
-    const def = CrossoverDefs[id];
+  function hireHero(id) {
+    const def = HeroDefs[id];
     if (!def) return false;
-    if (getCrossoverOnField().includes(id)) {
+    if (getHeroesOnField().includes(id)) {
       showMessage(`${def.name} is already on the field!`);
       return false;
     }
-    if (!hasCrossoverBarracks(def.faction)) {
-      showMessage(
-        `Build a ${CrossoverFactions[def.faction]?.label || 'crossover'} barracks first!`
-      );
+    if (!hasCompanyHall(def.faction)) {
+      showMessage(`Build a ${FreeCompanies[def.faction]?.label || 'crossover'} barracks first!`);
       return false;
     }
     const costMult = svc('FactionDepth')
@@ -70,7 +68,7 @@ const GameRosterUi = (() => {
     const u = spawnUnit(id, base?.x ?? GS.worldW / 2, (base?.y ?? GS.rallyY) + 18, 'player');
     applyPlayerStatMods(u);
     if (svc('FactionDepth')) svc('FactionDepth').applyToUnit(u, GS.units);
-    if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').onRecruit(u);
+    if (svc('CompanyTraining')) svc('CompanyTraining').onRecruit(u);
     u.targetY = GS.rallyY;
     u.huntMode = GS.globalHunt && u.canHunt;
     if (u.canHunt && !u.huntMode) {
@@ -82,7 +80,7 @@ const GameRosterUi = (() => {
       u.pathTargetId = 'hold';
     }
     GS.units.push(u);
-    svc('MetaProgress').recordCrossoverRecruit(id);
+    svc('MetaProgress').recordHeroRecruit(id);
     if (svc('Legacy')) {
       svc('Legacy').recordFaction(def.faction);
       svc('Legacy').recordDeploy(id);
@@ -105,10 +103,10 @@ const GameRosterUi = (() => {
     return true;
   }
 
-  function recruitWweSuperstar(id) {
-    const def = WweDefs[id];
+  function hireChampion(id) {
+    const def = ChampionDefs[id];
     if (!def) return false;
-    if (!hasWweAcademy()) {
+    if (!hasChampionsHall()) {
       showMessage('Complete a Champions’ Hall on the field first!');
       return false;
     }
@@ -132,8 +130,8 @@ const GameRosterUi = (() => {
     }
     GS.units.push(u);
     if (svc('FactionDepth')) svc('FactionDepth').applyToUnit(u, GS.units);
-    if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').onRecruit(u);
-    svc('MetaProgress').recordWweRecruit(id);
+    if (svc('CompanyTraining')) svc('CompanyTraining').onRecruit(u);
+    svc('MetaProgress').recordChampionRecruit(id);
     if (svc('Legacy')) {
       svc('Legacy').recordFaction('champions');
       svc('Legacy').recordDeploy(id);
@@ -469,8 +467,8 @@ const GameRosterUi = (() => {
     getSelectedUnitsInfo,
     markCheatsUsed,
     panCameraToFraction,
-    recruitCrossoverOperative,
-    recruitWweSuperstar,
+    hireHero,
+    hireChampion,
     restartCurrentWave,
     setSelectedHunt,
     toggleSelectedHunt,

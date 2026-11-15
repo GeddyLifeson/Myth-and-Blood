@@ -37,7 +37,7 @@ const LP = load('living-planet.js', 'LivingPlanet');
 load('neutral-wildlife.js', 'NeutralWildlife');
 const NR = load('neutral-relations.js', 'NeutralRelations');
 const BS = load('biome-spawn.js', 'BiomeSpawn');
-const OST = load('operative-skill-trees.js', 'OperativeSkillTrees');
+const OST = load('company-training.js', 'CompanyTraining');
 
 NR.resetRun();
 ok(NR.getReputation() === 0, 'neutral relations starts neutral');
@@ -95,7 +95,7 @@ const unit = {
   projectile: null,
   combatType: 'melee',
 };
-vmCtx.getCrossoverDef = () => ({ faction: 'powderhorn' });
+vmCtx.getHeroDef = () => ({ faction: 'powderhorn' });
 OST.applyToUnit(unit, [unit]);
 ok((unit.skillAcc || 0) >= 6, 'skill tree applies accuracy bonus');
 const dmg = OST.modifyDamage(

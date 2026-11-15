@@ -62,8 +62,8 @@ function loadModules() {
       getState: () => ({ paused: true, lastStandActive: true }),
     },
     UI: { updateHUD: () => {} },
-    isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'tavish_coalheart',
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart',
   };
   sb.window = sb;
   sb.globalThis = sb;

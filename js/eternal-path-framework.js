@@ -431,8 +431,8 @@ const EternalPathFramework = (() => {
 
   function getPathForUnit(unitType, unit = {}) {
     if (!unitType) return null;
-    if (typeof isCrossoverUnit === 'function' && isCrossoverUnit(unitType)) return 'mythic';
-    if (typeof isWweUnit === 'function' && isWweUnit(unitType)) return 'mythic';
+    if (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(unitType)) return 'mythic';
+    if (typeof isChampionUnit === 'function' && isChampionUnit(unitType)) return 'mythic';
     if (unitType === 'doomslayer_hero' || unit.honorName) return 'mythic';
     for (const pathId of PATH_IDS) {
       if (pathId === 'mythic') continue;
@@ -451,8 +451,8 @@ const EternalPathFramework = (() => {
     let matches = false;
     if (pathId === 'mythic') {
       matches =
-        (typeof isCrossoverUnit === 'function' && isCrossoverUnit(unit.type)) ||
-        (typeof isWweUnit === 'function' && isWweUnit(unit.type)) ||
+        (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(unit.type)) ||
+        (typeof isChampionUnit === 'function' && isChampionUnit(unit.type)) ||
         unit.type === 'doomslayer_hero' ||
         unit.honorName ||
         (unit.vetTier || 0) >= 4;

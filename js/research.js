@@ -27,7 +27,7 @@ const Research = (() => {
   ]);
 
   /** Faction crossover research — cost reflects tech tier + combat power. */
-  const CROSSOVER_FACTION_RESEARCH = [
+  const COMPANY_RESEARCH = [
     {
       id: 'xf_gears',
       faction: 'sawtooth',
@@ -400,7 +400,7 @@ const Research = (() => {
     },
   ];
 
-  const ALL_NODES = [...CORE_TREE, ...CROSSOVER_FACTION_RESEARCH];
+  const ALL_NODES = [...CORE_TREE, ...COMPANY_RESEARCH];
   const BY_ID = Object.fromEntries(ALL_NODES.map((n) => [n.id, n]));
 
   let sciencePoints = 0;
@@ -824,8 +824,8 @@ const Research = (() => {
     if (factionUnlocks.has(factionId)) return true;
     if (factionId === 'champions' && completed.has('xf_wwe')) return true;
     if (typeof MetaProgress !== 'undefined') {
-      if (factionId === 'champions') return MetaProgress.isWweUnlocked();
-      return MetaProgress.isCrossoverFactionUnlocked?.(factionId);
+      if (factionId === 'champions') return MetaProgress.isChampionsUnlocked();
+      return MetaProgress.isCompanyUnlocked?.(factionId);
     }
     return false;
   }
@@ -893,7 +893,7 @@ const Research = (() => {
       const label =
         node.faction === 'champions'
           ? 'Champions’ Hall'
-          : `${(typeof CrossoverFactions !== 'undefined' && CrossoverFactions[node.faction]?.label) || 'Faction'} barracks`;
+          : `${(typeof FreeCompanies !== 'undefined' && FreeCompanies[node.faction]?.label) || 'Faction'} barracks`;
       return `Unlocks ${label} construction`;
     }
     if (node.id === 'doom_protocol') return 'Unlocks Hellbane deployment (with meta unlock)';
@@ -1310,7 +1310,7 @@ const Research = (() => {
     restoreSnapshot,
     getEncyclopediaEntries,
     ALL_NODES,
-    CROSSOVER_FACTION_RESEARCH,
+    COMPANY_RESEARCH,
     STARTER_DEPLOY,
     STARTER_BUILD,
     get sciencePoints() {

@@ -59,8 +59,8 @@ function loadModules() {
     Chronicles: { appendNarrativeBeat: () => {} },
     Game: { setPaused: () => {}, showMessage: () => {}, getState: () => ({ paused: true }) },
     UI: { updateHUD: () => {} },
-    isWweUnit: () => false,
-    isCrossoverUnit: () => false,
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: () => false,
   };
   sb.window = sb;
   sb.globalThis = sb;

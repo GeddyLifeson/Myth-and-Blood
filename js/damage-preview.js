@@ -66,7 +66,7 @@ const DamagePreview = (() => {
       CrownLegacies.applyUnitBonuses(u);
     }
 
-    if (typeof GameDepth !== 'undefined' && GameDepth.isIpOperative?.(u)) {
+    if (typeof GameDepth !== 'undefined' && GameDepth.isIpHero?.(u)) {
       u.baseMaxHp = null;
       u.baseDamage = null;
       GameDepth.applyIpWaveScaling(u, ctx.wave);

@@ -366,12 +366,12 @@ const Tooltips = (() => {
         body: `Simulation runs at ${gs?.gameSpeed ?? 1}×. Click to cycle from 1× up to 10×.`,
         footer: 'No key - use this button · Paused always runs 1×',
       },
-      'wwe-academy-open': {
+      'champions-hall-open': {
         title: 'Champions’ Hall',
         body: 'Recruit squared-circle champions from your academy roster.',
         footer: 'Requires Champions’ Hall on field',
       },
-      'crossover-hub-open': {
+      'companies-open': {
         title: 'Free Companies',
         body: 'Recruit operatives from unlocked evolved factions.',
         footer: 'Requires evolved barracks on field',
@@ -783,8 +783,8 @@ const Tooltips = (() => {
       'formation-reform-btn',
       'builder-repair-toggle',
       'speed-toggle',
-      'wwe-academy-open',
-      'crossover-hub-open',
+      'champions-hall-open',
+      'companies-open',
     ].forEach((id) => {
       const btn = document.getElementById(id);
       if (btn) bindHover(btn, (gs) => getMetaTip(id, gs));

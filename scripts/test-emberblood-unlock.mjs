@@ -24,8 +24,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -66,7 +66,7 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 kiStand();
 Achievements.onEvent('wave_complete', { wave: 520, playerDeaths: 0, units: [] });
 Achievements.onEvent('game_end', { victory: true, wave: 520 });
-ok(MetaProgress.isDragonballUnlocked(), 'victory with planet boss ki stand unlocks Dragon Ball');
+ok(MetaProgress.isEmberbloodUnlocked(), 'victory with planet boss ki stand unlocks Dragon Ball');
 ok(Achievements.evaluateRule('run_dragonball_ki:200:0.55'), 'dragonball ki rule passes');
 
 MetaProgress.reset();
@@ -75,7 +75,7 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 kiStand(150, 0.8);
 Achievements.onEvent('wave_complete', { wave: 150, playerDeaths: 0, units: [] });
 Achievements.onEvent('game_end', { victory: true, wave: 150 });
-ok(!MetaProgress.isDragonballUnlocked(), 'planet boss ki stand before wave 200 blocks unlock');
+ok(!MetaProgress.isEmberbloodUnlocked(), 'planet boss ki stand before wave 200 blocks unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -83,14 +83,14 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 kiStand();
 Achievements.onEvent('wave_complete', { wave: 520, playerDeaths: 0, units: [] });
 Achievements.onEvent('game_end', { victory: false, wave: 520 });
-ok(!MetaProgress.isDragonballUnlocked(), 'defeat with ki stand does not unlock');
+ok(!MetaProgress.isEmberbloodUnlocked(), 'defeat with ki stand does not unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
 Achievements.onEvent('wave_complete', { wave: 520, playerDeaths: 0, units: [] });
 Achievements.onEvent('game_end', { victory: true, wave: 520 });
-ok(!MetaProgress.isDragonballUnlocked(), 'victory without planet boss ki stand blocks unlock');
+ok(!MetaProgress.isEmberbloodUnlocked(), 'victory without planet boss ki stand blocks unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();

@@ -100,9 +100,9 @@ const Encyclopedia = (() => {
     EnemyFactions: () => (typeof EnemyFactions !== 'undefined' ? EnemyFactions : null),
     MonsterBosses: () => (typeof MonsterBosses !== 'undefined' ? MonsterBosses : null),
     MetaProgress: () => (typeof MetaProgress !== 'undefined' ? MetaProgress : null),
-    WweDefs: () => (typeof WweDefs !== 'undefined' ? WweDefs : null),
-    CrossoverDefs: () => (typeof CrossoverDefs !== 'undefined' ? CrossoverDefs : null),
-    CrossoverFactions: () => (typeof CrossoverFactions !== 'undefined' ? CrossoverFactions : null),
+    ChampionDefs: () => (typeof ChampionDefs !== 'undefined' ? ChampionDefs : null),
+    HeroDefs: () => (typeof HeroDefs !== 'undefined' ? HeroDefs : null),
+    FreeCompanies: () => (typeof FreeCompanies !== 'undefined' ? FreeCompanies : null),
     AudioEngine: () => (typeof AudioEngine !== 'undefined' ? AudioEngine : null),
     Legacy: () => (typeof Legacy !== 'undefined' ? Legacy : null),
     WarCamps: () => (typeof WarCamps !== 'undefined' ? WarCamps : null),
@@ -849,18 +849,18 @@ const Encyclopedia = (() => {
       Object.entries(defs)
         .filter(([id, def]) => profiles[id] && keep(def))
         .map(([id, def]) => ({ id, def, profile: profiles[id] }));
-    const arena = G('WweDefs');
+    const arena = G('ChampionDefs');
     if (arena) {
       out.push({
         id: 'arena',
         label: buildName('champions_hall'),
         hall: 'champions_hall',
-        sworn: !!Meta?.isWweUnlocked?.(),
+        sworn: !!Meta?.isChampionsUnlocked?.(),
         members: members(arena, () => true),
       });
     }
-    const defs = G('CrossoverDefs');
-    const factions = G('CrossoverFactions');
+    const defs = G('HeroDefs');
+    const factions = G('FreeCompanies');
     if (defs) {
       const ids = factions
         ? Object.keys(factions)
@@ -871,7 +871,7 @@ const Encyclopedia = (() => {
           id: fid,
           label: f.label || fid,
           hall: f.building || null,
-          sworn: !!Meta?.isCrossoverFactionUnlocked?.(fid),
+          sworn: !!Meta?.isCompanyUnlocked?.(fid),
           members: members(defs, (def) => def.faction === fid),
         });
       }
@@ -921,7 +921,7 @@ const Encyclopedia = (() => {
     // Lone heroes are flagged in the unit data and sit outside every company.
     for (const [id, d] of Object.entries(G('UnitDefs') || {})) {
       if (!d.isDoomslayer) continue;
-      const open = !!G('MetaProgress')?.isDoomslayerHeroUnlocked?.();
+      const open = !!G('MetaProgress')?.isAbyssWalkerUnlocked?.();
       out.push(
         entry(
           'champions',

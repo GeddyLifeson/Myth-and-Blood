@@ -120,13 +120,13 @@ const UX = (() => {
       when: (gs) => gs.wweUnlocked,
       title: 'Champions’ Hall',
       body: 'The grand arena is yours - open <strong>CHAMPIONS’ HALL</strong>, build the hall on the field, then sign champions. They scale with waves and bring morale bombs and finishers.',
-      highlight: 'wwe-academy-open',
+      highlight: 'champions-hall-open',
     },
     {
       when: (gs) => gs.crossoverUnlocked,
       title: 'Legion Operatives',
       body: 'Open <strong>FREE COMPANIES</strong> to browse factions, place barracks, and recruit operatives. One copy of each hero per field - combine tags (melee, ranged, support) for research perks.',
-      highlight: 'crossover-hub-open',
+      highlight: 'companies-open',
     },
     {
       minWave: 20,

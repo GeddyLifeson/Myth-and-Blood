@@ -217,8 +217,8 @@ const GameCombat = (() => {
     if (svc('FactionDepth') && (unit.isCrossover || unit.isWwe)) {
       dmg = svc('FactionDepth').modifyDamage(unit, target, dmg);
     }
-    if (svc('OperativeSkillTrees') && (unit.isCrossover || unit.isWwe)) {
-      dmg = svc('OperativeSkillTrees').modifyDamage(unit, target, dmg);
+    if (svc('CompanyTraining') && (unit.isCrossover || unit.isWwe)) {
+      dmg = svc('CompanyTraining').modifyDamage(unit, target, dmg);
     }
     if (
       svc('FactionDepth') &&
@@ -228,11 +228,11 @@ const GameCombat = (() => {
       dmg = svc('FactionDepth').modifyDamageTaken(target, unit, dmg);
     }
     if (
-      svc('OperativeSkillTrees') &&
+      svc('CompanyTraining') &&
       target?.team === 'player' &&
       (target.isCrossover || target.isWwe)
     ) {
-      dmg = svc('OperativeSkillTrees').modifyDamageTaken(target, dmg);
+      dmg = svc('CompanyTraining').modifyDamageTaken(target, dmg);
     }
     if (svc('DynamicMapEvents')) {
       dmg = Math.round(dmg * svc('DynamicMapEvents').getCombatDamageMult(unit));
@@ -716,12 +716,12 @@ const GameCombat = (() => {
     }
   }
 
-  function doomslayerDamage(target) {
+  function abyssWalkerDamage(target) {
     if (GS.wave >= 1001) return calcDamage({ damage: 120, type: 'melee' }, target, 0);
     return Math.max(target.hp, target.maxHp * 0.95);
   }
 
-  function updateDoomslayerAI(unit) {
+  function updateAbyssWalkerAI(unit) {
     if (!unit.isDoomslayer || unit.hp <= 0) return;
     let foesOnAllies = 0;
     let onMe = 0;
@@ -745,7 +745,7 @@ const GameCombat = (() => {
       for (let i = 0; i < GS.units.length; i++) {
         const e = GS.units[i];
         if (e.team !== 'enemy' || e.hp <= 0) continue;
-        if (unitDistSq(unit, e) < ripR2) takeDamage(e, doomslayerDamage(e), { crit: true });
+        if (unitDistSq(unit, e) < ripR2) takeDamage(e, abyssWalkerDamage(e), { crit: true });
       }
       svc('FloatingText').status(unit.x, unit.y, 'REND & RUIN', '#ff4040');
       svc('Particles').dust(unit.x, unit.y);
@@ -767,7 +767,7 @@ const GameCombat = (() => {
         const e = GS.units[i];
         if (e.team !== 'enemy' || e.hp <= 0) continue;
         if (unitDistSq(unit, e) < cleaveR2) {
-          takeDamage(e, doomslayerDamage(e));
+          takeDamage(e, abyssWalkerDamage(e));
           cleaveHits++;
         }
       }
@@ -777,9 +777,9 @@ const GameCombat = (() => {
     if (unit.doomCleaveCd > 0) unit.doomCleaveCd--;
   }
 
-  function applyCrossoverOnHit(unit, target, dmg) {
+  function applyHeroOnHit(unit, target, dmg) {
     if (!unit.isCrossover) return;
-    const cDef = typeof getCrossoverDef === 'function' ? getCrossoverDef(unit.type) : null;
+    const cDef = typeof getHeroDef === 'function' ? getHeroDef(unit.type) : null;
     if (cDef?.faction)
       ach('crossover_ability', {
         unitType: unit.type,
@@ -789,7 +789,7 @@ const GameCombat = (() => {
     if (svc('FactionDepth')) svc('FactionDepth').processAbilityHit(unit, target, dmg);
   }
 
-  function applyWweOnHit(unit, target, dmg) {
+  function applyChampionOnHit(unit, target, dmg) {
     if (!unit.isWwe) return;
     ach('crossover_ability', {
       unitType: unit.type,
@@ -845,14 +845,14 @@ const GameCombat = (() => {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
       const meleeHit = unit.isDoomslayer || Math.random() * 100 <= hit;
       if (meleeHit) {
-        const dmg = unit.isDoomslayer ? doomslayerDamage(target) : calcDamage(unit, target, 12);
+        const dmg = unit.isDoomslayer ? abyssWalkerDamage(target) : calcDamage(unit, target, 12);
         takeDamage(target, dmg, {
           crit: unit.isDoomslayer,
           attackerTeam: unit.team,
           attacker: unit,
         });
-        applyWweOnHit(unit, target, dmg);
-        applyCrossoverOnHit(unit, target, dmg);
+        applyChampionOnHit(unit, target, dmg);
+        applyHeroOnHit(unit, target, dmg);
         if (unit.hasElementalPop)
           svc('Perks').applyElementalPopSplash(unit, target, GS.units, takeDamage);
         if (unit.hasDoubleTap && target.hp > 0 && Math.random() < 0.45) {
@@ -908,9 +908,9 @@ const GameCombat = (() => {
 
   return {
     bind,
-    applyCrossoverOnHit,
+    applyHeroOnHit,
     applyGeneralAura,
-    applyWweOnHit,
+    applyChampionOnHit,
     calcDamage,
     damageInRadius,
     findCombatTarget,
@@ -922,6 +922,6 @@ const GameCombat = (() => {
     getStationedGeneral,
     refreshAuraCache,
     takeDamage,
-    updateDoomslayerAI,
+    updateAbyssWalkerAI,
   };
 })();

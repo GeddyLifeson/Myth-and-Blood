@@ -79,8 +79,8 @@ const MythicPathEvolution = (() => {
   function isMythicUnitType(type) {
     if (!type) return false;
     if (type === 'doomslayer_hero') return true;
-    if (typeof isWweUnit === 'function' && isWweUnit(type)) return true;
-    if (typeof isCrossoverUnit === 'function' && isCrossoverUnit(type)) return true;
+    if (typeof isChampionUnit === 'function' && isChampionUnit(type)) return true;
+    if (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(type)) return true;
     return type.startsWith('xf_');
   }
 
@@ -215,7 +215,7 @@ const MythicPathEvolution = (() => {
     tryUnlock(wave, 'crossover champion');
     if (!isPantheonPathActive(wave)) return;
     if (type === 'doomslayer_hero') recordAction('deploy_doomslayer', { wave });
-    else if (typeof isWweUnit === 'function' && isWweUnit(type))
+    else if (typeof isChampionUnit === 'function' && isChampionUnit(type))
       recordAction('deploy_wwe', { wave });
     else recordAction('deploy_crossover', { wave });
   }

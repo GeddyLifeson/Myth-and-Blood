@@ -47,9 +47,9 @@ function loadModules() {
     localStorage: mockStorage(),
     Legacy: { get: () => ({ victories: 1, maxWaveEver: 500 }) },
     StoryLore: { getDominantBranch: () => null },
-    MetaProgress: { isCrossoverType: () => false },
-    isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
+    MetaProgress: { isCompanyHeroType: () => false },
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     MAX_VETERAN_TIER: 6,
     isValidHonorName: (n) => !!n && n.length > 2,
   };

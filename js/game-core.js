@@ -21,7 +21,7 @@ const GameCore = (() => {
     guilds: 0,
     enemyEconomy: 0,
     northernHolds: 0,
-    hasWweAcademy: false,
+    hasChampionsHall: false,
     liveBuilders: 0,
     hasCourier: false,
     playerGeneral: null,
@@ -253,7 +253,7 @@ const GameCore = (() => {
     if (!unit || unit.hp <= 0) return false;
     const role = getUnitCombatRole(unit);
     if (!role || role === 'support') return false;
-    const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(unit.type) : null;
+    const def = typeof getHeroDef === 'function' ? getHeroDef(unit.type) : null;
     if (def?.combatTag === 'ember' || def?.faction === 'emberblood') return true;
     if (unit.type === 'mage' || unit.projectile === 'bolt') return true;
     if (def?.ability && KI_ENERGY_ABILITIES.has(def.ability)) return true;
@@ -315,23 +315,23 @@ const GameCore = (() => {
   function isDragonThemedUnit(unit) {
     if (!unit || unit.team !== 'player') return false;
     if (unit.wweAbility && DRAGON_THEMED_ABILITIES.has(unit.wweAbility)) return true;
-    const def = getCrossoverDef?.(unit.type);
+    const def = getHeroDef?.(unit.type);
     if (def?.combatTag === 'skald' || def?.faction === 'rimehowl') return true;
     return false;
   }
 
-  function sampleCrossoverHeroAlliance(playerUnits) {
+  function sampleHeroAlliance(playerUnits) {
     let heroCount = 0;
     const factions = new Set();
     for (const u of playerUnits || []) {
       if (u.team !== 'player' || u.hp <= 0) continue;
       if (!u.isCrossover && !u.isWwe) continue;
       heroCount++;
-      if (typeof isWweUnit === 'function' && isWweUnit(u.type)) {
+      if (typeof isChampionUnit === 'function' && isChampionUnit(u.type)) {
         factions.add('champions');
         continue;
       }
-      const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(u.type) : null;
+      const def = typeof getHeroDef === 'function' ? getHeroDef(u.type) : null;
       if (def?.faction) factions.add(def.faction);
     }
     if (heroCount < STAND_ALLIANCE_MIN_HEROES) return null;
@@ -353,8 +353,8 @@ const GameCore = (() => {
       unit.combatType === 'general'
     )
       return 'support';
-    if (typeof getCrossoverCombatTag === 'function') {
-      const tag = getCrossoverCombatTag(unit);
+    if (typeof getHeroCombatTag === 'function') {
+      const tag = getHeroCombatTag(unit);
       if (tag === 'support') return 'support';
       if (tag === 'ranged') return 'ranged';
       if (tag === 'melee') return 'melee';
@@ -509,15 +509,15 @@ const GameCore = (() => {
     return unitCounts.guilds;
   }
 
-  function getCrossoverBuildingsOnField() {
+  function getCompanyHallsOnField() {
     return unitCounts.crossoverBuildings;
   }
 
-  function getWweOnField() {
+  function getChampionsOnField() {
     return unitCounts.wweOnField;
   }
 
-  function getCrossoverOnField() {
+  function getHeroesOnField() {
     return unitCounts.crossoverOnField;
   }
 
@@ -1172,7 +1172,7 @@ const GameCore = (() => {
     sampleShowmanshipArmy,
     isMajorBossUnit,
     isDragonThemedUnit,
-    sampleCrossoverHeroAlliance,
+    sampleHeroAlliance,
     getUnitCombatRole,
     sampleMeleeFocusedArmy,
     isMoraleCombatUnit,
@@ -1190,9 +1190,9 @@ const GameCore = (() => {
     countGarrisoned,
     countPlayerHamlets,
     countPlayerGuilds,
-    getCrossoverBuildingsOnField,
-    getWweOnField,
-    getCrossoverOnField,
+    getCompanyHallsOnField,
+    getChampionsOnField,
+    getHeroesOnField,
     ensurePlayerUnitDef,
     getHamletTpBonus,
     getMerchantGuildTpBonus,

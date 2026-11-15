@@ -104,9 +104,9 @@ const PerkBuildTypes = [
 function perkMachinesUnlocked() {
   if (typeof MetaProgress === 'undefined') return false;
   return (
-    MetaProgress.isWweUnlocked?.() ||
-    MetaProgress.isDoomslayerHeroUnlocked?.() ||
-    MetaProgress.isAnyCrossoverUnlocked?.()
+    MetaProgress.isChampionsUnlocked?.() ||
+    MetaProgress.isAbyssWalkerUnlocked?.() ||
+    MetaProgress.isAnyCompanyUnlocked?.()
   );
 }
 
@@ -142,14 +142,14 @@ function perkMatchesUnit(perkId, unit) {
   if (!def) return false;
   if (def.generalOnly && !unit.isGeneral) return false;
   if (perkId === 'tombstone' && !unit.isGeneral) return false;
-  const tag = getCrossoverCombatTag(unit);
+  const tag = getHeroCombatTag(unit);
   return def.tags.includes(tag);
 }
 
 function scorePerkForUnit(perkId, unit) {
   if (!perkMatchesUnit(perkId, unit)) return -1;
   const def = PerkDefs[perkId];
-  const tag = getCrossoverCombatTag(unit);
+  const tag = getHeroCombatTag(unit);
   let score = 1;
   if (tag === 'melee' && perkId === 'melee_macchiato') score += 5;
   if (tag === 'melee' && perkId === 'jugger_nog') score += 3;

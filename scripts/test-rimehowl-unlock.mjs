@@ -26,10 +26,10 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
-    isCrossoverUnit: () => false,
-    isWweUnit: () => false,
+    ChampionDefs: {},
+    HeroDefs: {},
+    isCompanyHeroUnit: () => false,
+    isChampionUnit: () => false,
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -72,7 +72,7 @@ immortal('tech', 'sapper');
 immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaHero: true });
 Achievements.onEvent('game_end', { victory: true, wave: 110 });
-ok(MetaProgress.isTesUnlocked(), 'victory with four path immortals unlocks TES');
+ok(MetaProgress.isRimehowlUnlocked(), 'victory with four path immortals unlocks TES');
 ok(Achievements.evaluateRule('run_dragonborn_legacy:100'), 'dragonborn legacy rule passes');
 
 MetaProgress.reset();
@@ -84,7 +84,7 @@ immortal('arcane', 'mage');
 immortal('tech', 'sapper');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaStrike: true });
 Achievements.onEvent('game_end', { victory: true, wave: 110 });
-ok(!MetaProgress.isTesUnlocked(), 'missing mythic immortal blocks TES unlock');
+ok(!MetaProgress.isRimehowlUnlocked(), 'missing mythic immortal blocks TES unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -96,7 +96,7 @@ immortal('tech', 'sapper');
 immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('dragon_boss_slay', { wave: 80, bossType: 'war_chief', viaHero: true });
 Achievements.onEvent('game_end', { victory: true, wave: 90 });
-ok(!MetaProgress.isTesUnlocked(), 'wave below 100 blocks TES unlock');
+ok(!MetaProgress.isRimehowlUnlocked(), 'wave below 100 blocks TES unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -107,7 +107,7 @@ immortal('arcane', 'mage');
 immortal('tech', 'sapper');
 immortal('mythic', 'hrafna_stormthroat');
 Achievements.onEvent('game_end', { victory: true, wave: 110 });
-ok(!MetaProgress.isTesUnlocked(), 'missing dragon boss slay blocks unlock');
+ok(!MetaProgress.isRimehowlUnlocked(), 'missing dragon boss slay blocks unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();

@@ -84,8 +84,8 @@ const NarrativeThread = (() => {
   function isMythicType(type) {
     if (!type) return false;
     if (type === 'doomslayer_hero') return true;
-    if (typeof isWweUnit === 'function' && isWweUnit(type)) return true;
-    if (typeof isCrossoverUnit === 'function' && isCrossoverUnit(type)) return true;
+    if (typeof isChampionUnit === 'function' && isChampionUnit(type)) return true;
+    if (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(type)) return true;
     return type.startsWith('xf_');
   }
 

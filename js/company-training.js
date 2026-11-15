@@ -2,10 +2,10 @@
  * Company training: a small tree of nodes for the champions and for each free company,
  * bought with skill points earned during a run. Tree keys and node ids are save-file ids.
  */
-const OperativeSkillTrees = (() => {
+const CompanyTraining = (() => {
   const STORAGE_KEY = 'myth-and-blood-operative-skills-v1';
 
-  /** Names come from the cast data (js/crossover.js) so the trees can never drift from it. */
+  /** Names come from the cast data (js/free-companies.js) so the trees can never drift from it. */
   function treeLabel(fid) {
     return typeof HeroCast !== 'undefined' ? HeroCast.factionLabel(fid) : 'Free company';
   }
@@ -356,8 +356,8 @@ const OperativeSkillTrees = (() => {
     if (!unit) return null;
     if (unit.isWwe) return 'champions';
     if (unit.isDoomslayer) return 'doom';
-    if (typeof getCrossoverDef === 'function') {
-      return getCrossoverDef(unit.type)?.faction || null;
+    if (typeof getHeroDef === 'function') {
+      return getHeroDef(unit.type)?.faction || null;
     }
     return null;
   }
@@ -581,11 +581,11 @@ const OperativeSkillTrees = (() => {
   }
 
   /**
-   * Skill-tree shop, drawn into every `.operative-skills-panel` host (the Free Companies and
+   * Skill-tree shop, drawn into every `.hero-skills-panel` host (the Free Companies and
    * Champions' Hall screens). A tree appears once its company has heroes, points or nodes.
    */
   function renderPanel() {
-    const hosts = document.querySelectorAll('.operative-skills-panel');
+    const hosts = document.querySelectorAll('.hero-skills-panel');
     if (!hosts.length) return;
     const gs = typeof Game !== 'undefined' ? Game.getState?.() : null;
     const snap = getSnapshot(gs?.wave || 0, gs?.units || []);
@@ -668,4 +668,4 @@ const OperativeSkillTrees = (() => {
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a
 // classic script is not a property of globalThis, so it must be exported explicitly.
-globalThis.OperativeSkillTrees = OperativeSkillTrees;
+globalThis.CompanyTraining = CompanyTraining;

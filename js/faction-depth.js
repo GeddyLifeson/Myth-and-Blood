@@ -276,7 +276,7 @@ class FactionDepthSystem {
 
   static PLANET_WARFARE_WAVE = typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200;
 
-  static PLANET_WARFARE_OPERATIVES = {
+  static PLANET_WARFARE_HEROES = {
     pry_and_spike: {
       label: 'Pry and Spike',
       operative: 'Pell Rivetson',
@@ -684,7 +684,7 @@ class FactionDepthSystem {
     this.STANDARD_BARRACKS_COST = FactionDepthSystem.STANDARD_BARRACKS_COST;
     this.STANDARD_BARRACKS_BUILDERS = FactionDepthSystem.STANDARD_BARRACKS_BUILDERS;
     this.PROFILES = FactionDepthSystem.PROFILES;
-    this.PLANET_WARFARE_OPERATIVES = FactionDepthSystem.PLANET_WARFARE_OPERATIVES;
+    this.PLANET_WARFARE_HEROES = FactionDepthSystem.PLANET_WARFARE_HEROES;
     this.SYNERGIES = typeof GameData !== 'undefined' ? GameData.synergies : [];
     this.ENEMY_COUNTERS = FactionDepthSystem.ENEMY_COUNTERS;
     this.MASTERY_CHALLENGES = FactionDepthSystem.MASTERY_CHALLENGES;
@@ -759,7 +759,7 @@ class FactionDepthSystem {
     }
     const units = armyUnits || this.ctx?.units;
     if (units) {
-      const { byFaction } = this.countCrossoverUnits(units);
+      const { byFaction } = this.countHeroUnits(units);
       const fc = Object.keys(byFaction).length;
       if (fc >= FactionDepthSystem.FACTION_SOUP_THRESHOLD) {
         mult *= 1 + (fc - (FactionDepthSystem.FACTION_SOUP_THRESHOLD - 1)) * 0.06;
@@ -784,7 +784,7 @@ class FactionDepthSystem {
     if (!unit) return null;
     if (unit.isWwe) return 'champions';
     if (unit.isDoomslayer) return 'doom';
-    return getCrossoverDef?.(unit.type)?.faction || null;
+    return getHeroDef?.(unit.type)?.faction || null;
   }
 
   getWeaknessMods(unit) {
@@ -831,25 +831,21 @@ class FactionDepthSystem {
     return d;
   }
 
-  countCrossoverUnits(units) {
+  countHeroUnits(units) {
     let n = 0;
     const byFaction = {};
     for (const u of units || []) {
       if (u.team !== 'player' || u.hp <= 0) continue;
       if (!u.isCrossover && !u.isWwe && !u.isDoomslayer) continue;
       n++;
-      const f = u.isWwe
-        ? 'champions'
-        : u.isDoomslayer
-          ? 'doom'
-          : getCrossoverDef?.(u.type)?.faction;
+      const f = u.isWwe ? 'champions' : u.isDoomslayer ? 'doom' : getHeroDef?.(u.type)?.faction;
       if (f) byFaction[f] = (byFaction[f] || 0) + 1;
     }
     return { total: n, byFaction };
   }
 
   computeSynergies(units) {
-    const { byFaction } = this.countCrossoverUnits(units);
+    const { byFaction } = this.countHeroUnits(units);
     const present = new Set(Object.keys(byFaction));
     const active = [];
     for (const syn of this.SYNERGIES) {
@@ -882,7 +878,7 @@ class FactionDepthSystem {
     const accBonuses = [];
     const abilityBonuses = [];
     const siegeBonuses = [];
-    const crossoverBonuses = [];
+    const heroBonuses = [];
     const critBonuses = [];
     let moraleRegen = 0;
 
@@ -893,7 +889,7 @@ class FactionDepthSystem {
       if (s.bonus.abilityDmg) abilityBonuses.push(s.bonus.abilityDmg);
       if (s.bonus.siegeDmg) siegeBonuses.push(s.bonus.siegeDmg);
       if (s.bonus.crossoverDmg && (unit.isCrossover || unit.isWwe))
-        crossoverBonuses.push(s.bonus.crossoverDmg);
+        heroBonuses.push(s.bonus.crossoverDmg);
       if (s.bonus.critChance && !unit.projectile) critBonuses.push(s.bonus.critChance);
       if (s.bonus.moraleRegen) moraleRegen += s.bonus.moraleRegen;
     }
@@ -902,7 +898,7 @@ class FactionDepthSystem {
     unit.synergyAcc = Math.round(this.stackSynergyBonuses(accBonuses));
     unit.synergyAbility = this.stackSynergyBonuses(abilityBonuses);
     unit.synergySiege = this.stackSynergyBonuses(siegeBonuses);
-    unit.synergyCrossover = this.stackSynergyBonuses(crossoverBonuses);
+    unit.synergyCrossover = this.stackSynergyBonuses(heroBonuses);
     unit.synergyCrit = this.stackSynergyBonuses(critBonuses);
     unit.synergyMoraleRegen = moraleRegen;
 
@@ -961,8 +957,8 @@ class FactionDepthSystem {
   }
 
   applyWarhammerDuty(unit) {
-    if (typeof MetaProgress === 'undefined' || !MetaProgress.isWarhammerUnlocked?.()) return;
-    const faction = getCrossoverDef?.(unit.type)?.faction;
+    if (typeof MetaProgress === 'undefined' || !MetaProgress.isWarhostUnlocked?.()) return;
+    const faction = getHeroDef?.(unit.type)?.faction;
     if (faction !== 'iron_psalm' && faction !== 'open_wound') return;
     if (this.isHoldingDefensivePosition(unit)) {
       unit.dutyStacks = Math.min(8, (unit.dutyStacks || 0) + 1);
@@ -981,7 +977,7 @@ class FactionDepthSystem {
   applyToUnit(unit, armyUnits) {
     if (!unit || unit.team !== 'player') return unit;
     this.applyWarhammerDuty(unit);
-    const { total, byFaction } = this.countCrossoverUnits(armyUnits || this.ctx?.units || []);
+    const { total, byFaction } = this.countHeroUnits(armyUnits || this.ctx?.units || []);
     const factionCount = Object.keys(byFaction).length;
     const vanilla = (armyUnits || this.ctx?.units || []).filter(
       (u) => u.team === 'player' && u.hp > 0 && !u.isCrossover && !u.isWwe && !u.isDoomslayer
@@ -993,20 +989,20 @@ class FactionDepthSystem {
       ? 'champions'
       : unit.isDoomslayer
         ? 'doom'
-        : getCrossoverDef?.(unit.type)?.faction;
+        : getHeroDef?.(unit.type)?.faction;
     const tier = faction ? this.getMasteryTier(faction) : 0;
     if (tier > 0 && (unit.isCrossover || unit.isWwe)) {
       unit.masteryTier = tier;
       unit.maxMorale = Math.min(45, unit.maxMorale + tier);
     }
-    if (typeof OperativeSkillTrees !== 'undefined') {
-      OperativeSkillTrees.applyToUnit(unit, armyUnits);
+    if (typeof CompanyTraining !== 'undefined') {
+      CompanyTraining.applyToUnit(unit, armyUnits);
     }
     return unit;
   }
 
   canBuildBarracks(buildType, wave, buildings, units) {
-    const faction = Object.entries(CrossoverFactions || {}).find(
+    const faction = Object.entries(FreeCompanies || {}).find(
       ([, f]) => f.building === buildType
     )?.[0];
     if (!faction) return { ok: true };
@@ -1044,7 +1040,7 @@ class FactionDepthSystem {
       if (event.bonus.morale) {
         for (const u of units) {
           if (u.team !== 'player' || u.hp <= 0) continue;
-          const f = u.isWwe ? 'champions' : getCrossoverDef?.(u.type)?.faction;
+          const f = u.isWwe ? 'champions' : getHeroDef?.(u.type)?.faction;
           if (f && event.factions.includes(f))
             u.morale = Math.min(u.maxMorale, u.morale + event.bonus.morale);
         }
@@ -1052,7 +1048,7 @@ class FactionDepthSystem {
       if (event.bonus.moraleRegen) {
         for (const u of units) {
           if (u.team !== 'player' || u.hp <= 0) continue;
-          const f = u.isWwe ? 'champions' : getCrossoverDef?.(u.type)?.faction;
+          const f = u.isWwe ? 'champions' : getHeroDef?.(u.type)?.faction;
           if (f && event.factions.includes(f))
             u.morale = Math.min(u.maxMorale, u.morale + event.bonus.moraleRegen);
         }
@@ -1060,7 +1056,7 @@ class FactionDepthSystem {
     }
     if (
       typeof MetaProgress !== 'undefined' &&
-      MetaProgress.isTesUnlocked?.() &&
+      MetaProgress.isRimehowlUnlocked?.() &&
       depthRoll() < 0.08
     ) {
       for (const u of units) {
@@ -1112,7 +1108,7 @@ class FactionDepthSystem {
             (a) =>
               a.team === 'player' &&
               a.isCrossover &&
-              getCrossoverDef?.(a.type)?.faction === 'greywatch' &&
+              getHeroDef?.(a.type)?.faction === 'greywatch' &&
               this.ctx.unitDistance(u, a) < coolInt(90)
           )
           .forEach((a) => {
@@ -1137,7 +1133,7 @@ class FactionDepthSystem {
     this.checkSynergyAchievements(syns, units);
   }
 
-  getLifetimeCrossoverStats() {
+  getLifetimeHeroStats() {
     try {
       const raw = localStorage.getItem('myth-and-blood-achievements-v3');
       if (!raw) return { kills: {}, abilities: {} };
@@ -1149,8 +1145,8 @@ class FactionDepthSystem {
   }
 
   checkMasteryChallenges(wave, units, extras = {}) {
-    const { byFaction } = this.countCrossoverUnits(units);
-    const life = this.getLifetimeCrossoverStats();
+    const { byFaction } = this.countHeroUnits(units);
+    const life = this.getLifetimeHeroStats();
     for (const ch of this.MASTERY_CHALLENGES) {
       if (this.sessionChallenges.has(ch.id)) continue;
       let ok = true;
@@ -1161,7 +1157,7 @@ class FactionDepthSystem {
       if (ch.abilities != null && (life.abilities[ch.faction] || 0) < ch.abilities) ok = false;
       if (ch.flag === 'jojo_cavalry') {
         const p7 = (units || []).filter((u) => {
-          const d = getCrossoverDef?.(u.type);
+          const d = getHeroDef?.(u.type);
           // Part 7 units use type:'cavalry' with melee/ranged combatTags — tag-only check was impossible.
           return (
             u.team === 'player' &&
@@ -1189,7 +1185,7 @@ class FactionDepthSystem {
     if (syns.length >= 2) this.ctx.ach('faction_synergy_multi', { count: syns.length });
     const fourWorld = syns.find((s) => s.id === 'multiversal_4');
     if (fourWorld) this.ctx.ach('multiversal_synergy', { count: 4 });
-    const { byFaction } = this.countCrossoverUnits(units);
+    const { byFaction } = this.countHeroUnits(units);
     const fc = Object.keys(byFaction).length;
     if (fc >= 3) this.ctx.ach('multiversal_check', { count: fc });
   }
@@ -1201,7 +1197,7 @@ class FactionDepthSystem {
   procAbilityVfx(unit, label, color) {
     if (!unit) return;
     FloatingText?.status(unit.x, unit.y - 10, label, color || '#ffd700');
-    const f = unit.isWwe ? 'champions' : getCrossoverDef?.(unit.type)?.faction;
+    const f = unit.isWwe ? 'champions' : getHeroDef?.(unit.type)?.faction;
     if (f) this.playFactionSfx(f);
   }
 
@@ -1255,7 +1251,7 @@ class FactionDepthSystem {
           a.team === 'player' &&
           a.hp > 0 &&
           a.id !== unit.id &&
-          getCrossoverDef?.(a.type)?.faction === 'iron_psalm' &&
+          getHeroDef?.(a.type)?.faction === 'iron_psalm' &&
           this.ctx.unitDistance(unit, a) < 90
       ).length;
       if (allies >= 1) d = Math.round(d * 1.12);
@@ -1693,7 +1689,7 @@ class FactionDepthSystem {
             a.team === 'player' &&
             a.hp > 0 &&
             a.id !== unit.id &&
-            getCrossoverDef?.(a.type)?.faction === 'iron_psalm' &&
+            getHeroDef?.(a.type)?.faction === 'iron_psalm' &&
             this.ctx.unitDistance(unit, a) < 90
         ).length;
         if (allies >= 2) this.ctx.takeDamage(target, Math.round(dmg * 0.2));
@@ -1895,7 +1891,7 @@ class FactionDepthSystem {
 
   /** Audit parity across evolved factions (barracks, mastery, seasonal, synergies, counters). */
   auditFairRepresentation() {
-    const factions = Object.keys(CrossoverFactions || {});
+    const factions = Object.keys(FreeCompanies || {});
     const synergyCount = {};
     for (const f of factions) synergyCount[f] = 0;
     for (const s of this.SYNERGIES) {
@@ -1936,7 +1932,7 @@ class FactionDepthSystem {
   }
 
   getPlanetWarfareOp(ability) {
-    return ability ? this.PLANET_WARFARE_OPERATIVES[ability] || null : null;
+    return ability ? this.PLANET_WARFARE_HEROES[ability] || null : null;
   }
 
   isPlanetSiegeSpecialist(unit, wave) {
@@ -2027,7 +2023,7 @@ class FactionDepthSystem {
   }
 
   formatPlanetOpsTable() {
-    return Object.values(this.PLANET_WARFARE_OPERATIVES)
+    return Object.values(this.PLANET_WARFARE_HEROES)
       .map(
         (op) =>
           `• ${op.operative} — ${op.label} (${this.PROFILES[op.faction]?.label || op.faction}): ${op.desc}`
@@ -2131,7 +2127,7 @@ class FactionDepthSystem {
     ];
     for (const [id, prof] of Object.entries(this.PROFILES)) {
       if (id === 'doom' || id === 'champions') continue;
-      const planetOps = Object.values(this.PLANET_WARFARE_OPERATIVES)
+      const planetOps = Object.values(this.PLANET_WARFARE_HEROES)
         .filter((op) => op.faction === id)
         .map((op) => op.operative);
       const planetNote = planetOps.length

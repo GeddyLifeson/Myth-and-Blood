@@ -25,8 +25,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
     BuildDefs: { castle: { cost: 0 } },
     MetaProgress: null,
     Achievements: null,
@@ -35,7 +35,7 @@ function loadModules() {
     ACHIEVEMENT_META_316_ID: null,
     ACHIEVEMENT_CLUB_316_ID: null,
     ACHIEVEMENT_MILLENNIUM_ID: null,
-    CROSSOVER_ACH_FACTIONS: null,
+    COMPANY_ACH_IDS: null,
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -71,7 +71,7 @@ Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
 for (let w = 1; w <= 150; w++) {
   Achievements.onEvent('wave_complete', { wave: w, difficulty: 'doomslayer', units: [] });
 }
-ok(MetaProgress.is115Unlocked(), 'wave 150 doomslayer unlocks Element 115');
+ok(MetaProgress.isPowderhornUnlocked(), 'wave 150 doomslayer unlocks Element 115');
 ok(Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'), 'horde fortress rule passes');
 ok(Achievements.evaluateRule('unlock:powderhorn'), 'powderhorn unlock rule passes');
 
@@ -86,7 +86,7 @@ Achievements.onEvent('zombie_building_lost', {
 for (let w = 1; w <= 150; w++) {
   Achievements.onEvent('wave_complete', { wave: w, difficulty: 'doomslayer', units: [] });
 }
-ok(!MetaProgress.is115Unlocked(), 'horde building loss blocks Element 115 unlock');
+ok(!MetaProgress.isPowderhornUnlocked(), 'horde building loss blocks Element 115 unlock');
 ok(
   !Achievements.evaluateRule('diff_zombie_fortress:doomslayer:150'),
   'horde loss fails fortress rule'
@@ -98,9 +98,9 @@ Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
 for (let w = 1; w <= 149; w++) {
   Achievements.onEvent('wave_complete', { wave: w, difficulty: 'doomslayer', units: [] });
 }
-ok(!MetaProgress.is115Unlocked(), 'wave 149 does not unlock Element 115 yet');
+ok(!MetaProgress.isPowderhornUnlocked(), 'wave 149 does not unlock Element 115 yet');
 Achievements.onEvent('wave_complete', { wave: 150, difficulty: 'doomslayer', units: [] });
-ok(MetaProgress.is115Unlocked(), 'wave 150 triggers Element 115 unlock');
+ok(MetaProgress.isPowderhornUnlocked(), 'wave 150 triggers Element 115 unlock');
 
 if (failures()) {
   console.error(`\n${failures()} test(s) failed`);

@@ -24,8 +24,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -64,9 +64,9 @@ Achievements.onEvent('general_fielded', {});
 for (let w = 1; w <= 12; w++) sampleForts(9, w);
 for (let w = 1; w <= 3; w++) repelBoss(w * 20);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(MetaProgress.isWarhammerUnlocked(), 'chad victory with fortress line unlocks Warhammer');
-ok(MetaProgress.isImperiumUnlocked(), 'warhammer unlock grants Imperium');
-ok(MetaProgress.isWarpUnlocked(), 'warhammer unlock grants Warp');
+ok(MetaProgress.isWarhostUnlocked(), 'chad victory with fortress line unlocks Warhammer');
+ok(MetaProgress.isIronPsalmUnlocked(), 'warhammer unlock grants Imperium');
+ok(MetaProgress.isOpenWoundUnlocked(), 'warhammer unlock grants Warp');
 ok(Achievements.evaluateRule('run_eternal_crusade:3:8'), 'eternal crusade rule passes');
 
 MetaProgress.reset();
@@ -77,7 +77,7 @@ for (let w = 1; w <= 5; w++) sampleForts(9, w);
 sampleForts(6, 6);
 for (let w = 1; w <= 3; w++) repelBoss(w * 20);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isWarhammerUnlocked(), 'fort line breach blocks Warhammer unlock');
+ok(!MetaProgress.isWarhostUnlocked(), 'fort line breach blocks Warhammer unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -87,7 +87,7 @@ for (let w = 1; w <= 12; w++) sampleForts(9, w);
 repelBoss(20);
 repelBoss(40);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isWarhammerUnlocked(), 'fewer than three boss repels blocks unlock');
+ok(!MetaProgress.isWarhostUnlocked(), 'fewer than three boss repels blocks unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -97,7 +97,7 @@ Achievements.onEvent('general_fell', { wave: 30 });
 for (let w = 1; w <= 12; w++) sampleForts(9, w);
 for (let w = 1; w <= 3; w++) repelBoss(w * 20);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isWarhammerUnlocked(), 'general death blocks Warhammer unlock');
+ok(!MetaProgress.isWarhostUnlocked(), 'general death blocks Warhammer unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
@@ -106,7 +106,7 @@ Achievements.onEvent('general_fielded', {});
 for (let w = 1; w <= 12; w++) sampleForts(9, w);
 for (let w = 1; w <= 3; w++) repelBoss(w * 20);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isWarhammerUnlocked(), 'normal difficulty blocks Warhammer unlock');
+ok(!MetaProgress.isWarhostUnlocked(), 'normal difficulty blocks Warhammer unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();

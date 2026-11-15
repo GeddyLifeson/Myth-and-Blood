@@ -180,7 +180,7 @@ class ColonyValueSystem {
       military += this.unitMilitaryValue(u);
       if (u.isCrossover) {
         signals.crossoverCount++;
-        const cf = typeof getCrossoverDef === 'function' ? getCrossoverDef(u.type)?.faction : null;
+        const cf = typeof getHeroDef === 'function' ? getHeroDef(u.type)?.faction : null;
         if (cf) signals.crossoverFactions[cf] = (signals.crossoverFactions[cf] || 0) + 1;
       }
       if (u.isWwe) signals.wweCount++;
@@ -297,16 +297,16 @@ class ColonyValueSystem {
       weights.dark_mage = 1.35;
     }
 
-    const activeCrossoverFactions = new Set(Object.keys(signals.crossoverFactions || {}));
-    if (signals.wweCount > 0) activeCrossoverFactions.add('champions');
+    const activeCompanies = new Set(Object.keys(signals.crossoverFactions || {}));
+    if (signals.wweCount > 0) activeCompanies.add('champions');
     const factionDepth = this._svc('FactionDepth');
-    if (activeCrossoverFactions.size > 0 && factionDepth) {
+    if (activeCompanies.size > 0 && factionDepth) {
       const armyUnits = this.ctx?.units ?? [];
       const synergyCount = armyUnits.length
         ? (factionDepth.computeSynergies(armyUnits) || []).length
         : 0;
       for (const [enemyType, counter] of Object.entries(factionDepth.ENEMY_COUNTERS || {})) {
-        const hits = (counter.weakFactions || []).filter((f) => activeCrossoverFactions.has(f));
+        const hits = (counter.weakFactions || []).filter((f) => activeCompanies.has(f));
         if (!hits.length) continue;
         poolExtras.push(enemyType);
         weights[enemyType] = Math.max(

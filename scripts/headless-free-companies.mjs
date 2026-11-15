@@ -1,6 +1,6 @@
 /**
  * Headless runtime tests for crossover UI, abilities, synergies, and perk machines.
- * Run: node scripts/headless-crossover.mjs
+ * Run: node scripts/headless-free-companies.mjs
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -82,8 +82,8 @@ function el(id = '') {
         e.dataset[attr] = m[1];
         e.className =
           v.includes(`data-${attr}="${m[1]}"`) && v.includes('selected')
-            ? 'selected crossover-card'
-            : 'crossover-card';
+            ? 'selected company-card'
+            : 'company-card';
         childEls.push(e);
       }
       const tabRe = /data-faction="([^"]+)"/g;
@@ -92,8 +92,8 @@ function el(id = '') {
         e.dataset.faction = m[1];
         e.className =
           v.includes(`data-faction="${m[1]}"`) && v.includes('active')
-            ? 'crossover-tab active'
-            : 'crossover-tab';
+            ? 'company-tab active'
+            : 'company-tab';
         if (!childEls.find((c) => c.dataset.faction === m[1])) childEls.push(e);
       }
     },
@@ -106,9 +106,9 @@ function el(id = '') {
     appendChild: (c) => c,
     querySelector: () => null,
     querySelectorAll: (sel) => {
-      if (sel === '.crossover-tab' || sel === '.crossover-card') {
+      if (sel === '.company-tab' || sel === '.company-card') {
         return childEls.filter((c) =>
-          sel === '.crossover-tab' ? c.dataset.faction : c.dataset.crossover
+          sel === '.company-tab' ? c.dataset.faction : c.dataset.crossover
         );
       }
       return childEls;
@@ -132,14 +132,14 @@ function boot(seed = 1) {
     'ach-toast-name',
     'ach-toast-desc',
     'menu-screen',
-    'crossover-roster-grid',
-    'crossover-faction-tabs',
-    'crossover-selected-detail',
-    'crossover-screen',
-    'crossover-recruit-btn',
-    'crossover-build-btn',
-    'crossover-hub-open',
-    'crossover-close',
+    'companies-roster-grid',
+    'companies-tabs',
+    'companies-selected-detail',
+    'companies-screen',
+    'companies-recruit-btn',
+    'companies-build-btn',
+    'companies-open',
+    'companies-close',
   ].forEach(mk);
 
   let rng = seed;
@@ -220,7 +220,7 @@ function loadGame() {
   // Macro layers (PlanetWarfare, PlanetConquest, …) were removed — only export what loads.
   const exp = vm.runInContext(
     `${code}\n({
-      Game, Cheats, MetaProgress, FactionDepth, CrossoverHub, Perks, GameModes, FloatingText,
+      Game, Cheats, MetaProgress, FactionDepth, FreeCompaniesScreen, Perks, GameModes, FloatingText,
       SpriteGen, StrikeFX, ColonyValue, Research, ContentExpansion, GameDepth, EnemyFactions,
       FactionReputation, CrownLegacies, Legacy,
       PlanetWarfare: typeof PlanetWarfare !== 'undefined' ? PlanetWarfare : null,
@@ -238,7 +238,7 @@ function loadGame() {
       createUnit, getSpecialistLateAbilityInfo, isSpecialistUnit, perkMachinesUnlocked,
       ACADEMY_ERA_WAVE, RTS_ERA_WAVE, BuildDefs, getWaveConfig, getDifficultyDef,
       getUnlockedAttackSides, canSpendTpVeteranUpgrade, getVeteranUpgradeCost, upgradeVeteranUnit,
-      isEnemyHordeGruntType, getUnlockedEvilOperatives, EVIL_OPERATIVE_WAVES,
+      isEnemyHordeGruntType, getUnlockedEvilHeroes, EVIL_HERO_WAVES,
       getKingdomEvolutionStage, getKingdomStageBuffs, isKingdomRaidsUnlocked, isKingdomLoadoutsUnlocked,
       KINGDOM_DOCTRINES, getUnlockedKingdomDoctrines, getTerritoryTier, getWorldSize,
       BASE_FIELD_W, BASE_FIELD_H, isEliteEnemy
@@ -284,10 +284,10 @@ function mkUnit(createUnitFn, type, x, y, team = 'player', extra = {}) {
 function testPerkMachines(MP, perksUnlocked) {
   MP.reset();
   assert(!perksUnlocked(), 'perk machines should be locked before any crossover unlock');
-  MP.unlock115();
+  MP.unlockPowderhorn();
   assert(perksUnlocked(), 'perk machines should unlock after Element 115');
   MP.reset();
-  MP.unlockWweAcademy();
+  MP.unlockChampionsHall();
   assert(perksUnlocked(), 'perk machines should unlock after WWE');
 }
 
@@ -303,8 +303,8 @@ function testCrossoverHubUI(MP, Hub, doc) {
     crossoverOnField: [],
   };
   Hub.renderRoster(gsNoBase);
-  const grid = doc.getElementById('crossover-roster-grid');
-  const tabs = doc.getElementById('crossover-faction-tabs');
+  const grid = doc.getElementById('companies-roster-grid');
+  const tabs = doc.getElementById('companies-tabs');
   assert(
     tabs.innerHTML.includes('Powderhorn Company'),
     'faction tabs should render unlocked factions'
@@ -332,12 +332,12 @@ function testCrossoverHubUI(MP, Hub, doc) {
     'ultimis roster should not show need-base when barracks on field'
   );
 
-  const buildBtn = doc.getElementById('crossover-build-btn');
+  const buildBtn = doc.getElementById('companies-build-btn');
   assert(typeof buildBtn.addEventListener === 'function', 'build button should be wired in init');
 
-  const ultimisRoster = Hub.rosterForFaction('powderhorn');
+  const powderhornRoster = Hub.rosterForFaction('powderhorn');
   assert(
-    ultimisRoster.some(([id]) => id === 'dunmar_fusewick'),
+    powderhornRoster.some(([id]) => id === 'dunmar_fusewick'),
     'rosterForFaction ultimis includes tank_dempsey'
   );
 }
@@ -405,10 +405,10 @@ function testAbilityProcs(FD, createUnitFn) {
 // --- Synergies & mastery during waves ---
 function testSynergiesAndMastery(FD, createUnitFn) {
   const dempsey = mkUnit(createUnitFn, 'dunmar_fusewick', 100, 200);
-  const primisNik = mkUnit(createUnitFn, 'ser_hadwin_morrow', 120, 200);
+  const paleVigilNik = mkUnit(createUnitFn, 'ser_hadwin_morrow', 120, 200);
   dempsey.isCrossover = true;
-  primisNik.isCrossover = true;
-  const army = [dempsey, primisNik];
+  paleVigilNik.isCrossover = true;
+  const army = [dempsey, paleVigilNik];
 
   const syns = FD.computeSynergies(army);
   assert(
@@ -493,19 +493,19 @@ function testGameRecruitFlow(exp) {
   assert(placed, 'powderhorn_magazine should place in creative mode');
 
   const before = Game.getState().tactical;
-  const recruited = Game.recruitCrossoverOperative('dunmar_fusewick');
-  assert(recruited, 'recruitCrossoverOperative(tank_dempsey) should succeed with barracks');
+  const recruited = Game.hireHero('dunmar_fusewick');
+  assert(recruited, 'hireHero(tank_dempsey) should succeed with barracks');
   const after = Game.getState();
   assert(after.tactical < before, 'recruit should spend TP');
   assert(after.crossoverOnField?.includes('dunmar_fusewick'), 'tank_dempsey should be on field');
 
   const tpBeforeDup = Game.getState().tactical;
-  const dup = Game.recruitCrossoverOperative('dunmar_fusewick');
-  assert(!dup, 'recruitCrossoverOperative should block duplicate named crossover on field');
+  const dup = Game.hireHero('dunmar_fusewick');
+  assert(!dup, 'hireHero should block duplicate named crossover on field');
   assert(Game.getState().tactical === tpBeforeDup, 'duplicate recruit should not spend TP');
 
   Cheats.submit('void residue');
-  assert(MetaProgress.is115Unlocked(), 'cheat 115 should unlock ultimis meta');
+  assert(MetaProgress.isPowderhornUnlocked(), 'cheat 115 should unlock ultimis meta');
 }
 
 // --- Academy Era mode bootstrap ---
@@ -690,21 +690,21 @@ function testScalingSymmetry(GameDepth, createUnitFn, getWaveConfigFn, getDiffic
   const vetMult = GameDepth.getVanillaObsoleteMult(vetFoot, wave);
   assert(vetMult > obsolete, 'promoted veterans should resist obsolescence');
   assert(GameDepth.isEnemyHordeGrunt(grunt), 'goblin should be horde grunt');
-  assert(GameDepth.isEnemyEvilOperative(op), 'hellbound legionnaire should be evil operative');
-  assert(!GameDepth.isIpOperative(foot), 'footman is not IP operative');
+  assert(GameDepth.isEnemyEvilHero(op), 'hellbound legionnaire should be evil operative');
+  assert(!GameDepth.isIpHero(foot), 'footman is not IP operative');
 }
 
-function testOperativeInjection(GameDepth, isEnemyHordeGruntTypeFn, getUnlockedEvilOperativesFn) {
+function testOperativeInjection(GameDepth, isEnemyHordeGruntTypeFn, getUnlockedEvilHeroesFn) {
   if (!GameDepth) return;
   const queue = ['goblin', 'goblin', 'orc', 'plague_rat'];
-  const injected = GameDepth.injectEvilOperativesIntoQueue(queue, 50, () => 0);
+  const injected = GameDepth.injectEvilHeroesIntoQueue(queue, 50, () => 0);
   const hasOp = injected.some((t) => !isEnemyHordeGruntTypeFn(t));
   assert(hasOp, 'operative injection should replace horde grunt slots at wave 50');
   assert(
-    getUnlockedEvilOperativesFn(30).includes('nightmare_strider'),
+    getUnlockedEvilHeroesFn(30).includes('nightmare_strider'),
     'nightmare strider unlocks wave 30'
   );
-  assert(getUnlockedEvilOperativesFn(10).length === 0, 'no operatives before wave 25');
+  assert(getUnlockedEvilHeroesFn(10).length === 0, 'no operatives before wave 25');
 }
 
 function testCampaignBuildGate(exp) {
@@ -1777,7 +1777,7 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
     'secret content should mention the Champions’ Hall'
   );
   assert(
-    FactionDepth.PLANET_WARFARE_OPERATIVES?.pry_and_spike?.siegeMult >= 2,
+    FactionDepth.PLANET_WARFARE_HEROES?.pry_and_spike?.siegeMult >= 2,
     'tech_head should have siege mult'
   );
 }
@@ -2162,7 +2162,7 @@ let exp = loadGame();
 const {
   MetaProgress,
   FactionDepth,
-  CrossoverHub,
+  FreeCompaniesScreen,
   SpriteGen,
   StrikeFX,
   createUnit,
@@ -2174,7 +2174,7 @@ if (SpriteGen) SpriteGen.prewarmCache = noop;
 MetaProgress.load();
 
 testPerkMachines(MetaProgress, perkMachinesUnlocked);
-testCrossoverHubUI(MetaProgress, CrossoverHub, sb.document);
+testCrossoverHubUI(MetaProgress, FreeCompaniesScreen, sb.document);
 testAbilityProcs(FactionDepth, createUnit);
 testSynergiesAndMastery(FactionDepth, createUnit);
 testFairRepresentation(FactionDepth, exp.BuildDefs);
@@ -2217,7 +2217,7 @@ testResearchGates(exp.Research, exp.BuildDefs);
 testVeteranDoctrine(exp.Research, createUnit, exp.canSpendTpVeteranUpgrade);
 testUnitPanelScaling(exp);
 testScalingSymmetry(exp.GameDepth, createUnit, exp.getWaveConfig, exp.getDifficultyDef);
-testOperativeInjection(exp.GameDepth, exp.isEnemyHordeGruntType, exp.getUnlockedEvilOperatives);
+testOperativeInjection(exp.GameDepth, exp.isEnemyHordeGruntType, exp.getUnlockedEvilHeroes);
 testCampaignBuildGate(exp);
 
 if (issues.length) {

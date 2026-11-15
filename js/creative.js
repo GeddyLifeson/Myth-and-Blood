@@ -25,12 +25,12 @@ const CreativeMode = (() => {
 
   function allySpawnOptions() {
     const ids = Object.keys(UnitDefs || {});
-    const crossover = typeof CrossoverDefs !== 'undefined' ? Object.keys(CrossoverDefs) : [];
-    const wwe = typeof WweDefs !== 'undefined' ? Object.keys(WweDefs) : [];
+    const crossover = typeof HeroDefs !== 'undefined' ? Object.keys(HeroDefs) : [];
+    const wwe = typeof ChampionDefs !== 'undefined' ? Object.keys(ChampionDefs) : [];
     const all = [...new Set([...ids, ...crossover, ...wwe, 'doomslayer_hero'])];
     return all
       .map((id) => {
-        const d = getPlayerUnitDef?.(id) || CrossoverDefs?.[id] || WweDefs?.[id] || EnemyDefs[id];
+        const d = getPlayerUnitDef?.(id) || HeroDefs?.[id] || ChampionDefs?.[id] || EnemyDefs[id];
         return `<option value="${id}">${d?.name || id}</option>`;
       })
       .join('');

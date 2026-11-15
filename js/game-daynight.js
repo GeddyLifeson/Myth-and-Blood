@@ -18,7 +18,7 @@ const GameDayNight = (() => {
     getTotalStarCount,
     playSfx,
     releaseCombatPursuit,
-    sampleCrossoverHeroAlliance,
+    sampleHeroAlliance,
     sampleMeleeFocusedArmy,
     samplePlayerArmyMorale,
     sampleShowmanshipArmy,
@@ -114,7 +114,7 @@ const GameDayNight = (() => {
     return pen;
   }
 
-  function updateWweLanternAura() {
+  function updateChampionLanternAura() {
     if (!isDayPhase()) return;
     for (const bray of GS.units) {
       if (!bray.isWwe || bray.wweAbility !== 'corpse_candle_omen' || bray.hp <= 0) continue;
@@ -130,7 +130,7 @@ const GameDayNight = (() => {
     }
   }
 
-  function applyWweWaveStartPulse() {
+  function applyChampionWaveStartPulse() {
     for (const u of GS.units) {
       if (!u.isWwe || u.hp <= 0) continue;
       if (u.wweAbility === 'raise_the_colours') {
@@ -204,7 +204,7 @@ const GameDayNight = (() => {
     if (meleeSnap && !GS.creativeMode) {
       ach('army_melee_sample', { wave: GS.wave, ...meleeSnap });
     }
-    const standSnap = sampleCrossoverHeroAlliance(playerUnits);
+    const standSnap = sampleHeroAlliance(playerUnits);
     if (standSnap && !GS.creativeMode) {
       ach('stand_alliance_sample', { wave: GS.wave, ...standSnap });
     }
@@ -574,7 +574,7 @@ const GameDayNight = (() => {
 
   function updateDayNightCycle() {
     if (GS.state !== 'playing') return;
-    updateWweLanternAura();
+    updateChampionLanternAura();
     if (isDayPhase() && GS.spawnQueue.length > 0) {
       GS.spawnTimer--;
       if (GS.spawnTimer <= 0) {
@@ -709,7 +709,7 @@ const GameDayNight = (() => {
   return {
     bind,
     CAMPAIGN_VICTORY_WAVE,
-    applyWweWaveStartPulse,
+    applyChampionWaveStartPulse,
     beginDayPhase,
     enterNightPhase,
     getDayLightLevel,

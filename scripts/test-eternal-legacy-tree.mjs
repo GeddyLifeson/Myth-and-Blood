@@ -50,7 +50,7 @@ function loadEternalLegacy(extra = {}) {
     localStorage: mockStorage(),
     Legacy: { get: () => leg },
     StoryLore: { getDominantBranch: () => 'iron_crown' },
-    MetaProgress: { isCrossoverType: () => false },
+    MetaProgress: { isCompanyHeroType: () => false },
     ...extra,
   };
   sb.window = sb;

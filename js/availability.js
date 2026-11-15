@@ -178,7 +178,7 @@ const Availability = (() => {
     if (ab.dragonStrike) {
       const pact =
         (gs.creativeMode && gs.creativeSettings?.unlockAll) ||
-        (typeof MetaProgress !== 'undefined' && MetaProgress.isTesUnlocked?.());
+        (typeof MetaProgress !== 'undefined' && MetaProgress.isRimehowlUnlocked?.());
       if (!pact) return blocked('needs the Rimehowl Pact', true, { cost });
     }
     if (id === 'reinforce' && gs.gameMode?.noReinforceStrike) {

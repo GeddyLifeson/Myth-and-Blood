@@ -32,7 +32,7 @@ const GameWaves = (() => {
     announceEnemyRtsEra,
     announceHooks,
     announceKingdomEvolution,
-    applyWweWaveStartPulse,
+    applyChampionWaveStartPulse,
     emitWaveStartAssault,
     emitWaveStartPrep,
     floatStatus,
@@ -56,7 +56,7 @@ const GameWaves = (() => {
       announceEnemyRtsEra,
       announceHooks,
       announceKingdomEvolution,
-      applyWweWaveStartPulse,
+      applyChampionWaveStartPulse,
       emitWaveStartAssault,
       emitWaveStartPrep,
       floatStatus,
@@ -766,7 +766,7 @@ const GameWaves = (() => {
     for (const u of raids) GS.units.push(u);
   }
 
-  function healDoomslayerHero() {
+  function healAbyssWalkerHero() {
     if (GS.wave % 2 !== 0) return;
     for (const u of GS.units) {
       if (u.team !== 'player' || !u.isDoomslayer || u.hp <= 0) continue;
@@ -806,7 +806,7 @@ const GameWaves = (() => {
         );
       }
     }
-    healDoomslayerHero();
+    healAbyssWalkerHero();
     syncTerritory();
     ensureInitialBattlefield();
     const wavePrep = emitWaveStartPrep();
@@ -1013,7 +1013,7 @@ const GameWaves = (() => {
       showMessage("HELLSCAPE — even the Hellbane's blade falters here!", 400);
       svc('FloatingText').status(GS.worldW / 2, 80, 'HELLSCAPE', '#ff2020');
     }
-    applyWweWaveStartPulse();
+    applyChampionWaveStartPulse();
     const assaultUnits = [];
     for (let i = 0; i < GS.units.length; i++) {
       const u = GS.units[i];

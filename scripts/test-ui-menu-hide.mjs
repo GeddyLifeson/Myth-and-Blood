@@ -103,8 +103,8 @@ mkEl('achievements-screen');
 mkEl('advanced-diff-screen');
 mkEl('cheats-screen');
 mkEl('encyclopedia-screen');
-mkEl('crossover-screen');
-mkEl('wwe-screen');
+mkEl('companies-screen');
+mkEl('champions-screen');
 mkEl('howto-panel');
 mkEl('game-modes-picker');
 mkEl('modes-leaderboard');
@@ -124,8 +124,8 @@ const OVERLAY_SCREEN_IDS = [
   'advanced-diff-screen',
   'cheats-screen',
   'encyclopedia-screen',
-  'crossover-screen',
-  'wwe-screen',
+  'companies-screen',
+  'champions-screen',
 ];
 
 function dismissMenuScreen() {

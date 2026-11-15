@@ -11,8 +11,8 @@ const UI = (() => {
     'advanced-diff-screen',
     'cheats-screen',
     'encyclopedia-screen',
-    'crossover-screen',
-    'wwe-screen',
+    'companies-screen',
+    'champions-screen',
   ];
 
   function setPlayingUi(active) {
@@ -868,8 +868,8 @@ const UI = (() => {
     if (typeof Research !== 'undefined') Research.init();
     if (typeof GameModes !== 'undefined') GameModes.init();
     if (typeof Onboarding !== 'undefined') Onboarding.init();
-    if (typeof WweAcademy !== 'undefined') WweAcademy.init();
-    if (typeof CrossoverHub !== 'undefined') CrossoverHub.init();
+    if (typeof ChampionsHall !== 'undefined') ChampionsHall.init();
+    if (typeof FreeCompaniesScreen !== 'undefined') FreeCompaniesScreen.init();
     if (typeof CreativeMode !== 'undefined') CreativeMode.init();
     if (typeof Tooltips !== 'undefined') Tooltips.init();
     if (typeof FactionIntel !== 'undefined') FactionIntel.init();
@@ -1648,19 +1648,19 @@ const UI = (() => {
       }
     });
 
-    const doomBtn = hudEls['doomslayer-deploy'];
+    const doomBtn = hudEls['abyss-walker-deploy'];
     if (doomBtn) doomBtn.style.display = gs.doomslayerUnlocked ? '' : 'none';
 
-    const wweBtn = hudEls['wwe-academy-open'];
-    if (wweBtn) {
-      wweBtn.style.display = '';
-      wweBtn.classList.toggle('disabled', !gs.wweUnlocked);
-      wweBtn.title = gs.wweUnlocked
+    const championBtn = hudEls['champions-hall-open'];
+    if (championBtn) {
+      championBtn.style.display = '';
+      championBtn.classList.toggle('disabled', !gs.wweUnlocked);
+      championBtn.title = gs.wweUnlocked
         ? 'Champions’ Hall - arena champions'
         : 'Champions’ Hall - unlock via research or the Quarryman’s Oath';
-      wweBtn.textContent = gs.wweUnlocked ? 'CHAMPIONS’ HALL' : 'CHAMPIONS’ HALL · LOCKED';
+      championBtn.textContent = gs.wweUnlocked ? 'CHAMPIONS’ HALL' : 'CHAMPIONS’ HALL · LOCKED';
     }
-    const crossBtn = hudEls['crossover-hub-open'];
+    const crossBtn = hudEls['companies-open'];
     if (crossBtn) {
       // Always show the Free Companies entry; dim when locked so players know where it is.
       crossBtn.style.display = '';
@@ -2336,10 +2336,10 @@ const UI = (() => {
     const syns = gs.factionSynergies || [];
     const skillNote = gs.operativeSkills?.summary;
     const fieldCount = (v) => (Array.isArray(v) ? v.length : v || 0);
-    const hasCrossoverField = fieldCount(gs.wweOnField) + fieldCount(gs.crossoverOnField) > 0;
+    const hasHeroField = fieldCount(gs.wweOnField) + fieldCount(gs.crossoverOnField) > 0;
     if (synHud && synEl) {
       const show =
-        hasCrossoverField &&
+        hasHeroField &&
         (syns.length > 0 || gs.seasonalEvent || skillNote || gs.operativeSkills?.active);
       synHud.style.display = show ? '' : 'none';
       if (show) {
@@ -2480,9 +2480,9 @@ const UI = (() => {
       'advanced-diff-pct',
       'message-box',
       'threat-text',
-      'doomslayer-deploy',
-      'wwe-academy-open',
-      'crossover-hub-open',
+      'abyss-walker-deploy',
+      'champions-hall-open',
+      'companies-open',
       'perk-build-section',
       'loadout-section',
       'hunt-toggle',

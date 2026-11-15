@@ -60,10 +60,10 @@ ok(
   'crossover step when hub unlocked'
 );
 
-const wweUx = boot(12);
+const championUx = boot(12);
 ok(
-  wweUx.resolveTutorialStep({ wave: 30, creativeMode: false, wweUnlocked: true })?.step?.title ===
-    'Champions’ Hall',
+  championUx.resolveTutorialStep({ wave: 30, creativeMode: false, wweUnlocked: true })?.step
+    ?.title === 'Champions’ Hall',
   'WWE step when academy unlocked'
 );
 

@@ -730,8 +730,8 @@ function getDifficultyDef(id) {
 
 function getPlayerUnitDef(type) {
   if (UnitDefs[type]) return UnitDefs[type];
-  if (typeof WweDefs !== 'undefined' && WweDefs[type]) return WweDefs[type];
-  if (typeof CrossoverDefs !== 'undefined' && CrossoverDefs[type]) return CrossoverDefs[type];
+  if (typeof ChampionDefs !== 'undefined' && ChampionDefs[type]) return ChampionDefs[type];
+  if (typeof HeroDefs !== 'undefined' && HeroDefs[type]) return HeroDefs[type];
   return null;
 }
 
@@ -754,7 +754,7 @@ function isVanillaAcademyType(type) {
   return !!(def?.isAcademy && !def?.isCrossoverBarracks && !def?.isWweAcademy);
 }
 
-function isCrossoverBarracksType(type) {
+function isCompanyHallType(type) {
   return !!BuildDefs[type]?.isCrossoverBarracks;
 }
 
@@ -1378,8 +1378,8 @@ function getUnitTypeName(unit) {
   if (unit.team === 'enemy' && EnemyDefs[unit.type]) {
     return EnemyDefs[unit.type].bossName || EnemyDefs[unit.type].name;
   }
-  if (unit.isWwe && typeof WweDefs !== 'undefined' && WweDefs[unit.type])
-    return WweDefs[unit.type].name;
+  if (unit.isWwe && typeof ChampionDefs !== 'undefined' && ChampionDefs[unit.type])
+    return ChampionDefs[unit.type].name;
   return (
     getPlayerUnitDef(unit.type)?.name || UnitDefs[unit.type]?.name || formatUnitTypeName(unit.type)
   );
@@ -1427,7 +1427,7 @@ function unitDisplayName(unit) {
 /** EnemyDefs — loaded at init from data/enemies.json via GameData. */
 
 /** Wave-scaling evil operatives — fantasy mirrors of crossover power roles (not literal gunmen). */
-const EVIL_OPERATIVE_WAVES = {
+const EVIL_HERO_WAVES = {
   hellbound_legionnaire: 25,
   nightmare_strider: 30,
   dreadborn_champion: 35,
@@ -1450,13 +1450,13 @@ function isZombieTypeEnemy(type) {
   return !!(def.isHordeGrunt || def.isZombie || def.undead);
 }
 
-function isEnemyEvilOperativeType(type) {
+function isEnemyEvilHeroType(type) {
   const def = EnemyDefs[type];
   return !!(def?.isEvilOperative || def?.isNamedBoss);
 }
 
-function getUnlockedEvilOperatives(waveNum) {
-  return Object.entries(EVIL_OPERATIVE_WAVES)
+function getUnlockedEvilHeroes(waveNum) {
+  return Object.entries(EVIL_HERO_WAVES)
     .filter(([, minWave]) => waveNum >= minWave)
     .map(([type]) => type);
 }
@@ -1540,7 +1540,7 @@ function getWaveConfig(waveNum) {
   if (waveNum >= 12) pool.push('shaman', 'goblin_engineer', 'war_chief');
   if (waveNum >= 15) pool.push('siege_tower', 'siege_tower', 'goblin_sapper');
   if (waveNum >= 20) pool.push('war_chief', 'berserker', 'siege_tower');
-  for (const [type, minWave] of Object.entries(EVIL_OPERATIVE_WAVES)) {
+  for (const [type, minWave] of Object.entries(EVIL_HERO_WAVES)) {
     if (waveNum >= minWave) pool.push(type);
   }
 
@@ -1605,11 +1605,11 @@ const ENEMY_SPRITE_MAP = {
 
 function resolvePlayerSpriteType(type) {
   if (type === 'doomslayer_hero') return 'doomslayer_hero';
-  if (typeof getCrossoverDef === 'function') {
-    const cdef = getCrossoverDef(type);
+  if (typeof getHeroDef === 'function') {
+    const cdef = getHeroDef(type);
     if (cdef?.faction) return `roster_${cdef.faction}`;
   }
-  if (typeof isWweUnit === 'function' && isWweUnit(type)) return 'roster_champions';
+  if (typeof isChampionUnit === 'function' && isChampionUnit(type)) return 'roster_champions';
   return type;
 }
 
@@ -1762,8 +1762,8 @@ function createUnit(type, x, y, team, opts = {}) {
     def.type !== 'builder' &&
     def.type !== 'courier' &&
     def.type !== 'general';
-  u.isWwe = typeof isWweUnit === 'function' && isWweUnit(type);
-  u.isCrossover = typeof isCrossoverUnit === 'function' && isCrossoverUnit(type);
+  u.isWwe = typeof isChampionUnit === 'function' && isChampionUnit(type);
+  u.isCrossover = typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(type);
   u.isDoomslayer = !!(def.isDoomslayer || type === 'doomslayer_hero');
   u.wweAbility = def.ability || null;
   u.wweColor = def.color || null;

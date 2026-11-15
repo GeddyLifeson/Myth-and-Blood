@@ -488,8 +488,8 @@ const GameCampaign = (() => {
           hooks: { showMessage, floatingText: fx },
         });
       }
-      if (svc('OperativeSkillTrees')) {
-        svc('OperativeSkillTrees').onWaveStart(p.wave, GS.units);
+      if (svc('CompanyTraining')) {
+        svc('CompanyTraining').onWaveStart(p.wave, GS.units);
       }
       if (svc('AsymmetricWarfare')) {
         const asymCtx = getAsymmetricContext();

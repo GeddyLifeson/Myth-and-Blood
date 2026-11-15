@@ -915,8 +915,8 @@ const VisualPolish = (() => {
     let fid = null;
     if (u.isWwe) fid = 'champions';
     else if (u.isDoomslayer) fid = 'doom';
-    else if (u.isCrossover && typeof getCrossoverDef === 'function') {
-      fid = getCrossoverDef(u.type)?.faction;
+    else if (u.isCrossover && typeof getHeroDef === 'function') {
+      fid = getHeroDef(u.type)?.faction;
     }
     const acc = fid && FACTION_ACCENT[fid];
     if (!acc) return;
