@@ -113,21 +113,11 @@ body.touch-device .cycle-btn {
   font-size: calc(11px * var(--ui-scale) * var(--font-scale));
   letter-spacing: 0.6px;
 }
-body.touch-device #top-bar .cycle-hud {
-  pointer-events: auto;
-  padding: 4px 6px;
-  border-radius: 4px;
-  background: rgba(12, 10, 8, 0.55);
-}
 
 /* Main menu — larger tap targets on iPad */
 body.touch-device .screen.active {
   touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
-}
-body.touch-device .menu-content.menu-scroll {
-  overscroll-behavior: contain;
-  padding-bottom: calc(24px * var(--ui-scale));
 }
 body.touch-device .menu-btn {
   width: min(92vw, calc(280px * var(--font-scale)));
@@ -330,12 +320,6 @@ body.screen-reader-hints button:focus-visible {
 .cost {
   font-size: 7px;
   color: #80c0ff;
-}
-
-.panel-divider {
-  height: 2px;
-  background: #4a3728;
-  margin: 4px 0;
 }
 
 .btn-icon {
@@ -1402,9 +1386,6 @@ body.window-borderless .window-drag-handle {
   }
 }
 
-.cycle-hud {
-  gap: 6px;
-}
 .cycle-btn {
   position: relative;
   overflow: hidden;
@@ -1582,11 +1563,6 @@ body.menu-dismissed #menu-screen,
   padding: calc(32px * var(--ui-scale));
   margin: auto 0;
 }
-.menu-content.menu-scroll {
-  max-height: calc(100vh - 24px);
-  overflow-y: auto;
-  overflow-x: hidden;
-}
 
 .game-title {
   font-family: 'Cinzel', serif;
@@ -1661,22 +1637,6 @@ body.menu-dismissed #menu-screen,
     0 4px 24px rgba(0, 0, 0, 0.45),
     inset 0 0 40px rgba(80, 120, 60, 0.08);
   image-rendering: pixelated;
-}
-
-@keyframes title-glow {
-  0%,
-  100% {
-    text-shadow:
-      0 4px 0 #2a1810,
-      0 0 18px rgba(200, 80, 40, 0.18),
-      0 0 36px rgba(160, 40, 20, 0.1);
-  }
-  50% {
-    text-shadow:
-      0 4px 0 #2a1810,
-      0 0 28px rgba(255, 120, 50, 0.4),
-      0 0 52px rgba(200, 60, 30, 0.2);
-  }
 }
 
 .menu-btn {
@@ -2093,11 +2053,6 @@ body.menu-dismissed #menu-screen,
 .ach-top-btn:hover {
   border-color: #f0c040;
 }
-.ach-top-btn.club-316 {
-  border-color: #ffd700;
-  box-shadow: 0 0 10px rgba(255, 215, 0, 0.45);
-  color: #ffe880;
-}
 .ach-top-progress {
   display: block;
   width: 100%;
@@ -2113,9 +2068,6 @@ body.menu-dismissed #menu-screen,
   width: 0%;
   background: linear-gradient(90deg, #c0a040, #ffe880);
   transition: width 0.4s ease;
-}
-.ach-top-btn.club-316 #ach-top-progress-fill {
-  background: linear-gradient(90deg, #ffd700, #fff8c0);
 }
 
 #achievement-toast {
@@ -2238,10 +2190,6 @@ body.menu-dismissed #menu-screen,
   color: #a08060;
   margin-bottom: 8px;
 }
-.ach-count.club-316 {
-  color: #ffd700;
-  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
-}
 .ach-progress-wrap {
   display: flex;
   align-items: center;
@@ -2276,20 +2224,6 @@ body.menu-dismissed #menu-screen,
   max-height: 72px;
   overflow-y: auto;
 }
-.ach-subtab {
-  font-family: 'Cinzel', serif;
-  font-size: 8px;
-  padding: 4px 7px;
-  background: rgba(20, 16, 12, 0.9);
-  border: 1px solid #4a3728;
-  color: #a0a0c0;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.ach-subtab.active {
-  border-color: #6080c0;
-  color: #c0d0f0;
-}
 .achievements-recent {
   display: flex;
   flex-wrap: wrap;
@@ -2311,17 +2245,6 @@ body.menu-dismissed #menu-screen,
   color: #706050;
   margin: 0;
 }
-.ach-recent-tier {
-  font-size: 7px;
-  margin-right: 4px;
-  text-transform: uppercase;
-}
-.ach-tier-badge {
-  font-size: 8px;
-  padding: 1px 4px;
-  border-radius: 3px;
-  vertical-align: middle;
-}
 .tier-bronze .ach-tier-badge,
 .ach-tier-badge.tier-bronze,
 .ach-card.tier-bronze.unlocked {
@@ -2337,18 +2260,6 @@ body.menu-dismissed #menu-screen,
 .ach-card.tier-gold.unlocked {
   border-color: #c0a040;
   box-shadow: 0 0 6px rgba(255, 215, 0, 0.25);
-}
-.ach-tier-badge.tier-bronze {
-  background: #4a3020;
-  color: #cd7f32;
-}
-.ach-tier-badge.tier-silver {
-  background: #3a3a40;
-  color: #d0d0d0;
-}
-.ach-tier-badge.tier-gold {
-  background: #4a4020;
-  color: #ffd700;
 }
 
 .achievements-grid {
@@ -2379,24 +2290,6 @@ body.menu-dismissed #menu-screen,
 
 .ach-card.locked {
   opacity: 0.45;
-}
-
-.ach-card-icon {
-  font-size: 20px;
-  line-height: 1;
-}
-
-.ach-card-name {
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  color: #f0d890;
-  margin-bottom: 2px;
-}
-
-.ach-card-desc {
-  font-size: 10px;
-  color: #908070;
-  line-height: 1.35;
 }
 
 #achievements-screen .menu-btn {
@@ -2506,57 +2399,6 @@ body.menu-dismissed #menu-screen,
   color: #c0a0b0;
 }
 
-.ency-tease-tag {
-  font-family: 'Cinzel', serif;
-  font-size: 8px;
-  color: #806070;
-  letter-spacing: 0.12em;
-  margin-top: 6px;
-}
-
-.ency-classified {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: rgba(32, 20, 28, 0.85);
-  border-left: 3px solid #a04050;
-  border-radius: 0 4px 4px 0;
-  font-size: 9px;
-  color: #c0a0a8;
-  line-height: 1.45;
-}
-
-.ency-classified-locked {
-  margin-top: 8px;
-  padding: 8px 10px;
-  background: rgba(20, 16, 18, 0.9);
-  border-left: 3px solid #503040;
-  border-radius: 0 4px 4px 0;
-}
-
-.ency-classified-label {
-  display: block;
-  font-family: 'Cinzel', serif;
-  font-size: 7px;
-  color: #a06070;
-  letter-spacing: 0.14em;
-  margin-bottom: 4px;
-}
-
-.ency-redacted {
-  display: block;
-  font-size: 9px;
-  color: #504040;
-  letter-spacing: 0.08em;
-  margin-bottom: 4px;
-}
-
-.ency-unlock-hint {
-  display: block;
-  font-size: 8px;
-  color: #807060;
-  font-style: italic;
-}
-
 .ency-bestiary-tags {
   display: flex;
   flex-wrap: wrap;
@@ -2582,10 +2424,6 @@ body.menu-dismissed #menu-screen,
 .ency-btag.counter {
   color: #a0d0a0;
   background: rgba(16, 32, 20, 0.8);
-}
-
-.ency-entry.ency-bestiary {
-  border-color: #5a4838;
 }
 
 .ency-chronicle-meta,
@@ -2670,35 +2508,8 @@ body.menu-dismissed #menu-screen,
   justify-content: center;
   margin-bottom: 10px;
 }
-.ach-tab {
-  font-family: 'Cinzel', serif;
-  font-size: 9px;
-  padding: 5px 8px;
-  background: rgba(20, 16, 12, 0.9);
-  border: 1px solid #4a3728;
-  color: #c0a880;
-  border-radius: 4px;
-  cursor: pointer;
-}
-.ach-tab.active {
-  border-color: #c0a040;
-  color: #f0e8c0;
-}
-.ach-card-cat {
-  font-size: 8px;
-  color: #706050;
-  margin-top: 2px;
-  text-transform: uppercase;
-}
-.ach-card.meta-ach.unlocked {
-  border-color: #ffd700;
-  box-shadow: 0 0 8px rgba(255, 215, 0, 0.3);
-}
 .ach-card.unlocked {
   cursor: pointer;
-}
-.ach-card.ach-shared {
-  outline: 2px solid #80c080;
 }
 .achievements-grid {
   max-height: 48vh;
@@ -2956,22 +2767,6 @@ body.menu-dismissed #menu-screen,
   color: #706050;
   font-family: monospace;
 }
-.onboarding-guided-toggle {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  font-size: calc(10px * var(--font-scale));
-  color: #b0a090;
-  padding: 8px;
-  border: 1px dashed #5a4830;
-  border-radius: 4px;
-  cursor: pointer;
-  line-height: 1.4;
-}
-.onboarding-guided-toggle input {
-  margin-top: 2px;
-  flex-shrink: 0;
-}
 .onboarding-selected {
   font-size: calc(9px * var(--font-scale));
   color: #7080a0;
@@ -3159,12 +2954,6 @@ body.menu-dismissed #menu-screen,
   background: rgba(16, 20, 16, 0.5);
   max-height: 120px;
   overflow-y: auto;
-}
-.pause-tips-title {
-  font-family: 'Cinzel', serif;
-  font-size: 9px;
-  color: #a0b0c0;
-  margin-bottom: 4px;
 }
 .pause-scaling-tips ul {
   margin: 0;
@@ -3491,12 +3280,6 @@ body.menu-dismissed #menu-screen,
   text-decoration: underline dotted rgba(224, 112, 80, 0.45);
 }
 
-.onboarding-journey-steps {
-  font-size: 10px;
-  color: #c0a860;
-  margin: 0 0 10px;
-  letter-spacing: 0.02em;
-}
 .mode-subtitle {
   font-size: 11px;
   color: #c0a860;
@@ -4533,18 +4316,6 @@ body.touch-device .hint-cancel-btn {
   max-width: 580px;
   text-align: left;
 }
-.pause-hero-row {
-  display: grid;
-  grid-template-columns: 1fr 168px;
-  gap: 12px;
-  margin-bottom: 16px;
-  align-items: start;
-}
-@media (max-width: 560px) {
-  .pause-hero-row {
-    grid-template-columns: 1fr;
-  }
-}
 .pause-quicksave-panel {
   background: rgba(16, 12, 10, 0.9);
   border: 1px solid #5a4830;
@@ -4673,13 +4444,6 @@ body.touch-device .hint-cancel-btn {
   max-height: 150px;
   overflow-y: auto;
 }
-.pause-shortcuts-title {
-  font-family: 'Cinzel', serif;
-  font-size: 9px;
-  color: #a0b0c0;
-  margin-bottom: 6px;
-  text-align: center;
-}
 .pause-shortcuts-items {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
@@ -4760,12 +4524,6 @@ body.touch-device .hint-cancel-btn {
   border-radius: 6px;
   max-height: 180px;
   overflow-y: auto;
-}
-.result-highlights-title {
-  font-family: 'Cinzel', serif;
-  font-size: 12px;
-  color: #a08060;
-  margin-bottom: 8px;
 }
 .result-highlights-list {
   list-style: none;
@@ -4932,49 +4690,6 @@ body.touch-device .hint-cancel-btn {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.save-slot {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 8px;
-  padding: 8px;
-  background: rgba(16, 14, 10, 0.9);
-  border: 1px solid #4a3728;
-  border-radius: 4px;
-  font-size: 10px;
-}
-.save-slot-thumb {
-  width: 56px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 3px;
-  border: 1px solid #4a3728;
-  flex-shrink: 0;
-  background: rgba(8, 6, 5, 0.95);
-}
-.save-slot-thumb.empty {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #504030;
-  font-size: 12px;
-}
-.save-slot-info {
-  flex: 1;
-  min-width: 0;
-}
-.save-slot.empty {
-  opacity: 0.55;
-}
-.save-slot-meta {
-  color: #706050;
-  font-size: 9px;
-}
-.save-slot-btns {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
 }
 .save-slot-btn {
   font-family: 'Cinzel', serif;
@@ -5609,10 +5324,6 @@ body.window-borderless #top-bar button {
 }
 .ach-card.tier-meta {
   border-color: rgba(200, 160, 64, 0.45);
-}
-#achievement-toast.toast-meta {
-  border-color: #d4b040;
-  box-shadow: 0 0 16px rgba(212, 176, 64, 0.35);
 }
 
 /* �� Cross-facet polish: night prep, streaks, combat chips �� */
