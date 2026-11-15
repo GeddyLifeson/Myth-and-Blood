@@ -544,7 +544,7 @@
     "secret": true
   },
   "element_barracks": {
-    "name": "Void Residue Barracks",
+    "name": "Powderhorn Barracks",
     "cost": 90,
     "hp": 500,
     "cover": 0.4,
@@ -558,7 +558,7 @@
     "secret": true
   },
   "primis_shrine": {
-    "name": "First Circle Shrine",
+    "name": "Pale Vigil Shrine",
     "cost": 90,
     "hp": 520,
     "cover": 0.42,
@@ -572,7 +572,7 @@
     "secret": true
   },
   "spartan_academy": {
-    "name": "Orbital Vanguard Academy",
+    "name": "Greywatch Academy",
     "cost": 90,
     "hp": 600,
     "cover": 0.45,
@@ -586,7 +586,7 @@
     "secret": true
   },
   "cog_academy": {
-    "name": "Iron Trench Academy",
+    "name": "Sawtooth Academy",
     "cost": 90,
     "hp": 580,
     "cover": 0.44,
@@ -600,7 +600,7 @@
     "secret": true
   },
   "rivendell_camp": {
-    "name": "Ninefold March Camp",
+    "name": "Thornroad Camp",
     "cost": 90,
     "hp": 560,
     "cover": 0.43,
@@ -614,7 +614,7 @@
     "secret": true
   },
   "hanma_dojo": {
-    "name": "Iron Pit Dojo",
+    "name": "Knucklebone Lodge",
     "cost": 90,
     "hp": 540,
     "cover": 0.42,
@@ -628,7 +628,7 @@
     "secret": true
   },
   "stand_arrow_shrine": {
-    "name": "Bound Spirit Shrine",
+    "name": "Marrow Choir Shrine",
     "cost": 90,
     "hp": 580,
     "cover": 0.44,
@@ -642,7 +642,7 @@
     "secret": true
   },
   "north_star_dojo": {
-    "name": "North Star Ascetic Dojo",
+    "name": "Quiet Hand Dojo",
     "cost": 90,
     "hp": 550,
     "cover": 0.43,
@@ -656,7 +656,7 @@
     "secret": true
   },
   "capsule_corp": {
-    "name": "Skyburst Foundry",
+    "name": "Emberblood Foundry",
     "cost": 90,
     "hp": 590,
     "cover": 0.45,
@@ -670,7 +670,7 @@
     "secret": true
   },
   "astartes_chapel": {
-    "name": "Crimson Legion Chapel",
+    "name": "Iron Psalm Chapel",
     "cost": 90,
     "hp": 620,
     "cover": 0.48,
@@ -684,7 +684,7 @@
     "secret": true
   },
   "crystal_sanctum": {
-    "name": "Crystal Sanctum",
+    "name": "Saltglass Sanctum",
     "cost": 90,
     "hp": 580,
     "cover": 0.44,
@@ -698,7 +698,7 @@
     "secret": true
   },
   "warp_shrine": {
-    "name": "Rift Cult Shrine",
+    "name": "Open Wound Shrine",
     "cost": 90,
     "hp": 600,
     "cover": 0.46,
@@ -712,7 +712,7 @@
     "secret": true
   },
   "dragon_moot": {
-    "name": "Wyrmcaller Moot Hall",
+    "name": "Rimehowl Moot Hall",
     "cost": 90,
     "hp": 610,
     "cover": 0.47,

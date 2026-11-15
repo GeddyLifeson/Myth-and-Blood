@@ -11322,10 +11322,7 @@ const Game = (() => {
       const tesOk =
         (GS.creativeMode && GS.creativeSettings.unlockAll) || svc('MetaProgress').isTesUnlocked();
       if (!tesOk) {
-        showMessage(
-          'Voice shouts unlock with Voicebound Pact — complete the Wyrmcaller Legacy.',
-          300
-        );
+        showMessage('Voice shouts unlock with Rimehowl Pact — complete the Rimehowl Legacy.', 300);
         return false;
       }
     }
@@ -12050,7 +12047,7 @@ const Game = (() => {
         if (!GS.castleBreachWarned) {
           GS.castleBreachWarned = true;
           showMessage(
-            'Inner keep breached — timeline integrity compromised. First Circle sanctum challenge failed.',
+            'Inner keep breached — timeline integrity compromised. Pale Vigil sanctum challenge failed.',
             400
           );
         }
@@ -13294,7 +13291,7 @@ const Game = (() => {
           const kiSnap = sampleKiEnergyArmy(playerAlive);
           if (kiSnap?.high) {
             ach('planet_boss_ki_stand', { wave: GS.wave, bossType: unit.type, ...kiSnap });
-            showMessage('Power overwhelming — skyburst warriors break the warlord!', 380);
+            showMessage('Power overwhelming — Emberblood warriors break the warlord!', 380);
           }
         }
         if (isMajorBossUnit(unit)) {
@@ -13302,7 +13299,7 @@ const Game = (() => {
           if (dragonKill) {
             ach('dragon_boss_slay', dragonKill);
             showMessage(
-              `By Voice and dragon-fire — ${dragonKill.bossName} falls to the Wyrmcaller legacy!`,
+              `By Voice and dragon-fire — ${dragonKill.bossName} falls to the Rimehowl legacy!`,
               360
             );
           }

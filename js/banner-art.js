@@ -277,7 +277,8 @@ const BannerArt = (() => {
     const def = b.def;
     const unit = Math.max(0.62, Math.min(1.5, Math.min(w / 900, h / 620)));
     const barH = (def.tall ? 118 : 74) * unit;
-    const cy = def.final ? h * 0.42 : Math.max(h * 0.24, 96 * unit + barH / 2);
+    // 84px floor keeps the bar clear of the night text drawn at y 52 to 68.
+    const cy = def.final ? h * 0.42 : Math.max(h * 0.24, Math.max(96 * unit, 84) + barH / 2);
     const tin = Math.min(1, t / IN_MS);
     const tout = Math.min(1, Math.max(0, (life - t) / OUT_MS));
     const ease = (k) => 1 - (1 - k) * (1 - k);

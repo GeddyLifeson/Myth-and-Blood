@@ -52,8 +52,11 @@ globalThis.setTimeout = (fn, ms) => {
   timers.push({ fn, ms });
   return timers.length;
 };
+const titleHud = { hidden: true, title: '' };
+const titleText = { textContent: '' };
 globalThis.document = {
-  getElementById: (id) => (id === 'achievement-toast' ? toast : null),
+  getElementById: (id) =>
+    ({ 'achievement-toast': toast, 'title-hud': titleHud, 'title-text': titleText })[id] ?? null,
   querySelectorAll: () => [],
 };
 const meta = new Proxy({}, { get: () => () => {} });
@@ -358,6 +361,11 @@ ok(C.isUnlockMet('creative_skin_doom'), 'an order mastery skin unlocks from its 
 const titleAch = L.find((a) => a.reward?.type === 'title');
 A.tryUnlock(titleAch.id);
 ok(A.earnedTitles().includes(titleAch.reward.label), 'an earned title is listed');
+A.updateTopBar();
+ok(
+  !titleHud.hidden && titleText.textContent === titleAch.reward.label,
+  'the HUD shows the title just earned'
+);
 while (timers.length) timers.shift().fn();
 
 process.exit(failures() ? 1 : 0);

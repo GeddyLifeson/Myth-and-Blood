@@ -103,42 +103,42 @@ const Cheats = (() => {
     'void residue': {
       id: 'cod115',
       message:
-        'POWDERHORN COMPANY — Dunmar Fusewick, Aldous Verdigris, Otmar Caskwright & Isen Quillon unlocked! Build Void Residue Barracks.',
+        'POWDERHORN COMPANY — Dunmar Fusewick, Aldous Verdigris, Otmar Caskwright & Isen Quillon unlocked! Build Powderhorn Barracks.',
       apply() {
         MetaProgress.unlock115();
       },
     },
     'first circle': {
       id: 'primus',
-      message: 'FIRST CIRCLE — crew unlocked! Build the First Circle Shrine.',
+      message: 'PALE VIGIL — crew unlocked! Build the Pale Vigil Shrine.',
       apply() {
         MetaProgress.unlockPrimus();
       },
     },
     'orbital vanguard': {
       id: 'halo',
-      message: 'ORBITAL VANGUARD — Orbital heroes & Vanguard Academy unlocked!',
+      message: 'GREYWATCH — Greywatch wardens & Greywatch Academy unlocked!',
       apply() {
         MetaProgress.unlockHalo();
       },
     },
     'iron trench': {
       id: 'gears',
-      message: 'IRON TRENCH — Trench squad & Trenchsaw Academy unlocked!',
+      message: 'SAWTOOTH — Sawtooth crew & Sawtooth Academy unlocked!',
       apply() {
         MetaProgress.unlockGears();
       },
     },
     'ninefold march': {
       id: 'lotr',
-      message: 'THE NINEFOLD MARCH — march company unlocked!',
+      message: 'THE THORNROAD COMPANY — march company unlocked!',
       apply() {
         MetaProgress.unlockLotr();
       },
     },
     'iron pit': {
       id: 'hanma',
-      message: 'IRON PIT — pit fighters unlocked! Build the Iron Pit Guild.',
+      message: 'KNUCKLEBONE — lodge fighters unlocked! Build the Knucklebone Lodge.',
       apply() {
         MetaProgress.unlockBaki();
       },
@@ -146,49 +146,49 @@ const Cheats = (() => {
     'bound spirit': {
       id: 'jojo',
       message:
-        'Spirit Court sigil — bound spirit heroes (Cohorts 1–7) unlocked! Cohort 7 = cavalry.',
+        'Marrow Choir sigil — Marrow Choir heroes (Cohorts 1–7) unlocked! Cohort 7 = cavalry.',
       apply() {
         MetaProgress.unlockJojo();
       },
     },
     'spirit court': {
       id: 'jojo',
-      message: 'BOUND SPIRIT COURT — Cohorts 1–7 unlocked! Gilded Derby cavalry ready.',
+      message: 'THE MARROW CHOIR — Cohorts 1–7 unlocked! Gilded Derby cavalry ready.',
       apply() {
         MetaProgress.unlockJojo();
       },
     },
     'north star': {
       id: 'fotns',
-      message: 'NORTH STAR — Seven Star Fist masters unlocked!',
+      message: 'QUIET HAND — Seven Star Fist masters unlocked!',
       apply() {
         MetaProgress.unlockFotns();
       },
     },
     skyburst: {
       id: 'dragonball',
-      message: 'SKYBURST SOUL — skyburst fighters unlocked! Build Skyburst Foundry.',
+      message: 'EMBERBLOOD — Emberblood fighters unlocked! Build Emberblood Foundry.',
       apply() {
         MetaProgress.unlockDragonball();
       },
     },
     'crimson legions': {
       id: 'imperium',
-      message: 'FOR THE CRIMSON THRONE — crimson legion unlocked! Build the Crimson Chapel.',
+      message: 'IRON PSALM — Iron Psalm brothers unlocked! Build the Iron Psalm Chapel.',
       apply() {
         MetaProgress.unlockImperium();
       },
     },
     'crystal light': {
       id: 'crystal',
-      message: 'CRYSTAL LIGHT — Crystal Vanguard unlocked! Build the Crystal Sanctum.',
+      message: 'SALTGLASS — Saltglass Guild unlocked! Build the Saltglass Sanctum.',
       apply() {
         MetaProgress.unlockCrystal();
       },
     },
     'rift cult': {
       id: 'warp',
-      message: 'RIFT CULT — unlocked! Build the Rift Cult Shrine.',
+      message: 'OPEN WOUND — unlocked! Build the Open Wound Shrine.',
       apply() {
         MetaProgress.unlockWarp();
       },
@@ -196,7 +196,7 @@ const Cheats = (() => {
     'eternal crusade': {
       id: 'warhammer',
       message:
-        'ETERNAL MARCH — Crimson Legions and Rift Cult unlocked! Faith & Rift. Build the Crimson Chapel and Warp Shrine.',
+        'ETERNAL MARCH — Iron Psalm and Cult of the Open Wound unlocked! Faith & Rift. Build the Iron Psalm Chapel and Open Wound Shrine.',
       apply() {
         MetaProgress.unlockWarhammer();
       },
@@ -204,7 +204,7 @@ const Cheats = (() => {
     voicebound: {
       id: 'tes',
       message:
-        'WYRM CALLER LEGACY — Voicebound Pact roster unlocked! Voice shouts await. Build the Wyrmcaller Moot Hall.',
+        'RIMEHOWL LEGACY — Rimehowl Pact roster unlocked! Voice shouts await. Build the Rimehowl Moot Hall.',
       apply() {
         MetaProgress.unlockTes();
       },

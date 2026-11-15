@@ -661,14 +661,29 @@
     line-height: 1.3 !important;
   }
 
-  /* Achievement toast: under the strip, clear of the thumb button and the bar. */
+  /* Achievement toast: a compact card low on the left, beside the thumb button, so it never
+     covers the night message or the wave banner at the top. */
   html.m-playing #achievement-toast {
     z-index: 70;
-    right: calc(6px + var(--m-sr));
-    bottom: auto;
-    top: calc(var(--m-hud-h) + var(--m-st) + 6px);
-    width: min(300px, calc(100vw - 12px));
+    left: calc(8px + var(--m-sl));
+    right: auto;
+    top: auto;
+    bottom: calc(var(--m-bar-h) + var(--m-sb) + 8px);
+    width: min(210px, calc(100vw - 190px));
+    padding: 6px 10px;
     box-sizing: border-box;
+  }
+  html.m-playing #achievement-toast .ach-toast-name,
+  html.m-playing #achievement-toast .ach-toast-tier,
+  html.m-playing #achievement-toast .ach-toast-reward {
+    font-size: 14px;
+    line-height: 1.2;
+    margin: 0;
+  }
+  html.m-playing #achievement-toast .ach-toast-label,
+  html.m-playing #achievement-toast .ach-toast-desc,
+  html.m-playing #achievement-toast .ach-toast-progress {
+    display: none;
   }
   /* Wave-clear achievement summary: above the message line, left of the thumb button. */
   html.m-playing .wave-summary-ach {
@@ -782,8 +797,9 @@
       align-content: start;
     }
     html.m-playing #achievement-toast {
-      top: calc(6px + var(--m-st));
-      right: calc(var(--m-bar-w) + var(--m-sr) + 8px);
+      left: calc(var(--m-hud-w) + var(--m-sl) + 176px);
+      bottom: calc(8px + var(--m-sb));
+      width: 250px;
     }
     html.m-playing .wave-summary-ach {
       left: calc(var(--m-hud-w) + var(--m-sl) + 8px);

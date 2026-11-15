@@ -6,7 +6,7 @@
       "primis"
     ],
     "name": "Residue Paradox",
-    "desc": "Void Residue + First Circle on field: +12% ability proc damage.",
+    "desc": "Powderhorn + Pale Vigil on field: +12% ability proc damage.",
     "bonus": {
       "abilityDmg": 0.12
     }
@@ -18,7 +18,7 @@
       "gears"
     ],
     "name": "Trench Vanguard",
-    "desc": "Orbital Vanguard + Iron Trench: +10 accuracy to ranged evolved operatives.",
+    "desc": "Greywatch + Sawtooth: +10 accuracy to ranged evolved operatives.",
     "bonus": {
       "rangedAcc": 10
     }
@@ -30,7 +30,7 @@
       "halo"
     ],
     "name": "March Vanguard",
-    "desc": "Ninefold March + Orbital Vanguard: +4 morale/round to all allies.",
+    "desc": "Thornroad + Greywatch: +4 morale/round to all allies.",
     "bonus": {
       "moraleRegen": 4
     }
@@ -42,7 +42,7 @@
       "fotns"
     ],
     "name": "Martial Worlds",
-    "desc": "Iron Pit + North Star: +15% melee evolved ally damage.",
+    "desc": "Knucklebone + Quiet Hand: +15% melee evolved ally damage.",
     "bonus": {
       "meleeDmg": 0.15
     }
@@ -54,7 +54,7 @@
       "baki"
     ],
     "name": "Spiritual Martial Arts",
-    "desc": "Bound Spirit + Iron Pit: +8% crit chance on melee finishers.",
+    "desc": "Marrow Choir + Knucklebone: +8% crit chance on melee finishers.",
     "bonus": {
       "critChance": 0.08
     }
@@ -65,8 +65,8 @@
       "dragonball",
       "jojo"
     ],
-    "name": "Skyburst Spirit",
-    "desc": "Skyburst + Bound Spirit: evolved ally kills heal nearest ally 8 HP.",
+    "name": "Emberblood Spirit",
+    "desc": "Emberblood + Marrow Choir: evolved ally kills heal nearest ally 8 HP.",
     "bonus": {
       "killHeal": 8
     }
@@ -78,7 +78,7 @@
       "gears"
     ],
     "name": "March of War",
-    "desc": "Ninefold March + Iron Trench: +20% siege damage from evolved units.",
+    "desc": "Thornroad + Sawtooth: +20% siege damage from evolved units.",
     "bonus": {
       "siegeDmg": 0.2
     }
@@ -102,7 +102,7 @@
       "halo"
     ],
     "name": "Circle Vanguard",
-    "desc": "First Circle + Orbital Vanguard: +6 accuracy to ranged evolved operatives.",
+    "desc": "Pale Vigil + Greywatch: +6 accuracy to ranged evolved operatives.",
     "bonus": {
       "rangedAcc": 6
     }
@@ -114,7 +114,7 @@
       "dragonball"
     ],
     "name": "Ascetic Pressure",
-    "desc": "North Star + Skyburst: +10% melee evolved ally damage.",
+    "desc": "Quiet Hand + Emberblood: +10% melee evolved ally damage.",
     "bonus": {
       "meleeDmg": 0.1
     }
@@ -126,7 +126,7 @@
       "gears"
     ],
     "name": "Arena Siege",
-    "desc": "Grand Coliseum + Iron Trench: +12% siege damage from evolved units.",
+    "desc": "Grand Coliseum + Sawtooth: +12% siege damage from evolved units.",
     "bonus": {
       "siegeDmg": 0.12
     },
@@ -154,7 +154,7 @@
       "halo"
     ],
     "name": "Grim Alliance",
-    "desc": "Crimson Legion + Orbital Vanguard: +8 accuracy to ranged evolved operatives.",
+    "desc": "Iron Psalm + Greywatch: +8 accuracy to ranged evolved operatives.",
     "bonus": {
       "rangedAcc": 8
     }
@@ -166,7 +166,7 @@
       "lotr"
     ],
     "name": "Crystal March",
-    "desc": "Crystal Vanguard + Ninefold March: +3 morale/round to all allies.",
+    "desc": "Saltglass Guild + Thornroad: +3 morale/round to all allies.",
     "bonus": {
       "moraleRegen": 3
     }
@@ -178,7 +178,7 @@
       "primis"
     ],
     "name": "Rift Paradox",
-    "desc": "Rift Cult + First Circle: +10% ability proc damage.",
+    "desc": "Cult of the Open Wound + Pale Vigil: +10% ability proc damage.",
     "bonus": {
       "abilityDmg": 0.1
     }
@@ -190,7 +190,7 @@
       "warp"
     ],
     "name": "Eternal War",
-    "desc": "Crimson Legion + Rift Cult: +12% melee evolved ally damage.",
+    "desc": "Iron Psalm + Cult of the Open Wound: +12% melee evolved ally damage.",
     "bonus": {
       "meleeDmg": 0.12
     }
@@ -201,8 +201,8 @@
       "crystal",
       "dragonball"
     ],
-    "name": "Crystal Skyburst",
-    "desc": "Crystal Vanguard + Skyburst: evolved ally kills heal nearest ally 6 HP.",
+    "name": "Saltglass Emberblood",
+    "desc": "Saltglass Guild + Emberblood: evolved ally kills heal nearest ally 6 HP.",
     "bonus": {
       "killHeal": 6
     }
@@ -214,7 +214,7 @@
       "lotr"
     ],
     "name": "Prophecy March",
-    "desc": "Voicebound + Ninefold March: +4 morale/round to all allies.",
+    "desc": "Rimehowl + Thornroad: +4 morale/round to all allies.",
     "bonus": {
       "moraleRegen": 4
     }
@@ -226,7 +226,7 @@
       "crystal"
     ],
     "name": "Voice & Crystal",
-    "desc": "Voicebound + Crystal Vanguard: +10% ability proc damage.",
+    "desc": "Rimehowl + Saltglass Guild: +10% ability proc damage.",
     "bonus": {
       "abilityDmg": 0.1
     }
