@@ -666,6 +666,7 @@ const DIFFICULTIES = {
     missLimit: 14,
     playerMoraleBonus: 4,
     eliteChanceMult: 0.6,
+    firstBloodWaves: [8, 10],
   },
   normal: {
     id: 'normal',
@@ -683,6 +684,7 @@ const DIFFICULTIES = {
     missLimit: 10,
     playerMoraleBonus: 0,
     eliteChanceMult: 1,
+    firstBloodWaves: [4, 6],
   },
   chad: {
     id: 'chad',
@@ -1495,6 +1497,15 @@ const EARLY_HP_EXTRA = 0;
 const EARLY_DMG_EXTRA = 0;
 const EARLY_HP_PER_WAVE = 0;
 const EARLY_DMG_PER_WAVE = 0;
+// A few waves bite harder so the first soldier falls there; the window is per difficulty.
+const FIRST_BLOOD_COUNT = 8;
+const FIRST_BLOOD_DMG = 0.6;
+
+function isFirstBloodWave(waveNum) {
+  const id = typeof GameState !== 'undefined' ? GameState.difficultyId : 'normal';
+  const span = getDifficultyDef(id).firstBloodWaves;
+  return !!span && waveNum >= span[0] && waveNum <= span[1];
+}
 
 /** Health and damage scale every enemy type gets at this wave; getWaveConfig and spawning share it. */
 function getEnemyWaveScale(waveNum) {
@@ -1504,7 +1515,13 @@ function getEnemyWaveScale(waveNum) {
   const surge = Math.min(MID_PRESSURE_UNTIL, early);
   return {
     hp: 1 + eased * 3.15 + post * 1.85 + early * EARLY_HP_PER_WAVE + surge * EARLY_HP_EXTRA,
-    dmg: 1 + eased * 1.95 + post * 1.15 + early * EARLY_DMG_PER_WAVE + surge * EARLY_DMG_EXTRA,
+    dmg:
+      1 +
+      eased * 1.95 +
+      post * 1.15 +
+      early * EARLY_DMG_PER_WAVE +
+      surge * EARLY_DMG_EXTRA +
+      (isFirstBloodWave(waveNum) ? FIRST_BLOOD_DMG : 0),
   };
 }
 
@@ -1534,7 +1551,10 @@ function getWaveConfig(waveNum) {
     waveNum >= 4
       ? Math.min(90, 4 + waveNum * MID_COUNT_PER_WAVE + pressureWaves * MID_PRESSURE_EXTRA)
       : 0;
-  const count = Math.floor(Math.max(templateCount, academyCount, midCount) + post * 38);
+  const firstBlood = isFirstBloodWave(waveNum) ? FIRST_BLOOD_COUNT : 0;
+  const count = Math.floor(
+    Math.max(templateCount, academyCount, midCount) + post * 38 + firstBlood
+  );
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
   // Early pressure: enemies used to stay at wave-1 strength for the first twenty waves.

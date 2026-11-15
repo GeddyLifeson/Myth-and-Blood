@@ -576,7 +576,12 @@ function previewCtx(GS) {
   const { getWaveConfig, DIFFICULTIES, ColonyValue } = start(19);
   const c = (w) => getWaveConfig(w);
   // Retuned for capped veterans: the old surge was sized against uncapped attack speed.
-  ok(c(3).count === 8 && c(6).count === 12, `the opening waves stay small (${c(6).count} at 6)`);
+  ok(c(3).count === 8 && c(7).count === 13, `the opening waves stay small (${c(7).count} at 7)`);
+  // Normal's first-blood window: waves 4-6 bring 8 more foes hitting 0.6 harder, then it stops.
+  ok(
+    c(6).count === 20 && c(6).dmgScale - c(7).dmgScale > 0.5 && c(3).dmgScale < 1.05,
+    `waves 4-6 bite harder (${c(6).count} at 6, damage x${c(6).dmgScale.toFixed(2)})`
+  );
   ok(
     c(10).count === 20 && c(15).count === 30 && c(20).count === 44,
     `the host reaches 20, 30, 44 at waves 10, 15, 20; got ${c(10).count}, ${c(15).count}, ${c(20).count}`
@@ -597,6 +602,12 @@ function previewCtx(GS) {
   ok(
     baby.enemyCountMult === 0.78 && baby.enemyHpMult === 0.72 && baby.waveHpScaleMult === 0.82,
     'Baby keeps its discounts'
+  );
+  ok(
+    String(baby.firstBloodWaves) === '8,10' &&
+      !DIFFICULTIES.chad.firstBloodWaves &&
+      !DIFFICULTIES.doomslayer.firstBloodWaves,
+    'Baby bites at waves 8-10; Chad and Hellbane need no first-blood push'
   );
   const babyPower =
     c(15).count * baby.enemyCountMult * c(15).hpScale * baby.enemyHpMult * baby.waveHpScaleMult;
