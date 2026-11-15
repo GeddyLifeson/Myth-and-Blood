@@ -1310,18 +1310,25 @@ const ContentExpansion = (() => {
   };
 
   function pickWaveEvent(wave) {
-    let best = null;
-    let bestPri = -1;
-    for (const evt of Object.values(WAVE_EVENTS)) {
-      if (evt.waveMin && wave < evt.waveMin) continue;
-      if (evt.waveMod && wave % evt.waveMod !== 0) continue;
-      const pri = evt.priority ?? 0;
-      if (pri > bestPri) {
-        bestPri = pri;
-        best = evt.id;
-      }
+    if (typeof DynamicMapEvents === 'undefined' || DynamicMapEvents.eventSlot(wave) !== 'field') {
+      return null;
     }
-    return best;
+    const live = Object.values(WAVE_EVENTS).filter((e) => !e.waveMin || wave >= e.waveMin);
+    return DynamicMapEvents.deckPick(live, wave, 23)?.id ?? null;
+  }
+
+  /** What the event deck holds for a wave, by name, whichever system speaks. */
+  function heraldNews(wave) {
+    if (typeof DynamicMapEvents === 'undefined') return null;
+    const slot = DynamicMapEvents.eventSlot(wave);
+    if (slot === 'field') return WAVE_EVENTS[pickWaveEvent(wave)]?.label || null;
+    if (slot === 'planet') return DynamicMapEvents.pickEvent(wave)?.name || null;
+    if (slot === 'wildlife') {
+      return typeof NeutralWildlife !== 'undefined'
+        ? NeutralWildlife.pickWaveEvent(wave)?.label || null
+        : null;
+    }
+    return slot === 'hazard' ? 'enemy hazards laid on the field' : null;
   }
 
   function applyWaveEvent(wave, spawnQueue) {
@@ -1546,7 +1553,8 @@ const ContentExpansion = (() => {
         u.y += Math.sin(updateTick * 0.04 + u.id.charCodeAt(0)) * 0.15;
       }
 
-      if (u.team === 'enemy' && u.summoner && u.hp > 0) {
+      // A summoner ordered to storm the line stops raising minions, so the wave can end.
+      if (u.team === 'enemy' && u.summoner && u.hp > 0 && !u.stormLine) {
         u.summonTimer = (u.summonTimer || 0) - 1;
         if (u.summonTimer <= 0) {
           u.summonTimer = u.summonCooldown || 280;
@@ -1557,6 +1565,7 @@ const ContentExpansion = (() => {
           if (minion) {
             minion.maxHp = Math.floor(minion.maxHp * 0.7);
             minion.hp = minion.maxHp;
+            minion.summoned = true;
             units.push(minion);
             FloatingText?.status(sx, sy, 'RISE!', '#a060c0');
           }
@@ -1794,9 +1803,8 @@ const ContentExpansion = (() => {
           u.morale = Math.min(u.maxMorale, u.morale + 4);
         }
       }
-      const nextEvt = pickWaveEvent(ctx.wave + 1);
-      if (nextEvt)
-        ctx.showMessage(`Herald proclaims: next wave may bring ${nextEvt.replace('_', ' ')}!`, 300);
+      const news = heraldNews(ctx.wave + 1);
+      if (news) ctx.showMessage(`Herald proclaims: the next wave brings ${news}!`, 300);
       else ctx.showMessage('Royal herald spreads courage across the ranks!');
       return true;
     }
@@ -2150,6 +2158,7 @@ const ContentExpansion = (() => {
     getWaveEvent,
     getEncyclopediaEntries,
     pickWaveEvent,
+    heraldNews,
   };
 })();
 

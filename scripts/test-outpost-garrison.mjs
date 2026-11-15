@@ -121,6 +121,8 @@ Game.setCreativeSetting?.('unlockAll', true);
 Game.setCreativeSetting?.('freeResources', true);
 Game.setCreativeSetting?.('instantBuild', true);
 Game.creativeForceDay?.();
+// Open ground: the flee path must not depend on where this seed put its trees.
+Game.creativeClearDecorations();
 const cx2 = Game.getWorldCenter();
 const opY = cx2.y - 100;
 ok(Game.creativeSpawnPlayerBuildingAt('outpost', cx2.x, opY), 'spawn outpost for mage flee test');
@@ -155,6 +157,8 @@ Game.setCreativeSetting?.('unlockAll', true);
 Game.setCreativeSetting?.('freeResources', true);
 Game.setCreativeSetting?.('instantBuild', true);
 Game.creativeForceDay?.();
+// Seeded trees must not stand between the outpost and the tent.
+Game.creativeClearDecorations();
 const cx3 = Game.getWorldCenter();
 const opY3 = cx3.y - 100;
 Game.creativeSpawnPlayerBuildingAt('outpost', cx3.x, opY3);

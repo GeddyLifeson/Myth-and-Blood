@@ -102,6 +102,7 @@ const Encyclopedia = (() => {
     CrossoverFactions: () => (typeof CrossoverFactions !== 'undefined' ? CrossoverFactions : null),
     AudioEngine: () => (typeof AudioEngine !== 'undefined' ? AudioEngine : null),
     Legacy: () => (typeof Legacy !== 'undefined' ? Legacy : null),
+    WarCamps: () => (typeof WarCamps !== 'undefined' ? WarCamps : null),
   };
   const G = (name) => {
     try {
@@ -435,6 +436,20 @@ const Encyclopedia = (() => {
             .map(([, d]) => `${d.name}: ${d.hp} health`)
             .join('\n')}`,
           { refs: { builds: theirs.map(([id]) => id) } }
+        )
+      );
+    }
+    const camps = G('WarCamps');
+    if (camps) {
+      const kinds = Object.values(camps.KINDS);
+      out.push(
+        entry(
+          'buildings',
+          'War camps',
+          `From wave ${camps.FROM_WAVE} the enemy may raise a camp on the top edge at nightfall. While it stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid.\n\n${kinds
+            .map((k) => `${k.name}: ${k.line}`)
+            .join('\n')}`,
+          { refs: { builds: kinds.map((k) => k.type) } }
         )
       );
     }
