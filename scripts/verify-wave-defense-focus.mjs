@@ -1,7 +1,7 @@
 /**
  * Expanding battlefield (all sides) + no enemy buildings + progressive attack flanks.
  */
-import { readFileSync } from 'fs';
+import { readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import vm from 'vm';
@@ -69,7 +69,11 @@ ok(sb.getUnlockedAttackSides(75).join() === 'north', 'wave 75 comes from the top
 ok(sb.getUnlockedAttackSides(500).join() === 'north', 'late game comes from the top edge');
 ok(sb.isEnemyRtsEra(250) === false, 'enemy RTS era off');
 
-const game = readFileSync(join(root, 'js/game.js'), 'utf8');
+// game.js is split across js/game-*.js; scan the engine modules together.
+const game = readdirSync(join(root, 'js'))
+  .filter((f) => /^game(-[a-z-]+)?\.js$/.test(f) && !/-(data-bundle|modes)\.js$/.test(f))
+  .map((f) => readFileSync(join(root, 'js', f), 'utf8'))
+  .join('\n');
 ok(
   /function tryPlaceEnemyBuilding[\s\S]{0,120}return false/.test(game),
   'tryPlaceEnemyBuilding no-ops'
