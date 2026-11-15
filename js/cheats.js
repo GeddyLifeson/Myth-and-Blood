@@ -60,9 +60,6 @@ const Cheats = (() => {
       message: 'HELL WALKS — Hellbane hero unlocked!',
       apply() {
         MetaProgress.unlockDoomslayerHero();
-        if (typeof Achievements !== 'undefined') {
-          Achievements.tryUnlock('doom_hero_unlock');
-        }
       },
     },
     hellbane: {
@@ -70,9 +67,6 @@ const Cheats = (() => {
       message: 'HELLBANE — The hero walks among mortals!',
       apply() {
         MetaProgress.unlockDoomslayerHero();
-        if (typeof Achievements !== 'undefined') {
-          Achievements.tryUnlock('doom_hero_unlock');
-        }
       },
     },
     'arena calls': {
@@ -215,7 +209,6 @@ const Cheats = (() => {
         'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Champions’ Hall, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
-        Achievements?.tryUnlock('doom_hero_unlock');
       },
     },
   };
