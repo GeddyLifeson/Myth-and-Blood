@@ -794,8 +794,8 @@ function testEnemyFactions(exp) {
   const queue = ['goblin', 'goblin', 'orc', 'orc'];
   const withBoss = EnemyFactions.injectSubBosses(queue, 15, () => 0);
   assert(
-    withBoss.includes('boss_gorath') || withBoss.includes('boss_thokk'),
-    'injectSubBosses should add orc sub-boss at wave 15'
+    withBoss.length === queue.length && !withBoss.some((t) => t.startsWith('boss_')),
+    'named bosses stay out of ordinary waves'
   );
   const buildings = [
     {
@@ -925,42 +925,30 @@ function testMultiFrontSiege(exp) {
     console.log('  skip MultiFrontSiege (removed)');
     return;
   }
-  const { MultiFrontSiege, EnemyFactions, getUnlockedAttackSides, PlanetConquest } = exp;
-  assert(MultiFrontSiege, 'MultiFrontSiege module should exist');
-  assert(MultiFrontSiege.MULTI_FRONT_MIN_WAVE === 12, 'multi-front should start wave 12');
-  PlanetConquest?.resetRun?.({ forcedMode: false });
+  // The flanks are gone: the host enters by three sectors of the top edge. The planner is
+  // tested in full in scripts/test-onefield.mjs; this checks what other modules call.
+  const { MultiFrontSiege, getUnlockedAttackSides } = exp;
+  assert(MultiFrontSiege.SECTORS.join() === 'left,centre,right', 'three entry sectors');
+  assert(getUnlockedAttackSides(40).join() === 'north', 'only the top edge attacks');
+  assert(getUnlockedAttackSides(400).join() === 'north', 'at any wave');
   MultiFrontSiege.resetRun();
-  const solo = EnemyFactions.getActiveFactions(20).slice(0, 1);
+  assert(MultiFrontSiege.getCurrentPlan() === null, 'no plan before a wave');
+  const queue = Array(12).fill('goblin').concat(Array(8).fill('orc'));
+  const plan = MultiFrontSiege.buildPlan({ wave: 40, kind: 'horde', queue, rng: () => 0.9 });
+  assert(plan.sectors.length === 3, 'a wide roll uses all three sectors');
   assert(
-    !MultiFrontSiege.buildFrontPlan(20, solo, ['north', 'east'], () => 0.5),
-    'single faction should not build plan'
+    plan.sectors.reduce((a, s) => a + plan.counts[s], 0) === queue.length,
+    'sector counts add up to the host'
   );
-  const factions = EnemyFactions.getActiveFactions(40);
-  assert(factions.length >= 2, 'wave 40 should have multiple factions');
-  const plan = MultiFrontSiege.buildFrontPlan(40, factions, getUnlockedAttackSides(40), () => 0.1);
-  assert(plan && plan.assignments.length >= 2, 'should assign doctrines per faction');
-  assert(plan.waveSides.length >= 1, 'plan should expose wave sides');
-  assert(plan.intel.includes('·') || plan.assignments.length >= 2, 'intel should describe fronts');
-  const orcSide = MultiFrontSiege.pickSpawnSide('orc', plan, plan.waveSides, () => 0);
-  const goblinSide = MultiFrontSiege.pickSpawnSide('goblin', plan, plan.waveSides, () => 0);
-  const orcAssign = plan.assignments.find((a) => a.factionId === 'orc_warbands');
-  const gobAssign = plan.assignments.find((a) => a.factionId === 'goblin_hordes');
-  if (orcAssign && plan.mode === 'coordinated') {
-    assert(orcAssign.fronts.includes(orcSide), 'orc spawns should follow siege assignment');
-  }
-  if (gobAssign && plan.mode === 'coordinated' && gobAssign.doctrine === 'economy_raid') {
-    assert(
-      gobAssign.fronts.includes('south') || !getUnlockedAttackSides(40).includes('south'),
-      'goblins should prefer south economy raids when unlocked'
-    );
-  }
+  MultiFrontSiege.setCurrentPlan(plan);
+  assert(MultiFrontSiege.getCurrentPlan() === plan, 'the current plan can be asked for');
   const hamlet = {
     id: 'h1',
     owner: 'player',
     complete: true,
     hp: 100,
     isHamlet: true,
-    x: 200,
+    x: 60,
     y: 500,
   };
   const outpost = {
@@ -972,29 +960,20 @@ function testMultiFrontSiege(exp) {
     x: 200,
     y: 120,
   };
-  const ecoTarget = MultiFrontSiege.pickCounterRaidTarget('goblin_hordes', [hamlet, outpost], plan);
-  const siegeTarget = MultiFrontSiege.pickCounterRaidTarget(
-    'orc_warbands',
-    [hamlet, outpost],
-    plan
-  );
-  if (plan.assignments.find((a) => a.factionId === 'goblin_hordes')?.doctrine === 'economy_raid') {
-    assert(ecoTarget?.id === 'h1', 'economy raid should target southern hamlet');
-  }
-  if (plan.assignments.find((a) => a.factionId === 'orc_warbands')?.doctrine === 'siege_line') {
-    assert(siegeTarget?.y <= hamlet.y, 'siege line should prefer northern holds');
-  }
+  const target = MultiFrontSiege.pickCounterRaidTarget('goblin_hordes', [hamlet, outpost], plan);
+  assert(target?.id === 'h1', 'counter-raids prefer settlements');
   const spawn = MultiFrontSiege.resolveCounterRaidSpawn('goblin_hordes', hamlet, {
     worldW: 400,
     worldH: 600,
     rng: () => 0.5,
   });
-  assert(
-    spawn.side === 'south' || spawn.side === 'north',
-    'counter-raid should spawn from a flank'
-  );
-  const snap = MultiFrontSiege.getStateSnapshot(40, factions);
-  assert(snap.active && snap.assignments.length >= 2, 'snapshot should expose multi-front state');
+  assert(spawn.side === 'north' && spawn.y < 40, 'counter-raid enters at the top edge');
+  assert(spawn.sector === 'left' && spawn.x < 134, 'in the sector above its target');
+  assert(MultiFrontSiege.FRONT_LABELS.north, 'the top edge has a label for the raid message');
+  const snap = MultiFrontSiege.getStateSnapshot();
+  assert(snap.active && snap.sectors.length === 3, 'snapshot describes the plan');
+  assert(Array.isArray(snap.assignments), 'snapshot keeps the list older readers expect');
+  MultiFrontSiege.resetRun();
 }
 
 function testNeutralWildlife(exp) {
@@ -1006,10 +985,14 @@ function testNeutralWildlife(exp) {
   assert(NeutralWildlife, 'NeutralWildlife module should exist');
   NeutralWildlife.resetRun();
   assert(NeutralWildlife.pickWaveEvent(7) === null, 'inactive before wave 8');
-  const evt = NeutralWildlife.pickWaveEvent(22);
-  assert(evt?.id === 'beast_migration', 'wave 22 should trigger beast migration');
+  const evtWave = eventWave(
+    exp,
+    'wildlife',
+    (w) => NeutralWildlife.pickWaveEvent(w)?.id === 'beast_migration'
+  );
+  assert(evtWave > 0, 'the event deck reaches a beast migration');
   const spawned = [];
-  NeutralWildlife.onWaveStart(22, {
+  NeutralWildlife.onWaveStart(evtWave, {
     worldW: 500,
     worldH: 820,
     rallyY: 720,
@@ -1198,7 +1181,7 @@ function testFactionReputation(exp) {
     10,
     {}
   );
-  assert(FactionReputation.getHostility('goblin_hordes') > 22, 'kills should raise hostility');
+  assert(FactionReputation.getHostility('goblin_hordes') > 0, 'kills should raise the grudge');
 
   FactionReputation.onEnemyStructureDestroyed(
     {
@@ -1210,7 +1193,7 @@ function testFactionReputation(exp) {
     { hooks: {} }
   );
   const hAfterRaze = FactionReputation.getHostility('goblin_hordes');
-  assert(hAfterRaze >= 30, 'razing should spike hostility');
+  assert(hAfterRaze >= 20, 'razing should spike the grudge');
 
   const offsetHigh = FactionReputation.getEvolutionWaveOffset('goblin_hordes');
   assert(offsetHigh >= 0, 'high hostility should not delay evolution');
@@ -1225,8 +1208,8 @@ function testFactionReputation(exp) {
   FactionReputation.reduceHostility('orc_warbands', 10, 20);
   const lowMods = FactionReputation.getFactionModifiers('orc_warbands', 20);
   assert(
-    lowMods.economicFocus || lowMods.buildingIntervalMult < 1,
-    'low hostility should favor economy'
+    !lowMods.economicFocus && lowMods.spawnMult === 1 && lowMods.eliteChanceMult === 1,
+    'a grudge has no hidden effect on spawns'
   );
 
   FactionReputation.resetRun();
@@ -1234,12 +1217,19 @@ function testFactionReputation(exp) {
   FactionReputation.addHostility('orc_warbands', 58, 14);
   const tierBoosted = EnemyFactions.getFactionTier('orc_warbands', 14);
   assert(
-    (tierBoosted?.stage || 0) > (tierBase?.stage || 0),
-    'hostility should pull evolution forward'
+    (tierBoosted?.stage || 0) === (tierBase?.stage || 0),
+    'a grudge does not move a faction up its tiers'
   );
 
   const snap = FactionReputation.getStateSnapshot(20);
   assert(snap.factions.length >= 1, 'snapshot should list faction reputations');
+}
+
+/** First wave on the fixed test deck where `hit` holds; the deck decides which waves carry events. */
+function eventWave(exp, _kind, hit) {
+  exp.DynamicMapEvents.resetRun(5);
+  for (let w = 8; w < 3000; w++) if (hit(w)) return w;
+  return -1;
 }
 
 function testDynamicMapEvents(exp) {
@@ -1249,11 +1239,14 @@ function testDynamicMapEvents(exp) {
   }
   const { DynamicMapEvents } = exp;
   assert(DynamicMapEvents, 'DynamicMapEvents module should exist');
-  DynamicMapEvents.resetRun();
+  DynamicMapEvents.resetRun(5);
   assert(DynamicMapEvents.pickEvent(10) === null, 'inactive before wave 12');
-  const geo = DynamicMapEvents.pickEvent(14);
-  assert(geo?.id === 'geothermal_surge', 'wave 14 should trigger geothermal surge');
-  const pending = DynamicMapEvents.prepareNextEvent(14, {
+  const planetWave = (id) =>
+    eventWave(exp, 'planet', (w) => DynamicMapEvents.pickEvent(w)?.id === id);
+  const geoWave = planetWave('geothermal_surge');
+  const volcanoWave = planetWave('volcanic_eruption');
+  assert(geoWave > 0 && volcanoWave > 0, 'the event deck reaches both geothermal and volcanic');
+  const pending = DynamicMapEvents.prepareNextEvent(geoWave, {
     worldW: 500,
     rallyY: 720,
     hooks: {},
@@ -1265,7 +1258,7 @@ function testDynamicMapEvents(exp) {
   assert(evac.ok, 'should accept vent choice');
 
   const waveMods = { countMult: 1, hpMult: 1, noElites: false, stealReduction: 0 };
-  DynamicMapEvents.applyForWave(14, {
+  DynamicMapEvents.applyForWave(geoWave, {
     worldW: 500,
     rallyY: 720,
     territoryTier: 2,
@@ -1275,10 +1268,10 @@ function testDynamicMapEvents(exp) {
   });
   assert(waveMods.countMult === 0.9, 'vent should reduce enemy spawns');
 
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(32, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('evacuate', { tactical: 10, spendTp: () => {} });
-  const volcano = DynamicMapEvents.applyForWave(32, {
+  const volcano = DynamicMapEvents.applyForWave(volcanoWave, {
     worldW: 500,
     rallyY: 720,
     units: [{ team: 'player', hp: 100, maxHp: 100, morale: 50, maxMorale: 100 }],
@@ -1286,8 +1279,8 @@ function testDynamicMapEvents(exp) {
   });
   assert(volcano?.mods.playerDamageTakenMult === 0.95, 'evacuate should reduce damage taken');
 
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(14, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(geoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('tap', { tactical: 10, spendTp: () => {} });
   assert(
     DynamicMapEvents.getActiveMods().nightBuildMult === 1.35,
@@ -1296,10 +1289,10 @@ function testDynamicMapEvents(exp) {
 
   let tp = 0;
   let science = 0;
-  DynamicMapEvents.resetRun();
-  DynamicMapEvents.prepareNextEvent(32, { worldW: 500, rallyY: 720, hooks: {} });
+  DynamicMapEvents.resetRun(5);
+  DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('harness', { tactical: 10, spendTp: () => {} });
-  DynamicMapEvents.applyForWave(32, {
+  DynamicMapEvents.applyForWave(volcanoWave, {
     grantTp: (n) => {
       tp += n;
     },
@@ -1310,7 +1303,7 @@ function testDynamicMapEvents(exp) {
   });
   assert(tp >= 6 && science >= 2, 'harness should grant TP and science');
 
-  const snap = DynamicMapEvents.getStateSnapshot(32, 20, false);
+  const snap = DynamicMapEvents.getStateSnapshot(volcanoWave, 20, false);
   assert(snap.activeSummary, 'snapshot should expose active summary after apply');
 }
 
@@ -1545,9 +1538,15 @@ function testFactionIntel(exp) {
   const active = rows.filter((r) => r.status === 'active' || r.status === 'weakened');
   assert(active.length >= 2, 'wave 20 should have multiple active factions');
   const goblin = rows.find((r) => r.id === 'goblin_hordes');
-  assert(goblin && goblin.stage >= 1, 'goblin should have evolution stage');
+  assert(goblin && goblin.tacticName === 'Swarm and Sappers', 'goblin should name its tactic');
+  assert(goblin.counter.length > 10, 'goblin should give a counter');
   const summary = FactionIntel.formatSummary(gs);
-  assert(summary.includes('S'), 'summary should mention stages');
+  assert(summary.includes('Goblin'), 'summary should name the factions that are awake');
+  const night = { ...gs, nextHost: { factionName: 'Orc Warbands', countText: 'about 40' } };
+  assert(
+    FactionIntel.formatSummary(night).includes('Tomorrow: Orc Warbands lead'),
+    'summary should name the lead for tomorrow'
+  );
   const snap = FactionIntel.getStateSnapshot(gs);
   assert(snap.activeCount >= 2, 'snapshot should count active factions');
 }
@@ -1821,23 +1820,18 @@ function testEnemyFactionEncyclopedia(EnemyFactions) {
   }
   const entries = EnemyFactions.getEncyclopediaEntries();
   assert(
-    entries.length >= 23,
-    'faction encyclopedia should have overviews + tracks + 20 stage pages'
+    entries.length >= 9,
+    'faction encyclopedia should have the overview, hordes, grudges and one page per host'
   );
-  const overview = entries.find((e) => e.name === 'Enemy Faction Evolution System');
-  assert(overview?.body?.includes('Stage 4 Kingdom'), 'overview should describe kingdom stage');
-  const goblinS2 = entries.find((e) => e.name === 'Goblin Hordes — Stage 2: Organized');
-  assert(
-    goblinS2?.body?.includes('goblin_sapper') || goblinS2?.body?.includes('Sapper'),
-    'goblin stage 2 should list sappers'
-  );
-  assert(goblinS2?.campaignWave === 8, 'goblin stage 2 should gate at wave 8');
-  const darkS4 = entries.find(
-    (e) => e.name?.includes('Dark Legions') && e.name?.includes('Stage 4')
-  );
-  assert(darkS4?.body?.includes('Counter-raids: ACTIVE'), 'dark stage 4 should flag counter-raids');
-  const mirror = entries.find((e) => e.name === 'Mirror Empires — Evolution Track');
-  assert(mirror?.body?.includes('Wave 200'), 'mirror track should cite debut wave');
+  const overview = entries.find((e) => e.name === 'Enemy Factions');
+  assert(overview?.body?.includes('One faction leads each wave'), 'overview should say who leads');
+  const goblin = entries.find((e) => e.name?.startsWith('Goblin Hordes'));
+  assert(goblin?.body?.includes('Sapper'), 'goblin page should list sappers');
+  assert(goblin?.campaignWave === 1, 'goblin page should open at wave 1');
+  const dark = entries.find((e) => e.name?.startsWith('Dark Legions'));
+  assert(dark?.body?.includes('Counter:'), 'dark legions page should give the counter');
+  const mirror = entries.find((e) => e.name?.startsWith('Mirror Empires'));
+  assert(mirror?.campaignWave === 200, 'mirror page should cite its debut wave');
 }
 
 function testColonyValueEncyclopedia(ColonyValue) {
@@ -1993,6 +1987,8 @@ function testEnemyTradePostSiegeable(exp) {
   Game.setCreativeSetting?.('instantBuild', true);
   Game.setCreativeSetting?.('academyDeploy', true);
   Game.creativeForceDay?.();
+  // Placement is the test, not where this seed put its trees.
+  Game.creativeClearDecorations();
   const cx = Game.getWorldCenter();
   assert(
     Game.creativeSpawnEnemyBuildingAt('enemy_trade_outpost', cx.x + 120, cx.y - 60),

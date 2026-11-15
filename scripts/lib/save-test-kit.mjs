@@ -300,6 +300,8 @@ export function normalise(g) {
       .map((b) => {
         const out = entity(b, new Set());
         if (out.wallSlots) out.wallSlots = out.wallSlots.map((s) => ({ ...s }));
+        // WarCamps rebuilds its camps on load, so their ids are new ones.
+        if (/^war_camp/.test(b.type)) out.id = `camp:${b.type}`;
         return out;
       })
       .sort(byId),

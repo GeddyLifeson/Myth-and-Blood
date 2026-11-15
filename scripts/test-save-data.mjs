@@ -11,6 +11,18 @@ const ok = (cond, msg) => {
   if (!cond) failed++;
 };
 
+// --- a neutral animal on the field is a readable soldier record ------------------------------
+{
+  const g = bootGame(3);
+  g.Game.setDifficulty('baby');
+  g.Game.start();
+  const snap = JSON.parse(JSON.stringify(g.Game.exportGameState()));
+  snap.units.push({ type: 'wild_boar', team: 'neutral', x: 100, y: 100, hp: 50 });
+  ok(g.SaveFormat.validate(snap) === null, 'a save with a neutral unit passes the shape check');
+  snap.units[snap.units.length - 1].team = 'ghost';
+  ok(g.SaveFormat.validate(snap) !== null, 'an unknown team is still refused');
+}
+
 // --- SaveRegistry: a module adds its own state ---------------------------------------------
 {
   const g = bootGame(3, { extra: ['save.js'], names: ['SaveManager'] });

@@ -84,7 +84,7 @@
     "blocksLOS": false,
     "buildTime": 100,
     "isMedical": true,
-    "healRate": 0.14
+    "healRate": 0.03
   },
   "mess_hall": {
     "name": "Mess Hall",

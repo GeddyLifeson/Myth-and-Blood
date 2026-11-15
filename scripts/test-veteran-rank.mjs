@@ -160,8 +160,13 @@ healer.vetStatTierApplied = 0;
 healer.specialistRankedThisWave = false;
 const heal0 = healer.healAmount;
 const healerHp0 = healer.maxHp;
-const rankEvent = sb.trySpecialistRank(healer);
-ok(rankEvent === 'upgrade', `specialist wave rank applies upgrade (got ${rankEvent})`);
+// A specialist ranks up on every third working wave (difficulty rebalance).
+let rankEvent = null;
+for (let i = 0; i < 3; i++) {
+  healer.specialistRankedThisWave = false;
+  rankEvent = sb.trySpecialistRank(healer);
+}
+ok(rankEvent === 'upgrade', `the third working wave applies an upgrade (got ${rankEvent})`);
 ok(healer.vetTier === 1, 'healer vet tier increments from wave work');
 ok(healer.healAmount > heal0, `healer healAmount rises (${heal0} -> ${healer.healAmount})`);
 ok(healer.maxHp > healerHp0, `healer maxHp rises (${healerHp0} -> ${healer.maxHp})`);

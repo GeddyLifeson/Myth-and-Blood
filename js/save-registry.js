@@ -315,7 +315,8 @@ const SaveFormat = (() => {
       if (!u || typeof u !== 'object' || typeof u.type !== 'string' || !fin(u.x) || !fin(u.y)) {
         return `This save is damaged (soldier ${i + 1} is unreadable).`;
       }
-      if (!fin(u.hp) || (u.team !== 'player' && u.team !== 'enemy' && u.team != null)) {
+      const teams = ['player', 'enemy', 'neutral'];
+      if (!fin(u.hp) || (u.team != null && !teams.includes(u.team))) {
         return `This save is damaged (soldier ${i + 1} is unreadable).`;
       }
     }

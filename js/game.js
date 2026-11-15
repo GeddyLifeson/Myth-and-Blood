@@ -224,7 +224,7 @@ const Game = (() => {
   GS.spawnTimer = 0;
   GS.waveTimer = 0;
   GS.spawnDelayBonus = 0;
-  /** Set once wave 1 terrain is generated; map only grows via syncMapGrowth after that. */
+  /** Set once wave 1 terrain is generated; the field is not rolled again during a run. */
   GS.terrainInitialized = false;
   GS.selectedDeploy = null;
   GS.selectedAbility = null;
@@ -262,6 +262,8 @@ const Game = (() => {
   const PATH_BUDGET_WARN_INTERVAL = 120;
   GS.spatialFrame = -1;
   const TP_SANITY_CAP = 500000;
+  /** Faction hazards on the field at once; a hazard wave adds at most two. */
+  const HAZARD_FIELD_CAP = 4;
   GS.spyNetwork = true;
   GS.waveModifiers = { ...GameRuntime.DEFAULT_WAVE_MODIFIERS };
   GS.pendingWaveMods = { ...GameRuntime.DEFAULT_PENDING_WAVE_MODS };
@@ -281,8 +283,10 @@ const Game = (() => {
   GS.waveProgress = 0;
   GS.waveEnemyTotal = 0;
   GS.waveAttackSides = ['north'];
+  GS.sectorPlan = null;
+  GS.spawnSectors = [];
+  GS.lastSectorMain = null;
   GS.nextWavePlan = null;
-  GS.multiFrontPlan = null;
   GS.pointerScreen = { sx: -1, sy: -1 };
   GS.moraleAlertCooldown = 0;
   GS.moraleCascadeState = { recentBreaks: [], cascade: false, tick: 0 };
@@ -768,6 +772,8 @@ const Game = (() => {
       const off = offsets[i] || { x: 0, y: 0 };
       orderMove(unit, anchor.x + off.x, anchor.y + off.y, true, { hold: opts.hold ?? false });
     });
+    // A move that lands on a war camp is the order to attack it; any other move cancels that.
+    if (typeof WarCamps !== 'undefined') WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx);
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
@@ -1005,61 +1011,21 @@ const Game = (() => {
   }
 
   /**
-   * After a centered expand, old content lives in [ox, oy]..[ox+prevW, oy+prevH].
-   * Sample only the new north / south / east / west bands.
+   * A clear spot in no-man's-land: between the muster zone's top and the ground the
+   * player builds on, away from the field edges.
    */
-  function pickExpansionSpot(prevW, prevH, placed, radius, maxAttempts = 30) {
-    const dW = Math.max(0, GS.worldW - prevW);
-    const dH = Math.max(0, GS.worldH - prevH);
-    const ox = dW / 2;
-    const oy = dH / 2;
+  function pickFieldSpot(placed, radius, maxAttempts = 30) {
+    const top = 70;
+    const bottom = Math.max(top + 60, GS.rallyY - 130);
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      let x;
-      let y;
-      const roll = Math.random();
-      const northH = oy;
-      const southH = dH - oy;
-      const westW = ox;
-      const eastW = dW - ox;
-      // Weight bands that actually grew this expansion.
-      const bands = [];
-      if (northH > 24) bands.push('north', 'north');
-      if (southH > 24) bands.push('south', 'south');
-      if (westW > 24) bands.push('west');
-      if (eastW > 24) bands.push('east');
-      const band = bands.length ? bands[Math.floor(Math.random() * bands.length)] : null;
-      if (band === 'north') {
-        x = 30 + Math.random() * Math.max(40, GS.worldW - 60);
-        y = 12 + Math.random() * Math.max(16, northH - 20);
-      } else if (band === 'south') {
-        x = 30 + Math.random() * Math.max(40, GS.worldW - 60);
-        y = oy + prevH + 12 + Math.random() * Math.max(16, southH - 24);
-      } else if (band === 'west') {
-        x = 12 + Math.random() * Math.max(16, westW - 20);
-        y = 40 + Math.random() * Math.max(40, GS.worldH - 80);
-      } else if (band === 'east') {
-        x = ox + prevW + 12 + Math.random() * Math.max(16, eastW - 20);
-        y = 40 + Math.random() * Math.max(40, GS.worldH - 80);
-      } else if (dH > 0 && roll < 0.5) {
-        x = 40 + Math.random() * (GS.worldW - 80);
-        y = prevH + 20 + Math.random() * Math.max(20, GS.worldH - prevH - 40);
-      } else if (dW > 0) {
-        const side = dW / 2;
-        const left = Math.random() < 0.5;
-        x = left
-          ? 16 + Math.random() * Math.max(12, side - 20)
-          : GS.worldW - side + 8 + Math.random() * Math.max(12, side - 20);
-        y = 60 + Math.random() * Math.max(40, GS.worldH - 120);
-      } else {
-        x = 50 + Math.random() * (GS.worldW - 100);
-        y = 80 + Math.random() * (GS.worldH - 160);
-      }
+      const x = 40 + Math.random() * (GS.worldW - 80);
+      const y = top + Math.random() * (bottom - top);
       if (isDecorationSpotClear(x, y, radius, placed)) return { x, y, radius };
     }
     return null;
   }
 
-  /** Shift all world-space objects so growth is centered (land on every side). */
+  /** Moves every world-space object by (dx, dy). Used to fit a save from a grown map. */
   function shiftWorldEntities(dx, dy) {
     if (!dx && !dy) return;
     const shiftOne = (o) => {
@@ -1114,13 +1080,21 @@ const Game = (() => {
     GS.cameraWorldY += dy;
   }
 
-  function spawnExpansionFeatures(prevW, prevH, placed) {
+  /**
+   * The field does not grow, but the war still changes it: each new land tier leaves a
+   * few crates, barrels and a beast den in no-man's-land. Each kind is capped so the one
+   * field never silts up.
+   */
+  function seedTerritoryFeatures() {
+    const placed = [...GS.decorations];
+    const live = (test) => GS.decorations.filter((d) => d.hp > 0 && test(d)).length;
     if (GS.territoryTier >= 1) {
       const destTypes = ['supply_crate', 'oil_barrel'];
-      const destCount = 1 + Math.floor(GS.territoryTier / 3);
+      const room = 4 - live((d) => destTypes.includes(d.type));
+      const destCount = Math.min(room, 1 + Math.floor(GS.territoryTier / 3));
       for (let i = 0; i < destCount; i++) {
         const t = destTypes[i % destTypes.length];
-        const spot = pickExpansionSpot(prevW, prevH, placed, 14);
+        const spot = pickFieldSpot(placed, 14);
         if (!spot) continue;
         const deco = {
           type: t,
@@ -1142,9 +1116,10 @@ const Game = (() => {
       }
     }
     if (GS.territoryTier >= 1 && svc('NeutralWildlife')) {
-      const denCount = 1 + Math.floor(GS.territoryTier / 4);
+      const room = 2 - live((d) => d.isNeutralDen);
+      const denCount = Math.min(room, 1 + Math.floor(GS.territoryTier / 4));
       for (let i = 0; i < denCount; i++) {
-        const spot = pickExpansionSpot(prevW, prevH, placed, 18);
+        const spot = pickFieldSpot(placed, 18);
         if (!spot) continue;
         const deco = {
           type: 'neutral_den',
@@ -1165,24 +1140,7 @@ const Game = (() => {
         placed.push(deco);
       }
     }
-    if (GS.territoryTier >= 2 && svc('GameDepth')) {
-      const types = ['swamp', 'fire'];
-      const hazCount = 1 + Math.floor(GS.territoryTier / 2);
-      for (let i = 0; i < hazCount; i++) {
-        const spot = pickExpansionSpot(prevW, prevH, [], 20);
-        if (!spot) continue;
-        const t = types[i % types.length];
-        GS.hazards.push({
-          type: t,
-          id: `haz_exp_${Date.now()}_${i}`,
-          x: spot.x,
-          y: spot.y,
-          radius: 28 + Math.random() * 18,
-          damage: t === 'fire' ? 0.35 : 0,
-          slow: t === 'swamp' ? 0.55 : 1,
-        });
-      }
-    }
+    invalidateObstacles();
   }
 
   function resolveUnitsInTerrain() {
@@ -1208,94 +1166,20 @@ const Game = (() => {
     }
   }
 
-  function populateNewTerritory(prevW, prevH) {
-    const types = ['tree', 'tree', 'rock'];
-    const placed = [...GS.decorations];
-    const count = 4 + GS.territoryTier * 2;
-
-    for (let i = 0; i < count; i++) {
-      const t = types[Math.floor(Math.random() * types.length)];
-      const radius = t === 'tree' ? 14 : 10;
-      const spot = pickExpansionSpot(prevW, prevH, placed, radius);
-      if (!spot) continue;
-      const deco = {
-        type: t,
-        id: 'deco_exp_' + Date.now() + '_' + i,
-        x: spot.x,
-        y: spot.y,
-        size: t === 'tree' ? 18 + Math.random() * 10 : 12 + Math.random() * 6,
-        hp: 999,
-        blocksMove: true,
-        blocksLOS: true,
-        cover: t === 'rock' ? 0.3 : 0.45,
-        radius,
-      };
-      GS.decorations.push(deco);
-      placed.push(deco);
-    }
-    spawnExpansionFeatures(prevW, prevH, placed);
-    if (svc('LivingPlanet')) {
-      svc('LivingPlanet').populateBiomeDecor(
-        GS.decorations,
-        GS.worldW,
-        GS.worldH,
-        GS.territoryTier,
-        GS.rallyY,
-        prevW,
-        prevH
-      );
-    }
-    resolveUnitsInTerrain();
-    invalidateObstacles();
-  }
-
-  function syncMapGrowth(opts = {}) {
+  /**
+   * The field is one size for the whole run. What changes with the waves is the land
+   * tier, which gates hazards, wildlife and the features left in no-man's-land.
+   */
+  function syncTerritory(opts = {}) {
     if (GS.wave <= 0) return false;
-    const prevW = GS.worldW;
-    const prevH = GS.worldH;
+    const prevTier = GS.territoryTier;
     applyWorldSize(GS.wave);
-    const grew = GS.worldW > prevW || GS.worldH > prevH;
-    if (!grew) return false;
-
-    // Center the old map in the new bounds so new land wraps north/south/east/west.
-    const shiftX = (GS.worldW - prevW) / 2;
-    const shiftY = (GS.worldH - prevH) / 2;
-    shiftWorldEntities(shiftX, shiftY);
-
-    populateNewTerritory(prevW, prevH);
-    resolveUnitsInTerrain();
-    invalidateObstacles();
-    // Immediate walk-grid rebuild so pathing is valid on the new bounds (not deferred a few ticks).
-    GS.walkGridRebuildDue = true;
-    GS.walkGridRebuildTick = -9999;
-    maybeRebuildWalkGrids();
-    if (typeof resize === 'function') resize();
-    if (typeof applyCamera === 'function') applyCamera();
-
-    // Keep non-manual troops oriented on the new rally line.
-    for (const u of GS.units) {
-      if (u.team !== 'player' || u.hp <= 0) continue;
-      if (!u.manualOrder && !u.garrisoned && !u.stationedKeep && !u.wallGarrisoned) {
-        u.targetY = GS.rallyY;
-      }
-    }
-
-    if (opts.announce !== false) {
-      const roman =
-        ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII', 'IX', 'X', 'XI', 'XII'][
-          GS.territoryTier
-        ] || String(GS.territoryTier || '');
-      const label = roman ? `Land ${roman}` : `Wave ${GS.wave}`;
-      addHighlight('territory', `${label} — map ${GS.worldW}×${GS.worldH} (N/E/S/W)`);
-      showMessage(`Territory expanded on all sides! ${label} · ${GS.worldW}×${GS.worldH}`, 300);
-      svc('FloatingText')?.status?.(GS.worldW / 2, GS.worldH / 2, 'LAND GAINED', '#f0d060');
-      svc('Particles')?.dust?.(GS.worldW / 2, GS.worldH / 2);
-      playSfx('reinforce');
-    }
+    if (GS.territoryTier <= prevTier) return false;
+    if (!opts.skipTerrain) seedTerritoryFeatures();
     return true;
   }
 
-  /** One-time full-map terrain roll (wave 1). Later growth uses populateNewTerritory only. */
+  /** One-time full-field terrain roll (wave 1). The field keeps this size and terrain. */
   function generateBattlefield() {
     const preserved = GS.decorations.filter((d) => d.type === 'barricade' && d.hp > 0);
     GS.decorations = [...preserved];
@@ -2175,7 +2059,6 @@ const Game = (() => {
   const SURROUND_MIN_FILLED = 6;
   const MORALE_WITNESS_RADIUS = 150;
   const MORALE_WITNESS_CLOSE = 70;
-  const MORALE_WITNESS_BREAK_COUNT = 3;
   const OPENING_RESOLVE_WAVES = 2;
   const GENERAL_RALLY_RANGE = 40;
   const GENERAL_W2W_BUFF_TICKS = 200;
@@ -2251,6 +2134,20 @@ const Game = (() => {
   function triggerMoraleBreak(unit, reason) {
     if (!isMoraleCombatUnit(unit) || unit.fleeing || unit.demoralized || unit.retreatingToMed)
       return;
+    if (
+      unit.team === 'enemy' &&
+      (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilOperative(unit))
+    ) {
+      // A broken operative that fights at range would hang back for good: it runs for the line.
+      if (!unit.isNamedBoss && unit.combatType !== 'melee' && !unit.stormLine) {
+        unit.lineBreaker = true;
+        unit.stormLine = true;
+        unit.path = [];
+        unit.pathIndex = 0;
+        unit.combatTargetId = null;
+      }
+      return;
+    }
     if (unit.team === 'player') {
       GS.moraleCascadeState =
         GameDepth?.recordMoraleCascade({ ...GS.moraleCascadeState, tick: GS.updateTick }, true) ||
@@ -2563,14 +2460,19 @@ const Game = (() => {
       const closeWitness =
         unitDistSq(observer, deadUnit) < MORALE_WITNESS_CLOSE * MORALE_WITNESS_CLOSE;
       observer.witnessDeaths = (observer.witnessDeaths || 0) + 1;
-      let moraleLoss = closeWitness ? 3 : 2;
+      const enemyWitness = observer.team === 'enemy';
+      const t = DIFFICULTY_TUNING;
+      let moraleLoss = enemyWitness
+        ? closeWitness
+          ? t.enemyWitnessLossClose
+          : t.enemyWitnessLossFar
+        : closeWitness
+          ? t.soldierWitnessLossClose
+          : t.soldierWitnessLossFar;
       if (isGeneralDeath) moraleLoss += 3;
       if (isEliteDeath && observer.team === 'enemy') moraleLoss += 1;
       observer.morale = Math.max(0, observer.morale - moraleLoss);
-      if (
-        observer.witnessDeaths >= MORALE_WITNESS_BREAK_COUNT ||
-        observer.morale <= moraleBreakThreshold(observer)
-      ) {
+      if (observer.morale <= moraleBreakThreshold(observer)) {
         triggerMoraleBreak(observer, 'witness');
       }
     }
@@ -2578,7 +2480,10 @@ const Game = (() => {
       for (const ally of GS.units) {
         if (ally.team !== 'player' || ally.hp <= 0 || ally.id === deadUnit.id) continue;
         if (!isMoraleCombatUnit(ally)) continue;
-        ally.morale = Math.max(0, ally.morale - (isGeneralDeath ? 4 : 1));
+        ally.morale = Math.max(
+          0,
+          ally.morale - (isGeneralDeath ? 4 : DIFFICULTY_TUNING.armyLossPerDeath)
+        );
         if (ally.morale <= moraleBreakThreshold(ally) && !ally.demoralized && !ally.fleeing) {
           triggerMoraleBreak(ally, 'casualty');
         }
@@ -2797,10 +2702,29 @@ const Game = (() => {
     },
     /** Enemy count multiplier for a given wave (the first two waves are eased in). */
     countMultFor: (waveNum) => openingCountMult(getDifficulty().enemyCountMult, waveNum),
-    /** Flanks the next wave will use; known only at night, after they have been rolled. */
+    /** The host always comes from the top edge. */
     get nextSides() {
+      return GS.timeOfDay === 'night' ? ['north'] : null;
+    },
+    /** Tomorrow's entry-sector plan; known only at night, after it has been rolled. */
+    get nextSectorPlan() {
       const plan = GS.nextWavePlan;
-      return GS.timeOfDay === 'night' && plan && plan.wave === GS.wave + 1 ? plan.sides : null;
+      return GS.timeOfDay === 'night' && plan && plan.wave === GS.wave + 1 ? plan : null;
+    },
+    /** Tomorrow's host for the night preview: lead faction, tactic, head count. */
+    get nextHost() {
+      if (GS.timeOfDay !== 'night') return null;
+      let towers = 0;
+      for (const b of GS.buildings) {
+        if (b.isWatchtower && b.owner === 'player' && b.complete && b.hp > 0) towers++;
+      }
+      const scouted = towers > 0 || GS.scoutedWave === GS.wave + 1;
+      // The panel reads this every frame; the host only changes with the army, so once a second.
+      const key = `${GS.wave}:${scouted}:${Math.floor((GS.updateTick || 0) / 60)}`;
+      if (!hostPreviewCache || hostPreviewCache.key !== key) {
+        hostPreviewCache = { key, value: hostPreviewFor(GS.wave + 1, scouted) };
+      }
+      return hostPreviewCache.value;
     },
     get viewScale() {
       return GS.viewScale || 1;
@@ -2912,6 +2836,28 @@ const Game = (() => {
     },
   };
   SiegeLoop.bindContext(() => siegeCtx);
+
+  /** What WarCamps needs on top of the siege context: the building code and the wave plan. */
+  const warCampCtx = Object.create(siegeCtx, {
+    nextPlan: { get: () => GS.nextWavePlan },
+    spawnQueue: { get: () => GS.spawnQueue },
+    createCamp: {
+      value: (type, x, y) => {
+        const b = createBuilding(type, x, y, 'enemy');
+        if (!b) return null;
+        b.complete = true;
+        b.buildProgress = b.buildTime || 1;
+        ensureBuildingHealth(b);
+        GS.buildings.push(b);
+        return b;
+      },
+    },
+    removeCamp: { value: (b) => finalizeBuildingDestroyed(b, { silent: true, packedUp: true }) },
+    campDamage: { value: (unit, b) => calcBuildingDamage(unit, b) },
+    foeInReach: { value: (unit) => !!findNearestFoeInRange(unit) },
+    markCrate: { value: () => SiegeLoop.forgeMaps() },
+    refreshPreview: { value: () => SiegeLoop.refreshPreview?.(siegeCtx) },
+  });
 
   function isDayPhase() {
     return GS.timeOfDay === 'day';
@@ -3299,7 +3245,10 @@ const Game = (() => {
     awardRoundTP();
     syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
-    GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
+    GS.nextWavePlan = planWaveSectors(GS.wave + 1);
+    // ...and who leads it, so the preview can name the faction.
+    if (!GS.creativeMode) planHostFor(GS.wave + 1);
+    if (typeof WarCamps !== 'undefined') WarCamps.onNightBegin(warCampCtx);
     SiegeLoop.onNightBegin(siegeCtx);
     refreshUnitCounts();
     const playerUnits = [];
@@ -3646,8 +3595,8 @@ const Game = (() => {
 
   function calcDamage(unit, target, baseRand = 10) {
     let dmg = unit.damage + Math.floor(Math.random() * baseRand);
-    dmg += Math.floor((unit.experience || 0) / 3) * 2;
-    dmg += (unit.vetTier || 0) * 5;
+    dmg += getExperienceDamageBonus(unit.experience);
+    dmg += (unit.vetTier || 0) * DIFFICULTY_TUNING.tierFlatDamage;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
       const aura = getGeneralAura();
       const typeMult =
@@ -3846,6 +3795,7 @@ const Game = (() => {
     );
   }
 
+  /** What an era milestone may touch: messages and a science grant. Never the field. */
   function getProgressionRestartCtx() {
     const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
     return {
@@ -3854,136 +3804,13 @@ const Game = (() => {
       modeId: runSession?.modeId || 'campaign',
       worldW: GS.worldW,
       worldH: GS.worldH,
-      rallyY: GS.rallyY,
-      deployY: GS.deployY,
-      units: GS.units,
-      getTactical: () => GS.tactical,
-      setTactical: (n) => {
-        GS.tactical = Math.max(0, n | 0);
-        sanitizeTactical();
-      },
-      releaseAllUnits,
-      releaseAllBuildings,
-      clearProjectiles: () => {
-        GS.projectiles = [];
-      },
-      applyWorldSize,
-      generateBattlefield,
-      invalidateObstacles,
-      resetCamera,
-      tryRtsMapExpansion,
-      bootstrapPlaceComplete,
-      bootstrapSpawnArmy,
-      // Veterans march into the new era: the soldiers with the most kills and waves survive the reset.
-      captureVeterans: (limit = 10) =>
-        GS.units
-          .filter(
-            (u) =>
-              u.team === 'player' &&
-              u.hp > 0 &&
-              !u.isDoomslayer &&
-              ((u.kills || 0) >= 5 || (u.wavesSurvived || 0) >= 5 || u.honorName || u.isGeneral)
-          )
-          .sort(
-            (a, b) =>
-              (b.isGeneral ? 1e6 : 0) +
-              (b.kills || 0) * 2 +
-              (b.wavesSurvived || 0) -
-              ((a.isGeneral ? 1e6 : 0) + (a.kills || 0) * 2 + (a.wavesSurvived || 0))
-          )
-          .slice(0, limit)
-          .map((u) => serializeUnitSnap(u)),
-      restoreVeterans: (snaps) => {
-        let n = 0;
-        for (const us of snaps || []) {
-          ensurePlayerUnitDef(us.type);
-          const x = GS.worldW / 2 - 110 + (n % 10) * 24;
-          const y = GS.deployY + 26 + Math.floor(n / 10) * 24;
-          const u = createUnit(us.type, x, y, 'player');
-          if (!u) continue;
-          Object.assign(u, us, { x, y });
-          u.maxHp = Math.max(1, us.maxHp || u.maxHp || 1);
-          u.hp = u.maxHp;
-          u.targetX = x;
-          u.targetY = GS.rallyY;
-          u.path = [];
-          u.pathIndex = 0;
-          u.combatTargetId = null;
-          u.garrisoned = false;
-          u.wallGarrisoned = false;
-          u.stationedKeep = null;
-          u.retreatingToMed = null;
-          u.atMedicalTent = null;
-          u.demoralized = false;
-          u.fleeing = false;
-          u.manualOrder = false;
-          // The old era's post is on a field that no longer exists.
-          u.postX = x;
-          u.postY = y;
-          u.holdX = null;
-          u.holdY = null;
-          stopPostReturn(u);
-          // Hunt by default; a held soldier holds his new post. Never for the General,
-          // healers or builders, who used to be switched to Hunt here.
-          u.huntMode = !!u.canHunt && !u.holding;
-          if (u.canHunt && u.holding) enterHoldStance(u, { x, y, reassign: true });
-          if (typeof repairHonorName === 'function') repairHonorName(u);
-          GS.units.push(u);
-          n++;
-        }
-        return n;
-      },
-      bootstrapEnemyEconomyForWave,
-      grantBootstrapUnlocks: (w) => {
-        if (svc('Research')) svc('Research').grantBootstrapUnlocks(w);
-      },
       getResearchCompletedCount: () => (svc('Research') ? svc('Research').completedCount : 0),
-      applyRunStartBonuses: () => {
-        if (GS.creativeMode) {
-          return { heirs: 0, startTp: 0, activePassives: 0, eternalInvested: 0 };
-        }
-        let legacy = { heirs: 0, startTp: 0, activePassives: 0 };
-        if (svc('CrownLegacies')) {
-          legacy = svc('CrownLegacies').applyRunStartBonuses({
-            creative: false,
-            deployY: GS.deployY,
-            rallyY: GS.rallyY,
-            units: GS.units,
-            grantTp: (n) => {
-              if (n > 0 && !(GS.creativeMode && GS.creativeSettings.freeResources)) {
-                GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
-                sanitizeTactical();
-              }
-            },
-            spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
-            pushUnit: (u) => GS.units.push(u),
-            hooks: { showMessage },
-          });
-        }
-        let eternal = { startTp: 0, invested: 0 };
-        if (typeof EternalLegacyTree !== 'undefined') {
-          eternal = EternalLegacyTree.applyRunStartBonuses({
-            creative: false,
-            units: GS.units,
-            grantTp: (n) => {
-              if (n > 0 && !(GS.creativeMode && GS.creativeSettings.freeResources)) {
-                GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
-                sanitizeTactical();
-              }
-            },
-          });
-        }
-        return {
-          ...legacy,
-          startTp: (legacy.startTp || 0) + (eternal.startTp || 0),
-          eternalInvested: eternal.invested || 0,
-        };
-      },
       grantScience: (n) => {
         if (n > 0 && svc('Research') && svc('Research').grantSciencePoints) {
           svc('Research').grantSciencePoints(n, { showMessage });
         }
       },
+      playSfx: (name) => playSfx(name),
       ...uiHooks(),
     };
   }
@@ -5021,34 +4848,13 @@ const Game = (() => {
 
   function creativeSetWave(n, opts = {}) {
     GS.wave = Math.max(0, Math.floor(n));
-    const prevW = GS.worldW;
-    const prevH = GS.worldH;
     applyWorldSize(GS.wave);
-    const grew = GS.worldW > prevW || GS.worldH > prevH;
-    if (grew) {
-      // Match campaign growth: center old content so land appears on all sides.
-      shiftWorldEntities((GS.worldW - prevW) / 2, (GS.worldH - prevH) / 2);
-      if (!opts.skipTerrain) populateNewTerritory(prevW, prevH);
-      resolveUnitsInTerrain();
-      invalidateObstacles();
-      // Rebuild walk grids immediately so pathing works on the new bounds this frame.
-      GS.walkGridRebuildDue = true;
-      GS.walkGridRebuildTick = -9999;
-      maybeRebuildWalkGrids();
-      if (typeof resize === 'function') resize();
-      if (typeof applyCamera === 'function') applyCamera();
-    } else if (!opts.skipTerrain) {
-      ensureInitialBattlefield(true);
-    }
+    if (!opts.skipTerrain) ensureInitialBattlefield(true);
     GS.spawnQueue = [];
+    GS.spawnSectors = [];
     GS.spawnTimer = 0;
     GS.waveProgress = 0;
-    showMessage(
-      grew
-        ? `Creative: wave ${GS.wave} · map ${GS.worldW}×${GS.worldH} (expanded all sides)`
-        : `Creative: wave set to ${GS.wave}.`,
-      180
-    );
+    showMessage(`Creative: wave set to ${GS.wave}.`, 180);
   }
 
   function creativeAddTp(amount) {
@@ -6201,38 +6007,21 @@ const Game = (() => {
     return ok;
   }
 
-  function spawnPosForSide(side) {
+  /** Where an enemy appears: on the top edge, inside its entry sector. */
+  function spawnPosForSector(sector) {
+    const mf = svc('MultiFrontSiege');
     const m = 24;
-    let pos;
-    switch (side) {
-      case 'south':
-        pos = {
-          x: m + Math.random() * (GS.worldW - m * 2),
-          y: GS.worldH - 28 - Math.random() * 14,
-        };
-        break;
-      case 'east':
-        pos = {
-          x: GS.worldW - 28 - Math.random() * 14,
-          y: 90 + Math.random() * (GS.worldH - 200),
-        };
-        break;
-      case 'west':
-        pos = {
-          x: 10 + Math.random() * 18,
-          y: 90 + Math.random() * (GS.worldH - 200),
-        };
-        break;
-      default:
-        pos = {
-          x: m + Math.random() * (GS.worldW - m * 2),
-          y: 8 + Math.random() * 20,
-        };
-    }
+    let pos = {
+      x:
+        mf && mf.isSector(sector)
+          ? mf.spawnX(sector, GS.worldW, Math.random)
+          : m + Math.random() * (GS.worldW - m * 2),
+      y: 8 + Math.random() * 20,
+    };
     if (svc('BiomeSpawn')) {
       pos = svc('BiomeSpawn').biasSpawnPosition(
         pos,
-        side,
+        'north',
         GS.worldW,
         GS.worldH,
         getLivingPlanetCtx()
@@ -6241,53 +6030,109 @@ const Game = (() => {
     return pos;
   }
 
+  /** Kept for callers that still name an edge: every edge is the top edge now. */
+  function spawnPosForSide(_side) {
+    return spawnPosForSector(null);
+  }
+
   function getWaveAttackSides() {
-    return GS.waveAttackSides.length ? GS.waveAttackSides : ['north'];
+    return ['north'];
   }
 
-  /** Pick a random non-empty subset of unlocked flanks for this wave. */
-  function rollWaveAttackSides(waveNum) {
-    const pool = getUnlockedAttackSides(waveNum);
-    if (pool.length <= 1) return [...pool];
-    const flankBias = getAsymmetricMods().multiFlankBias || 0;
-    if (flankBias > 0 && gameRandom() < flankBias) return [...pool];
-    const total = (1 << pool.length) - 1;
-    const pick = 1 + Math.floor(gameRandom() * total);
-    const chosen = [];
-    for (let i = 0; i < pool.length; i++) {
-      if (pick & (1 << i)) chosen.push(pool[i]);
-    }
-    return chosen;
+  function sectorWaveKind(waveNum) {
+    const gd = svc('GameDepth');
+    const cfg = getWaveConfig(waveNum) || {};
+    const boss = gd?.isBossWave ? gd.isBossWave(waveNum) : !!cfg.boss;
+    const horde = !boss && !!gd?.isHordeWave?.(waveNum);
+    return { boss, horde, cfg };
   }
 
-  /** Roll which flanks a wave uses, and the multi-front plan that may override them. */
-  function planWaveAttackSides(waveNum) {
-    const unlockedSides = getUnlockedAttackSides(waveNum);
-    let sides = rollWaveAttackSides(waveNum);
-    let multiFrontPlan = null;
-    if (svc('MultiFrontSiege') && svc('EnemyFactions') && !GS.creativeMode) {
-      const activeFactions = svc('EnemyFactions').getActiveFactions?.(waveNum) || [];
-      multiFrontPlan = svc('MultiFrontSiege').buildFrontPlan(
-        waveNum,
-        activeFactions,
-        unlockedSides,
-        gameRandom
-      );
-      if (multiFrontPlan?.waveSides?.length) {
-        const planned = multiFrontPlan.waveSides.filter((s) => unlockedSides.includes(s));
-        if (planned.length) sides = planned;
-      }
-    }
-    return { wave: waveNum, sides, multiFrontPlan };
+  /** True for the enemy the skull on the markers stands for, and for its pack. */
+  function sectorBossPredicate(waveNum, boss) {
+    if (!boss) return null;
+    const named = svc('GameDepth')?.getNamedBossForWave?.(waveNum);
+    return (t) =>
+      (named && t === named.type) ||
+      !!EnemyDefs[t]?.isNamedBoss ||
+      (!named && t === 'war_chief') ||
+      (GS.wave === waveNum && !!svc('MonsterBosses')?.isPackMinion?.(t));
   }
 
-  function nextEnemySpawnSide(unitType) {
-    const sides = getWaveAttackSides();
-    if (svc('MultiFrontSiege') && GS.multiFrontPlan) {
-      return svc('MultiFrontSiege').pickSpawnSide(unitType, GS.multiFrontPlan, sides, gameRandom);
+  /**
+   * Tonight's best reading of tomorrow's host, as a list of enemy types. Built from the
+   * same seed and weights the dawn uses, so on a quiet night it is the host itself; wave
+   * events, late elites and sub-bosses are only known at dawn. Null when it cannot be read.
+   */
+  function forecastSpawnQueue(waveNum) {
+    try {
+      if (!svc('EnemyFactions')?.composeWave) return null;
+      const hp = hostBuildParams(waveNum);
+      const plan = planHostFor(waveNum, hp);
+      if (!plan) return null;
+      const guard = hp.isBoss && !hp.noElites ? bossGuardFor(waveNum) : [];
+      const comp = composeHost(waveNum, hp, plan, guard);
+      return comp && comp.queue.length ? comp.queue.slice() : null;
+    } catch (_) {
+      return null;
     }
-    if (sides.length <= 1) return sides[0] || 'north';
-    return sides[Math.floor(gameRandom() * sides.length)];
+  }
+
+  /**
+   * Rolls the plan for a wave: which of the three top-edge sectors the host uses, what
+   * share each gets, and which enemies go where. Rolled at nightfall so the night markers
+   * tell the truth; `assignWaveSectors` settles it against the real host at dawn.
+   */
+  function planWaveSectors(waveNum) {
+    const mf = svc('MultiFrontSiege');
+    if (!mf) return null;
+    const { boss, horde, cfg } = sectorWaveKind(waveNum);
+    const kind = mf.waveKind({ boss, horde });
+    const queue = GS.creativeMode ? null : forecastSpawnQueue(waveNum);
+    const tally = {};
+    for (const t of cfg.pool || []) tally[t] = (tally[t] || 0) + 1;
+    const poolTypes = Object.keys(tally).sort((a, b) => tally[b] - tally[a]);
+    const count = Math.max(
+      1,
+      Math.round((cfg.count || 1) * openingCountMult(getDifficulty().enemyCountMult, waveNum))
+    );
+    return mf.buildPlan({
+      wave: waveNum,
+      kind,
+      queue,
+      count,
+      poolTypes,
+      isBossType: sectorBossPredicate(waveNum, boss),
+      rng: gameRandom,
+      prevMain: GS.lastSectorMain || null,
+      spreadBias: getAsymmetricMods().multiFlankBias || 0,
+    });
+  }
+
+  /** Dawn: every queued enemy gets its sector, in queue order. */
+  function assignWaveSectors() {
+    const mf = svc('MultiFrontSiege');
+    if (!mf) {
+      GS.spawnSectors = [];
+      return;
+    }
+    if (!GS.sectorPlan || GS.sectorPlan.wave !== GS.wave) GS.sectorPlan = planWaveSectors(GS.wave);
+    const boss = sectorWaveKind(GS.wave).boss || !!GS.namedBossWave;
+    GS.spawnSectors = mf.assignQueue(
+      GS.sectorPlan,
+      GS.spawnQueue,
+      sectorBossPredicate(GS.wave, boss)
+    );
+    GS.lastSectorMain = GS.sectorPlan.main;
+    mf.setCurrentPlan(GS.sectorPlan);
+  }
+
+  /** The sector of the enemy about to leave the queue. */
+  function takeSpawnSector() {
+    // The queue can be rewritten outside the dawn (a custom wave, a loaded older save).
+    if (!Array.isArray(GS.spawnSectors) || GS.spawnSectors.length !== GS.spawnQueue.length) {
+      assignWaveSectors();
+    }
+    return GS.spawnSectors.shift() || GS.sectorPlan?.main || 'centre';
   }
 
   function checkPlayerElimination() {
@@ -6298,67 +6143,39 @@ const Game = (() => {
     endGame(false);
   }
 
-  /** Inward march goal per flank — toward map center, not a player "side". */
-  function getEnemyAdvanceGoal(side) {
-    const cx = GS.worldW * 0.5;
-    const cy = GS.worldH * 0.5;
-    switch (side) {
-      case 'south':
-        return { x: cx, y: Math.min(cy + 90, GS.worldH - 48) };
-      case 'east':
-        return { x: Math.max(cx - 90, 48), y: cy };
-      case 'west':
-        return { x: Math.min(cx + 90, GS.worldW - 48), y: cy };
-      default:
-        return { x: cx, y: Math.max(cy - 90, 48) };
-    }
+  /** Where the host forms up before it comes on: across the field, above the middle. */
+  function getEnemyAdvanceGoal(_side) {
+    return { x: GS.worldW * 0.5, y: Math.max(GS.worldH * 0.5 - 90, 48) };
   }
 
   function getEnemyAdvancePoint(unit) {
     let hash = 0;
     for (let i = 0; i < unit.id.length; i++) hash = (hash + unit.id.charCodeAt(i) * (i + 1)) % 200;
     const spread = (hash - 100) * 0.35;
-    const side = unit.spawnSide || 'north';
-    const goal = getEnemyAdvanceGoal(side);
-    const step = 110;
-    switch (side) {
-      case 'south':
-        return clampPos(unit.x + spread, Math.max(unit.y - step, goal.y));
-      case 'east':
-        return clampPos(Math.max(unit.x - step, goal.x), unit.y + spread);
-      case 'west':
-        return clampPos(Math.min(unit.x + step, goal.x), unit.y + spread);
-      default:
-        return clampPos(unit.x + spread, Math.min(unit.y + step, goal.y));
+    const goal = getEnemyAdvanceGoal();
+    let x = unit.x + spread;
+    // While it musters, a squad stays in the third of the muster zone it entered by.
+    if (unit.entrySector && !unit.mustered && svc('MultiFrontSiege')) {
+      x = svc('MultiFrontSiege').clampToSector(x, unit.entrySector, GS.worldW);
     }
+    return clampPos(x, Math.min(unit.y + 110, goal.y));
   }
 
   function announceAttackSides() {
-    const sides = getWaveAttackSides();
-    const labels = { north: 'North', east: 'East', west: 'West', south: 'South' };
-    if (GS.multiFrontPlan?.assignments?.length >= 2) {
-      const mode =
-        GS.multiFrontPlan.mode === 'coordinated' ? 'Coordinated siege' : 'Competing hosts';
-      showMessage(`${mode} — ${GS.multiFrontPlan.intel}`, 400);
-      svc('FloatingText').status(GS.worldW / 2, 40, 'MULTI-FRONT SIEGE', '#ff7050');
-      return;
-    }
-    if (sides.length <= 1) return;
-    const text = sides.map((s) => labels[s]).join(', ');
-    const pool = getUnlockedAttackSides(GS.wave);
-    const poolNote =
-      pool.length > sides.length
-        ? ` (${pool
-            .filter((s) => !sides.includes(s))
-            .map((s) => labels[s])
-            .join(', ')} quiet this wave)`
-        : '';
-    showMessage(`Enemies assault from: ${text}!${poolNote}`, 280);
-    svc('FloatingText').status(GS.worldW / 2, 40, 'MULTI-FRONT', '#ff8060');
+    const plan = GS.sectorPlan;
+    const mf = svc('MultiFrontSiege');
+    if (!plan || !mf || plan.sectors.length <= 1) return;
+    const parts = plan.sectors.map((s) => `${mf.SECTOR_LABELS[s]} ${plan.counts[s] || 0}`);
+    showMessage(
+      `The host enters on ${mf.describeSectors(plan.sectors)}: ${parts.join(', ')}.`,
+      300
+    );
   }
 
   function announceAcademyEra() {
     if (GS.wave !== ACADEMY_ERA_WAVE) return;
+    // The era module announces wave 100 itself; one banner is enough.
+    if (typeof ProgressionRestarts !== 'undefined' && !GS.creativeMode) return;
     addHighlight('era', 'Academy Era begins — train through Academies');
     showMessage(
       'Wave 100 — Academy Era! Train free troops each round, grow your line, and weather heavier northern assaults.',
@@ -6502,10 +6319,7 @@ const Game = (() => {
     if (tw === ACADEMY_ERA_WAVE) {
       announceAcademyEra();
     } else {
-      showMessage(
-        `Academy Era — wave ${tw}. Train via academies; the realm keeps expanding on all flanks.`,
-        380
-      );
+      showMessage(`Academy Era — wave ${tw}. Train via academies and hold the one field.`, 380);
       svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2, 'ACADEMY ERA', '#c0a040');
     }
     refreshUnitCounts();
@@ -6698,27 +6512,28 @@ const Game = (() => {
           hooks: { showMessage, floatingText: fx },
         });
       }
-      if (svc('FactionHazards')) {
-        const graceOpts = {};
-        if (!p.hazards.length && p.territoryTier >= svc('FactionHazards').MIN_TERRITORY_TIER) {
-          p.hazards = svc('FactionHazards').spawnInitial(
-            GS.worldW,
-            GS.worldH,
-            p.territoryTier,
-            GS.rallyY,
-            p.wave,
-            graceOpts
-          );
-        } else if (p.hazards.length) {
-          const spreadResult = svc('FactionHazards').onWaveStart(p.hazards, p.wave, {
-            worldW: GS.worldW,
-            worldH: GS.worldH,
-            rallyY: GS.rallyY,
-            territoryTier: p.territoryTier,
-            showMessage,
-            ...graceOpts,
-          });
-          p.hazards = spreadResult.hazards;
+      // Hazards are laid and spread only on the event deck's hazard waves, and each is announced.
+      const FH = svc('FactionHazards');
+      if (FH && svc('DynamicMapEvents')?.eventSlot(p.wave) === 'hazard') {
+        // A full field gives up its oldest hazard, so every hazard wave lays something new.
+        if (p.hazards.length >= HAZARD_FIELD_CAP) p.hazards = p.hazards.slice(1 - HAZARD_FIELD_CAP);
+        const fresh = FH.spawnInitial(GS.worldW, GS.worldH, p.territoryTier, GS.rallyY, p.wave, {
+          maxHazards: Math.min(2, HAZARD_FIELD_CAP - p.hazards.length),
+          rng: gameRandom,
+        });
+        const res = FH.onWaveStart(p.hazards.concat(fresh), p.wave, {
+          worldW: GS.worldW,
+          worldH: GS.worldH,
+          rallyY: GS.rallyY,
+          territoryTier: p.territoryTier,
+          rng: gameRandom,
+          noTopUp: true,
+          showMessage,
+        });
+        p.hazards = res.hazards;
+        const names = [...new Set(fresh.map((h) => h.label))].join(' and ');
+        if (names) {
+          showMessage(`Field condition: ${names} laid across the field. Mages can dispel it.`, 340);
         }
       }
       if (svc('NeutralWildlife')) {
@@ -6886,10 +6701,6 @@ const Game = (() => {
       wave: GS.wave,
       playerUnits,
     });
-  }
-
-  function tryRtsMapExpansion() {
-    return syncMapGrowth({ announce: GS.wave >= RTS_ERA_WAVE - 5 });
   }
 
   function tickSettlementWaveProgress() {
@@ -7402,7 +7213,8 @@ const Game = (() => {
     const grid = new Map();
     for (let i = 0; i < n; i++) {
       const u = GS.units[i];
-      if (!unitBlocksMovement(u)) continue;
+      // Runners leave past the edge; the clamp below would hold them inside the field for good.
+      if (!unitBlocksMovement(u) || u.fleeing) continue;
       const key = `${Math.floor(u.x / cellSize)},${Math.floor(u.y / cellSize)}`;
       if (!grid.has(key)) grid.set(key, []);
       grid.get(key).push(i);
@@ -7641,6 +7453,7 @@ const Game = (() => {
     // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
+    if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
       diff.startingTp +
@@ -7703,6 +7516,9 @@ const Game = (() => {
     GS.waveProgress = 0;
     GS.waveEnemyTotal = 0;
     GS.waveAttackSides = ['north'];
+    GS.sectorPlan = null;
+    GS.spawnSectors = [];
+    GS.lastSectorMain = null;
     GS.nextWavePlan = null;
     GS.namedBossWave = null;
     GS.bossTrackId = null;
@@ -7750,6 +7566,7 @@ const Game = (() => {
       ContentExpansion.registerDefs();
     }
     if (svc('EnemyFactions')) svc('EnemyFactions').resetRun();
+    if (typeof HostTactics !== 'undefined') HostTactics.resetRun();
     if (svc('FactionReputation')) svc('FactionReputation').resetRun();
     if (svc('AsymmetricWarfare')) svc('AsymmetricWarfare').resetRun();
     if (svc('SettlementRaids')) svc('SettlementRaids').resetRun();
@@ -7762,7 +7579,8 @@ const Game = (() => {
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
     if (svc('NeutralRelations')) svc('NeutralRelations').resetRun();
     if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').resetRun();
-    if (svc('DynamicMapEvents')) svc('DynamicMapEvents').resetRun();
+    if (svc('DynamicMapEvents'))
+      svc('DynamicMapEvents').resetRun(svc('GameModes')?.getSession?.()?.seed);
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
     if (typeof ProgressionRestarts !== 'undefined') ProgressionRestarts.resetRun();
     if (typeof PacingTools !== 'undefined') PacingTools.resetRun();
@@ -7777,7 +7595,6 @@ const Game = (() => {
     if (typeof ArcanePathEvolution !== 'undefined') ArcanePathEvolution.resetRun();
     if (typeof TechPathEvolution !== 'undefined') TechPathEvolution.resetRun();
     if (typeof MythicPathEvolution !== 'undefined') MythicPathEvolution.resetRun();
-    GS.multiFrontPlan = null;
     if (svc('PathWorkerBridge')) svc('PathWorkerBridge').shutdown();
     resetTerrainForNewRun();
     applyWorldSize(0);
@@ -8014,120 +7831,165 @@ const Game = (() => {
     return 1 + (mult - 1) * (waveNum <= 1 ? 1 / 3 : 2 / 3);
   }
 
-  function computeSpawnFillParams(waveNum) {
+  let hostPreviewCache = null;
+
+  /** True when this wave is a horde (every fifth wave, or every wave in a forced-horde mode). */
+  function isHordeWaveFor(waveNum, isBoss) {
+    const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
+    const forceHorde =
+      runSession?.forceHorde ||
+      (typeof OnlineMultiplayer !== 'undefined' && OnlineMultiplayer.isForceHordeMode(runSession));
+    if (isBoss) return false;
+    if (forceHorde) return waveNum >= 1;
+    return !!(svc('GameDepth') && svc('GameDepth').isHordeWave?.(waveNum));
+  }
+
+  /**
+   * Everything that sizes a wave: how many bodies it would have, which elites are allowed,
+   * and what the player's build is pulling towards it. Shared by the dawn builder and the
+   * night preview, so the preview's head count is the one that would spawn if dawn came now.
+   */
+  function hostBuildParams(waveNum) {
     const cfg = getWaveConfig(waveNum);
     const diff = getDifficulty();
     const isBoss =
       svc('GameDepth') && svc('GameDepth').isBossWave
         ? svc('GameDepth').isBossWave(waveNum)
         : cfg.boss;
-    if (!isBoss && svc('GameDepth')?.isHordeWave?.(waveNum)) return null;
-
-    const colonyAssess = assessColonyThreat(waveNum);
-    const colonyPressure = colonyAssess?.pressure;
-
-    let count = Math.max(
-      1,
-      Math.floor(
-        cfg.count *
-          GS.waveModifiers.countMult *
-          openingCountMult(diff.enemyCountMult, waveNum) *
-          (colonyPressure?.countMult || 1)
-      )
-    );
-    if (isRtsEra(waveNum)) {
-      const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
-      count = Math.floor(count * (1.22 + rtsProg * 0.28));
-    }
-    if (isEnemyRtsEra(waveNum)) {
-      const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
-      count = Math.floor(count * (1.1 + enemyRts * 0.18));
-    }
-    count += getEnemyEconomySpawnBonus();
-    count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
-    if (GS.waveModifiers.stealReduction)
-      count = Math.max(1, count - GS.waveModifiers.stealReduction);
-
-    let pool = ColonyValue?.mergePool
-      ? svc('ColonyValue').mergePool([...cfg.pool], colonyPressure || {})
-      : [...cfg.pool];
-    if (svc('EnemyFactions')) pool = svc('EnemyFactions').enrichPool(pool, waveNum);
-    let weights = ColonyValue?.mergeWeights
-      ? svc('ColonyValue').mergeWeights(getDifficulty().enemyWeight || {}, colonyPressure?.weights)
-      : getDifficulty().enemyWeight || {};
-    if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(waveNum, weights);
-    if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
-        weights,
+    const isHorde = isHordeWaveFor(waveNum, isBoss);
+    const colonyPressure = assessColonyThreat(waveNum)?.pressure;
+    const mods = GS.waveModifiers || {};
+    const asym = getAsymmetricMods();
+    let count;
+    let hordeInfo = null;
+    if (isHorde) {
+      const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
+      const hordeMult =
+        (runSession?.hordeCountMult || 1) *
+        (typeof OnlineMultiplayer !== 'undefined'
+          ? OnlineMultiplayer.getHordeCountMult(runSession)
+          : 1);
+      // GameDepth still owns the horde's numbers (size, pace, health); the host itself is
+      // composed by the leading faction's flavour.
+      hordeInfo = svc('GameDepth').buildHordeSpawnQueue(
         waveNum,
-        getLivingPlanetCtx()
+        [],
+        {
+          ...mods,
+          countMult: (mods.countMult || 1) * (colonyPressure?.countMult || 1) * hordeMult,
+        },
+        diff
       );
-      weights = biomeMerge.weights;
-      count = svc('BiomeSpawn').adjustSpawnCount(count, waveNum, getLivingPlanetCtx());
+      count = hordeInfo.queue.length;
+    } else {
+      count = Math.max(
+        1,
+        Math.floor(
+          cfg.count *
+            (mods.countMult || 1) *
+            openingCountMult(diff.enemyCountMult, waveNum) *
+            (colonyPressure?.countMult || 1)
+        )
+      );
+      if (isRtsEra(waveNum)) {
+        const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
+        count = Math.floor(count * (1.22 + rtsProg * 0.28));
+      }
+      if (isEnemyRtsEra(waveNum)) {
+        const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
+        count = Math.floor(count * (1.1 + enemyRts * 0.18));
+      }
+      count += getEnemyEconomySpawnBonus();
+      count = Math.max(1, Math.floor(count * (asym.enemyCountMult || 1)));
+      if (mods.stealReduction) count = Math.max(1, count - mods.stealReduction);
+      if (svc('BiomeSpawn')) {
+        count = svc('BiomeSpawn').adjustSpawnCount(count, waveNum, getLivingPlanetCtx());
+      }
     }
-
+    const typeWeights = diff.enemyWeight || {};
     return {
+      cfg,
+      diff,
+      isBoss,
+      isHorde,
+      hordeInfo,
+      colonyPressure,
       count,
-      pool,
-      weights,
-      elites: SPAWN_ELITE_TYPES,
-      noElites: !!(GS.waveModifiers.noElites || diff.forceNoElites),
-      seed: getSpawnFillSeed(waveNum),
+      noElites: !!(mods.noElites || diff.forceNoElites),
+      typeWeights,
+      pressureWeights: ColonyValue?.mergeWeights
+        ? svc('ColonyValue').mergeWeights(typeWeights, colonyPressure?.weights)
+        : typeWeights,
+      eliteSlots: (colonyPressure?.eliteSlots || 0) + (asym.eliteSlotBonus || 0),
+      strategies: svc('StrategyCounterplay') ? svc('StrategyCounterplay').getActive() : [],
     };
   }
 
-  function buildWeightedSpawnFill(params) {
-    const bridge = svc('PathWorkerBridge');
-    const key = `${GS.wave}:${params.count}:${params.seed}`;
-    const prefetched = bridge?.takePrefetchedSpawnQueue?.(GS.wave, key);
-    if (prefetched) return prefetched;
-    if (typeof WaveCompositionCore !== 'undefined') {
-      return WaveCompositionCore.buildWeightedSpawnQueue({
-        count: params.count,
-        pool: params.pool,
-        weights: params.weights,
-        elites: params.elites,
-        noElites: params.noElites,
-        seed: params.seed,
-      });
-    }
-    const queue = [];
-    for (let i = 0; i < params.count; i++) {
-      let pickPool = params.pool;
-      if (params.noElites && params.elites.length) {
-        pickPool = params.pool.filter((t) => !params.elites.includes(t));
-      }
-      if (!pickPool.length) pickPool = params.pool;
-      if (!pickPool.length) break;
-      if (Object.keys(params.weights).length) {
-        const weighted = [];
-        for (const t of pickPool) {
-          const w = Math.max(1, Math.floor((params.weights[t] || 1) * 10));
-          for (let j = 0; j < w; j++) weighted.push(t);
-        }
-        queue.push(weighted[Math.floor(gameRandom() * weighted.length)]);
-      } else {
-        queue.push(pickPool[Math.floor(gameRandom() * pickPool.length)]);
-      }
-    }
-    return queue;
-  }
-
-  function prefetchSpawnQueueForWave(waveNum) {
-    const bridge = svc('PathWorkerBridge');
-    if (!bridge?.isReady?.()) return;
-    const params = computeSpawnFillParams(waveNum);
-    if (!params) return;
-    bridge.prefetchSpawnQueue({
-      wave: waveNum,
-      count: params.count,
-      pool: params.pool,
-      weights: params.weights,
-      elites: params.elites,
-      noElites: params.noElites,
-      seed: params.seed,
+  /**
+   * Who leads a wave. Made once (normally at nightfall, so the night can show it) and kept
+   * until the wave is fought.
+   */
+  function planHostFor(waveNum, params) {
+    const factions = svc('EnemyFactions');
+    if (!factions || !factions.planFor) return null;
+    const hp = params || hostBuildParams(waveNum);
+    const kind = hp.isBoss ? 'boss' : hp.isHorde ? 'horde' : 'ordinary';
+    const cached = factions.getPlan(waveNum);
+    if (cached && cached.kind === kind) return cached;
+    if (cached) factions.forgetPlan(waveNum);
+    const rep = svc('FactionReputation');
+    const session = svc('GameModes') ? svc('GameModes').getSession() : null;
+    return factions.planFor(waveNum, {
+      seed: getSpawnFillSeed(waveNum),
+      seeded: !!session?.seed,
+      boss: hp.isBoss && svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(waveNum) : null,
+      horde: hp.isHorde,
+      revenge: kind === 'ordinary' && rep?.dueRevenge ? rep.dueRevenge(waveNum) : null,
+      barred: rep?.getBarred ? rep.getBarred(waveNum) : [],
+      strategies: hp.strategies,
+      pressureWeights: hp.pressureWeights,
     });
   }
+
+  /** One composition for the night forecast, the preview and the dawn, so they agree. */
+  function composeHost(waveNum, hp, plan, guard) {
+    return svc('EnemyFactions').composeWave(plan, {
+      count: hp.count + guard.length,
+      noElites: hp.noElites,
+      typeWeights: hp.typeWeights,
+      eliteSlots: hp.eliteSlots,
+      strategies: hp.strategies,
+      packMinions: guard,
+      template: waveNum < 4 ? hp.cfg.pool : null,
+    });
+  }
+
+  /** The boss's own guard for a boss wave, without counting it as an appearance. */
+  function bossGuardFor(waveNum) {
+    const named = svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(waveNum) : null;
+    const pack = named && svc('MonsterBosses') ? svc('MonsterBosses').getPackDef(named.type) : null;
+    return pack ? pack.minions.filter((t) => EnemyDefs[t]) : [];
+  }
+
+  /**
+   * Tomorrow's host as the night shows it: the plan, and the host it would be if dawn came
+   * now. `scouted` (a Watchtower, a Scout Report) decides how much of it is told.
+   */
+  function hostPreviewFor(waveNum, scouted) {
+    const factions = svc('EnemyFactions');
+    if (!factions || !factions.composeWave || GS.creativeMode) return null;
+    const hp = hostBuildParams(waveNum);
+    const plan = planHostFor(waveNum, hp);
+    if (!plan) return null;
+    const guard = hp.isBoss && !hp.noElites ? bossGuardFor(waveNum) : [];
+    const comp = composeHost(waveNum, hp, plan, guard);
+    return typeof FactionIntel !== 'undefined' && FactionIntel.hostReport
+      ? FactionIntel.hostReport(plan, comp, scouted)
+      : factions.describeHost(plan, comp, scouted);
+  }
+
+  /** The host is composed on the main thread now (it is a few dozen entries); nothing to prefetch. */
+  function prefetchSpawnQueueForWave() {}
 
   function expireStalePendingPaths() {
     for (const unit of GS.units) {
@@ -8268,384 +8130,21 @@ const Game = (() => {
       showMessage(`Ambush on the road: the first ${mods.softenCount} foes arrive wounded.`, 260);
     }
     if ((mods.speedMult || 1) > 1) {
-      showMessage('Disrupted host: fewer of them, but tougher and on a forced march.', 260);
+      // Disrupt: the foes cut off on the road are late, not gone.
+      const late =
+        (mods.countMult || 1) < 1 ? EconomyRules.rejoinSquad(GS.spawnQueue, mods.countMult) : 0;
+      showMessage(
+        late > 0
+          ? `Disrupted host: fewer of them, tougher and on a forced march. ${late} stragglers will catch up late in the wave.`
+          : 'Disrupted host: fewer of them, but tougher and on a forced march.',
+        280
+      );
     }
     EconomyRules.onWaveStart(mods);
   }
 
-  function buildSpawnQueue() {
-    GS.currentWaveConfig = getWaveConfig(GS.wave);
-    GS.currentHordeWave = null;
-    const diff = getDifficulty();
-    const isBoss =
-      svc('GameDepth') && svc('GameDepth').isBossWave
-        ? svc('GameDepth').isBossWave(GS.wave)
-        : GS.currentWaveConfig.boss;
-    const colonyAssess = assessColonyThreat(GS.wave);
-    let colonyPressure = colonyAssess?.pressure;
-
-    const runSession = svc('GameModes') ? svc('GameModes').getSession() : null;
-    const forceHorde =
-      runSession?.forceHorde ||
-      (typeof OnlineMultiplayer !== 'undefined' && OnlineMultiplayer.isForceHordeMode(runSession));
-    const isHorde =
-      forceHorde && !isBoss
-        ? GS.wave >= 1
-        : !isBoss && svc('GameDepth') && svc('GameDepth').isHordeWave?.(GS.wave);
-
-    if (isHorde) {
-      const pool = ColonyValue?.mergePool
-        ? svc('ColonyValue').mergePool([...(GS.currentWaveConfig.pool || [])], colonyPressure || {})
-        : [...(GS.currentWaveConfig.pool || [])];
-      const hordeMult =
-        (runSession?.hordeCountMult || 1) *
-        (typeof OnlineMultiplayer !== 'undefined'
-          ? OnlineMultiplayer.getHordeCountMult(runSession)
-          : 1);
-      const hordeMods = {
-        ...GS.waveModifiers,
-        countMult: (GS.waveModifiers.countMult || 1) * (colonyPressure?.countMult || 1) * hordeMult,
-      };
-      GS.currentHordeWave = svc('GameDepth').buildHordeSpawnQueue(GS.wave, pool, hordeMods, diff);
-      if (
-        colonyPressure &&
-        GS.colonySnapshot?.signals?.wallCount >= 4 &&
-        GS.wave >= 7 &&
-        !GS.currentHordeWave.queue.includes('siege_tower')
-      ) {
-        GS.currentHordeWave.queue.unshift('siege_tower', 'goblin_sapper');
-        GS.currentHordeWave.hasSiege = true;
-      }
-      GS.spawnQueue = svc('GameDepth')
-        ? svc('GameDepth').injectEvilOperativesIntoQueue(
-            [...GS.currentHordeWave.queue],
-            GS.wave,
-            gameRandom
-          )
-        : [...GS.currentHordeWave.queue];
-      if (svc('EnemyFactions')) {
-        GS.spawnQueue = svc('EnemyFactions').biasHordeQueue(GS.spawnQueue, GS.wave, gameRandom);
-        GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
-      }
-      GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
-      GS.waveEnemyTotal = GS.spawnQueue.length;
-      GS.waveProgress = 0;
-      const towers = GS.spawnQueue.filter((t) => t === 'siege_tower').length;
-      GS.nextWaveIntel =
-        svc('GameDepth').formatWaveIntel(
-          GS.spawnQueue,
-          getWaveAttackSides(),
-          GS.currentHordeWave.hasSiege,
-          towers
-        ) || '';
-      const f = GS.currentHordeWave.flavor || svc('GameDepth')?.HORDE_FLAVORS?.[0];
-      addHighlight('horde', `Horde wave ${GS.wave} — ${f?.label || 'Horde'}`);
-      showMessage(`HORDE WAVE ${GS.wave}! ${f?.label || 'Horde'} — ${f?.tagline || ''}`, 360);
-      const hordeI = GS.currentHordeWave.intensity ?? 0.5;
-      const hordeColor = hordeI >= 0.72 ? '#ff4840' : hordeI >= 0.48 ? '#ff8040' : '#ff9040';
-      svc('FloatingText').status(GS.worldW / 2, 48, 'HORDE INCOMING', hordeColor);
-      svc('FloatingText').status(GS.worldW / 2, 62, (f?.label || 'Horde').toUpperCase(), '#ffc060');
-      if (GS.currentHordeWave.hasSiege) {
-        playSfx('siegeRumble');
-        showMessage('Siege elements embedded in the horde — protect your walls!', 280);
-      }
-      if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
-        const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
-        GS.nextWaveIntel = note + (GS.nextWaveIntel ? ` · ${GS.nextWaveIntel}` : '');
-      }
-      if (svc('EnemyFactions')) {
-        const roster = svc('EnemyFactions').formatFactionRoster(GS.spawnQueue);
-        if (roster)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
-      }
-      if (typeof ProgressionRestarts !== 'undefined') {
-        const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
-        if (prNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
-      }
-      if (typeof PacingTools !== 'undefined') {
-        const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-        if (ptNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
-      }
-      if (typeof EternalLegacyTree !== 'undefined') {
-        const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
-        if (elNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;
-      }
-      if (typeof FoundationalMedievalLayer !== 'undefined') {
-        const fmNote = FoundationalMedievalLayer.formatIntelNote({ wave: GS.wave });
-        if (fmNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${fmNote}` : fmNote;
-      }
-      if (typeof AscensionSystem !== 'undefined') {
-        const ascNote = AscensionSystem.formatIntelNote({ wave: GS.wave });
-        if (ascNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ascNote}` : ascNote;
-      }
-      if (typeof ThematicEraSynergies !== 'undefined') {
-        const synNote = ThematicEraSynergies.formatIntelNote({ wave: GS.wave });
-        if (synNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${synNote}` : synNote;
-      }
-      if (typeof HybridPowerFantasy !== 'undefined') {
-        const pfNote = HybridPowerFantasy.formatIntelNote({ wave: GS.wave });
-        if (pfNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${pfNote}` : pfNote;
-      }
-      if (typeof NarrativeThread !== 'undefined') {
-        const crownNote = NarrativeThread.formatIntelNote({ wave: GS.wave });
-        if (crownNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${crownNote}` : crownNote;
-      }
-      if (typeof TechTreeBranches !== 'undefined') {
-        const techNote = TechTreeBranches.formatIntelNote({ wave: GS.wave });
-        if (techNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${techNote}` : techNote;
-      }
-      if (typeof EternalPathFramework !== 'undefined') {
-        const epfNote = EternalPathFramework.formatIntelNote({ wave: GS.wave });
-        if (epfNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${epfNote}` : epfNote;
-      }
-      if (typeof MartialPathEvolution !== 'undefined') {
-        const mpeNote = MartialPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mpeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mpeNote}` : mpeNote;
-      }
-      if (typeof ArcanePathEvolution !== 'undefined') {
-        const apeNote = ArcanePathEvolution.formatIntelNote({ wave: GS.wave });
-        if (apeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${apeNote}` : apeNote;
-      }
-      if (typeof TechPathEvolution !== 'undefined') {
-        const tpeNote = TechPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (tpeNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${tpeNote}` : tpeNote;
-      }
-      if (typeof MythicPathEvolution !== 'undefined') {
-        const mypNote = MythicPathEvolution.formatIntelNote({ wave: GS.wave });
-        if (mypNote)
-          GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
-      }
-      appendCounterIntel();
-      return;
-    }
-    let count = Math.max(
-      1,
-      Math.floor(
-        GS.currentWaveConfig.count *
-          GS.waveModifiers.countMult *
-          openingCountMult(diff.enemyCountMult, GS.wave) *
-          (colonyPressure?.countMult || 1)
-      )
-    );
-    if (isRtsEra(GS.wave)) {
-      const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(GS.wave) : 0;
-      count = Math.floor(count * (1.22 + rtsProg * 0.28));
-    }
-    if (isEnemyRtsEra(GS.wave)) {
-      const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(GS.wave) : 0;
-      count = Math.floor(count * (1.1 + enemyRts * 0.18));
-    }
-    count += getEnemyEconomySpawnBonus();
-    count = Math.max(1, Math.floor(count * (getAsymmetricMods().enemyCountMult || 1)));
-    const asymElites = getAsymmetricMods().eliteSlotBonus || 0;
-    if (GS.waveModifiers.stealReduction)
-      count = Math.max(1, count - GS.waveModifiers.stealReduction);
-    const elites = SPAWN_ELITE_TYPES;
-    let pool = ColonyValue?.mergePool
-      ? svc('ColonyValue').mergePool([...GS.currentWaveConfig.pool], colonyPressure || {})
-      : [...GS.currentWaveConfig.pool];
-    if (svc('EnemyFactions')) pool = svc('EnemyFactions').enrichPool(pool, GS.wave);
-    let weights = ColonyValue?.mergeWeights
-      ? svc('ColonyValue').mergeWeights(getDifficulty().enemyWeight || {}, colonyPressure?.weights)
-      : getDifficulty().enemyWeight || {};
-    if (svc('EnemyFactions')) weights = svc('EnemyFactions').mergeFactionWeights(GS.wave, weights);
-    if (svc('BiomeSpawn')) {
-      const biomeMerge = svc('BiomeSpawn').mergeSpawnWeights(
-        weights,
-        GS.wave,
-        getLivingPlanetCtx()
-      );
-      weights = biomeMerge.weights;
-      count = svc('BiomeSpawn').adjustSpawnCount(count, GS.wave, getLivingPlanetCtx());
-    }
-    const fillParams = {
-      count,
-      pool,
-      weights,
-      elites,
-      noElites: !!(GS.waveModifiers.noElites || diff.forceNoElites),
-      seed: getSpawnFillSeed(GS.wave),
-    };
-    GS.spawnQueue = buildWeightedSpawnFill(fillParams);
-    GS.namedBossWave = svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(GS.wave) : null;
-    let monsterBossPrep = null;
-    if (GS.namedBossWave && svc('MonsterBosses')) {
-      monsterBossPrep = svc('MonsterBosses').prepareBossWave(
-        GS.namedBossWave.type,
-        GS.wave,
-        GS.namedBossWave.scale || 1
-      );
-      GS.namedBossWave = {
-        ...GS.namedBossWave,
-        scale: monsterBossPrep.totalScale,
-        evolution: monsterBossPrep.evolution,
-        packSummary: monsterBossPrep.packSummary,
-      };
-    }
-    if (isBoss && (!GS.waveModifiers.noElites || GS.namedBossWave)) {
-      let bossCore = GameDepth?.bossWaveComposition(GS.wave, pool) || [
-        'war_chief',
-        'dark_knight',
-        'dark_knight',
-      ];
-      if (GS.waveModifiers.noElites && GS.namedBossWave) {
-        bossCore = [GS.namedBossWave.type];
-      }
-      GS.spawnQueue = bossCore.concat(GS.spawnQueue.slice(0, Math.max(0, count - bossCore.length)));
-      if (GS.namedBossWave && svc('MonsterBosses')) {
-        GS.spawnQueue = svc('MonsterBosses').injectPackIntoQueue(
-          GS.spawnQueue,
-          GS.namedBossWave.type,
-          monsterBossPrep
-        );
-      }
-      if (GS.namedBossWave) {
-        const assassinNote = GS.waveModifiers.noElites
-          ? ' (elites assassinated — boss remains)'
-          : '';
-        const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
-        addHighlight(
-          'boss',
-          `Boss wave ${GS.wave} — ${GS.namedBossWave.name} leads the assault${assassinNote}`
-        );
-        showMessage(
-          `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name} — ${GS.namedBossWave.tagline}${packNote}`,
-          380
-        );
-        svc('FloatingText').status(
-          GS.worldW / 2,
-          44,
-          GS.namedBossWave.name.toUpperCase(),
-          '#ffd040'
-        );
-        svc('FloatingText').status(
-          GS.worldW / 2,
-          58,
-          GS.namedBossWave.title.toUpperCase(),
-          '#ff6060'
-        );
-        if (svc('MonsterBosses') && GS.namedBossWave.evolution?.label) {
-          svc('MonsterBosses').announceEvolution(monsterBossPrep, GS.namedBossWave, {
-            showMessage,
-            addHighlight,
-            floatingText: floatStatus,
-            worldW: GS.worldW,
-          });
-        }
-      } else {
-        addHighlight('boss', `Boss wave ${GS.wave} — War Chief leads the assault`);
-        showMessage(`BOSS WAVE ${GS.wave}! War Chief leads the assault!`, 320);
-        svc('FloatingText').status(GS.worldW / 2, 48, 'BOSS WAVE', '#ff4040');
-      }
-      playSfx('bossWarn');
-    } else if (isBoss) {
-      GS.namedBossWave = null;
-    }
-    if (typeof GameFeedback !== 'undefined') {
-      GameFeedback.resetWave();
-      GameFeedback.onWaveStart(GS.wave, {
-        boss: !!isBoss || !!GS.namedBossWave,
-        horde: !!GS.currentHordeWave,
-        siege: !!GS.currentHordeWave?.hasSiege || isSiegeWave?.(),
-        subtitle:
-          GS.namedBossWave?.name || (GS.currentHordeWave ? 'Brace for the swarm' : 'Hold the line'),
-      });
-    }
-    if (colonyPressure && svc('ColonyValue')) {
-      svc('ColonyValue').injectElites(GS.spawnQueue, pool, colonyPressure, gameRandom);
-    }
-    const wantSiege = (GS.colonySnapshot?.signals?.wallCount || 0) >= 3 || GS.wave >= 7;
-    if (
-      wantSiege &&
-      !GS.spawnQueue.includes('siege_tower') &&
-      !GS.waveModifiers.noElites &&
-      !isBoss &&
-      !GS.currentHordeWave
-    ) {
-      GS.spawnQueue[Math.floor(gameRandom() * GS.spawnQueue.length)] = 'siege_tower';
-    }
-    if (GS.waveModifiers.revealed || GS.waveModifiers.nextPreview) {
-      GS.nextWaveIntel =
-        GameDepth?.formatWaveIntel(GS.spawnQueue, getWaveAttackSides(), false, 0) ||
-        [...new Set(GS.spawnQueue.map((t) => EnemyDefs[t]?.name || t))].join(', ');
-      GS.waveModifiers.nextPreview = GS.nextWaveIntel;
-      showMessage(`Scout report: ${GS.nextWaveIntel}`, 360);
-    }
-    GS.waveEnemyTotal = GS.spawnQueue.length;
-    GS.waveProgress = 0;
-    GS.bossTrackId =
-      GS.namedBossWave?.type ||
-      [
-        'boss_malachar',
-        'boss_volk',
-        'boss_karg',
-        'boss_sylvara',
-        'war_chief',
-        'behemoth',
-        'elder_wyrm',
-        'iron_colossus',
-      ].find((t) => GS.spawnQueue.includes(t)) ||
-      null;
-    if (svc('ContentExpansion')) {
-      GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
-    }
-    if (svc('GameDepth')) {
-      GS.spawnQueue = svc('GameDepth').injectEvilOperativesIntoQueue(
-        GS.spawnQueue,
-        GS.wave,
-        gameRandom
-      );
-    }
-    if (svc('EnemyFactions')) {
-      GS.spawnQueue = svc('EnemyFactions').biasSpawnQueue(GS.spawnQueue, GS.wave, gameRandom);
-      GS.spawnQueue = svc('EnemyFactions').injectSubBosses(GS.spawnQueue, GS.wave, gameRandom);
-    }
-    if (asymElites > 0 && !GS.waveModifiers.noElites) {
-      const elitePool = elites.filter((t) => pool.includes(t) || EnemyDefs[t]);
-      for (let i = 0; i < asymElites && elitePool.length; i++) {
-        GS.spawnQueue[Math.floor(gameRandom() * GS.spawnQueue.length)] =
-          elitePool[Math.floor(gameRandom() * elitePool.length)];
-      }
-    }
-    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
-    GS.waveEnemyTotal = GS.spawnQueue.length;
-    if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
-      const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
-      GS.nextWaveIntel = note + (GS.nextWaveIntel ? ` · ${GS.nextWaveIntel}` : '');
-    }
-    if (svc('EnemyFactions')) {
-      const roster = svc('EnemyFactions').formatFactionRoster(GS.spawnQueue);
-      if (roster) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${roster}` : roster;
-    }
-    if (svc('AsymmetricWarfare')) {
-      const asym = getAsymmetricSnapshot();
-      if (asym) {
-        GS.nextWaveIntel =
-          (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') +
-          `Cmd ${asym.commanderAuthority} vs Host Lv${asym.hostThreatLevel}`;
-      }
-    }
-    if (GS.multiFrontPlan?.intel) {
-      GS.nextWaveIntel =
-        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.multiFrontPlan.intel;
-    }
-    if (GS.namedBossWave?.packSummary) {
-      GS.nextWaveIntel =
-        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
-    }
+  /** Notes other systems add after the host line of the wave intel. */
+  function appendModuleIntelNotes() {
     if (typeof ProgressionRestarts !== 'undefined') {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
@@ -8711,7 +8210,168 @@ const Game = (() => {
       if (mypNote)
         GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${mypNote}` : mypNote;
     }
+  }
+
+  /**
+   * Build the wave. One faction leads it (chosen at nightfall by planHostFor) and at most
+   * one ally marches in support; EnemyFactions.composeWave turns that into the queue and
+   * HostTactics is told which tactic to play. Boss waves are led by the boss's own faction;
+   * horde waves by the flavour's faction.
+   */
+  function buildSpawnQueue() {
+    GS.currentWaveConfig = getWaveConfig(GS.wave);
+    GS.currentHordeWave = null;
+    // Rebuilt from nothing every wave: it used to grow by one prepended note a day.
+    GS.nextWaveIntel = '';
+    const factions = svc('EnemyFactions');
+    const hp = hostBuildParams(GS.wave);
+    const { isBoss, isHorde, colonyPressure } = hp;
+
+    GS.namedBossWave =
+      isBoss && svc('GameDepth') ? svc('GameDepth').getNamedBossForWave(GS.wave) : null;
+    let monsterBossPrep = null;
+    if (GS.namedBossWave && svc('MonsterBosses')) {
+      monsterBossPrep = svc('MonsterBosses').prepareBossWave(
+        GS.namedBossWave.type,
+        GS.wave,
+        GS.namedBossWave.scale || 1
+      );
+      GS.namedBossWave = {
+        ...GS.namedBossWave,
+        scale: monsterBossPrep.totalScale,
+        evolution: monsterBossPrep.evolution,
+        packSummary: monsterBossPrep.packSummary,
+      };
+    }
+
+    const plan = planHostFor(GS.wave, hp);
+    const guard = isBoss && !hp.noElites ? monsterBossPrep?.minions || [] : [];
+    const comp = plan ? composeHost(GS.wave, hp, plan, guard) : null;
+    // No faction module (a stripped build): fall back to a plain draw from the wave's pool.
+    GS.spawnQueue = comp
+      ? comp.queue.slice()
+      : WaveCompositionCore.buildWeightedSpawnQueue({
+          count: hp.count,
+          pool: GS.currentWaveConfig.pool,
+          weights: hp.typeWeights,
+          elites: SPAWN_ELITE_TYPES,
+          noElites: hp.noElites,
+          seed: getSpawnFillSeed(GS.wave),
+        });
+    const lead = plan ? factions.getFactionDef(plan.leadId) : null;
+    const tactic = plan ? factions.tacticForPlan(plan) : null;
+
+    if (isHorde) {
+      const flavor = { label: tactic?.name || 'Horde', tagline: tactic?.desc || '' };
+      GS.currentHordeWave = {
+        ...hp.hordeInfo,
+        queue: GS.spawnQueue,
+        count: GS.spawnQueue.length,
+        flavor,
+        hasSiege: GS.spawnQueue.includes('siege_tower'),
+      };
+      addHighlight('horde', `Horde wave ${GS.wave}: ${flavor.label}`);
+      showMessage(`HORDE WAVE ${GS.wave}! ${flavor.label}. ${flavor.tagline}`, 360);
+      const hordeI = GS.currentHordeWave.intensity ?? 0.5;
+      const hordeColor = hordeI >= 0.72 ? '#ff4840' : hordeI >= 0.48 ? '#ff8040' : '#ff9040';
+      svc('FloatingText').status(GS.worldW / 2, 48, 'HORDE INCOMING', hordeColor);
+      svc('FloatingText').status(GS.worldW / 2, 62, flavor.label.toUpperCase(), '#ffc060');
+    } else if (isBoss && GS.namedBossWave) {
+      const assassinNote = hp.noElites ? ' (guard assassinated, boss remains)' : '';
+      const packNote = GS.namedBossWave.packSummary ? ` · ${GS.namedBossWave.packSummary}` : '';
+      const hostNote = lead ? ` · ${lead.name}` : '';
+      addHighlight(
+        'boss',
+        `Boss wave ${GS.wave}: ${GS.namedBossWave.name} leads the assault${assassinNote}`
+      );
+      showMessage(
+        `BOSS WAVE ${GS.wave}! ${GS.namedBossWave.name}. ${GS.namedBossWave.tagline}${hostNote}${packNote}`,
+        380
+      );
+      svc('FloatingText').status(GS.worldW / 2, 44, GS.namedBossWave.name.toUpperCase(), '#ffd040');
+      svc('FloatingText').status(
+        GS.worldW / 2,
+        58,
+        GS.namedBossWave.title.toUpperCase(),
+        '#ff6060'
+      );
+      if (svc('MonsterBosses') && GS.namedBossWave.evolution?.label) {
+        svc('MonsterBosses').announceEvolution(monsterBossPrep, GS.namedBossWave, {
+          showMessage,
+          addHighlight,
+          floatingText: floatStatus,
+          worldW: GS.worldW,
+        });
+      }
+      playSfx('bossWarn');
+    } else if (lead && tactic && GS.wave >= 4) {
+      addHighlight('host', `Wave ${GS.wave}: ${lead.name} lead (${tactic.name})`);
+      showMessage(`${lead.name} lead today: ${tactic.name}. ${tactic.counter}`, 380);
+      svc('FloatingText').status(GS.worldW / 2, 48, lead.name.toUpperCase(), lead.color);
+    }
+    if (typeof GameFeedback !== 'undefined') {
+      GameFeedback.resetWave();
+      GameFeedback.onWaveStart(GS.wave, {
+        boss: !!isBoss || !!GS.namedBossWave,
+        horde: !!GS.currentHordeWave,
+        siege: !!GS.currentHordeWave?.hasSiege || isSiegeWave?.(),
+        subtitle:
+          GS.namedBossWave?.name ||
+          (GS.currentHordeWave
+            ? 'Brace for the swarm'
+            : lead && tactic
+              ? tactic.name
+              : 'Hold the line'),
+      });
+    }
+    if (!isHorde && svc('ContentExpansion')) {
+      GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
+    }
+    GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
+    if (GS.currentHordeWave) GS.currentHordeWave.queue = GS.spawnQueue;
+    GS.waveEnemyTotal = GS.spawnQueue.length;
+    GS.waveProgress = 0;
+    GS.bossTrackId =
+      GS.namedBossWave?.type ||
+      ['war_chief', 'behemoth', 'elder_wyrm', 'iron_colossus'].find((t) =>
+        GS.spawnQueue.includes(t)
+      ) ||
+      null;
+
+    // The intel line: who leads and how they fight, then what other systems add.
+    const scouted = !!(GS.waveModifiers.revealed || GS.waveModifiers.nextPreview);
+    if (plan && comp) {
+      const report = factions.describeHost(plan, comp, true);
+      GS.nextWaveIntel = factions.formatHostLine(report);
+      if (scouted) {
+        GS.waveModifiers.nextPreview = GS.nextWaveIntel;
+        showMessage(`Scout report: ${GS.nextWaveIntel}`, 360);
+      }
+    }
+    if (GS.colonySnapshot && colonyPressure && svc('ColonyValue')) {
+      const note = svc('ColonyValue').formatWaveNote(GS.colonySnapshot, colonyPressure);
+      if (note) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${note}` : note;
+    }
+    if (GS.namedBossWave?.packSummary) {
+      GS.nextWaveIntel =
+        (GS.nextWaveIntel ? `${GS.nextWaveIntel} · ` : '') + GS.namedBossWave.packSummary;
+    }
+    appendModuleIntelNotes();
     appendCounterIntel();
+
+    // Hand the wave to its tactic, and let the rotation and the grudges know it is here.
+    if (plan && comp) {
+      if (typeof HostTactics !== 'undefined') {
+        HostTactics.beginWave(plan, { ...comp, queue: GS.spawnQueue }, siegeCtx);
+      }
+      factions.commitPlan(plan);
+      if (plan.revenge && svc('FactionReputation')?.onRevengeWave) {
+        svc('FactionReputation').onRevengeWave(plan.leadId, GS.wave, plan.revenge, {
+          hooks: uiHooks(),
+          worldW: GS.worldW,
+        });
+      }
+    }
   }
 
   function spawnFactionCounterRaids() {
@@ -8720,7 +8380,7 @@ const Game = (() => {
       buildings: GS.buildings,
       worldW: GS.worldW,
       worldH: GS.worldH,
-      frontPlan: GS.multiFrontPlan,
+      frontPlan: GS.sectorPlan,
       showMessage,
       floatingText: floatStatus,
       rng: gameRandom,
@@ -8786,30 +8446,20 @@ const Game = (() => {
       }
     }
     healDoomslayerHero();
-    syncMapGrowth();
+    syncTerritory();
     ensureInitialBattlefield();
     const wavePrep = emitWaveStartPrep();
     GS.hazards = wavePrep.hazards;
     updateEnemyRTS();
-    // Progressive flanks: unlock by wave, then roll which sides assault this wave.
-    // The sides were usually rolled at nightfall so the field-edge markers told the truth;
-    // a wave that starts without a night (first wave, restarts, cheats) rolls them now.
-    const sidePlan =
+    // The entry sectors were usually rolled at nightfall so the markers told the truth; a
+    // wave that starts without a night (first wave, cheats) rolls them now. The host gets
+    // its sectors once the queue is built, in startWaveSpawns.
+    GS.sectorPlan =
       GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave
         ? GS.nextWavePlan
-        : planWaveAttackSides(GS.wave);
+        : planWaveSectors(GS.wave);
     GS.nextWavePlan = null;
-    GS.waveAttackSides = sidePlan.sides;
-    GS.multiFrontPlan = sidePlan.multiFrontPlan;
-    announceAttackSides();
-    if (GS.wave === 25 || GS.wave === 50 || GS.wave === 75) {
-      const labels = { 25: 'East', 50: 'West', 75: 'South' };
-      showMessage(
-        `New attack flank unlocked: ${labels[GS.wave]}! The host can now strike from more sides.`,
-        340
-      );
-      addHighlight('era', `${labels[GS.wave]} flank unlocked`);
-    }
+    GS.spawnSectors = [];
     announceAcademyEra();
     announceRtsEra();
     announceEnemyRtsEra();
@@ -8958,7 +8608,11 @@ const Game = (() => {
       });
     }
     buildSpawnQueue();
+    // Camps still standing at dawn add their bodies before Sabotage strips siege engines.
+    if (typeof WarCamps !== 'undefined') WarCamps.onWaveStart(warCampCtx);
     applyEconomyWaveMods();
+    assignWaveSectors();
+    announceAttackSides();
     if (GS.namedBossWave && svc('MonsterBosses')) {
       svc('MonsterBosses').spawnPackStructures(
         GS.namedBossWave.type,
@@ -9480,6 +9134,7 @@ const Game = (() => {
     const def = SpyActions[action];
     const ruleKey = `spy:${action}`;
     const rules = typeof EconomyRules !== 'undefined' ? EconomyRules : null;
+    rules?.patchCampActions?.();
     const baseCost = rules?.getCost(ruleKey, econCtx()) ?? def?.cost ?? 99;
     const cost = svc('ContentExpansion')
       ? svc('ContentExpansion').getSpyCost(action, baseCost)
@@ -9504,6 +9159,23 @@ const Game = (() => {
     if (GS.spyUsedThisWave) {
       showMessage('Spy network already used this wave!');
       return false;
+    }
+
+    if (action === 'settlement_raid' && typeof WarCamps !== 'undefined') {
+      // The raid goes for a war camp. No camp, no raid, and nothing is charged.
+      const res = WarCamps.orderRaid(warCampCtx);
+      if (!res.ok) {
+        showMessage(`${def.name}: ${res.reason}`);
+        return false;
+      }
+      GS.tactical -= cost;
+      GS.spyUsedThisWave = true;
+      rules?.markUsed(ruleKey, GS.wave);
+      syncEconomyActions();
+      playSfx('magicCast');
+      ach('spy', { action });
+      syncInteractionState();
+      return true;
     }
 
     if (svc('ContentExpansion') && svc('ContentExpansion').handleSpyAction) {
@@ -9544,7 +9216,7 @@ const Game = (() => {
       GS.pendingWaveMods.hpMult = (GS.pendingWaveMods.hpMult || 1) * r.hpMult;
       GS.pendingWaveMods.speedMult = r.speedMult;
       showMessage(
-        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes, but ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster.`,
+        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes in the main host, ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster. Half of those cut off catch up as a late squad.`,
         300
       );
     } else if (action === 'assassin') {
@@ -9562,7 +9234,7 @@ const Game = (() => {
       GS.scoutedWave = GS.wave + 1;
       GS.pendingWaveMods.revealed = true;
       GS.waveModifiers.revealed = true;
-      const sides = getUnlockedAttackSides(GS.wave + 1);
+      const sectorNote = nextSectorIntel();
       const nextW = GS.wave + 1;
       const horde = nextW >= 5 && nextW % 5 === 0 && !(nextW >= 10 && nextW % 10 === 0);
       const boss = nextW >= 10 && nextW % 10 === 0;
@@ -9574,18 +9246,17 @@ const Game = (() => {
       const report = preview
         ? SiegeLoop.previewText(preview)
         : 'Scout intel locked — roster at dawn.';
-      GS.nextWaveIntel = `${report}${sides.length > 1 ? ` · Possible flanks: ${sides.join(', ')}` : ''}${extra}`;
+      GS.nextWaveIntel = `${report}${sectorNote}${extra}`;
       showMessage(GS.nextWaveIntel, 340);
     } else if (action === 'bribery') {
       GS.pendingWaveMods.revealed = true;
       GS.waveModifiers.revealed = true;
-      const sides = getUnlockedAttackSides(GS.wave + 1);
       if (Math.random() < 0.5) GS.pendingWaveMods.stealReduction += 3;
       else {
         GS.tactical = Math.max(0, GS.tactical - 2);
         showMessage('Informant double-crossed! -2 TP', 180);
       }
-      GS.nextWaveIntel = `Bribed intel${sides.length > 1 ? ` · Possible flanks: ${sides.join(', ')}` : ''}`;
+      GS.nextWaveIntel = `Bribed intel${nextSectorIntel()}`;
       showMessage(GS.nextWaveIntel, 300);
     } else if (action === 'poison') {
       GS.pendingWaveMods.hpMult = 0.8;
@@ -9594,6 +9265,13 @@ const Game = (() => {
       const r = rules?.rule(ruleKey) || { delayTicks: 600 };
       GS.pendingWaveMods.noSiege = true;
       GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
+      const spiked = typeof WarCamps !== 'undefined' ? WarCamps.sabotage(warCampCtx) : null;
+      if (spiked) {
+        showMessage(
+          `Saboteurs spike the ${WarCamps.KINDS[spiked.kind].name}: no bonus from it this wave.`,
+          260
+        );
+      }
       showMessage(
         `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
         300
@@ -10235,6 +9913,11 @@ const Game = (() => {
     if (!b || b._destroyed) return false;
     const wasProducer = isUnitProducingBuilding(b);
     const wasEnemyEconomy = isEnemyEconomyStructure(b);
+    // The record is wiped when it goes back to the pool, so keep what WarCamps needs.
+    const wasWarCamp =
+      typeof WarCamps !== 'undefined' && WarCamps.isCamp(b)
+        ? { id: b.id, type: b.type, x: b.x, y: b.y }
+        : null;
     if (
       b.owner === 'player' &&
       !opts.silent &&
@@ -10258,7 +9941,14 @@ const Game = (() => {
     clearBuildingTargeting(b);
     removeBuildingRecord(b);
     invalidateObstacles();
-    if (opts.message) showMessage(opts.message);
+    if (wasWarCamp) {
+      // WarCamps announces it (bounty, crate, what the next wave loses).
+      if (!opts.packedUp) {
+        GS.structuresRazedThisWave++;
+        GS.runStructuresRazed++;
+        WarCamps.onDestroyed(wasWarCamp, opts.attacker || null, warCampCtx);
+      }
+    } else if (opts.message) showMessage(opts.message);
     else if (!opts.silent) {
       const name = BuildDefs[b.type]?.name || 'Structure';
       const prefix = b.owner === 'enemy' ? 'Enemy ' : '';
@@ -12973,8 +12663,8 @@ const Game = (() => {
         continue;
       }
       const nightHealMult = isNightPhase() ? 1.55 : 1;
-      const healAmt = unit.maxHp * (tent.healRate || 0.14) * 0.04 * nightHealMult;
-      if (healAmt > 0.3 && unit.hp < unit.maxHp) {
+      const healAmt = unit.maxHp * (tent.healRate || 0.03) * 0.04 * nightHealMult;
+      if (healAmt > 0 && unit.hp < unit.maxHp) {
         const applied = Math.min(healAmt, unit.maxHp - unit.hp);
         unit.hp += applied;
         if (unit.frame === 0) {
@@ -12982,8 +12672,8 @@ const Game = (() => {
           svc('Particles').heal(unit.x, unit.y);
         }
       }
-      // He leaves healed to full (a tent too weak to heal lets him go at once).
-      const healed = unit.hp >= unit.maxHp - 0.01 || healAmt <= 0.3;
+      // He leaves healed to full (a tent that cannot heal lets him go at once).
+      const healed = unit.hp >= unit.maxHp - 0.01 || healAmt <= 0;
       const healerSafe =
         unit.combatType === 'healer' && unit.healerFleeing && !isBeingTargeted(unit);
       if (healed && (!unit.healerFleeing || healerSafe)) {
@@ -13374,8 +13064,8 @@ const Game = (() => {
     actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
     if (!(actual > 0)) return 0;
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
-    // from out of reach must not hold a wave open forever.
-    if (actual > 0 && unit.team === 'enemy') {
+    // from out of reach must not hold a wave open forever, nor a stream of raised minions.
+    if (actual > 0 && unit.team === 'enemy' && !unit.summoned) {
       SiegeLoop.noteCombat(GS.updateTick);
       GS.huntQuietTicks = 0; // an enemy was hurt: the army is not idle
     } else if (actual > 0 && unit.team === 'player') SiegeLoop.noteBlood(GS.updateTick);
@@ -13490,6 +13180,7 @@ const Game = (() => {
     if (
       !nonCombat &&
       !Roster.blocksPin(unit) &&
+      !unit.isNamedBoss &&
       !(unit.team === 'enemy' && (unit.pinImmuneUntil || 0) > GS.updateTick) &&
       Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
     ) {
@@ -13562,7 +13253,8 @@ const Game = (() => {
         SiegeLoop.onUnitDeath(unit, killer, siegeCtx);
         Roster.onDeath(unit, killer, siegeCtx);
         if (killer) {
-          killer.experience = (killer.experience || 0) + 2 + SiegeLoop.killXpBonus();
+          killer.experience =
+            (killer.experience || 0) + DIFFICULTY_TUNING.xpPerKill + SiegeLoop.killXpBonus();
           if (svc('Legacy')) svc('Legacy').recordKill(killer.type, unit.type);
           if (typeof FoundationalMedievalLayer !== 'undefined') {
             FoundationalMedievalLayer.recordKill(killer.type, GS.wave);
@@ -13709,6 +13401,10 @@ const Game = (() => {
     const ft = svc('FloatingText');
     if (ft?.summed) ft.summed(hurtAll);
     else hurtAll();
+    // The player's strikes and blasts also fall on war camps.
+    if (team === 'player' && typeof WarCamps !== 'undefined') {
+      WarCamps.onBlast(x, y, radius, damage, warCampCtx);
+    }
   }
 
   function doomslayerDamage(target) {
@@ -14432,7 +14128,7 @@ const Game = (() => {
         unit.actionTimer = (unit.actionTimer || 0) - 1;
         if (unit.actionTimer <= 0 && unit.attackAnimTimer <= 0) {
           fireWeapon(unit, foe);
-          const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
+          const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
           unit.actionTimer = Math.max(
             12,
             Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -14464,7 +14160,7 @@ const Game = (() => {
       unit.actionTimer--;
       if (unit.actionTimer <= 0) {
         fireWeapon(unit, target);
-        const baseCd = 90 - (unit.experience || 0) * 4 + Math.floor(Math.random() * 20);
+        const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
         unit.actionTimer = Math.max(
           12,
           Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -14505,6 +14201,7 @@ const Game = (() => {
     let dest = null;
     if (!unit.lineBreaker) {
       const prey =
+        (typeof HostTactics !== 'undefined' && HostTactics.preyFor(unit)) ||
         (Roster.preference(unit) === 'support' && findPreferredPlayer(unit, Roster.isSupport)) ||
         findNearestPlayer(unit);
       if (prey) {
@@ -14537,6 +14234,9 @@ const Game = (() => {
 
   function updateEnemyAI(unit) {
     if (unit.hp <= 0) return;
+    // A tactic that moves this enemy itself (a dash down the field edge).
+    if (unit.dash && typeof HostTactics !== 'undefined' && HostTactics.drive(unit, siegeCtx))
+      return;
     if (unit.flying && unit.combatType !== 'siege' && GS.state === 'playing' && !GS.creativeMode) {
       updateFlyerAI(unit);
       return;
@@ -14750,19 +14450,29 @@ const Game = (() => {
     if (isDayPhase() && GS.spawnQueue.length > 0) {
       GS.spawnTimer--;
       if (GS.spawnTimer <= 0) {
+        // Its sector was settled at dawn with the rest of the host.
+        const sector = takeSpawnSector();
         const type = GS.spawnQueue.shift();
-        let side = nextEnemySpawnSide(type);
-        if (svc('MonsterBosses') && GS.namedBossWave) {
-          if (type === GS.namedBossWave.type) {
-            const packSide = svc('MonsterBosses').getPackDef(GS.namedBossWave.type)?.spawnSide;
-            if (packSide && getWaveAttackSides().includes(packSide)) side = packSide;
-          } else if (svc('MonsterBosses').isPackMinion(type)) {
-            const packSide = svc('MonsterBosses').getPackDef(GS.namedBossWave.type)?.spawnSide;
-            if (packSide && getWaveAttackSides().includes(packSide)) side = packSide;
-          }
+        const side = 'north';
+        // The leading faction's tactic may place this one itself (a flank lane, a rift
+        // behind the line) or hold it back until its rift has opened.
+        const tweak =
+          typeof HostTactics !== 'undefined' ? HostTactics.spawnTweak(type, side, siegeCtx) : null;
+        if (tweak && tweak.defer) {
+          GS.spawnQueue.push(type);
+          GS.spawnSectors.push(sector);
+          GS.spawnTimer = 24;
+          return;
         }
-        const pos = spawnPosForSide(side);
+        const pos = tweak && tweak.x != null ? tweak : spawnPosForSector(sector);
+        // A dash lane still enters inside the sector the markers showed.
+        const mf = svc('MultiFrontSiege');
+        if (tweak && tweak.tag === 'dash' && mf && mf.isSector(sector)) {
+          const b = mf.sectorBounds(sector, GS.worldW);
+          pos.x = Math.max(b.x0 + 6, Math.min(b.x1 - 6, pos.x));
+        }
         const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: side });
+        u.entrySector = sector;
         if (svc('EnemyFactions')) u.enemyFaction = svc('EnemyFactions').getUnitFaction(type);
         if (svc('MonsterBosses') && GS.namedBossWave) {
           svc('MonsterBosses').applyPackTags(u, GS.namedBossWave.type);
@@ -14811,7 +14521,15 @@ const Game = (() => {
           playSfx('bossWarn');
         }
         u.huntMode = true;
-        SiegeLoop.tagEnemySpawn(u, siegeCtx);
+        // The tactic decides who runs for the line when it has a say; otherwise the usual roll.
+        const tacticRunners =
+          typeof HostTactics !== 'undefined' &&
+          HostTactics.onSpawn(u, tweak && tweak.tag, siegeCtx);
+        if (!tacticRunners) SiegeLoop.tagEnemySpawn(u, siegeCtx);
+        if (typeof WarCamps !== 'undefined') {
+          const campLabel = WarCamps.onEnemySpawn(u);
+          if (campLabel) svc('FloatingText')?.status?.(u.x, u.y - 14, campLabel, '#ff8060');
+        }
         Roster.onSpawn(u, GS.creativeMode ? 0 : GS.wave);
         GS.units.push(u);
         const baseInterval =
@@ -14831,10 +14549,15 @@ const Game = (() => {
               colonyInterval *
               planetInterval *
               asymInterval
-          ) + Math.floor(Math.random() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
+          ) + Math.floor(gameRandom() * (GS.currentHordeWave ? 10 : GS.creativeMode ? 8 : 20))
         );
         // Enemies arrive in squads, not a trickle: a squad lands together, then a longer lull.
-        const squad = GS.creativeMode ? 1 : Math.min(10, 2 + Math.floor(GS.wave / 4));
+        const tacticSquad = typeof HostTactics !== 'undefined' ? HostTactics.squad() : null;
+        const squad = GS.creativeMode
+          ? 1
+          : tacticSquad
+            ? tacticSquad.size
+            : Math.min(10, 2 + Math.floor(GS.wave / 4));
         if ((GS.spawnSquadLeft || 0) > 1) {
           GS.spawnSquadLeft--;
           spawnGap = 6;
@@ -14949,6 +14672,7 @@ const Game = (() => {
     GS.updateTick++;
     if (GS.state === 'playing') {
       SiegeLoop.update(siegeCtx);
+      if (typeof WarCamps !== 'undefined') WarCamps.update(warCampCtx);
       Roster.update(siegeCtx);
     }
     markUpdatePhase('update-begin', `w${GS.wave} u${GS.units.length}`);
@@ -15373,11 +15097,8 @@ const Game = (() => {
         if (dist < p.speed) {
           const hit = getUnitById(p.targetId);
           const shooter = p.sourceId ? getUnitById(p.sourceId) : null;
-          const projHit =
-            p.team === 'enemy' && shooter
-              ? Math.max(4, p.accuracy - getSightPenaltyForUnit(shooter))
-              : p.accuracy;
-          if (hit?.hp > 0 && Math.random() * 100 <= projHit) {
+          // p.accuracy already paid the enemy sight penalty when the shot was fired.
+          if (hit?.hp > 0 && Math.random() * 100 <= p.accuracy) {
             p.landed = true;
             // Prefer live shooter so vet/aura/crossover/WWE modifiers apply (not a bare damage stub).
             const src =
@@ -16090,6 +15811,7 @@ const Game = (() => {
       if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
+      if (typeof WarCamps !== 'undefined') WarCamps.draw(GS.ctx, warCampCtx, GS.updateTick);
       Roster.drawOverlays(GS.ctx, GS.units, GS.updateTick);
       svc('Particles').draw(GS.ctx, vBounds);
       svc('FloatingText').draw(GS.ctx, vBounds);
@@ -16613,10 +16335,7 @@ const Game = (() => {
       : null;
     const mf =
       svc('MultiFrontSiege') && svc('EnemyFactions')
-        ? svc('MultiFrontSiege').getStateSnapshot(
-            GS.wave,
-            svc('EnemyFactions').getActiveFactions(GS.wave)
-          )
+        ? svc('MultiFrontSiege').getStateSnapshot(activeSectorPlan())
         : null;
     return {
       worldW: GS.worldW,
@@ -16717,6 +16436,7 @@ const Game = (() => {
     GS.spawnTimer = 0;
     buildSpawnQueue();
     applyEconomyWaveMods();
+    assignWaveSectors();
     GS.waveProgress = 0;
     addHighlight('wave', `Wave ${GS.wave} restarted`);
     showMessage(`Wave ${GS.wave} restarted.`, 200);
@@ -16892,25 +16612,37 @@ const Game = (() => {
     return SaveFormat.isSupportedVersion(v);
   }
 
-  const SAVE_SIDES = ['north', 'east', 'west', 'south'];
-
   /**
-   * A saved spawn plan is used only if it is for the coming wave and names real sides.
-   * Everything else in the plan (sectors, leader, multi-front detail) is carried as it is.
+   * A saved entry-sector plan is used only if it is for the coming wave and names real
+   * sectors. Saves from before the three sectors stored flanks here; those are dropped and
+   * the plan is rolled again.
    */
   function restoreNextWavePlan(plan, wave) {
-    if (!plan || plan.wave !== wave + 1 || !Array.isArray(plan.sides)) return null;
-    const sides = plan.sides.filter((x) => SAVE_SIDES.includes(x));
-    if (!sides.length || sides.length !== plan.sides.length) return null;
+    const mf = svc('MultiFrontSiege');
+    if (!mf || !plan) return null;
     let copy = null;
     try {
       copy = JSON.parse(JSON.stringify(plan));
     } catch (_) {
       return null;
     }
-    copy.sides = sides;
-    copy.multiFrontPlan = copy.multiFrontPlan || null;
-    return copy;
+    return mf.restorePlan(copy, wave + 1);
+  }
+
+  /** " · Enters top edge: left 12 · right 9" for tomorrow's host, or '' if not rolled. */
+  function nextSectorIntel() {
+    const plan = GS.nextWavePlan;
+    const mf = svc('MultiFrontSiege');
+    if (!mf || !plan || plan.wave !== GS.wave + 1) return '';
+    return ` · ${mf.formatIntel(plan)}`;
+  }
+
+  /** The plan the HUD should describe: tomorrow's at night, today's by day. */
+  function activeSectorPlan() {
+    if (isNightPhase() && GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1) {
+      return GS.nextWavePlan;
+    }
+    return GS.sectorPlan;
   }
 
   // Run state on GS that has no better home in the save. Each is plain data.
@@ -17009,6 +16741,9 @@ const Game = (() => {
       builderAutoRepair: GS.builderAutoRepair,
       tpAwardedForWave: GS.tpAwardedForWave,
       spawnQueue: JSON.parse(JSON.stringify(GS.spawnQueue)),
+      spawnSectors: [...(GS.spawnSectors || [])],
+      sectorPlan: GS.sectorPlan ? JSON.parse(JSON.stringify(GS.sectorPlan)) : null,
+      lastSectorMain: GS.lastSectorMain || null,
       waveEnemyTotal: GS.waveEnemyTotal,
       spawnTimer: GS.spawnTimer,
       currentHordeWave: GS.currentHordeWave
@@ -17019,6 +16754,7 @@ const Game = (() => {
         : null,
       runPlayerDeaths: GS.runPlayerDeaths,
       pendingLevy: GS.pendingLevy,
+      warCamps: typeof WarCamps !== 'undefined' ? WarCamps.exportState(warCampCtx) : null,
       scoutedWave: GS.scoutedWave ?? -1,
       pendingReinforce: [...GS.pendingReinforce],
       spawnDelayBonus: GS.spawnDelayBonus,
@@ -17042,50 +16778,53 @@ const Game = (() => {
       // Soldiers away on an expedition keep their own list; the expedition itself is in
       // the PlayerCounterEvolution section and gets them back on load.
       expeditionAway: away.filter((u) => u.hp > 0).map((u) => serializeUnitSnap(u)),
-      buildings: GS.buildings.map((b) =>
-        captureSaveFields(
-          b,
-          {
-            id: b.id,
-            type: b.type,
-            x: b.x,
-            y: b.y,
-            hp: b.hp,
-            maxHp: b.maxHp,
-            complete: b.complete,
-            owner: b.owner,
-            buildProgress: b.buildProgress,
-            waveBuildRequired: b.waveBuildRequired || 0,
-            waveBuildProgress: b.waveBuildProgress || 0,
-            facing: b.facing || null,
-            isHamlet: !!b.isHamlet,
-            isMerchantGuild: !!b.isMerchantGuild,
-            isAcademy: !!b.isAcademy,
-            isResearchLab: !!b.isResearchLab,
-            isEnemySettlement: !!b.isEnemySettlement,
-            isResourceGen: !!b.isResourceGen,
-            isSettlement: !!b.isSettlement,
-            isWatchtower: !!b.isWatchtower,
-            isKeep: !!b.isKeep,
-            isMedical: !!b.isMedical,
-            isMessHall: !!b.isMessHall,
-            isWweAcademy: !!b.isWweAcademy,
-            isCrossoverBarracks: !!b.isCrossoverBarracks,
-            isPerkMachine: !!b.isPerkMachine,
-            academyUnit: b.academyUnit || null,
-            crossoverFaction: b.crossoverFaction || null,
-            fortressTier: b.fortressTier || 0,
-            upgrade: b.upgrade || null,
-            upgradeName: b.upgradeName || null,
-            garrisonUnitId: b.garrisonUnitId || null,
-            slotX: b.slotX,
-            slotY: b.slotY,
-            castleGroup: b.castleGroup || null,
-            enemyFaction: b.enemyFaction || null,
-          },
-          BUILDING_SAVE_SKIP
-        )
-      ),
+      // War camps are saved by WarCamps (kind, health, sector) and rebuilt on load.
+      buildings: GS.buildings
+        .filter((b) => typeof WarCamps === 'undefined' || !WarCamps.isCamp(b))
+        .map((b) =>
+          captureSaveFields(
+            b,
+            {
+              id: b.id,
+              type: b.type,
+              x: b.x,
+              y: b.y,
+              hp: b.hp,
+              maxHp: b.maxHp,
+              complete: b.complete,
+              owner: b.owner,
+              buildProgress: b.buildProgress,
+              waveBuildRequired: b.waveBuildRequired || 0,
+              waveBuildProgress: b.waveBuildProgress || 0,
+              facing: b.facing || null,
+              isHamlet: !!b.isHamlet,
+              isMerchantGuild: !!b.isMerchantGuild,
+              isAcademy: !!b.isAcademy,
+              isResearchLab: !!b.isResearchLab,
+              isEnemySettlement: !!b.isEnemySettlement,
+              isResourceGen: !!b.isResourceGen,
+              isSettlement: !!b.isSettlement,
+              isWatchtower: !!b.isWatchtower,
+              isKeep: !!b.isKeep,
+              isMedical: !!b.isMedical,
+              isMessHall: !!b.isMessHall,
+              isWweAcademy: !!b.isWweAcademy,
+              isCrossoverBarracks: !!b.isCrossoverBarracks,
+              isPerkMachine: !!b.isPerkMachine,
+              academyUnit: b.academyUnit || null,
+              crossoverFaction: b.crossoverFaction || null,
+              fortressTier: b.fortressTier || 0,
+              upgrade: b.upgrade || null,
+              upgradeName: b.upgradeName || null,
+              garrisonUnitId: b.garrisonUnitId || null,
+              slotX: b.slotX,
+              slotY: b.slotY,
+              castleGroup: b.castleGroup || null,
+              enemyFaction: b.enemyFaction || null,
+            },
+            BUILDING_SAVE_SKIP
+          )
+        ),
       // The field itself: trees, rocks, barricades, crates and barrels exactly where they are.
       terrain: {
         initialized: !!GS.terrainInitialized,
@@ -17102,6 +16841,69 @@ const Game = (() => {
       modules: SaveRegistry.saveAll(),
     };
     return SaveFormat.seal(snap);
+  }
+
+  /**
+   * A save made when the map still grew holds positions on a larger field. Growth was
+   * centred, so the home ground sits in the middle of that field: everything is moved
+   * back by the growth offset, which puts the base where it was built, and whatever stood
+   * on the added land is brought in to the nearest point of the field. Shots in flight
+   * are dropped.
+   */
+  function fitSaveToField(snap) {
+    const legacy = typeof getLegacyWorldSize === 'function' ? getLegacyWorldSize(snap.wave) : null;
+    const oldW = Number.isFinite(snap.worldW) ? snap.worldW : legacy?.w || GS.worldW;
+    const oldH = Number.isFinite(snap.worldH) ? snap.worldH : legacy?.h || GS.worldH;
+    if (oldW <= GS.worldW && oldH <= GS.worldH) return false;
+    // The terrain was rolled for this field a moment ago; only what the save carried moves.
+    const terrain = GS.decorations;
+    const hazards = GS.hazards;
+    GS.decorations = [];
+    GS.hazards = [];
+    GS.projectiles = [];
+    shiftWorldEntities(-(oldW - GS.worldW) / 2, -(oldH - GS.worldH) / 2);
+    GS.decorations = terrain;
+    GS.hazards = hazards;
+    for (const u of GS.units) {
+      const at = clampPos(u.x, u.y);
+      u.x = at.x;
+      u.y = at.y;
+      if (Number.isFinite(u.postX) && Number.isFinite(u.postY)) {
+        const post = clampPos(u.postX, u.postY);
+        u.postX = post.x;
+        u.postY = post.y;
+      }
+      if (Number.isFinite(u.holdX) && Number.isFinite(u.holdY)) {
+        const hold = clampPos(u.holdX, u.holdY);
+        u.holdX = hold.x;
+        u.holdY = hold.y;
+      }
+      if (Number.isFinite(u.targetX)) u.targetX = Math.max(14, Math.min(GS.worldW - 14, u.targetX));
+      if (Number.isFinite(u.targetY)) u.targetY = Math.max(20, Math.min(GS.worldH - 8, u.targetY));
+      u.path = [];
+      u.pathIndex = 0;
+      u.spawnSide = u.team === 'enemy' ? 'north' : u.spawnSide;
+    }
+    for (const b of GS.buildings) {
+      const x = Math.max(30, Math.min(GS.worldW - 30, b.x));
+      const y = Math.max(44, Math.min(GS.worldH - 30, b.y));
+      const dx = x - b.x;
+      const dy = y - b.y;
+      if (!dx && !dy) continue;
+      b.x = x;
+      b.y = y;
+      if (Number.isFinite(b.slotX)) b.slotX += dx;
+      if (Number.isFinite(b.slotY)) b.slotY += dy;
+      for (const slot of b.wallSlots || []) {
+        if (!slot) continue;
+        if (Number.isFinite(slot.x)) slot.x += dx;
+        if (Number.isFinite(slot.y)) slot.y += dy;
+      }
+    }
+    invalidateObstacles();
+    resolveUnitsInTerrain();
+    resetCamera();
+    return true;
   }
 
   /** Build one unit from its saved record. Null when this game has no such unit type. */
@@ -17353,6 +17155,19 @@ const Game = (() => {
       delete u.buildQueueIds;
     }
     GS.spawnQueue = JSON.parse(JSON.stringify(snap.spawnQueue || []));
+    {
+      // Today's sectors. A save from before the three sectors has none: the enemies
+      // still queued are given sectors when the first of them spawns.
+      const mf = svc('MultiFrontSiege');
+      GS.sectorPlan = mf && snap.sectorPlan ? mf.restorePlan(snap.sectorPlan, GS.wave) : null;
+      const saved = Array.isArray(snap.spawnSectors) ? snap.spawnSectors : [];
+      GS.spawnSectors =
+        mf && GS.sectorPlan && saved.length === GS.spawnQueue.length && saved.every(mf.isSector)
+          ? [...saved]
+          : [];
+      GS.lastSectorMain = mf?.isSector(snap.lastSectorMain) ? snap.lastSectorMain : null;
+      mf?.setCurrentPlan(GS.sectorPlan);
+    }
     GS.waveEnemyTotal = snap.waveEnemyTotal || GS.spawnQueue.length;
     GS.spawnTimer = snap.spawnTimer || 0;
     GS.currentHordeWave = snap.currentHordeWave
@@ -17419,12 +17234,17 @@ const Game = (() => {
           angle: p.angle || 0,
         }))
       : [];
+    if (typeof WarCamps !== 'undefined') WarCamps.importState(snap.warCamps || null, warCampCtx);
+    fitSaveToField(snap);
     wireGameContext();
     // Tomorrow's host: the saved plan, or for an older save made at night a fresh roll,
     // so the field-edge markers still tell the truth.
     GS.nextWavePlan = restoreNextWavePlan(snap.nextWavePlan, GS.wave);
     if (GS.cheatsUsed) SiegeLoop.voidRun();
-    if (!GS.nextWavePlan && isNightPhase()) GS.nextWavePlan = planWaveAttackSides(GS.wave + 1);
+    const rolledAnew = !GS.nextWavePlan && isNightPhase();
+    if (rolledAnew) GS.nextWavePlan = planWaveSectors(GS.wave + 1);
+    // A saved preview is kept as it was, unless the plan behind it was just rolled again.
+    if (rolledAnew || !snap.modules?.SiegeLoop?.data?.preview) SiegeLoop.refreshPreview(siegeCtx);
     if (svc('UX')) svc('UX').onPauseChanged(true);
     syncInteractionState({ refreshCounts: true });
     if (droppedUnits) {
@@ -17743,6 +17563,7 @@ const Game = (() => {
       generalThreat: GS.generalThreatCount,
       lastStandActive: GS.lastStandActive,
       nextWaveIntel: GS.nextWaveIntel,
+      nextHost: GS.timeOfDay === 'night' ? siegeCtx.nextHost : null,
       colonyValue: displayColony?.total ?? 0,
       colonyBaseline: displayColony?.baseline ?? 0,
       colonyThreatRatio: displayColony?.threatRatio ?? 1,
@@ -17870,12 +17691,7 @@ const Game = (() => {
       ),
       multiFrontSiege: cachedSnap('multiFrontSiege', () =>
         svc('MultiFrontSiege') && svc('EnemyFactions')
-          ? svc('MultiFrontSiege').getStateSnapshot(
-              GS.wave,
-              cachedSnap('enemyActiveFactions', () =>
-                svc('EnemyFactions').getActiveFactions(GS.wave)
-              )
-            )
+          ? svc('MultiFrontSiege').getStateSnapshot(activeSectorPlan())
           : null
       ),
       monsterBosses: cachedSnap('monsterBosses', () =>
@@ -18158,6 +17974,14 @@ const Game = (() => {
     setSelectionFormation,
     reformSelectionFormation,
     moveSelectionToWorld,
+    /** War camps: test and creative hooks (raise one, hit one, read the damage a soldier does). */
+    warCampHooks: {
+      ctx: () => warCampCtx,
+      raise: (opts) =>
+        typeof WarCamps !== 'undefined' ? WarCamps.raiseCamp(warCampCtx, opts) : null,
+      hit: (b, amount) => damageBuilding(b, amount, null),
+      damageOf: (unit, b) => calcBuildingDamage(unit, b),
+    },
     restartCurrentWave,
     quickSave,
     quickLoad,

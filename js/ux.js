@@ -520,7 +520,7 @@ const UX = (() => {
           // Keep combat chips in sync when damage rises from star bumps.
           const dmgChip = body.querySelector('.unit-info-combat .combat-chip');
           if (dmgChip && dmgChip.textContent.startsWith('DMG')) {
-            dmgChip.textContent = `DMG ${u.damage ?? '-'}`;
+            dmgChip.textContent = `DMG ${u.damage == null ? '-' : Math.round(u.damage)}`;
           }
           lastUnitPanelKey = barKey;
           return;
@@ -637,7 +637,7 @@ const UX = (() => {
         ${stance ? `<div class="unit-info-stance ${u.holding ? 'holding' : 'hunting'}"><strong>${u.holding ? 'HOLD' : 'HUNT'}</strong> ${escapeHtml(stance.replace(/^[A-Za-z]+: /, ''))}</div>` : ''}
         ${u.status ? `<div class="unit-info-status">${escapeHtml(u.status)}</div>` : ''}
         <div class="unit-info-combat">
-          <span class="combat-chip" title="Damage per hit">DMG ${u.damage ?? '-'}</span>
+          <span class="combat-chip" title="Damage per hit">DMG ${u.damage == null ? '-' : Math.round(u.damage)}</span>
           <span class="combat-chip" title="Attack range">${(u.combatType || '') === 'ranged' || (u.range || 0) > (u.meleeRange || 0) + 2 ? 'RNG' : 'MEL'} ${u.range ?? u.meleeRange ?? '-'}</span>
           <span class="combat-chip" title="Accuracy">ACC ${u.accuracy ?? '-'}%</span>
           <span class="combat-chip" title="Move speed">SPD ${u.speed ?? '-'}</span>

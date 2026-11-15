@@ -87,7 +87,7 @@ const DamagePreview = (() => {
 
     const diff = getDiffMods(ctx);
     GameDepth.applyEnemySpawnScaling(enemy, ctx.wave, {
-      cfg: { hpScale: 1, dmgScale: 1 },
+      cfg: getWaveConfig(ctx.wave),
       diff: {
         enemyHpMult: diff.enemyHpMult,
         enemyDmgMult: diff.enemyDmgMult,
@@ -103,8 +103,8 @@ const DamagePreview = (() => {
 
   function calcDamageAt(attacker, target, ctx, randRoll) {
     let dmg = attacker.damage + randRoll;
-    dmg += Math.floor((attacker.experience || 0) / 3) * 2;
-    dmg += (attacker.vetTier || 0) * 5;
+    dmg += getExperienceDamageBonus(attacker.experience);
+    dmg += (attacker.vetTier || 0) * DIFFICULTY_TUNING.tierFlatDamage;
 
     if (
       attacker.team === 'player' &&

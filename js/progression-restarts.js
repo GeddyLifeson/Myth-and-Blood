@@ -1,89 +1,58 @@
 /**
- * Progression Restarts — major escalation gates reset the tactical map while
- * importing crown legacies, research, kingdom bonuses, and partial TP carryover.
+ * Eras. The run is fought on one field from the first wave to the last: reaching wave 100
+ * or 200 no longer wipes the field or hands out a fresh base. An era is a milestone. It is
+ * announced once, pays a small science grant for the research already done, and names what
+ * the war opens up from that wave on. Soldiers, veterans, buildings, mines and posts are
+ * not touched.
+ *
+ * The global keeps its old name, `ProgressionRestarts`, because saves, the HUD and the
+ * state snapshot refer to it.
  */
 const ProgressionRestarts = (() => {
-  const ESCALATION_RESTARTS = [
+  const ERAS = [
     {
       wave: 100,
       id: 'empire',
       name: 'Empire Ascendant',
       shortName: 'Empire',
-      tagline: 'The frontier is redrawn — academies and settlements seed a new defensive realm.',
+      tagline:
+        'The host comes on heavier from here. Your field, your walls and your veterans stand.',
       color: '#e8a040',
-      tpCarryPct: 0.35,
-      baseTp: 110,
       scienceBonus: 6,
-      wallSpan: 3,
-      hamlets: 2,
-      guild: true,
-      researchLab: false,
-      academies: [
-        'academy_footman',
-        'academy_archer',
-        'academy_knight',
-        'academy_mage',
-        'academy_builder',
+      opens: [
+        'heavier hosts and elite packs',
+        'the wave-100 research tier',
+        'academies for every troop with an Immortal mentor',
       ],
-      army: [
-        { type: 'knight', count: 5 },
-        { type: 'archer', count: 6 },
-        { type: 'footman', count: 4 },
-        { type: 'mage', count: 2 },
-        { type: 'builder', count: 3 },
-        { type: 'sapper', count: 2 },
-      ],
-      extraArmy: [],
     },
     {
       wave: 200,
       id: 'dominion',
       name: 'Planetary Dominion',
       shortName: 'Dominion',
-      tagline: 'Mirror war at scale — northern holds respawn against your imported veterans.',
+      tagline: 'The late war begins. Nothing is taken from you; everything is asked of you.',
       color: '#ff6060',
-      tpCarryPct: 0.28,
-      baseTp: 140,
       scienceBonus: 14,
-      wallSpan: 4,
-      hamlets: 2,
-      guild: true,
-      researchLab: true,
-      academies: [
-        'academy_footman',
-        'academy_archer',
-        'academy_knight',
-        'academy_mage',
-        'academy_builder',
-        'academy_sapper',
-      ],
-      army: [
-        { type: 'knight', count: 7 },
-        { type: 'archer', count: 7 },
-        { type: 'footman', count: 6 },
-        { type: 'mage', count: 3 },
-        { type: 'builder', count: 4 },
-        { type: 'sapper', count: 3 },
-        { type: 'scout', count: 2 },
-      ],
-      extraArmy: [
-        { type: 'knight', count: 3 },
-        { type: 'archer', count: 3 },
+      opens: [
+        'late-war hosts and named threats',
+        'the wave-200 research tier',
+        'late-war decrees and loadouts',
       ],
     },
   ];
 
+  /** Modes that begin inside an era have nothing to announce. */
   const SKIP_MODES = new Set(['academy_era']);
 
   let fired = new Set();
-  let lastRestart = null;
+  let lastEra = null;
 
-  function getRestartDef(wave) {
-    return ESCALATION_RESTARTS.find((d) => d.wave === (wave | 0)) || null;
+  function getEraDef(wave) {
+    return ERAS.find((d) => d.wave === (wave | 0)) || null;
   }
 
   function isEscalationWave(wave) {
-    return !!getRestartDef(wave);
+    return !!getEraDef(wave);
   }
 
   function shouldSkip(ctx = {}) {
@@ -94,181 +63,115 @@ const ProgressionRestarts = (() => {
 
   function resetRun() {
     fired = new Set();
-    lastRestart = null;
+    lastEra = null;
   }
 
+  /** A save from before eras were recorded: every era at or below its wave has passed. */
   function syncFiredThroughWave(wave) {
-    for (const def of ESCALATION_RESTARTS) {
-      if ((wave | 0) >= def.wave) fired.add(def.wave);
+    for (const def of ERAS) {
+      if ((wave | 0) >= def.wave) {
+        fired.add(def.wave);
+        lastEra = { wave: def.wave, id: def.id, name: def.name, shortName: def.shortName };
+      }
     }
   }
 
   function restoreSnapshot(snap) {
-    fired = new Set(snap?.fired || []);
-    lastRestart = snap?.lastRestart || null;
+    fired = new Set((snap?.fired || []).filter((w) => getEraDef(w)));
+    // Older saves called this `lastRestart` and stored what the wipe handed out with it.
+    const last = snap?.lastEra || snap?.lastRestart || null;
+    lastEra = last
+      ? {
+          wave: last.wave,
+          id: last.id,
+          name: last.name,
+          shortName: last.shortName,
+          science: last.science ?? last.imported?.science ?? 0,
+        }
+      : null;
   }
 
   function getSnapshot() {
     return {
       fired: [...fired],
-      lastRestart,
+      lastEra: lastEra ? { ...lastEra } : null,
     };
   }
 
-  function bootstrapPlayerBase(def, ctx) {
-    const cx = ctx.worldW / 2;
-    const wy = ctx.rallyY - 50;
-    for (let i = -def.wallSpan; i <= def.wallSpan; i++) {
-      ctx.bootstrapPlaceComplete('wall', cx + i * 28, wy);
-    }
-    ctx.bootstrapPlaceComplete('outpost', cx, wy - 35);
-    const hamletOffsets = [-130, 130, 0];
-    for (let i = 0; i < def.hamlets; i++) {
-      ctx.bootstrapPlaceComplete('hamlet', cx + (hamletOffsets[i] ?? i * 90), wy - 90 - i * 8);
-    }
-    if (def.guild) ctx.bootstrapPlaceComplete('merchant_guild', cx, wy - 120);
-    if (def.researchLab) ctx.bootstrapPlaceComplete('research_lab', cx + 160, wy - 85);
-    def.academies.forEach((t, i) => {
-      ctx.bootstrapPlaceComplete(t, cx - 100 + i * 42, wy - 25);
-    });
-  }
-
-  function applyKingdomMoraleBonus(ctx) {
-    if (typeof getKingdomStageBuffs !== 'function') return 0;
-    const kb = getKingdomStageBuffs(ctx.wave);
-    if (!kb.veteranMoraleCap) return 0;
-    let n = 0;
-    for (const u of ctx.units || []) {
-      if (u.team !== 'player' || u.hp <= 0) continue;
-      u.morale = Math.min(u.maxMorale, u.morale + 2);
-      n++;
-    }
-    return n;
-  }
-
-  function performRestart(wave, ctx = {}) {
-    const def = getRestartDef(wave);
+  /**
+   * Called at every dawn. On an era wave it announces the era, once; it never removes or
+   * adds a soldier or a building.
+   */
+  function enterEra(wave, ctx = {}) {
+    const def = getEraDef(wave);
     if (!def || fired.has(def.wave) || shouldSkip(ctx)) return null;
 
-    const priorTp = Math.max(0, ctx.getTactical?.() || 0);
-    const carryTp = Math.floor(priorTp * def.tpCarryPct);
     const researchDone = ctx.getResearchCompletedCount?.() || 0;
-    const scienceGrant = def.scienceBonus + Math.min(12, Math.floor(researchDone / 2));
-
-    const veterans = ctx.captureVeterans?.() || [];
-    ctx.releaseAllUnits?.();
-    ctx.releaseAllBuildings?.();
-    ctx.clearProjectiles?.();
-    ctx.applyWorldSize?.(wave);
-    ctx.generateBattlefield?.();
-    ctx.invalidateObstacles?.();
-    ctx.resetCamera?.();
-
-    const rtsWave = typeof RTS_ERA_WAVE !== 'undefined' ? RTS_ERA_WAVE : 200;
-    if (wave >= rtsWave) ctx.tryRtsMapExpansion?.();
-
-    bootstrapPlayerBase(def, ctx);
-    ctx.bootstrapSpawnArmy?.(def.army);
-    if (def.extraArmy?.length) ctx.bootstrapSpawnArmy?.(def.extraArmy);
-    const veteransKept = veterans.length ? ctx.restoreVeterans?.(veterans) || 0 : 0;
-    ctx.bootstrapEnemyEconomyForWave?.(wave);
-    ctx.grantBootstrapUnlocks?.(wave);
-
-    const baseTp = def.baseTp + carryTp;
-    ctx.setTactical?.(baseTp);
-
-    const legacy = ctx.applyRunStartBonuses?.() || {};
-    applyKingdomMoraleBonus(ctx);
-
-    if (scienceGrant > 0) ctx.grantScience?.(scienceGrant);
+    const science = def.scienceBonus + Math.min(12, Math.floor(researchDone / 2));
+    if (science > 0) ctx.grantScience?.(science);
 
     fired.add(def.wave);
-    lastRestart = {
-      wave: def.wave,
-      id: def.id,
-      name: def.name,
-      shortName: def.shortName,
-      imported: {
-        tp: baseTp + (legacy.startTp || 0),
-        carryTp,
-        science: scienceGrant,
-        heirs: legacy.heirs || 0,
-        passives: legacy.activePassives || 0,
-        research: researchDone,
-        eternalEchoes: legacy.eternalInvested || 0,
-      },
-    };
+    lastEra = { wave: def.wave, id: def.id, name: def.name, shortName: def.shortName, science };
 
-    ctx.addHighlight?.('era', `Escalation restart — ${def.name}`);
-    const eternalNote = legacy.eternalInvested ? `, ${legacy.eternalInvested} eternal echo(s)` : '';
-    ctx.showMessage?.(
-      `Progression Restart — ${def.name}. Tactical map reset; legacies, research (${researchDone} complete)${eternalNote}, and ${baseTp + (legacy.startTp || 0)} TP imported.`,
-      440
-    );
-    if (veteransKept > 0) {
-      ctx.showMessage?.(
-        `${veteransKept} veteran${veteransKept === 1 ? '' : 's'} marched into the new era with you.`,
-        320
-      );
+    ctx.addHighlight?.('era', `${def.name} — wave ${def.wave}`);
+    ctx.showMessage?.(`Wave ${def.wave} — ${def.name}. ${def.tagline}`, 440);
+    ctx.showMessage?.(`Now open: ${def.opens.join('; ')}.`, 380);
+    if (science > 0) {
+      ctx.showMessage?.(`Your scholars mark the new era: +${science} science.`, 300);
     }
-    ctx.showMessage?.(def.tagline, 360);
-    ctx.floatingText?.(ctx.worldW / 2, 56, def.shortName.toUpperCase(), def.color);
+    ctx.floatingText?.((ctx.worldW || 400) / 2, 56, def.shortName.toUpperCase(), def.color);
+    ctx.playSfx?.('reinforce');
 
-    return { performed: true, def, snapshot: lastRestart };
+    return { performed: true, wiped: false, def, snapshot: { ...lastEra } };
   }
 
   function onWaveStart(wave, ctx = {}) {
-    return performRestart(wave, ctx);
+    return enterEra(wave, ctx);
   }
 
   function getStateSnapshot(ctx = {}) {
-    const next = ESCALATION_RESTARTS.find((d) => !fired.has(d.wave) && (ctx.wave | 0) < d.wave);
+    const next = ERAS.find((d) => !fired.has(d.wave) && (ctx.wave | 0) < d.wave);
     return {
       fired: [...fired],
       firedCount: fired.size,
-      totalGates: ESCALATION_RESTARTS.length,
-      lastRestart,
+      totalGates: ERAS.length,
+      lastEra,
+      lastRestart: lastEra,
       nextGate: next ? { wave: next.wave, name: next.name, shortName: next.shortName } : null,
       hudLine: formatHudLine(ctx),
     };
   }
 
-  function formatHudLine(ctx = {}) {
-    if (!lastRestart) return '';
-    const imp = lastRestart.imported;
-    const parts = [`${lastRestart.shortName} import`];
-    if (imp.passives > 0) parts.push(`${imp.passives} legacy`);
-    if (imp.heirs > 0) parts.push(`${imp.heirs} heir`);
-    if (imp.research > 0) parts.push(`${imp.research} tech`);
-    if (imp.tp > 0) parts.push(`${imp.tp} TP`);
-    if (ctx.wave >= 150 && !fired.has(150) && lastRestart.wave < 150) {
-      /* no-op — show last import only */
-    }
-    return parts.join(' · ');
+  function formatHudLine() {
+    return lastEra ? `${lastEra.shortName} era` : '';
   }
 
   function formatIntelNote(ctx = {}) {
-    const snap = getStateSnapshot(ctx);
-    if (!snap.lastRestart && !snap.nextGate) return '';
-    if (snap.nextGate && (ctx.wave | 0) >= snap.nextGate.wave - 5) {
-      return `Escalation w${snap.nextGate.wave}: map reset, legacies import`;
+    const next = ERAS.find((d) => !fired.has(d.wave) && (ctx.wave | 0) < d.wave);
+    if (next && (ctx.wave | 0) >= next.wave - 5) {
+      return `Wave ${next.wave}: ${next.name} — heavier hosts, your field stands`;
     }
-    if (snap.lastRestart) return `Legacy import: ${snap.lastRestart.shortName}`;
     return '';
   }
 
   return {
-    ESCALATION_RESTARTS,
+    ERAS,
+    ESCALATION_RESTARTS: ERAS,
     isEscalationWave,
     shouldSkip,
     resetRun,
     syncFiredThroughWave,
     restoreSnapshot,
     getSnapshot,
-    performRestart,
+    enterEra,
+    performRestart: enterEra,
     onWaveStart,
     getStateSnapshot,
     formatHudLine,
     formatIntelNote,
   };
 })();
+
+// Published for headless runs and GameServices.registerFromGlobals(): a top-level `const`
+// in a classic script is not a property of globalThis.
+globalThis.ProgressionRestarts = ProgressionRestarts;

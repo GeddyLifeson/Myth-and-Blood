@@ -4,6 +4,8 @@
  */
 const DynamicMapEvents = (() => {
   const WAVE_MIN = 12;
+  /** Territory tier 2, the first at which faction hazards can be placed. */
+  const HAZARD_WAVE = 22;
   const ERUPTION_TICK = 150;
 
   const EVENTS = {
@@ -164,7 +166,46 @@ const DynamicMapEvents = (() => {
   let lastEruptionTick = 0;
   let deckSeed = 1;
 
-  function resetRun() {
+  function mix(a, b) {
+    let h =
+      Math.imul((a | 0) ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul((b | 0) + 0x7f4a7c15, 0xc2b2ae35);
+    h ^= h >>> 15;
+    h = Math.imul(h, 0x2c1b3c6d);
+    h ^= h >>> 12;
+    return h >>> 0;
+  }
+
+  /**
+   * One wave in every block of four carries an event, and the same slot says which system
+   * speaks: a planet choice, a field event, wildlife or faction hazards laid on the field.
+   * Every picker reads this one deck.
+   * @returns {'planet'|'field'|'wildlife'|'hazard'|null}
+   */
+  function eventSlot(wave) {
+    if (wave < 3) return null;
+    const h = mix(deckSeed, Math.floor(wave / 4));
+    if (wave % 4 !== h % 4) return null;
+    const kinds = wave >= WAVE_MIN ? ['planet', 'field', 'wildlife'] : ['field'];
+    if (wave >= HAZARD_WAVE) kinds.push('hazard');
+    return kinds[(h >>> 2) % kinds.length];
+  }
+
+  /** A stable pick from a list for this wave and system. */
+  function deckPick(list, wave, salt) {
+    return list.length ? list[mix(deckSeed + salt, wave) % list.length] : null;
+  }
+
+  /**
+   * @param {string|number} [seed] a seeded run's seed; otherwise the browser's own entropy,
+   *   which leaves the game's random stream alone (headless runs without it use seed 1)
+   */
+  function resetRun(seed) {
+    deckSeed = 1;
+    if (seed != null && seed !== '') {
+      for (const ch of String(seed)) deckSeed = mix(deckSeed, ch.charCodeAt(0));
+    } else if (globalThis.crypto?.getRandomValues) {
+      deckSeed = globalThis.crypto.getRandomValues(new Uint32Array(1))[0];
+    }
     pending = null;
     choiceId = null;
     activeMods = null;
@@ -199,22 +240,9 @@ const DynamicMapEvents = (() => {
   }
 
   function pickEvent(wave) {
-    if (wave < WAVE_MIN) return null;
-    let best = null;
-    let bestPri = -1;
-    for (const id of EVENT_ORDER) {
-      const evt = EVENTS[id];
-      if (!evt || wave < evt.waveMin) continue;
-      if (evt.waveMod && wave % evt.waveMod !== 0) continue;
-      const pri = evt.priority ?? 10;
-      if (pri > bestPri) {
-        bestPri = pri;
-        best = evt;
-      }
-    }
-    if (best) return best;
-    if (wave >= 20 && wave % 27 === 0) return EVENTS.geothermal_surge;
-    return null;
+    if (wave < WAVE_MIN || eventSlot(wave) !== 'planet') return null;
+    const live = EVENT_ORDER.map((id) => EVENTS[id]).filter((e) => e && wave >= e.waveMin);
+    return deckPick(live, wave, 11);
   }
 
   function placeSite(evt, ctx) {
@@ -578,6 +606,8 @@ const DynamicMapEvents = (() => {
     EVENTS,
     resetRun,
     pickEvent,
+    eventSlot,
+    deckPick,
     prepareNextEvent,
     respond,
     applyForWave,

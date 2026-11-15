@@ -35,8 +35,7 @@ const ACADEMY_ERA_WAVE = 100;
 const RTS_ERA_WAVE = 200;
 const RTS_MAP_EXPAND_W = 180;
 const RTS_MAP_EXPAND_H = 220;
-const ATTACK_SIDES = ['north', 'east', 'west', 'south'];
-const ATTACK_SIDE_INTERVAL = 25;
+const ATTACK_SIDES = ['north'];
 function academyEase() { return 1; }
 function rtsMapBlend() { return 1; }
 `;
@@ -62,17 +61,12 @@ const s10 = sb.getWorldSize(10);
 const s20 = sb.getWorldSize(20);
 const s200 = sb.getWorldSize(200);
 ok(s1.w === 400 && s1.h === 600, 'wave 1 map is base field');
-ok(s10.w > s1.w && s10.h > s1.h, 'wave 10 expands width and height');
-ok(s20.w > s10.w && s20.h > s10.h, 'wave 20 expands further on both axes');
-ok(s200.w > s20.w && s200.h > s20.h, 'RTS era map is larger still');
-ok(s1.fixedBattlefield === false, 'battlefield is allowed to grow');
-ok((s10.w - s1.w) % 2 === 0 || true, 'width delta usable for centered shift');
-ok(sb.getUnlockedAttackSides(1).join() === 'north', 'early waves north only');
-ok(sb.getUnlockedAttackSides(24).join() === 'north', 'wave 24 still north only');
-ok(sb.getUnlockedAttackSides(25).join() === 'north,east', 'east unlocks at 25');
-ok(sb.getUnlockedAttackSides(50).join() === 'north,east,west', 'west unlocks at 50');
-ok(sb.getUnlockedAttackSides(75).join() === 'north,east,west,south', 'south unlocks at 75');
-ok(sb.getUnlockedAttackSides(500).join() === 'north,east,west,south', 'late game all flanks');
+ok(s10.w === s1.w && s10.h === s1.h, 'wave 10 is the same field');
+ok(s20.w === s1.w && s20.h === s1.h, 'wave 20 is the same field');
+ok(s200.w === s1.w && s200.h === s1.h, 'wave 200 is the same field');
+ok(sb.getUnlockedAttackSides(1).join() === 'north', 'early waves come from the top edge');
+ok(sb.getUnlockedAttackSides(75).join() === 'north', 'wave 75 comes from the top edge');
+ok(sb.getUnlockedAttackSides(500).join() === 'north', 'late game comes from the top edge');
 ok(sb.isEnemyRtsEra(250) === false, 'enemy RTS era off');
 
 const game = readFileSync(join(root, 'js/game.js'), 'utf8');
@@ -89,10 +83,9 @@ ok(
   /function allowsCampaignEconomyVictory[\s\S]{0,120}return false/.test(game),
   'no economy victory'
 );
-ok(/rollWaveAttackSides/.test(game), 'wave start rolls attack flanks');
-ok(/buildFrontPlan/.test(game), 'multi-front siege plans restored');
-ok(/shiftWorldEntities/.test(game), 'map growth shifts content for all-side expansion');
-ok(/populateNewTerritory/.test(game), 'new territory is populated after expand');
+ok(/planWaveSectors/.test(game), 'nightfall rolls the entry sectors');
+ok(/assignWaveSectors/.test(game), 'dawn gives every queued enemy a sector');
+ok(!/populateNewTerritory|syncMapGrowth/.test(game), 'no map growth code is left');
 
 const modes = readFileSync(join(root, 'js/game-modes.js'), 'utf8');
 ok(
