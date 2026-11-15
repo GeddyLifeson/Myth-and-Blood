@@ -21,7 +21,7 @@ function loadModules() {
     Legacy: { get: () => ({}) },
     Research: { completedCount: 0, countLabs: () => 1, getActiveInfo: () => null },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -64,8 +64,8 @@ ok(
 // Mythic root
 FoundationalMedievalLayer.resetRun();
 FoundationalMedievalLayer.onRunStart({ creative: false });
-FoundationalMedievalLayer.recordDeploy('goku', 60);
-FoundationalMedievalLayer.recordDeploy('tank_dempsey', 65);
+FoundationalMedievalLayer.recordDeploy('tavish_coalheart', 60);
+FoundationalMedievalLayer.recordDeploy('dunmar_fusewick', 65);
 TechTreeBranches.resetRun();
 TechTreeBranches.onWaveStart(50, { wave: 50, showMessage: () => {}, addHighlight: () => {} });
 ok(TechTreeBranches.getRootId() === 'mythic', 'mythic root from crossover heroes');

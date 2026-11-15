@@ -109,7 +109,7 @@ const GameRosterUi = (() => {
     const def = WweDefs[id];
     if (!def) return false;
     if (!hasWweAcademy()) {
-      showMessage('Complete a Grand Coliseum on the field first!');
+      showMessage('Complete a Champions’ Hall on the field first!');
       return false;
     }
     if (GS.tactical < def.cost) {
@@ -135,11 +135,11 @@ const GameRosterUi = (() => {
     if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').onRecruit(u);
     svc('MetaProgress').recordWweRecruit(id);
     if (svc('Legacy')) {
-      svc('Legacy').recordFaction('wwe');
+      svc('Legacy').recordFaction('champions');
       svc('Legacy').recordDeploy(id);
     }
     if (typeof MythicPathEvolution !== 'undefined') {
-      MythicPathEvolution.recordFaction('wwe', GS.wave);
+      MythicPathEvolution.recordFaction('champions', GS.wave);
       MythicPathEvolution.recordDeploy(id, GS.wave);
     }
     ach('wwe_recruit', { wweId: id });

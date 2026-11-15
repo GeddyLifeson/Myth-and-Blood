@@ -1,13 +1,13 @@
 {
   "champions": {
-    "stone_cold": {
+    "hadrek_quarryborn": {
       "role": "Elite breaker",
       "trait": "Keystone Blow — +30% damage to bosses, monsters and elites. The first hit on each new target pins it for 1 second (not bosses, monsters or elites).",
       "weak": "Melee only; nothing to offer against a crowd.",
       "bossBane": 1.3,
       "stagger": 60
     },
-    "the_rock": {
+    "osmar_tallgrave": {
       "role": "Crowd pleaser",
       "trait": "Cairn Fall — Every third hit also deals 60% of its damage to up to 6 enemies within 44 of the target. Each kill gives allies within 110 +4 morale.",
       "weak": "Ordinary health for the price.",
@@ -21,7 +21,7 @@
         "morale": 4
       }
     },
-    "ric_flair": {
+    "lord_corvane_ashgilt": {
       "role": "Morale anchor",
       "trait": "Herald's Boast — Allies within 110 regain 1.5 morale each second. Each kill gives allies within 110 +3 morale.",
       "weak": "Low damage for a champion.",
@@ -34,7 +34,7 @@
         "morale": 3
       }
     },
-    "hulk_hogan": {
+    "brunhal_oxmantle": {
       "role": "Comeback tank",
       "trait": "Stubborn Blood — Takes 30% less damage while below 40% health. Recovers 1% of own health each second.",
       "weak": "Slow, and misses six swings in ten.",
@@ -44,7 +44,7 @@
       },
       "regen": 0.01
     },
-    "macho_man": {
+    "jorun_kestrelhand": {
       "role": "Long-range striker",
       "trait": "Stooping Cast — +35% damage to targets more than 140 away. The first hit on each new target deals +20% damage.",
       "weak": "Needs distance. Deals 30% less damage to enemies within 55.",
@@ -58,7 +58,7 @@
         "mult": 0.7
       }
     },
-    "sting": {
+    "maldrick_sootgate": {
       "role": "Lockdown",
       "trait": "Chain Hold — The first hit on each new target pins it for 1.5 seconds (not bosses, monsters or elites). +25% damage to targets below 40% health.",
       "weak": "Modest damage until the target is already hurt.",
@@ -68,7 +68,7 @@
         "mult": 1.25
       }
     },
-    "john_cena": {
+    "alder_wynfast": {
       "role": "Stalwart",
       "trait": "Sworn Stand — Takes 35% less damage while below 50% health. Each kill gives allies within 100 +3 morale.",
       "weak": "Low damage and slow on his feet.",
@@ -81,7 +81,7 @@
         "morale": 3
       }
     },
-    "bautista": {
+    "gorvan_hullbreaker": {
       "role": "Brawler",
       "trait": "Goring Sweep — Every hit also deals 30% of its damage to up to 6 enemies within 36 of the target. +20% damage while below half health.",
       "weak": "Misses more than half his swings.",
@@ -92,7 +92,7 @@
       },
       "bloodRage": 1.2
     },
-    "roman_reigns": {
+    "ulvar_deepmoor": {
       "role": "Line captain",
       "trait": "Shoulder Ram — The first hit on each new target deals +50% damage. Allies within 70 take 10% less damage.",
       "weak": "Slow; the bonus is spent after the first blow on each target.",
@@ -101,7 +101,7 @@
         "r": 70
       }
     },
-    "shawn_michaels": {
+    "sennet_quickheel": {
       "role": "Finisher",
       "trait": "Spinning Heel — +60% damage to targets below 30% health. +25% damage when striking from behind.",
       "weak": "Low health; needs someone else to start the fight.",
@@ -111,7 +111,7 @@
       },
       "backstab": 1.25
     },
-    "bret_hart": {
+    "hestor_grindlaw": {
       "role": "Single-target specialist",
       "trait": "Lockwright's Hold — Each consecutive hit on the same target deals 8% more, up to +40%. Enemies hit deal 15% less damage for 3 seconds.",
       "weak": "The build-up resets every time the target changes.",
@@ -124,7 +124,7 @@
         "ticks": 180
       }
     },
-    "undertaker": {
+    "brother_halvec": {
       "role": "Terror",
       "trait": "Passing Bell — Enemies within 120 lose 2 morale each second. Takes 10% less damage.",
       "weak": "Very slow, and the most expensive champion.",
@@ -134,14 +134,14 @@
       },
       "flatResist": 0.1
     },
-    "kane": {
+    "varn_thistlehide": {
       "role": "Monster hunter",
       "trait": "Barbed Hide — +35% damage to bosses, monsters and elites. Melee attackers take 6 damage for each blow they land.",
       "weak": "Slow; wasted on small fry.",
       "bossBane": 1.35,
       "thorns": 6
     },
-    "andre_giant": {
+    "big_oddo_of_cragfoot": {
       "role": "Siege wall",
       "trait": "Keep-Breaker — Each attack also deals 50% of its damage to one more enemy within 40 of the target. +50% damage to siege towers, iron colossi and hellmortars. Cannot be pinned.",
       "weak": "The slowest unit in the army, and misses two swings in three.",
@@ -156,7 +156,7 @@
       },
       "noPin": true
     },
-    "razor_ramon": {
+    "ilvane_whetstone": {
       "role": "Steady blade",
       "trait": "Whetted Edge — Each consecutive hit on the same target deals 6% more, up to +30%. Takes 5% less damage.",
       "weak": "One target at a time; the build-up resets when the target changes.",
@@ -166,7 +166,7 @@
       },
       "flatResist": 0.05
     },
-    "kevin_nash": {
+    "durgan_beamshoulder": {
       "role": "Area bruiser",
       "trait": "Roof Fall — Every 4th hit also deals 100% of its damage to up to 6 enemies within 48 of the target. Takes 8% less damage.",
       "weak": "Slow and inaccurate; three plain hits between each drop.",
@@ -177,7 +177,7 @@
       },
       "flatResist": 0.08
     },
-    "roddy_piper": {
+    "fenrick_barbtongue": {
       "role": "Instigator",
       "trait": "Barbed Tongue — Each kill gives allies within 130 +6 morale. Enemies hit take 10% more damage from every source for 3 seconds.",
       "weak": "Low health; he helps others more than he fights.",
@@ -190,7 +190,7 @@
         "ticks": 180
       }
     },
-    "hacksaw_duggan": {
+    "old_garth_bannerpole": {
       "role": "Rally point",
       "trait": "Raise the Colours — Allies within 120 regain 1 morale each second. Allies within 60 take 10% less damage.",
       "weak": "Poor aim and low damage.",
@@ -202,14 +202,14 @@
         "r": 60
       }
     },
-    "junkyard_dog": {
+    "brask_ironbrow": {
       "role": "Staggerer",
       "trait": "Ram's Brow — The first hit on each new target pins it for 2 seconds (not bosses, monsters or elites). Melee attackers take 4 damage for each blow they land.",
       "weak": "Slow; each enemy can only be pinned once every few seconds.",
       "stagger": 120,
       "thorns": 4
     },
-    "rey_mysterio": {
+    "pip_wrenfall": {
       "role": "Skirmisher",
       "trait": "Rope-Dancer's Leap — Dodges 40% of arrows and bolts. Cannot be pinned. +40% damage to line-breakers and routing enemies.",
       "weak": "The lowest health and damage of any champion.",
@@ -217,14 +217,14 @@
       "noPin": true,
       "runDown": 1.4
     },
-    "eddie_guerrero": {
+    "jessom_magpie": {
       "role": "Opportunist",
       "trait": "Magpie's Due — +50% damage when striking from behind. The first hit on each new target deals +30% damage.",
       "weak": "Low health; weak in a head-on slog.",
       "backstab": 1.5,
       "pounceEach": 1.3
     },
-    "chris_benoit": {
+    "orrin_clampjaw": {
       "role": "Duelist",
       "trait": "Tightening Grip — Each consecutive hit on the same target deals 10% more, up to +50%.",
       "weak": "Low health; the build-up resets when the target changes.",
@@ -233,7 +233,7 @@
         "max": 0.5
       }
     },
-    "oba_femi": {
+    "tharn_ringholder": {
       "role": "Melee anchor",
       "trait": "Ringed In — Each attack also deals 40% of its damage to one more enemy within 34 of the target. Melee attackers take 5 damage for each blow they land.",
       "weak": "No answer to ranged fire.",
@@ -243,7 +243,7 @@
       },
       "thorns": 5
     },
-    "brock_lesnar": {
+    "gundrek_oxblood": {
       "role": "Executioner",
       "trait": "Carcass Throw — +50% damage to targets below 35% health. Each kill restores 6% of own health.",
       "weak": "Costly, and misses more than half his swings.",
@@ -253,7 +253,7 @@
       },
       "killHeal": 0.06
     },
-    "cm_punk": {
+    "kerrin_ashvow": {
       "role": "Closer",
       "trait": "Last Word — +50% damage to targets below 25% health. Enemies hit deal 10% less damage for 2 seconds.",
       "weak": "Low health for a front-line fighter.",
@@ -266,7 +266,7 @@
         "ticks": 120
       }
     },
-    "seth_rollins": {
+    "merrow_slingstone": {
       "role": "Ranged finisher",
       "trait": "Poacher's Cast — +40% damage to targets below 30% health. +10% damage to targets more than 120 away.",
       "weak": "Low health; ordinary damage against fresh targets.",
@@ -279,7 +279,7 @@
         "mult": 1.1
       }
     },
-    "sheamus": {
+    "hulder_rustbeard": {
       "role": "Line breaker",
       "trait": "Turf-Cutter's Sweep — Each attack also deals 45% of its damage to one more enemy within 36 of the target. +15% damage while below half health.",
       "weak": "Slow and inaccurate.",
@@ -289,7 +289,7 @@
       },
       "bloodRage": 1.15
     },
-    "bray_wyatt": {
+    "old_mother_sedge": {
       "role": "Dread caster",
       "trait": "Corpse-Candle Omen — Enemies within 110 lose 1.5 morale each second. Enemies hit deal 15% less damage for 4 seconds.",
       "weak": "Slow, with short reach for a ranged fighter.",
@@ -302,7 +302,7 @@
         "ticks": 240
       }
     },
-    "randy_orton": {
+    "hallec_stillwater": {
       "role": "Ambusher",
       "trait": "Sudden Fall — The first hit on each new target deals +40% damage. +30% damage to targets below 30% health.",
       "weak": "Average in a long fight against a single tough enemy.",
@@ -314,7 +314,7 @@
     }
   },
   "operatives": {
-    "tank_dempsey": {
+    "dunmar_fusewick": {
       "role": "Horde breaker",
       "trait": "Fused Pot — Every third hit also deals 50% of its damage to up to 6 enemies within 40 of the target. +20% damage to goblins and plague rats.",
       "weak": "Melee only; no bonus against big targets.",
@@ -332,7 +332,7 @@
         "plague_rat": 1.2
       }
     },
-    "richtofen": {
+    "aldous_verdigris": {
       "role": "Elite hunter",
       "trait": "Bottled Storm — +20% damage to bosses, monsters and elites. Enemies hit take 8% more damage from every source for 3 seconds.",
       "weak": "The lowest health in the company.",
@@ -342,7 +342,7 @@
         "ticks": 180
       }
     },
-    "nikolai": {
+    "otmar_caskwright": {
       "role": "Wounded wall",
       "trait": "Hooped Iron — Takes 30% less damage while below 40% health. +15% damage to goblins and plague rats.",
       "weak": "Slow, and misses more than half his swings.",
@@ -359,7 +359,7 @@
         "plague_rat": 1.15
       }
     },
-    "takeo": {
+    "isen_quillon": {
       "role": "Duelist",
       "trait": "First Cut — The first hit on each new target deals +40% damage. +25% damage to goblins and plague rats.",
       "weak": "Light armour; the bonus is spent after the first blow on each target.",
@@ -373,7 +373,7 @@
         "plague_rat": 1.25
       }
     },
-    "primis_tank": {
+    "ser_wulmar_dray": {
       "role": "Vanguard",
       "trait": "Barrow Sweep — Each attack also deals 40% of its damage to one more enemy within 34 of the target. Takes 6% less damage.",
       "weak": "No answer to ranged fire.",
@@ -383,7 +383,7 @@
       },
       "flatResist": 0.06
     },
-    "primis_nikolai": {
+    "ser_hadwin_morrow": {
       "role": "Bulwark",
       "trait": "Sealed Door — Takes 40% less damage while below 35% health. Melee attackers take 4 damage for each blow they land.",
       "weak": "Slow, and misses more than half his swings.",
@@ -393,7 +393,7 @@
       },
       "thorns": 4
     },
-    "primis_takeo": {
+    "dame_ysolt_kerne": {
       "role": "Finisher",
       "trait": "Mercy Stroke — +35% damage to targets below 40% health. Takes 5% less damage.",
       "weak": "Ordinary damage against fresh targets.",
@@ -403,7 +403,7 @@
       },
       "flatResist": 0.05
     },
-    "primis_richtofen": {
+    "brother_odrin_wick": {
       "role": "Battle medic",
       "trait": "Candle and Lancet — Heals for 10% of the damage dealt. Allies within 60 recover 0.8% of their health each second.",
       "weak": "Low health; modest damage.",
@@ -413,7 +413,7 @@
         "pct": 0.008
       }
     },
-    "master_chief": {
+    "torvald_greyhame": {
       "role": "Shield leader",
       "trait": "Pavise Line — Allies within 80 take 10% less damage. +10% damage to targets more than 120 away.",
       "weak": "Expensive; the shield only covers soldiers who stay close.",
@@ -425,7 +425,7 @@
         "mult": 1.1
       }
     },
-    "noble_six": {
+    "ashka_lonefell": {
       "role": "Lone hunter",
       "trait": "Far from the Fire — +20% damage to targets more than 120 away. +50% damage to line-breakers and routing enemies.",
       "weak": "Gives nothing to the soldiers nearby.",
@@ -435,7 +435,7 @@
       },
       "runDown": 1.5
     },
-    "sgt_johnson": {
+    "bertram_hobnail": {
       "role": "Serjeant",
       "trait": "Barrack Roar — Allies within 100 regain 1.5 morale each second. Each kill gives allies within 100 +3 morale.",
       "weak": "Melee only, slow, and no damage bonus.",
@@ -448,7 +448,7 @@
         "morale": 3
       }
     },
-    "noble_carter": {
+    "emric_dawnhollow": {
       "role": "Volley caller",
       "trait": "Call the Mark — Ranged allies within 130 deal 12% more damage. +8% damage to targets more than 120 away.",
       "weak": "Modest damage alone; worth little without ranged allies nearby.",
@@ -460,7 +460,7 @@
         "mult": 1.08
       }
     },
-    "noble_kat": {
+    "kesta_wirewright": {
       "role": "Saboteur",
       "trait": "Hobbling Bolt — Enemies hit deal 15% less damage for 3 seconds. +10% damage to targets more than 120 away.",
       "weak": "Low health and low damage.",
@@ -473,7 +473,7 @@
         "mult": 1.1
       }
     },
-    "noble_emile": {
+    "rask_notchblade": {
       "role": "Close assault",
       "trait": "Scaling Knife — +50% damage to targets below 30% health. The first hit on each new target deals +20% damage.",
       "weak": "The only melee fighter in a ranged company; low health.",
@@ -483,7 +483,7 @@
       },
       "pounceEach": 1.2
     },
-    "noble_jorge": {
+    "hulbrand_oxbow": {
       "role": "Springald bearer",
       "trait": "Springald Shot — Every third hit also deals 70% of its damage to up to 6 enemies within 46 of the target. Takes 8% less damage.",
       "weak": "Slow, short-ranged, and misses six shots in ten.",
@@ -494,7 +494,7 @@
       },
       "flatResist": 0.08
     },
-    "noble_jun": {
+    "jessa_stillbreath": {
       "role": "Tower marksman",
       "trait": "Held Breath — +30% damage to targets more than 160 away. +30% damage to bosses, monsters and elites.",
       "weak": "Low health. Deals 40% less damage to enemies within 60.",
@@ -508,7 +508,7 @@
         "mult": 0.6
       }
     },
-    "spartan_soldier": {
+    "greywatch_arbalester": {
       "role": "Arbalester",
       "trait": "Steady Crank — Each consecutive hit on the same target deals 4% more, up to +20%. +10% damage to targets more than 120 away.",
       "weak": "Low damage; the build-up resets when the target changes.",
@@ -521,7 +521,7 @@
         "mult": 1.1
       }
     },
-    "marcus_fenix": {
+    "hale_brandreth": {
       "role": "Company captain",
       "trait": "Sawback Glaive — +40% damage to targets below 30% health. Melee attackers take 4 damage for each blow they land.",
       "weak": "Short reach for a ranged fighter.",
@@ -531,7 +531,7 @@
       },
       "thorns": 4
     },
-    "dom_santiago": {
+    "derrow_fenn": {
       "role": "Wingman",
       "trait": "Stand With Me — Takes on 20% of the damage dealt to allies within 50. Melee attackers take 3 damage for each blow they land.",
       "weak": "Takes extra punishment for the squad; low damage.",
@@ -541,7 +541,7 @@
       },
       "thorns": 3
     },
-    "damon_baird": {
+    "pell_rivetson": {
       "role": "Engineer",
       "trait": "Pry and Spike — +50% damage to siege towers, iron colossi and hellmortars. Allies within 60 take 10% less damage.",
       "weak": "Low health and low damage against anything but engines.",
@@ -554,14 +554,14 @@
         "r": 60
       }
     },
-    "augustus_cole": {
+    "jorram_brakeless": {
       "role": "Line breaker",
       "trait": "Downhill Charge — The first hit on each new target deals +50% damage. Melee attackers take 5 damage for each blow they land.",
       "weak": "Melee only, slow, and misses more than half his swings.",
       "pounceEach": 1.5,
       "thorns": 5
     },
-    "anthony_carmine": {
+    "tam_nockley": {
       "role": "Marker",
       "trait": "Flag Bolt — Enemies hit take 12% more damage from every source for 3 seconds.",
       "weak": "The lowest health in the company. Takes 10% more damage.",
@@ -571,7 +571,7 @@
       },
       "frail": 1.1
     },
-    "clayton_carmine": {
+    "garrow_twinstring": {
       "role": "Suppressor",
       "trait": "Bolt Storm — Enemies hit deal 20% less damage for 3 seconds. Every second hit also deals 40% of its damage to up to 6 enemies within 40 of the target.",
       "weak": "Slow and inaccurate.",
@@ -585,7 +585,7 @@
         "pct": 0.4
       }
     },
-    "benjamin_carmine": {
+    "odo_perch": {
       "role": "Spotter",
       "trait": "Spotter's Whistle — Ranged allies within 110 deal 12% more damage. Melee attackers take 2 damage for each blow they land.",
       "weak": "Low health and low damage.",
@@ -594,14 +594,14 @@
       },
       "thorns": 2
     },
-    "cog_soldier": {
+    "sawtooth_pavisier": {
       "role": "Pavisier",
       "trait": "Dug In — Takes 25% less damage from ranged attacks. Melee attackers take 4 damage for each blow they land.",
       "weak": "The lowest damage in the company.",
       "armourVsRanged": 0.75,
       "thorns": 4
     },
-    "aragorn": {
+    "halvard_roadwarden": {
       "role": "Captain",
       "trait": "Rider's Bane — +25% damage to bosses, monsters and elites. +40% damage to dark knights, warg riders and nightmare striders. Each kill gives allies within 100 +3 morale.",
       "weak": "Melee only; no bonus against common infantry.",
@@ -616,7 +616,7 @@
         "morale": 3
       }
     },
-    "legolas": {
+    "wenna_marshbow": {
       "role": "Marksman",
       "trait": "Long Draw — +35% damage to targets more than 150 away. +40% damage to line-breakers and routing enemies.",
       "weak": "Low health. Deals 40% less damage to enemies within 55.",
@@ -630,7 +630,7 @@
         "mult": 0.6
       }
     },
-    "gimli": {
+    "dorn_quarrykin": {
       "role": "Axe wall",
       "trait": "Splitting Stroke — Each attack also deals 45% of its damage to one more enemy within 32 of the target. +40% damage to siege towers, iron colossi and hellmortars.",
       "weak": "Slow, and misses more than half his swings.",
@@ -644,7 +644,7 @@
         "hellmortar_pack": 1.4
       }
     },
-    "gandalf": {
+    "father_tolland": {
       "role": "Warding mage",
       "trait": "Ward of Salt — Enemies within 110 lose 1.5 morale each second. +20% damage to bosses, monsters and elites.",
       "weak": "Low health for the price.",
@@ -654,7 +654,7 @@
       },
       "bossBane": 1.2
     },
-    "frodo": {
+    "nib_thimblewick": {
       "role": "Scout",
       "trait": "Underfoot — Dodges 30% of arrows and bolts. Allies within 90 regain 1 morale each second.",
       "weak": "The lowest health and damage in the company.",
@@ -664,7 +664,7 @@
         "morale": 1
       }
     },
-    "boromir": {
+    "gerent_gatesby": {
       "role": "Gate serjeant",
       "trait": "Hold the Gate — Takes on 20% of the damage dealt to allies within 45. Each kill gives allies within 100 +3 morale.",
       "weak": "Slow; takes extra punishment for the soldiers beside him.",
@@ -677,7 +677,7 @@
         "morale": 3
       }
     },
-    "eowyn": {
+    "marta_hobblethorn": {
       "role": "Giant slayer",
       "trait": "Hamstring Thrust — +30% damage to bosses, monsters and elites. +30% damage to targets below 30% health.",
       "weak": "Light armour.",
@@ -687,14 +687,14 @@
         "mult": 1.3
       }
     },
-    "baki_hanma": {
+    "kell_splitlip": {
       "role": "Brawler",
       "trait": "Blooded — +35% damage while below half health. The first hit on each new target deals +20% damage.",
       "weak": "Has to be badly hurt to fight at his best.",
       "bloodRage": 1.35,
       "pounceEach": 1.2
     },
-    "yujiro_hanma": {
+    "morgash_skullhand": {
       "role": "Apex fighter",
       "trait": "Bare-Handed Ruin — Each attack also deals 35% of its damage to one more enemy within 36 of the target. Cannot be pinned.",
       "weak": "The most expensive fighter in the lodge.",
@@ -704,7 +704,7 @@
       },
       "noPin": true
     },
-    "doppo_orochi": {
+    "hesk_hardpalm": {
       "role": "Precision striker",
       "trait": "Callus Strike — +30% damage to targets below 40% health. +15% damage while below half health.",
       "weak": "Ordinary damage against fresh targets.",
@@ -714,35 +714,35 @@
       },
       "bloodRage": 1.15
     },
-    "jack_hanma": {
+    "grudd_filetooth": {
       "role": "Giant biter",
       "trait": "Gnaw — +30% damage to bosses, monsters and elites. Heals for 8% of the damage dealt.",
       "weak": "Slow, and misses more than half his swings.",
       "bossBane": 1.3,
       "lifesteal": 0.08
     },
-    "oliva_biscuit": {
+    "tunn_oxhide": {
       "role": "Juggernaut",
       "trait": "Anvil Flesh — Takes 15% less damage. Melee attackers take 5 damage for each blow they land.",
       "weak": "Very slow, and misses six swings in ten.",
       "flatResist": 0.15,
       "thorns": 5
     },
-    "kaku_kaioh": {
+    "wend_reedhand": {
       "role": "Counter-fighter",
       "trait": "Yield and Break — Melee attackers take 8 damage for each blow they land. Riders and beasts that strike in melee take 30% of the blow back.",
       "weak": "Low health; no bonus on his own attacks.",
       "thorns": 8,
       "reflectCharge": 0.3
     },
-    "pickle": {
+    "uggar_no_tongue": {
       "role": "Primal brute",
       "trait": "Feral Hunger — +30% damage while below half health. Recovers 0.8% of own health each second.",
       "weak": "Slow, and misses two swings in three.",
       "bloodRage": 1.3,
       "regen": 0.008
     },
-    "jonathan_joestar": {
+    "ser_anselm_dawnmere": {
       "role": "Undead bane",
       "trait": "Dawn Hymn — +50% damage to necromancers, bone summoners, wraiths, revenants and abominations. The first hit on each new target deals +25% damage.",
       "weak": "Slow; no bonus against the living.",
@@ -755,7 +755,7 @@
       },
       "pounceEach": 1.25
     },
-    "dio_brando_p1": {
+    "veyra_coldcloister": {
       "role": "Intimidator",
       "trait": "Cold Antiphon — Enemies within 90 lose 1.5 morale each second. The first hit on each new target deals +25% damage.",
       "weak": "Average health for a front-line fighter.",
@@ -765,7 +765,7 @@
       },
       "pounceEach": 1.25
     },
-    "zeppeli": {
+    "tiber_wellspring": {
       "role": "Field mender",
       "trait": "Mending Verse — Allies within 60 recover 0.8% of their health each second. The first hit on each new target deals +20% damage.",
       "weak": "Low health and low damage.",
@@ -775,7 +775,7 @@
       },
       "pounceEach": 1.2
     },
-    "joseph_joestar_p2": {
+    "dallow_tripwire": {
       "role": "Trickster",
       "trait": "Snare Verse — Enemies hit take 10% more damage from every source for 3 seconds. The first hit on each new target deals +25% damage.",
       "weak": "Modest damage alone.",
@@ -785,7 +785,7 @@
       },
       "pounceEach": 1.25
     },
-    "caesar_zeppeli": {
+    "cael_slingsong": {
       "role": "Sling marksman",
       "trait": "Whistling Stone — +25% damage to targets more than 110 away. The first hit on each new target deals +20% damage.",
       "weak": "Low health and short reach.",
@@ -795,7 +795,7 @@
       },
       "pounceEach": 1.2
     },
-    "stroheim": {
+    "gaunt_ironrib": {
       "role": "Siege breaker",
       "trait": "Ram's Canticle — +50% damage to siege towers, iron colossi and hellmortars. Takes 6% less damage.",
       "weak": "Slow, short-ranged and inaccurate.",
@@ -806,7 +806,7 @@
       },
       "flatResist": 0.06
     },
-    "jotaro_kujo": {
+    "corvin_stonepsalm": {
       "role": "Heavy hitter",
       "trait": "Hammered Verse — The first hit on each new target pins it for 1 second (not bosses, monsters or elites). Each consecutive hit on the same target deals 8% more, up to +32%.",
       "weak": "The most expensive member of the choir; one target at a time.",
@@ -816,7 +816,7 @@
         "max": 0.32
       }
     },
-    "kakyoin": {
+    "neve_shardglass": {
       "role": "Area shooter",
       "trait": "Shard Rain — Every second hit also deals 50% of its damage to up to 6 enemies within 40 of the target.",
       "weak": "The lowest health among the choir’s shooters.",
@@ -826,7 +826,7 @@
         "pct": 0.5
       }
     },
-    "polnareff": {
+    "aubrin_needlepoint": {
       "role": "Fencer",
       "trait": "Needle Verse — +35% damage to targets below 35% health. The first hit on each new target deals +25% damage.",
       "weak": "Light armour.",
@@ -836,7 +836,7 @@
       },
       "pounceEach": 1.25
     },
-    "avdol": {
+    "hesper_brazier": {
       "role": "Fire caster",
       "trait": "Burning Censer — Every hit also deals 30% of its damage to up to 6 enemies within 34 of the target. Hits leave a wound that deals 3 damage a second for 3 seconds.",
       "weak": "Low health.",
@@ -850,7 +850,7 @@
         "ticks": 180
       }
     },
-    "josuke_higashikata": {
+    "brother_linden_salve": {
       "role": "Mender",
       "trait": "Knitting Hymn — Allies within 70 recover 1.2% of their health each second.",
       "weak": "No damage bonus of his own.",
@@ -859,13 +859,13 @@
         "pct": 0.012
       }
     },
-    "okuyasu": {
+    "dunnock_heavyhand": {
       "role": "Burst striker",
       "trait": "Tolling Blow — The first hit on each new target deals +60% damage.",
       "weak": "Misses six swings in ten, and slow.",
       "pounceEach": 1.6
     },
-    "rohan_kishibe": {
+    "sister_quillane": {
       "role": "Hexer",
       "trait": "Written Curse — Enemies hit deal 20% less damage for 3 seconds. +10% damage to targets more than 130 away.",
       "weak": "The lowest health in the choir.",
@@ -878,7 +878,7 @@
         "mult": 1.1
       }
     },
-    "kira_yoshikage": {
+    "hollis_greyglove": {
       "role": "Quiet killer",
       "trait": "Unsung End — +50% damage to targets below 30% health. +20% damage when striking from behind.",
       "weak": "Low health; ordinary damage against fresh targets.",
@@ -888,7 +888,7 @@
       },
       "backstab": 1.2
     },
-    "giorno_giovanna": {
+    "aurel_thornbloom": {
       "role": "Life giver",
       "trait": "Alms of Blood — Each kill restores 8% of own health. Each kill gives allies within 90 +3 morale.",
       "weak": "Does nothing extra until he lands a kill.",
@@ -898,7 +898,7 @@
         "morale": 3
       }
     },
-    "bruno_bucciarati": {
+    "marrec_tallcandle": {
       "role": "Rally leader",
       "trait": "Leading Voice — Each kill gives allies within 110 +4 morale. The first hit on each new target deals +30% damage.",
       "weak": "No staying power in a long fight.",
@@ -908,7 +908,7 @@
       },
       "pounceEach": 1.3
     },
-    "guido_mista": {
+    "tobble_skipstone": {
       "role": "Skip-shot slinger",
       "trait": "Skipping Stone — Each attack also deals 50% of its damage to one more enemy within 60 of the target.",
       "weak": "Low health; the second shot needs another enemy close by.",
@@ -917,7 +917,7 @@
         "pct": 0.5
       }
     },
-    "diavolo": {
+    "serrec_hoodwell": {
       "role": "Executioner",
       "trait": "Final Amen — +70% damage to targets below 25% health.",
       "weak": "Ordinary damage until the target is nearly dead.",
@@ -926,14 +926,14 @@
         "mult": 1.7
       }
     },
-    "jolyne_cujoh": {
+    "wren_catgut": {
       "role": "Snare fighter",
       "trait": "Gut-String Snare — The first hit on each new target pins it for 1.5 seconds (not bosses, monsters or elites). The first hit on each new target deals +20% damage.",
       "weak": "Light armour; each enemy can only be pinned once every few seconds.",
       "stagger": 90,
       "pounceEach": 1.2
     },
-    "weather_report": {
+    "harrow_cloudcall": {
       "role": "Storm caster",
       "trait": "Thunder Response — Every third hit also deals 80% of its damage to up to 6 enemies within 50 of the target.",
       "weak": "Low health; two plain shots between each strike.",
@@ -943,7 +943,7 @@
         "pct": 0.8
       }
     },
-    "ermes_costello": {
+    "brannet_doublet": {
       "role": "Pressure fighter",
       "trait": "Refrain — Each consecutive hit on the same target deals 7% more, up to +35%. +15% damage to bosses, monsters and elites.",
       "weak": "Low health and low base damage.",
@@ -953,7 +953,7 @@
       },
       "bossBane": 1.15
     },
-    "johnny_joestar": {
+    "ilsa_longspur": {
       "role": "Lancer",
       "trait": "Couched Lance — +60% damage to line-breakers and routing enemies. +25% damage to targets below 30% health.",
       "weak": "Low health; pikes and trolls stop a charge cold.",
@@ -963,7 +963,7 @@
         "mult": 1.25
       }
     },
-    "gyro_zeppeli": {
+    "garrin_flailwheel": {
       "role": "Charging cleaver",
       "trait": "Wheeling Flail — +40% damage to line-breakers and routing enemies. Each attack also deals 40% of its damage to one more enemy within 34 of the target.",
       "weak": "Low health; pikes and trolls stop a charge cold.",
@@ -973,14 +973,14 @@
         "pct": 0.4
       }
     },
-    "diego_brando": {
+    "hask_wolfsaddle": {
       "role": "Predator",
       "trait": "Run to Ground — +50% damage to line-breakers and routing enemies. The first hit on each new target deals +40% damage.",
       "weak": "Low health; pikes and trolls stop a charge cold.",
       "runDown": 1.5,
       "pounceEach": 1.4
     },
-    "lucy_steel": {
+    "pella_ribbonmane": {
       "role": "Mounted herald",
       "trait": "Riding Hymn — Allies within 100 regain 1.5 morale each second. +30% damage to line-breakers and routing enemies.",
       "weak": "The weakest fighter in the choir.",
@@ -990,7 +990,7 @@
       },
       "runDown": 1.3
     },
-    "kenshiro": {
+    "sevrin_palmquiet": {
       "role": "Finisher",
       "trait": "Stopped Breath — +50% damage to targets below 30% health. +25% damage when striking from behind.",
       "weak": "Expensive; melee only.",
@@ -1000,7 +1000,7 @@
       },
       "backstab": 1.25
     },
-    "raoh": {
+    "gorhame_the_unbowed": {
       "role": "Warlord",
       "trait": "Heavy Tread — Enemies within 110 lose 2 morale each second. +30% damage to siege towers, iron colossi and hellmortars.",
       "weak": "Slow, and the most expensive of the order.",
@@ -1014,7 +1014,7 @@
         "hellmortar_pack": 1.3
       }
     },
-    "toki": {
+    "ellit_softpalm": {
       "role": "Healer-fighter",
       "trait": "Laying On of Hands — Allies within 70 recover 1.2% of their health each second. +25% damage when striking from behind.",
       "weak": "Low health and low damage.",
@@ -1024,7 +1024,7 @@
       },
       "backstab": 1.25
     },
-    "rei": {
+    "sorrel_scytheheel": {
       "role": "Blade dancer",
       "trait": "Scything Step — Each attack also deals 40% of its damage to one more enemy within 34 of the target. +30% damage when striking from behind.",
       "weak": "The lowest health in the order.",
@@ -1034,7 +1034,7 @@
       },
       "backstab": 1.3
     },
-    "jaggi": {
+    "lorn_spitgravel": {
       "role": "Dirty fighter",
       "trait": "Grit in the Eye — Enemies hit deal 15% less damage for 3 seconds. +40% damage when striking from behind.",
       "weak": "Slow, and misses more than half his swings.",
@@ -1044,14 +1044,14 @@
       },
       "backstab": 1.4
     },
-    "shin": {
+    "castrel_spearhand": {
       "role": "Piercer",
       "trait": "Spear-Hand — The first hit on each new target deals +50% damage. +25% damage when striking from behind.",
       "weak": "Misses more than half his swings.",
       "pounceEach": 1.5,
       "backstab": 1.25
     },
-    "goku": {
+    "tavish_coalheart": {
       "role": "Crowd fighter",
       "trait": "Ember Burst — Every 4th hit also deals 80% of its damage to up to 6 enemies within 50 of the target. +30% damage to line-breakers and routing enemies.",
       "weak": "Three plain hits between each burst.",
@@ -1062,14 +1062,14 @@
       },
       "runDown": 1.3
     },
-    "vegeta": {
+    "raddoc_proudflame": {
       "role": "Elite duelist",
       "trait": "Banked Fury — +30% damage to bosses, monsters and elites. +25% damage while below half health.",
       "weak": "No bonus against common infantry.",
       "bossBane": 1.3,
       "bloodRage": 1.25
     },
-    "piccolo": {
+    "varrow_cindersight": {
       "role": "Piercing caster",
       "trait": "Lancing Ember — +20% damage to bosses, monsters and elites. Each attack also deals 40% of its damage to one more enemy within 50 of the target.",
       "weak": "Average health; the second hit needs another enemy close by.",
@@ -1079,7 +1079,7 @@
         "pct": 0.4
       }
     },
-    "gohan": {
+    "emmet_kindling": {
       "role": "Late bloomer",
       "trait": "Slow Burn — +40% damage while below half health. Takes 20% less damage while below 40% health.",
       "weak": "Inaccurate, and ordinary until badly hurt.",
@@ -1089,7 +1089,7 @@
         "resist": 0.2
       }
     },
-    "trunks": {
+    "isk_farflame": {
       "role": "Ranged finisher",
       "trait": "Thrown Coals — +40% damage to targets below 30% health. +30% damage to line-breakers and routing enemies.",
       "weak": "Low health for the warband.",
@@ -1099,7 +1099,7 @@
       },
       "runDown": 1.3
     },
-    "frieza": {
+    "selka_whiteash": {
       "role": "Executioner",
       "trait": "Ashen Needle — +60% damage to targets below 25% health. The first hit on each new target pins it for 1 second (not bosses, monsters or elites).",
       "weak": "Short reach for a ranged fighter.",
@@ -1109,14 +1109,14 @@
       },
       "stagger": 60
     },
-    "cell": {
+    "gulch_the_glutton": {
       "role": "Devourer",
       "trait": "Feeding Fire — Each kill restores 10% of own health. Heals for 6% of the damage dealt.",
       "weak": "No damage bonus.",
       "killHeal": 0.1,
       "lifesteal": 0.06
     },
-    "beerus": {
+    "mother_scoria": {
       "role": "Ender",
       "trait": "Pyre's End — +50% damage to targets below 35% health. +30% damage to line-breakers and routing enemies.",
       "weak": "The most expensive member of the warband.",
@@ -1126,7 +1126,7 @@
       },
       "runDown": 1.3
     },
-    "chapter_captain": {
+    "ivo_harrowgate": {
       "role": "Fire commander",
       "trait": "Ordered Volley — Ranged allies within 140 deal 12% more damage. Takes 15% less damage from ranged attacks.",
       "weak": "Expensive; no damage bonus of his own.",
@@ -1135,7 +1135,7 @@
       },
       "armourVsRanged": 0.85
     },
-    "chaplain": {
+    "brother_malloch": {
       "role": "Zealot",
       "trait": "Psalm of Wrath — Enemies within 90 lose 1.5 morale each second. Each kill gives allies within 100 +3 morale.",
       "weak": "Melee only; no armour bonus.",
@@ -1148,7 +1148,7 @@
         "morale": 3
       }
     },
-    "librarian": {
+    "sister_ottoline_reed": {
       "role": "Witch hunter",
       "trait": "Unbinding — +50% damage to dark mages, necromancers, summoners, prophets and shamans. Takes 20% less damage from ranged attacks.",
       "weak": "Low health; no bonus against anything that does not cast.",
@@ -1161,7 +1161,7 @@
       },
       "armourVsRanged": 0.8
     },
-    "commissar": {
+    "provost_kerrick": {
       "role": "Enforcer",
       "trait": "Deserter's Wage — +50% damage to line-breakers and routing enemies. +40% damage to targets below 25% health.",
       "weak": "Low damage against enemies that stand and fight.",
@@ -1171,7 +1171,7 @@
         "mult": 1.4
       }
     },
-    "guardsman": {
+    "iron_psalm_levy": {
       "role": "Line infantry",
       "trait": "Levy Volley — Every third hit also deals 50% of its damage to up to 6 enemies within 40 of the target.",
       "weak": "The lowest health and damage in the order.",
@@ -1181,7 +1181,7 @@
         "pct": 0.5
       }
     },
-    "terminator": {
+    "brother_hulm": {
       "role": "Shield bearer",
       "trait": "Tower Shield — Takes 30% less damage from ranged attacks. Takes 30% less damage while below 40% health.",
       "weak": "Very slow; melee only.",
@@ -1191,7 +1191,7 @@
         "resist": 0.3
       }
     },
-    "dreadnought": {
+    "tobiah_bronzeback": {
       "role": "Bombardier",
       "trait": "Bronze Bombard — +60% damage to siege towers, iron colossi and hellmortars. Takes 25% less damage from ranged attacks. Cannot be pinned.",
       "weak": "The slowest and most expensive unit in the order; short reach.",
@@ -1203,7 +1203,7 @@
       "armourVsRanged": 0.75,
       "noPin": true
     },
-    "soldier_of_light": {
+    "davin_glasswright": {
       "role": "Finisher",
       "trait": "Crosswise Cut — +40% damage to targets below 35% health. Allies within 50 recover 0.6% of their health each second.",
       "weak": "Melee only.",
@@ -1216,7 +1216,7 @@
         "pct": 0.006
       }
     },
-    "black_mage": {
+    "obsidia_kiln": {
       "role": "Area caster",
       "trait": "Kiln Burst — Every third hit also deals 70% of its damage to up to 6 enemies within 48 of the target.",
       "weak": "Low health. Deals 40% less damage to enemies within 55.",
@@ -1230,7 +1230,7 @@
         "mult": 0.6
       }
     },
-    "white_mage": {
+    "elowen_saltmere": {
       "role": "Healer",
       "trait": "Clear Glass — Allies within 80 recover 1.5% of their health each second.",
       "weak": "Low damage and low health.",
@@ -1239,7 +1239,7 @@
         "pct": 0.015
       }
     },
-    "dragoon_knight": {
+    "corbet_highvault": {
       "role": "Sky lancer",
       "trait": "Vaulting Lance — +50% damage to harpies, drakes, wyrms and wraiths. +40% damage to line-breakers and routing enemies. The first hit on each new target deals +20% damage.",
       "weak": "Pikes and trolls stop a charge cold.",
@@ -1252,7 +1252,7 @@
       "runDown": 1.4,
       "pounceEach": 1.2
     },
-    "summoner": {
+    "thessaly_prism": {
       "role": "Elite hunter",
       "trait": "Burning Lens — +30% damage to bosses, monsters and elites. Every 4th hit also deals 60% of its damage to up to 6 enemies within 44 of the target.",
       "weak": "Low health; no bonus against common infantry.",
@@ -1263,7 +1263,7 @@
         "pct": 0.6
       }
     },
-    "limit_striker": {
+    "harl_crackglaze": {
       "role": "Berserker",
       "trait": "Shatter Point — +40% damage while below half health. Takes 25% less damage while below 30% health.",
       "weak": "The most expensive member of the guild; ordinary until badly hurt.",
@@ -1273,7 +1273,7 @@
         "resist": 0.25
       }
     },
-    "crystal_sentinel": {
+    "guild_shardbow": {
       "role": "Line shooter",
       "trait": "Shard Bolt — +15% damage to targets more than 120 away. Allies within 50 recover 0.6% of their health each second.",
       "weak": "Low health and low damage.",
@@ -1286,7 +1286,7 @@
         "pct": 0.006
       }
     },
-    "chaos_champion": {
+    "hesker_rawhand": {
       "role": "Berserker",
       "trait": "Red Frenzy — +35% damage while below half health. Enemies hit deal 10% less damage for 2 seconds.",
       "weak": "Melee only; ordinary until badly hurt.",
@@ -1296,7 +1296,7 @@
         "ticks": 120
       }
     },
-    "plague_cultist": {
+    "pox_sister_marrin": {
       "role": "Plague bearer",
       "trait": "Weeping Sore — Hits leave a wound that deals 4 damage a second for 4 seconds. Enemies within 80 lose 1 morale each second.",
       "weak": "Slow, with low damage on the blow itself.",
@@ -1309,7 +1309,7 @@
         "morale": 1
       }
     },
-    "warp_magus": {
+    "ezrin_splitveil": {
       "role": "Chain caster",
       "trait": "Forked Curse — Each attack also deals 30% of its damage to one more enemy within 60 of the target. Enemies hit deal 8% less damage for 2 seconds.",
       "weak": "Low health.",
@@ -1322,7 +1322,7 @@
         "ticks": 120
       }
     },
-    "daemon_knight": {
+    "ser_culloch_the_flensed": {
       "role": "Dread knight",
       "trait": "Scabbed Plate — Takes 35% less damage while below 40% health. Melee attackers take 6 damage for each blow they land.",
       "weak": "Slow, and the most expensive cultist.",
@@ -1332,14 +1332,14 @@
       },
       "thorns": 6
     },
-    "heretic_acolyte": {
+    "nym_bloodcup": {
       "role": "Blood cultist",
       "trait": "Blood Tithe — Each kill restores 12% of own health. Heals for 8% of the damage dealt.",
       "weak": "Low damage, and misses more than half the time.",
       "killHeal": 0.12,
       "lifesteal": 0.08
     },
-    "possessed_marine": {
+    "brannoc_ashquarrel": {
       "role": "Bolt support",
       "trait": "Wound-Fire Bolts — Every second hit also deals 40% of its damage to up to 6 enemies within 40 of the target. +15% damage to bosses, monsters and elites.",
       "weak": "Slow and inaccurate.",
@@ -1350,7 +1350,7 @@
       },
       "bossBane": 1.15
     },
-    "dragonborn": {
+    "hrafna_stormthroat": {
       "role": "War skald",
       "trait": "Breaking Howl — Every 4th hit also deals 90% of its damage to up to 6 enemies within 54 of the target. Each kill gives allies within 90 +3 morale.",
       "weak": "Three plain hits between each howl.",
@@ -1364,7 +1364,7 @@
         "morale": 3
       }
     },
-    "greybeard_sage": {
+    "skegga_hoarfrost": {
       "role": "Sage",
       "trait": "Echoing Chant — Ranged allies within 120 deal 12% more damage. Enemies hit deal 12% less damage for 3 seconds.",
       "weak": "Slow, with low damage and short reach.",
@@ -1376,7 +1376,7 @@
         "ticks": 180
       }
     },
-    "nord_huscarl": {
+    "bodmar_lindenshield": {
       "role": "Shield wall",
       "trait": "Hold Fast — Takes 12% less damage. Takes on 15% of the damage dealt to allies within 40.",
       "weak": "No damage bonus; misses more than half his swings.",
@@ -1386,7 +1386,7 @@
         "pct": 0.15
       }
     },
-    "battlemage": {
+    "sigrith_hailcaller": {
       "role": "Storm mage",
       "trait": "Hail Call — +30% damage to bosses, monsters and elites. +10% damage to targets more than 130 away. Each kill gives allies within 90 +2 morale.",
       "weak": "Low health.",
@@ -1400,7 +1400,7 @@
         "morale": 2
       }
     },
-    "nightingale": {
+    "yrsel_nightfoot": {
       "role": "Shadow blade",
       "trait": "Knife in the Dark — +40% damage when striking from behind. +30% damage to targets below 35% health.",
       "weak": "The lowest health among the warband’s fighters.",
@@ -1410,7 +1410,7 @@
         "mult": 1.3
       }
     },
-    "restoration_saint": {
+    "hervild_hearthmender": {
       "role": "Healer",
       "trait": "Hearth Blessing — Allies within 80 recover 1.5% of their health each second. Allies within 100 regain 1 morale each second.",
       "weak": "Cannot fight.",

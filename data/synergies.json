@@ -2,8 +2,8 @@
   {
     "id": "temporal_paradox",
     "factions": [
-      "ultimis",
-      "primis"
+      "powderhorn",
+      "pale_vigil"
     ],
     "name": "Residue Paradox",
     "desc": "Powderhorn + Pale Vigil on field: +12% ability proc damage.",
@@ -14,8 +14,8 @@
   {
     "id": "modern_warfare",
     "factions": [
-      "halo",
-      "gears"
+      "greywatch",
+      "sawtooth"
     ],
     "name": "Trench Vanguard",
     "desc": "Greywatch + Sawtooth: +10 accuracy to ranged evolved operatives.",
@@ -26,8 +26,8 @@
   {
     "id": "last_alliance",
     "factions": [
-      "lotr",
-      "halo"
+      "thornroad",
+      "greywatch"
     ],
     "name": "March Vanguard",
     "desc": "Thornroad + Greywatch: +4 morale/round to all allies.",
@@ -38,8 +38,8 @@
   {
     "id": "martial_worlds",
     "factions": [
-      "baki",
-      "fotns"
+      "knucklebone",
+      "quiet_hand"
     ],
     "name": "Martial Worlds",
     "desc": "Knucklebone + Quiet Hand: +15% melee evolved ally damage.",
@@ -50,8 +50,8 @@
   {
     "id": "bizarre_martial",
     "factions": [
-      "jojo",
-      "baki"
+      "marrow_choir",
+      "knucklebone"
     ],
     "name": "Spiritual Martial Arts",
     "desc": "Marrow Choir + Knucklebone: +8% crit chance on melee finishers.",
@@ -62,8 +62,8 @@
   {
     "id": "ki_stand",
     "factions": [
-      "dragonball",
-      "jojo"
+      "emberblood",
+      "marrow_choir"
     ],
     "name": "Emberblood Spirit",
     "desc": "Emberblood + Marrow Choir: evolved ally kills heal nearest ally 8 HP.",
@@ -74,8 +74,8 @@
   {
     "id": "fellowship_gears",
     "factions": [
-      "lotr",
-      "gears"
+      "thornroad",
+      "sawtooth"
     ],
     "name": "March of War",
     "desc": "Thornroad + Sawtooth: +20% siege damage from evolved units.",
@@ -86,10 +86,10 @@
   {
     "id": "guest_star",
     "factions": [
-      "wwe"
+      "champions"
     ],
-    "name": "Coliseum Guest",
-    "desc": "Any Grand Coliseum + second faction: +6 morale on wave start.",
+    "name": "Bloodsand Guest",
+    "desc": "Any Champions’ Hall + second faction: +6 morale on wave start.",
     "bonus": {
       "waveMorale": 6
     },
@@ -98,8 +98,8 @@
   {
     "id": "aether_unsc",
     "factions": [
-      "primis",
-      "halo"
+      "pale_vigil",
+      "greywatch"
     ],
     "name": "Circle Vanguard",
     "desc": "Pale Vigil + Greywatch: +6 accuracy to ranged evolved operatives.",
@@ -110,8 +110,8 @@
   {
     "id": "ki_pressure",
     "factions": [
-      "fotns",
-      "dragonball"
+      "quiet_hand",
+      "emberblood"
     ],
     "name": "Ascetic Pressure",
     "desc": "Quiet Hand + Emberblood: +10% melee evolved ally damage.",
@@ -122,11 +122,11 @@
   {
     "id": "ppv_siege",
     "factions": [
-      "wwe",
-      "gears"
+      "champions",
+      "sawtooth"
     ],
     "name": "Arena Siege",
-    "desc": "Grand Coliseum + Sawtooth: +12% siege damage from evolved units.",
+    "desc": "Champions’ Hall + Sawtooth: +12% siege damage from evolved units.",
     "bonus": {
       "siegeDmg": 0.12
     },
@@ -135,10 +135,10 @@
   {
     "id": "multiversal_4",
     "factions": [
-      "ultimis",
-      "halo",
-      "lotr",
-      "jojo"
+      "powderhorn",
+      "greywatch",
+      "thornroad",
+      "marrow_choir"
     ],
     "name": "Four Worlds",
     "desc": "Four distinct evolved factions: +5% all evolved ally damage.",
@@ -150,8 +150,8 @@
   {
     "id": "grim_alliance",
     "factions": [
-      "imperium",
-      "halo"
+      "iron_psalm",
+      "greywatch"
     ],
     "name": "Grim Alliance",
     "desc": "Iron Psalm + Greywatch: +8 accuracy to ranged evolved operatives.",
@@ -162,8 +162,8 @@
   {
     "id": "crystal_fellowship",
     "factions": [
-      "crystal",
-      "lotr"
+      "saltglass",
+      "thornroad"
     ],
     "name": "Crystal March",
     "desc": "Saltglass Guild + Thornroad: +3 morale/round to all allies.",
@@ -174,8 +174,8 @@
   {
     "id": "warp_paradox",
     "factions": [
-      "warp",
-      "primis"
+      "open_wound",
+      "pale_vigil"
     ],
     "name": "Rift Paradox",
     "desc": "Cult of the Open Wound + Pale Vigil: +10% ability proc damage.",
@@ -186,8 +186,8 @@
   {
     "id": "eternal_war",
     "factions": [
-      "imperium",
-      "warp"
+      "iron_psalm",
+      "open_wound"
     ],
     "name": "Eternal War",
     "desc": "Iron Psalm + Cult of the Open Wound: +12% melee evolved ally damage.",
@@ -198,8 +198,8 @@
   {
     "id": "aether_legion",
     "factions": [
-      "crystal",
-      "dragonball"
+      "saltglass",
+      "emberblood"
     ],
     "name": "Saltglass Emberblood",
     "desc": "Saltglass Guild + Emberblood: evolved ally kills heal nearest ally 6 HP.",
@@ -210,8 +210,8 @@
   {
     "id": "prophecy_fellowship",
     "factions": [
-      "tes",
-      "lotr"
+      "rimehowl",
+      "thornroad"
     ],
     "name": "Prophecy March",
     "desc": "Rimehowl + Thornroad: +4 morale/round to all allies.",
@@ -222,8 +222,8 @@
   {
     "id": "thuum_aether",
     "factions": [
-      "tes",
-      "crystal"
+      "rimehowl",
+      "saltglass"
     ],
     "name": "Voice & Crystal",
     "desc": "Rimehowl + Saltglass Guild: +10% ability proc damage.",

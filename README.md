@@ -542,7 +542,7 @@ There is no live networking. Co-op and PvP work by share codes only.
 
 ## Champions and companies
 
-Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company is first sworn to your line by completing its trial (listed under Achievements), then a Builder raises its hall, and its fighters are recruited from the **Legion Archive** in the left panel. Each company also has a skill tree there.
+Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company is first sworn to your line by completing its trial (listed under Achievements), then a Builder raises its hall, and its fighters are recruited from the **Free Companies** in the left panel. Each company also has a skill tree there.
 
 Every champion has his own role, trait and weakness. Names, prices and profiles are data (`data/champions.json`, `data/operatives.json`, `data/roster-profiles.json`), and the Champions tab of the encyclopedia renders them from that data, so this manual does not list them.
 

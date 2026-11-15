@@ -391,7 +391,7 @@ const GameViewState = (() => {
       wweUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isWweUnlocked() ||
-        (svc('Research') && svc('Research').isFactionUnlocked('wwe', getResearchOpts())),
+        (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts())),
       doomslayerUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isDoomslayerHeroUnlocked() ||

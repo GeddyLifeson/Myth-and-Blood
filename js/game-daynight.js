@@ -100,7 +100,12 @@ const GameDayNight = (() => {
     if (isNightPhase()) pen += 28;
     if (svc('ContentExpansion')) pen += svc('ContentExpansion').getWatchtowerIntelPenalty(unit);
     for (const ally of GS.units) {
-      if (ally.team !== 'player' || !ally.isWwe || ally.wweAbility !== 'lantern' || ally.hp <= 0)
+      if (
+        ally.team !== 'player' ||
+        !ally.isWwe ||
+        ally.wweAbility !== 'corpse_candle_omen' ||
+        ally.hp <= 0
+      )
         continue;
       if (unitDistance(ally, unit) < 140) {
         pen += 14 + Math.floor((1 - light) * 22);
@@ -112,7 +117,7 @@ const GameDayNight = (() => {
   function updateWweLanternAura() {
     if (!isDayPhase()) return;
     for (const bray of GS.units) {
-      if (!bray.isWwe || bray.wweAbility !== 'lantern' || bray.hp <= 0) continue;
+      if (!bray.isWwe || bray.wweAbility !== 'corpse_candle_omen' || bray.hp <= 0) continue;
       bray.lanternPulse = (bray.lanternPulse || 0) + 1;
       if (bray.lanternPulse % 45 !== 0) continue;
       const light = getDayLightLevel();
@@ -120,7 +125,7 @@ const GameDayNight = (() => {
         if (foe.team !== 'enemy' || foe.hp <= 0) continue;
         if (unitDistance(bray, foe) > 130) continue;
         foe.morale = Math.max(0, foe.morale - (1 + Math.floor((1 - light) * 2)));
-        if (foe.morale <= 2 && !foe.fleeing) triggerMoraleBreak(foe, 'lantern');
+        if (foe.morale <= 2 && !foe.fleeing) triggerMoraleBreak(foe, 'corpse_candle_omen');
       }
     }
   }
@@ -128,7 +133,7 @@ const GameDayNight = (() => {
   function applyWweWaveStartPulse() {
     for (const u of GS.units) {
       if (!u.isWwe || u.hp <= 0) continue;
-      if (u.wweAbility === 'usa') {
+      if (u.wweAbility === 'raise_the_colours') {
         GS.units
           .filter((a) => a.team === 'player' && a.hp > 0 && unitDistance(u, a) < 120)
           .forEach((a) => {

@@ -64,9 +64,9 @@ function sample(heavy, wave) {
 function showmanshipProc(n = 1) {
   for (let i = 0; i < n; i++) {
     Achievements.onEvent('crossover_ability', {
-      unitType: 'stone_cold',
-      faction: 'wwe',
-      ability: 'stunner',
+      unitType: 'hadrek_quarryborn',
+      faction: 'champions',
+      ability: 'keystone_blow',
     });
   }
 }

@@ -264,7 +264,7 @@ const STRATS = [
   [
     'wwe_cheat',
     (Gm, t, C) => {
-      if (t === 1) C.submit('iron creed');
+      if (t === 1) C.submit('quarry oath');
     },
   ],
   [

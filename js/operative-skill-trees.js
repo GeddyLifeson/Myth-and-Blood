@@ -14,305 +14,305 @@ const OperativeSkillTrees = (() => {
   }
 
   const FACTION_TREES = {
-    wwe: {
+    champions: {
       get label() {
-        return treeLabel('wwe');
+        return treeLabel('champions');
       },
       nodes: {
-        showmanship: {
-          id: 'showmanship',
+        play_to_the_crowd: {
+          id: 'play_to_the_crowd',
           name: 'Play to the Crowd',
           cost: 1,
           desc: '+3 max morale',
           bonus: { maxMorale: 3 },
         },
-        hulk_up: {
-          id: 'hulk_up',
+        second_wind: {
+          id: 'second_wind',
           name: 'Second Wind',
           cost: 2,
-          requires: ['showmanship'],
+          requires: ['play_to_the_crowd'],
           desc: '+8% melee damage',
           bonus: { meleeDmg: 0.08 },
         },
-        finisher: {
-          id: 'finisher',
+        finishing_blow: {
+          id: 'finishing_blow',
           name: 'Finishing Blow',
           cost: 2,
-          requires: ['showmanship'],
+          requires: ['play_to_the_crowd'],
           desc: '+10% ability damage',
           bonus: { abilityDmg: 0.1 },
         },
-        tag_team: {
-          id: 'tag_team',
+        fight_in_pairs: {
+          id: 'fight_in_pairs',
           name: 'Fight in Pairs',
           cost: 3,
-          requires: ['hulk_up', 'finisher'],
+          requires: ['second_wind', 'finishing_blow'],
           desc: '+2 morale regen, +5 accuracy',
           bonus: { moraleRegen: 2, acc: 5 },
         },
       },
     },
-    ultimis: {
+    powderhorn: {
       get label() {
-        return treeLabel('ultimis');
+        return treeLabel('powderhorn');
       },
       nodes: {
-        frag_drill: {
-          id: 'frag_drill',
+        fuse_drill: {
+          id: 'fuse_drill',
           name: 'Fuse Drill',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
         },
-        vodka_tank: {
-          id: 'vodka_tank',
+        barrel_banded: {
+          id: 'barrel_banded',
           name: 'Barrel-Banded',
           cost: 2,
-          requires: ['frag_drill'],
+          requires: ['fuse_drill'],
           desc: '+12% max HP',
           bonus: { hpMult: 0.12 },
         },
-        wunder_chain: {
-          id: 'wunder_chain',
+        forked_storm: {
+          id: 'forked_storm',
           name: 'Forked Storm',
           cost: 2,
-          requires: ['frag_drill'],
+          requires: ['fuse_drill'],
           desc: '+10% ability damage',
           bonus: { abilityDmg: 0.1 },
         },
-        moon_op: {
-          id: 'moon_op',
+        master_of_the_horn: {
+          id: 'master_of_the_horn',
           name: 'Master of the Horn',
           cost: 3,
-          requires: ['vodka_tank', 'wunder_chain'],
+          requires: ['barrel_banded', 'forked_storm'],
           desc: '+8% melee, +4 morale',
           bonus: { meleeDmg: 0.08, maxMorale: 4 },
         },
       },
     },
-    primis: {
+    pale_vigil: {
       get label() {
-        return treeLabel('primis');
+        return treeLabel('pale_vigil');
       },
       nodes: {
-        aether_guard: {
-          id: 'aether_guard',
+        barrow_ward: {
+          id: 'barrow_ward',
           name: 'Barrow Ward',
           cost: 1,
           desc: '+10% damage reduction aura',
           bonus: { damageTakenMult: 0.9 },
         },
-        curtain: {
-          id: 'curtain',
+        sealed_door: {
+          id: 'sealed_door',
           name: 'Sealed Door',
           cost: 2,
-          requires: ['aether_guard'],
+          requires: ['barrow_ward'],
           desc: '+15 max HP',
           bonus: { flatHp: 15 },
         },
-        summoning_key: {
-          id: 'summoning_key',
+        candle_and_lancet: {
+          id: 'candle_and_lancet',
           name: 'Candle and Lancet',
           cost: 2,
-          requires: ['aether_guard'],
+          requires: ['barrow_ward'],
           desc: '+12% ability damage',
           bonus: { abilityDmg: 0.12 },
         },
-        cycle_break: {
-          id: 'cycle_break',
+        last_door: {
+          id: 'last_door',
           name: 'Last Door',
           cost: 3,
-          requires: ['curtain', 'summoning_key'],
+          requires: ['sealed_door', 'candle_and_lancet'],
           desc: '+7 accuracy, +3 morale',
           bonus: { acc: 7, maxMorale: 3 },
         },
       },
     },
-    halo: {
+    greywatch: {
       get label() {
-        return treeLabel('halo');
+        return treeLabel('greywatch');
       },
       nodes: {
-        mjolnir: {
-          id: 'mjolnir',
+        citadel_drill: {
+          id: 'citadel_drill',
           name: 'Citadel Drill',
           cost: 1,
           desc: '+5 accuracy',
           bonus: { acc: 5 },
         },
-        noble_team: {
-          id: 'noble_team',
+        volley_line: {
+          id: 'volley_line',
           name: 'Volley Line',
           cost: 2,
-          requires: ['mjolnir'],
+          requires: ['citadel_drill'],
           desc: '+8% ranged damage',
           bonus: { rangedDmg: 0.08 },
         },
-        spartan_rage: {
-          id: 'spartan_rage',
+        wall_clearing: {
+          id: 'wall_clearing',
           name: 'Wall-Clearing',
           cost: 2,
-          requires: ['mjolnir'],
+          requires: ['citadel_drill'],
           desc: '+10% melee damage',
           bonus: { meleeDmg: 0.1 },
         },
-        chief: {
-          id: 'chief',
+        warden_captain: {
+          id: 'warden_captain',
           name: 'Warden-Captain',
           cost: 3,
-          requires: ['noble_team', 'spartan_rage'],
+          requires: ['volley_line', 'wall_clearing'],
           desc: '+12 max HP, +2 morale',
           bonus: { flatHp: 12, maxMorale: 2 },
         },
       },
     },
-    gears: {
+    sawtooth: {
       get label() {
-        return treeLabel('gears');
+        return treeLabel('sawtooth');
       },
       nodes: {
-        lancer_disc: {
-          id: 'lancer_disc',
+        crossbow_drill: {
+          id: 'crossbow_drill',
           name: 'Crossbow Drill',
           cost: 1,
           desc: '+6 accuracy',
           bonus: { acc: 6 },
         },
-        chainsaw: {
-          id: 'chainsaw',
+        saw_edge: {
+          id: 'saw_edge',
           name: 'Saw-Edge',
           cost: 2,
-          requires: ['lancer_disc'],
+          requires: ['crossbow_drill'],
           desc: '+10% melee damage',
           bonus: { meleeDmg: 0.1 },
         },
-        carmine_bond: {
-          id: 'carmine_bond',
+        engine_breaking: {
+          id: 'engine_breaking',
           name: 'Engine-Breaking',
           cost: 2,
-          requires: ['lancer_disc'],
+          requires: ['crossbow_drill'],
           desc: '+8% siege damage',
           bonus: { siegeDmg: 0.08 },
         },
-        last_jacinto: {
-          id: 'last_jacinto',
+        last_in_the_ditch: {
+          id: 'last_in_the_ditch',
           name: 'Last in the Ditch',
           cost: 3,
-          requires: ['chainsaw', 'carmine_bond'],
+          requires: ['saw_edge', 'engine_breaking'],
           desc: '+10 max HP, +4 morale',
           bonus: { flatHp: 10, maxMorale: 4 },
         },
       },
     },
-    lotr: {
+    thornroad: {
       get label() {
-        return treeLabel('lotr');
+        return treeLabel('thornroad');
       },
       nodes: {
-        fellowship: {
-          id: 'fellowship',
+        road_sworn: {
+          id: 'road_sworn',
           name: 'Road-Sworn',
           cost: 1,
           desc: '+3 max morale',
           bonus: { maxMorale: 3 },
         },
-        ranger_eye: {
-          id: 'ranger_eye',
+        fowlers_eye: {
+          id: 'fowlers_eye',
           name: 'Fowler’s Eye',
           cost: 2,
-          requires: ['fellowship'],
+          requires: ['road_sworn'],
           desc: '+8 accuracy',
           bonus: { acc: 8 },
         },
-        dwarf_axe: {
-          id: 'dwarf_axe',
+        quarry_axe: {
+          id: 'quarry_axe',
           name: 'Quarry Axe',
           cost: 2,
-          requires: ['fellowship'],
+          requires: ['road_sworn'],
           desc: '+9% melee damage',
           bonus: { meleeDmg: 0.09 },
         },
-        king_returned: {
-          id: 'king_returned',
+        shrines_avenged: {
+          id: 'shrines_avenged',
           name: 'Shrines Avenged',
           cost: 3,
-          requires: ['ranger_eye', 'dwarf_axe'],
+          requires: ['fowlers_eye', 'quarry_axe'],
           desc: '+10% ability damage',
           bonus: { abilityDmg: 0.1 },
         },
       },
     },
-    baki: {
+    knucklebone: {
       get label() {
-        return treeLabel('baki');
+        return treeLabel('knucklebone');
       },
       nodes: {
-        demon_back: {
-          id: 'demon_back',
+        blooded: {
+          id: 'blooded',
           name: 'Blooded',
           cost: 1,
           desc: '+8% melee damage',
           bonus: { meleeDmg: 0.08 },
         },
-        iron_body: {
-          id: 'iron_body',
+        anvil_flesh: {
+          id: 'anvil_flesh',
           name: 'Anvil Flesh',
           cost: 2,
-          requires: ['demon_back'],
+          requires: ['blooded'],
           desc: '+14 max HP',
           bonus: { flatHp: 14 },
         },
-        ogre_slayer: {
-          id: 'ogre_slayer',
+        one_blow_taught: {
+          id: 'one_blow_taught',
           name: 'One Blow Taught',
           cost: 2,
-          requires: ['demon_back'],
+          requires: ['blooded'],
           desc: '+6 accuracy',
           bonus: { acc: 6 },
         },
-        hanma_blood: {
-          id: 'hanma_blood',
+        knucklebones_won: {
+          id: 'knucklebones_won',
           name: 'Knucklebones Won',
           cost: 3,
-          requires: ['iron_body', 'ogre_slayer'],
+          requires: ['anvil_flesh', 'one_blow_taught'],
           desc: '+12% melee, +3 morale',
           bonus: { meleeDmg: 0.12, maxMorale: 3 },
         },
       },
     },
-    jojo: {
+    marrow_choir: {
       get label() {
-        return treeLabel('jojo');
+        return treeLabel('marrow_choir');
       },
       nodes: {
-        stand_awaken: {
-          id: 'stand_awaken',
+        first_verse: {
+          id: 'first_verse',
           name: 'First Verse',
           cost: 1,
           desc: '+8% ability damage',
           bonus: { abilityDmg: 0.08 },
         },
-        sunbreath: {
-          id: 'sunbreath',
+        dawn_office: {
+          id: 'dawn_office',
           name: 'Dawn Office',
           cost: 2,
-          requires: ['stand_awaken'],
+          requires: ['first_verse'],
           desc: '+5 accuracy',
           bonus: { acc: 5 },
         },
-        spin: {
-          id: 'spin',
+        whistling_stones: {
+          id: 'whistling_stones',
           name: 'Whistling Stones',
           cost: 2,
-          requires: ['stand_awaken'],
+          requires: ['first_verse'],
           desc: '+7% ranged damage',
           bonus: { rangedDmg: 0.07 },
         },
-        made_in_heaven: {
-          id: 'made_in_heaven',
+        full_choir: {
+          id: 'full_choir',
           name: 'Full Choir',
           cost: 3,
-          requires: ['sunbreath', 'spin'],
+          requires: ['dawn_office', 'whistling_stones'],
           desc: '+10% ability, +2 morale',
           bonus: { abilityDmg: 0.1, maxMorale: 2 },
         },
@@ -354,7 +354,7 @@ const OperativeSkillTrees = (() => {
 
   function getFactionForUnit(unit) {
     if (!unit) return null;
-    if (unit.isWwe) return 'wwe';
+    if (unit.isWwe) return 'champions';
     if (unit.isDoomslayer) return 'doom';
     if (typeof getCrossoverDef === 'function') {
       return getCrossoverDef(unit.type)?.faction || null;

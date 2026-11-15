@@ -324,7 +324,12 @@ const GameRender = (() => {
 
       if (gfxQ?.drawLanternAuras !== false)
         for (const u of GS.units) {
-          if (!u.isWwe || u.wweAbility !== 'lantern' || u.hp <= 0 || !isInView(u.x, u.y, 140))
+          if (
+            !u.isWwe ||
+            u.wweAbility !== 'corpse_candle_omen' ||
+            u.hp <= 0 ||
+            !isInView(u.x, u.y, 140)
+          )
             continue;
           const pulse = 0.1 + Math.sin(GS.updateTick * 0.07) * 0.05;
           const alpha = pulse * (isNightPhase() ? 0.35 : 0.55 + (1 - light) * 0.45);

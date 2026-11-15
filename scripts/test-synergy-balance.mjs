@@ -35,7 +35,7 @@ function loadFactionDepth() {
   );
   vm.runInContext(crossover, ctx);
   vm.runInContext(
-    `CrossoverDefs.baki_hanma = { ...(CrossoverDefs.baki_hanma || {}), faction: 'baki' };
+    `CrossoverDefs.kell_splitlip = { ...(CrossoverDefs.kell_splitlip || {}), faction: 'knucklebone' };
      function getCrossoverDef(type) { return CrossoverDefs[type]; }`,
     ctx
   );
@@ -57,7 +57,7 @@ const baki = {
   team: 'player',
   hp: 100,
   maxHp: 100,
-  type: 'baki_hanma',
+  type: 'kell_splitlip',
   isCrossover: true,
   damage: 40,
   projectile: false,
@@ -98,7 +98,7 @@ const meleeUnit = {
   team: 'player',
   hp: 100,
   isCrossover: true,
-  type: 'baki_hanma',
+  type: 'kell_splitlip',
   projectile: false,
 };
 FD.applySynergyToUnit(meleeUnit, martialSyn);

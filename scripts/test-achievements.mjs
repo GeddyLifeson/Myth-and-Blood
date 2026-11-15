@@ -71,6 +71,7 @@ globalThis.isWweUnit = (t) => t === 'wwe_star';
 function load(name) {
   vm.runInThisContext(readFileSync(join(JS, name), 'utf8'), { filename: name });
 }
+load('renamed-ids.js');
 load('enemy-factions.js');
 load('achievements-data.js');
 load('achievements.js');
@@ -229,7 +230,7 @@ E('wave_complete', {
   units: ACHIEVEMENT_CROSSOVER_KEYS.map((f) => ({
     team: 'player',
     hp: 5,
-    type: f === 'wwe' ? 'wwe_star' : f === 'doom' ? 'doomslayer_hero' : `xo_${f}`,
+    type: f === 'champions' ? 'wwe_star' : f === 'doom' ? 'doomslayer_hero' : `xo_${f}`,
   })),
 });
 E('campaign_victory', { wave: 100 });
@@ -282,6 +283,18 @@ store['myth-and-blood-achievements-v3'] = JSON.stringify({
 });
 while (timers.length) timers.shift().fn();
 toast.names.length = 0;
+// The game runs the renamed-id pass over an old profile before achievements load it.
+delete store['myth-and-blood-ids-renamed-v1'];
+vm.runInThisContext('RenamedIds').migrateStorage({
+  get length() {
+    return Object.keys(store).length;
+  },
+  key: (i) => Object.keys(store)[i] ?? null,
+  getItem: (k) => store[k] ?? null,
+  setItem: (k, v) => {
+    store[k] = String(v);
+  },
+});
 A.reload();
 ok(
   A.isUnlocked('wave_5') && A.isUnlocked('wave_15') && A.isUnlocked('wave_20'),
@@ -295,7 +308,7 @@ ok(
   'old lifetime counters unlock the lifetime goals'
 );
 ok(
-  A.isUnlocked('order_wwe_1') && A.isUnlocked('order_wwe_2'),
+  A.isUnlocked('order_champions_1') && A.isUnlocked('order_champions_2'),
   'old mastery points unlock the order ladder'
 );
 ok(!A.retiredIds().includes('reach_wave_20'), 'a mapped id is not retired');

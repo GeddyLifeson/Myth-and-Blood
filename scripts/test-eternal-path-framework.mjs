@@ -59,7 +59,7 @@ function loadModules() {
     Game: { setPaused: () => {}, showMessage: () => {}, getState: () => ({ paused: true }) },
     UI: { updateHUD: () => {} },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart',
   };
   sb.window = sb;
   sb.globalThis = sb;

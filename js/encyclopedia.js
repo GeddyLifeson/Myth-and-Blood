@@ -14,44 +14,47 @@ const Encyclopedia = (() => {
   let panelOpen = false;
   let returnToPause = false;
 
-  const COLISEUM_TEASE = {
-    stone_cold:
+  const CHAMPION_TEASE = {
+    hadrek_quarryborn:
       'The Wall-Splitter: old bailiff rolls say elites fall to one keystone blow, and the yard goes quiet.',
-    the_rock: 'The Cairn-Maker raises a stone over every foe he drops; his kill streaks ring loud.',
-    ric_flair: 'The Gilded Bastard: allies near him fight with a boasting nerve.',
-    hulk_hogan:
+    osmar_tallgrave:
+      'The Cairn-Maker raises a stone over every foe he drops; his kill streaks ring loud.',
+    lord_corvane_ashgilt: 'The Gilded Bastard: allies near him fight with a boasting nerve.',
+    brunhal_oxmantle:
       'The Unfelled: below half health his stubborn blood surges and he will not stay down.',
-    macho_man:
+    jorun_kestrelhand:
       'The Javelin of Spite hurls from the high ground, and the crit lands before the cheer.',
-    sting: 'The Gaoler drags the wounded back by the chain. Few slip his hold.',
-    john_cena: 'The Oathkeeper never yields: blows seem to glance off when the fight turns ugly.',
-    bautista: 'The Bull of Marrowgate: his goring sweep scatters everyone standing too close.',
-    roman_reigns: 'The Fen Warden: his shoulder ram ends arguments and several orcs at once.',
-    shawn_michaels:
+    maldrick_sootgate: 'The Gaoler drags the wounded back by the chain. Few slip his hold.',
+    alder_wynfast:
+      'The Oathkeeper never yields: blows seem to glance off when the fight turns ugly.',
+    gorvan_hullbreaker:
+      'The Bull of Marrowgate: his goring sweep scatters everyone standing too close.',
+    ulvar_deepmoor: 'The Fen Warden: his shoulder ram ends arguments and several orcs at once.',
+    sennet_quickheel:
       'The Tourney Darling: a spinning heel rings out when the moment is right, usually a crit.',
-    bret_hart: 'The Lockwright: one hold, one foe, no way out.',
-    undertaker:
+    hestor_grindlaw: 'The Lockwright: one hold, one foe, no way out.',
+    brother_halvec:
       'The Bell of Low Hallow: a passing bell spreads dread; enemy morale withers nearby.',
-    kane: 'The Troll-Flayer: his barbed hide bites harder the bigger the target.',
-    andre_giant: 'The Walking Keep: footsteps splash damage; walls fear him.',
-    razor_ramon: 'The Patient Blade: steady, stylish, inevitable edge damage.',
-    kevin_nash: 'The Lintel: every fourth blow brings the roof down on the ranks.',
-    roddy_piper: 'The Heckler: when he scores, allies feel it.',
-    hacksaw_duggan:
+    varn_thistlehide: 'The Troll-Flayer: his barbed hide bites harder the bigger the target.',
+    big_oddo_of_cragfoot: 'The Walking Keep: footsteps splash damage; walls fear him.',
+    ilvane_whetstone: 'The Patient Blade: steady, stylish, inevitable edge damage.',
+    durgan_beamshoulder: 'The Lintel: every fourth blow brings the roof down on the ranks.',
+    fenrick_barbtongue: 'The Heckler: when he scores, allies feel it.',
+    old_garth_bannerpole:
       'The Colour-Serjeant: raises the colours and rallies the line at the start of each wave.',
-    junkyard_dog: "The Ram of Tanner's Row: his brow stuns on a crit.",
-    rey_mysterio: 'The Rope-Dancer: too quick to pin, too clever to catch.',
-    eddie_guerrero:
+    brask_ironbrow: "The Ram of Tanner's Row: his brow stuns on a crit.",
+    pip_wrenfall: 'The Rope-Dancer: too quick to pin, too clever to catch.',
+    jessom_magpie:
       'The Light-Fingered: lie, cheat, steal; maybe lift a purse from an elite for TP.',
-    chris_benoit: 'The Vise: surgical, cruel, single-target devastation.',
-    oba_femi: 'The Unbeaten Novice: surrounded is when he hits hardest.',
-    brock_lesnar: 'The Butcher of the Bloodsand: if you are wounded, you are gone.',
-    cm_punk: 'The Hedge-Preacher: the last word finishes anyone already hurting.',
-    seth_rollins: 'The Poacher: a long cast at wounded targets.',
-    sheamus: 'The Peat-Cutter: his sweep leaves a line of bodies.',
-    bray_wyatt:
+    orrin_clampjaw: 'The Vise: surgical, cruel, single-target devastation.',
+    tharn_ringholder: 'The Unbeaten Novice: surrounded is when he hits hardest.',
+    gundrek_oxblood: 'The Butcher of the Bloodsand: if you are wounded, you are gone.',
+    kerrin_ashvow: 'The Hedge-Preacher: the last word finishes anyone already hurting.',
+    merrow_slingstone: 'The Poacher: a long cast at wounded targets.',
+    hulder_rustbeard: 'The Peat-Cutter: his sweep leaves a line of bodies.',
+    old_mother_sedge:
       'The Bog Oracle: her corpse-candle dims enemy accuracy when dusk falls on the field.',
-    randy_orton: 'The Still Hand: a sudden fall on anyone already hurting.',
+    hallec_stillwater: 'The Still Hand: a sudden fall on anyone already hurting.',
   };
 
   const CATEGORIES = [
@@ -850,8 +853,8 @@ const Encyclopedia = (() => {
     if (arena) {
       out.push({
         id: 'arena',
-        label: buildName('wwe_academy'),
-        hall: 'wwe_academy',
+        label: buildName('champions_hall'),
+        hall: 'champions_hall',
         sworn: !!Meta?.isWweUnlocked?.(),
         members: members(arena, () => true),
       });
@@ -883,7 +886,7 @@ const Encyclopedia = (() => {
       entry(
         'champions',
         'Champions and companies',
-        `Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company must first be sworn to your line (each has its own trial, listed under Achievements); then a ${unitName('builder')} raises its hall, and its fighters are recruited from the Legion Archive. Each has his own role, trait and weakness. ${all.filter((c) => c.sworn).length} of ${all.length} companies are sworn to you.`
+        `Champions are fighters from outside the realm, far stronger than line troops and priced to match. They come in companies. A company must first be sworn to your line (each has its own trial, listed under Achievements); then a ${unitName('builder')} raises its hall, and its fighters are recruited from the Free Companies. Each has his own role, trait and weakness. ${all.filter((c) => c.sworn).length} of ${all.length} companies are sworn to you.`
       ),
     ];
     for (const c of all) {
@@ -908,7 +911,7 @@ const Encyclopedia = (() => {
           `${head}\n\n${c.members
             .map(
               (m) =>
-                `${m.def.name}: ${m.profile.role}, ${m.def.cost} TP\n${COLISEUM_TEASE[m.id] ? `${COLISEUM_TEASE[m.id]}\n` : ''}${m.profile.trait}\nWeakness: ${m.profile.weak}`
+                `${m.def.name}: ${m.profile.role}, ${m.def.cost} TP\n${CHAMPION_TEASE[m.id] ? `${CHAMPION_TEASE[m.id]}\n` : ''}${m.profile.trait}\nWeakness: ${m.profile.weak}`
             )
             .join('\n\n')}`,
           { companyId: c.id, refs }

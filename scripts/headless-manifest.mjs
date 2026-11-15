@@ -10,6 +10,7 @@ export const JS = join(ROOT, 'js');
 export const HEADLESS_FILES = [
   'html-util.js',
   'save-registry.js',
+  'renamed-ids.js',
   'floatingText.js',
   'pathfinding-core.js',
   'pathfinding.js',

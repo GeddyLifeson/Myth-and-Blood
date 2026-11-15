@@ -1459,7 +1459,7 @@
 
   // ===================================================================== special
   BuildingArt.register(
-    'wwe_academy',
+    'champions_hall',
     at(62, (g, o, A) => {
       const sq = 31 / 54;
       drum(g, 0, 6, 54, 16, { squash: sq, crenel: false, open: true });
@@ -1513,7 +1513,7 @@
 
   /** Powderhorn Barracks: a bunker with vats of glowing residue and a ring pad. */
   BuildingArt.register(
-    'element_barracks',
+    'powderhorn_magazine',
     at(52, (g, o, A) => {
       ell(g, -8, 24, 16, 8, C.slateD);
       ell(g, -8, 24, 11, 5.4, null, 0.8);
@@ -1555,7 +1555,7 @@
 
   /** Pale Vigil Shrine: nine standing stones round an altar. */
   BuildingArt.register(
-    'primis_shrine',
+    'pale_vigil_shrine',
     at(50, (g, o, A) => {
       ell(g, 0, 6, 42, 23, C.dirt, 1);
       K.hatchEll(g, 0, 6, 42, 23, 3.2, 0.9, 0.3);
@@ -1604,7 +1604,7 @@
 
   /** Greywatch Academy: a landing pad with a drop capsule and a signal mast. */
   BuildingArt.register(
-    'spartan_academy',
+    'greywatch_hall',
     at(54, (g, o, A) => {
       block(g, -46, -20, 30, 16, 12, { wall: C.stone, top: C.slateD, slits: 4, door: 5 });
       rect(g, -42, -29, 10, 5, C.slate, 0.9);
@@ -1654,7 +1654,7 @@
 
   /** Sawtooth Academy: a bunker under a great cog, with a zigzag trench before it. */
   BuildingArt.register(
-    'cog_academy',
+    'sawtooth_camp',
     at(52, (g, o, A) => {
       block(g, -26, -20, 52, 17, 12, { wall: C.stoneD, top: C.slate, door: 6, slits: 0 });
       rect(g, -21, -11, 14, 2.2, C.dark, 0.7);
@@ -1693,7 +1693,7 @@
 
   /** Thornroad Camp: nine pale tents round a fire, under green pennons. */
   BuildingArt.register(
-    'rivendell_camp',
+    'thornroad_camp',
     at(52, (g, o, A) => {
       ell(g, 0, 6, 44, 24, 'rgba(66,78,50,0.6)', 0);
       const tents = [];
@@ -1752,7 +1752,7 @@
 
   /** Knucklebone Lodge: a dark hall behind a roped fighting pit. */
   BuildingArt.register(
-    'hanma_dojo',
+    'knucklebone_lodge',
     at(50, (g, o, A) => {
       hip(g, -27, -26, 54, 16, 12, 7, {
         wall: C.woodD,
@@ -1801,7 +1801,7 @@
 
   /** Marrow Choir Shrine: a blood-red gate before a small shrine, with spirit lights. */
   BuildingArt.register(
-    'stand_arrow_shrine',
+    'marrow_reliquary',
     at(54, (g, o, A) => {
       hip(g, -16, -30, 32, 15, 11, 8, {
         wall: C.wood,
@@ -1846,7 +1846,7 @@
 
   /** Quiet Hand Dojo: a three-tiered tower under one great star. */
   BuildingArt.register(
-    'north_star_dojo',
+    'quiet_hand_cloister',
     at(51, (g, o, A) => {
       const roof = { roof: C.blueD, roofD: C.slateD, rtex: 'slate' };
       const eaves = (w, y) => {
@@ -1897,7 +1897,7 @@
 
   /** Emberblood Foundry: a ribbed dome with a glowing forge mouth and two stacks. */
   BuildingArt.register(
-    'capsule_corp',
+    'emberblood_hearth',
     at(54, (g, o, A) => {
       block(g, 22, -12, 8, 7, 34, { wall: C.tile });
       block(g, 34, -2, 7, 6, 25, { wall: C.tile });
@@ -1923,7 +1923,7 @@
 
   /** Iron Psalm Chapel: a cross-shaped church under a blood-red roof and a spire. */
   BuildingArt.register(
-    'astartes_chapel',
+    'iron_psalm_chapel',
     at(54, (g, o, A) => {
       const red = {
         wall: C.stone,
@@ -1954,7 +1954,7 @@
 
   /** Saltglass Sanctum: pale shards rising from a stepped dais. */
   BuildingArt.register(
-    'crystal_sanctum',
+    'saltglass_furnace',
     at(54, (g, o, A) => {
       ell(g, 0, 12, 42, 22, C.stoneD);
       ell(g, 0, 9, 33, 17, C.stone);
@@ -2027,7 +2027,7 @@
 
   /** Open Wound Shrine: crooked obelisks chained to a tear in the air. */
   BuildingArt.register(
-    'warp_shrine',
+    'open_wound_shrine',
     at(54, (g, o, A) => {
       ell(g, 0, 10, 42, 22, C.dirtD, 1);
       K.hatchEll(g, 0, 10, 42, 22, 2.4, -0.8, 0.5);
@@ -2102,7 +2102,7 @@
 
   /** Rimehowl Moot Hall: a longhouse with crossed wyrm-head beams and a great skull. */
   BuildingArt.register(
-    'dragon_moot',
+    'rimehowl_longhouse',
     at(54, (g, o, A) => {
       gableNS(g, -18, -24, 36, 46, 13, 13, {
         wall: C.wood,

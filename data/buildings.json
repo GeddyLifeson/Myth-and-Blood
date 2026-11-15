@@ -527,8 +527,8 @@
     "isAcademy": true,
     "isEnemySettlement": true
   },
-  "wwe_academy": {
-    "name": "Grand Coliseum",
+  "champions_hall": {
+    "name": "Champions’ Hall",
     "cost": 1000,
     "hp": 1200,
     "cover": 0.5,
@@ -543,7 +543,7 @@
     "isSettlement": true,
     "secret": true
   },
-  "element_barracks": {
+  "powderhorn_magazine": {
     "name": "Powderhorn Barracks",
     "cost": 90,
     "hp": 500,
@@ -554,10 +554,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "ultimis",
+    "crossoverFaction": "powderhorn",
     "secret": true
   },
-  "primis_shrine": {
+  "pale_vigil_shrine": {
     "name": "Pale Vigil Shrine",
     "cost": 90,
     "hp": 520,
@@ -568,10 +568,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "primis",
+    "crossoverFaction": "pale_vigil",
     "secret": true
   },
-  "spartan_academy": {
+  "greywatch_hall": {
     "name": "Greywatch Academy",
     "cost": 90,
     "hp": 600,
@@ -582,10 +582,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "halo",
+    "crossoverFaction": "greywatch",
     "secret": true
   },
-  "cog_academy": {
+  "sawtooth_camp": {
     "name": "Sawtooth Academy",
     "cost": 90,
     "hp": 580,
@@ -596,10 +596,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "gears",
+    "crossoverFaction": "sawtooth",
     "secret": true
   },
-  "rivendell_camp": {
+  "thornroad_camp": {
     "name": "Thornroad Camp",
     "cost": 90,
     "hp": 560,
@@ -610,10 +610,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "lotr",
+    "crossoverFaction": "thornroad",
     "secret": true
   },
-  "hanma_dojo": {
+  "knucklebone_lodge": {
     "name": "Knucklebone Lodge",
     "cost": 90,
     "hp": 540,
@@ -624,10 +624,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "baki",
+    "crossoverFaction": "knucklebone",
     "secret": true
   },
-  "stand_arrow_shrine": {
+  "marrow_reliquary": {
     "name": "Marrow Choir Shrine",
     "cost": 90,
     "hp": 580,
@@ -638,10 +638,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "jojo",
+    "crossoverFaction": "marrow_choir",
     "secret": true
   },
-  "north_star_dojo": {
+  "quiet_hand_cloister": {
     "name": "Quiet Hand Dojo",
     "cost": 90,
     "hp": 550,
@@ -652,10 +652,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "fotns",
+    "crossoverFaction": "quiet_hand",
     "secret": true
   },
-  "capsule_corp": {
+  "emberblood_hearth": {
     "name": "Emberblood Foundry",
     "cost": 90,
     "hp": 590,
@@ -666,10 +666,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "dragonball",
+    "crossoverFaction": "emberblood",
     "secret": true
   },
-  "astartes_chapel": {
+  "iron_psalm_chapel": {
     "name": "Iron Psalm Chapel",
     "cost": 90,
     "hp": 620,
@@ -680,10 +680,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "imperium",
+    "crossoverFaction": "iron_psalm",
     "secret": true
   },
-  "crystal_sanctum": {
+  "saltglass_furnace": {
     "name": "Saltglass Sanctum",
     "cost": 90,
     "hp": 580,
@@ -694,10 +694,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "crystal",
+    "crossoverFaction": "saltglass",
     "secret": true
   },
-  "warp_shrine": {
+  "open_wound_shrine": {
     "name": "Open Wound Shrine",
     "cost": 90,
     "hp": 600,
@@ -708,10 +708,10 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "warp",
+    "crossoverFaction": "open_wound",
     "secret": true
   },
-  "dragon_moot": {
+  "rimehowl_longhouse": {
     "name": "Rimehowl Moot Hall",
     "cost": 90,
     "hp": 610,
@@ -722,7 +722,7 @@
     "buildTime": 180,
     "requiresBuilders": 2,
     "isCrossoverBarracks": true,
-    "crossoverFaction": "tes",
+    "crossoverFaction": "rimehowl",
     "secret": true
   },
   "perk_jugger_nog": {
@@ -852,7 +852,7 @@
     "blocksLOS": false,
     "buildTime": 150,
     "isPerkMachine": true,
-    "perkId": "tombstone",
+    "perkId": "passing_bell",
     "secret": true
   }
 }

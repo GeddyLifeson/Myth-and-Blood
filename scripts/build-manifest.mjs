@@ -14,6 +14,7 @@ export const GAME_SCRIPTS = [
   'touch-input.js',
   'html-util.js',
   'save-registry.js',
+  'renamed-ids.js',
   'dialog.js',
   'hotkeys.js',
   'floatingText.js',

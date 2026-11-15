@@ -37,7 +37,7 @@ function loadModules(extra = {}) {
     StoryLore: { getDominantBranch: () => null },
     MetaProgress: { isCrossoverType: () => false },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     ...extra,
   };
   sb.window = sb;
@@ -91,9 +91,9 @@ ok(arcSnap.leading === 'arcane_dominion', 'arcane leads after academy investment
 const mythRun = loadModules();
 mythRun.FoundationalMedievalLayer.resetRun();
 mythRun.FoundationalMedievalLayer.onRunStart({ creative: false });
-mythRun.FoundationalMedievalLayer.recordDeploy('goku', 60);
-mythRun.FoundationalMedievalLayer.recordDeploy('tank_dempsey', 65);
-mythRun.FoundationalMedievalLayer.recordFaction('gears', 70);
+mythRun.FoundationalMedievalLayer.recordDeploy('tavish_coalheart', 60);
+mythRun.FoundationalMedievalLayer.recordDeploy('dunmar_fusewick', 65);
+mythRun.FoundationalMedievalLayer.recordFaction('sawtooth', 70);
 const mythSnap = mythRun.FoundationalMedievalLayer.getRunSnapshot();
 ok(mythSnap.leading === 'mythic_alliance', 'mythic leads after crossover heroes');
 

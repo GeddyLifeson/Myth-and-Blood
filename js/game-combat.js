@@ -347,11 +347,12 @@ const GameCombat = (() => {
     if (!Number.isFinite(amount) || amount <= 0) return 0;
     if (unit.isDoomslayer && unit.team === 'player') amount *= 0.08;
     if (unit.isGeneral && (unit.w2wBuffTimer || 0) > 0) amount *= 0.42;
-    if (unit.isWwe && unit.wweAbility === '619' && Math.random() < 0.35) {
+    if (unit.isWwe && unit.wweAbility === 'rope_dancers_leap' && Math.random() < 0.35) {
       svc('FloatingText').status(unit.x, unit.y, 'DODGE', '#80c0ff');
       return 0;
     }
-    if (unit.isWwe && unit.wweAbility === 'attitude' && unit.hp / unit.maxHp < 0.5) amount *= 0.55;
+    if (unit.isWwe && unit.wweAbility === 'sworn_stand' && unit.hp / unit.maxHp < 0.5)
+      amount *= 0.55;
     let mitigation = 1 - getCoverAt(unit.x, unit.y) - getWallProtection(unit);
     if (unit.type === 'knight') mitigation -= 0.22;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -792,7 +793,7 @@ const GameCombat = (() => {
     if (!unit.isWwe) return;
     ach('crossover_ability', {
       unitType: unit.type,
-      faction: 'wwe',
+      faction: 'champions',
       ability: unit.wweAbility,
     });
     if (svc('FactionDepth')) svc('FactionDepth').processAbilityHit(unit, target, dmg);
