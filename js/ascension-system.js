@@ -140,7 +140,7 @@ const AscensionSystem = (() => {
         desc: 'Regenerates tissue at the cellular level across eras.',
       },
     },
-    tank_dempsey: {
+    dunmar_fusewick: {
       kingdom: {
         id: 'siege_legend',
         label: 'Siege Legend',
@@ -162,7 +162,7 @@ const AscensionSystem = (() => {
         desc: 'Frag Out scales to orbital bombardment.',
       },
     },
-    goku: {
+    tavish_coalheart: {
       kingdom: {
         id: 'mythic_champion',
         label: 'Mythic Champion',

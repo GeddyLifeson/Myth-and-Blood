@@ -40,7 +40,7 @@ function loadModules() {
     StoryLore: { getDominantBranch: () => null },
     MetaProgress: { isCrossoverType: () => false },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     MAX_VETERAN_TIER: 6,
     isValidHonorName: (n) => !!n && n.length > 2,
     Chronicles: { appendNarrativeBeat: () => {} },
@@ -109,7 +109,7 @@ ok(
 const mythic = {
   id: 'u3',
   team: 'player',
-  type: 'goku',
+  type: 'tavish_coalheart',
   hp: 200,
   maxHp: 200,
   damage: 40,
@@ -117,7 +117,10 @@ const mythic = {
   morale: 40,
 };
 NarrativeThread.scanLegends([mythic], 120, { showMessage: () => {}, addHighlight: () => {} });
-ok(NarrativeThread.getMythicLegendIds().includes('goku'), 'mythic legend id exposed for echoes');
+ok(
+  NarrativeThread.getMythicLegendIds().includes('tavish_coalheart'),
+  'mythic legend id exposed for echoes'
+);
 
 const mods100 = NarrativeThread.getLegendPowerMods(100);
 const mods400 = NarrativeThread.getLegendPowerMods(400);
@@ -131,8 +134,8 @@ ok(
 
 FoundationalMedievalLayer.resetRun();
 FoundationalMedievalLayer.onRunStart({ creative: false });
-FoundationalMedievalLayer.recordDeploy('goku', 60);
-FoundationalMedievalLayer.recordDeploy('tank_dempsey', 65);
+FoundationalMedievalLayer.recordDeploy('tavish_coalheart', 60);
+FoundationalMedievalLayer.recordDeploy('dunmar_fusewick', 65);
 ThematicEraSynergies.resetRun();
 NarrativeThread.resetRun();
 ThematicEraSynergies.onWaveStart(150, {

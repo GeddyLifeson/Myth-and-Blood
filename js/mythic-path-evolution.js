@@ -363,7 +363,7 @@ const MythicPathEvolution = (() => {
       unit.eternalChampion = true;
       unit.pantheonAscendant = true;
       unit.ascensionWeapon = unit.ascensionWeapon || 'Godblood Relic';
-      if (unit.cosmicOrbitalStrike == null && unit.wweAbility === 'frag_out') {
+      if (unit.cosmicOrbitalStrike == null && unit.wweAbility === 'fused_pot') {
         unit.cosmicOrbitalStrike = true;
       }
     }
@@ -474,7 +474,7 @@ const MythicPathEvolution = (() => {
       <div class="mype-mythic-panel locked">
         <div class="gs-province-head">MYTHIC EVOLUTION — <span style="color:#908070">Locked</span></div>
         <p class="gs-kingdom-desc">The crossover path begins only when a powerful hero joins your banner.</p>
-        <p class="gs-mob-hint">Recruit a evolved operative, coliseum champion, or mythic champion to unlock Powerful Heroes → Bloodlines → Pantheon Ascendant.</p>
+        <p class="gs-mob-hint">Recruit a evolved operative, Bloodsand champion, or mythic champion to unlock Powerful Heroes → Bloodlines → Pantheon Ascendant.</p>
       </div>`;
     }
     const snap = getStateSnapshot(ctx);
@@ -510,7 +510,12 @@ const MythicPathEvolution = (() => {
     state.unlockReason = 'test';
     state.score = 78;
     state.legendScore = 48;
-    state.firstChampion = { captured: true, foundingWave: 5, unitId: 'test-goku', type: 'goku' };
+    state.firstChampion = {
+      captured: true,
+      foundingWave: 5,
+      unitId: 'test-goku',
+      type: 'tavish_coalheart',
+    };
     state.godbloodArmada = { active: true, tier: 3 };
     state._lastWave = GALACTIC_WAVE;
     if (preset === 'locked') {

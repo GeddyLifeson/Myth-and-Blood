@@ -2887,7 +2887,12 @@ const Game = (() => {
     if (isNightPhase()) pen += 28;
     if (svc('ContentExpansion')) pen += svc('ContentExpansion').getWatchtowerIntelPenalty(unit);
     for (const ally of GS.units) {
-      if (ally.team !== 'player' || !ally.isWwe || ally.wweAbility !== 'lantern' || ally.hp <= 0)
+      if (
+        ally.team !== 'player' ||
+        !ally.isWwe ||
+        ally.wweAbility !== 'corpse_candle_omen' ||
+        ally.hp <= 0
+      )
         continue;
       if (unitDistance(ally, unit) < 140) {
         pen += 14 + Math.floor((1 - light) * 22);
@@ -2899,7 +2904,7 @@ const Game = (() => {
   function updateWweLanternAura() {
     if (!isDayPhase()) return;
     for (const bray of GS.units) {
-      if (!bray.isWwe || bray.wweAbility !== 'lantern' || bray.hp <= 0) continue;
+      if (!bray.isWwe || bray.wweAbility !== 'corpse_candle_omen' || bray.hp <= 0) continue;
       bray.lanternPulse = (bray.lanternPulse || 0) + 1;
       if (bray.lanternPulse % 45 !== 0) continue;
       const light = getDayLightLevel();
@@ -2907,7 +2912,7 @@ const Game = (() => {
         if (foe.team !== 'enemy' || foe.hp <= 0) continue;
         if (unitDistance(bray, foe) > 130) continue;
         foe.morale = Math.max(0, foe.morale - (1 + Math.floor((1 - light) * 2)));
-        if (foe.morale <= 2 && !foe.fleeing) triggerMoraleBreak(foe, 'lantern');
+        if (foe.morale <= 2 && !foe.fleeing) triggerMoraleBreak(foe, 'corpse_candle_omen');
       }
     }
   }
@@ -2915,7 +2920,7 @@ const Game = (() => {
   function applyWweWaveStartPulse() {
     for (const u of GS.units) {
       if (!u.isWwe || u.hp <= 0) continue;
-      if (u.wweAbility === 'usa') {
+      if (u.wweAbility === 'raise_the_colours') {
         GS.units
           .filter((a) => a.team === 'player' && a.hp > 0 && unitDistance(u, a) < 120)
           .forEach((a) => {
@@ -10679,10 +10684,10 @@ const Game = (() => {
       const wweOk =
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isWweUnlocked() ||
-        (svc('Research') && svc('Research').isFactionUnlocked('wwe', getResearchOpts()));
+        (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts()));
       if (!wweOk) {
         showMessage(
-          'Research Arena Warfare Doctrine or join the Iron Creed to unlock the Grand Coliseum!',
+          'Research Arena Warfare Doctrine or swear the Quarryman’s Oath to unlock the Bloodsand Pit!',
           300
         );
         return false;
@@ -10691,12 +10696,12 @@ const Game = (() => {
       const recGuilds = def.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Grand Coliseum tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Bloodsand Pit tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Grand Coliseum tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Bloodsand Pit tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -10865,24 +10870,24 @@ const Game = (() => {
     const research = svc('Research');
     if (bdef?.isWweAcademy) {
       // Same rule finalizeBuild uses: a Research Lab unlock counts, not just the cheat.
-      const coliseumOk =
+      const pitOk =
         unlockAll ||
         svc('MetaProgress').isWweUnlocked() ||
-        (research && research.isFactionUnlocked('wwe', getResearchOpts()));
-      if (!coliseumOk) {
-        showMessage('Research Arena Warfare Doctrine or join the Iron Creed first!');
+        (research && research.isFactionUnlocked('champions', getResearchOpts()));
+      if (!pitOk) {
+        showMessage('Research Arena Warfare Doctrine or swear the Quarryman’s Oath first!');
         return false;
       }
       const recHamlets = bdef.recommendedHamlets ?? 2;
       const recGuilds = bdef.recommendedGuilds ?? 1;
       if (countPlayerHamlets() < recHamlets) {
         showMessage(
-          `Grand Coliseum tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
+          `Bloodsand Pit tip: ${recHamlets}+ hamlets recommended (you have ${countPlayerHamlets()}).`,
           300
         );
       } else if (countPlayerGuilds() < recGuilds) {
         showMessage(
-          `Grand Coliseum tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
+          `Bloodsand Pit tip: ${recGuilds}+ merchant guilds recommended (you have ${countPlayerGuilds()}).`,
           300
         );
       }
@@ -11583,7 +11588,7 @@ const Game = (() => {
       ensureWallSlots(b);
     }
     if (b.isWweAcademy) {
-      showMessage('Grand Coliseum complete! Click it to recruit Champions.', 320);
+      showMessage('Bloodsand Pit complete! Click it to recruit Champions.', 320);
       svc('FloatingText').status(b.x, b.y - 20, 'GC', '#c04040');
     }
     if (b.isCrossoverBarracks && isCrossoverBarracksType(b.type)) {
@@ -13037,11 +13042,12 @@ const Game = (() => {
     if (!Number.isFinite(amount) || amount <= 0) return 0;
     if (unit.isDoomslayer && unit.team === 'player') amount *= 0.08;
     if (unit.isGeneral && (unit.w2wBuffTimer || 0) > 0) amount *= 0.42;
-    if (unit.isWwe && unit.wweAbility === '619' && Math.random() < 0.35) {
+    if (unit.isWwe && unit.wweAbility === 'rope_dancers_leap' && Math.random() < 0.35) {
       svc('FloatingText').status(unit.x, unit.y, 'DODGE', '#80c0ff');
       return 0;
     }
-    if (unit.isWwe && unit.wweAbility === 'attitude' && unit.hp / unit.maxHp < 0.5) amount *= 0.55;
+    if (unit.isWwe && unit.wweAbility === 'sworn_stand' && unit.hp / unit.maxHp < 0.5)
+      amount *= 0.55;
     let mitigation = 1 - getCoverAt(unit.x, unit.y) - getWallProtection(unit);
     if (unit.type === 'knight') mitigation -= 0.22;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -13482,7 +13488,7 @@ const Game = (() => {
     if (!unit.isWwe) return;
     ach('crossover_ability', {
       unitType: unit.type,
-      faction: 'wwe',
+      faction: 'champions',
       ability: unit.wweAbility,
     });
     if (svc('FactionDepth')) svc('FactionDepth').processAbilityHit(unit, target, dmg);
@@ -15512,7 +15518,12 @@ const Game = (() => {
 
       if (gfxQ?.drawLanternAuras !== false)
         for (const u of GS.units) {
-          if (!u.isWwe || u.wweAbility !== 'lantern' || u.hp <= 0 || !isInView(u.x, u.y, 140))
+          if (
+            !u.isWwe ||
+            u.wweAbility !== 'corpse_candle_omen' ||
+            u.hp <= 0 ||
+            !isInView(u.x, u.y, 140)
+          )
             continue;
           const pulse = 0.1 + Math.sin(GS.updateTick * 0.07) * 0.05;
           const alpha = pulse * (isNightPhase() ? 0.35 : 0.55 + (1 - light) * 0.45);
@@ -16089,7 +16100,7 @@ const Game = (() => {
     const def = WweDefs[id];
     if (!def) return false;
     if (!hasWweAcademy()) {
-      showMessage('Complete a Grand Coliseum on the field first!');
+      showMessage('Complete a Bloodsand Pit on the field first!');
       return false;
     }
     if (GS.tactical < def.cost) {
@@ -16115,11 +16126,11 @@ const Game = (() => {
     if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').onRecruit(u);
     svc('MetaProgress').recordWweRecruit(id);
     if (svc('Legacy')) {
-      svc('Legacy').recordFaction('wwe');
+      svc('Legacy').recordFaction('champions');
       svc('Legacy').recordDeploy(id);
     }
     if (typeof MythicPathEvolution !== 'undefined') {
-      MythicPathEvolution.recordFaction('wwe', GS.wave);
+      MythicPathEvolution.recordFaction('champions', GS.wave);
       MythicPathEvolution.recordDeploy(id, GS.wave);
     }
     ach('wwe_recruit', { wweId: id });
@@ -17759,7 +17770,7 @@ const Game = (() => {
       wweUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isWweUnlocked() ||
-        (svc('Research') && svc('Research').isFactionUnlocked('wwe', getResearchOpts())),
+        (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts())),
       doomslayerUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         svc('MetaProgress').isDoomslayerHeroUnlocked() ||

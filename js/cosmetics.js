@@ -80,8 +80,8 @@ const Cosmetics = (() => {
     },
     ring_champion: {
       label: 'Ring Champion',
-      unlock: 'creative_skin_wwe',
-      desc: 'Unlocked at coliseum mastery tier IV.',
+      unlock: 'creative_skin_champions',
+      desc: 'Unlocked at Bloodsand mastery tier IV.',
       body: '#702028',
       accent: '#ffd700',
       mark: '#c04040',
@@ -96,7 +96,7 @@ const Cosmetics = (() => {
     },
     crystal_vanguard: {
       label: 'Saltglass Guild',
-      unlock: 'creative_skin_crystal',
+      unlock: 'creative_skin_saltglass',
       desc: 'Unlocked at Crystal mastery tier IV.',
       body: '#5080c0',
       accent: '#a0d0f0',
@@ -104,7 +104,7 @@ const Cosmetics = (() => {
     },
     warp_legion: {
       label: 'Cult of the Open Wound',
-      unlock: 'creative_skin_warp',
+      unlock: 'creative_skin_open_wound',
       desc: 'Unlocked at Warp mastery tier IV.',
       body: '#402030',
       accent: '#8040a0',
@@ -112,7 +112,7 @@ const Cosmetics = (() => {
     },
     imperium_herald: {
       label: 'Iron Psalm',
-      unlock: 'creative_skin_imperium',
+      unlock: 'creative_skin_iron_psalm',
       desc: 'Unlocked at Iron Psalm mastery tier IV.',
       body: '#384858',
       accent: '#6080b0',

@@ -4,141 +4,141 @@
  * everything a player reads comes from `label`, `kind` and `lore`.
  */
 const CrossoverFactions = {
-  ultimis: {
-    id: 'ultimis',
+  powderhorn: {
+    id: 'powderhorn',
     label: 'Powderhorn Company',
     short: 'Powderhorn',
     kind: 'mercenary company',
     crest: '#c06030',
     lore: 'Four sellswords who learned black powder from a mine that killed everyone else in it. They hire out to any wall that can pay, and leave before the smoke clears.',
-    building: 'element_barracks',
+    building: 'powderhorn_magazine',
     unlockKey: 'is115Unlocked',
   },
-  primis: {
-    id: 'primis',
+  pale_vigil: {
+    id: 'pale_vigil',
     label: 'The Pale Vigil',
     short: 'Pale Vigil',
     kind: 'knightly order',
     crest: '#d8d0b8',
     lore: 'An order of knights sworn to watch the old barrows so that nothing climbs out. When the dead began to march anyway, the Vigil came down to meet them.',
-    building: 'primis_shrine',
+    building: 'pale_vigil_shrine',
     unlockKey: 'isPrimusUnlocked',
   },
-  halo: {
-    id: 'halo',
+  greywatch: {
+    id: 'greywatch',
     label: 'The Greywatch',
     short: 'Greywatch',
     kind: 'citadel order',
     crest: '#708090',
     lore: 'The Greywatch has held one mountain citadel for three hundred years and has never opened its gate to an enemy. Its wardens come down only when a wall elsewhere is about to fail.',
-    building: 'spartan_academy',
+    building: 'greywatch_hall',
     unlockKey: 'isHaloUnlocked',
   },
-  gears: {
-    id: 'gears',
+  sawtooth: {
+    id: 'sawtooth',
     label: 'Sawtooth Company',
     short: 'Sawtooth',
     kind: 'mercenary company',
     crest: '#8a5a30',
     lore: 'A mercenary company that has fought every war from the bottom of a ditch. Its saw-backed glaives were made for cutting stakes and turned out to cut goblins as well.',
-    building: 'cog_academy',
+    building: 'sawtooth_camp',
     unlockKey: 'isGearsUnlocked',
   },
-  lotr: {
-    id: 'lotr',
+  thornroad: {
+    id: 'thornroad',
     label: 'Thornroad Company',
     short: 'Thornroad',
     kind: 'free company',
     crest: '#4a7040',
     lore: 'Seven guards-for-hire who keep the pilgrim road through the thorn country. The shrines they were paid to protect are burning, so they have come to the source.',
-    building: 'rivendell_camp',
+    building: 'thornroad_camp',
     unlockKey: 'isLotrUnlocked',
   },
-  baki: {
-    id: 'baki',
+  knucklebone: {
+    id: 'knucklebone',
     label: 'Knucklebone Lodge',
     short: 'Knucklebone',
     kind: 'fighting guild',
     crest: '#b89868',
     lore: 'A fighting guild that settles rank by bouts and marks it in knucklebones worn at the belt. The lodge treats your siege as one more bout, and it does not forfeit.',
-    building: 'hanma_dojo',
+    building: 'knucklebone_lodge',
     unlockKey: 'isBakiUnlocked',
   },
-  jojo: {
-    id: 'jojo',
+  marrow_choir: {
+    id: 'marrow_choir',
     label: 'The Marrow Choir',
     short: 'Marrow Choir',
     kind: 'relic cult',
     crest: '#8050a0',
     lore: "A cult that carries its saints' bones into battle and sings over them. The hymns work, which is the only reason the church has not burned the choir.",
-    building: 'stand_arrow_shrine',
+    building: 'marrow_reliquary',
     unlockKey: 'isJojoUnlocked',
   },
-  fotns: {
-    id: 'fotns',
+  quiet_hand: {
+    id: 'quiet_hand',
     label: 'Order of the Quiet Hand',
     short: 'Quiet Hand',
     kind: 'ascetic order',
     crest: '#506898',
     lore: 'An ascetic order that gave up weapons and then found it did not need them. Its monks speak rarely and strike once.',
-    building: 'north_star_dojo',
+    building: 'quiet_hand_cloister',
     unlockKey: 'isFotnsUnlocked',
   },
-  dragonball: {
-    id: 'dragonball',
+  emberblood: {
+    id: 'emberblood',
     label: 'Emberblood Warband',
     short: 'Emberblood',
     kind: 'hill warband',
     crest: '#e07030',
     lore: 'A hill warband whose blood runs hot enough to scorch. They follow whoever burns brightest, and they came south because the cold was leaving them.',
-    building: 'capsule_corp',
+    building: 'emberblood_hearth',
     unlockKey: 'isDragonballUnlocked',
   },
-  imperium: {
-    id: 'imperium',
+  iron_psalm: {
+    id: 'iron_psalm',
     label: 'Order of the Iron Psalm',
     short: 'Iron Psalm',
     kind: 'militant order',
     crest: '#802828',
     lore: 'A church order that sings its psalms in armour and counts every enemy an unbeliever. It tithes its levies from villages that would rather not be asked.',
-    building: 'astartes_chapel',
+    building: 'iron_psalm_chapel',
     unlockKey: 'isImperiumUnlocked',
   },
-  crystal: {
-    id: 'crystal',
+  saltglass: {
+    id: 'saltglass',
     label: 'Saltglass Guild',
     short: 'Saltglass',
     kind: 'craft guild',
     crest: '#60b0c0',
     lore: 'The glassmakers of the salt coast guard their furnace secrets with hired blades and their own burned hands. A lens that can light a ship at a mile lights a goblin just as well.',
-    building: 'crystal_sanctum',
+    building: 'saltglass_furnace',
     unlockKey: 'isCrystalUnlocked',
   },
-  warp: {
-    id: 'warp',
+  open_wound: {
+    id: 'open_wound',
     label: 'Cult of the Open Wound',
     short: 'Open Wound',
     kind: 'blood cult',
     crest: '#903050',
     lore: 'The cult believes the world has a wound that must be kept open, and that it bleeds power for those who tend it. It fights beside you because the host would close the wound for good.',
-    building: 'warp_shrine',
+    building: 'open_wound_shrine',
     unlockKey: 'isWarpUnlocked',
   },
-  tes: {
-    id: 'tes',
+  rimehowl: {
+    id: 'rimehowl',
     label: 'Rimehowl Warband',
     short: 'Rimehowl',
     kind: 'northern warband',
     crest: '#4068a0',
     lore: 'A warband from the ice coast whose war-skalds howl before the charge. The howl carries a mile over snow, and what hears it tends not to wait.',
-    building: 'dragon_moot',
+    building: 'rimehowl_longhouse',
     unlockKey: 'isTesUnlocked',
   },
 };
 
 /** The champions are not a hired company; they have a hall of their own (js/wwe.js). */
 const CHAMPION_FACTION = {
-  id: 'wwe',
+  id: 'champions',
   label: 'Bloodsand Champions',
   short: 'Champions',
   kind: 'champions’ hall',
@@ -167,8 +167,8 @@ const HeroCast = (() => {
     melee: 'melee',
     ranged: 'ranged',
     support: 'support',
-    ki: 'ember-blooded',
-    dragon: 'war-skald',
+    ember: 'ember-blooded',
+    skald: 'war-skald',
   };
   const TYPE_LABELS = { melee: 'Melee', ranged: 'Ranged', cavalry: 'Mounted', healer: 'Healer' };
 
@@ -270,24 +270,24 @@ function getUnlockedFactions() {
 }
 
 const CROSSOVER_FACTION_TAB_ORDER = [
-  'ultimis',
-  'primis',
-  'halo',
-  'gears',
-  'lotr',
-  'baki',
-  'jojo',
-  'fotns',
-  'dragonball',
-  'imperium',
-  'crystal',
-  'warp',
-  'tes',
+  'powderhorn',
+  'pale_vigil',
+  'greywatch',
+  'sawtooth',
+  'thornroad',
+  'knucklebone',
+  'marrow_choir',
+  'quiet_hand',
+  'emberblood',
+  'iron_psalm',
+  'saltglass',
+  'open_wound',
+  'rimehowl',
 ];
 
 const CrossoverHub = (() => {
   let selectedId = null;
-  let activeFaction = 'ultimis';
+  let activeFaction = 'powderhorn';
 
   function rosterForFaction(fid) {
     return Object.entries(CrossoverDefs).filter(([, d]) => d.faction === fid);

@@ -1,5 +1,5 @@
 {
-  "stone_cold": {
+  "hadrek_quarryborn": {
     "name": "Hadrek Quarryborn",
     "displayName": "Hadrek Quarryborn",
     "title": "The Wall-Splitter",
@@ -15,11 +15,11 @@
     "morale": 30,
     "experience": 12,
     "canHunt": true,
-    "ability": "stunner",
+    "ability": "keystone_blow",
     "abilityDesc": "Keystone Blow — bonus damage vs elites, brief pin.",
     "color": "#404040"
   },
-  "the_rock": {
+  "osmar_tallgrave": {
     "name": "Osmar Tallgrave",
     "displayName": "Osmar Tallgrave",
     "title": "The Cairn-Maker",
@@ -35,11 +35,11 @@
     "morale": 32,
     "experience": 12,
     "canHunt": true,
-    "ability": "rock_bottom",
+    "ability": "cairn_fall",
     "abilityDesc": "Cairn Fall — smashes nearby foes on kill streak.",
     "color": "#c04040"
   },
-  "ric_flair": {
+  "lord_corvane_ashgilt": {
     "name": "Lord Corvane Ashgilt",
     "displayName": "Lord Corvane Ashgilt",
     "title": "The Gilded Bastard",
@@ -55,11 +55,11 @@
     "morale": 35,
     "experience": 14,
     "canHunt": true,
-    "ability": "woo",
+    "ability": "heralds_boast",
     "abilityDesc": "Herald's Boast — boosts ally morale in aura.",
     "color": "#6080c0"
   },
-  "hulk_hogan": {
+  "brunhal_oxmantle": {
     "name": "Brunhal Oxmantle",
     "displayName": "Brunhal Oxmantle",
     "title": "The Unfelled",
@@ -75,11 +75,11 @@
     "morale": 40,
     "experience": 10,
     "canHunt": true,
-    "ability": "hulk_up",
+    "ability": "stubborn_blood",
     "abilityDesc": "Stubborn Blood — heals when below 40% HP.",
     "color": "#e0c040"
   },
-  "macho_man": {
+  "jorun_kestrelhand": {
     "name": "Jorun Kestrelhand",
     "displayName": "Jorun Kestrelhand",
     "title": "The Javelin of Spite",
@@ -96,11 +96,11 @@
     "morale": 28,
     "experience": 11,
     "canHunt": true,
-    "ability": "elbow_drop",
+    "ability": "stooping_cast",
     "abilityDesc": "Stooping Cast — crit from high ground.",
     "color": "#c060a0"
   },
-  "sting": {
+  "maldrick_sootgate": {
     "name": "Maldrick Sootgate",
     "displayName": "Maldrick Sootgate",
     "title": "The Gaoler",
@@ -116,11 +116,11 @@
     "morale": 26,
     "experience": 12,
     "canHunt": true,
-    "ability": "scorpion",
+    "ability": "chain_hold",
     "abilityDesc": "Chain Hold — pins wounded foes.",
     "color": "#404080"
   },
-  "john_cena": {
+  "alder_wynfast": {
     "name": "Alder Wynfast",
     "displayName": "Alder Wynfast",
     "title": "The Oathkeeper",
@@ -136,11 +136,11 @@
     "morale": 38,
     "experience": 10,
     "canHunt": true,
-    "ability": "attitude",
+    "ability": "sworn_stand",
     "abilityDesc": "Sworn Stand — damage reduction under 50% HP.",
     "color": "#2060a0"
   },
-  "bautista": {
+  "gorvan_hullbreaker": {
     "name": "Gorvan Hullbreaker",
     "displayName": "Gorvan Hullbreaker",
     "title": "The Bull of Marrowgate",
@@ -156,11 +156,11 @@
     "morale": 24,
     "experience": 11,
     "canHunt": true,
-    "ability": "batista_bomb",
+    "ability": "goring_sweep",
     "abilityDesc": "Goring Sweep — aoE slam on attack.",
     "color": "#505050"
   },
-  "roman_reigns": {
+  "ulvar_deepmoor": {
     "name": "Ulvar Deepmoor",
     "displayName": "Ulvar Deepmoor",
     "title": "The Fen Warden",
@@ -176,11 +176,11 @@
     "morale": 34,
     "experience": 12,
     "canHunt": true,
-    "ability": "spear",
+    "ability": "shoulder_ram",
     "abilityDesc": "Shoulder Ram — charge attack with knockback.",
     "color": "#303030"
   },
-  "shawn_michaels": {
+  "sennet_quickheel": {
     "name": "Sennet Quickheel",
     "displayName": "Sennet Quickheel",
     "title": "The Tourney Darling",
@@ -196,11 +196,11 @@
     "morale": 22,
     "experience": 13,
     "canHunt": true,
-    "ability": "sweet_chin",
+    "ability": "spinning_heel",
     "abilityDesc": "Spinning Heel — high crit finisher.",
     "color": "#c0a060"
   },
-  "bret_hart": {
+  "hestor_grindlaw": {
     "name": "Hestor Grindlaw",
     "displayName": "Hestor Grindlaw",
     "title": "The Lockwright",
@@ -216,11 +216,11 @@
     "morale": 28,
     "experience": 14,
     "canHunt": true,
-    "ability": "sharpshooter",
+    "ability": "lockwrights_hold",
     "abilityDesc": "Lockwright's Hold — locks down one target.",
     "color": "#c04060"
   },
-  "undertaker": {
+  "brother_halvec": {
     "name": "Brother Halvec",
     "displayName": "Brother Halvec",
     "title": "The Bell of Low Hallow",
@@ -236,11 +236,11 @@
     "morale": 35,
     "experience": 15,
     "canHunt": true,
-    "ability": "tombstone",
+    "ability": "passing_bell",
     "abilityDesc": "Passing Bell — terrifies nearby enemies (-morale).",
     "color": "#302040"
   },
-  "kane": {
+  "varn_thistlehide": {
     "name": "Varn Thistlehide",
     "displayName": "Varn Thistlehide",
     "title": "The Troll-Flayer",
@@ -256,11 +256,11 @@
     "morale": 20,
     "experience": 11,
     "canHunt": true,
-    "ability": "chokeslam",
+    "ability": "barbed_hide",
     "abilityDesc": "Barbed Hide — bonus vs larger foes.",
     "color": "#802020"
   },
-  "andre_giant": {
+  "big_oddo_of_cragfoot": {
     "name": "Big Oddo of Cragfoot",
     "displayName": "Big Oddo of Cragfoot",
     "title": "The Walking Keep",
@@ -276,11 +276,11 @@
     "morale": 30,
     "experience": 8,
     "canHunt": true,
-    "ability": "giant_strength",
+    "ability": "keep_breaker",
     "abilityDesc": "Keep-Breaker — splash damage, siege bonus.",
     "color": "#706050"
   },
-  "razor_ramon": {
+  "ilvane_whetstone": {
     "name": "Ilvane Whetstone",
     "displayName": "Ilvane Whetstone",
     "title": "The Patient Blade",
@@ -296,11 +296,11 @@
     "morale": 26,
     "experience": 11,
     "canHunt": true,
-    "ability": "razors_edge",
+    "ability": "whetted_edge",
     "abilityDesc": "Whetted Edge — steady DPS boost.",
     "color": "#c0c0c0"
   },
-  "kevin_nash": {
+  "durgan_beamshoulder": {
     "name": "Durgan Beamshoulder",
     "displayName": "Durgan Beamshoulder",
     "title": "The Lintel",
@@ -316,11 +316,11 @@
     "morale": 22,
     "experience": 10,
     "canHunt": true,
-    "ability": "jackknife",
+    "ability": "roof_fall",
     "abilityDesc": "Roof Fall — heavy splash on every fourth blow.",
     "color": "#304060"
   },
-  "roddy_piper": {
+  "fenrick_barbtongue": {
     "name": "Fenrick Barbtongue",
     "displayName": "Fenrick Barbtongue",
     "title": "The Heckler",
@@ -336,11 +336,11 @@
     "morale": 30,
     "experience": 12,
     "canHunt": true,
-    "ability": "piper_pit",
+    "ability": "barbed_tongue",
     "abilityDesc": "Barbed Tongue — buffs allies when he scores.",
     "color": "#c06030"
   },
-  "hacksaw_duggan": {
+  "old_garth_bannerpole": {
     "name": "Old Garth Bannerpole",
     "displayName": "Old Garth Bannerpole",
     "title": "The Colour-Serjeant",
@@ -356,11 +356,11 @@
     "morale": 32,
     "experience": 9,
     "canHunt": true,
-    "ability": "usa",
+    "ability": "raise_the_colours",
     "abilityDesc": "Raise the Colours — rally pulse on wave start.",
     "color": "#c04040"
   },
-  "junkyard_dog": {
+  "brask_ironbrow": {
     "name": "Brask Ironbrow",
     "displayName": "Brask Ironbrow",
     "title": "The Ram of Tanner's Row",
@@ -376,11 +376,11 @@
     "morale": 28,
     "experience": 10,
     "canHunt": true,
-    "ability": "headbutt",
+    "ability": "rams_brow",
     "abilityDesc": "Ram's Brow — stuns on crit.",
     "color": "#806040"
   },
-  "rey_mysterio": {
+  "pip_wrenfall": {
     "name": "Pip Wrenfall",
     "displayName": "Pip Wrenfall",
     "title": "The Rope-Dancer",
@@ -396,11 +396,11 @@
     "morale": 24,
     "experience": 13,
     "canHunt": true,
-    "ability": "619",
+    "ability": "rope_dancers_leap",
     "abilityDesc": "Rope-Dancer's Leap — evasion, hard to pin.",
     "color": "#4060c0"
   },
-  "eddie_guerrero": {
+  "jessom_magpie": {
     "name": "Jessom Magpie",
     "displayName": "Jessom Magpie",
     "title": "The Light-Fingered",
@@ -416,11 +416,11 @@
     "morale": 26,
     "experience": 13,
     "canHunt": true,
-    "ability": "lie_cheat_steal",
+    "ability": "magpies_due",
     "abilityDesc": "Magpie's Due — steals TP on elite kill.",
     "color": "#c0a040"
   },
-  "chris_benoit": {
+  "orrin_clampjaw": {
     "name": "Orrin Clampjaw",
     "displayName": "Orrin Clampjaw",
     "title": "The Vise",
@@ -436,11 +436,11 @@
     "morale": 22,
     "experience": 14,
     "canHunt": true,
-    "ability": "crippler",
+    "ability": "tightening_grip",
     "abilityDesc": "Tightening Grip — high single-target DPS.",
     "color": "#404040"
   },
-  "oba_femi": {
+  "tharn_ringholder": {
     "name": "Tharn Ringholder",
     "displayName": "Tharn Ringholder",
     "title": "The Unbeaten Novice",
@@ -456,11 +456,11 @@
     "morale": 28,
     "experience": 11,
     "canHunt": true,
-    "ability": "nigerian_nightmare",
+    "ability": "ringed_in",
     "abilityDesc": "Ringed In — bonus damage when surrounded.",
     "color": "#208040"
   },
-  "brock_lesnar": {
+  "gundrek_oxblood": {
     "name": "Gundrek Oxblood",
     "displayName": "Gundrek Oxblood",
     "title": "The Butcher of the Bloodsand",
@@ -476,11 +476,11 @@
     "morale": 20,
     "experience": 12,
     "canHunt": true,
-    "ability": "f5",
+    "ability": "carcass_throw",
     "abilityDesc": "Carcass Throw — ends wounded targets outright.",
     "color": "#c04040"
   },
-  "cm_punk": {
+  "kerrin_ashvow": {
     "name": "Kerrin Ashvow",
     "displayName": "Kerrin Ashvow",
     "title": "The Hedge-Preacher",
@@ -496,11 +496,11 @@
     "morale": 30,
     "experience": 13,
     "canHunt": true,
-    "ability": "go_to_sleep",
+    "ability": "last_word",
     "abilityDesc": "Last Word — finisher on low HP targets.",
     "color": "#303030"
   },
-  "seth_rollins": {
+  "merrow_slingstone": {
     "name": "Merrow Slingstone",
     "displayName": "Merrow Slingstone",
     "title": "The Poacher",
@@ -517,11 +517,11 @@
     "morale": 26,
     "experience": 12,
     "canHunt": true,
-    "ability": "curb_stomp",
+    "ability": "poachers_cast",
     "abilityDesc": "Poacher's Cast — burst ranged finisher.",
     "color": "#c04080"
   },
-  "sheamus": {
+  "hulder_rustbeard": {
     "name": "Hulder Rustbeard",
     "displayName": "Hulder Rustbeard",
     "title": "The Peat-Cutter",
@@ -537,11 +537,11 @@
     "morale": 24,
     "experience": 10,
     "canHunt": true,
-    "ability": "brogue_kick",
+    "ability": "turf_cutters_sweep",
     "abilityDesc": "Turf-Cutter's Sweep — line cleave.",
     "color": "#40a040"
   },
-  "bray_wyatt": {
+  "old_mother_sedge": {
     "name": "Old Mother Sedge",
     "displayName": "Old Mother Sedge",
     "title": "The Bog Oracle",
@@ -558,11 +558,11 @@
     "morale": 32,
     "experience": 14,
     "canHunt": true,
-    "ability": "lantern",
+    "ability": "corpse_candle_omen",
     "abilityDesc": "Corpse-Candle Omen — fear aura blinds enemies; strongest when darkness falls.",
     "color": "#304030"
   },
-  "randy_orton": {
+  "hallec_stillwater": {
     "name": "Hallec Stillwater",
     "displayName": "Hallec Stillwater",
     "title": "The Still Hand",
@@ -578,7 +578,7 @@
     "morale": 27,
     "experience": 13,
     "canHunt": true,
-    "ability": "rko",
+    "ability": "sudden_fall",
     "abilityDesc": "Sudden Fall — strikes without warning; devastates wounded foes.",
     "color": "#304860"
   }

@@ -1656,19 +1656,19 @@ const UI = (() => {
       wweBtn.style.display = '';
       wweBtn.classList.toggle('disabled', !gs.wweUnlocked);
       wweBtn.title = gs.wweUnlocked
-        ? 'Grand Coliseum - arena champions'
-        : 'Grand Coliseum - unlock via research or Iron Creed';
-      wweBtn.textContent = gs.wweUnlocked ? 'GRAND COLISEUM' : 'GRAND COLISEUM · LOCKED';
+        ? 'Bloodsand Pit - arena champions'
+        : 'Bloodsand Pit - unlock via research or the Quarryman’s Oath';
+      wweBtn.textContent = gs.wweUnlocked ? 'BLOODSAND PIT' : 'BLOODSAND PIT · LOCKED';
     }
     const crossBtn = hudEls['crossover-hub-open'];
     if (crossBtn) {
-      // Always show the Legion Archive entry; dim when locked so players know where it is.
+      // Always show the Company Roll entry; dim when locked so players know where it is.
       crossBtn.style.display = '';
       crossBtn.classList.toggle('disabled', !gs.crossoverUnlocked);
       crossBtn.title = gs.crossoverUnlocked
-        ? 'Legion Archive - faction barracks & operatives'
-        : 'Legion Archive - unlock a crossover faction (meta or research) to open';
-      crossBtn.textContent = gs.crossoverUnlocked ? 'LEGION ARCHIVE' : 'LEGION ARCHIVE · LOCKED';
+        ? 'Company Roll - faction barracks & operatives'
+        : 'Company Roll - unlock a crossover faction (meta or research) to open';
+      crossBtn.textContent = gs.crossoverUnlocked ? 'COMPANY ROLL' : 'COMPANY ROLL · LOCKED';
     }
     const perkSection = hudEls['perk-build-section'];
     if (perkSection) perkSection.style.display = gs.perksUnlocked ? '' : 'none';

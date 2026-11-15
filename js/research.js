@@ -30,7 +30,7 @@ const Research = (() => {
   const CROSSOVER_FACTION_RESEARCH = [
     {
       id: 'xf_gears',
-      faction: 'gears',
+      faction: 'sawtooth',
       name: 'Sawtooth Ditch Doctrine',
       cost: 85,
       wave: 1,
@@ -39,7 +39,7 @@ const Research = (() => {
     },
     {
       id: 'xf_lotr',
-      faction: 'lotr',
+      faction: 'thornroad',
       name: 'March Protocols',
       cost: 85,
       wave: 1,
@@ -48,7 +48,7 @@ const Research = (() => {
     },
     {
       id: 'xf_ultimis',
-      faction: 'ultimis',
+      faction: 'powderhorn',
       name: 'Powderhorn Studies',
       cost: 85,
       wave: 1,
@@ -57,7 +57,7 @@ const Research = (() => {
     },
     {
       id: 'xf_halo',
-      faction: 'halo',
+      faction: 'greywatch',
       name: 'Vanguard Augmentation',
       cost: 100,
       wave: 1,
@@ -66,7 +66,7 @@ const Research = (() => {
     },
     {
       id: 'xf_primis',
-      faction: 'primis',
+      faction: 'pale_vigil',
       name: 'Pale Vigil Barrow Lore',
       cost: 100,
       wave: 1,
@@ -75,7 +75,7 @@ const Research = (() => {
     },
     {
       id: 'xf_baki',
-      faction: 'baki',
+      faction: 'knucklebone',
       name: 'Knucklebone Fighting Lore',
       cost: 120,
       wave: 1,
@@ -84,7 +84,7 @@ const Research = (() => {
     },
     {
       id: 'xf_fotns',
-      faction: 'fotns',
+      faction: 'quiet_hand',
       name: 'Seven Star Fist Archives',
       cost: 120,
       wave: 1,
@@ -93,7 +93,7 @@ const Research = (() => {
     },
     {
       id: 'xf_dragonball',
-      faction: 'dragonball',
+      faction: 'emberblood',
       name: 'Ki Manipulation Theory',
       cost: 140,
       wave: 1,
@@ -102,7 +102,7 @@ const Research = (() => {
     },
     {
       id: 'xf_jojo',
-      faction: 'jojo',
+      faction: 'marrow_choir',
       name: 'Spirit Arrow Metallurgy',
       cost: 140,
       wave: 1,
@@ -111,7 +111,7 @@ const Research = (() => {
     },
     {
       id: 'xf_imperium',
-      faction: 'imperium',
+      faction: 'iron_psalm',
       name: 'Legion Gene-Seed Theory',
       cost: 140,
       wave: 1,
@@ -120,7 +120,7 @@ const Research = (() => {
     },
     {
       id: 'xf_crystal',
-      faction: 'crystal',
+      faction: 'saltglass',
       name: 'Crystal Aether Studies',
       cost: 160,
       wave: 1,
@@ -129,7 +129,7 @@ const Research = (() => {
     },
     {
       id: 'xf_warp',
-      faction: 'warp',
+      faction: 'open_wound',
       name: 'Warp Rift Containment',
       cost: 160,
       wave: 1,
@@ -138,16 +138,16 @@ const Research = (() => {
     },
     {
       id: 'xf_wwe',
-      faction: 'wwe',
+      faction: 'champions',
       name: 'Arena Warfare Doctrine',
       cost: 160,
       wave: 1,
       tier: 5,
-      desc: 'The grand arena goes to war — unlock Grand Coliseum.',
+      desc: 'The grand arena goes to war — unlock Bloodsand Pit.',
     },
     {
       id: 'xf_tes',
-      faction: 'tes',
+      faction: 'rimehowl',
       name: 'Voice & Wyrm Prophecy',
       cost: 160,
       wave: 1,
@@ -442,7 +442,7 @@ const Research = (() => {
     if (node.id === 'doom_protocol') doomResearchUnlocked = true;
     if (node.id === 'veteran_doctrine' || node.feature === 'tp_veteran_upgrade')
       tpVeteranUpgradeUnlocked = true;
-    if (node.id === 'xf_wwe') factionUnlocks.add('wwe');
+    if (node.id === 'xf_wwe') factionUnlocks.add('champions');
   }
 
   function resetRun() {
@@ -810,7 +810,7 @@ const Research = (() => {
       return isFactionUnlocked(f, opts);
     }
     if (BuildDefs[type]?.isWweAcademy) {
-      return isFactionUnlocked('wwe', opts);
+      return isFactionUnlocked('champions', opts);
     }
     if (BuildDefs[type]?.isPerkMachine) {
       return completed.has('perk_science') || !!opts.perksMetaUnlocked;
@@ -822,9 +822,9 @@ const Research = (() => {
     if (!factionId) return false;
     if (opts.creativeUnlockAll) return true;
     if (factionUnlocks.has(factionId)) return true;
-    if (factionId === 'wwe' && completed.has('xf_wwe')) return true;
+    if (factionId === 'champions' && completed.has('xf_wwe')) return true;
     if (typeof MetaProgress !== 'undefined') {
-      if (factionId === 'wwe') return MetaProgress.isWweUnlocked();
+      if (factionId === 'champions') return MetaProgress.isWweUnlocked();
       return MetaProgress.isCrossoverFactionUnlocked?.(factionId);
     }
     return false;
@@ -891,8 +891,8 @@ const Research = (() => {
     }
     if (node.faction) {
       const label =
-        node.faction === 'wwe'
-          ? 'Grand Coliseum'
+        node.faction === 'champions'
+          ? 'Bloodsand Pit'
           : `${(typeof CrossoverFactions !== 'undefined' && CrossoverFactions[node.faction]?.label) || 'Faction'} barracks`;
       return `Unlocks ${label} construction`;
     }

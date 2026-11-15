@@ -64,8 +64,8 @@ const ProjectileArt = (() => {
     boss_morwen: 'soul',
     grim_revenant: 'javelin',
     bard: 'song',
-    macho_man: 'axe',
-    seth_rollins: 'axe',
+    jorun_kestrelhand: 'axe',
+    merrow_slingstone: 'axe',
   };
 
   function kindOf(p) {

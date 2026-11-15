@@ -322,7 +322,7 @@ function testCrossoverHubUI(MP, Hub, doc) {
   const gsWithBase = {
     tactical: 500,
     wave: 100,
-    crossoverBuildings: ['element_barracks'],
+    crossoverBuildings: ['powderhorn_magazine'],
     crossoverOnField: [],
   };
   Hub.renderRoster(gsWithBase);
@@ -335,9 +335,9 @@ function testCrossoverHubUI(MP, Hub, doc) {
   const buildBtn = doc.getElementById('crossover-build-btn');
   assert(typeof buildBtn.addEventListener === 'function', 'build button should be wired in init');
 
-  const ultimisRoster = Hub.rosterForFaction('ultimis');
+  const ultimisRoster = Hub.rosterForFaction('powderhorn');
   assert(
-    ultimisRoster.some(([id]) => id === 'tank_dempsey'),
+    ultimisRoster.some(([id]) => id === 'dunmar_fusewick'),
     'rosterForFaction ultimis includes tank_dempsey'
   );
 }
@@ -348,8 +348,8 @@ function testAbilityProcs(FD, createUnitFn) {
   FD.bind(ctx);
 
   // Frag Out — splash on clustered foes
-  const dempsey = mkUnit(createUnitFn, 'tank_dempsey', 100, 200);
-  dempsey.wweAbility = 'frag_out';
+  const dempsey = mkUnit(createUnitFn, 'dunmar_fusewick', 100, 200);
+  dempsey.wweAbility = 'fused_pot';
   const primary = mkUnit(createUnitFn, 'goblin', 200, 200, 'enemy');
   const cluster1 = mkUnit(createUnitFn, 'goblin', 215, 205, 'enemy');
   const cluster2 = mkUnit(createUnitFn, 'goblin', 220, 198, 'enemy');
@@ -362,8 +362,8 @@ function testAbilityProcs(FD, createUnitFn) {
   assert(splashed.length >= 2, `frag_out should splash clustered foes (got ${splashed.length})`);
 
   // Star Platinum — bonus on pinned foe
-  const jotaro = mkUnit(createUnitFn, 'jotaro_kujo', 100, 300);
-  jotaro.wweAbility = 'star_platinum';
+  const jotaro = mkUnit(createUnitFn, 'corvin_stonepsalm', 100, 300);
+  jotaro.wweAbility = 'hammered_verse';
   const pinned = mkUnit(createUnitFn, 'orc', 130, 300, 'enemy', {
     pinned: true,
     hp: 80,
@@ -378,8 +378,8 @@ function testAbilityProcs(FD, createUnitFn) {
   );
 
   // Hakai — executes wounded foes
-  const beerus = mkUnit(createUnitFn, 'beerus', 100, 400);
-  beerus.wweAbility = 'hakai';
+  const beerus = mkUnit(createUnitFn, 'mother_scoria', 100, 400);
+  beerus.wweAbility = 'pyres_end';
   const wounded = mkUnit(createUnitFn, 'troll', 130, 400, 'enemy', { hp: 20, maxHp: 200 });
   ctx.units = [beerus, wounded];
   ctx.damageLog.length = 0;
@@ -390,8 +390,8 @@ function testAbilityProcs(FD, createUnitFn) {
   );
 
   // ORA rush alias — oorah wave-start buff (Johnson-style halo)
-  const johnson = mkUnit(createUnitFn, 'sgt_johnson', 200, 200);
-  johnson.wweAbility = 'oorah';
+  const johnson = mkUnit(createUnitFn, 'bertram_hobnail', 200, 200);
+  johnson.wweAbility = 'barrack_roar';
   johnson.isCrossover = true;
   const ally = mkUnit(createUnitFn, 'footman', 210, 205, 'player', { morale: 10, maxMorale: 30 });
   ctx.units = [johnson, ally];
@@ -404,8 +404,8 @@ function testAbilityProcs(FD, createUnitFn) {
 
 // --- Synergies & mastery during waves ---
 function testSynergiesAndMastery(FD, createUnitFn) {
-  const dempsey = mkUnit(createUnitFn, 'tank_dempsey', 100, 200);
-  const primisNik = mkUnit(createUnitFn, 'primis_nikolai', 120, 200);
+  const dempsey = mkUnit(createUnitFn, 'dunmar_fusewick', 100, 200);
+  const primisNik = mkUnit(createUnitFn, 'ser_hadwin_morrow', 120, 200);
   dempsey.isCrossover = true;
   primisNik.isCrossover = true;
   const army = [dempsey, primisNik];
@@ -426,8 +426,8 @@ function testSynergiesAndMastery(FD, createUnitFn) {
   assert(mod > 100, 'synergy ability damage should amplify crossover hits');
 
   const guestArmy = [
-    mkUnit(createUnitFn, 'stone_cold', 50, 50),
-    mkUnit(createUnitFn, 'tank_dempsey', 80, 50),
+    mkUnit(createUnitFn, 'hadrek_quarryborn', 50, 50),
+    mkUnit(createUnitFn, 'dunmar_fusewick', 80, 50),
   ];
   guestArmy[0].isWwe = true;
   guestArmy[1].isCrossover = true;
@@ -442,7 +442,7 @@ function testSynergiesAndMastery(FD, createUnitFn) {
     maxMorale: 30,
   });
   const waveArmy = [moraleUnit, guestArmy[0], guestArmy[1]];
-  guestArmy[0].wweAbility = 'attitude';
+  guestArmy[0].wweAbility = 'sworn_stand';
   FD.onWaveStart(waveArmy);
   assert(moraleUnit.morale >= 18, 'guest_star wave morale should apply on wave start');
 }
@@ -489,18 +489,18 @@ function testGameRecruitFlow(exp) {
   Game.creativeSetWave?.(100);
 
   const cx = Game.getWorldCenter?.() || { x: 400, y: 300 };
-  const placed = Game.creativeSpawnPlayerBuildingAt?.('element_barracks', cx.x, cx.y - 60);
-  assert(placed, 'element_barracks should place in creative mode');
+  const placed = Game.creativeSpawnPlayerBuildingAt?.('powderhorn_magazine', cx.x, cx.y - 60);
+  assert(placed, 'powderhorn_magazine should place in creative mode');
 
   const before = Game.getState().tactical;
-  const recruited = Game.recruitCrossoverOperative('tank_dempsey');
+  const recruited = Game.recruitCrossoverOperative('dunmar_fusewick');
   assert(recruited, 'recruitCrossoverOperative(tank_dempsey) should succeed with barracks');
   const after = Game.getState();
   assert(after.tactical < before, 'recruit should spend TP');
-  assert(after.crossoverOnField?.includes('tank_dempsey'), 'tank_dempsey should be on field');
+  assert(after.crossoverOnField?.includes('dunmar_fusewick'), 'tank_dempsey should be on field');
 
   const tpBeforeDup = Game.getState().tactical;
-  const dup = Game.recruitCrossoverOperative('tank_dempsey');
+  const dup = Game.recruitCrossoverOperative('dunmar_fusewick');
   assert(!dup, 'recruitCrossoverOperative should block duplicate named crossover on field');
   assert(Game.getState().tactical === tpBeforeDup, 'duplicate recruit should not spend TP');
 
@@ -648,7 +648,7 @@ function testVeteranDoctrine(Research, createUnitFn, canSpendTpVeteranUpgradeFn)
   const foot = createUnitFn('footman', 0, 0, 'player');
   foot.vetUpgradeEligible = true;
   assert(canSpendTpVeteranUpgradeFn(foot), 'eligible vanilla footman can spend TP upgrade');
-  const chief = createUnitFn('master_chief', 0, 0, 'player');
+  const chief = createUnitFn('torvald_greyhame', 0, 0, 'player');
   chief.vetUpgradeEligible = true;
   assert(
     !canSpendTpVeteranUpgradeFn(chief),
@@ -668,7 +668,7 @@ function testScalingSymmetry(GameDepth, createUnitFn, getWaveConfigFn, getDiffic
 
   const grunt = createUnitFn('goblin', 0, 0, 'enemy', { spawnWave: wave });
   const op = createUnitFn('hellbound_legionnaire', 0, 0, 'enemy', { spawnWave: wave });
-  const ip = createUnitFn('master_chief', 0, 0, 'player', { spawnWave: wave });
+  const ip = createUnitFn('torvald_greyhame', 0, 0, 'player', { spawnWave: wave });
   const foot = createUnitFn('footman', 0, 0, 'player', { spawnWave: wave });
 
   GameDepth.applyEnemySpawnScaling(grunt, wave, opts);
@@ -741,7 +741,7 @@ function testFairRepresentation(FD, BuildDefs) {
       `${f} should have a seasonal event`
     );
   }
-  const def = BuildDefs.element_barracks;
+  const def = BuildDefs.powderhorn_magazine;
   assert(def.cost === FD.STANDARD_BARRACKS_COST, 'ultimis barracks cost should be normalized');
   assert(
     def.requiresBuilders === FD.STANDARD_BARRACKS_BUILDERS,
@@ -1124,7 +1124,7 @@ function testCrownLegacies(exp) {
     totalWavesCleared: 30,
     favoriteUnitType: 'footman',
     unitKills: { footman: 60 },
-    factionsUsed: ['ultimis'],
+    factionsUsed: ['powderhorn'],
     honorNames: [
       { name: 'Syr Aldric', type: 'footman', wave: 22 },
       { name: 'Dame Elara', type: 'archer', wave: 35 },
@@ -1777,7 +1777,7 @@ function testEvolvedAlliesEncyclopedia(FactionDepth) {
     'secret content should mention the Champions’ Hall'
   );
   assert(
-    FactionDepth.PLANET_WARFARE_OPERATIVES?.tech_head?.siegeMult >= 2,
+    FactionDepth.PLANET_WARFARE_OPERATIVES?.pry_and_spike?.siegeMult >= 2,
     'tech_head should have siege mult'
   );
 }
@@ -1788,16 +1788,16 @@ function testPlanetWarfareOps(FactionDepth, createUnitFn) {
     return;
   }
   assert(
-    !FactionDepth.isPlanetSiegeSpecialist({ isCrossover: true, wweAbility: 'tech_head' }, 50),
+    !FactionDepth.isPlanetSiegeSpecialist({ isCrossover: true, wweAbility: 'pry_and_spike' }, 50),
     'inactive before wave 200'
   );
   assert(
-    FactionDepth.isPlanetSiegeSpecialist({ isCrossover: true, wweAbility: 'tech_head' }, 210),
+    FactionDepth.isPlanetSiegeSpecialist({ isCrossover: true, wweAbility: 'pry_and_spike' }, 210),
     'tech_head active at wave 210'
   );
-  const baird = createUnitFn('damon_baird', 0, 0, 'player');
+  const baird = createUnitFn('pell_rivetson', 0, 0, 'player');
   baird.isCrossover = true;
-  baird.wweAbility = 'tech_head';
+  baird.wweAbility = 'pry_and_spike';
   const hamlet = {
     owner: 'enemy',
     hp: 400,

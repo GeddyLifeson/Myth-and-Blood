@@ -367,12 +367,12 @@ const Tooltips = (() => {
         footer: 'No key - use this button · Paused always runs 1×',
       },
       'wwe-academy-open': {
-        title: 'Grand Coliseum',
+        title: 'Bloodsand Pit',
         body: 'Recruit squared-circle champions from your academy roster.',
-        footer: 'Requires Grand Coliseum on field',
+        footer: 'Requires Bloodsand Pit on field',
       },
       'crossover-hub-open': {
-        title: 'Legion Archive',
+        title: 'Company Roll',
         body: 'Recruit operatives from unlocked evolved factions.',
         footer: 'Requires evolved barracks on field',
       },
@@ -526,7 +526,7 @@ const Tooltips = (() => {
     if (label === 'SYN') {
       return {
         title: 'Faction Synergies',
-        body: 'Active evolved/coliseum synergy bonuses and seasonal events.',
+        body: 'Active evolved/Bloodsand synergy bonuses and seasonal events.',
         footer: (gs?.factionSynergies || []).join(', ') || '-',
       };
     }
@@ -561,7 +561,7 @@ const Tooltips = (() => {
       },
       'achievements-btn': {
         title: 'Achievements',
-        body: 'Iron Creed milestones and run tracking.',
+        body: 'Milestones and run tracking.',
         footer: 'Hotkey: A',
       },
       'creative-panel-toggle': {
@@ -857,7 +857,7 @@ const Tooltips = (() => {
       },
       'TONIC STATIONS': {
         title: 'Tonic Stations',
-        body: 'Machines grant perks to Coliseum, evolved allies, and General heroes at night.',
+        body: 'Machines grant perks to Bloodsand champions, evolved allies, and General heroes at night.',
         footer: 'Max 4 perks per hero',
       },
     };

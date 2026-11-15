@@ -63,7 +63,7 @@ ok(
 const wweUx = boot(12);
 ok(
   wweUx.resolveTutorialStep({ wave: 30, creativeMode: false, wweUnlocked: true })?.step?.title ===
-    'Grand Coliseum',
+    'Bloodsand Pit',
   'WWE step when academy unlocked'
 );
 

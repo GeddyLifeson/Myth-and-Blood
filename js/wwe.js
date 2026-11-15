@@ -1,6 +1,6 @@
 /**
  * The Champions' Hall: twenty-nine freed pit-fighters who hire out as the Bloodsand Champions.
- * Identifiers in this file (`wwe`, `Wwe…`) are save-file and DOM ids kept for compatibility;
+ * Identifiers in this file (`champions`, `Wwe…`) are save-file and DOM ids kept for compatibility;
  * none of them is shown to the player. Names, titles and text come from data/champions.json.
  */
 const WWE_ACADEMY_COST = 1000;
@@ -10,31 +10,31 @@ const WWE_ACADEMY_RECOMMENDED_GUILDS = 1;
 
 /** Finishing blows that play to the crowd: these lift morale as well as doing damage. */
 const WWE_SHOWMANSHIP_ABILITIES = new Set([
-  'attitude',
-  'woo',
-  'stunner',
-  'rock_bottom',
-  'hulk_up',
-  'elbow_drop',
-  'sweet_chin',
-  '619',
-  'usa',
-  'tombstone',
-  'piper_pit',
-  'lie_cheat_steal',
-  'lantern',
-  'spear',
-  'rko',
-  'curb_stomp',
-  'go_to_sleep',
-  'scorpion',
-  'batista_bomb',
-  'jackknife',
+  'sworn_stand',
+  'heralds_boast',
+  'keystone_blow',
+  'cairn_fall',
+  'stubborn_blood',
+  'stooping_cast',
+  'spinning_heel',
+  'rope_dancers_leap',
+  'raise_the_colours',
+  'passing_bell',
+  'barbed_tongue',
+  'magpies_due',
+  'corpse_candle_omen',
+  'shoulder_ram',
+  'sudden_fall',
+  'poachers_cast',
+  'last_word',
+  'chain_hold',
+  'goring_sweep',
+  'roof_fall',
   'ora_rush',
-  'king_crimson',
+  'final_amen',
   'sunbreath',
-  'sunlight_yellow',
-  'star_platinum',
+  'mending_verse',
+  'hammered_verse',
 ]);
 
 function isShowmanshipAbility(abilityId) {
@@ -175,8 +175,8 @@ const WweAcademy = (() => {
       UI.updateHUD(true);
     });
     document.getElementById('wwe-build-btn')?.addEventListener('click', () => {
-      if (typeof Availability !== 'undefined') Availability.trySelect('build', 'wwe_academy');
-      else if (typeof Game !== 'undefined') Game.selectBuild('wwe_academy');
+      if (typeof Availability !== 'undefined') Availability.trySelect('build', 'champions_hall');
+      else if (typeof Game !== 'undefined') Game.selectBuild('champions_hall');
       togglePanel();
       UI.updateHUD(true);
     });

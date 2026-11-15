@@ -48,7 +48,7 @@ function loadModules() {
     StoryLore: { getDominantBranch: () => null },
     MetaProgress: { isCrossoverType: () => false },
     isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     MAX_VETERAN_TIER: 6,
     isValidHonorName: (n) => !!n && n.length > 2,
   };
@@ -79,9 +79,9 @@ function seedArcane(FML) {
 function seedMythic(FML) {
   FML.resetRun();
   FML.onRunStart({ creative: false });
-  FML.recordDeploy('goku', 60);
-  FML.recordDeploy('tank_dempsey', 65);
-  FML.recordFaction('gears', 70);
+  FML.recordDeploy('tavish_coalheart', 60);
+  FML.recordDeploy('dunmar_fusewick', 65);
+  FML.recordFaction('sawtooth', 70);
 }
 
 const { FoundationalMedievalLayer, AscensionSystem, ThematicEraSynergies, GrandStrategy } =
@@ -145,8 +145,8 @@ AscensionSystem.onWaveStart(150, {
   addHighlight: () => {},
 });
 const units = [
-  { team: 'player', type: 'goku', hp: 100, honorName: null },
-  { team: 'player', type: 'tank_dempsey', hp: 100 },
+  { team: 'player', type: 'tavish_coalheart', hp: 100, honorName: null },
+  { team: 'player', type: 'dunmar_fusewick', hp: 100 },
 ];
 ThematicEraSynergies.onWaveStart(150, {
   wave: 150,
@@ -158,7 +158,7 @@ const mythSnap = ThematicEraSynergies.getStateSnapshot({ wave: 150 });
 ok(mythSnap.active && mythSnap.pathId === 'mythic', 'mythic synergy activates');
 ok(mythSnap.echoes.candidates.length >= 2, 'echo candidates seeded from mythic heroes');
 const beforeLp = AscensionSystem.getStateSnapshot({ wave: 150 }).legacyPoints;
-const recruit = ThematicEraSynergies.recruitHeroEcho('goku', {
+const recruit = ThematicEraSynergies.recruitHeroEcho('tavish_coalheart', {
   wave: 150,
   showMessage: () => {},
   addHighlight: () => {},

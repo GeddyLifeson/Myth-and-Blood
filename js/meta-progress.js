@@ -1,5 +1,5 @@
 /**
- * Persistent unlocks — Grand Coliseum, Hellbane hero, cheat flags.
+ * Persistent unlocks — Bloodsand Pit, Hellbane hero, cheat flags.
  */
 const MetaProgress = (() => {
   const STORAGE_KEY = 'myth-and-blood-meta-v1';
@@ -256,20 +256,20 @@ const MetaProgress = (() => {
 
   function isCrossoverFactionUnlocked(factionId) {
     const map = {
-      ultimis: is115Unlocked,
-      primis: isPrimusUnlocked,
-      halo: isHaloUnlocked,
-      gears: isGearsUnlocked,
-      lotr: isLotrUnlocked,
-      baki: isBakiUnlocked,
-      jojo: isJojoUnlocked,
-      fotns: isFotnsUnlocked,
-      dragonball: isDragonballUnlocked,
-      imperium: isImperiumUnlocked,
-      crystal: isCrystalUnlocked,
-      warp: isWarpUnlocked,
+      powderhorn: is115Unlocked,
+      pale_vigil: isPrimusUnlocked,
+      greywatch: isHaloUnlocked,
+      sawtooth: isGearsUnlocked,
+      thornroad: isLotrUnlocked,
+      knucklebone: isBakiUnlocked,
+      marrow_choir: isJojoUnlocked,
+      quiet_hand: isFotnsUnlocked,
+      emberblood: isDragonballUnlocked,
+      iron_psalm: isImperiumUnlocked,
+      saltglass: isCrystalUnlocked,
+      open_wound: isWarpUnlocked,
       warhammer: isWarhammerUnlocked,
-      tes: isTesUnlocked,
+      rimehowl: isTesUnlocked,
     };
     return map[factionId]?.() ?? false;
   }

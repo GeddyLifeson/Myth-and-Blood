@@ -50,7 +50,9 @@ function warn(msg) {
 }
 
 const factionIds = Object.keys(CrossoverFactions);
-const profileIds = Object.keys(FactionDepth.PROFILES).filter((id) => id !== 'wwe' && id !== 'doom');
+const profileIds = Object.keys(FactionDepth.PROFILES).filter(
+  (id) => id !== 'champions' && id !== 'doom'
+);
 const crossoverUnitIds = Object.keys(CrossoverDefs);
 
 // --- Faction ↔ building ↔ unlock ---
@@ -76,7 +78,7 @@ for (const [fid, f] of Object.entries(CrossoverFactions)) {
 }
 
 for (const pid of profileIds) {
-  if (!CrossoverFactions[pid] && pid !== 'wwe' && pid !== 'doom') {
+  if (!CrossoverFactions[pid] && pid !== 'champions' && pid !== 'doom') {
     warn(`FactionDepth profile "${pid}" has no CrossoverFactions entry`);
   }
 }
@@ -117,7 +119,7 @@ for (const id of crossoverUnitIds) {
 // --- Synergies reference valid factions ---
 for (const syn of FactionDepth.SYNERGIES) {
   for (const f of syn.factions) {
-    if (f === 'wwe') continue;
+    if (f === 'champions') continue;
     if (!FactionDepth.PROFILES[f] && !CrossoverFactions[f])
       fail(`Synergy "${syn.id}" references unknown faction: ${f}`);
   }
@@ -166,20 +168,20 @@ global.Achievements = { tryUnlock: () => {} };
 global.AudioEngine = { SFX: { reinforce: () => {} } };
 loadScript('cheats.js');
 const cheatUnlocks = [
-  ['void residue', 'ultimis'],
-  ['first circle', 'primis'],
-  ['orbital vanguard', 'halo'],
-  ['iron trench', 'gears'],
-  ['ninefold march', 'lotr'],
-  ['iron pit', 'baki'],
-  ['spirit court', 'jojo'],
-  ['north star', 'fotns'],
-  ['skyburst', 'dragonball'],
-  ['crimson legions', 'imperium'],
-  ['crystal light', 'crystal'],
-  ['rift cult', 'warp'],
+  ['void residue', 'powderhorn'],
+  ['first circle', 'pale_vigil'],
+  ['orbital vanguard', 'greywatch'],
+  ['iron trench', 'sawtooth'],
+  ['ninefold march', 'thornroad'],
+  ['iron pit', 'knucklebone'],
+  ['spirit court', 'marrow_choir'],
+  ['north star', 'quiet_hand'],
+  ['skyburst', 'emberblood'],
+  ['crimson legions', 'iron_psalm'],
+  ['crystal light', 'saltglass'],
+  ['rift cult', 'open_wound'],
   ['eternal crusade', 'warhammer'],
-  ['voicebound', 'tes'],
+  ['voicebound', 'rimehowl'],
 ];
 for (const [code, fid] of cheatUnlocks) {
   MetaProgress.reset();

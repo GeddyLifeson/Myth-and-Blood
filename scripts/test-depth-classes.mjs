@@ -58,10 +58,10 @@ ok(colony.total >= 0 && colony.tier?.label, 'ColonyValue.computeKingdomStrength'
 const pressure = ColonyValue.deriveWavePressure(colony, 10);
 ok(pressure.countMult > 0, 'ColonyValue.deriveWavePressure');
 
-ok(FactionDepth.PROFILES?.halo?.label === 'The Greywatch', 'FactionDepth.PROFILES');
+ok(FactionDepth.PROFILES?.greywatch?.label === 'The Greywatch', 'FactionDepth.PROFILES');
 ok(typeof FactionDepth.getProfile === 'function', 'FactionDepth.getProfile');
 ok(
-  FactionDepth.getProfile('halo')?.building === 'spartan_academy',
+  FactionDepth.getProfile('greywatch')?.building === 'greywatch_hall',
   'FactionDepth.getProfile(halo)'
 );
 FactionDepth.bind({
@@ -72,8 +72,8 @@ FactionDepth.bind({
   takeDamage: () => {},
   damageInRadius: () => {},
 });
-const dempsey = createUnit('tank_dempsey', 0, 0, 'player');
-dempsey.wweAbility = 'frag_out';
+const dempsey = createUnit('dunmar_fusewick', 0, 0, 'player');
+dempsey.wweAbility = 'fused_pot';
 FactionDepth.processAbilityHit(dempsey, { id: 1, team: 'enemy', hp: 10, x: 0, y: 0 }, 20);
 ok(true, 'FactionDepth.processAbilityHit with bound ctx');
 

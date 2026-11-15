@@ -183,6 +183,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "RTS_ERA_WAVE",
   "RTS_MAP_EXPAND_H",
   "RTS_MAP_EXPAND_W",
+  "RenamedIds",
   "Research",
   "Roster",
   "SETTLEMENT_TP_SOFT_CAP",

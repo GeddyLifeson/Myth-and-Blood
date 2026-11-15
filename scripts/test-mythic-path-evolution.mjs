@@ -59,8 +59,8 @@ function loadModules() {
     Chronicles: { appendNarrativeBeat: () => {} },
     Game: { setPaused: () => {}, showMessage: () => {}, getState: () => ({ paused: true }) },
     UI: { updateHUD: () => {} },
-    isWweUnit: (t) => t === 'john_cena',
-    isCrossoverUnit: (t) => t === 'goku' || t === 'tank_dempsey',
+    isWweUnit: (t) => t === 'alder_wynfast',
+    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -77,9 +77,9 @@ const { FoundationalMedievalLayer, GrandStrategy, IntergalacticLayer, MythicPath
 function seedMythicRun(FML) {
   FML.resetRun();
   FML.onRunStart({ creative: false });
-  FML.recordDeploy('goku', 40);
-  FML.recordDeploy('tank_dempsey', 45);
-  FML.recordFaction('gears', 50);
+  FML.recordDeploy('tavish_coalheart', 40);
+  FML.recordDeploy('dunmar_fusewick', 45);
+  FML.recordFaction('sawtooth', 50);
 }
 
 MythicPathEvolution.resetRun();
@@ -91,14 +91,14 @@ ok(lockedHtml.includes('Locked'), 'locked panel shows');
 const intelLocked = MythicPathEvolution.formatIntelNote({ wave: 5 });
 ok(intelLocked.includes('locked'), 'intel mentions locked state');
 
-MythicPathEvolution.recordDeploy('goku', 12);
+MythicPathEvolution.recordDeploy('tavish_coalheart', 12);
 ok(!MythicPathEvolution.getStateSnapshot({ wave: 12 }).locked, 'unlocks on crossover deploy');
 ok(MythicPathEvolution.isPantheonPathActive(12), 'active after unlock');
 
 seedMythicRun(FoundationalMedievalLayer);
-for (let i = 0; i < 4; i++) MythicPathEvolution.recordDeploy('goku', 30);
+for (let i = 0; i < 4; i++) MythicPathEvolution.recordDeploy('tavish_coalheart', 30);
 MythicPathEvolution.captureFirstChampion(
-  { team: 'player', type: 'goku', id: 'ch-1', maxHp: 120, hp: 120, damage: 50 },
+  { team: 'player', type: 'tavish_coalheart', id: 'ch-1', maxHp: 120, hp: 120, damage: 50 },
   12
 );
 ok(
@@ -106,7 +106,14 @@ ok(
   'first champion captured'
 );
 
-const hero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 120, hp: 120, damage: 50 };
+const hero = {
+  team: 'player',
+  type: 'tavish_coalheart',
+  id: 'ch-1',
+  maxHp: 120,
+  hp: 120,
+  damage: 50,
+};
 MythicPathEvolution.applyChampionUnitBonuses(hero, 60);
 ok(hero.firstChampion && hero.championLineage, 'first champion bonuses');
 
@@ -128,7 +135,14 @@ const armada = MythicPathEvolution.getGodbloodArmadaMods({ wave: 410, invasionAc
 ok(armada.active && armada.eternalChampion, 'godblood armada active');
 ok(armada.countMult < 1, 'armada relieves enemy pressure');
 
-const galHero = { team: 'player', type: 'goku', id: 'ch-1', maxHp: 200, hp: 200, damage: 60 };
+const galHero = {
+  team: 'player',
+  type: 'tavish_coalheart',
+  id: 'ch-1',
+  maxHp: 200,
+  hp: 200,
+  damage: 60,
+};
 ok(
   !IntergalacticLayer ||
     galHero.eternalChampion ||

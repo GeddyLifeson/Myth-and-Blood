@@ -229,7 +229,7 @@ const Legacy = (() => {
               .map(
                 (f) =>
                   (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[f]?.label) ||
-                  (f === 'wwe' ? 'Grand Coliseum' : f)
+                  (f === 'champions' ? 'Bloodsand Pit' : f)
               )
               .join(', ')}.`
           : 'Recruit evolved operatives to log evolved service.',
