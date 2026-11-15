@@ -215,7 +215,6 @@ const Cheats = (() => {
         'ALL FRACTURES UNSEALED — ALL cheat content unlocked! Champions’ Hall, Hellbane, every evolved roster!',
       apply() {
         MetaProgress.unlockAllCheatContent();
-        Achievements?.tryUnlock('doom_hero_unlock');
       },
     },
   };
