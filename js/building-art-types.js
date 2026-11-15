@@ -1511,7 +1511,7 @@
     })
   );
 
-  /** Void Residue Barracks: a bunker with vats of glowing residue and a ring pad. */
+  /** Powderhorn Barracks: a bunker with vats of glowing residue and a ring pad. */
   BuildingArt.register(
     'element_barracks',
     at(52, (g, o, A) => {
@@ -1553,7 +1553,7 @@
     })
   );
 
-  /** First Circle Shrine: nine standing stones round an altar. */
+  /** Pale Vigil Shrine: nine standing stones round an altar. */
   BuildingArt.register(
     'primis_shrine',
     at(50, (g, o, A) => {
@@ -1602,7 +1602,7 @@
     })
   );
 
-  /** Orbital Vanguard Academy: a landing pad with a drop capsule and a signal mast. */
+  /** Greywatch Academy: a landing pad with a drop capsule and a signal mast. */
   BuildingArt.register(
     'spartan_academy',
     at(54, (g, o, A) => {
@@ -1652,7 +1652,7 @@
     })
   );
 
-  /** Iron Trench Academy: a bunker under a great cog, with a zigzag trench before it. */
+  /** Sawtooth Academy: a bunker under a great cog, with a zigzag trench before it. */
   BuildingArt.register(
     'cog_academy',
     at(52, (g, o, A) => {
@@ -1691,7 +1691,7 @@
     })
   );
 
-  /** Ninefold March Camp: nine pale tents round a fire, under green pennons. */
+  /** Thornroad Camp: nine pale tents round a fire, under green pennons. */
   BuildingArt.register(
     'rivendell_camp',
     at(52, (g, o, A) => {
@@ -1750,7 +1750,7 @@
     })
   );
 
-  /** Iron Pit Dojo: a dark hall behind a roped fighting pit. */
+  /** Knucklebone Lodge: a dark hall behind a roped fighting pit. */
   BuildingArt.register(
     'hanma_dojo',
     at(50, (g, o, A) => {
@@ -1799,7 +1799,7 @@
     })
   );
 
-  /** Bound Spirit Shrine: a blood-red gate before a small shrine, with spirit lights. */
+  /** Marrow Choir Shrine: a blood-red gate before a small shrine, with spirit lights. */
   BuildingArt.register(
     'stand_arrow_shrine',
     at(54, (g, o, A) => {
@@ -1844,7 +1844,7 @@
     })
   );
 
-  /** North Star Ascetic Dojo: a three-tiered tower under one great star. */
+  /** Quiet Hand Dojo: a three-tiered tower under one great star. */
   BuildingArt.register(
     'north_star_dojo',
     at(51, (g, o, A) => {
@@ -1895,7 +1895,7 @@
     })
   );
 
-  /** Skyburst Foundry: a ribbed dome with a glowing forge mouth and two stacks. */
+  /** Emberblood Foundry: a ribbed dome with a glowing forge mouth and two stacks. */
   BuildingArt.register(
     'capsule_corp',
     at(54, (g, o, A) => {
@@ -1921,7 +1921,7 @@
     })
   );
 
-  /** Crimson Legion Chapel: a cross-shaped church under a blood-red roof and a spire. */
+  /** Iron Psalm Chapel: a cross-shaped church under a blood-red roof and a spire. */
   BuildingArt.register(
     'astartes_chapel',
     at(54, (g, o, A) => {
@@ -1952,7 +1952,7 @@
     })
   );
 
-  /** Crystal Sanctum: pale shards rising from a stepped dais. */
+  /** Saltglass Sanctum: pale shards rising from a stepped dais. */
   BuildingArt.register(
     'crystal_sanctum',
     at(54, (g, o, A) => {
@@ -2025,7 +2025,7 @@
     })
   );
 
-  /** Rift Cult Shrine: crooked obelisks chained to a tear in the air. */
+  /** Open Wound Shrine: crooked obelisks chained to a tear in the air. */
   BuildingArt.register(
     'warp_shrine',
     at(54, (g, o, A) => {
@@ -2100,7 +2100,7 @@
     })
   );
 
-  /** Wyrmcaller Moot Hall: a longhouse with crossed wyrm-head beams and a great skull. */
+  /** Rimehowl Moot Hall: a longhouse with crossed wyrm-head beams and a great skull. */
   BuildingArt.register(
     'dragon_moot',
     at(54, (g, o, A) => {

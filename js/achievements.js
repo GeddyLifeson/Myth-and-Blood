@@ -1119,6 +1119,19 @@ const Achievements = (() => {
     const fillEl = document.getElementById('ach-top-progress-fill');
     if (top) top.textContent = `${c.unlocked}/${c.total}`;
     if (fillEl) fillEl.style.width = `${Math.round((c.unlocked / c.total) * 100)}%`;
+    const titleHud = document.getElementById('title-hud');
+    if (titleHud) {
+      const titles = earnedTitles();
+      const latest = [...unlocked]
+        .reverse()
+        .map((id) => BY_ID.get(id)?.reward)
+        .find((r) => r?.type === 'title');
+      titleHud.hidden = !latest;
+      if (latest) {
+        document.getElementById('title-text').textContent = latest.label;
+        titleHud.title = `Titles earned: ${titles.join(', ')}`;
+      }
+    }
   }
 
   function togglePanel() {

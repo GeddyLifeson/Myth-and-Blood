@@ -31,7 +31,7 @@ const Cosmetics = (() => {
       mark: '#fff0a0',
     },
     crimson_legion: {
-      label: 'Crimson Legion',
+      label: 'Iron Psalm',
       unlock: 'default',
       desc: 'Blood-red armor with brass trim.',
       body: '#802030',
@@ -95,7 +95,7 @@ const Cosmetics = (() => {
       mark: '#80ff80',
     },
     crystal_vanguard: {
-      label: 'Crystal Vanguard',
+      label: 'Saltglass Guild',
       unlock: 'creative_skin_crystal',
       desc: 'Unlocked at Crystal mastery tier IV.',
       body: '#5080c0',
@@ -103,7 +103,7 @@ const Cosmetics = (() => {
       mark: '#c04060',
     },
     warp_legion: {
-      label: 'Rift Cult',
+      label: 'Cult of the Open Wound',
       unlock: 'creative_skin_warp',
       desc: 'Unlocked at Warp mastery tier IV.',
       body: '#402030',
@@ -111,9 +111,9 @@ const Cosmetics = (() => {
       mark: '#ff4020',
     },
     imperium_herald: {
-      label: 'Crimson Legions',
+      label: 'Iron Psalm',
       unlock: 'creative_skin_imperium',
-      desc: 'Unlocked at Crimson Legion mastery tier IV.',
+      desc: 'Unlocked at Iron Psalm mastery tier IV.',
       body: '#384858',
       accent: '#6080b0',
       mark: '#c04040',

@@ -31,7 +31,7 @@ const Research = (() => {
     {
       id: 'xf_gears',
       faction: 'gears',
-      name: 'Iron Trench Battle Doctrine',
+      name: 'Sawtooth Ditch Doctrine',
       cost: 85,
       wave: 1,
       tier: 1,
@@ -44,16 +44,16 @@ const Research = (() => {
       cost: 85,
       wave: 1,
       tier: 1,
-      desc: 'Ninefold March war council — unlock Ninefold March Camp.',
+      desc: 'Thornroad war council — unlock Thornroad Camp.',
     },
     {
       id: 'xf_ultimis',
       faction: 'ultimis',
-      name: 'Void Residue Studies',
+      name: 'Powderhorn Studies',
       cost: 85,
       wave: 1,
       tier: 2,
-      desc: 'forbidden residue science — unlock Void Residue Barracks.',
+      desc: 'black-powder mining lore — unlock Powderhorn Barracks.',
     },
     {
       id: 'xf_halo',
@@ -67,20 +67,20 @@ const Research = (() => {
     {
       id: 'xf_primis',
       faction: 'primis',
-      name: 'First Circle Temporal Theory',
+      name: 'Pale Vigil Barrow Lore',
       cost: 100,
       wave: 1,
       tier: 3,
-      desc: 'void-era upgrades — unlock First Circle Shrine.',
+      desc: 'barrow-watch rites — unlock Pale Vigil Shrine.',
     },
     {
       id: 'xf_baki',
       faction: 'baki',
-      name: 'Iron Pit Combat Genome',
+      name: 'Knucklebone Fighting Lore',
       cost: 120,
       wave: 1,
       tier: 3,
-      desc: 'Peak human martial arts — unlock Iron Pit Guild.',
+      desc: 'Bare-knuckle pit craft — unlock Knucklebone Lodge.',
     },
     {
       id: 'xf_fotns',
@@ -89,7 +89,7 @@ const Research = (() => {
       cost: 120,
       wave: 1,
       tier: 4,
-      desc: 'North Star assassination art — unlock North Star Ascetic Dojo.',
+      desc: 'Quiet Hand assassination art — unlock Quiet Hand Dojo.',
     },
     {
       id: 'xf_dragonball',
@@ -98,7 +98,7 @@ const Research = (() => {
       cost: 140,
       wave: 1,
       tier: 4,
-      desc: 'skyburst fighter energy systems — unlock Skyburst Foundry.',
+      desc: 'Emberblood fire-forging — unlock Emberblood Foundry.',
     },
     {
       id: 'xf_jojo',
@@ -107,7 +107,7 @@ const Research = (() => {
       cost: 140,
       wave: 1,
       tier: 5,
-      desc: 'Bound spirit weapons — unlock Bound Spirit Shrine.',
+      desc: 'Marrow Choir weapons — unlock Marrow Choir Shrine.',
     },
     {
       id: 'xf_imperium',
@@ -116,7 +116,7 @@ const Research = (() => {
       cost: 140,
       wave: 1,
       tier: 5,
-      desc: 'Transhuman legion doctrine — unlock Crimson Chapel.',
+      desc: 'Psalm-bound plate doctrine — unlock Iron Psalm Chapel.',
     },
     {
       id: 'xf_crystal',
@@ -125,7 +125,7 @@ const Research = (() => {
       cost: 160,
       wave: 1,
       tier: 5,
-      desc: 'Limit-break aether theory — unlock Crystal Sanctum.',
+      desc: 'Saltglass lens theory — unlock Saltglass Sanctum.',
     },
     {
       id: 'xf_warp',
@@ -134,7 +134,7 @@ const Research = (() => {
       cost: 160,
       wave: 1,
       tier: 5,
-      desc: 'Forbidden chaos cults — unlock Rift Cult Shrine.',
+      desc: 'Forbidden wound rites — unlock Open Wound Shrine.',
     },
     {
       id: 'xf_wwe',
@@ -152,7 +152,7 @@ const Research = (() => {
       cost: 160,
       wave: 1,
       tier: 5,
-      desc: 'Voices of the wyrm — unlock Wyrmcaller Moot Hall.',
+      desc: 'Voices of the wyrm — unlock Rimehowl Moot Hall.',
     },
     {
       id: 'doom_protocol',
@@ -986,7 +986,7 @@ const Research = (() => {
       {
         cat: 'research',
         name: 'Full Research Tree Overview',
-        body: 'Projects gate at minimum wave thresholds and prerequisite research. Military opens sappers, knights, officers, and siege. Defense opens castles, towers, and traps. Economy runs quarry → hamlet → village → town → city → metropolis. Academies train free troops each round after Academy Charter. Evolved allies research is available from wave 1 (or instantly if the faction is meta-unlocked). SP costs scale with roster power. Secret paths: Tonic Stations Science (wave 55) and Hellgate Containment (wave 100, requires Bound Spirit + Skyburst research).',
+        body: 'Projects gate at minimum wave thresholds and prerequisite research. Military opens sappers, knights, officers, and siege. Defense opens castles, towers, and traps. Economy runs quarry → hamlet → village → town → city → metropolis. Academies train free troops each round after Academy Charter. Evolved allies research is available from wave 1 (or instantly if the faction is meta-unlocked). SP costs scale with roster power. Secret paths: Tonic Stations Science (wave 55) and Hellgate Containment (wave 100, requires Marrow Choir + Emberblood research).',
       },
     ];
 

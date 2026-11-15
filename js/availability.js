@@ -179,7 +179,7 @@ const Availability = (() => {
       const pact =
         (gs.creativeMode && gs.creativeSettings?.unlockAll) ||
         (typeof MetaProgress !== 'undefined' && MetaProgress.isTesUnlocked?.());
-      if (!pact) return blocked('needs the Voicebound Pact', true, { cost });
+      if (!pact) return blocked('needs the Rimehowl Pact', true, { cost });
     }
     if (id === 'reinforce' && gs.gameMode?.noReinforceStrike) {
       return blocked('switched off by this challenge', true, { cost });

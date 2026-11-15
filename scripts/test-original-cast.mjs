@@ -874,8 +874,7 @@ ok(
 
 // Whole source files, so only the plain name list applies, not the broad source terms.
 const NAME_ONLY = new RegExp(
-  // Wyrmcaller stays the name of a building and legacy path, so it is only barred as a hero name.
-  `(?<![\\p{L}\\p{N}])(?:${phrase(OLD_NAMES.filter((n) => !/wyrmcaller/i.test(n))).join('|')})(?![\\p{L}\\p{N}])`,
+  `(?<![\\p{L}\\p{N}])(?:${phrase(OLD_NAMES).join('|')})(?![\\p{L}\\p{N}])`,
   'iu'
 );
 const nameHit = (text) => NAME_ONLY.exec(text)?.[0];

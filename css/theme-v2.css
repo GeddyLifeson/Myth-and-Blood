@@ -3868,9 +3868,6 @@ body.ui-v2 .menu-sheet {
 body.ui-v2 .menu-sheet > .modal-box {
   width: min(820px, 100%);
 }
-body.ui-v2 #menu-howto-sheet > .modal-box {
-  width: min(900px, 100%);
-}
 body.ui-v2 #howto-panel {
   display: block;
   max-width: none;

@@ -64,7 +64,7 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   r = Availability.check('build', 'academy_footman');
   ok(!r.ok && /^needs an Immortal /.test(r.reason), `Footman Academy: ${r.reason}`);
   r = Availability.check('ability', 'fus_ro_dah');
-  ok(!r.ok && r.locked && r.reason === 'needs the Voicebound Pact', `Voice Shout: ${r.reason}`);
+  ok(!r.ok && r.locked && r.reason === 'needs the Rimehowl Pact', `Voice Shout: ${r.reason}`);
   ok(
     !Availability.trySelect('ability', 'fus_ro_dah').ok && GS.selectedAbility == null,
     'a locked strike is not selected'
