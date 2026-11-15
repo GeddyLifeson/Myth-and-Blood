@@ -1987,6 +1987,8 @@ function testEnemyTradePostSiegeable(exp) {
   Game.setCreativeSetting?.('instantBuild', true);
   Game.setCreativeSetting?.('academyDeploy', true);
   Game.creativeForceDay?.();
+  // Placement is the test, not where this seed put its trees.
+  Game.creativeClearDecorations();
   const cx = Game.getWorldCenter();
   assert(
     Game.creativeSpawnEnemyBuildingAt('enemy_trade_outpost', cx.x + 120, cx.y - 60),
