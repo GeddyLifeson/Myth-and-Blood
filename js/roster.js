@@ -60,7 +60,7 @@ const Roster = (() => {
     },
     healer: {
       role: 'Medic',
-      trait: 'Field Dressing — soldiers standing near a healer slowly recover on their own.',
+      trait: 'Field Dressing: soldiers standing near a healer slowly recover on their own.',
       weak: 'Cannot fight.',
       dressing: { r: 70, pct: 0.012 },
     },
@@ -225,7 +225,7 @@ const Roster = (() => {
     },
     op_medic: {
       role: 'Medic',
-      trait: 'Field Dressing — soldiers standing near him slowly recover on their own.',
+      trait: 'Field Dressing: soldiers standing near him slowly recover on their own.',
       weak: 'A poor fighter.',
       dressing: { r: 70, pct: 0.012 },
     },
