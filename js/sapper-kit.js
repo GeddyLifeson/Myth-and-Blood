@@ -179,8 +179,7 @@ const SapperKit = (() => {
     state.blasts.push({ x, y, r: radius, age: 0, big: kind === 'mine' });
     state.scorches.push({ x, y, r: radius * 0.42, age: 0, tilt: (x * 7 + y * 3) % 3 });
     if (state.scorches.length > 28) state.scorches.shift();
-    // Sound: `firebomb` stands in. Cues wanted: `mineBlast` (deep thump) and `satchelBlast`.
-    ctx.playSfx('firebomb');
+    ctx.playSfx(kind === 'mine' ? 'mineBlast' : 'satchelBlast');
     ctx.shake(kind === 'mine' ? 5 : 3.5);
     ctx.burst('explosion', x, y);
     ctx.burst('dust', x, y);
@@ -448,8 +447,8 @@ const SapperKit = (() => {
       blow: tick + FLIGHT + fuse,
       o: unit.id,
     });
-    // Sound: `whoosh` stands in for the throw. Cue wanted: `fuseHiss` while it lies burning.
     ctx.playSfx('whoosh');
+    ctx.playSfx('fuseHiss');
     return true;
   }
 

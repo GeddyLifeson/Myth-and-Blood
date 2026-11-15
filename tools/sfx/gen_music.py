@@ -18,7 +18,15 @@ def line(spec):
         acc = '>' in rest
         dur = int(rest.replace('t', '').replace('>', ''))
         pitches = [] if head == 'r' else head.strip('[]').split(',')
-        cur += note(pitches, dur, dyn, trem=trem, accent=acc)
+        if pitches or dur in (16, 12, 8, 6, 4, 3, 2, 1):
+            cur += note(pitches, dur, dyn, trem=trem, accent=acc)
+        else:
+            # Odd rest lengths (r:14) are written as a run of plain rests.
+            left = dur
+            for d in (8, 4, 2, 1):
+                while left >= d:
+                    cur += note([], d)
+                    left -= d
         dyn = None
         total += dur
         assert total <= 16, f'bar overflow near {tok} in: {spec[:60]}'
@@ -123,17 +131,18 @@ PIECES = [
   ('horde_warning', horde, 4, 0, False),
 ]
 
-def build():
+def build(pieces=None, title='Myth and Blood music'):
+    pieces = pieces or PIECES
     ids = list(PARTS)
     out = ['<?xml version="1.0" encoding="UTF-8"?>',
            '<!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 4.0 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">',
-           '<score-partwise version="4.0"><work><work-title>Myth and Blood music</work-title></work><part-list>']
+           f'<score-partwise version="4.0"><work><work-title>{title}</work-title></work><part-list>']
     for i, k in enumerate(ids, 1):
         name, prog, _, snd = PARTS[k]
         out.append(f'<score-part id="P{i}"><part-name>{name}</part-name><score-instrument id="P{i}-I1"><instrument-name>{name}</instrument-name><instrument-sound>{snd}</instrument-sound></score-instrument><midi-instrument id="P{i}-I1"><midi-channel>{i if i < 10 else i + 1}</midi-channel><midi-program>{prog}</midi-program></midi-instrument></score-part>')
     out.append('</part-list>')
     layout, bar0 = [], 0
-    for name, parts, bars, tail, loop in PIECES:
+    for name, parts, bars, tail, loop in pieces:
         layout.append({'name': name, 'startBar': bar0, 'bars': bars, 'tailBars': tail, 'loop': loop,
                        'start': bar0 * 2, 'seconds': bars * 2, 'tailSeconds': tail * 2})
         bar0 += bars + tail
@@ -141,7 +150,7 @@ def build():
         _, _, (sign, ln), _ = PARTS[k]
         out.append(f'<part id="P{i}">')
         m = 0
-        for name, parts, bars, tail, loop in PIECES:
+        for name, parts, bars, tail, loop in pieces:
             got = line(parts[k]) if k in parts else []
             assert len(got) <= bars, f'{name}/{k}: {len(got)} bars > {bars}'
             got = got + [BAR_REST] * (bars - len(got) + tail)

@@ -1,6 +1,6 @@
 /**
- * Procedural sound synthesis for Myth and Blood.
- * All audio generated via Web Audio API — no external sound files.
+ * Sound for Myth and Blood: recorded orchestral cues and loops (assets/sfx), with a
+ * synthesized Web Audio version of each cue that plays until the recording has loaded.
  */
 const AudioEngine = (() => {
   // Sound draws its own random numbers: its cooldowns run on wall-clock time, so sharing
@@ -14,6 +14,7 @@ const AudioEngine = (() => {
   let masterGain = null;
   let musicGain = null;
   let sfxGain = null;
+  let duckGain = null;
   let musicPlaying = false;
   let musicContext = 'none';
   let musicTimer = null;
@@ -34,9 +35,12 @@ const AudioEngine = (() => {
       masterGain.gain.value = masterVol;
       masterGain.connect(ctx.destination);
 
+      // Music runs through its own duck stage, so stingers can dip it without fighting updateMix.
+      duckGain = ctx.createGain();
+      duckGain.connect(masterGain);
       musicGain = ctx.createGain();
       musicGain.gain.value = musicVol;
-      musicGain.connect(masterGain);
+      musicGain.connect(duckGain);
 
       sfxGain = ctx.createGain();
       sfxGain.gain.value = sfxVol;
@@ -148,12 +152,70 @@ const AudioEngine = (() => {
     musicMenu: 'music_menu',
     musicSiege: 'music_siege',
     musicBoss: 'music_boss',
+    mineBlast: 'mine_blast',
+    satchelBlast: 'satchel_blast',
+    fuseHiss: 'fuse_hiss',
+    dawnHorn: 'dawn_horn',
+    lastBreach: 'last_breach',
+    factionGoblin: 'faction_goblin',
+    factionOrc: 'faction_orc',
+    factionDark: 'faction_dark',
+    factionVoid: 'faction_void',
+    factionWild: 'faction_wild',
+    factionCinder: 'faction_cinder',
+    factionMirror: 'faction_mirror',
+    musicNight: 'music_night',
+    musicSiegeMid: 'music_siege_mid',
+    musicSiegeLate: 'music_siege_late',
+    musicHorde: 'music_horde',
+    musicLastStand: 'music_last_stand',
+  };
+  // Each enemy faction has a short theme, played when it takes the lead from another.
+  const FACTION_CUES = {
+    goblin_hordes: 'factionGoblin',
+    orc_warbands: 'factionOrc',
+    dark_legions: 'factionDark',
+    void_abyssal: 'factionVoid',
+    wild_hunt: 'factionWild',
+    cinder_flight: 'factionCinder',
+    mirror_empires: 'factionMirror',
   };
   /** Recorded cues with no synthesized sound of their own borrow one until they load. */
   const SAMPLE_FALLBACK = { ribbonEarned: 'honorChime', veteranFallen: 'moraleBreak' };
-  const SAMPLE_GAIN = { wraithWail: 0.5, crateOpen: 0.7, spoilsClaim: 0.8, nightDrone: 0.35 };
+  for (const cue of Object.values(FACTION_CUES)) SAMPLE_FALLBACK[cue] = 'factionHorn';
+  const SAMPLE_GAIN = {
+    wraithWail: 0.5,
+    crateOpen: 0.7,
+    spoilsClaim: 0.8,
+    nightDrone: 0.35,
+    fuseHiss: 0.45,
+    satchelBlast: 0.85,
+  };
   // A cue that can fire many times in a row plays recorded once, then synthesized until this many ms pass.
-  const SAMPLE_COOLDOWN = { runnerShriek: 7000, hordeWarn: 9000, veteranFallen: 5000 };
+  const SAMPLE_COOLDOWN = {
+    runnerShriek: 7000,
+    hordeWarn: 9000,
+    veteranFallen: 5000,
+    mineBlast: 350,
+    satchelBlast: 300,
+    fuseHiss: 1200,
+  };
+  // Long recorded stingers dip the music for their first seconds so they read over the loop.
+  const DUCKED = new Set([
+    'breachHorn',
+    'bossRoar',
+    'warCry',
+    'holdLine',
+    'enrage',
+    'victory',
+    'defeat',
+    'veteranFallen',
+    'nightFall',
+    'hordeWarn',
+    'dawnHorn',
+    'lastBreach',
+    ...Object.values(FACTION_CUES),
+  ]);
   const sampleLastPlayed = {};
   const samples = {};
   let samplesRequested = false;
@@ -206,7 +268,30 @@ const AudioEngine = (() => {
     source.connect(gain);
     gain.connect(dest || sfxGain);
     source.start();
+    if (DUCKED.has(name)) duckMusic(Math.min(2.5, buffer.duration));
     return source;
+  }
+
+  function duckMusic(seconds) {
+    if (!duckGain) return;
+    const t = ctx.currentTime;
+    const g = duckGain.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(0.5, t + 0.08);
+    g.setValueAtTime(0.5, t + seconds);
+    g.linearRampToValueAtTime(1, t + seconds + 0.9);
+  }
+
+  let lastFactionCue = null;
+
+  /** The lead faction of a wave. Plays its theme only when the lead changes. */
+  function factionArrival(factionId) {
+    const cue = FACTION_CUES[factionId];
+    if (!cue || factionId === lastFactionCue) return false;
+    lastFactionCue = factionId;
+    play(cue);
+    return true;
   }
 
   function play(name, ...args) {
@@ -230,23 +315,39 @@ const AudioEngine = (() => {
   }
 
   // ----------------------------------------------------------- recorded music
-  // Three looping pieces (menu, siege, boss). Once a piece has loaded it takes over from the
-  // synthesized sequencer for its scene; the two cross-fade when the scene changes.
-  let recorded = null; // { name, source, gain }
+  // Looping pieces by scene. Once a piece has loaded it takes over from the synthesized
+  // sequencer; a scene whose own loop has not loaded plays the plain siege loop.
+  let recorded = null; // { name, source, gain, startedAt }
+  const BAR_SECONDS = 2;
+  const LATE_ERAS = new Set(['siege', 'academy', 'rts', 'hellscape']);
+
+  /** The loop the scene asks for, most urgent first. */
+  function sceneMusic() {
+    if (musicContext === 'menu') return 'musicMenu';
+    if (mixState.boss) return 'musicBoss';
+    const feedback = typeof GameFeedback !== 'undefined' ? GameFeedback : null;
+    const pressure = feedback?.breachPressure?.() || 0;
+    if (pressure >= 0.75) return 'musicLastStand';
+    if (mixState.phase === 'night') return 'musicNight';
+    if (mixState.horde) return 'musicHorde';
+    if (LATE_ERAS.has(mixState.era)) return 'musicSiegeLate';
+    if (mixState.era === 'mid') return 'musicSiegeMid';
+    return 'musicSiege';
+  }
 
   function wantedMusic() {
     if (!musicPlaying || muted) return null;
-    if (musicContext === 'menu') return 'musicMenu';
-    return mixState.boss && samples.musicBoss ? 'musicBoss' : 'musicSiege';
+    const want = sceneMusic();
+    return samples[want] || want === 'musicMenu' ? want : 'musicSiege';
   }
 
-  function fadeOutRecorded(seconds = 1.2) {
+  function fadeOutRecorded(seconds = 1.2, at = null) {
     if (!recorded || !ctx) return;
     const old = recorded;
     recorded = null;
     try {
-      const t = ctx.currentTime;
-      old.gain.gain.cancelScheduledValues(t);
+      const t = at ?? ctx.currentTime;
+      old.gain.gain.cancelScheduledValues(ctx.currentTime);
       old.gain.gain.setValueAtTime(old.gain.gain.value, t);
       old.gain.gain.linearRampToValueAtTime(0, t + seconds);
       old.source.stop(t + seconds + 0.05);
@@ -265,18 +366,23 @@ const AudioEngine = (() => {
     }
     if (recorded && recorded.name === want) return;
     if (ctx.state !== 'running') return;
-    fadeOutRecorded(1.6);
+    // Swap on the old loop's next bar line so the beat carries across.
+    let t = ctx.currentTime;
+    if (recorded) {
+      const into = (t - recorded.startedAt) % BAR_SECONDS;
+      if (into < BAR_SECONDS - 0.05) t += BAR_SECONDS - into;
+    }
+    fadeOutRecorded(1.6, t);
     const source = ctx.createBufferSource();
     source.buffer = samples[want];
     source.loop = true;
     const gain = ctx.createGain();
-    const t = ctx.currentTime;
     gain.gain.setValueAtTime(0, t);
     gain.gain.linearRampToValueAtTime(RECORDED_MUSIC_GAIN, t + 1.6);
     source.connect(gain);
     gain.connect(musicGain);
-    source.start();
-    recorded = { name: want, source, gain };
+    source.start(t);
+    recorded = { name: want, source, gain, startedAt: t };
   }
   const RECORDED_MUSIC_GAIN = 1.6;
 
@@ -393,6 +499,8 @@ const AudioEngine = (() => {
     lastHitAt = now;
     return true;
   }
+
+  let moraleBreakAt = 0;
 
   const SFX = {
     swordHit() {
@@ -700,6 +808,9 @@ const AudioEngine = (() => {
       playTone(660, 0.3, 'square', 0.28);
     },
     moraleBreak() {
+      // A rout can break a dozen soldiers in one tick.
+      if (Date.now() - moraleBreakAt < 250) return;
+      moraleBreakAt = Date.now();
       sweep(300, 100, 0.5, 'sawtooth', 0.25);
     },
     unlockChime() {
@@ -765,6 +876,39 @@ const AudioEngine = (() => {
       const vol = 0.05 + i * 0.07;
       playNoise(0.07, vol, 190);
       playTone(68 + i * 24, 0.09, 'sine', vol * 1.1);
+    },
+    /** A buried mine goes up: deep thump under a dirt spray. */
+    mineBlast() {
+      playNoise(0.45, 0.42, 160);
+      sweep(110, 32, 0.5, 'sine', 0.42);
+      later(30, () => playNoise(0.3, 0.16, 1400));
+    },
+    /** A thrown satchel charge: a sharper crack with less low end than a mine. */
+    satchelBlast() {
+      playNoise(0.3, 0.36, 700);
+      sweep(180, 50, 0.32, 'triangle', 0.3);
+    },
+    fuseHiss() {
+      playNoise(0.7, 0.05, 5200);
+      later(120, () => playNoise(0.5, 0.04, 6800));
+    },
+    dawnHorn() {
+      playTone(196, 0.5, 'triangle', 0.18);
+      later(420, () => playTone(294, 0.9, 'triangle', 0.2));
+    },
+    /** One breach left before the realm falls. */
+    lastBreach() {
+      playTone(523, 0.6, 'sine', 0.2);
+      playTone(554, 0.6, 'sine', 0.12);
+      later(650, () => {
+        playTone(523, 0.9, 'sine', 0.2);
+        playTone(554, 0.9, 'sine', 0.12);
+      });
+    },
+    /** Stands in for a faction theme until its recording loads. */
+    factionHorn() {
+      playTone(147, 0.32, 'sawtooth', 0.18);
+      later(260, () => playTone(110, 0.5, 'sawtooth', 0.18));
     },
   };
 
@@ -976,7 +1120,8 @@ const AudioEngine = (() => {
     whenReady(() => {
       if (!musicPlaying) return;
       playMusicStep(musicStep++);
-      const theme = ERA_THEMES[mixState.era] || ERA_THEMES.early;
+      const theme =
+        musicContext === 'menu' ? MENU_THEME : ERA_THEMES[mixState.era] || ERA_THEMES.early;
       if (musicTimer) clearTimeout(musicTimer);
       musicTimer = setTimeout(tickMusic, theme.tempo);
     });
@@ -988,6 +1133,7 @@ const AudioEngine = (() => {
     musicPlaying = true;
     musicContext = context;
     musicStep = 0;
+    if (context === 'game') lastFactionCue = null;
     resume().then((ok) => {
       if (!ok || muted) {
         musicPlaying = false;
@@ -1133,6 +1279,7 @@ const AudioEngine = (() => {
     bindUnlock,
     whenReady,
     play,
+    factionArrival,
     SFX,
     startMusic,
     startMenuMusic,
@@ -1140,7 +1287,7 @@ const AudioEngine = (() => {
     setAmbience,
     /** Names of the recorded cues that have loaded; the rest are playing synthesized. */
     getLoadedCues: () => Object.keys(samples),
-    /** Which recorded loop is playing ('musicMenu' | 'musicSiege' | 'musicBoss'), or null. */
+    /** Which recorded loop is playing (a `music*` name from SAMPLE_FILES), or null. */
     getRecordedMusic: () => (recorded ? recorded.name : null),
     updateMix,
     toggleMute,

@@ -432,6 +432,9 @@ const BannerArt = (() => {
   let siegeCtx = null;
   let bossCard = null;
 
+  // GameFeedback is a top-level const in its script, so it is not a property of globalThis.
+  const feedback = () => (typeof GameFeedback !== 'undefined' ? GameFeedback : null);
+
   function observe(GS, ctx) {
     if (!GS) return;
     siegeCtx = ctx || siegeCtx;
@@ -454,7 +457,9 @@ const BannerArt = (() => {
     // Dawn is announced on its own only when no wave banner comes with it.
     if (seen.dawnAt && now() - seen.dawnAt > 350) {
       seen.dawnAt = 0;
-      show('dawn', { title: 'Dawn', sub: 'They come from the north' });
+      if (show('dawn', { title: 'Dawn', sub: 'They come from the north' })) {
+        globalThis.AudioEngine?.play?.('dawnHorn');
+      }
     }
 
     // The boss banner is the name card: the page's own card stays down.
@@ -486,10 +491,10 @@ const BannerArt = (() => {
               ? 'One more and the realm falls'
               : `The realm can bear ${left} more`,
       });
-      globalThis.GameFeedback?.onBreach?.();
+      feedback()?.onBreach?.();
     }
     seen.breaches = hud.breaches || 0;
-    globalThis.GameFeedback?.setBreachState?.(seen.breaches, limit);
+    feedback()?.setBreachState?.(seen.breaches, limit);
 
     const spoils = hud.pendingSpoils || 0;
     if (primed && spoils > seen.spoils) {
