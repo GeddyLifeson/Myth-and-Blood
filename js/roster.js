@@ -294,7 +294,7 @@ const Roster = (() => {
   const mergedProfiles = new Map();
 
   /** Archetype plus faction signature. The archetype wins where both set the same mechanic. */
-  function operativeProfile(key, faction) {
+  function heroProfile(key, faction) {
     const sig = FACTION_SIGNATURES[faction];
     if (!sig) return ARCHETYPES[key];
     const id = `${key}|${faction}`;
@@ -309,7 +309,7 @@ const Roster = (() => {
 
   function factionOf(unit) {
     if (unit.faction) return unit.faction;
-    const def = typeof CrossoverDefs !== 'undefined' ? CrossoverDefs[unit.type] : null;
+    const def = typeof HeroDefs !== 'undefined' ? HeroDefs[unit.type] : null;
     return def ? def.faction : null;
   }
 
@@ -711,7 +711,7 @@ const Roster = (() => {
   /** The profile that governs a unit. Cached on the unit; pooled units are wiped on reuse. */
   function profileOf(unit) {
     if (!unit) return null;
-    if (unit.rosterKey) return operativeProfile(unit.rosterKey, unit.rosterFaction) || null;
+    if (unit.rosterKey) return heroProfile(unit.rosterKey, unit.rosterFaction) || null;
     if (unit.team === 'enemy') return ENEMIES[unit.type] || null;
     if (unit.team !== 'player') return null;
     if (TROOPS[unit.type]) return TROOPS[unit.type];
@@ -719,7 +719,7 @@ const Roster = (() => {
     if (unit.isCrossover || unit.isWwe) {
       unit.rosterKey = archetypeKey(unit);
       unit.rosterFaction = unit.isWwe ? null : factionOf(unit);
-      return operativeProfile(unit.rosterKey, unit.rosterFaction);
+      return heroProfile(unit.rosterKey, unit.rosterFaction);
     }
     return null;
   }

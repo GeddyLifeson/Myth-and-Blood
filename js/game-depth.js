@@ -10,7 +10,7 @@
  * - scaleSettlementTp / waveTpScale — TP economy
  * - getGeneralAuraBreakdown / getNightBuildMult — general & build pacing
  * - isBossWave / isHordeWave / buildHordeSpawnQueue — wave taxonomy
- * - applyEnemySpawnScaling / injectEvilOperativesIntoQueue — host stat growth
+ * - applyEnemySpawnScaling / injectEvilHeroesIntoQueue — host stat growth
  * - applyIpWaveScaling / getVanillaObsoleteMult / getUnitScalingSnapshot — ally scaling
  * - applyVeteranTenureScaling / getTenureMult — tenure growth
  * - spawnHazards / applyHazardToUnit — battlefield hazards
@@ -292,9 +292,7 @@ class GameDepthSystem {
 
     if (wave >= 25) {
       ['hellbound_legionnaire', 'nightmare_strider', 'dreadborn_champion'].forEach((t) => {
-        if (
-          wave >= (typeof EVIL_OPERATIVE_WAVES !== 'undefined' ? EVIL_OPERATIVE_WAVES[t] || 99 : 99)
-        )
+        if (wave >= (typeof EVIL_HERO_WAVES !== 'undefined' ? EVIL_HERO_WAVES[t] || 99 : 99))
           unlocked.add(t);
       });
     }
@@ -455,12 +453,12 @@ class GameDepthSystem {
     return Math.hypot(unit.x - keep.x, unit.y - keep.y) < CASTLE_COMPOUND_OFFSET + 20;
   }
 
-  isIpOperative(unit) {
+  isIpHero(unit) {
     return !!(unit?.isCrossover || unit?.isWwe || unit?.isDoomslayer);
   }
 
   isVanillaAlly(unit) {
-    return unit?.team === 'player' && unit.hp > 0 && !this.isIpOperative(unit);
+    return unit?.team === 'player' && unit.hp > 0 && !this.isIpHero(unit);
   }
 
   isEnemyHordeGrunt(unit) {
@@ -471,12 +469,12 @@ class GameDepthSystem {
     );
   }
 
-  isEnemyEvilOperative(unit) {
+  isEnemyEvilHero(unit) {
     return (
       unit?.team === 'enemy' &&
       (unit.isEvilOperative ||
         unit.isNamedBoss ||
-        (typeof isEnemyEvilOperativeType === 'function' && isEnemyEvilOperativeType(unit.type)))
+        (typeof isEnemyEvilHeroType === 'function' && isEnemyEvilHeroType(unit.type)))
     );
   }
 
@@ -486,7 +484,7 @@ class GameDepthSystem {
     if (unit.baseDamage == null) unit.baseDamage = unit.damage || 0;
   }
 
-  /** Horde grunts scale slowly — filler that falls behind crossover-grade threats. */
+  /** Horde grunts scale slowly — filler that falls behind company-grade threats. */
   getHordeGruntWaveScale(wave) {
     const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
     const post = typeof postAcademyEase === 'function' ? postAcademyEase(wave) : 0;
@@ -505,17 +503,17 @@ class GameDepthSystem {
   }
 
   /** Evil operatives mirror crossover IP scaling, never below the wave scale. */
-  getEvilOperativeWaveScale(wave, floor = this.getEnemyScaleFloor(wave)) {
+  getEvilHeroWaveScale(wave, floor = this.getEnemyScaleFloor(wave)) {
     const ip = this.getIpWaveScale(wave);
     return { hp: Math.max(ip.hp, floor.hp), dmg: Math.max(ip.dmg, floor.dmg) };
   }
 
-  applyEvilOperativeWaveScaling(unit, wave, floor) {
-    if (!this.isEnemyEvilOperative(unit) || unit.hp <= 0) return false;
+  applyEvilHeroWaveScaling(unit, wave, floor) {
+    if (!this.isEnemyEvilHero(unit) || unit.hp <= 0) return false;
     this.ensureEnemyBaseStats(unit);
     const spawnW = unit.spawnWave ?? wave;
     const tenure = Math.max(0, wave - spawnW);
-    const waveS = this.getEvilOperativeWaveScale(wave, floor);
+    const waveS = this.getEvilHeroWaveScale(wave, floor);
     const tenS = this.getTenureMult(tenure, 'enemy');
     const hpRatio = unit.maxHp > 0 ? unit.hp / unit.maxHp : 1;
     unit.maxHp = Math.max(1, Math.floor(unit.baseMaxHp * waveS.hp * tenS.hp));
@@ -527,10 +525,9 @@ class GameDepthSystem {
     return true;
   }
 
-  injectEvilOperativesIntoQueue(queue, wave, rng = Math.random) {
-    if (!queue?.length || wave < 30 || typeof getUnlockedEvilOperatives !== 'function')
-      return queue;
-    const ops = getUnlockedEvilOperatives(wave);
+  injectEvilHeroesIntoQueue(queue, wave, rng = Math.random) {
+    if (!queue?.length || wave < 30 || typeof getUnlockedEvilHeroes !== 'function') return queue;
+    const ops = getUnlockedEvilHeroes(wave);
     if (!ops.length) return queue;
     const eased = typeof academyEase === 'function' ? academyEase(wave) : Math.min(1, wave / 100);
     const replaceChance = Math.min(0.3, 0.04 + eased * 0.18);
@@ -569,8 +566,8 @@ class GameDepthSystem {
           (diff.waveDmgScaleMult || 1) *
           (diff.enemyDmgMult || 1)
       );
-    } else if (this.isEnemyEvilOperative(unit)) {
-      this.applyEvilOperativeWaveScaling(unit, wave, floor);
+    } else if (this.isEnemyEvilHero(unit)) {
+      this.applyEvilHeroWaveScaling(unit, wave, floor);
       unit.maxHp = Math.floor(
         unit.maxHp * (diff.waveHpScaleMult || 1) * (diff.enemyHpMult || 1) * (waveMods.hpMult || 1)
       );
@@ -645,7 +642,7 @@ class GameDepthSystem {
   }
 
   applyIpWaveScaling(unit, wave) {
-    if (!unit || unit.hp <= 0 || !this.isIpOperative(unit) || unit.isDoomslayer) return false;
+    if (!unit || unit.hp <= 0 || !this.isIpHero(unit) || unit.isDoomslayer) return false;
     this.ensureIpBaseStats(unit);
     const spawnW = unit.spawnWave ?? wave;
     const tenure = Math.max(0, wave - spawnW);
@@ -674,7 +671,7 @@ class GameDepthSystem {
       snap.kind = 'doomslayer';
       return snap;
     }
-    if (this.isIpOperative(unit)) {
+    if (this.isIpHero(unit)) {
       const waveS = this.getIpWaveScale(wave);
       const tenS = this.getTenureMult(tenure, 'player');
       snap.kind = 'ip';
@@ -762,14 +759,14 @@ class GameDepthSystem {
     for (const u of units) {
       if (!u || u.hp <= 0 || u.isDoomslayer) continue;
       if (u.team === 'player') {
-        if (this.isIpOperative(u)) {
+        if (this.isIpHero(u)) {
           if (this.applyIpWaveScaling(u, wave)) ipBuffed++;
         }
         continue;
       }
       if (this.isEnemyHordeGrunt(u)) continue;
-      if (this.isEnemyEvilOperative(u)) {
-        if (this.applyEvilOperativeWaveScaling(u, wave)) enemyBuffed++;
+      if (this.isEnemyEvilHero(u)) {
+        if (this.applyEvilHeroWaveScaling(u, wave)) enemyBuffed++;
         continue;
       }
       const spawnW = u.spawnWave ?? wave;

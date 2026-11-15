@@ -1,5 +1,5 @@
 /**
- * Smoke tests — Gears / COG unlock via siege structure grind.
+ * Smoke tests — FOTNS unlock via solo hero named boss kill on victory.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -23,8 +23,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -42,44 +42,48 @@ function loadModules() {
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
 
-const siegeAch = ACHIEVEMENT_LIST.find((a) => a.id === 'gears_siege_victory');
-ok(siegeAch && siegeAch.rule === 'run_siege_victory:12', 'gears siege achievement exists');
+const hokutoAch = ACHIEVEMENT_LIST.find((a) => a.id === 'fotns_hokuto_victory');
+ok(hokutoAch && hokutoAch.rule === 'run_hokuto_solo', 'fotns hokuto victory achievement exists');
 
-function raze(n) {
-  for (let i = 0; i < n; i++) {
-    Achievements.onEvent('enemy_structure_razed', {
-      buildType: 'enemy_hamlet',
-      wave: 40 + i,
-      runTotal: i + 1,
-    });
-  }
+function soloKill(bossType = 'boss_gorath') {
+  Achievements.onEvent('solo_hero_boss_kill', {
+    solo: true,
+    heroType: 'torvald_greyhame',
+    bossType,
+    bossName: 'Gorath the Breaker',
+    wave: 50,
+  });
 }
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-raze(12);
-Achievements.onEvent('game_end', { victory: true, wave: 80, enemyStructuresRazed: 12 });
-ok(MetaProgress.isGearsUnlocked(), 'victory with 12 razed structures unlocks Gears');
-ok(Achievements.evaluateRule('run_siege_victory:12'), 'siege victory rule passes');
+soloKill();
+Achievements.onEvent('game_end', { victory: true, wave: 80 });
+ok(MetaProgress.isQuietHandUnlocked(), 'victory with solo hero boss kill unlocks FOTNS');
+ok(Achievements.evaluateRule('run_hokuto_solo'), 'hokuto solo victory rule passes');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-raze(12);
-Achievements.onEvent('game_end', { victory: false, wave: 80, enemyStructuresRazed: 12 });
-ok(!MetaProgress.isGearsUnlocked(), 'defeat with enough razes does not unlock');
+soloKill();
+Achievements.onEvent('game_end', { victory: false, wave: 80 });
+ok(!MetaProgress.isQuietHandUnlocked(), 'defeat with solo kill does not unlock FOTNS');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-raze(8);
-Achievements.onEvent('game_end', { victory: true, wave: 80, enemyStructuresRazed: 8 });
-ok(!MetaProgress.isGearsUnlocked(), 'victory with too few razes blocks unlock');
-ok(Achievements.evaluateRule('enemy_structures_razed:6'), 'six raze milestone passes');
+Achievements.onEvent('game_end', { victory: true, wave: 80 });
+ok(!MetaProgress.isQuietHandUnlocked(), 'victory without solo boss kill blocks FOTNS unlock');
+
+MetaProgress.reset();
+Achievements.resetSession();
+Achievements.onEvent('game_start', { difficulty: 'normal' });
+soloKill();
+ok(Achievements.evaluateRule('solo_hero_named_boss'), 'solo hero named boss milestone');
 
 if (failures()) {
   console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
-console.log('\nAll gears-unlock tests passed');
+console.log('\nAll fotns-unlock tests passed');

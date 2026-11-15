@@ -133,15 +133,15 @@ function boot(seed = 11) {
 const { sb, cvs } = boot(19);
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 const exp = vm.runInContext(
-  `${code}\n({ Game, SpriteGen, Pathfinding, CrossoverDefs, CrossoverFactions, BuildDefs, FactionDepth, getWorldSize })`,
+  `${code}\n({ Game, SpriteGen, Pathfinding, HeroDefs, FreeCompanies, BuildDefs, FactionDepth, getWorldSize })`,
   vm.createContext(sb)
 );
 const {
   Game,
   SpriteGen,
   Pathfinding,
-  CrossoverDefs,
-  CrossoverFactions,
+  HeroDefs,
+  FreeCompanies,
   BuildDefs,
   FactionDepth,
   getWorldSize,
@@ -222,11 +222,11 @@ ok(Math.hypot(u.x - x0, u.y - y0) > 4, 'unit advances after map growth');
 
 // Faction barracks + recruit (exported API)
 FactionDepth?.patchBuildDefs?.();
-const factions = Object.keys(CrossoverFactions || {});
+const factions = Object.keys(FreeCompanies || {});
 ok(factions.length >= 12, `factions loaded ${factions.length}`);
 let barracksOk = 0;
 for (const f of factions) {
-  const bid = CrossoverFactions[f].building;
+  const bid = FreeCompanies[f].building;
   const d = BuildDefs[bid];
   if (d?.isCrossoverBarracks && d.cost === 90 && d.requiresBuilders === 2) barracksOk++;
   else
@@ -244,8 +244,8 @@ let recruited = 0;
 const wh = Game.getState().worldH || 600;
 const ww = Game.getState().worldW || 400;
 for (const f of factions) {
-  const bid = CrossoverFactions[f].building;
-  const roster = Object.entries(CrossoverDefs).filter(([, d]) => d.faction === f);
+  const bid = FreeCompanies[f].building;
+  const roster = Object.entries(HeroDefs).filter(([, d]) => d.faction === f);
   if (!roster.length) continue;
   const [opId] = roster[0];
   // Nudge placement if a tree occupies the first attempt.
@@ -258,7 +258,7 @@ for (const f of factions) {
   }
   if (okPlace) {
     placed++;
-    if (Game.recruitCrossoverOperative?.(opId)) recruited++;
+    if (Game.hireHero?.(opId)) recruited++;
   }
 }
 ok(placed >= 8, `placed many barracks despite terrain (${placed}/${factions.length})`);

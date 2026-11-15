@@ -14,7 +14,7 @@ const tests = readdirSync(join(root, 'scripts'))
   .filter((f) => f.startsWith('test-') && f.endsWith('.mjs'))
   .sort();
 
-const extras = ['headless-crossover.mjs', ...(skipSim ? [] : ['headless-sim.mjs'])];
+const extras = ['headless-free-companies.mjs', ...(skipSim ? [] : ['headless-sim.mjs'])];
 
 let failed = 0;
 const results = [];

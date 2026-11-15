@@ -14,8 +14,8 @@ class GameServicesSystem {
    * (GrandStrategy, GrandStrategyMidBranches, IntergalacticLayer,
    * IntergalacticLateBranches, PlanetWarfare, PlanetConquest — see
    * scripts/verify-shelved-macro.mjs, which asserts those files stay deleted),
-   * plus Effects, WWE and Crossover, whose files declare CombatFX, WweAcademy
-   * and CrossoverHub respectively and which had zero `svc()` call sites. The
+   * plus Effects, WWE and Crossover, whose files declare CombatFX, ChampionsHall
+   * and FreeCompaniesScreen respectively and which had zero `svc()` call sites. The
    * shelved-macro ids still have guarded `svc('PlanetWarfare') && …` call sites
    * in game.js; those already resolved to null and continue to.
    * 'Research' was also listed twice.
@@ -34,7 +34,7 @@ class GameServicesSystem {
     'NeutralWildlife',
     'NeutralRelations',
     'BiomeSpawn',
-    'OperativeSkillTrees',
+    'CompanyTraining',
     'Pathfinding',
     'PathfindingCore',
     'PathWorkerBridge',

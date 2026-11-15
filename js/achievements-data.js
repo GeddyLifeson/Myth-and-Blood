@@ -44,7 +44,7 @@ const ACHIEVEMENT_FAMILIES = [
 ];
 
 /** The allied hero groups. Display names come from the game data, never from here. */
-const CROSSOVER_ACH_FACTIONS = [
+const COMPANY_ACH_IDS = [
   { key: 'champions', build: 'champions_hall' },
   { key: 'doom', build: null },
   { key: 'powderhorn', build: 'powderhorn_magazine' },
@@ -1170,7 +1170,7 @@ function buildAchievementList() {
     'Win the campaign with a top-rank veteran on each of the four paths and a dragon-kind warlord slain. Opens the {order:rimehowl}.',
     'run_dragonborn_legacy:100'
   );
-  for (const f of CROSSOVER_ACH_FACTIONS) {
+  for (const f of COMPANY_ACH_IDS) {
     steps(
       'allies',
       `order_${f.key}`,

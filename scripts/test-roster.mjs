@@ -11,8 +11,8 @@ import { CLAUSES, clausesFor, mechanicsOf } from './lib/roster-clauses.mjs';
 
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 const { sb } = boot(21);
-const { Roster, EnemyDefs, UnitDefs, CrossoverDefs, WweDefs, roleEntries } = vm.runInContext(
-  `${code}\n({ Roster, EnemyDefs, UnitDefs, CrossoverDefs, WweDefs, roleEntries: Encyclopedia.buildRoleEntries() })`,
+const { Roster, EnemyDefs, UnitDefs, HeroDefs, ChampionDefs, roleEntries } = vm.runInContext(
+  `${code}\n({ Roster, EnemyDefs, UnitDefs, HeroDefs, ChampionDefs, roleEntries: Encyclopedia.buildRoleEntries() })`,
   vm.createContext(sb)
 );
 
@@ -40,14 +40,14 @@ const opUnit = (type) => ({
   type,
   team: 'player',
   isCrossover: true,
-  combatType: CrossoverDefs[type].type,
-  range: CrossoverDefs[type].range,
-  speed: CrossoverDefs[type].speed,
-  maxHp: CrossoverDefs[type].hp,
+  combatType: HeroDefs[type].type,
+  range: HeroDefs[type].range,
+  speed: HeroDefs[type].speed,
+  maxHp: HeroDefs[type].hp,
 });
-const champUnit = (type) => ({ type, team: 'player', isWwe: true, maxHp: WweDefs[type].hp });
-const groups = { champions: Object.keys(WweDefs) };
-for (const [type, def] of Object.entries(CrossoverDefs)) {
+const champUnit = (type) => ({ type, team: 'player', isWwe: true, maxHp: ChampionDefs[type].hp });
+const groups = { champions: Object.keys(ChampionDefs) };
+for (const [type, def] of Object.entries(HeroDefs)) {
   (groups[def.faction] = groups[def.faction] || []).push(type);
 }
 const own = (type) => Roster.PROFILES[type];
@@ -60,10 +60,10 @@ ok(
   unprofiled.length === 0 && everyone.length === 133,
   `every operative and champion has its own role, trait and weakness (${everyone.length} checked) ${unprofiled.join(',')}`
 );
-const strays = Object.keys(Roster.PROFILES).filter((t) => !CrossoverDefs[t] && !WweDefs[t]);
+const strays = Object.keys(Roster.PROFILES).filter((t) => !HeroDefs[t] && !ChampionDefs[t]);
 ok(strays.length === 0, `no profile without a unit ${strays.join(',')}`);
 const notOwn = everyone.filter((t) => {
-  const unit = WweDefs[t] ? champUnit(t) : opUnit(t);
+  const unit = ChampionDefs[t] ? champUnit(t) : opUnit(t);
   return Roster.profileOf(unit) !== own(t) || Roster.describe(unit).trait !== own(t).trait;
 });
 ok(notOwn.length === 0, `profileOf returns the unit's own profile ${notOwn.join(',')}`);
@@ -130,7 +130,7 @@ for (const [faction, types] of Object.entries(groups)) {
 ok(twins.length === 0, `no two faction-mates share the same mechanics ${twins.join(' ')}`);
 
 // A unit with no profile of its own (a modded operative) falls back to archetype plus signature.
-const stranger = { ...opUnit(Object.keys(CrossoverDefs)[0]), type: 'modded_operative' };
+const stranger = { ...opUnit(Object.keys(HeroDefs)[0]), type: 'modded_operative' };
 stranger.faction = 'powderhorn';
 ok(
   Roster.describe(stranger)?.trait.includes(Roster.FACTION_SIGNATURES.powderhorn.note),
@@ -145,7 +145,7 @@ ok(
 // The encyclopedia lists every one of them under Roles & Counters.
 const roleNames = new Set(roleEntries.map((e) => e.name));
 const unlisted = everyone.filter((t) => {
-  const def = CrossoverDefs[t] || WweDefs[t];
+  const def = HeroDefs[t] || ChampionDefs[t];
   return !roleNames.has(`${def.name}: ${own(t).role}`);
 });
 ok(

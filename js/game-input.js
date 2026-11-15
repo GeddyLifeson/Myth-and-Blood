@@ -473,7 +473,7 @@ const GameInput = (() => {
       if (GS.selectedDeploy === 'doomslayer_hero') {
         const doomOk =
           (GS.creativeMode && GS.creativeSettings.unlockAll) ||
-          svc('MetaProgress').isDoomslayerHeroUnlocked() ||
+          svc('MetaProgress').isAbyssWalkerUnlocked() ||
           (svc('Research') && svc('Research').isDoomResearchUnlocked(getResearchOpts()));
         if (!doomOk) {
           showMessage('Research Hellgate Containment or survive wave 200 on Hellbane difficulty!');
@@ -572,13 +572,13 @@ const GameInput = (() => {
     }
 
     const clickedBuilding = findBuildingAt(pos.x, pos.y);
-    if (clickedBuilding?.isWweAcademy && svc('MetaProgress').isWweUnlocked()) {
-      WweAcademy.togglePanel();
+    if (clickedBuilding?.isWweAcademy && svc('MetaProgress').isChampionsUnlocked()) {
+      ChampionsHall.togglePanel();
       playSfx('click');
       return true;
     }
-    if (clickedBuilding?.isCrossoverBarracks && isCrossoverBarracksType(clickedBuilding.type)) {
-      CrossoverHub.togglePanel(clickedBuilding.crossoverFaction);
+    if (clickedBuilding?.isCrossoverBarracks && isCompanyHallType(clickedBuilding.type)) {
+      FreeCompaniesScreen.togglePanel(clickedBuilding.crossoverFaction);
       playSfx('click');
       return true;
     }

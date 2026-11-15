@@ -89,9 +89,9 @@ const Game = (() => {
     updateHuntSweep,
   } = GameMorale;
   const {
-    applyCrossoverOnHit,
+    applyHeroOnHit,
     applyGeneralAura,
-    applyWweOnHit,
+    applyChampionOnHit,
     calcDamage,
     damageInRadius,
     findCombatTarget,
@@ -101,7 +101,7 @@ const Game = (() => {
     getGeneralAura,
     refreshAuraCache,
     takeDamage,
-    updateDoomslayerAI,
+    updateAbyssWalkerAI,
   } = GameCombat;
   const { damageBuilding, findEnemyMoveTarget, inAttackRange } = GameTargeting;
   const {
@@ -256,8 +256,8 @@ const Game = (() => {
     getSelectedUnitsInfo,
     markCheatsUsed,
     panCameraToFraction,
-    recruitCrossoverOperative,
-    recruitWweSuperstar,
+    hireHero,
+    hireChampion,
     restartCurrentWave,
     setSelectedHunt,
     toggleSelectedHunt,
@@ -916,7 +916,7 @@ const Game = (() => {
     unitCounts.guilds = 0;
     unitCounts.enemyEconomy = 0;
     unitCounts.northernHolds = 0;
-    unitCounts.hasWweAcademy = false;
+    unitCounts.hasChampionsHall = false;
     unitCounts.academies = 0;
     unitCounts.enemyBuildings = 0;
     unitCounts.researchLabs = 0;
@@ -965,7 +965,7 @@ const Game = (() => {
           });
         }
         if (b.isMerchantGuild) unitCounts.guilds++;
-        if (b.isWweAcademy) unitCounts.hasWweAcademy = true;
+        if (b.isWweAcademy) unitCounts.hasChampionsHall = true;
         if (b.isAcademy) unitCounts.academies++;
         if (b.isResearchLab || b.type === 'research_lab') unitCounts.researchLabs++;
         if (b.isCrossoverBarracks) unitCounts.crossoverBuildings.push(b.type);
@@ -1288,7 +1288,7 @@ const Game = (() => {
     const tags = new Set();
     for (const u of playerUnits || []) {
       if (!u.isCrossover && !u.isWwe) continue;
-      tags.add(typeof getCrossoverCombatTag === 'function' ? getCrossoverCombatTag(u) : 'melee');
+      tags.add(typeof getHeroCombatTag === 'function' ? getHeroCombatTag(u) : 'melee');
     }
     if (tags.has('melee') && tags.has('ranged') && tags.has('support')) ach('roster_synergy');
     if (svc('FactionDepth')) {
@@ -1448,7 +1448,7 @@ const Game = (() => {
     if (svc('FactionHazards')) svc('FactionHazards').resetRun();
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
     if (svc('NeutralRelations')) svc('NeutralRelations').resetRun();
-    if (svc('OperativeSkillTrees')) svc('OperativeSkillTrees').resetRun();
+    if (svc('CompanyTraining')) svc('CompanyTraining').resetRun();
     if (svc('DynamicMapEvents'))
       svc('DynamicMapEvents').resetRun(svc('GameModes')?.getSession?.()?.seed);
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
@@ -2365,7 +2365,7 @@ const Game = (() => {
       if (unit.combatTargetId || unit.pathTargetId) sanitizeUnitPursuit(unit);
 
       updateCavalryCharge(unit);
-      if (unit.isDoomslayer) updateDoomslayerAI(unit);
+      if (unit.isDoomslayer) updateAbyssWalkerAI(unit);
 
       if (unit.combatType === 'healer') {
         if (!unit.pinned && unit.attackAnimTimer <= 0) followPath(unit);
@@ -2493,8 +2493,8 @@ const Game = (() => {
             const dmg = calcDamage(dmgSrc, hit, 8);
             takeDamage(hit, dmg, { attackerTeam: p.team, attacker: shooter || null });
             if (shooter && shooter.hp > 0) {
-              applyWweOnHit(shooter, hit, dmg);
-              applyCrossoverOnHit(shooter, hit, dmg);
+              applyChampionOnHit(shooter, hit, dmg);
+              applyHeroOnHit(shooter, hit, dmg);
               if (shooter.hasElementalPop && svc('Perks')?.applyElementalPopSplash) {
                 svc('Perks').applyElementalPopSplash(shooter, hit, GS.units, takeDamage);
               }
@@ -2840,8 +2840,8 @@ const Game = (() => {
     getLastLoadReport,
     getSaveBlockReason,
     setDifficulty,
-    recruitWweSuperstar,
-    recruitCrossoverOperative,
+    hireChampion,
+    hireHero,
     applyCheatEffect,
     markCheatsUsed,
     cheatsUsed: () => !!GS.cheatsUsed,

@@ -562,7 +562,7 @@ const GameSave = (() => {
     if (typeof ensureHealerStats === 'function') ensureHealerStats(u);
     if (legacy) {
       if (typeof repairHonorName === 'function') repairHonorName(u);
-      if (svc('GameDepth') && u.team === 'player' && svc('GameDepth').isIpOperative(u)) {
+      if (svc('GameDepth') && u.team === 'player' && svc('GameDepth').isIpHero(u)) {
         svc('GameDepth').applyIpWaveScaling(u, GS.wave);
       }
       if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);

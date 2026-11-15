@@ -41,8 +41,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     Legacy: { get: () => ({ victories: 1, maxWaveEver: 500 }) },
     StoryLore: { getDominantBranch: () => null },
-    isWweUnit: () => false,
-    isCrossoverUnit: () => false,
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: () => false,
   };
   sb.window = sb;
   sb.globalThis = sb;

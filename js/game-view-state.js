@@ -15,7 +15,7 @@ const GameViewState = (() => {
     getCourierMessagesPerWave,
     getResearchOpts,
     isAcademyEraActive,
-    isAnyCrossoverAccess,
+    isAnyCompanyAccess,
     isCourierMessageCapReached,
   } = GameCommands;
   const { activeSectorPlan } = GameSave;
@@ -362,9 +362,7 @@ const GameViewState = (() => {
             : null
       ),
       operativeSkills: cachedSnap('operativeSkills', () =>
-        svc('OperativeSkillTrees')
-          ? svc('OperativeSkillTrees').getSnapshot(GS.wave, GS.units)
-          : null
+        svc('CompanyTraining') ? svc('CompanyTraining').getSnapshot(GS.wave, GS.units) : null
       ),
       // Night after wave 11 prepares wave-12 events — do not gate on wave>=12 or creativeMode
       // (pathSnap would hide pending choices so buttons stay unusable).
@@ -377,7 +375,7 @@ const GameViewState = (() => {
       liveBuilders: unitCounts.liveBuilders,
       hamletCount: unitCounts.hamlets,
       guildCount: unitCounts.guilds,
-      hasWweAcademy: unitCounts.hasWweAcademy,
+      hasChampionsHall: unitCounts.hasChampionsHall,
       sciencePoints: svc('Research') ? svc('Research').sciencePoints : 0,
       scienceKillStatus: cachedSnap('scienceKillStatus', () =>
         svc('Research') ? svc('Research').getKillScienceStatus(GS.wave, GS.buildings) : null
@@ -390,14 +388,13 @@ const GameViewState = (() => {
       hasResearchLab: unitCounts.researchLabs > 0,
       wweUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
-        svc('MetaProgress').isWweUnlocked() ||
+        svc('MetaProgress').isChampionsUnlocked() ||
         (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts())),
       doomslayerUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
-        svc('MetaProgress').isDoomslayerHeroUnlocked() ||
+        svc('MetaProgress').isAbyssWalkerUnlocked() ||
         (svc('Research') && svc('Research').isDoomResearchUnlocked(getResearchOpts())),
-      crossoverUnlocked:
-        (GS.creativeMode && GS.creativeSettings.unlockAll) || isAnyCrossoverAccess(),
+      crossoverUnlocked: (GS.creativeMode && GS.creativeSettings.unlockAll) || isAnyCompanyAccess(),
       perksUnlocked:
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
         (svc('Perks') && svc('Perks').perkMachinesUnlocked()),

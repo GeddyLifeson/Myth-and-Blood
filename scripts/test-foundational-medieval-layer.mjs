@@ -35,9 +35,9 @@ function loadModules(extra = {}) {
     localStorage: mockStorage(),
     Legacy: { get: () => ({ victories: 1, maxWaveEver: 150 }) },
     StoryLore: { getDominantBranch: () => null },
-    MetaProgress: { isCrossoverType: () => false },
-    isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
+    MetaProgress: { isCompanyHeroType: () => false },
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
     ...extra,
   };
   sb.window = sb;

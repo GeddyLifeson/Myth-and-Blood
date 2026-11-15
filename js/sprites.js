@@ -6368,9 +6368,7 @@ const SpriteGen = (() => {
       ctx.font = '6px Cinzel';
       // Show the faction's in-game name, never its internal id.
       const factionLabel =
-        (typeof CrossoverFactions !== 'undefined' &&
-          CrossoverFactions[b.crossoverFaction]?.label) ||
-        'HQ';
+        (typeof FreeCompanies !== 'undefined' && FreeCompanies[b.crossoverFaction]?.label) || 'HQ';
       ctx.fillText(factionLabel.toUpperCase(), b.x, b.y + 4);
     } else if (b.type === 'champions_hall') {
       ctx.fillStyle = '#202028';

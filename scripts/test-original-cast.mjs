@@ -604,14 +604,14 @@ ok(split.length === 0, `card ability and profile trait share one name ${split.jo
 const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('\n;\n');
 const { sb } = boot(33);
 const g = vm.runInContext(
-  `${code}\n({ HeroCast, CrossoverFactions, CHAMPION_FACTION, CrossoverHub, WweAcademy, FactionDepth,
-    OperativeSkillTrees, MetaProgress, Roster, formatUnitTypeName, getUnitTypeName })`,
+  `${code}\n({ HeroCast, FreeCompanies, CHAMPION_FACTION, FreeCompaniesScreen, ChampionsHall, FactionDepth,
+    CompanyTraining, MetaProgress, Roster, formatUnitTypeName, getUnitTypeName })`,
   vm.createContext(sb)
 );
-const { HeroCast, CrossoverFactions, CHAMPION_FACTION, FactionDepth } = g;
+const { HeroCast, FreeCompanies, CHAMPION_FACTION, FactionDepth } = g;
 
 // Companies: thirteen, each with a name, a kind, two sentences of lore and a crest colour.
-const companies = [...Object.values(CrossoverFactions), CHAMPION_FACTION];
+const companies = [...Object.values(FreeCompanies), CHAMPION_FACTION];
 const thin = companies.filter(
   (f) =>
     !f.label ||
@@ -621,7 +621,7 @@ const thin = companies.filter(
     (f.lore || '').split(/[.!?](?:\s|$)/).filter((x) => x.trim()).length !== 2
 );
 ok(
-  Object.keys(CrossoverFactions).length === 13 && thin.length === 0,
+  Object.keys(FreeCompanies).length === 13 && thin.length === 0,
   `thirteen companies and the champions each have a name, kind, crest and two sentences of lore ${thin.map((f) => f.id).join(',')}`
 );
 ok(
@@ -629,7 +629,7 @@ ok(
     new Set(companies.map((f) => f.crest)).size === companies.length,
   'company names and crest colours are unique'
 );
-const homeless = Object.entries(operatives).filter(([, d]) => !CrossoverFactions[d.faction]);
+const homeless = Object.entries(operatives).filter(([, d]) => !FreeCompanies[d.faction]);
 ok(
   homeless.length === 0,
   `every hero belongs to a company ${homeless.map(([id]) => id).join(',')}`
@@ -638,8 +638,8 @@ ok(
 const drift = companies.filter(
   (f) =>
     FactionDepth.PROFILES[f.id]?.label !== f.label ||
-    (g.OperativeSkillTrees.FACTION_TREES[f.id] &&
-      g.OperativeSkillTrees.FACTION_TREES[f.id].label !== f.label)
+    (g.CompanyTraining.FACTION_TREES[f.id] &&
+      g.CompanyTraining.FACTION_TREES[f.id].label !== f.label)
 );
 ok(
   drift.length === 0,
@@ -698,7 +698,7 @@ ok(
   ),
   'an unknown id falls back to a plain word, never to the id'
 );
-for (const id of Object.keys(CrossoverFactions).concat('champions')) {
+for (const id of Object.keys(FreeCompanies).concat('champions')) {
   const label = HeroCast.factionLabel(id);
   if (
     label
@@ -716,7 +716,7 @@ const visible = (html) =>
     .replace(/\s+/g, ' ')
     .trim();
 const el = (id) => sb.document.getElementById(id);
-for (const f of Object.values(CrossoverFactions)) g.MetaProgress[f.unlockKey] = () => true;
+for (const f of Object.values(FreeCompanies)) g.MetaProgress[f.unlockKey] = () => true;
 const gs = {
   wave: 12,
   tactical: 9999,
@@ -741,33 +741,33 @@ const scan = (where, html, ids) => {
   return text;
 };
 let cards = 0;
-for (const f of Object.values(CrossoverFactions)) {
+for (const f of Object.values(FreeCompanies)) {
   const ids = Object.keys(operatives).filter((id) => operatives[id].faction === f.id);
-  g.CrossoverHub.select(ids[0]);
-  g.CrossoverHub.renderRoster(gs);
-  const grid = scan(`${f.id} cards`, el('crossover-roster-grid').innerHTML, ids);
-  scan(`${f.id} tabs`, el('crossover-faction-tabs').innerHTML, Object.keys(CrossoverFactions));
+  g.FreeCompaniesScreen.select(ids[0]);
+  g.FreeCompaniesScreen.renderRoster(gs);
+  const grid = scan(`${f.id} cards`, el('companies-roster-grid').innerHTML, ids);
+  scan(`${f.id} tabs`, el('companies-tabs').innerHTML, Object.keys(FreeCompanies));
   for (const id of ids) {
     if (!grid.includes(operatives[id].displayName) || !grid.includes(operatives[id].title)) {
       screenHits.push(`${id} card lacks name or title`);
     }
-    g.CrossoverHub.select(id);
-    g.CrossoverHub.renderRoster(gs);
-    const detail = scan(`${id} detail`, el('crossover-selected-detail').innerHTML, [id, f.id]);
+    g.FreeCompaniesScreen.select(id);
+    g.FreeCompaniesScreen.renderRoster(gs);
+    const detail = scan(`${id} detail`, el('companies-selected-detail').innerHTML, [id, f.id]);
     if (!detail.includes(operatives[id].description) || !detail.includes(f.label)) {
       screenHits.push(`${id} detail lacks description or company`);
     }
     cards++;
   }
 }
-g.WweAcademy.renderRoster(gs);
-const hall = scan('champion cards', el('wwe-roster-grid').innerHTML, Object.keys(champions));
+g.ChampionsHall.renderRoster(gs);
+const hall = scan('champion cards', el('champions-roster-grid').innerHTML, Object.keys(champions));
 for (const id of Object.keys(champions)) {
   if (!hall.includes(champions[id].displayName) || !hall.includes(champions[id].title)) {
     screenHits.push(`${id} card lacks name or title`);
   }
-  g.WweAcademy.select(id);
-  const detail = scan(`${id} detail`, el('wwe-selected-detail').innerHTML, [id]);
+  g.ChampionsHall.select(id);
+  const detail = scan(`${id} detail`, el('champions-selected-detail').innerHTML, [id]);
   if (!detail.includes(champions[id].description))
     screenHits.push(`${id} detail lacks description`);
   cards++;
@@ -801,7 +801,7 @@ for (const [fid, p] of Object.entries(FactionDepth.PROFILES)) {
 }
 sweep(
   'northernOps',
-  Object.values(FactionDepth.PLANET_WARFARE_OPERATIVES).map((o) =>
+  Object.values(FactionDepth.PLANET_WARFARE_HEROES).map((o) =>
     pick(o, ['label', 'operative', 'desc'])
   )
 );
@@ -826,10 +826,10 @@ sweep(
     .filter((e) => e.name !== 'Company Synergies')
     .map((e) => ({ name: e.name, body: e.body.replace(synergyTable, '') }))
 );
-for (const [fid, tree] of Object.entries(g.OperativeSkillTrees.FACTION_TREES)) {
+for (const [fid, tree] of Object.entries(g.CompanyTraining.FACTION_TREES)) {
   sweep(`training.${fid}`, [tree.label, ...Object.values(tree.nodes).map((n) => [n.name, n.desc])]);
 }
-sweep('screens', [g.WweAcademy.SCREEN_TEXT, g.CrossoverHub.SCREEN_TEXT]);
+sweep('screens', [g.ChampionsHall.SCREEN_TEXT, g.FreeCompaniesScreen.SCREEN_TEXT]);
 ok(
   textHits.length === 0,
   `no old name or source term in company, mastery or screen text ${textHits.slice(0, 12).join(' | ')}`
@@ -838,7 +838,12 @@ ok(
 // String literals in the four cast modules: floating barks, toasts and dialog text that the
 // sweeps above cannot reach. Identifiers, selectors and markup attributes are not text.
 const literalHits = [];
-for (const file of ['crossover.js', 'wwe.js', 'operative-skill-trees.js', 'faction-depth.js']) {
+for (const file of [
+  'free-companies.js',
+  'champions-hall.js',
+  'company-training.js',
+  'faction-depth.js',
+]) {
   const src = readFileSync(join(JS, file), 'utf8')
     .replace(/\/\*[\s\S]*?\*\//g, '')
     .replace(/^\s*\/\/.*$/gm, '');
@@ -877,7 +882,7 @@ ok(
 
 // The northern-war table names real heroes and their real abilities.
 const byAbility = Object.fromEntries(Object.values(operatives).map((d) => [d.ability, d]));
-const stale = Object.entries(FactionDepth.PLANET_WARFARE_OPERATIVES).filter(([ability, o]) => {
+const stale = Object.entries(FactionDepth.PLANET_WARFARE_HEROES).filter(([ability, o]) => {
   const d = byAbility[ability];
   return !d || o.operative !== d.displayName || o.label !== d.abilityDesc.split(' — ')[0];
 });

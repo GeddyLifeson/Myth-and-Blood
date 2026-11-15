@@ -45,7 +45,7 @@ const SKIP = new Set(['game-data-bundle.js']);
 const FROM_DATA_BUNDLE = [
   'Abilities',
   'BuildDefs',
-  'CrossoverFactions',
+  'FreeCompanies',
   'EnemyDefs',
   'SpyActions',
   'UnitDefs',

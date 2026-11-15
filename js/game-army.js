@@ -34,13 +34,13 @@ const GameArmy = (() => {
     return null;
   }
 
-  function hasWweAcademy() {
+  function hasChampionsHall() {
     return GS.buildings.some(
       (b) => b.owner === 'player' && b.isWweAcademy && b.complete && b.hp > 0
     );
   }
 
-  function hasCrossoverBarracks(factionId) {
+  function hasCompanyHall(factionId) {
     return GS.buildings.some(
       (b) =>
         b.owner === 'player' &&
@@ -96,7 +96,7 @@ const GameArmy = (() => {
         u.siegeMult = d?.siegeMult || 2.2;
       }
       if (u.type === 'ballista' && !u.projectile) u.projectile = 'arrow';
-      if (svc('GameDepth') && svc('GameDepth').isIpOperative(u)) {
+      if (svc('GameDepth') && svc('GameDepth').isIpHero(u)) {
         u.baseMaxHp = null;
         u.baseDamage = null;
         svc('GameDepth').applyIpWaveScaling(u, GS.wave);
@@ -309,8 +309,8 @@ const GameArmy = (() => {
       }
       if (fmods.mythicMorale > 0 && u.team === 'player') {
         const mythic =
-          (typeof isCrossoverUnit === 'function' && isCrossoverUnit(u.type)) ||
-          (typeof isWweUnit === 'function' && isWweUnit(u.type)) ||
+          (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(u.type)) ||
+          (typeof isChampionUnit === 'function' && isChampionUnit(u.type)) ||
           u.type === 'doomslayer_hero';
         if (mythic) u.morale = Math.min(u.maxMorale, u.morale + fmods.mythicMorale);
       }
@@ -382,14 +382,14 @@ const GameArmy = (() => {
       }
       if (
         fx.mythicHpMult > 1 &&
-        (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')
+        (isCompanyHeroUnit(u.type) || isChampionUnit(u.type) || u.type === 'doomslayer_hero')
       ) {
         u.maxHp = Math.floor(u.maxHp * fx.mythicHpMult);
         u.hp = Math.min(u.hp, u.maxHp);
       }
       if (
         fx.mythicMorale > 0 &&
-        (isCrossoverUnit(u.type) || isWweUnit(u.type) || u.type === 'doomslayer_hero')
+        (isCompanyHeroUnit(u.type) || isChampionUnit(u.type) || u.type === 'doomslayer_hero')
       ) {
         u.morale = Math.min(u.maxMorale, u.morale + fx.mythicMorale);
       }
@@ -422,7 +422,7 @@ const GameArmy = (() => {
 
   function canDeployUnitType(type) {
     if (GS.creativeMode && !GS.creativeSettings.academyDeploy) {
-      return type === 'doomslayer_hero' || isWweUnit(type) || isCrossoverUnit(type);
+      return type === 'doomslayer_hero' || isChampionUnit(type) || isCompanyHeroUnit(type);
     }
     return true;
   }
@@ -553,8 +553,8 @@ const GameArmy = (() => {
     canDeployUnitType,
     canTpVeteranUpgrade,
     findLivePlayerOfType,
-    hasCrossoverBarracks,
-    hasWweAcademy,
+    hasCompanyHall,
+    hasChampionsHall,
     notifyVetStarEvent,
     recordFootmanCommandElevation,
     recruitSelectedEcho,

@@ -45,114 +45,114 @@ const MetaProgress = (() => {
     }
   }
 
-  function unlockWweAcademy() {
+  function unlockChampionsHall() {
     if (data.wweAcademyUnlocked) return false;
     data.wweAcademyUnlocked = true;
     save();
     return true;
   }
 
-  function unlockDoomslayerHero() {
+  function unlockAbyssWalker() {
     if (data.doomslayerHeroUnlocked) return false;
     data.doomslayerHeroUnlocked = true;
     save();
     return true;
   }
 
-  function unlock115() {
+  function unlockPowderhorn() {
     if (data.crossover115Unlocked) return false;
     data.crossover115Unlocked = true;
     save();
     return true;
   }
 
-  function unlockPrimus() {
+  function unlockPaleVigil() {
     if (data.crossoverPrimusUnlocked) return false;
     data.crossoverPrimusUnlocked = true;
     save();
     return true;
   }
 
-  function unlockHalo() {
+  function unlockGreywatch() {
     if (data.crossoverHaloUnlocked) return false;
     data.crossoverHaloUnlocked = true;
     save();
     return true;
   }
 
-  function unlockGears() {
+  function unlockSawtooth() {
     if (data.crossoverGearsUnlocked) return false;
     data.crossoverGearsUnlocked = true;
     save();
     return true;
   }
 
-  function unlockLotr() {
+  function unlockThornroad() {
     if (data.crossoverLotrUnlocked) return false;
     data.crossoverLotrUnlocked = true;
     save();
     return true;
   }
 
-  function unlockBaki() {
+  function unlockKnucklebone() {
     if (data.crossoverBakiUnlocked) return false;
     data.crossoverBakiUnlocked = true;
     save();
     return true;
   }
 
-  function unlockJojo() {
+  function unlockMarrowChoir() {
     if (data.crossoverJojoUnlocked) return false;
     data.crossoverJojoUnlocked = true;
     save();
     return true;
   }
 
-  function unlockFotns() {
+  function unlockQuietHand() {
     if (data.crossoverFotnsUnlocked) return false;
     data.crossoverFotnsUnlocked = true;
     save();
     return true;
   }
 
-  function unlockDragonball() {
+  function unlockEmberblood() {
     if (data.crossoverDragonballUnlocked) return false;
     data.crossoverDragonballUnlocked = true;
     save();
     return true;
   }
 
-  function unlockImperium() {
+  function unlockIronPsalm() {
     if (data.crossoverImperiumUnlocked) return false;
     data.crossoverImperiumUnlocked = true;
     save();
     return true;
   }
 
-  function unlockCrystal() {
+  function unlockSaltglass() {
     if (data.crossoverCrystalUnlocked) return false;
     data.crossoverCrystalUnlocked = true;
     save();
     return true;
   }
 
-  function unlockWarp() {
+  function unlockOpenWound() {
     if (data.crossoverWarpUnlocked) return false;
     data.crossoverWarpUnlocked = true;
     save();
     return true;
   }
 
-  function unlockWarhammer() {
+  function unlockWarhost() {
     if (data.crossoverWarhammerUnlocked) return false;
     data.crossoverWarhammerUnlocked = true;
-    unlockImperium();
-    unlockWarp();
+    unlockIronPsalm();
+    unlockOpenWound();
     save();
     return true;
   }
 
-  function unlockTes() {
+  function unlockRimehowl() {
     if (data.crossoverTesUnlocked) return false;
     data.crossoverTesUnlocked = true;
     save();
@@ -187,117 +187,117 @@ const MetaProgress = (() => {
     }
   }
 
-  function recordWweRecruit(id) {
+  function recordChampionRecruit(id) {
     if (!data.wweRecruited.includes(id)) {
       data.wweRecruited.push(id);
       save();
     }
   }
 
-  function recordCrossoverRecruit(id) {
+  function recordHeroRecruit(id) {
     if (!data.crossoverRecruited.includes(id)) {
       data.crossoverRecruited.push(id);
       save();
     }
   }
 
-  function isWweUnlocked() {
+  function isChampionsUnlocked() {
     return !!data.wweAcademyUnlocked;
   }
 
-  function isDoomslayerHeroUnlocked() {
+  function isAbyssWalkerUnlocked() {
     return !!data.doomslayerHeroUnlocked;
   }
 
-  function is115Unlocked() {
+  function isPowderhornUnlocked() {
     return !!data.crossover115Unlocked;
   }
-  function isPrimusUnlocked() {
+  function isPaleVigilUnlocked() {
     return !!data.crossoverPrimusUnlocked;
   }
-  function isHaloUnlocked() {
+  function isGreywatchUnlocked() {
     return !!data.crossoverHaloUnlocked;
   }
-  function isGearsUnlocked() {
+  function isSawtoothUnlocked() {
     return !!data.crossoverGearsUnlocked;
   }
-  function isLotrUnlocked() {
+  function isThornroadUnlocked() {
     return !!data.crossoverLotrUnlocked;
   }
-  function isBakiUnlocked() {
+  function isKnuckleboneUnlocked() {
     return !!data.crossoverBakiUnlocked;
   }
-  function isJojoUnlocked() {
+  function isMarrowChoirUnlocked() {
     return !!data.crossoverJojoUnlocked;
   }
-  function isFotnsUnlocked() {
+  function isQuietHandUnlocked() {
     return !!data.crossoverFotnsUnlocked;
   }
-  function isDragonballUnlocked() {
+  function isEmberbloodUnlocked() {
     return !!data.crossoverDragonballUnlocked;
   }
-  function isImperiumUnlocked() {
+  function isIronPsalmUnlocked() {
     return !!data.crossoverImperiumUnlocked;
   }
-  function isCrystalUnlocked() {
+  function isSaltglassUnlocked() {
     return !!data.crossoverCrystalUnlocked;
   }
-  function isWarpUnlocked() {
+  function isOpenWoundUnlocked() {
     return !!data.crossoverWarpUnlocked;
   }
 
-  function isWarhammerUnlocked() {
+  function isWarhostUnlocked() {
     return !!data.crossoverWarhammerUnlocked;
   }
 
-  function isTesUnlocked() {
+  function isRimehowlUnlocked() {
     return !!data.crossoverTesUnlocked;
   }
 
-  function isCrossoverFactionUnlocked(factionId) {
+  function isCompanyUnlocked(factionId) {
     const map = {
-      powderhorn: is115Unlocked,
-      pale_vigil: isPrimusUnlocked,
-      greywatch: isHaloUnlocked,
-      sawtooth: isGearsUnlocked,
-      thornroad: isLotrUnlocked,
-      knucklebone: isBakiUnlocked,
-      marrow_choir: isJojoUnlocked,
-      quiet_hand: isFotnsUnlocked,
-      emberblood: isDragonballUnlocked,
-      iron_psalm: isImperiumUnlocked,
-      saltglass: isCrystalUnlocked,
-      open_wound: isWarpUnlocked,
-      warhammer: isWarhammerUnlocked,
-      rimehowl: isTesUnlocked,
+      powderhorn: isPowderhornUnlocked,
+      pale_vigil: isPaleVigilUnlocked,
+      greywatch: isGreywatchUnlocked,
+      sawtooth: isSawtoothUnlocked,
+      thornroad: isThornroadUnlocked,
+      knucklebone: isKnuckleboneUnlocked,
+      marrow_choir: isMarrowChoirUnlocked,
+      quiet_hand: isQuietHandUnlocked,
+      emberblood: isEmberbloodUnlocked,
+      iron_psalm: isIronPsalmUnlocked,
+      saltglass: isSaltglassUnlocked,
+      open_wound: isOpenWoundUnlocked,
+      warhammer: isWarhostUnlocked,
+      rimehowl: isRimehowlUnlocked,
     };
     return map[factionId]?.() ?? false;
   }
 
-  function isAnyCrossoverUnlocked() {
+  function isAnyCompanyUnlocked() {
     return (
-      is115Unlocked() ||
-      isPrimusUnlocked() ||
-      isHaloUnlocked() ||
-      isGearsUnlocked() ||
-      isLotrUnlocked() ||
-      isBakiUnlocked() ||
-      isJojoUnlocked() ||
-      isFotnsUnlocked() ||
-      isDragonballUnlocked() ||
-      isImperiumUnlocked() ||
-      isCrystalUnlocked() ||
-      isWarpUnlocked() ||
-      isWarhammerUnlocked() ||
-      isTesUnlocked()
+      isPowderhornUnlocked() ||
+      isPaleVigilUnlocked() ||
+      isGreywatchUnlocked() ||
+      isSawtoothUnlocked() ||
+      isThornroadUnlocked() ||
+      isKnuckleboneUnlocked() ||
+      isMarrowChoirUnlocked() ||
+      isQuietHandUnlocked() ||
+      isEmberbloodUnlocked() ||
+      isIronPsalmUnlocked() ||
+      isSaltglassUnlocked() ||
+      isOpenWoundUnlocked() ||
+      isWarhostUnlocked() ||
+      isRimehowlUnlocked()
     );
   }
 
-  function getWweRecruited() {
+  function getChampionsRecruited() {
     return [...data.wweRecruited];
   }
 
-  function getCrossoverRecruited() {
+  function getHeroesRecruited() {
     return [...(data.crossoverRecruited || [])];
   }
 
@@ -353,46 +353,46 @@ const MetaProgress = (() => {
   return {
     load,
     save,
-    unlockWweAcademy,
-    unlockDoomslayerHero,
-    unlock115,
-    unlockPrimus,
-    unlockHalo,
-    unlockGears,
-    unlockLotr,
-    unlockBaki,
-    unlockJojo,
-    unlockFotns,
-    unlockDragonball,
-    unlockImperium,
-    unlockCrystal,
-    unlockWarp,
-    unlockWarhammer,
-    unlockTes,
+    unlockChampionsHall,
+    unlockAbyssWalker,
+    unlockPowderhorn,
+    unlockPaleVigil,
+    unlockGreywatch,
+    unlockSawtooth,
+    unlockThornroad,
+    unlockKnucklebone,
+    unlockMarrowChoir,
+    unlockQuietHand,
+    unlockEmberblood,
+    unlockIronPsalm,
+    unlockSaltglass,
+    unlockOpenWound,
+    unlockWarhost,
+    unlockRimehowl,
     unlockAllCheatContent,
     recordCheat,
-    recordWweRecruit,
-    recordCrossoverRecruit,
-    isWweUnlocked,
-    isDoomslayerHeroUnlocked,
-    is115Unlocked,
-    isPrimusUnlocked,
-    isHaloUnlocked,
-    isGearsUnlocked,
-    isLotrUnlocked,
-    isBakiUnlocked,
-    isJojoUnlocked,
-    isFotnsUnlocked,
-    isDragonballUnlocked,
-    isImperiumUnlocked,
-    isCrystalUnlocked,
-    isWarpUnlocked,
-    isWarhammerUnlocked,
-    isTesUnlocked,
-    isCrossoverFactionUnlocked,
-    isAnyCrossoverUnlocked,
-    getWweRecruited,
-    getCrossoverRecruited,
+    recordChampionRecruit,
+    recordHeroRecruit,
+    isChampionsUnlocked,
+    isAbyssWalkerUnlocked,
+    isPowderhornUnlocked,
+    isPaleVigilUnlocked,
+    isGreywatchUnlocked,
+    isSawtoothUnlocked,
+    isThornroadUnlocked,
+    isKnuckleboneUnlocked,
+    isMarrowChoirUnlocked,
+    isQuietHandUnlocked,
+    isEmberbloodUnlocked,
+    isIronPsalmUnlocked,
+    isSaltglassUnlocked,
+    isOpenWoundUnlocked,
+    isWarhostUnlocked,
+    isRimehowlUnlocked,
+    isCompanyUnlocked,
+    isAnyCompanyUnlocked,
+    getChampionsRecruited,
+    getHeroesRecruited,
     getCheatsUsed,
     reset,
     getFactionMasteryTitles,

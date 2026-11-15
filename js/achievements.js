@@ -338,9 +338,9 @@ const Achievements = (() => {
   }
 
   function getUnitFaction(unitType) {
-    if (typeof isWweUnit === 'function' && isWweUnit(unitType)) return 'champions';
+    if (typeof isChampionUnit === 'function' && isChampionUnit(unitType)) return 'champions';
     if (unitType === 'doomslayer_hero') return 'doom';
-    const def = typeof getCrossoverDef === 'function' ? getCrossoverDef(unitType) : null;
+    const def = typeof getHeroDef === 'function' ? getHeroDef(unitType) : null;
     return def?.faction || null;
   }
 
@@ -523,11 +523,11 @@ const Achievements = (() => {
     session.maxCrossoverFactions = Math.max(session.maxCrossoverFactions || 0, field.size);
     for (const f of field) addMastery(f, 10);
     if (w >= 200 && diff === 'doomslayer') {
-      MetaProgress.unlockDoomslayerHero();
+      MetaProgress.unlockAbyssWalker();
       session.flags.add('doom_trial');
     }
     if (w >= 150 && diff === 'doomslayer' && !session.flags.has('zombie_building_lost')) {
-      MetaProgress.unlock115();
+      MetaProgress.unlockPowderhorn();
     }
     const doomOn = d.units?.some((u) => u.type === 'doomslayer_hero' && u.hp > 0);
     if (doomOn) {
@@ -544,30 +544,30 @@ const Achievements = (() => {
     const s = session;
     const ratio = (a, b) => b >= 8 && a / b >= 0.55;
     const castle = s.flags.has('has_castle_compound') && !s.flags.has('castle_compound_breached');
-    if (castle) MetaProgress.unlockPrimus();
+    if (castle) MetaProgress.unlockPaleVigil();
     if (
       s.flags.has('had_general') &&
       !s.flags.has('general_fell') &&
       s.flags.has('footman_promoted_general') &&
       s.footmanGeneralPipeline.size >= 5
     ) {
-      MetaProgress.unlockHalo();
+      MetaProgress.unlockGreywatch();
     }
-    if (s.enemyStructuresRazed >= 12) MetaProgress.unlockGears();
-    if (ratio(s.moraleSamplesHigh, s.moraleSamplesTotal)) MetaProgress.unlockLotr();
+    if (s.enemyStructuresRazed >= 12) MetaProgress.unlockSawtooth();
+    if (ratio(s.moraleSamplesHigh, s.moraleSamplesTotal)) MetaProgress.unlockThornroad();
     if (CHAD_PLUS.has(s.currentDiff) && ratio(s.meleeSamplesFocused, s.meleeSamplesTotal)) {
-      MetaProgress.unlockBaki();
+      MetaProgress.unlockKnucklebone();
     }
     if (
       s.crossoverHeroRecruits.size >= 3 &&
       ratio(s.standAllianceSamplesAllied, s.standAllianceSamplesTotal)
     ) {
-      MetaProgress.unlockJojo();
+      MetaProgress.unlockMarrowChoir();
     }
-    if (s.flags.has('solo_hero_named_boss')) MetaProgress.unlockFotns();
-    if (s.flags.has('planet_boss_high_ki')) MetaProgress.unlockDragonball();
+    if (s.flags.has('solo_hero_named_boss')) MetaProgress.unlockQuietHand();
+    if (s.flags.has('planet_boss_high_ki')) MetaProgress.unlockEmberblood();
     if (ratio(s.showmanshipSamplesHeavy, s.showmanshipSamplesTotal))
-      MetaProgress.unlockWweAcademy();
+      MetaProgress.unlockChampionsHall();
     if (
       CHAD_PLUS.has(s.currentDiff) &&
       s.flags.has('fort_line_established') &&
@@ -576,14 +576,14 @@ const Achievements = (() => {
       !s.flags.has('general_fell') &&
       s.namedBossWavesRepelled >= 3
     ) {
-      MetaProgress.unlockWarhammer();
+      MetaProgress.unlockWarhost();
     }
     if (
       s.maxWave >= 100 &&
       ['martial', 'arcane', 'tech', 'mythic'].every((p) => s.pathImmortals.has(p)) &&
       s.flags.has('dragon_boss_slay')
     ) {
-      MetaProgress.unlockTes();
+      MetaProgress.unlockRimehowl();
     }
     if (type === 'campaign_victory') {
       lifetimeTrueVictories++;
@@ -782,7 +782,7 @@ const Achievements = (() => {
 
       case 'wwe_recruit':
         if (data.wweId) session.crossoverHeroRecruits.add(data.wweId);
-        MetaProgress.recordWweRecruit(data.wweId);
+        MetaProgress.recordChampionRecruit(data.wweId);
         addMastery('champions', 15);
         break;
 
@@ -792,8 +792,8 @@ const Achievements = (() => {
 
       case 'crossover_recruit': {
         if (data.crossoverId) session.crossoverHeroRecruits.add(data.crossoverId);
-        MetaProgress.recordCrossoverRecruit(data.crossoverId);
-        const def = getCrossoverDef?.(data.crossoverId);
+        MetaProgress.recordHeroRecruit(data.crossoverId);
+        const def = getHeroDef?.(data.crossoverId);
         if (def?.faction) addMastery(def.faction, 15);
         break;
       }
@@ -927,11 +927,11 @@ const Achievements = (() => {
         return s.flags.has(kind);
       case 'unlock': {
         // Company ids no longer match the unlock getter names, so ask by id first.
-        if (rest[0] === 'champions') return !!MetaProgress.isWweUnlocked?.();
-        if (MetaProgress.isCrossoverFactionUnlocked?.(rest[0])) return true;
+        if (rest[0] === 'champions') return !!MetaProgress.isChampionsUnlocked?.();
+        if (MetaProgress.isCompanyUnlocked?.(rest[0])) return true;
         const name = { 115: '115', primus: 'Primus' }[rest[0]];
         const key = name || rest[0].replace(/(^|_)(\w)/g, (_, _u, c) => c.toUpperCase());
-        const fn = key === 'DoomHero' ? 'isDoomslayerHeroUnlocked' : `is${key}Unlocked`;
+        const fn = key === 'DoomHero' ? 'isAbyssWalkerUnlocked' : `is${key}Unlocked`;
         return !!MetaProgress[fn]?.();
       }
       default:
@@ -1046,7 +1046,7 @@ const Achievements = (() => {
     set('achievements-progress-text', (el) => (el.textContent = `${pct}% complete`));
     for (const id of [
       'achievements-tabs',
-      'achievements-crossover-tabs',
+      'achievements-company-tabs',
       'achievements-tier-filter',
     ]) {
       set(id, (el) => (el.style.display = 'none'));

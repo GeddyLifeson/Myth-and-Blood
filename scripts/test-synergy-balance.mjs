@@ -9,7 +9,7 @@ import { ok, failures } from './lib/harness.mjs';
 
 function loadFactionDepth() {
   const bundle = readFileSync(join(JS, 'game-data-bundle.js'), 'utf8');
-  const crossover = readFileSync(join(JS, 'crossover.js'), 'utf8');
+  const crossover = readFileSync(join(JS, 'free-companies.js'), 'utf8');
   const depth = readFileSync(join(JS, 'faction-depth.js'), 'utf8');
   const sb = {
     Math,
@@ -35,8 +35,8 @@ function loadFactionDepth() {
   );
   vm.runInContext(crossover, ctx);
   vm.runInContext(
-    `CrossoverDefs.kell_splitlip = { ...(CrossoverDefs.kell_splitlip || {}), faction: 'knucklebone' };
-     function getCrossoverDef(type) { return CrossoverDefs[type]; }`,
+    `HeroDefs.kell_splitlip = { ...(HeroDefs.kell_splitlip || {}), faction: 'knucklebone' };
+     function getHeroDef(type) { return HeroDefs[type]; }`,
     ctx
   );
   return { FD: vm.runInContext(`${depth}\nFactionDepth`, ctx), sb: ctx };

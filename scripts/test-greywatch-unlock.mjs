@@ -1,5 +1,5 @@
 /**
- * Smoke tests — FOTNS unlock via solo hero named boss kill on victory.
+ * Smoke tests — Halo / UNSC unlock via Spartan command challenge.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -23,8 +23,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -42,48 +42,50 @@ function loadModules() {
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
 
-const hokutoAch = ACHIEVEMENT_LIST.find((a) => a.id === 'fotns_hokuto_victory');
-ok(hokutoAch && hokutoAch.rule === 'run_hokuto_solo', 'fotns hokuto victory achievement exists');
+const greywatchAch = ACHIEVEMENT_LIST.find((a) => a.id === 'halo_spartan_victory');
+ok(
+  greywatchAch && greywatchAch.rule === 'run_spartan_command:5',
+  'halo spartan achievement exists'
+);
 
-function soloKill(bossType = 'boss_gorath') {
-  Achievements.onEvent('solo_hero_boss_kill', {
-    solo: true,
-    heroType: 'torvald_greyhame',
-    bossType,
-    bossName: 'Gorath the Breaker',
-    wave: 50,
-  });
+function elevateFootman(id) {
+  Achievements.onEvent('footman_command_elevated', { unitKey: id });
 }
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-soloKill();
+for (let i = 1; i <= 4; i++) elevateFootman(`fm-${i}`);
+Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-5' });
+Achievements.onEvent('general_fielded', { wave: 40 });
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(MetaProgress.isFotnsUnlocked(), 'victory with solo hero boss kill unlocks FOTNS');
-ok(Achievements.evaluateRule('run_hokuto_solo'), 'hokuto solo victory rule passes');
+ok(
+  MetaProgress.isGreywatchUnlocked(),
+  'victory with general alive and 5 command elevations unlocks Halo'
+);
+ok(Achievements.evaluateRule('run_spartan_command:5'), 'spartan command rule passes');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-soloKill();
-Achievements.onEvent('game_end', { victory: false, wave: 80 });
-ok(!MetaProgress.isFotnsUnlocked(), 'defeat with solo kill does not unlock FOTNS');
-
-MetaProgress.reset();
-Achievements.resetSession();
-Achievements.onEvent('game_start', { difficulty: 'normal' });
+for (let i = 1; i <= 5; i++) elevateFootman(`fm-${i}`);
+Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-5' });
+Achievements.onEvent('general_fielded', { wave: 40 });
+Achievements.onEvent('general_fell', { wave: 55 });
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isFotnsUnlocked(), 'victory without solo boss kill blocks FOTNS unlock');
+ok(!MetaProgress.isGreywatchUnlocked(), 'general death blocks Halo unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-soloKill();
-ok(Achievements.evaluateRule('solo_hero_named_boss'), 'solo hero named boss milestone');
+for (let i = 1; i <= 3; i++) elevateFootman(`fm-${i}`);
+Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-4' });
+Achievements.onEvent('general_fielded', { wave: 40 });
+Achievements.onEvent('game_end', { victory: true, wave: 80 });
+ok(!MetaProgress.isGreywatchUnlocked(), 'fewer than 5 command elevations blocks unlock');
 
 if (failures()) {
   console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
-console.log('\nAll fotns-unlock tests passed');
+console.log('\nAll halo-unlock tests passed');

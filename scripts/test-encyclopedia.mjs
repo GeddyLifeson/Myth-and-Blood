@@ -19,11 +19,11 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 const { sb } = boot(33);
 const g = vm.runInContext(
   `${code}\n({ Encyclopedia, LoreData, StoryLore, Roster, UnitDefs, BuildDefs,
-     EnemyDefs, CrossoverDefs, WweDefs, CrossoverFactions, SiegeLoop, Research, Hotkeys })`,
+     EnemyDefs, HeroDefs, ChampionDefs, FreeCompanies, SiegeLoop, Research, Hotkeys })`,
   vm.createContext(sb)
 );
 const { Encyclopedia, LoreData, StoryLore, Roster, UnitDefs, BuildDefs, EnemyDefs } = g;
-const { CrossoverDefs, WweDefs, CrossoverFactions, SiegeLoop } = g;
+const { HeroDefs, ChampionDefs, FreeCompanies, SiegeLoop } = g;
 
 // --- every entry renders -------------------------------------------------------------------
 const entries = Encyclopedia.getAllEntries();
@@ -68,7 +68,7 @@ ok(
 // --- ids ---------------------------------------------------------------------------------
 {
   const bad = [];
-  const unitOk = (id) => UnitDefs[id] || CrossoverDefs[id] || WweDefs[id];
+  const unitOk = (id) => UnitDefs[id] || HeroDefs[id] || ChampionDefs[id];
   for (const e of entries) {
     if (e.unitId && !UnitDefs[e.unitId]) bad.push(`${e.name}: unit ${e.unitId}`);
     if (e.buildId && !BuildDefs[e.buildId]) bad.push(`${e.name}: building ${e.buildId}`);
@@ -127,7 +127,7 @@ ok(
   );
   const companies = entries.filter((e) => e.companyId);
   const listed = new Set(companies.flatMap((e) => e.refs.units));
-  const everyone = [...Object.keys(CrossoverDefs), ...Object.keys(WweDefs)].filter(
+  const everyone = [...Object.keys(HeroDefs), ...Object.keys(ChampionDefs)].filter(
     (t) => Roster.PROFILES[t]
   );
   ok(
@@ -322,9 +322,9 @@ ok(
 
   // Champion and company names must come from data at run time, never from these files.
   const names = [
-    ...Object.values(CrossoverDefs).map((d) => d.name),
-    ...Object.values(WweDefs).map((d) => d.name),
-    ...Object.values(CrossoverFactions).map((f) => f.label),
+    ...Object.values(HeroDefs).map((d) => d.name),
+    ...Object.values(ChampionDefs).map((d) => d.name),
+    ...Object.values(FreeCompanies).map((f) => f.label),
   ].filter((n) => n && n.length >= 5);
   const hard = [];
   for (const [file, text] of Object.entries(src)) {

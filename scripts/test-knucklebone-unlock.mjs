@@ -24,8 +24,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -64,7 +64,10 @@ Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'chad' });
 for (let w = 1; w <= 10; w++) sample(w <= 7, w);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(MetaProgress.isBakiUnlocked(), 'chad victory with majority melee-focused waves unlocks Baki');
+ok(
+  MetaProgress.isKnuckleboneUnlocked(),
+  'chad victory with majority melee-focused waves unlocks Baki'
+);
 ok(Achievements.evaluateRule('run_martial_melee:8:0.55'), 'martial melee rule passes');
 
 MetaProgress.reset();
@@ -72,21 +75,24 @@ Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'chad' });
 for (let w = 1; w <= 10; w++) sample(w <= 3, w);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isBakiUnlocked(), 'low melee-focus majority blocks Baki unlock');
+ok(!MetaProgress.isKnuckleboneUnlocked(), 'low melee-focus majority blocks Baki unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
 for (let w = 1; w <= 10; w++) sample(true, w);
 Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isBakiUnlocked(), 'normal difficulty blocks Baki unlock even with melee focus');
+ok(
+  !MetaProgress.isKnuckleboneUnlocked(),
+  'normal difficulty blocks Baki unlock even with melee focus'
+);
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'doomslayer' });
 for (let w = 1; w <= 10; w++) sample(true, w);
 Achievements.onEvent('game_end', { victory: false, wave: 80 });
-ok(!MetaProgress.isBakiUnlocked(), 'defeat with good melee focus does not unlock');
+ok(!MetaProgress.isKnuckleboneUnlocked(), 'defeat with good melee focus does not unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();

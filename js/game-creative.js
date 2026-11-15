@@ -8,7 +8,7 @@ const GameCreative = (() => {
     applyCreativeUnitStats,
     countActiveEnemies,
     ensureBuildingHealth,
-    getCrossoverOnField,
+    getHeroesOnField,
     playSfx,
     posDistSq,
     releaseBuildingRecord,
@@ -133,13 +133,13 @@ const GameCreative = (() => {
     if (
       def.isWweAcademy &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-      !svc('MetaProgress').isWweUnlocked()
+      !svc('MetaProgress').isChampionsUnlocked()
     )
       return false;
     if (
       def.isCrossoverBarracks &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-      !svc('MetaProgress').isCrossoverFactionUnlocked(def.crossoverFaction)
+      !svc('MetaProgress').isCompanyUnlocked(def.crossoverFaction)
     )
       return false;
     if (
@@ -276,11 +276,11 @@ const GameCreative = (() => {
       return false;
     }
     if (
-      typeof isCrossoverUnit === 'function' &&
-      isCrossoverUnit(type) &&
-      getCrossoverOnField().includes(type)
+      typeof isCompanyHeroUnit === 'function' &&
+      isCompanyHeroUnit(type) &&
+      getHeroesOnField().includes(type)
     ) {
-      const name = typeof getCrossoverDef === 'function' ? getCrossoverDef(type)?.name : type;
+      const name = typeof getHeroDef === 'function' ? getHeroDef(type)?.name : type;
       showMessage(`${name || type} is already on the field!`);
       return false;
     }

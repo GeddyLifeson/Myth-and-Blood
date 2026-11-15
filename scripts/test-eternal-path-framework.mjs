@@ -58,8 +58,8 @@ function loadModules() {
     Chronicles: { appendNarrativeBeat: () => {} },
     Game: { setPaused: () => {}, showMessage: () => {}, getState: () => ({ paused: true }) },
     UI: { updateHUD: () => {} },
-    isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'tavish_coalheart',
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart',
   };
   sb.window = sb;
   sb.globalThis = sb;

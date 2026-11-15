@@ -3414,7 +3414,7 @@ body.ui-v2 .ency-title,
 body.ui-v2 .ach-title,
 body.ui-v2 .adv-title,
 body.ui-v2 .cheat-title,
-body.ui-v2 .wwe-title,
+body.ui-v2 .hero-title,
 body.ui-v2 .research-title,
 body.ui-v2 .faction-intel-title,
 body.ui-v2 .modal-title,
@@ -3442,7 +3442,7 @@ body.ui-v2 #result-title,
 body.ui-v2 .ency-subtitle,
 body.ui-v2 .adv-subtitle,
 body.ui-v2 .cheat-subtitle,
-body.ui-v2 .wwe-subtitle,
+body.ui-v2 .hero-subtitle,
 body.ui-v2 .ach-count,
 body.ui-v2 .research-sp,
 body.ui-v2 .research-active,
@@ -3452,7 +3452,7 @@ body.ui-v2 .faction-intel-map-legend,
 body.ui-v2 .faction-intel-roster,
 body.ui-v2 .result-subtitle,
 body.ui-v2 .cheat-result,
-body.ui-v2 .wwe-detail,
+body.ui-v2 .hero-detail,
 body.ui-v2 .diff-tagline,
 body.ui-v2 .diff-pct-display {
   flex: 0 0 auto;
@@ -3566,7 +3566,7 @@ body.ui-v2 .modal-actions,
 body.ui-v2 .settings-actions,
 body.ui-v2 .research-panel-actions,
 body.ui-v2 .faction-intel-panel-actions,
-body.ui-v2 .wwe-actions,
+body.ui-v2 .hero-actions,
 body.ui-v2 .gameover-actions,
 body.ui-v2 .inpage-dialog-buttons {
   flex: 0 0 auto;
@@ -3582,7 +3582,7 @@ body.ui-v2 .modal-actions .menu-btn,
 body.ui-v2 .settings-actions .menu-btn,
 body.ui-v2 .research-panel-actions .menu-btn,
 body.ui-v2 .faction-intel-panel-actions .menu-btn,
-body.ui-v2 .wwe-actions .menu-btn,
+body.ui-v2 .hero-actions .menu-btn,
 body.ui-v2 .gameover-actions .menu-btn {
   width: auto;
   min-width: 140px;
@@ -3937,7 +3937,7 @@ body.ui-v2 .speed-btn,
 body.ui-v2 .path-preset-btn,
 body.ui-v2 .achievements-tabs button,
 body.ui-v2 .encyclopedia-tabs button,
-body.ui-v2 .crossover-faction-tabs button {
+body.ui-v2 .companies-tabs button {
   min-height: 34px;
   padding: 4px 12px;
   font-family: var(--font-body);
@@ -3963,7 +3963,7 @@ body.ui-v2 .speed-btn:hover,
 body.ui-v2 .path-preset-btn:hover,
 body.ui-v2 .achievements-tabs button:hover,
 body.ui-v2 .encyclopedia-tabs button:hover,
-body.ui-v2 .crossover-faction-tabs button:hover {
+body.ui-v2 .companies-tabs button:hover {
   background: #3a1216;
   border-color: var(--blood);
   color: #fff;
@@ -3986,7 +3986,7 @@ body.ui-v2 .speed-btn.active,
 body.ui-v2 .path-preset-btn.selected,
 body.ui-v2 .achievements-tabs button.active,
 body.ui-v2 .encyclopedia-tabs button.active,
-body.ui-v2 .crossover-faction-tabs button.active {
+body.ui-v2 .companies-tabs button.active {
   background: var(--blood-deep);
   border-color: var(--bone);
   color: #fff;
@@ -4337,8 +4337,8 @@ body.ui-v2 .settings-panel {
 }
 body.ui-v2 .settings-tabs,
 body.ui-v2 .achievements-tabs,
-body.ui-v2 .achievements-crossover-tabs,
-body.ui-v2 .crossover-faction-tabs {
+body.ui-v2 .achievements-company-tabs,
+body.ui-v2 .companies-tabs {
   flex: 0 0 auto;
   display: flex;
   flex-wrap: wrap;
@@ -4426,7 +4426,7 @@ body.ui-v2 .ency-entry,
 body.ui-v2 .ach-card,
 body.ui-v2 .adv-mod-row,
 body.ui-v2 .research-node,
-body.ui-v2 .wwe-card {
+body.ui-v2 .hero-card {
   background: var(--ink-2);
   border: 1px solid var(--line);
   border-radius: 0;
@@ -4439,8 +4439,8 @@ body.ui-v2 .scaling-breakdown *,
 body.ui-v2 .research-tree *,
 body.ui-v2 .tech-branch-tree *,
 body.ui-v2 .faction-intel-list *,
-body.ui-v2 .wwe-roster-grid *,
-body.ui-v2 .operative-skills-panel *,
+body.ui-v2 .champions-roster-grid *,
+body.ui-v2 .hero-skills-panel *,
 body.ui-v2 .ach-search-row *,
 body.ui-v2 .ach-progress-text,
 body.ui-v2 .onboarding-panel *,
@@ -4504,11 +4504,11 @@ body.ui-v2 .cheats-panel .cheat-input {
   margin: 0 0 10px;
   box-sizing: border-box;
 }
-body.ui-v2 .wwe-panel {
+body.ui-v2 .hero-panel {
   width: min(980px, 100%);
   max-width: none;
 }
-body.ui-v2 .wwe-roster-grid {
+body.ui-v2 .champions-roster-grid {
   flex: 1 1 auto;
   min-height: 0;
   max-height: none;

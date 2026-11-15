@@ -61,12 +61,12 @@ globalThis.document = {
 };
 const meta = new Proxy({}, { get: () => () => {} });
 globalThis.MetaProgress = meta;
-globalThis.getCrossoverDef = (t) => (t.startsWith('xo_') ? { faction: t.slice(3) } : null);
+globalThis.getHeroDef = (t) => (t.startsWith('xo_') ? { faction: t.slice(3) } : null);
 globalThis.Research = {
   getSnapshot: () => ({ completed: Array.from({ length: 40 }, (_, i) => `r${i}`) }),
 };
 globalThis.SiegeLoop = { lastScore: () => ({ total: 30000 }) };
-globalThis.isWweUnit = (t) => t === 'wwe_star';
+globalThis.isChampionUnit = (t) => t === 'wwe_star';
 
 function load(name) {
   vm.runInThisContext(readFileSync(join(JS, name), 'utf8'), { filename: name });
@@ -77,7 +77,7 @@ load('achievements-data.js');
 load('achievements.js');
 
 const L = ACHIEVEMENT_LIST;
-const ACHIEVEMENT_CROSSOVER_KEYS = CROSSOVER_ACH_FACTIONS.map((f) => f.key);
+const ACHIEVEMENT_COMPANY_KEYS = COMPANY_ACH_IDS.map((f) => f.key);
 const A = globalThis.Achievements;
 
 // ---------------------------------------------------------------- the list
@@ -221,13 +221,13 @@ E('wave_complete', {
   playerCasualtiesThisWave: 0,
   units: plain(2),
 });
-for (const f of ACHIEVEMENT_CROSSOVER_KEYS) {
+for (const f of ACHIEVEMENT_COMPANY_KEYS) {
   E('crossover_recruit', { crossoverId: `xo_${f}` });
 }
 E('wave_complete', {
   wave: 23,
   difficulty: 'normal',
-  units: ACHIEVEMENT_CROSSOVER_KEYS.map((f) => ({
+  units: ACHIEVEMENT_COMPANY_KEYS.map((f) => ({
     team: 'player',
     hp: 5,
     type: f === 'champions' ? 'wwe_star' : f === 'doom' ? 'doomslayer_hero' : `xo_${f}`,

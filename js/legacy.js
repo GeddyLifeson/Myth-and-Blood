@@ -228,7 +228,7 @@ const Legacy = (() => {
           ? `Factions fielded: ${leg.factionsUsed
               .map(
                 (f) =>
-                  (typeof CrossoverFactions !== 'undefined' && CrossoverFactions[f]?.label) ||
+                  (typeof FreeCompanies !== 'undefined' && FreeCompanies[f]?.label) ||
                   (f === 'champions' ? 'Champions’ Hall' : f)
               )
               .join(', ')}.`

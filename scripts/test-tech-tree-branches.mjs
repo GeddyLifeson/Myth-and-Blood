@@ -20,8 +20,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     Legacy: { get: () => ({}) },
     Research: { completedCount: 0, countLabs: () => 1, getActiveInfo: () => null },
-    isWweUnit: () => false,
-    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
+    isChampionUnit: () => false,
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
   };
   sb.window = sb;
   sb.globalThis = sb;

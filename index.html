@@ -181,7 +181,7 @@
                 </button>
                 <button
                   class="deploy-btn secret-btn"
-                  id="doomslayer-deploy"
+                  id="abyss-walker-deploy"
                   data-unit="doomslayer_hero"
                   style="display: none"
                 >
@@ -611,17 +611,13 @@
               <div class="pane-section" data-section="halls">
                 <div class="panel-header">HALLS</div>
                 <button
-                  id="wwe-academy-open"
+                  id="champions-hall-open"
                   class="meta-btn secret-panel-btn"
                   style="display: none"
                 >
                   CHAMPIONS’ HALL
                 </button>
-                <button
-                  id="crossover-hub-open"
-                  class="meta-btn secret-panel-btn"
-                  style="display: none"
-                >
+                <button id="companies-open" class="meta-btn secret-panel-btn" style="display: none">
                   FREE COMPANIES
                 </button>
               </div>
@@ -1934,8 +1930,8 @@
           <p id="ach-filter-count" class="ach-filter-count"></p>
           <div id="achievements-tabs" class="achievements-tabs"></div>
           <div
-            id="achievements-crossover-tabs"
-            class="achievements-crossover-tabs"
+            id="achievements-company-tabs"
+            class="achievements-company-tabs"
             style="display: none"
           ></div>
           <div id="achievements-recent" class="achievements-recent"></div>
@@ -2419,38 +2415,38 @@
         </div>
       </div>
 
-      <div id="crossover-screen" class="screen">
-        <div class="menu-content wwe-panel crossover-panel">
-          <h2 class="wwe-title">FREE COMPANIES</h2>
-          <p class="wwe-subtitle">
+      <div id="companies-screen" class="screen">
+        <div class="menu-content hero-panel company-panel">
+          <h2 class="hero-title">FREE COMPANIES</h2>
+          <p class="hero-subtitle">
             All evolved rosters - build barracks in-game, then recruit here.
           </p>
-          <div id="crossover-faction-tabs" class="crossover-faction-tabs"></div>
-          <div class="wwe-actions">
-            <button id="crossover-build-btn" class="menu-btn">SELECT BARRACKS BUILD</button>
-            <button id="crossover-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
+          <div id="companies-tabs" class="companies-tabs"></div>
+          <div class="hero-actions">
+            <button id="companies-build-btn" class="menu-btn">SELECT BARRACKS BUILD</button>
+            <button id="companies-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
           </div>
-          <p id="crossover-selected-detail" class="wwe-detail">Select an operative below.</p>
-          <div id="crossover-roster-grid" class="wwe-roster-grid"></div>
-          <div class="operative-skills-panel"></div>
-          <button id="crossover-close" class="menu-btn">CLOSE</button>
+          <p id="companies-selected-detail" class="hero-detail">Select an operative below.</p>
+          <div id="companies-roster-grid" class="champions-roster-grid"></div>
+          <div class="hero-skills-panel"></div>
+          <button id="companies-close" class="menu-btn">CLOSE</button>
         </div>
       </div>
 
-      <div id="wwe-screen" class="screen">
-        <div class="menu-content wwe-panel">
-          <h2 class="wwe-title">CHAMPIONS’ HALL</h2>
-          <p class="wwe-subtitle">
+      <div id="champions-screen" class="screen">
+        <div class="menu-content hero-panel">
+          <h2 class="hero-title">CHAMPIONS’ HALL</h2>
+          <p class="hero-subtitle">
             Recruit Champions · Build academy: 1000 TP, 10 Builders (hamlets & guilds recommended)
           </p>
-          <div class="wwe-actions">
-            <button id="wwe-build-btn" class="menu-btn">SELECT CHAMPIONS’ HALL BUILD</button>
-            <button id="wwe-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
+          <div class="hero-actions">
+            <button id="champions-build-btn" class="menu-btn">SELECT CHAMPIONS’ HALL BUILD</button>
+            <button id="champions-recruit-btn" class="menu-btn primary">RECRUIT SELECTED</button>
           </div>
-          <p id="wwe-selected-detail" class="wwe-detail">Select a champion below.</p>
-          <div id="wwe-roster-grid" class="wwe-roster-grid"></div>
-          <div class="operative-skills-panel"></div>
-          <button id="wwe-close" class="menu-btn">CLOSE</button>
+          <p id="champions-selected-detail" class="hero-detail">Select a champion below.</p>
+          <div id="champions-roster-grid" class="champions-roster-grid"></div>
+          <div class="hero-skills-panel"></div>
+          <button id="champions-close" class="menu-btn">CLOSE</button>
         </div>
       </div>
 
@@ -2635,10 +2631,10 @@
     <script src="js/units.js"></script>
     <script src="js/content-expansion.js"></script>
     <script src="js/meta-progress.js"></script>
-    <script src="js/crossover.js"></script>
+    <script src="js/free-companies.js"></script>
     <script src="js/faction-depth.js"></script>
     <script src="js/perks.js"></script>
-    <script src="js/wwe.js"></script>
+    <script src="js/champions-hall.js"></script>
     <script src="js/achievements-data.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/cheats.js"></script>
@@ -2667,7 +2663,7 @@
     <script src="js/neutral-wildlife.js"></script>
     <script src="js/neutral-relations.js"></script>
     <script src="js/biome-spawn.js"></script>
-    <script src="js/operative-skill-trees.js"></script>
+    <script src="js/company-training.js"></script>
     <script src="js/dynamic-map-events.js"></script>
     <script src="js/game-services.js"></script>
     <script src="js/game-events.js"></script>

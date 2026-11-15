@@ -636,23 +636,23 @@ const EternalLegacyTree = (() => {
     return out;
   }
 
-  function isCrossoverUnit(unit) {
+  function isCompanyHeroUnit(unit) {
     if (!unit?.type) return false;
     if (unit.isCrossover || unit.isWwe) return true;
     if (unit.crossoverFaction || unit.factionId) return true;
-    // Global helpers take a type string (crossover.js / wwe.js).
+    // Global helpers take a type string (free-companies.js / champions-hall.js).
     if (
-      typeof globalThis.isCrossoverUnit === 'function' &&
-      globalThis.isCrossoverUnit !== isCrossoverUnit
+      typeof globalThis.isCompanyHeroUnit === 'function' &&
+      globalThis.isCompanyHeroUnit !== isCompanyHeroUnit
     ) {
       try {
-        if (globalThis.isCrossoverUnit(unit.type)) return true;
+        if (globalThis.isCompanyHeroUnit(unit.type)) return true;
       } catch (_) {
         /* ignore */
       }
     }
-    if (typeof isWweUnit === 'function' && isWweUnit(unit.type)) return true;
-    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCrossoverType?.(unit.type))
+    if (typeof isChampionUnit === 'function' && isChampionUnit(unit.type)) return true;
+    if (typeof MetaProgress !== 'undefined' && MetaProgress.isCompanyHeroType?.(unit.type))
       return true;
     return unit.type.startsWith('xf_') || unit.type.includes('crossover');
   }
@@ -676,7 +676,7 @@ const EternalLegacyTree = (() => {
       totalDmg *= fx.heroAscendMult;
       totalHp *= fx.heroAscendMult;
     }
-    if (isCrossoverUnit(unit) && fx.crossoverStatMult > 1) {
+    if (isCompanyHeroUnit(unit) && fx.crossoverStatMult > 1) {
       totalDmg *= fx.crossoverStatMult;
       totalHp *= fx.crossoverStatMult;
     }
@@ -695,7 +695,7 @@ const EternalLegacyTree = (() => {
     if (totalDmg > 1 && unit.damage) {
       unit.damage = Math.floor(unit.damage * totalDmg);
     }
-    if (fx.crossoverMorale > 0 && isCrossoverUnit(unit)) {
+    if (fx.crossoverMorale > 0 && isCompanyHeroUnit(unit)) {
       unit.morale = Math.min(unit.maxMorale, unit.morale + fx.crossoverMorale);
     }
 

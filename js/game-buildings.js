@@ -672,11 +672,11 @@ const GameBuildings = (() => {
       return false;
     }
     if (def.isWweAcademy) {
-      const wweOk =
+      const championOk =
         (GS.creativeMode && GS.creativeSettings.unlockAll) ||
-        svc('MetaProgress').isWweUnlocked() ||
+        svc('MetaProgress').isChampionsUnlocked() ||
         (svc('Research') && svc('Research').isFactionUnlocked('champions', getResearchOpts()));
-      if (!wweOk) {
+      if (!championOk) {
         showMessage(
           'Research Arena Warfare Doctrine or swear the Quarryman’s Oath to unlock the Champions’ Hall!',
           300
@@ -703,7 +703,7 @@ const GameBuildings = (() => {
       !(GS.creativeMode && GS.creativeSettings.unlockAll)
     ) {
       const factionOk =
-        svc('MetaProgress').isCrossoverFactionUnlocked(def.crossoverFaction) ||
+        svc('MetaProgress').isCompanyUnlocked(def.crossoverFaction) ||
         (svc('Research') &&
           svc('Research').isFactionUnlocked(def.crossoverFaction, getResearchOpts()));
       if (!factionOk) {
@@ -863,7 +863,7 @@ const GameBuildings = (() => {
       // Same rule finalizeBuild uses: a Research Lab unlock counts, not just the cheat.
       const pitOk =
         unlockAll ||
-        svc('MetaProgress').isWweUnlocked() ||
+        svc('MetaProgress').isChampionsUnlocked() ||
         (research && research.isFactionUnlocked('champions', getResearchOpts()));
       if (!pitOk) {
         showMessage('Research Arena Warfare Doctrine or swear the Quarryman’s Oath first!');
@@ -886,7 +886,7 @@ const GameBuildings = (() => {
     if (bdef?.isCrossoverBarracks && !isVanillaAcademyType(type)) {
       const factionOk =
         unlockAll ||
-        svc('MetaProgress').isCrossoverFactionUnlocked(bdef.crossoverFaction) ||
+        svc('MetaProgress').isCompanyUnlocked(bdef.crossoverFaction) ||
         (research && research.isFactionUnlocked(bdef.crossoverFaction, getResearchOpts()));
       if (!factionOk) {
         showMessage(`Research ${bdef.name} at the Research Lab first.`, 300);
@@ -981,7 +981,7 @@ const GameBuildings = (() => {
       showMessage('Champions’ Hall complete! Click it to recruit Champions.', 320);
       svc('FloatingText').status(b.x, b.y - 20, 'GC', '#c04040');
     }
-    if (b.isCrossoverBarracks && isCrossoverBarracksType(b.type)) {
+    if (b.isCrossoverBarracks && isCompanyHallType(b.type)) {
       if (svc('GameEvents')) {
         svc('GameEvents').emit(svc('GameEvents').GameEvent.BARRACKS_COMPLETE, { building: b });
       } else if (svc('FactionDepth')) {

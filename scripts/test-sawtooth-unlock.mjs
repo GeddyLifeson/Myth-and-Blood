@@ -1,5 +1,5 @@
 /**
- * Smoke tests — Halo / UNSC unlock via Spartan command challenge.
+ * Smoke tests — Gears / COG unlock via siege structure grind.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -23,8 +23,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
   };
   sb.window = sb;
   sb.globalThis = sb;
@@ -42,47 +42,44 @@ function loadModules() {
 
 const { MetaProgress, Achievements, ACHIEVEMENT_LIST } = loadModules();
 
-const haloAch = ACHIEVEMENT_LIST.find((a) => a.id === 'halo_spartan_victory');
-ok(haloAch && haloAch.rule === 'run_spartan_command:5', 'halo spartan achievement exists');
+const siegeAch = ACHIEVEMENT_LIST.find((a) => a.id === 'gears_siege_victory');
+ok(siegeAch && siegeAch.rule === 'run_siege_victory:12', 'gears siege achievement exists');
 
-function elevateFootman(id) {
-  Achievements.onEvent('footman_command_elevated', { unitKey: id });
+function raze(n) {
+  for (let i = 0; i < n; i++) {
+    Achievements.onEvent('enemy_structure_razed', {
+      buildType: 'enemy_hamlet',
+      wave: 40 + i,
+      runTotal: i + 1,
+    });
+  }
 }
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-for (let i = 1; i <= 4; i++) elevateFootman(`fm-${i}`);
-Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-5' });
-Achievements.onEvent('general_fielded', { wave: 40 });
-Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(
-  MetaProgress.isHaloUnlocked(),
-  'victory with general alive and 5 command elevations unlocks Halo'
-);
-ok(Achievements.evaluateRule('run_spartan_command:5'), 'spartan command rule passes');
+raze(12);
+Achievements.onEvent('game_end', { victory: true, wave: 80, enemyStructuresRazed: 12 });
+ok(MetaProgress.isSawtoothUnlocked(), 'victory with 12 razed structures unlocks Gears');
+ok(Achievements.evaluateRule('run_siege_victory:12'), 'siege victory rule passes');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-for (let i = 1; i <= 5; i++) elevateFootman(`fm-${i}`);
-Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-5' });
-Achievements.onEvent('general_fielded', { wave: 40 });
-Achievements.onEvent('general_fell', { wave: 55 });
-Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isHaloUnlocked(), 'general death blocks Halo unlock');
+raze(12);
+Achievements.onEvent('game_end', { victory: false, wave: 80, enemyStructuresRazed: 12 });
+ok(!MetaProgress.isSawtoothUnlocked(), 'defeat with enough razes does not unlock');
 
 MetaProgress.reset();
 Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
-for (let i = 1; i <= 3; i++) elevateFootman(`fm-${i}`);
-Achievements.onEvent('footman_promoted_general', { unitKey: 'fm-4' });
-Achievements.onEvent('general_fielded', { wave: 40 });
-Achievements.onEvent('game_end', { victory: true, wave: 80 });
-ok(!MetaProgress.isHaloUnlocked(), 'fewer than 5 command elevations blocks unlock');
+raze(8);
+Achievements.onEvent('game_end', { victory: true, wave: 80, enemyStructuresRazed: 8 });
+ok(!MetaProgress.isSawtoothUnlocked(), 'victory with too few razes blocks unlock');
+ok(Achievements.evaluateRule('enemy_structures_razed:6'), 'six raze milestone passes');
 
 if (failures()) {
   console.error(`\n${failures()} test(s) failed`);
   process.exit(1);
 }
-console.log('\nAll halo-unlock tests passed');
+console.log('\nAll gears-unlock tests passed');

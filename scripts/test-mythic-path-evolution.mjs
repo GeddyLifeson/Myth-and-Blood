@@ -59,8 +59,8 @@ function loadModules() {
     Chronicles: { appendNarrativeBeat: () => {} },
     Game: { setPaused: () => {}, showMessage: () => {}, getState: () => ({ paused: true }) },
     UI: { updateHUD: () => {} },
-    isWweUnit: (t) => t === 'alder_wynfast',
-    isCrossoverUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
+    isChampionUnit: (t) => t === 'alder_wynfast',
+    isCompanyHeroUnit: (t) => t === 'tavish_coalheart' || t === 'dunmar_fusewick',
   };
   sb.window = sb;
   sb.globalThis = sb;

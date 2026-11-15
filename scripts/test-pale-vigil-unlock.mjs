@@ -25,8 +25,8 @@ function loadModules() {
     localStorage: { getItem: () => null, setItem: () => {}, removeItem: () => {} },
     document: { getElementById: () => null, querySelectorAll: () => [] },
     Game: { isPlaying: () => false },
-    WweDefs: {},
-    CrossoverDefs: {},
+    ChampionDefs: {},
+    HeroDefs: {},
     BuildDefs: { castle: { cost: 0 }, castle_keep: { radius: 22 } },
   };
   sb.window = sb;
@@ -80,7 +80,7 @@ Achievements.resetSession();
 Achievements.onEvent('game_start', { difficulty: 'normal' });
 Achievements.onEvent('building_complete', { buildType: 'castle', compound: true });
 Achievements.onEvent('game_end', { victory: true, hasCastleCompound: true, wave: 80 });
-ok(MetaProgress.isPrimusUnlocked(), 'victory with intact sanctum unlocks Primis');
+ok(MetaProgress.isPaleVigilUnlocked(), 'victory with intact sanctum unlocks Primis');
 ok(Achievements.evaluateRule('run_sanctum_victory'), 'sanctum victory rule passes');
 ok(Achievements.evaluateRule('unlock:pale_vigil'), 'pale vigil unlock rule passes');
 
@@ -90,7 +90,7 @@ Achievements.onEvent('game_start', { difficulty: 'normal' });
 Achievements.onEvent('building_complete', { buildType: 'castle', compound: true });
 Achievements.onEvent('castle_compound_breach', { enemyType: 'goblin', wave: 20 });
 Achievements.onEvent('game_end', { victory: true, hasCastleCompound: true, wave: 80 });
-ok(!MetaProgress.isPrimusUnlocked(), 'inner keep breach blocks Primis unlock');
+ok(!MetaProgress.isPaleVigilUnlocked(), 'inner keep breach blocks Primis unlock');
 ok(!Achievements.evaluateRule('run_sanctum_victory'), 'breach fails sanctum victory rule');
 
 MetaProgress.reset();

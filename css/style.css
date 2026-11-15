@@ -2215,7 +2215,7 @@ body.menu-dismissed #menu-screen,
   color: #908070;
   white-space: nowrap;
 }
-.achievements-crossover-tabs {
+.achievements-company-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 4px;
@@ -2517,7 +2517,7 @@ body.menu-dismissed #menu-screen,
 
 .advanced-diff-panel,
 .cheats-panel,
-.wwe-panel {
+.hero-panel {
   max-width: 640px;
   width: 92vw;
   max-height: 85vh;
@@ -2527,7 +2527,7 @@ body.menu-dismissed #menu-screen,
 }
 .adv-title,
 .cheat-title,
-.wwe-title {
+.hero-title {
   font-family: 'Cinzel', serif;
   font-size: 26px;
   margin-bottom: 4px;
@@ -2538,12 +2538,12 @@ body.menu-dismissed #menu-screen,
 .cheat-title {
   color: #c080a0;
 }
-.wwe-title {
+.hero-title {
   color: #c04040;
 }
 .adv-subtitle,
 .cheat-subtitle,
-.wwe-subtitle {
+.hero-subtitle {
   font-size: 11px;
   color: #908070;
   margin-bottom: 10px;
@@ -2984,14 +2984,14 @@ body.menu-dismissed #menu-screen,
   margin: 8px 0;
 }
 
-.crossover-faction-tabs {
+.companies-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   justify-content: center;
   margin-bottom: 10px;
 }
-.crossover-tab {
+.company-tab {
   padding: 6px 10px;
   font-size: 10px;
   background: #1a1410;
@@ -3000,20 +3000,20 @@ body.menu-dismissed #menu-screen,
   border-radius: 4px;
   cursor: pointer;
 }
-.crossover-tab.active {
+.company-tab.active {
   border-color: #60a0c0;
   color: #a0d0f0;
 }
-.crossover-need-base {
+.company-need-base {
   font-size: 8px;
   color: #c08060;
   margin-top: 4px;
 }
-.crossover-empty {
+.company-empty {
   font-size: 11px;
   color: #807060;
 }
-.crossover-weakness {
+.company-weakness {
   display: block;
   font-size: 10px;
   color: #c08060;
@@ -3491,20 +3491,20 @@ body.menu-dismissed #menu-screen,
   opacity: 0.85;
 }
 
-.wwe-actions {
+.hero-actions {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: center;
   margin-bottom: 8px;
 }
-.wwe-detail {
+.hero-detail {
   font-size: 11px;
   color: #c0a880;
   margin-bottom: 8px;
   min-height: 32px;
 }
-.wwe-roster-grid {
+.champions-roster-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 8px;
@@ -3513,46 +3513,46 @@ body.menu-dismissed #menu-screen,
   margin-bottom: 12px;
   text-align: left;
 }
-.wwe-card {
+.hero-card {
   padding: 10px;
   background: rgba(20, 16, 12, 0.9);
   border: 1px solid #4a3728;
   border-radius: 5px;
   cursor: pointer;
 }
-.wwe-card.selected {
+.hero-card.selected {
   border-color: #c04040;
   box-shadow: 0 0 6px rgba(192, 64, 64, 0.4);
 }
-.wwe-card.cant-afford {
+.hero-card.cant-afford {
   opacity: 0.55;
 }
-.wwe-card-name {
+.hero-card-name {
   font-family: 'Cinzel', serif;
   font-size: 12px;
   margin-bottom: 2px;
 }
-.wwe-card-cost {
+.hero-card-cost {
   font-size: 10px;
   color: #c0a040;
 }
-.wwe-card-stats,
-.wwe-card-ability {
+.hero-card-stats,
+.hero-card-ability {
   font-size: 9px;
   color: #908070;
   line-height: 1.35;
 }
-.wwe-recruited,
-.wwe-on-field {
+.hero-recruited,
+.hero-on-field {
   font-size: 8px;
   color: #ffd700;
   margin-top: 4px;
 }
-.crossover-card.crossover-featured {
+.company-card.company-featured {
   border-color: #60a0c0;
   box-shadow: 0 0 8px rgba(96, 160, 192, 0.35);
 }
-.crossover-featured-badge {
+.company-featured-badge {
   font-size: 8px;
   color: #80c0e0;
   letter-spacing: 0.06em;
@@ -5519,7 +5519,7 @@ body.game-playing #night-prep-card:not([hidden]) {
 }
 
 /* Operative skill trees (Free Companies / Champions’ Hall) */
-.operative-skills-panel {
+.hero-skills-panel {
   margin: 12px 0;
   text-align: left;
 }

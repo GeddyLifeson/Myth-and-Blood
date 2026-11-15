@@ -147,10 +147,7 @@ const GameMorale = (() => {
   function triggerMoraleBreak(unit, reason) {
     if (!isMoraleCombatUnit(unit) || unit.fleeing || unit.demoralized || unit.retreatingToMed)
       return;
-    if (
-      unit.team === 'enemy' &&
-      (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilOperative(unit))
-    ) {
+    if (unit.team === 'enemy' && (unit.isNamedBoss || svc('GameDepth')?.isEnemyEvilHero(unit))) {
       // A broken operative that fights at range would hang back for good: it runs for the line.
       if (!unit.isNamedBoss && unit.combatType !== 'melee' && !unit.stormLine) {
         unit.lineBreaker = true;

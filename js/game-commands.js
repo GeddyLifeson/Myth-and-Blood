@@ -58,17 +58,17 @@ const GameCommands = (() => {
     const unlockAll = GS.creativeMode && GS.creativeSettings.unlockAll;
     return {
       creativeUnlockAll: unlockAll,
-      doomMetaUnlocked: unlockAll || svc('MetaProgress').isDoomslayerHeroUnlocked(),
+      doomMetaUnlocked: unlockAll || svc('MetaProgress').isAbyssWalkerUnlocked(),
       perksMetaUnlocked: unlockAll || (svc('Perks') && svc('Perks').perkMachinesUnlocked()),
     };
   }
 
-  function isAnyCrossoverAccess() {
+  function isAnyCompanyAccess() {
     const opts = getResearchOpts();
     if (opts.creativeUnlockAll) return true;
-    if (svc('MetaProgress').isAnyCrossoverUnlocked()) return true;
+    if (svc('MetaProgress').isAnyCompanyUnlocked()) return true;
     if (svc('Research')) {
-      for (const f of Object.keys(CrossoverFactions || {})) {
+      for (const f of Object.keys(FreeCompanies || {})) {
         if (svc('Research').isFactionUnlocked(f, opts)) return true;
       }
     }
@@ -969,9 +969,10 @@ const GameCommands = (() => {
       return false;
     }
     if (DRAGON_THEMED_STRIKES.has(ability)) {
-      const tesOk =
-        (GS.creativeMode && GS.creativeSettings.unlockAll) || svc('MetaProgress').isTesUnlocked();
-      if (!tesOk) {
+      const rimehowlOk =
+        (GS.creativeMode && GS.creativeSettings.unlockAll) ||
+        svc('MetaProgress').isRimehowlUnlocked();
+      if (!rimehowlOk) {
         showMessage('Voice shouts unlock with Rimehowl Pact — complete the Rimehowl Legacy.', 300);
         return false;
       }
@@ -1131,7 +1132,7 @@ const GameCommands = (() => {
     getDeployCost,
     getResearchOpts,
     isAcademyEraActive,
-    isAnyCrossoverAccess,
+    isAnyCompanyAccess,
     isCourierMessageCapReached,
     respondMapEvent,
     rotateWall,

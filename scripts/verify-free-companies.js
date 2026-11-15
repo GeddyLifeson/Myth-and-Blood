@@ -1,6 +1,6 @@
 /**
  * Static integrity checks for crossover rosters, buildings, unlocks, and encyclopedia.
- * Run: node scripts/verify-crossover.js
+ * Run: node scripts/verify-free-companies.js
  */
 const fs = require('fs');
 const path = require('path');
@@ -36,7 +36,7 @@ loadScript('game-services.js');
 loadScript('units.js');
 loadScript('meta-progress.js');
 MetaProgress.load();
-loadScript('crossover.js');
+loadScript('free-companies.js');
 loadScript('faction-depth.js');
 
 const issues = [];
@@ -49,16 +49,16 @@ function warn(msg) {
   warnings.push(msg);
 }
 
-const factionIds = Object.keys(CrossoverFactions);
+const factionIds = Object.keys(FreeCompanies);
 const profileIds = Object.keys(FactionDepth.PROFILES).filter(
   (id) => id !== 'champions' && id !== 'doom'
 );
-const crossoverUnitIds = Object.keys(CrossoverDefs);
+const heroUnitIds = Object.keys(HeroDefs);
 
 // --- Faction ↔ building ↔ unlock ---
-for (const [fid, f] of Object.entries(CrossoverFactions)) {
+for (const [fid, f] of Object.entries(FreeCompanies)) {
   if (!BuildDefs[f.building])
-    fail(`CrossoverFactions.${fid}.building missing in BuildDefs: ${f.building}`);
+    fail(`FreeCompanies.${fid}.building missing in BuildDefs: ${f.building}`);
   else {
     const b = BuildDefs[f.building];
     if (!b.isCrossoverBarracks) fail(`BuildDefs.${f.building} missing isCrossoverBarracks`);
@@ -69,30 +69,29 @@ for (const [fid, f] of Object.entries(CrossoverFactions)) {
   if (typeof unlockFn !== 'function')
     fail(`MetaProgress missing unlock fn: ${f.unlockKey} for faction ${fid}`);
   if (
-    !MetaProgress.isCrossoverFactionUnlocked(fid) &&
-    typeof MetaProgress.isCrossoverFactionUnlocked(fid) !== 'boolean'
+    !MetaProgress.isCompanyUnlocked(fid) &&
+    typeof MetaProgress.isCompanyUnlocked(fid) !== 'boolean'
   ) {
-    fail(`isCrossoverFactionUnlocked(${fid}) not boolean`);
+    fail(`isCompanyUnlocked(${fid}) not boolean`);
   }
   if (!FactionDepth.PROFILES[fid]) fail(`FactionDepth.PROFILES missing faction: ${fid}`);
 }
 
 for (const pid of profileIds) {
-  if (!CrossoverFactions[pid] && pid !== 'champions' && pid !== 'doom') {
-    warn(`FactionDepth profile "${pid}" has no CrossoverFactions entry`);
+  if (!FreeCompanies[pid] && pid !== 'champions' && pid !== 'doom') {
+    warn(`FactionDepth profile "${pid}" has no FreeCompanies entry`);
   }
 }
 
 // --- Operatives per faction ---
 const rosterByFaction = {};
-for (const [id, def] of Object.entries(CrossoverDefs)) {
-  if (!def.faction) fail(`CrossoverDefs.${id} missing faction`);
-  if (!def.name || !def.cost || !def.hp || !def.damage)
-    fail(`CrossoverDefs.${id} missing core stats`);
-  if (!def.ability || !def.abilityDesc) fail(`CrossoverDefs.${id} missing ability fields`);
-  if (!def.combatTag) fail(`CrossoverDefs.${id} missing combatTag`);
+for (const [id, def] of Object.entries(HeroDefs)) {
+  if (!def.faction) fail(`HeroDefs.${id} missing faction`);
+  if (!def.name || !def.cost || !def.hp || !def.damage) fail(`HeroDefs.${id} missing core stats`);
+  if (!def.ability || !def.abilityDesc) fail(`HeroDefs.${id} missing ability fields`);
+  if (!def.combatTag) fail(`HeroDefs.${id} missing combatTag`);
   if (!getPlayerUnitDef(id)) fail(`getPlayerUnitDef(${id}) returned null`);
-  if (!isCrossoverUnit(id)) fail(`isCrossoverUnit(${id}) returned false`);
+  if (!isCompanyHeroUnit(id)) fail(`isCompanyHeroUnit(${id}) returned false`);
   const created = createUnit(id, 100, 200, 'player');
   if (!created) fail(`createUnit(${id}) returned null`);
   else if (!created.isCrossover) fail(`createUnit(${id}) missing isCrossover flag`);
@@ -101,16 +100,16 @@ for (const [id, def] of Object.entries(CrossoverDefs)) {
 }
 
 for (const fid of factionIds) {
-  if (!rosterByFaction[fid]) fail(`Faction ${fid} has zero operatives in CrossoverDefs`);
+  if (!rosterByFaction[fid]) fail(`Faction ${fid} has zero operatives in HeroDefs`);
 }
 
 // --- Encyclopedia: champions are rendered from data, never named in the source ---
 const encSource = fs.readFileSync(path.join(jsDir, 'encyclopedia.js'), 'utf8');
-if (!/CrossoverDefs/.test(encSource) || !/CrossoverFactions/.test(encSource)) {
-  fail('Encyclopedia no longer reads CrossoverDefs / CrossoverFactions at run time');
+if (!/HeroDefs/.test(encSource) || !/FreeCompanies/.test(encSource)) {
+  fail('Encyclopedia no longer reads HeroDefs / FreeCompanies at run time');
 }
-for (const id of crossoverUnitIds) {
-  const name = CrossoverDefs[id]?.name;
+for (const id of heroUnitIds) {
+  const name = HeroDefs[id]?.name;
   if (name && name.length >= 5 && encSource.includes(name)) {
     fail(`Encyclopedia hardcodes the display name of ${id}; render it from data`);
   }
@@ -120,7 +119,7 @@ for (const id of crossoverUnitIds) {
 for (const syn of FactionDepth.SYNERGIES) {
   for (const f of syn.factions) {
     if (f === 'champions') continue;
-    if (!FactionDepth.PROFILES[f] && !CrossoverFactions[f])
+    if (!FactionDepth.PROFILES[f] && !FreeCompanies[f])
       fail(`Synergy "${syn.id}" references unknown faction: ${f}`);
   }
 }
@@ -128,21 +127,21 @@ for (const syn of FactionDepth.SYNERGIES) {
 // --- Unlock + recruit simulation ---
 MetaProgress.unlockAllCheatContent();
 for (const fid of factionIds) {
-  if (!MetaProgress.isCrossoverFactionUnlocked(fid))
-    fail(`unlockAllCheatContent did not unlock ${fid}`);
+  if (!MetaProgress.isCompanyUnlocked(fid)) fail(`unlockAllCheatContent did not unlock ${fid}`);
 }
 
-const sampleId = crossoverUnitIds[0];
-const sampleDef = CrossoverDefs[sampleId];
-if (typeof CrossoverHub?.rosterForFaction === 'function') {
-  const roster = CrossoverHub.rosterForFaction(sampleDef.faction);
-  if (!roster.length) fail(`CrossoverHub.rosterForFaction(${sampleDef.faction}) empty`);
-  if (!roster.find(([id]) => id === sampleId)) fail(`CrossoverHub roster missing ${sampleId}`);
+const sampleId = heroUnitIds[0];
+const sampleDef = HeroDefs[sampleId];
+if (typeof FreeCompaniesScreen?.rosterForFaction === 'function') {
+  const roster = FreeCompaniesScreen.rosterForFaction(sampleDef.faction);
+  if (!roster.length) fail(`FreeCompaniesScreen.rosterForFaction(${sampleDef.faction}) empty`);
+  if (!roster.find(([id]) => id === sampleId))
+    fail(`FreeCompaniesScreen roster missing ${sampleId}`);
 }
 
 // --- FactionDepth barracks rules ---
 for (const fid of factionIds) {
-  const building = CrossoverFactions[fid].building;
+  const building = FreeCompanies[fid].building;
   const chk = FactionDepth.canBuildBarracks(building, 100, [], []);
   if (!chk || typeof chk.ok !== 'boolean')
     fail(`canBuildBarracks(${building}) returned invalid result`);
@@ -155,9 +154,9 @@ const achFactionBlocks = [
     /\{\s*key:\s*'([^']+)',\s*label:[^,]+,\s*cat:\s*'([^']+)',\s*build:\s*('[^']*'|null)/g
   ),
 ];
-const achCrossover = achFactionBlocks.filter(([, key]) => CrossoverFactions[key]);
-for (const [, key, , buildRaw] of achCrossover) {
-  const expected = CrossoverFactions[key].building;
+const achHero = achFactionBlocks.filter(([, key]) => FreeCompanies[key]);
+for (const [, key, , buildRaw] of achHero) {
+  const expected = FreeCompanies[key].building;
   const buildVal = buildRaw === 'null' ? null : buildRaw.replace(/'/g, '');
   if (buildVal !== expected)
     fail(`achievements-data crossover key ${key}: build ${buildVal} !== ${expected}`);
@@ -186,14 +185,14 @@ const cheatUnlocks = [
 for (const [code, fid] of cheatUnlocks) {
   MetaProgress.reset();
   if (!Cheats.submit(code)) fail(`Cheats.submit("${code}") returned false`);
-  if (!MetaProgress.isCrossoverFactionUnlocked(fid))
+  if (!MetaProgress.isCompanyUnlocked(fid))
     fail(`Cheat code "${code}" did not unlock faction ${fid}`);
 }
 MetaProgress.reset();
 
 console.log('Crossover verification');
 console.log(`  Factions: ${factionIds.length}`);
-console.log(`  Operatives: ${crossoverUnitIds.length}`);
+console.log(`  Operatives: ${heroUnitIds.length}`);
 console.log(`  Roster counts: ${factionIds.map((f) => `${f}=${rosterByFaction[f]}`).join(', ')}`);
 
 if (warnings.length) {
