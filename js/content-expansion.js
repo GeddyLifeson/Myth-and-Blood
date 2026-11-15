@@ -1639,7 +1639,7 @@ const ContentExpansion = (() => {
     const coolFx = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
 
     if (ability === 'fus_ro_dah') {
-      AudioEngine.SFX.lightning?.();
+      AudioEngine.play('lightning');
       StrikeFX?.play?.('lightning', wx, wy, ab.radius);
       StrikeFX?.impact?.('lightning', wx, wy, ab.radius, 1.2 * coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(8 * coolFx));
@@ -1648,7 +1648,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'fire_breath') {
-      AudioEngine.SFX.fireball?.();
+      AudioEngine.play('fireball');
       StrikeFX?.play?.('fireball', wx, wy, ab.radius);
       StrikeFX?.impact?.('fireball', wx, wy, ab.radius, 1.35 * coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(9 * coolFx));
@@ -1660,7 +1660,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'ice_form') {
-      AudioEngine.SFX.magicCast?.();
+      AudioEngine.play('magicCast');
       StrikeFX?.play?.('frost_nova', wx, wy, ab.radius);
       StrikeFX?.impact?.('frost_nova', wx, wy, ab.radius, 1.1 * coolFx);
       for (const u of ctx.units) {
@@ -1676,7 +1676,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'meteor') {
-      AudioEngine.SFX.fireball();
+      AudioEngine.play('fireball');
       // The rock takes a moment to fall: shake and damage land with it.
       const land = () => {
         StrikeFX?.impact?.('meteor', wx, wy, ab.radius, 1.45 * coolFx);
@@ -1690,7 +1690,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'frost_nova') {
-      AudioEngine.SFX.magicCast();
+      AudioEngine.play('magicCast');
       StrikeFX?.play?.('frost_nova', wx, wy, ab.radius);
       StrikeFX?.impact?.('frost_nova', wx, wy, ab.radius, coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(4 * coolFx));

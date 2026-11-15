@@ -8308,6 +8308,7 @@ const Game = (() => {
       addHighlight('host', `Wave ${GS.wave}: ${lead.name} lead (${tactic.name})`);
       showMessage(`${lead.name} lead today: ${tactic.name}. ${tactic.counter}`, 380);
       svc('FloatingText').status(GS.worldW / 2, 48, lead.name.toUpperCase(), lead.color);
+      svc('AudioEngine')?.factionArrival?.(plan.leadId);
     }
     if (typeof GameFeedback !== 'undefined') {
       GameFeedback.resetWave();

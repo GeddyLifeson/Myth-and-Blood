@@ -1171,7 +1171,7 @@ const SiegeLoop = (() => {
     ctx.ach?.('breach', { total: run.breaches, left });
     ctx.float(unit.x, unit.y - 18, 'BREACH', '#ff3030');
     ctx.shake(7);
-    ctx.playSfx('breachHorn');
+    ctx.playSfx(left === 0 ? 'lastBreach' : 'breachHorn');
     ctx.burst('dust', unit.x, unit.y);
     flashBreach();
     globalThis.FieldArt?.noteBreach?.(unit.x);

@@ -453,7 +453,9 @@ const BannerArt = (() => {
     // Dawn is announced on its own only when no wave banner comes with it.
     if (seen.dawnAt && now() - seen.dawnAt > 350) {
       seen.dawnAt = 0;
-      show('dawn', { title: 'Dawn', sub: 'They come from the north' });
+      if (show('dawn', { title: 'Dawn', sub: 'They come from the north' })) {
+        globalThis.AudioEngine?.play?.('dawnHorn');
+      }
     }
 
     // The boss banner is the name card: the page's own card stays down.

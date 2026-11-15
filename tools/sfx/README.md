@@ -6,6 +6,17 @@ falls back to the synthesized sound if a file has not loaded.
 
 ## Rebuilding them
 
+MuseScore Studio can export without opening its window, with the same Muse Sounds render
+(checked against the shipped cues: same envelope, same tone):
+
+```
+"C:\Program Files\MuseScore 4\bin\MuseScore4.exe" -o pass.wav myth_and_blood_pass.musicxml
+python cut.py pass.wav pass.json ../../assets/sfx
+```
+
+`cut.py` does steps 3 and 4 below for any of the three layouts (`cues.json`, `music.json`,
+`pass.json`). It needs `pip install soundfile`.
+
 1. Run `python gen_cues.py`. It writes `myth_and_blood_cues.musicxml` (every cue in one
    score, four bars apiece at 120 bpm, so each cue starts on an 8-second boundary) and
    `cues.json` (the cue order).
@@ -54,3 +65,21 @@ like the ones above.
 | `horde_warning`   | a horde wave is coming                   |
 
 The synthesized sequencer still plays until a loop has loaded, and whenever a file is missing.
+
+## Sound pass
+
+`gen_sound_pass.py` writes a third score, `myth_and_blood_pass.musicxml`, and `pass.json`.
+
+| File               | Used for                                                    |
+| ------------------ | ----------------------------------------------------------- |
+| `mine_blast`       | a Sapper's mine goes up                                     |
+| `satchel_blast`    | a satchel charge bursts                                     |
+| `fuse_hiss`        | a satchel charge is thrown, fuse lit                        |
+| `dawn_horn`        | the Dawn banner (when no wave banner carries the dawn)      |
+| `last_breach`      | the breach that leaves one more before defeat               |
+| `faction_<name>`   | an enemy faction takes the lead of a wave (seven, one each) |
+| `music_night`      | night (looped)                                              |
+| `music_siege_mid`  | waves 15 to 39 by day (looped)                              |
+| `music_siege_late` | wave 40 onward by day (looped)                              |
+| `music_horde`      | a horde by day (looped)                                     |
+| `music_last_stand` | three quarters of the breach limit used (looped)            |
