@@ -1681,7 +1681,7 @@ const Game = (() => {
         difficulty: GS.difficultyId,
         wave: GS.wave,
         kills: GS.kills,
-        misses: GS.runPlayerDeaths,
+        breaches: typeof SiegeLoop !== 'undefined' ? SiegeLoop.exportState().breaches : 0,
         playerDeaths: GS.runPlayerDeaths,
         creative: GS.creativeMode,
       });

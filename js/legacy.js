@@ -20,6 +20,8 @@ const Legacy = (() => {
   };
 
   let currentRun = null;
+  // Kills and deploys mark the record dirty; it is written once per wave, not per kill.
+  let dirty = false;
 
   function load() {
     try {
@@ -31,6 +33,7 @@ const Legacy = (() => {
   }
 
   function save() {
+    dirty = false;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (_) {
@@ -68,7 +71,12 @@ const Legacy = (() => {
     };
   }
 
+  function flush() {
+    if (dirty) save();
+  }
+
   function onRunStart(opts = {}) {
+    flush();
     load();
     currentRun = {
       id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -89,7 +97,7 @@ const Legacy = (() => {
   function recordDeploy(unitType) {
     if (!unitType || currentRun?.creative) return;
     data.unitDeploys[unitType] = (data.unitDeploys[unitType] || 0) + 1;
-    save();
+    dirty = true;
   }
 
   function recordKill(killerType, enemyType) {
@@ -97,7 +105,7 @@ const Legacy = (() => {
     data.unitKills[killerType] = (data.unitKills[killerType] || 0) + 1;
     data.totalKills++;
     if (currentRun) currentRun.kills++;
-    save();
+    dirty = true;
   }
 
   function recordFaction(factionId) {
@@ -151,7 +159,8 @@ const Legacy = (() => {
       difficulty: stats.difficulty || currentRun?.difficulty || 'normal',
       wave: stats.wave ?? currentRun?.maxWave ?? 0,
       kills: stats.kills ?? currentRun?.kills ?? 0,
-      misses: stats.misses ?? 0,
+      breaches: stats.breaches ?? 0,
+      losses: stats.playerDeaths ?? 0,
       endedAt: Date.now(),
       honorNames: currentRun?.honorNames || [],
     };
@@ -173,6 +182,15 @@ const Legacy = (() => {
     if (typeof CrownLegacies !== 'undefined') CrownLegacies.refreshUnlocks(get());
     if (typeof EternalLegacyTree !== 'undefined') EternalLegacyTree.refreshUnlocks(get());
     return true;
+  }
+
+  /** Records from before `losses` was stored only had `misses`, which was unreliable: left out. */
+  function formatLastRun(r) {
+    const diff = getDifficultyDef?.(r.difficulty)?.label || r.difficulty;
+    const tail = Number.isFinite(r.losses)
+      ? `, ${r.breaches || 0} breaches, ${r.losses} soldiers lost`
+      : '';
+    return `${r.victory ? 'Victory' : 'Defeat'} on ${diff}: wave ${r.wave}, ${r.kills} kills${tail}.`;
   }
 
   function getLegacyEntries() {
@@ -238,13 +256,14 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Last After-Action',
         body: leg.lastRun
-          ? `${leg.lastRun.victory ? 'Victory' : 'Defeat'} on ${getDifficultyDef?.(leg.lastRun.difficulty)?.label || leg.lastRun.difficulty} — wave ${leg.lastRun.wave}, ${leg.lastRun.kills} kills, ${leg.lastRun.playerDeaths ?? leg.lastRun.misses ?? 0} losses.`
+          ? formatLastRun(leg.lastRun)
           : 'Complete a run to see your last summary here.',
       },
     ];
   }
 
   load();
+  if (typeof addEventListener === 'function') addEventListener('pagehide', flush);
 
   // Run state in saves: see js/save-registry.js.
   if (typeof SaveRegistry !== 'undefined') {
@@ -270,6 +289,8 @@ const Legacy = (() => {
     onRunStart,
     recordDeploy,
     recordKill,
+    flush,
+    formatLastRun,
     recordFaction,
     recordHonor,
     onWaveComplete,

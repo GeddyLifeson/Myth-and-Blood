@@ -915,7 +915,10 @@ const SiegeLoop = (() => {
       for (const k in src) out[k] = (out[k] || 0) + src[k];
     };
     if (run && run.counted) {
-      for (const r of RIBBONS) if (store.earned.includes(r.id)) add(r.fx);
+      // A ribbon's bonus applies only while it is slotted at the Muster (js/crown-legacies.js).
+      const slotted = (id) =>
+        typeof CrownLegacies === 'undefined' || CrownLegacies.isSlotted(`ribbon:${id}`);
+      for (const r of RIBBONS) if (store.earned.includes(r.id) && slotted(r.id)) add(r.fx);
     }
     if (run) for (const id of run.edicts) if (EDICTS[id]) add(EDICTS[id].fx);
     return out;

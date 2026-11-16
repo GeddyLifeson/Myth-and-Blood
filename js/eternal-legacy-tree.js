@@ -126,7 +126,7 @@ const EternalLegacyTree = (() => {
       branch: 'iron_crown',
       tier: 1,
       name: 'Volley Tradition',
-      hint: '50+ archer kills (lifetime)',
+      hint: '30+ archer kills (lifetime)',
       desc: 'Archers +4% damage — medieval volleys echo forever.',
       cost: 2,
       prereq: ['crown_age_mark'],
@@ -425,10 +425,13 @@ const EternalLegacyTree = (() => {
     if (!loadedOnce) load();
   }
 
+  let lastRaw = null;
   function load() {
     loadedOnce = true;
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw !== lastRaw) storeVersion++;
+      lastRaw = raw;
       if (raw) data = { ...data, ...JSON.parse(raw) };
     } catch (_) {
       /* ignore */
@@ -439,6 +442,7 @@ const EternalLegacyTree = (() => {
   }
 
   function save() {
+    storeVersion++;
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (_) {
@@ -472,7 +476,33 @@ const EternalLegacyTree = (() => {
   }
 
   function getAvailableShards(leg = null) {
-    return Math.max(0, computeEchoShards(leg) - getSpentShards());
+    // Shards also open Muster perk slots; both spends come out of one pool.
+    const slotSpend =
+      typeof CrownLegacies !== 'undefined' ? CrownLegacies.getSlotSpend?.() || 0 : 0;
+    return Math.max(0, computeEchoShards(leg) - getSpentShards() - slotSpend);
+  }
+
+  /** An invested node only counts while its branch is slotted at the Muster. */
+  function isBranchActive(branch) {
+    if (typeof CrownLegacies === 'undefined' || !CrownLegacies.isSlotted) return true;
+    return CrownLegacies.isSlotted(`echo:${branch}`);
+  }
+
+  function activeNodeIds() {
+    return data.investedIds.filter((id) => TREE_NODES[id] && isBranchActive(TREE_NODES[id].branch));
+  }
+
+  /** One Muster perk per branch: what slotting it switches on. */
+  function getBranchPerks() {
+    ensureLoaded();
+    return Object.values(BRANCHES).map((b) => ({
+      id: b.id,
+      label: b.label,
+      desc: b.desc,
+      invested: data.investedIds
+        .filter((id) => TREE_NODES[id]?.branch === b.id)
+        .map((id) => TREE_NODES[id].name),
+    }));
   }
 
   function hasFoundationPath(pathId) {
@@ -557,9 +587,29 @@ const EternalLegacyTree = (() => {
     return 1;
   }
 
+  // getCombinedEffects(null, wave) is on the damage path: one result per state, not per hit.
+  let fxCache = null;
+  let fxKey = '';
+  let storeVersion = 0;
+  let favoriteType = null;
+
   function getCombinedEffects(legacySnap = null, wave = 0) {
     ensureLoaded();
-    const leg = legacySnap || getLegacySnapshot();
+    if (legacySnap) return computeEffects(legacySnap, wave);
+    const crownVersion = typeof CrownLegacies !== 'undefined' ? CrownLegacies.getVersion?.() : 0;
+    const branch = typeof StoryLore !== 'undefined' ? StoryLore.getDominantBranch?.() : '';
+    const key = `${storeVersion}|${crownVersion}|${getWaveAscendMult(wave)}|${branch}`;
+    if (!fxCache || key !== fxKey) {
+      if (fxKey.split('|').slice(0, 2).join('|') !== key.split('|').slice(0, 2).join('|')) {
+        favoriteType = getLegacySnapshot().favoriteUnitType || null;
+      }
+      fxCache = computeEffects({ favoriteUnitType: favoriteType }, wave);
+      fxKey = key;
+    }
+    return fxCache;
+  }
+
+  function computeEffects(leg, wave) {
     const waveMult = getWaveAscendMult(wave);
     const out = {
       startTp: 0,
@@ -585,7 +635,7 @@ const EternalLegacyTree = (() => {
       investedCount: data.investedIds.length,
     };
 
-    for (const id of data.investedIds) {
+    for (const id of activeNodeIds()) {
       const def = TREE_NODES[id];
       if (!def?.effects) continue;
       const e = def.effects;
@@ -708,7 +758,7 @@ const EternalLegacyTree = (() => {
     if (!unit?.type) return 0;
     load();
     let tier = 0;
-    for (const id of data.investedIds) {
+    for (const id of activeNodeIds()) {
       const def = TREE_NODES[id];
       if (!def?.ascends?.includes(unit.type)) continue;
       tier = Math.max(tier, def.tier || 1);
@@ -730,7 +780,7 @@ const EternalLegacyTree = (() => {
         u._eternalStartMorale = true;
       }
     }
-    return { startTp: fx.startTp, invested: data.investedIds.length };
+    return { startTp: fx.startTp, invested: activeNodeIds().length };
   }
 
   function getMenuSnapshot() {
@@ -865,7 +915,7 @@ const EternalLegacyTree = (() => {
     const leg = getLegacySnapshot();
     const avail = getAvailableShards(leg);
     if (avail >= 3 && wave >= 50 && wave % 50 === 0) {
-      return `${avail} Echo Shards — invest Crown of Ages on main menu`;
+      return `${avail} Echo Shards to spend at the Muster`;
     }
     if (wave >= 100 && data.investedIds.some((id) => TREE_NODES[id]?.ascends?.length)) {
       return 'Echoes of the Past — early units ascend at empire scale';
@@ -879,6 +929,8 @@ const EternalLegacyTree = (() => {
     BRANCHES,
     TREE_NODES,
     computeEchoShards,
+    getAvailableShards,
+    getBranchPerks,
     refreshUnlocks,
     canInvest,
     investNode,
