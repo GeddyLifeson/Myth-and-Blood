@@ -25,7 +25,7 @@ const Tooltips = (() => {
     spike_trap:
       'Hidden spikes: the first enemy across it each reset takes heavy damage. Takes one upgrade: Barbed Pit or Hair Trigger. Requires Field Engineering.',
     quarry:
-      'Pays at the end of each wave in which no enemy came within 110 of it. Blocks movement. Shares the 6-site income cap. Requires Prospecting.',
+      'Pays at the end of each wave in which no enemy came within 110 of it. Blocks movement. Shares the 6-site income cap.',
     trade_outpost:
       'Pays at the end of each wave in which no enemy came within 160 of it; lifts morale nearby. Shares the 6-site income cap.',
     research_lab:

@@ -137,7 +137,7 @@ function upgrade(api, host, type) {
 {
   const api = start(43);
   const { GameState: GS, GameBuildings, Research } = api;
-  Research.completeResearch('prospecting');
+  ok(Research.isBuildUnlocked('quarry'), 'the Quarry is open from wave 1');
   for (let i = 0; i < 6; i++) place(api, 'quarry', 150 + i * 120, 300);
   GS.units.push(api.createUnit('builder', 500, 600, 'player'));
   GS.tactical = 100;

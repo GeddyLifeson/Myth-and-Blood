@@ -20,6 +20,7 @@ const Research = (() => {
     'research_lab',
     'watchtower',
     'trade_outpost',
+    'quarry',
     'enemy_hamlet',
     'enemy_merchant_guild',
     'enemy_trade_outpost',
