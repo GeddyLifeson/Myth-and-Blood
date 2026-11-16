@@ -42,6 +42,7 @@ export const GAME_SCRIPTS = [
   'strike-fx.js',
   'projectile-art.js',
   'banner-art.js',
+  'soldier-names.js',
   'units.js',
   'content-expansion.js',
   'meta-progress.js',

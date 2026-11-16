@@ -84,6 +84,7 @@ const GameSave = (() => {
       vetTier: u.vetTier,
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
+      soldierName: u.soldierName,
       experience: u.experience,
       morale: u.morale,
       maxMorale: u.maxMorale,
@@ -519,6 +520,9 @@ const GameSave = (() => {
     if (!u) return null;
     if (us.id) u.id = us.id;
     Object.assign(u, us);
+    if (u.team === 'player' && u.soldierName) SoldierNames.remember(u.soldierName);
+    else if (u.team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(u.type)))
+      u.soldierName = SoldierNames.roll();
     if (legacy) stopPostReturn(u);
     if (u.team === 'player') {
       if (legacy) {

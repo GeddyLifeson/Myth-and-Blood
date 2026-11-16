@@ -229,6 +229,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "Settings",
   "SettlementRaids",
   "SiegeLoop",
+  "SoldierNames",
   "Spatial",
   "SpriteGen",
   "SpriteLod",
