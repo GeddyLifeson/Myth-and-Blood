@@ -2226,6 +2226,7 @@ const Game = (() => {
         worldW: GS.worldW,
         rallyY: GS.rallyY,
         units: GS.units,
+        buildings: GS.buildings,
         damageUnit: (u, frac, opts = {}) => {
           if (u.hp <= 0) return;
           takeDamage(u, Math.max(1, u.maxHp * frac), opts);

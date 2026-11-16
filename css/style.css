@@ -780,8 +780,54 @@ body.window-borderless .window-drag-handle {
 .expedition-btn .expedition-stage + .expedition-status {
   margin-left: 2px;
 }
-.planet-event-section {
-  margin-top: 4px;
+.omen-card {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 32px));
+  padding: 8px 10px;
+  background: rgba(14, 10, 8, 0.92);
+  border: 1px solid rgba(180, 40, 30, 0.7);
+  border-left-width: 4px;
+  color: #e8dcc8;
+  pointer-events: auto;
+  z-index: 30;
+}
+.omen-card[hidden] {
+  display: none;
+}
+.omen-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.omen-card-title {
+  font-weight: bold;
+}
+.omen-card-weather {
+  color: #b8c4cc;
+}
+.omen-card .planet-event-summary {
+  font-size: 11px;
+  color: #e8dcc8;
+}
+.omen-card .planet-event-choices {
+  flex-direction: row;
+}
+.omen-card .planet-event-btn {
+  font-size: 11px;
+}
+.omen-card .planet-event-btn .planet-event-hint {
+  font-size: 10px;
+}
+.omen-card-default {
+  margin: 6px 0 0;
+  font-size: 10px;
+  color: rgba(200, 180, 150, 0.8);
 }
 .planet-event-summary {
   font-size: 9px;

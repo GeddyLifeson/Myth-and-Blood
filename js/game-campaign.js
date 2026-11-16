@@ -443,9 +443,9 @@ const GameCampaign = (() => {
           hooks: { showMessage, floatingText: fx },
         });
       }
-      // Hazards are laid and spread only on the event deck's hazard waves, and each is announced.
+      // Hazards are laid only when the night's trap omen was left to stand.
       const FH = svc('FactionHazards');
-      if (FH && svc('DynamicMapEvents')?.eventSlot(p.wave) === 'hazard') {
+      if (FH && svc('DynamicMapEvents')?.hazardsLaid(p.wave)) {
         // A full field gives up its oldest hazard, so every hazard wave lays something new.
         if (p.hazards.length >= HAZARD_FIELD_CAP) p.hazards = p.hazards.slice(1 - HAZARD_FIELD_CAP);
         const fresh = FH.spawnInitial(GS.worldW, GS.worldH, p.territoryTier, GS.rallyY, p.wave, {

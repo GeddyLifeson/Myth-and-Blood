@@ -1418,64 +1418,51 @@ const UI = (() => {
       .join('');
   }
 
+  /** The omen card on the field: tonight's omen (two options) and tomorrow's weather. */
   function refreshMapEventPanel(gs) {
-    const section = document.getElementById('planet-event-section');
+    const card = document.getElementById('omen-card');
+    const title = document.getElementById('omen-card-title');
+    const weatherEl = document.getElementById('omen-card-weather');
     const summary = document.getElementById('planet-event-summary');
     const list = document.getElementById('planet-event-choices');
+    const defEl = document.getElementById('omen-card-default');
+    if (!card || !title || !weatherEl || !summary || !list || !defEl) return;
     const me = gs.mapEvents;
-    if (!section || !summary || !list) return;
-    const wave = gs.wave || 0;
-    const waveMin = me?.waveMin || 12;
-    const show = !!(me?.active || me?.pending || me?.awaitingChoice || wave >= waveMin - 1);
-    section.style.display = show ? '' : 'none';
-    if (!show) return;
-
     const nightOk = gs.timeOfDay === 'night';
-    const canRespond = !!(me?.canRespond || (me?.pending && me?.awaitingChoice && nightOk));
+    const omen = me?.pending ? me.event : null;
+    const weather = me?.weather;
+    card.hidden = !nightOk || (!omen && !weather);
+    if (card.hidden) return;
+
+    card.style.borderLeftColor = omen?.color || weather?.color || '';
+    title.textContent = omen ? omen.name : 'Tomorrow';
+    weatherEl.textContent = weather ? weather.name : 'Clear skies';
+    summary.textContent = [omen?.prep, weather?.text].filter(Boolean).join(' ');
+
+    const choices = omen?.choices || [];
+    const chosen = omen?.choice;
+    defEl.textContent =
+      choices.length && !chosen
+        ? `Unanswered by dawn: ${omen.defaultLabel || 'the omen decides'}`
+        : '';
     const freeTp = gs.creativeMode && gs.creativeSettings?.freeResources;
-
-    if (me?.pending && me?.event?.prep) {
-      summary.textContent = `${me.event.name} - ${me.event.prep}${
-        nightOk ? '' : ' (night prep only)'
-      }`;
-    } else if (me?.activeSummary) {
-      summary.textContent = me.activeSummary;
-    } else {
-      summary.textContent = `Planet events unlock wave ${waveMin} (respond at night)`;
-    }
-
-    const choices = me?.event?.choices || [];
-    const chosen = me?.event?.choice;
-
-    if (!choices.length) {
-      list.innerHTML = chosen
-        ? '<p class="panel-hint">Response locked - effects apply at dawn.</p>'
-        : '<p class="panel-hint">No planet event pending - check again after a wave clears at night.</p>';
-      return;
-    }
-
-    const colorStyle = me.event?.color ? ` style="border-left-color:${me.event.color}"` : '';
     list.innerHTML = choices
       .map((ch) => {
         const isChosen = chosen === ch.id;
         const needTp = !freeTp && (ch.cost || 0) > 0 && (gs.tactical || 0) < (ch.cost || 0);
         let cls = '';
         let lockHint = '';
-        if (isChosen) {
-          cls = 'planet-event-chosen';
-        } else if (!nightOk) {
+        if (isChosen) cls = 'planet-event-chosen';
+        else if (chosen) {
           cls = 'planet-event-softlock';
-          lockHint = ' Night prep only - wait for night.';
-        } else if (!canRespond) {
-          cls = 'planet-event-softlock';
-          lockHint = ' Already answered or no pending event.';
+          lockHint = ' Already answered.';
         } else if (needTp) {
           cls = 'planet-event-softlock';
           lockHint = ` Need ${ch.cost} TP (have ${Math.floor(gs.tactical || 0)}).`;
         }
         const costLabel = ch.cost > 0 ? `${ch.cost} TP` : 'FREE';
         return (
-          `<button type="button" class="planet-event-btn ${cls}" data-map-choice="${ch.id}"${colorStyle}` +
+          `<button type="button" class="planet-event-btn ${cls}" data-map-choice="${ch.id}"` +
           ` title="${(ch.hint || ch.label || '') + lockHint}">` +
           `<span>${ch.label}</span><span class="planet-event-cost">${isChosen ? 'CHOSEN' : costLabel}</span>` +
           `<span class="planet-event-hint">${ch.hint || ''}${lockHint}</span></button>`
@@ -2281,12 +2268,12 @@ const UI = (() => {
           me?.activeSummary ||
           (me?.pending && me?.event?.name ? `${me.event.name} - respond` : null) ||
           me?.event?.name ||
-          'Planet';
+          'Omen';
         planetEl.textContent = (label || '-').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
         planetEl.title =
           me?.event?.prep ||
           me?.activeSummary ||
-          'Dynamic map events - volcanic eruptions, awakening ruins, ley storms';
+          'Omens: a card on the field some nights, two options each';
         planetEl.className =
           'stat-value planet-event-value' + (me?.pending ? ' planet-event-active' : '');
         planetEl.style.color = me?.event?.color || '';
