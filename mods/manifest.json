@@ -3,7 +3,7 @@
     {
       "id": "example_legion",
       "name": "Iron Legion (Example)",
-      "description": "Sample mod — Iron Guard melee troop and Iron Bastion outpost.",
+      "description": "Sample mod: Iron Guard troop, Iron Bastion outpost, an enemy, a wave and a spoil.",
       "path": "example-legion"
     }
   ]

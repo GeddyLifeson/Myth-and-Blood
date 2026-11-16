@@ -270,7 +270,7 @@ const GameUnitAi = (() => {
           const cool = typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2;
           const chance = repairDef?.procChance ?? 0.02 * cool;
           const patchFrac = repairDef?.patchHpFrac ?? 0.08 * cool;
-          if (Math.random() < chance) {
+          if ((globalThis.simRandom || Math.random)() < chance) {
             rt.hp = Math.min(rt.maxHp, rt.hp + rt.maxHp * patchFrac);
             svc('FloatingText').status(rt.x, rt.y, 'PATCH', '#80c0ff');
           }
@@ -394,7 +394,9 @@ const GameUnitAi = (() => {
         unit.actionTimer = (unit.actionTimer || 0) - 1;
         if (unit.actionTimer <= 0 && unit.attackAnimTimer <= 0) {
           fireWeapon(unit, foe);
-          const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
+          const baseCd =
+            getAttackBaseTicks(unit.experience) +
+            Math.floor((globalThis.simRandom || Math.random)() * 20);
           unit.actionTimer = Math.max(
             12,
             Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -426,7 +428,9 @@ const GameUnitAi = (() => {
       unit.actionTimer--;
       if (unit.actionTimer <= 0) {
         fireWeapon(unit, target);
-        const baseCd = getAttackBaseTicks(unit.experience) + Math.floor(Math.random() * 20);
+        const baseCd =
+          getAttackBaseTicks(unit.experience) +
+          Math.floor((globalThis.simRandom || Math.random)() * 20);
         unit.actionTimer = Math.max(
           12,
           Math.floor((baseCd * (unit.reloadMult || 1)) / (unit.attackSpeedMult || 1))
@@ -588,7 +592,7 @@ const GameUnitAi = (() => {
     // Engineer field works (barricades, raid trade posts) never ran while engineers stood
     // still. They stay off until the owner decides whether enemy structures come back.
     if (ENEMY_ENGINEER_WORKS && unit.type === 'goblin_engineer') {
-      if (Math.random() < 0.004) {
+      if ((globalThis.simRandom || Math.random)() < 0.004) {
         GS.decorations.push({
           type: 'barricade',
           x: unit.x,

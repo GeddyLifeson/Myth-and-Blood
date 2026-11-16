@@ -96,6 +96,26 @@ const CreativeTools = (() => {
       customWave: 'plague_rat*8,goblin_burrower*4,orc*6,bone_summoner*1',
       forceNight: true,
     },
+    {
+      id: 'camp_raid',
+      name: 'Camp Raid',
+      desc: 'Wave 14 at night: a forge and drum pit to burn before dawn.',
+      wave: 14,
+      tp: 6000,
+      allies: [
+        { type: 'cavalry', count: 4 },
+        { type: 'crossbowman', count: 4 },
+        { type: 'sapper', count: 2 },
+      ],
+      camps: [
+        { kind: 'forge', sector: 'left' },
+        { kind: 'drums', sector: 'right' },
+      ],
+      customWave: 'orc*8,goblin*10,warg_rider*2',
+      waveSector: 'left',
+      forceNight: true,
+      settings: { freeResources: true, noGameOver: true, noAutoCycle: true },
+    },
   ];
 
   const UNIT_PRESETS = {
@@ -343,9 +363,16 @@ const CreativeTools = (() => {
       }
     }
     if (tpl.customWave) {
-      Game.setCustomWave?.({ text: tpl.customWave, interval: tpl.interval || 50 });
+      Game.setCustomWave?.({
+        text: tpl.customWave,
+        interval: tpl.interval || 50,
+        sector: tpl.waveSector,
+      });
     }
     if (tpl.forceNight) Game.creativeForceNight?.();
+    for (const c of tpl.camps || []) {
+      Game.warCampHooks?.raise?.({ kind: c.kind, sector: c.sector, force: true, silent: true });
+    }
     if (tpl.stress) setStress({ ...tpl.stress, active: true });
     else setStress({ active: false });
 

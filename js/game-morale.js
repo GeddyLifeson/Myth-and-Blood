@@ -140,6 +140,7 @@ const GameMorale = (() => {
     )
       return false;
     if (!isMoraleCombatUnit(observer)) return false;
+    if (globalThis.Honours?.shieldsMorale(observer)) return false;
     if (unitDistSq(observer, dead) > MORALE_WITNESS_RADIUS * MORALE_WITNESS_RADIUS) return false;
     return lineOfSight(observer.x, observer.y, dead.x, dead.y);
   }

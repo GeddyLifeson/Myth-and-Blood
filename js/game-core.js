@@ -550,12 +550,17 @@ const GameCore = (() => {
     return unitCounts.merchantGuildTpBonus;
   }
 
-  function getRawSettlementTpBonus() {
-    return unitCounts.hamletTpBonus + unitCounts.merchantGuildTpBonus;
+  /**
+   * `withGround` adds the held plots. Only the player's own income asks for it: the host's
+   * threat sums do not, since a plot already costs the soldiers posted in it.
+   */
+  function getRawSettlementTpBonus(withGround = false) {
+    const ground = withGround && typeof Ground !== 'undefined' ? Ground.income() : 0;
+    return unitCounts.hamletTpBonus + unitCounts.merchantGuildTpBonus + ground;
   }
 
-  function getSettlementTpBonus() {
-    const raw = getRawSettlementTpBonus();
+  function getSettlementTpBonus(withGround = false) {
+    const raw = getRawSettlementTpBonus(withGround);
     const scaled = svc('GameDepth') ? svc('GameDepth').scaleSettlementTp(raw) : raw;
     const mult = getAdvancedMods().settlementTpMult || 1;
     return Math.floor(scaled * mult);
@@ -1067,7 +1072,7 @@ const GameCore = (() => {
     if (b.isHamlet) dmg = Math.floor(dmg * 1.2);
     if (b.isMerchantGuild) dmg = Math.floor(dmg * 1.1);
     if (b.type === 'wall') dmg = Math.floor(dmg * 0.95);
-    return Math.max(14, dmg + Math.floor(Math.random() * 4));
+    return Math.max(14, dmg + Math.floor((globalThis.simRandom || Math.random)() * 4));
   }
 
   function isBuildingPathTarget(id) {

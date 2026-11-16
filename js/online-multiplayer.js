@@ -332,7 +332,10 @@ const OnlineMultiplayer = (() => {
       const id = raw.slice(4).split(':')[0];
       const match = store.pvpMatches[id];
       if (!match)
-        return { ok: false, error: 'PvP match not found locally — paste full PVPDATA code' };
+        return {
+          ok: false,
+          error: 'This duel is not on this device yet. Paste the full PVPDATA code.',
+        };
       store.activePvpId = match.id;
       save();
       if (typeof GameModes !== 'undefined') {
@@ -344,18 +347,19 @@ const OnlineMultiplayer = (() => {
 
     if (raw.startsWith('PVPDATA:')) {
       const payload = fromB64(raw.slice(8));
-      if (!payload?.match) return { ok: false, error: 'This PvP code is not complete.' };
+      if (!payload?.match) return { ok: false, error: 'This duel code is not complete.' };
       if (Number.isInteger(payload.v) && payload.v > CODE_VERSION) {
         return { ok: false, error: MSG_NEWER_CODE, newer: true };
       }
-      store.pvpMatches[payload.match.id] = payload.match;
-      store.activePvpId = payload.match.id;
+      const match = mergePvpMatch(store.pvpMatches[payload.match.id], payload.match);
+      store.pvpMatches[match.id] = match;
+      store.activePvpId = match.id;
       save();
       if (typeof GameModes !== 'undefined') {
         GameModes.setMenuMode('pvp_endless');
         GameModes.setMenuSeed(payload.match.seed);
       }
-      return { ok: true, type: 'pvp', match: payload.match };
+      return { ok: true, type: 'pvp', match };
     }
 
     return { ok: false, error: 'This is not a Myth and Blood share code.' };
@@ -392,6 +396,43 @@ const OnlineMultiplayer = (() => {
     return match;
   }
 
+  /** Honest runs rank above cheated ones; then score, then wave. */
+  function rankEntries(match) {
+    match.entries.sort((a, b) => !!a.cheated - !!b.cheated || b.score - a.score || b.wave - a.wave);
+    if (match.entries.length >= 2) {
+      match.winnerId = match.entries[0].commanderId;
+      match.status = 'resolved';
+    } else {
+      match.winnerId = null;
+      match.status = 'open';
+    }
+  }
+
+  /**
+   * Fold an imported match into the one I have: one entry per commander, the later
+   * submission wins. Neither side's result is lost when both finish before swapping codes.
+   */
+  function mergePvpMatch(have, incoming) {
+    if (!have) {
+      const m = { ...incoming, entries: [...(incoming.entries || [])] };
+      rankEntries(m);
+      return m;
+    }
+    const byId = new Map();
+    for (const e of [...(have.entries || []), ...(incoming.entries || [])]) {
+      if (!e || !e.commanderId) continue;
+      const prev = byId.get(e.commanderId);
+      if (!prev || (e.at || 0) >= (prev.at || 0)) byId.set(e.commanderId, e);
+    }
+    const merged = {
+      ...have,
+      entries: [...byId.values()],
+      updatedAt: Math.max(have.updatedAt || 0, incoming.updatedAt || 0),
+    };
+    rankEntries(merged);
+    return merged;
+  }
+
   function submitPvpResult(result) {
     const match = getActivePvpMatch();
     if (!match || !result) return null;
@@ -402,16 +443,13 @@ const OnlineMultiplayer = (() => {
       kills: result.kills,
       score: result.score,
       victory: !!result.victory,
+      cheated: !!result.cheated,
       at: Date.now(),
     };
     match.entries = match.entries.filter((e) => e.commanderId !== store.playerId);
     match.entries.push(entry);
     match.updatedAt = Date.now();
-    if (match.entries.length >= 2) {
-      match.entries.sort((a, b) => b.score - a.score || b.wave - a.wave);
-      match.winnerId = match.entries[0].commanderId;
-      match.status = 'resolved';
-    }
+    rankEntries(match);
     save();
     return { match, entry, winner: match.entries[0] };
   }
@@ -431,7 +469,7 @@ const OnlineMultiplayer = (() => {
     if (!room) return null;
     const active = room.commanders.find((c) => c.id === room.activeCommanderId);
     const mine = isMyCoopTurn();
-    return `${room.kingdomName} · W${room.wave || 0} · ${mine ? 'Your turn' : `${active?.name || 'Your partner'}'s turn — waiting for their code`}`;
+    return `${room.kingdomName} · W${room.wave || 0} · ${mine ? 'Your turn' : `${active?.name || 'Your partner'}'s turn. Waiting for their code`}`;
   }
 
   function getPvpStatusLine() {
@@ -441,11 +479,11 @@ const OnlineMultiplayer = (() => {
     const opp = match.entries.find((e) => e.commanderId !== store.playerId);
     if (match.status === 'resolved' && match.entries.length >= 2) {
       const won = match.winnerId === store.playerId;
-      return won ? 'PvP won — highest score' : `PvP lost — ${match.entries[0].name} wins`;
+      return won ? 'Duel won: highest score' : `Duel lost: ${match.entries[0].name} wins`;
     }
-    if (mine && opp) return `PvP tied score check — you W${mine.wave} vs ${opp.name} W${opp.wave}`;
-    if (mine) return `PvP submitted W${mine.wave} — awaiting opponent`;
-    return `PvP match · seed ${match.seed.slice(0, 12)}…`;
+    if (mine && opp) return `Duel: you wave ${mine.wave}, ${opp.name} wave ${opp.wave}`;
+    if (mine) return `Duel score sent in at wave ${mine.wave}. Waiting for your opponent's code`;
+    return `Duel · seed ${match.seed.slice(0, 12)}…`;
   }
 
   function renderMenuPanel() {
@@ -467,7 +505,7 @@ const OnlineMultiplayer = (() => {
       </label>
       <div class="online-actions-row">
         <button type="button" id="online-create-coop" class="menu-btn small-btn">START SHARED KINGDOM</button>
-        <button type="button" id="online-create-pvp" class="menu-btn small-btn">CREATE PVP MATCH</button>
+        <button type="button" id="online-create-pvp" class="menu-btn small-btn">CREATE DUEL</button>
       </div>
       <div class="online-import-row">
         <input id="online-import-code" class="panel-search" type="text" placeholder="Paste COOP: / KINGDOM: / PVP: / PVPDATA: code…" autocomplete="off" />
@@ -477,10 +515,10 @@ const OnlineMultiplayer = (() => {
       ${
         showCoop && room
           ? `<div class="online-card">
-          <div class="online-card-title">Shared Kingdom — ${escapeHtml(room.kingdomName)}</div>
+          <div class="online-card-title">Shared Kingdom: ${escapeHtml(room.kingdomName)}</div>
           <div class="online-card-meta">Room ${room.id} · Seed ${escapeHtml(room.seed)} · Wave ${room.wave || 0}</div>
           <div class="online-card-meta">Commanders: ${room.commanders.map((c) => escapeHtml(c.name)).join(' · ')}</div>
-          <div class="online-card-meta">${isMyCoopTurn() ? '<strong>Your turn</strong> — play, then use Hand Off in the pause menu to get a code for your partner' : `Waiting for a code from ${escapeHtml(room.commanders.find((c) => c.id === room.activeCommanderId)?.name || 'your partner')}`}</div>
+          <div class="online-card-meta">${isMyCoopTurn() ? '<strong>Your turn.</strong> Play, then use Hand Off in the pause menu to get a code for your partner' : `Waiting for a code from ${escapeHtml(room.commanders.find((c) => c.id === room.activeCommanderId)?.name || 'your partner')}`}</div>
           <button type="button" id="online-copy-coop" class="menu-btn small-btn">COPY CO-OP INVITE</button>
           ${room.state && isMyCoopTurn() ? `<button type="button" id="online-continue-kingdom" class="menu-btn small-btn primary">CONTINUE SHARED KINGDOM</button>` : ''}
         </div>`
@@ -489,18 +527,21 @@ const OnlineMultiplayer = (() => {
       ${
         showPvp && pvp
           ? `<div class="online-card">
-          <div class="online-card-title">PvP Endless — ${pvp.id}</div>
+          <div class="online-card-title">Duel by Code: ${pvp.id}</div>
           <div class="online-card-meta">Seed ${escapeHtml(pvp.seed)} · ${pvp.entries.length} submission(s)</div>
           ${
             pvp.entries.length
               ? `<ol class="online-pvp-list">${pvp.entries
-                  .map((e) => `<li>${escapeHtml(e.name)} — W${e.wave} · score ${e.score}</li>`)
+                  .map(
+                    (e) =>
+                      `<li>${escapeHtml(e.name)}: wave ${e.wave} · score ${e.score}${e.cheated ? ' · <span class="online-cheated">cheats used</span>' : ''}</li>`
+                  )
                   .join('')}</ol>`
-              : '<p class="online-card-meta">No scores yet — both players run endless with the same seed.</p>'
+              : '<p class="online-card-meta">No scores yet. Both players run the same seed, then swap match codes.</p>'
           }
           ${pvp.status === 'resolved' ? `<div class="online-card-winner">Winner: ${escapeHtml(pvp.entries[0]?.name || '?')}</div>` : ''}
-          <button type="button" id="online-copy-pvp" class="menu-btn small-btn">COPY PVP CODE</button>
-          <button type="button" id="online-copy-pvpdata" class="menu-btn small-btn">COPY FULL MATCH DATA</button>
+          <button type="button" id="online-copy-pvp" class="menu-btn small-btn">COPY DUEL CODE</button>
+          <button type="button" id="online-copy-pvpdata" class="menu-btn small-btn">COPY DUEL RESULTS</button>
         </div>`
           : ''
       }
@@ -527,7 +568,7 @@ const OnlineMultiplayer = (() => {
       const diff = document.querySelector('.diff-btn.selected')?.dataset?.diff || 'normal';
       createPvpMatch({ difficulty: diff });
       renderMenuPanel();
-      Settings?.announce?.('PvP match created');
+      Settings?.announce?.('Duel created');
     });
 
     document.getElementById('online-import-btn')?.addEventListener('click', () => {
@@ -537,7 +578,7 @@ const OnlineMultiplayer = (() => {
       AudioEngine?.SFX?.click?.();
       if (status) {
         status.textContent = res.ok
-          ? `Imported ${res.type} — ${res.type === 'kingdom' ? 'click Continue Shared Kingdom or Begin Defense' : 'ready to play'}`
+          ? `Imported ${res.type}. ${res.type === 'kingdom' ? 'click Continue Shared Kingdom or Begin Defense' : 'ready to play'}`
           : res.error || 'Import failed';
       }
       if (res.ok) {
@@ -552,7 +593,7 @@ const OnlineMultiplayer = (() => {
       if (code && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(code);
         AudioEngine?.SFX?.click?.();
-        document.getElementById('online-import-status').textContent = 'Co-op invite copied!';
+        document.getElementById('online-import-status').textContent = 'Co-op invite copied.';
       }
     });
 
@@ -561,7 +602,7 @@ const OnlineMultiplayer = (() => {
       if (code && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(code);
         AudioEngine?.SFX?.click?.();
-        document.getElementById('online-import-status').textContent = 'PvP code copied!';
+        document.getElementById('online-import-status').textContent = 'Duel code copied.';
       }
     });
 
@@ -570,7 +611,7 @@ const OnlineMultiplayer = (() => {
       if (code && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(code);
         AudioEngine?.SFX?.click?.();
-        document.getElementById('online-import-status').textContent = 'Full PvP match data copied!';
+        document.getElementById('online-import-status').textContent = 'Full duel results copied.';
       }
     });
 
@@ -619,11 +660,11 @@ const OnlineMultiplayer = (() => {
     if (session?.modeId === 'async_coop') recordCoopWave(wave);
   }
 
-  function onRunEnded(wave, kills, victory, score) {
+  function onRunEnded(wave, kills, victory, score, cheated = false) {
     const session = typeof GameModes !== 'undefined' ? GameModes.getSession() : null;
     // The run session reports PvP as survival with onlinePvp set, so check both.
     if (session?.onlinePvp || session?.modeId === 'pvp_endless') {
-      return submitPvpResult({ wave, kills, score, victory });
+      return submitPvpResult({ wave, kills, score, victory, cheated });
     }
     return null;
   }
@@ -647,7 +688,7 @@ const OnlineMultiplayer = (() => {
       };
     }
     if (session.modeId === 'pve_horde') {
-      return { type: 'horde', statusLine: 'PvE Horde — every wave is an assault' };
+      return { type: 'horde', statusLine: 'Horde: every wave is a horde' };
     }
     return null;
   }

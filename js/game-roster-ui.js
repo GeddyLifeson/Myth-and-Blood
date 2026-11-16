@@ -42,20 +42,23 @@ const GameRosterUi = (() => {
     } = api);
   }
 
-  function hireHero(id) {
+  /** opts.fromCamp: a Mercenary Camp hire, at listed price and without the company's hall. */
+  function hireHero(id, opts = {}) {
     const def = HeroDefs[id];
     if (!def) return false;
     if (getHeroesOnField().includes(id)) {
       showMessage(`${def.name} is already on the field!`);
       return false;
     }
-    if (!hasCompanyHall(def.faction)) {
+    if (!opts.fromCamp && !hasCompanyHall(def.faction)) {
       showMessage(`Build a ${FreeCompanies[def.faction]?.label || 'crossover'} barracks first!`);
       return false;
     }
-    const costMult = svc('FactionDepth')
-      ? svc('FactionDepth').getDeployCostMult(def.faction, GS.wave, GS.units)
-      : 1;
+    const costMult = opts.fromCamp
+      ? 1
+      : svc('FactionDepth')
+        ? svc('FactionDepth').getDeployCostMult(def.faction, GS.wave, GS.units)
+        : 1;
     const deployCost = Math.ceil(def.cost * costMult);
     if (GS.tactical < deployCost) {
       showMessage(`Need ${deployCost} TP to deploy ${def.name}!`);
@@ -245,6 +248,8 @@ const GameRosterUi = (() => {
         if (!u || u.hp <= 0) return null;
         const displayName =
           typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type;
+        const shownName =
+          u.soldierName && !u.honorName ? `${u.soldierName}, ${displayName}` : displayName;
         const roleLabel =
           typeof getUnitRoleLabel === 'function'
             ? getUnitRoleLabel(u)
@@ -264,7 +269,7 @@ const GameRosterUi = (() => {
           id: u.id,
           type: u.type,
           spriteType: u.spriteType || u.type,
-          displayName,
+          displayName: shownName,
           roleLabel,
           honorName: u.honorName,
           kills: u.kills || 0,
@@ -311,10 +316,7 @@ const GameRosterUi = (() => {
           combatType: u.combatType || 'melee',
           experience: Math.floor(u.experience || 0),
           canPromote: u.type === 'footman' && footmanEligibleForGeneral(u) && !findPlayerGeneral(),
-          ascensionOffer:
-            typeof AscensionSystem !== 'undefined'
-              ? AscensionSystem.getUnitAscensionOffer(u, GS.wave)
-              : null,
+          honourOffer: typeof Honours !== 'undefined' ? Honours.getOffer(u) : null,
           ascensionLabel: u.ascensionLabel || null,
           ascensionWeapon: u.ascensionWeapon || null,
           echoOffer:
