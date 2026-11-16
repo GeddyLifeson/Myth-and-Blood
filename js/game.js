@@ -1449,6 +1449,7 @@ const Game = (() => {
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
     if (svc('NeutralRelations')) svc('NeutralRelations').resetRun();
     if (svc('CompanyTraining')) svc('CompanyTraining').resetRun();
+    if (typeof MercenaryCamp !== 'undefined') MercenaryCamp.reset();
     if (svc('DynamicMapEvents'))
       svc('DynamicMapEvents').resetRun(svc('GameModes')?.getSession?.()?.seed);
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
