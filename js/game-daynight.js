@@ -531,7 +531,10 @@ const GameDayNight = (() => {
       const sector = GS.spawnSectors[i];
       GS.spawnSectors.push(sector);
       const counts = GS.sectorPlan && GS.sectorPlan.counts;
-      if (counts && sector in counts) counts[sector]++;
+      if (counts && sector in counts) {
+        counts[sector]++;
+        GS.sectorPlan.total = (GS.sectorPlan.total || 0) + 1;
+      }
     }
     GS.waveEnemyTotal += n;
     GS.pendingWaveMods.stealReduction = (GS.pendingWaveMods.stealReduction || 0) + n;
