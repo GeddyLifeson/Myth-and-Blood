@@ -5009,3 +5009,47 @@ body.ui-v2 .cheat-void-warning {
   border: 1px solid #c0241c;
   font-weight: 700;
 }
+
+/* Message log: a side sheet above every other overlay. */
+body.ui-v2 .message-log-panel {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  bottom: calc(var(--hint-bar-h, 40px) + 12px);
+  left: auto;
+  width: min(380px, calc(100vw - 24px));
+  max-height: none;
+  transform: none;
+  z-index: 3000;
+}
+body.ui-v2 .message-log-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  font-size: var(--fs-1);
+}
+body.ui-v2 .message-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+body.ui-v2 .msg-log-filter {
+  padding: 2px 8px;
+  font-size: var(--fs-1);
+  color: var(--bone-dim);
+  background: none;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+body.ui-v2 .msg-log-filter.on {
+  color: #fff;
+  border-color: #c8202a;
+  background: #1a0806;
+}
+body.ui-v2 .msg-log-alert .msg-log-text {
+  color: var(--blood);
+}
+body.ui-v2 .msg-log-count {
+  color: var(--bone);
+}

@@ -268,16 +268,46 @@ const UX = (() => {
     }
   }
 
+  // The log keeps more than it shows: the filter picks what the player reads.
+  const LOG_FILTERS = [
+    { id: 'all', label: 'All' },
+    { id: 'alert', label: 'Alerts' },
+    { id: 'supply', label: 'Supplies' },
+    { id: 'event', label: 'Events' },
+    { id: 'system', label: 'System' },
+  ];
+  let logFilter = 'all';
+
+  function classifyMessage(text, source) {
+    if (source === 'system') return 'system';
+    if (/breach|has fallen|realm falls|line is broken|warlord|boss|wiped out/i.test(text)) {
+      return 'alert';
+    }
+    if (/gold|TP|spoils|crate|upkeep|recruit|trained|built|forged|cost/i.test(text)) {
+      return 'supply';
+    }
+    return 'event';
+  }
+
   function onMessage(text, source = 'game') {
     if (!text) return;
-    const entry = {
-      text,
-      source,
-      time: Date.now(),
-      wave: Game.isPlaying?.() ? Game.getState().wave : 0,
-    };
-    messageLog.unshift(entry);
-    if (messageLog.length > MESSAGE_LOG_MAX) messageLog.length = MESSAGE_LOG_MAX;
+    const wave = Game.isPlaying?.() ? Game.getState().wave : 0;
+    const last = messageLog.slice(0, 8).find((m) => m.text === text && m.wave === wave);
+    // The same line again in the same wave folds into one row with a count.
+    if (last) {
+      last.count = (last.count || 1) + 1;
+      last.time = Date.now();
+    } else {
+      messageLog.unshift({
+        text,
+        source,
+        kind: classifyMessage(text, source),
+        time: Date.now(),
+        wave,
+        count: 1,
+      });
+      if (messageLog.length > MESSAGE_LOG_MAX) messageLog.length = MESSAGE_LOG_MAX;
+    }
     renderMessageLog();
     announce(text);
   }
@@ -287,22 +317,38 @@ const UX = (() => {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
+  function setLogFilter(id) {
+    if (!LOG_FILTERS.some((f) => f.id === id)) return;
+    logFilter = id;
+    renderMessageLog();
+  }
+
   function renderMessageLog() {
     const list = document.getElementById('message-log-list');
     if (!list) return;
+    const tabs = document.getElementById('message-log-filters');
+    if (tabs) {
+      tabs.innerHTML = LOG_FILTERS.map((f) => {
+        const n =
+          f.id === 'all' ? messageLog.length : messageLog.filter((m) => m.kind === f.id).length;
+        return `<button type="button" class="msg-log-filter${f.id === logFilter ? ' on' : ''}" data-filter="${f.id}" aria-pressed="${f.id === logFilter}">${f.label} ${n}</button>`;
+      }).join('');
+    }
+    const shown = messageLog.filter((m) => logFilter === 'all' || m.kind === logFilter);
     list.innerHTML =
-      messageLog
-        .slice(0, 40)
+      shown
+        .slice(0, 60)
         .map(
           (m) => `
-      <div class="msg-log-entry">
+      <div class="msg-log-entry msg-log-${m.kind}">
         <span class="msg-log-wave">W${m.wave}</span>
         <span class="msg-log-time">${formatLogTime(m.time)}</span>
-        <span class="msg-log-text">${escapeHtml(m.text)}</span>
+        <span class="msg-log-text">${escapeHtml(m.text)}${m.count > 1 ? ` <b class="msg-log-count">×${m.count}</b>` : ''}</span>
       </div>
     `
         )
-        .join('') || '<p class="msg-log-empty">No messages yet.</p>';
+        .join('') ||
+      `<p class="msg-log-empty">${messageLog.length ? 'Nothing in this filter.' : 'No messages yet.'}</p>`;
   }
 
   function escapeHtml(s) {
@@ -1361,6 +1407,10 @@ const UX = (() => {
     bindPauseMenu();
     bindMinimap();
     bindTutorial();
+    document.getElementById('message-log-filters')?.addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-filter]');
+      if (b) setLogFilter(b.dataset.filter);
+    });
     document.getElementById('message-log-close')?.addEventListener('click', () => {
       document.getElementById('message-log-panel')?.classList.remove('open');
     });
@@ -1371,6 +1421,8 @@ const UX = (() => {
     onGameUpdate,
     onPauseChanged,
     onMessage,
+    setLogFilter,
+    getMessageLog: () => messageLog,
     updatePauseMenu,
     openPauseMenu,
     closePauseMenu,
