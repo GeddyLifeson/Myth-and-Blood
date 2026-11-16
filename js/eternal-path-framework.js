@@ -199,7 +199,7 @@ const RunPath = (() => {
     if (!state || ctx.creative) return;
     lastCtx = { showMessage: ctx.showMessage, addHighlight: ctx.addHighlight };
     if (canChoose(wave) && (wave | 0) === CHOICE_WAVE) {
-      ctx.showMessage?.('Choose your path: click PATH at the top.', 300);
+      ctx.showMessage?.('Choose your path: tap or click PATH.', 300);
       openCard();
     }
     syncSteps(wave, ctx);
@@ -211,6 +211,7 @@ const RunPath = (() => {
       const open = canChoose(wave);
       return {
         text: open ? 'Choose' : `Wave ${CHOICE_WAVE}`,
+        short: open ? 'Path?' : `Path ${CHOICE_WAVE}`,
         locked: !open,
         pending: open,
         color: null,
@@ -230,6 +231,7 @@ const RunPath = (() => {
     lines.push(`Now: ${stepText(t) || 'nothing yet'}.`);
     return {
       text: `${path.label} ${n}/${path.steps.length}`,
+      short: `${path.label.slice(0, 3)} ${n}/${path.steps.length}`,
       locked: false,
       pending: false,
       color: path.color,
@@ -274,7 +276,12 @@ const RunPath = (() => {
     if (typeof document === 'undefined' || !document.createElement || card) return;
     if (!canChoose()) return;
     const esc = (s) => String(s).replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
-    card = document.createElement('div');
+    // Research doctrine picks, when that module offers them, suggest a path.
+    const leanId = globalThis.Research?.getDoctrinePath?.();
+    const el = document.createElement('div');
+    // Headless test sandboxes stub the DOM without these.
+    if (!el?.setAttribute || !document.body?.appendChild) return;
+    card = el;
     card.id = 'run-path-card';
     card.setAttribute('role', 'dialog');
     card.setAttribute('aria-label', 'Choose your path');
@@ -298,8 +305,9 @@ const RunPath = (() => {
       <div>One path for the whole run. Steps arrive by wave 40 and reach soldiers already in the field.</div>
       <div class="rp-cols">${PATH_IDS.map((id) => {
         const p = PATHS[id];
+        const lean = id === leanId ? ' <small>(your doctrine leans here)</small>' : '';
         return `<div class="rp-col" style="border-top:3px solid ${p.color}">
-          <h3 style="color:${p.color}">${esc(p.label)}</h3><div>Helps ${esc(p.who)}.</div>
+          <h3 style="color:${p.color}">${esc(p.label)}${lean}</h3><div>Helps ${esc(p.who)}.</div>
           <ol>${p.steps.map((s) => `<li>Wave ${s.wave}: ${esc(s.name)}, ${esc(stepText(s))}</li>`).join('')}</ol>
           <button type="button" data-path="${id}">Take the ${esc(p.label)} path</button></div>`;
       }).join('')}</div>
@@ -313,10 +321,11 @@ const RunPath = (() => {
     document.body.appendChild(card);
   }
 
+  let chipBound = false;
   function bindChip() {
-    const chip = document.getElementById('epf-hud');
-    if (!chip || chip.dataset.runPathBound) return;
-    chip.dataset.runPathBound = '1';
+    const chip = document.getElementById?.('epf-hud');
+    if (!chip?.addEventListener || chipBound) return;
+    chipBound = true;
     chip.style.cursor = 'pointer';
     chip.addEventListener('click', () => (card ? closeCard() : openCard()));
   }
