@@ -389,7 +389,7 @@ const GeneralOrders = (() => {
       label(c, 'AMBUSH', x, 100, BONE);
     }
     if (night && turncoatWave === GS.wave + 1 && turncoatsLeft) {
-      label(c, `${turncoatsLeft} TURNCOATS IN THE HOST`, GS.worldW / 2, 124, BONE);
+      label(c, `${turncoatsLeft} TURNCOATS IN THE HOST`, GS.worldW / 2, 150, BONE);
     }
     if (night && plan && GS.scoutedWave === GS.wave + 1) {
       for (const s of plan.sectors || []) {
