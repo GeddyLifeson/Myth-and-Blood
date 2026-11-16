@@ -207,7 +207,7 @@ const AdvancedDifficulty = (() => {
     {
       id: 'economy_crunch',
       label: 'Economy Crunch',
-      desc: 'Tight TP and morale — plan every purchase.',
+      desc: 'Tight TP and morale: plan every purchase.',
       mods: ['tp_drought', 'morale_crisis', 'miss_tight'],
     },
     {
@@ -231,7 +231,7 @@ const AdvancedDifficulty = (() => {
     {
       id: 'blitz',
       label: 'Blitz Pace',
-      desc: 'Fast spawns, fewer elites, TP bonus — race the waves.',
+      desc: 'Fast spawns, fewer elites, TP bonus: race the waves.',
       mods: ['spawn_faster', 'elite_less', 'tp_bonus', 'night_terror'],
     },
     {
@@ -243,13 +243,13 @@ const AdvancedDifficulty = (() => {
     {
       id: 'sky_raid',
       label: 'Sky Raid',
-      desc: 'Flyers and warg riders — bring anti-air.',
+      desc: 'Flyers and warg riders: bring anti-air.',
       mods: ['flyer_swarm', 'cavalry_raiders', 'enemy_count_up'],
     },
     {
       id: 'fog_siege',
       label: 'Fog Siege',
-      desc: 'Limited vision — scouts and watchtowers under siege pressure.',
+      desc: 'Limited vision: scouts and watchtowers under siege pressure.',
       mods: ['fog_of_war', 'siege_heavy', 'spawn_faster'],
     },
     {
@@ -376,6 +376,12 @@ const AdvancedDifficulty = (() => {
         }
       }
     }
+    // Muster trade-off perks pay their cost through the same wave and breach rules.
+    if (typeof CrownLegacies !== 'undefined' && CrownLegacies.getCombinedEffects) {
+      const perk = CrownLegacies.getCombinedEffects();
+      combined.missLimitDelta += perk.missLimitDelta || 0;
+      combined.enemyCountMult *= perk.enemyCountMult || 1;
+    }
     return combined;
   }
 
@@ -433,32 +439,113 @@ const AdvancedDifficulty = (() => {
     return Math.max(10, Math.round(base + getCombinedMods().pctDelta));
   }
 
-  function renderPanel() {
-    const grid = document.getElementById('advanced-diff-grid');
+  /** Same rule as SiegeLoop.computeScore: each modifier scales the score by 1 + pct/100. */
+  function scoreMult(m) {
+    return Math.max(0.5, 1 + (Number(m.pct) || 0) / 100);
+  }
+
+  function getScoreMultiplier() {
+    let mult = 1;
+    for (const id of active) {
+      const m = MODIFIERS.find((x) => x.id === id);
+      if (m) mult *= scoreMult(m);
+    }
+    return Math.round(mult * 1000) / 1000;
+  }
+
+  /** Easier/harder pairs (one negative, one positive) shown as one three-state row. */
+  function getPairs() {
+    const out = [];
+    for (const g of CONFLICT_GROUPS) {
+      if (g.length !== 2) continue;
+      const [a, b] = g.map((id) => MODIFIERS.find((m) => m.id === id));
+      if (!a || !b || Math.sign(a.pct) === Math.sign(b.pct)) continue;
+      out.push(a.pct < 0 ? [a, b] : [b, a]);
+    }
+    return out;
+  }
+
+  function conflictReason(id) {
+    for (const g of CONFLICT_GROUPS) {
+      if (!g.includes(id)) continue;
+      const other = g.find((x) => x !== id && active.has(x));
+      if (other) return `Conflicts with ${MODIFIERS.find((m) => m.id === other)?.label || other}`;
+    }
+    return '';
+  }
+
+  const fmtMult = (m) => `×${scoreMult(m).toFixed(2)}`;
+
+  function pairRow(easy, hard) {
+    const state = active.has(easy.id) ? easy.id : active.has(hard.id) ? hard.id : '';
+    const opt = (id, label, title) =>
+      `<button type="button" class="adv-tri-btn${state === id ? ' on' : ''}" data-tri="${easy.id}|${hard.id}" data-set="${id}"${lockedForRun ? ' disabled' : ''} title="${title}">${label}</button>`;
+    return (
+      `<div class="adv-mod-row adv-tri${state ? ' on' : ''}">` +
+      opt(
+        easy.id,
+        `${easy.label} <span class="adv-mod-pct">${fmtMult(easy)}</span>`,
+        'Easier: lowers the score'
+      ) +
+      opt('', 'Off', 'No change') +
+      opt(
+        hard.id,
+        `${hard.label} <span class="adv-mod-pct">${fmtMult(hard)}</span>`,
+        'Harder: raises the score'
+      ) +
+      `</div>`
+    );
+  }
+
+  function singleRow(m) {
+    const on = active.has(m.id);
+    const reason = on ? '' : conflictReason(m.id);
+    const kind = m.pct >= 0 ? 'Handicap' : 'Aid';
+    return (
+      `<label class="adv-mod-row ${on ? 'on' : ''} ${reason ? 'conflict' : ''}" title="${reason || kind}">` +
+      `<input type="checkbox" data-mod="${m.id}" ${on ? 'checked' : ''} ${reason || lockedForRun ? 'disabled' : ''}>` +
+      `<span class="adv-mod-label">${m.label}${reason ? `<span class="adv-mod-reason">${reason}</span>` : ''}</span>` +
+      `<span class="adv-mod-pct">${fmtMult(m)} score</span>` +
+      `</label>`
+    );
+  }
+
+  function refreshTotals(baseId) {
+    const pct = `${getDifficultyPercent(baseId)}%`;
     const pctEl = document.getElementById('advanced-diff-pct');
     const pctPanel = document.getElementById('advanced-diff-pct-panel');
+    if (pctEl) pctEl.textContent = `Effective: ${pct}`;
+    const mult = getScoreMultiplier();
+    if (pctPanel) {
+      const n = active.size;
+      pctPanel.textContent = `Effective difficulty ${pct} · score ×${mult.toFixed(2)} from ${n} modifier${n === 1 ? '' : 's'}`;
+    }
+  }
+
+  function renderPanel() {
+    const grid = document.getElementById('advanced-diff-grid');
     if (!grid) return;
     const baseId = document.querySelector('.diff-btn.selected')?.dataset.diff || 'normal';
-    const pct = `${getDifficultyPercent(baseId)}%`;
-    if (pctEl) pctEl.textContent = `Effective: ${pct}`;
-    if (pctPanel) pctPanel.textContent = `Effective: ${pct}`;
+    refreshTotals(baseId);
+    const rerender = () => {
+      renderPanel();
+      if (typeof GameModes !== 'undefined') GameModes.renderScalingPanel(baseId);
+      globalThis.AudioEngine?.SFX?.click?.();
+    };
     const presetEl = document.getElementById('advanced-diff-presets');
     if (presetEl) {
-      presetEl.innerHTML = PRESETS.map(
-        (p) => `
-        <button type="button" class="adv-preset-btn" data-preset="${p.id}" title="${p.desc}" ${lockedForRun ? 'disabled' : ''}>${p.label}</button>
-      `
-      ).join('');
+      presetEl.innerHTML =
+        `<button type="button" class="adv-preset-btn" data-preset="" ${lockedForRun ? 'disabled' : ''}>Clear all</button>` +
+        PRESETS.map(
+          (p) =>
+            `<button type="button" class="adv-preset-btn" data-preset="${p.id}" title="${p.desc}" ${lockedForRun ? 'disabled' : ''}>${p.label}</button>`
+        ).join('');
       presetEl.querySelectorAll('.adv-preset-btn').forEach((btn) => {
         btn.addEventListener('click', () => {
-          if (applyPreset(btn.dataset.preset)) {
-            renderPanel();
-            if (typeof GameModes !== 'undefined') {
-              const diff = document.querySelector('.diff-btn.selected')?.dataset.diff || 'normal';
-              GameModes.renderScalingPanel(diff);
-            }
-            AudioEngine?.SFX?.click?.();
-          }
+          if (lockedForRun) return;
+          if (!btn.dataset.preset) setActive([]);
+          else if (!applyPreset(btn.dataset.preset)) return;
+          rerender();
         });
       });
     }
@@ -469,32 +556,43 @@ const AdvancedDifficulty = (() => {
     }
 
     if (lockedForRun) {
-      grid.innerHTML = `<p class="adv-locked-msg">Modifiers locked for this run (Roguelike / Daily / Weekly).</p>
+      grid.innerHTML = `<p class="adv-locked-msg">Handicaps are set by this mode (Roguelike, Daily or Weekly) and cannot change.</p>
         ${[...active]
           .map((id) => {
             const m = MODIFIERS.find((x) => x.id === id);
             return m
-              ? `<div class="adv-mod-row on locked"><span class="adv-mod-label">${m.label}</span></div>`
+              ? `<div class="adv-mod-row on locked"><span class="adv-mod-label">${m.label}</span><span class="adv-mod-pct">${fmtMult(m)}</span></div>`
               : '';
           })
           .join('')}`;
       return;
     }
 
-    grid.innerHTML = MODIFIERS.map(
-      (m) => `
-      <label class="adv-mod-row ${active.has(m.id) ? 'on' : ''} ${conflictsWithActive(m.id) && !active.has(m.id) ? 'conflict' : ''}">
-        <input type="checkbox" data-mod="${m.id}" ${active.has(m.id) ? 'checked' : ''} ${conflictsWithActive(m.id) && !active.has(m.id) ? 'disabled' : ''}>
-        <span class="adv-mod-label">${m.label}</span>
-        <span class="adv-mod-pct">${m.pct > 0 ? '+' : ''}${m.pct}%</span>
-      </label>
-    `
-    ).join('');
+    const pairs = getPairs();
+    const paired = new Set(pairs.flat().map((m) => m.id));
+    grid.innerHTML =
+      `<div class="adv-section-head">Trade-offs: easier lowers the score, harder raises it</div>` +
+      pairs.map(([e, h]) => pairRow(e, h)).join('') +
+      `<div class="adv-section-head">Handicaps</div>` +
+      MODIFIERS.filter((m) => !paired.has(m.id) && m.pct >= 0)
+        .map(singleRow)
+        .join('') +
+      `<div class="adv-section-head">Aids</div>` +
+      MODIFIERS.filter((m) => !paired.has(m.id) && m.pct < 0)
+        .map(singleRow)
+        .join('');
     grid.querySelectorAll('input[data-mod]').forEach((inp) => {
       inp.addEventListener('change', () => {
         toggle(inp.dataset.mod);
-        renderPanel();
-        AudioEngine?.SFX?.click?.();
+        rerender();
+      });
+    });
+    grid.querySelectorAll('button[data-tri]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        if (lockedForRun) return;
+        for (const id of btn.dataset.tri.split('|')) active.delete(id);
+        if (btn.dataset.set) active.add(btn.dataset.set);
+        rerender();
       });
     });
   }
@@ -503,16 +601,28 @@ const AdvancedDifficulty = (() => {
     const panel = document.getElementById('advanced-diff-screen');
     if (!panel) return;
     const open = panel.classList.toggle('active');
-    if (open) renderPanel();
+    if (open) {
+      renderPanel();
+      if (typeof CrownLegacies !== 'undefined') {
+        CrownLegacies.bindMuster?.();
+        CrownLegacies.renderMuster?.();
+      }
+    }
   }
 
   function init() {
-    document.getElementById('advanced-diff-btn')?.addEventListener('click', () => {
-      AudioEngine?.SFX?.click?.();
-      togglePanel();
-    });
+    for (const id of ['advanced-diff-btn', 'menu-muster-btn']) {
+      document.getElementById(id)?.addEventListener('click', () => {
+        AudioEngine?.SFX?.click?.();
+        togglePanel();
+      });
+    }
     document.getElementById('advanced-diff-close')?.addEventListener('click', () => {
       document.getElementById('advanced-diff-screen')?.classList.remove('active');
+    });
+    document.getElementById('muster-start')?.addEventListener('click', () => {
+      document.getElementById('advanced-diff-screen')?.classList.remove('active');
+      document.getElementById('start-btn')?.click();
     });
     document.querySelectorAll('.diff-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -537,6 +647,8 @@ const AdvancedDifficulty = (() => {
     getDifficultyPercent,
     getModifiers,
     getConflictGroups,
+    getPairs,
+    getScoreMultiplier,
     applyPreset,
     lockForRun,
     unlockForRun,

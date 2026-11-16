@@ -98,15 +98,15 @@ ok(
   'user pause takes priority over macro reason'
 );
 
-const intelFast = PacingTools.formatIntelNote({ gameSpeed: 10 });
-ok(intelFast.includes('10'), 'formatIntelNote at 10×');
+ok(
+  PacingTools.formatIntelNote === undefined,
+  'game speed and the toast queue stay out of wave intel'
+);
 
 PacingTools.resetRun();
 for (let i = 0; i < 6; i++) {
   PacingTools.processMessage(`msg ${i}`, 100, { paused: true });
 }
-const intelQueue = PacingTools.formatIntelNote({ gameSpeed: 1 });
-ok(intelQueue.includes('queued'), 'formatIntelNote when queue saturated');
 
 const hud = PacingTools.formatHudLine({ gameSpeed: 8, paused: true });
 ok(hud.includes('8×') && hud.includes('PAUSED'), 'formatHudLine shows speed and pause');

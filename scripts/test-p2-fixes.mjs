@@ -48,7 +48,7 @@ function toNight(Game, GS) {
     Game.getDeployCost('footman') === UnitDefs.footman.cost,
     `a small army pays the base price (${Game.getDeployCost('footman')})`
   );
-  // Grow the army well past the free 14 so upkeep applies.
+  // Grow the army well past the free 14: wages are owed, the price tag stays put.
   GS.tactical = 5000;
   for (let i = 0; i < 26; i++) {
     Game.selectDeploy('footman');
@@ -57,12 +57,12 @@ function toNight(Game, GS) {
   Game.update();
   const army = armyOf();
   ok(army >= 24, `army grown to ${army}`);
-  const mult = SiegeLoop.deployCostMult(army);
-  ok(mult > 1.5, `upkeep multiplier applies (×${mult.toFixed(2)})`);
+  const wages = SiegeLoop.dawnWages({ upkeepArmy: army });
+  ok(wages > 0, `a big army owes ${wages} TP in wages at dawn`);
   for (const type of ['footman', 'archer', 'healer']) {
     const want = Math.ceil(UnitDefs[type].cost * SiegeLoop.deployCostMult(armyOf()));
     const shown = Game.getDeployCost(type);
-    ok(shown === want && shown > UnitDefs[type].cost, `${type}: shared price ${shown} = ${want}`);
+    ok(shown === want && shown === UnitDefs[type].cost, `${type}: shared price ${shown} = ${want}`);
     // One TP short: the purchase is refused and nothing is spent.
     GS.tactical = shown - 1;
     let before = armyOf();

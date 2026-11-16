@@ -645,11 +645,11 @@ const GameCommands = (() => {
 
   function respondMapEvent(choiceId) {
     if (!svc('DynamicMapEvents')) {
-      showMessage('Planet events unavailable.');
+      showMessage('Omens unavailable.');
       return false;
     }
     if (!isNightPhase()) {
-      showMessage('Respond to planet events during night prep — before dawn.', 220, {
+      showMessage('Answer the omen at night, before dawn.', 220, {
         priority: 'critical',
         bypassQueue: true,
       });
@@ -658,14 +658,10 @@ const GameCommands = (() => {
     const cost = svc('DynamicMapEvents').getChoiceCost(choiceId);
     const freeTp = GS.creativeMode && GS.creativeSettings.freeResources;
     if (!freeTp && GS.tactical < cost) {
-      showMessage(
-        `Need ${cost} TP for this planet response (have ${Math.floor(GS.tactical)}).`,
-        220,
-        {
-          priority: 'critical',
-          bypassQueue: true,
-        }
-      );
+      showMessage(`Need ${cost} TP for this answer (have ${Math.floor(GS.tactical)}).`, 220, {
+        priority: 'critical',
+        bypassQueue: true,
+      });
       return false;
     }
     const result = svc('DynamicMapEvents').respond(choiceId, {
@@ -684,7 +680,7 @@ const GameCommands = (() => {
           bypassQueue: true,
         });
       } else if (result.reason === 'none_pending') {
-        showMessage('No planet event awaiting response this night.', 220, {
+        showMessage('No omen is waiting for an answer tonight.', 220, {
           priority: 'critical',
           bypassQueue: true,
         });
