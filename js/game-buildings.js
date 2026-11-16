@@ -202,7 +202,7 @@ const GameBuildings = (() => {
       waveBonus +
       postBonus +
       diff.tpPerRoundBonus +
-      getSettlementTpBonus() +
+      getSettlementTpBonus(true) +
       ecoGen;
     const cmdBonus = getAsymmetricMods().commanderTpRoundBonus || 0;
     return Math.floor(base * (diff.tpMult || 1)) + cmdBonus;

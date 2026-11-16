@@ -13,7 +13,7 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 function start(seed) {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, GameState, WarCamps, Ground, SaveFormat })`,
+    `${code}\n({ Game, SpriteGen, GameState, WarCamps, Ground, SaveFormat, GameCore })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -194,6 +194,10 @@ const man = (x, y, team = 'player', type = 'footman') => ({ x, y, team, type, hp
   for (const p of G.getSnapshot()) if (p.held) GS.wave++;
   G.onNightBegin({ wave: GS.wave, showMessage() {} });
   ok(Game.getState().tpPerRound === base + 3, 'held settlements add to the TP each wave');
+  ok(
+    api.GameCore.getSettlementTpBonus() === 0 && api.GameCore.getSettlementTpBonus(true) === 3,
+    'but not to the settlement sum the host is scaled by'
+  );
 
   GS.buildings = GS.buildings.filter((x) => !api.WarCamps.isCamp(x));
   api.WarCamps.resetRun();

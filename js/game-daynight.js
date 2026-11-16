@@ -508,7 +508,7 @@ const GameDayNight = (() => {
   function awardRoundTP() {
     if (GS.tpAwardedForWave === GS.wave) return;
     GS.tpAwardedForWave = GS.wave;
-    const eco = getSettlementTpBonus();
+    const eco = getSettlementTpBonus(true);
     // No arbitrary 120 ceiling — multi-hamlet / high-wave income was being clipped.
     // Bank still hard-capped by sanitizeTactical / TP_SANITY_CAP.
     const techTpMult =
