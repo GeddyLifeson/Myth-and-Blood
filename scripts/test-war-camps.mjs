@@ -493,7 +493,7 @@ function toNight(api, wave) {
       GS.tactical = 40;
       GS.spyUsedThisWave = false;
       if (mode === 'disrupt') Game.executeSpyAction('disrupt');
-      Game.beginDayPhase(true);
+      Game.beginDayPhase(false); // the dawn itself: an early horn brings a vanguard
       sizes[mode].push(GS.spawnQueue.length);
     }
   }
