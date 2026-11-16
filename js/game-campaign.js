@@ -661,8 +661,9 @@ const GameCampaign = (() => {
   }
 
   function spawnAcademyUnit(academy, unitType) {
-    const sx = academy.slotX ?? academy.x;
-    const sy = (academy.slotY ?? academy.y) + 16;
+    // Beside the mentor's drill spot at the ground's front edge.
+    const sx = academy.x + 18;
+    const sy = academy.y + 30;
     const u = spawnUnit(unitType, sx, sy, 'player');
     if (!u) {
       showMessage(`Academy failed to train ${unitType} — unit definition missing.`, 280);
@@ -690,7 +691,7 @@ const GameCampaign = (() => {
     if (!b?.mentorId) return null;
     const u = GS.units.find((x) => x.id === b.mentorId);
     if (!u || u.hp <= 0 || u.team !== 'player') return null;
-    const reach = (b.radius || 24) + 18;
+    const reach = (b.radius || 24) + 24;
     return Math.hypot(u.x - b.x, u.y - b.y) <= reach ? u : null;
   }
 
@@ -704,16 +705,16 @@ const GameCampaign = (() => {
     );
   }
 
-  /** A single soldier moved onto a Training Ground is posted there to drill recruits. */
+  /** A single soldier moved onto a Training Ground is posted there; returns the ground. */
   function postToTrainingGround(u, x, y) {
     const b = findTrainingGroundAt(x, y);
-    if (!b || !u) return false;
+    if (!b || !u) return null;
     if (!isTrainingMentor(u)) {
       const why = !TRAINABLE_TYPES.has(u.type)
         ? `${getUnitDisplayName(u)} cannot drill recruits.`
         : `${getUnitDisplayName(u)} needs rank ${TRAINING_MENTOR_TIER} to drill recruits.`;
       showMessage(why, 200);
-      return false;
+      return null;
     }
     b.mentorId = u.id;
     const where = b.complete ? 'From the next dawn' : 'Once it is built';
@@ -721,12 +722,13 @@ const GameCampaign = (() => {
       `${getUnitDisplayName(u)} posted to the Training Ground. ${where} they raise a recruit each dawn.`,
       260
     );
-    return true;
+    return b;
   }
 
   function spawnAcademyUnit(academy, unitType) {
-    const sx = academy.slotX ?? academy.x;
-    const sy = (academy.slotY ?? academy.y) + 16;
+    // Beside the mentor's drill spot at the ground's front edge.
+    const sx = academy.x + 18;
+    const sy = academy.y + 30;
     const u = spawnUnit(unitType, sx, sy, 'player');
     if (!u) return null;
     applyPlayerStatMods(u);

@@ -349,7 +349,7 @@ const GameBuildings = (() => {
     if (b.mentorId) {
       // A mentor drilling on a Training Ground when it falls is caught in the collapse.
       const m = GS.units.find((u) => u.id === b.mentorId && u.hp > 0);
-      if (fell && m && Math.hypot(m.x - b.x, m.y - b.y) <= (b.radius || 24) + 18) {
+      if (fell && m && Math.hypot(m.x - b.x, m.y - b.y) <= (b.radius || 24) + 24) {
         takeDamage(m, Math.ceil(m.maxHp * 0.6), {});
       }
       b.mentorId = null;

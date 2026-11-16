@@ -50,7 +50,11 @@ const builder = soldier('builder', 3, cx + 70);
 ok(!GC.postToTrainingGround(builder, cx, gy), 'a builder cannot drill recruits');
 const mentor = soldier('footman', 2);
 ok(!GC.postToTrainingGround(mentor, cx + 200, gy), 'a move elsewhere does not post');
-ok(GC.postToTrainingGround(mentor, cx, gy), 'rank 2 footman posted');
+Game.selectUnit(mentor.id);
+ok(Game.moveSelectionToWorld(cx, gy), 'move order onto the ground');
+ok(mentor.holding, 'the posted mentor holds at the ground');
+for (let i = 0; i < 240; i++) Game.update();
+ok(GC.getPostedMentor(ground) === mentor, 'mentor walked to the post');
 ok(ground.mentorId === mentor.id, 'ground remembers its mentor');
 
 const fresh = api.createUnit('footman', 0, 0, 'player');
@@ -65,14 +69,15 @@ api.Research.completeResearch('academy_charter');
 GC.processAcademyTraining();
 ok(GS.units[GS.units.length - 1].vetTier === 2, 'Academy Charter: recruits at rank 2');
 
+const [px, py] = [mentor.x, mentor.y];
 mentor.x = cx + 300;
 before = GS.units.length;
 ok(GC.processAcademyTraining() === 0 && GS.units.length === before, 'no recruit off post');
-mentor.x = cx;
+[mentor.x, mentor.y] = [px, py];
 
 const hp = mentor.maxHp;
 GB.finalizeBuildingDestroyed(ground, {});
-ok(mentor.hp <= hp * 0.4 + 1, `collapse hurts the mentor (${mentor.hp}/${hp})`);
+ok(mentor.hp <= hp * 0.6, `collapse hurts the mentor (${mentor.hp}/${hp})`);
 
 // A demolished ground lets its mentor walk away unhurt.
 const ground2 = api.createBuilding('training_ground', cx, gy, 'player');

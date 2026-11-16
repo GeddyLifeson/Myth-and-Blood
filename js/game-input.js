@@ -133,10 +133,9 @@ const GameInput = (() => {
     });
     // A move that lands on a war camp is the order to attack it; any other move cancels that.
     if (typeof WarCamps !== 'undefined') WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx);
-    // One soldier moved onto the Training Ground is posted there and holds.
-    if (liveUnits.length === 1 && postToTrainingGround(liveUnits[0], tx, ty)) {
-      orderMove(liveUnits[0], anchor.x, anchor.y, true, { hold: true });
-    }
+    // One soldier moved onto the Training Ground is posted there and holds at its front edge.
+    const ground = liveUnits.length === 1 && postToTrainingGround(liveUnits[0], tx, ty);
+    if (ground) orderMove(liveUnits[0], ground.x - 18, ground.y + 30, true, { hold: true });
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
