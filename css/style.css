@@ -816,10 +816,26 @@ body.window-borderless .window-drag-handle {
   color: #e8dcc8;
 }
 .omen-card .planet-event-choices {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
 }
 .omen-card .planet-event-btn {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: start;
   font-size: 11px;
+  border-left-width: 1px;
+}
+.omen-card .planet-event-btn > span:first-child {
+  order: 0;
+  font-weight: bold;
+}
+.omen-card .planet-event-btn .planet-event-cost {
+  order: 1;
+}
+.omen-card .planet-event-btn .planet-event-hint {
+  order: 2;
 }
 .omen-card .planet-event-btn .planet-event-hint {
   font-size: 10px;
