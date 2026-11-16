@@ -8,9 +8,9 @@
  *
  *   - A camp is a real enemy building (type `war_camp_*`), so damage, rubble, the health bar,
  *     Sapper blasts and siege multipliers all go through the ordinary building code.
- *   - Soldiers never walk off to a camp on their own. A camp is attacked only by soldiers the
- *     player has ordered onto it (a move order that lands on the camp), by blasts and strikes
- *     that land on it, and by the spy's Settlement Raid.
+ *   - Soldiers never walk off to a camp on their own. A camp is attacked by soldiers the
+ *     player has ordered onto it (a move order that lands on the camp), by any soldier already
+ *     within reach of it, by blasts and strikes that land on it, and by the spy's Settlement Raid.
  *   - Each camp has a few guards. They do not leave the camp; they throw at any soldier of
  *     yours within reach, and they fall as the camp is torn down.
  *   - At most two camps stand at once. A camp that is left alone packs up after a few waves.
@@ -442,7 +442,7 @@ const WarCamps = (() => {
       if (!u || u.team !== 'player') continue;
       if (camp && u.combatType !== 'builder' && u.combatType !== 'courier') {
         u.campOrderId = camp.id;
-        u.campCd = 0;
+        u.structureTargetId = camp.id;
         sent++;
       } else u.campOrderId = null;
     }
@@ -450,12 +450,6 @@ const WarCamps = (() => {
       ctx.float(camp.x, camp.y - 34, 'ATTACK THE CAMP', '#ffd080');
     }
     return camp && sent ? camp : null;
-  }
-
-  function inReach(u, b) {
-    const d = Math.hypot(u.x - b.x, u.y - b.y) - (b.radius || CAMP_RADIUS);
-    if (u.combatType === 'ranged' || u.projectile) return d <= (u.range || 60) * 0.92 + 6;
-    return d <= (u.meleeRange || u.range || 28) + 14;
   }
 
   function guardCount(camp, b) {
@@ -487,32 +481,7 @@ const WarCamps = (() => {
     }
     if (live.length !== state.camps.length) prune(ctx);
     if (!live.length) return;
-    for (let i = 0; i < units.length; i++) {
-      const u = units[i];
-      if (u.team !== 'player' || u.hp <= 0 || !u.campOrderId) continue;
-      let pair = null;
-      for (const p of live) if (p[0].id === u.campOrderId) pair = p;
-      if (!pair) {
-        u.campOrderId = null;
-        continue;
-      }
-      const b = pair[1];
-      if (b.hp <= 0 || !inReach(u, b)) continue;
-      if (u.fleeing || u.demoralized || u.retreatingToMed || u.pinned || u.garrisoned) continue;
-      if (u.combatType === 'healer' || u.combatType === 'builder') continue;
-      u.campCd = (u.campCd || 0) - 2;
-      if (u.campCd > 0 || u.attackAnimTimer > 0) continue;
-      // A foe within reach comes first; the camp does not hit back as hard as a sword.
-      if (ctx.foeInReach && ctx.foeInReach(u)) continue;
-      const siege = u.type === 'sapper' || (u.siegeMult || 1) >= 2;
-      u.campCd = siege ? 42 : u.combatType === 'ranged' ? 52 : 58;
-      u.animState = 'attack';
-      u.attackAnimTimer = 14;
-      u.rotation = Math.round((Math.atan2(b.y - u.y, b.x - u.x) * 180) / Math.PI);
-      const dmg = ctx.campDamage ? ctx.campDamage(u, b) : Math.max(4, (u.damage || 10) * 0.4);
-      ctx.hurtBuilding(b, dmg, u);
-      if (siege) ctx.float(b.x, b.y - 20, 'SIEGE!', '#ff8040');
-    }
+    // Soldiers strike camps through the ordinary building attack (updatePlayerStructureAttack).
     // The garrison throws at whoever comes close.
     for (const [c, b] of live) {
       if (b.hp <= 0) continue;
