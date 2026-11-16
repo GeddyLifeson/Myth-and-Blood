@@ -447,7 +447,7 @@ function toNight(api, wave) {
   );
   void c;
 
-  // Sabotage spikes a camp.
+  // Sabotage used to spike a camp; the orders rework cut it.
   toNight(api);
   GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
   W.resetRun();
@@ -455,15 +455,9 @@ function toNight(api, wave) {
   Game.warCampHooks.raise({ kind: 'siege' });
   GS.tactical = 40;
   GS.spyUsedThisWave = false;
-  ok(Game.executeSpyAction('sabotage') === true, 'Sabotage is bought');
   ok(
-    W.pendingBonuses({ buildings: GS.buildings }).length === 0,
-    'the Siege yard gives no bonus that wave'
-  );
-  Game.beginDayPhase(true);
-  ok(
-    !GS.spawnQueue.includes('siege_tower') && W.activeBonuses().length === 0,
-    'and no siege engine comes'
+    Game.executeSpyAction('sabotage') === false && GS.tactical === 40,
+    'Sabotage is cut from the spy network and charges nothing'
   );
 }
 
@@ -478,31 +472,12 @@ function toNight(api, wave) {
     'of 10 foes cut from a host of 40, 5 catch up as a late squad'
   );
   ok(R.rejoinSquad(['orc'], 1) === 0, 'an undisrupted host has no stragglers');
-  run(Game, 10);
-  toNight(api, 12);
-  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
-  W.resetRun();
-  const sizes = { plain: [], disrupt: [] };
-  for (let i = 0; i < 6; i++) {
-    for (const mode of ['plain', 'disrupt']) {
-      GS.timeOfDay = 'day';
-      toNight(api, 12);
-      GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
-      W.resetRun();
-      R.resetRun();
-      GS.tactical = 40;
-      GS.spyUsedThisWave = false;
-      if (mode === 'disrupt') Game.executeSpyAction('disrupt');
-      Game.beginDayPhase(true);
-      sizes[mode].push(GS.spawnQueue.length);
-    }
-  }
-  const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-  const ratio = avg(sizes.disrupt) / avg(sizes.plain);
+  GS.tactical = 40;
   ok(
-    ratio > 0.8 && ratio < 0.95,
-    `a disrupted wave fields about 87% of the bodies, not 75% (${ratio.toFixed(2)})`
+    Game.executeSpyAction('disrupt') === false && GS.tactical === 40,
+    'Disrupt is cut from the spy network; the late squad stays for any future cut'
   );
+  void W;
 }
 
 // --- 8. events: about one wave in four ------------------------------------------------------

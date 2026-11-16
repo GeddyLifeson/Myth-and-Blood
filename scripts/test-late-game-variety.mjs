@@ -1,5 +1,5 @@
 /**
- * Smoke tests for late-game wave events, map hazards, and expedition loot.
+ * Smoke tests for late-game wave events, map hazards, and expedition loot (science, no TP).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -92,7 +92,7 @@ ok(FH.HAZARD_TYPES.void_corruption.waveMin === 32, 'void corruption has waveMin'
 
 const PCE = vm.runInContext(`${counter}\nPlayerCounterEvolution`, ctx);
 const loot = PCE.computeExpeditionLoot({ targetStage: 3, unitIds: ['a', 'b', 'c'] }, 2, 150);
-ok(loot.tp >= 10, 'expedition returns meaningful TP loot');
+ok(loot.tp === 0, 'expedition loot is not TP (the money button is gone)');
 ok(loot.science >= 1, 'expedition returns science loot');
 ok(PCE.getExpeditionLootScale(200) > PCE.getExpeditionLootScale(50), 'loot scales into RTS era');
 
