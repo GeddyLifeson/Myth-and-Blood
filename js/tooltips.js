@@ -55,9 +55,9 @@ const Tooltips = (() => {
     sapper:
       'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close - keep him behind the line.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
-    bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
+    bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or raise one at the Training Ground under a ranked bard).',
     ballista:
-      '6 TP long-range siege crew. Bonus vs flyers and structures. Unlock: Research Lab → Iron Weapons → Siege Engineering (wave 12+), then click Ballista and place on the map (Shift-click to place more). Academy needs an Immortal ballista mentor.',
+      '6 TP long-range siege crew. Bonus vs flyers and structures. Unlock: Research Lab → Iron Weapons → Siege Engineering (wave 12+), then click Ballista and place on the map (Shift-click to place more).',
     pikeman:
       '4 TP anti-cavalry and anti-air line. Unlock: Research Lab → Iron Weapons → Advanced Infantry.',
     builder: 'Erects structures within build range. Auto-repair toggle in meta panel.',
@@ -67,7 +67,7 @@ const Tooltips = (() => {
   };
 
   const ACADEMY_NOTE =
-    'Find an Immortal veteran first - each academy needs a max-rank mentor of that unit type alive on the field before you can found it. Once complete, trains one free unit each round (Builder/Courier academies train while only the mentor is on the field).';
+    'Opens at wave 10, one per field. Select one soldier of rank 2 or higher and move them onto the Training Ground to post them there. Each dawn they stay at their post they raise one recruit of their own type who arrives with a rank. They are off the line while they drill, and they are badly hurt if the ground falls.';
 
   function esc(s) {
     return String(s ?? '')
@@ -169,28 +169,9 @@ const Tooltips = (() => {
         typeof Game !== 'undefined' && Game.getAcademyBuildStatus
           ? Game.getAcademyBuildStatus(type)
           : null;
-      const mentor =
-        status?.mentorType ||
-        (typeof getAcademyMentorUnitType === 'function'
-          ? getAcademyMentorUnitType(type)
-          : def.academyUnit || type.replace('academy_', ''));
-      const mentorName = status?.mentorName || getPlayerUnitDef(mentor)?.name || mentor;
-      const rank =
-        status?.mentorRank ||
-        (typeof getMaxVeteranRankName === 'function' ? getMaxVeteranRankName(mentor) : 'Immortal');
-      const trains = def.academyUnit || mentor;
-      body = `${ACADEMY_NOTE} This hall trains ${trains} - requires an on-field ${mentorName} at ${rank} (V${status?.mentorNeed || 6}).`;
-      if (status?.hasMentor) {
-        body += ` Mentor ready: Immortal ${mentorName} is on the field.`;
-        if (status.researchOk === false) {
-          body += ' Still need the matching research node to place this academy.';
-        } else {
-          body += ' You can found this academy now.';
-        }
-      } else if (status?.mentorProgress > 0) {
-        body += ` Progress: V${status.mentorProgress}/${status.mentorNeed || 6} on field - keep promoting after each gold-star cycle.`;
-      } else if (status?.reason) {
-        body += ` ${status.reason}`;
+      body = ACADEMY_NOTE;
+      if (status?.mentors) {
+        body += ` ${status.mentors} soldier${status.mentors > 1 ? 's' : ''} on the field can drill recruits now.`;
       }
     } else if (!body && def?.isAcademy) {
       body = ACADEMY_NOTE;
@@ -214,14 +195,8 @@ const Tooltips = (() => {
         typeof Game !== 'undefined' && Game.getAcademyBuildStatus
           ? Game.getAcademyBuildStatus(type)
           : null;
-      if (status?.canBuild) footer += ` · Ready to build`;
-      else if (status?.hasMentor && status.researchOk === false)
-        footer += ` · Mentor OK · need research`;
-      else if (status?.hasMentor) footer += ` · Mentor on field`;
-      else if (status?.mentorProgress > 0)
-        footer += ` · Mentor V${status.mentorProgress}/${status.mentorNeed || 6}`;
-      else if (status?.reason) footer = status.reason;
-      else footer += ' · Find an Immortal veteran first';
+      if (status?.reason) footer = status.reason;
+      else footer += ' · Ready to build';
     }
     footer += keyNote('build', type);
     if (def && !def.isAcademy) footer += whyNot('build', type, gs);
@@ -831,9 +806,9 @@ const Tooltips = (() => {
         footer: 'Click build, then click map',
       },
       ACADEMIES: {
-        title: 'Academies',
-        body: 'Find an Immortal veteran first - you cannot found an academy until a max-rank mentor of that unit type is alive on the field. Promote troops via Veteran Doctrine, deploy the mentor, then build. Each complete academy trains one free unit per round.',
-        footer: 'Hover each academy button for mentor requirements',
+        title: 'Training Ground',
+        body: 'Post a soldier of rank 2 or higher on the Training Ground and they raise one ranked recruit of their type each dawn, at the cost of fighting without them.',
+        footer: 'Opens at wave 10',
       },
       STRIKES: {
         title: 'Strikes',

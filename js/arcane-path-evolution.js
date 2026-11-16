@@ -38,8 +38,6 @@ const ArcanePathEvolution = (() => {
   const WEAVER_UNIT_TYPES = new Set(['mage', 'wizard', 'warlock', 'cleric', 'elemental', 'healer']);
   const ARCANE_BUILD_TYPES = new Set([
     'research_lab',
-    'academy_mage',
-    'academy_healer',
     'mage_tower',
   ]);
 

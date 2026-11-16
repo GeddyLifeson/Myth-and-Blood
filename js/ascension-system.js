@@ -221,7 +221,7 @@ const AscensionSystem = (() => {
         desc: 'Galactic muster — veterans ascend on deploy.',
       },
     },
-    academy_footman: {
+    training_ground: {
       kingdom: {
         id: 'paragon_academy',
         label: 'Paragon Academy',

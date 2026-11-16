@@ -44,23 +44,7 @@ const FoundationalMedievalLayer = (() => {
 
   const LONGBOW_TYPES = new Set(['footman', 'archer', 'pikeman', 'ballista', 'scout']);
   const ARCANE_TYPES = new Set(['mage', 'wizard', 'warlock', 'elemental', 'cleric', 'healer']);
-  const ARCANE_BUILDINGS = new Set([
-    'research_lab',
-    'academy_footman',
-    'academy_archer',
-    'academy_mage',
-    'academy_knight',
-    'academy_healer',
-    'academy_builder',
-    'academy_courier',
-    'academy_scout',
-    'academy_bard',
-    'academy_ballista',
-    'academy_pikeman',
-    'academy_general',
-    'academy_sapper',
-    'academy_cavalry',
-  ]);
+  const ARCANE_BUILDINGS = new Set(['research_lab', 'training_ground']);
   const ARCANE_RESEARCH = new Set([
     'academy_charter',
     'academy_knights',

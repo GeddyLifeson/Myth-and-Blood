@@ -542,8 +542,8 @@ function testAcademyEraMode(exp, academyWave) {
       'academy era should bootstrap settlement research'
     );
     assert(
-      Research.isBuildUnlocked('academy_footman', {}),
-      'academy era should bootstrap academy research'
+      Research.isBuildUnlocked('training_ground', {}),
+      'academy era can build a Training Ground'
     );
     assert(
       Research.isTpVeteranUpgradeUnlocked({}),
@@ -630,7 +630,7 @@ function testResearchGates(Research, BuildDefs) {
   assert(!Research.isBuildUnlocked('castle', {}), 'castle should require fortification research');
   assert(!Research.isBuildUnlocked('hamlet', {}), 'hamlet should require settlement charter');
   assert(!Research.isBuildUnlocked('village', {}), 'village should require village rights');
-  assert(!Research.isBuildUnlocked('academy_footman', {}), 'academies should require research');
+  assert(Research.isBuildUnlocked('training_ground', {}), 'Training Ground needs no research');
   Research.completeResearch('fortification', noop);
   assert(Research.isBuildUnlocked('castle', {}), 'castle unlocks after fortification');
   Research.completeResearch('settlement_charter', noop);

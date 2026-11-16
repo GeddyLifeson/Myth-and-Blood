@@ -20,6 +20,7 @@ const Research = (() => {
     'research_lab',
     'watchtower',
     'trade_outpost',
+    'training_ground',
     'enemy_hamlet',
     'enemy_merchant_guild',
     'enemy_trade_outpost',
@@ -240,9 +241,8 @@ const Research = (() => {
       wave: 9,
       category: 'military',
       prereq: ['iron_weapons'],
-      desc: 'Deploy ballistas (6 TP) and found Sapper/Ballista Academies.',
+      desc: 'Deploy ballistas (6 TP).',
       deploy: ['ballista'],
-      build: ['academy_sapper', 'academy_ballista'],
     },
     {
       id: 'prospecting',
@@ -261,48 +261,7 @@ const Research = (() => {
       wave: 20,
       category: 'academy',
       prereq: ['iron_weapons'],
-      desc: 'Train core troops each round.',
-      build: ['academy_footman', 'academy_archer', 'academy_mage', 'academy_cavalry'],
-    },
-    {
-      id: 'knight_order',
-      name: 'Knight Order',
-      cost: 52,
-      wave: 25,
-      category: 'academy',
-      prereq: ['academy_charter'],
-      desc: 'Elite knight training halls.',
-      build: ['academy_knight'],
-    },
-    {
-      id: 'support_corps',
-      name: 'Support Corps',
-      cost: 48,
-      wave: 22,
-      category: 'academy',
-      prereq: ['academy_charter'],
-      desc: 'Healer, builder, and courier academies.',
-      build: ['academy_healer', 'academy_builder', 'academy_courier'],
-    },
-    {
-      id: 'expansion_training',
-      name: 'Expansion Training',
-      cost: 55,
-      wave: 28,
-      category: 'academy',
-      prereq: ['advanced_infantry', 'morale_arts', 'siege_engineering'],
-      desc: 'Scout, bard, and pikeman academies (ballista academy via Siege Engineering).',
-      build: ['academy_scout', 'academy_bard', 'academy_pikeman'],
-    },
-    {
-      id: 'officer_training',
-      name: 'Officer Training',
-      cost: 72,
-      wave: 35,
-      category: 'academy',
-      prereq: ['command_theory', 'knight_order'],
-      desc: 'Promote generals from immortal footmen.',
-      build: ['academy_general'],
+      desc: 'Training Ground recruits arrive at rank 2 instead of 1.',
     },
     {
       id: 'settlement_charter',
@@ -857,7 +816,7 @@ const Research = (() => {
     defense: 'Defenses',
     support: 'Support',
     economy: 'Economy',
-    academy: 'Academies',
+    academy: 'Training',
     crossover: 'Evolved Allies',
     secret: 'Secret',
     other: 'Other',
@@ -986,7 +945,7 @@ const Research = (() => {
       {
         cat: 'research',
         name: 'Full Research Tree Overview',
-        body: 'Projects gate at minimum wave thresholds and prerequisite research. Military opens sappers, knights, officers, and siege. Defense opens castles, towers, and traps. Economy runs quarry → hamlet → village → town → city → metropolis. Academies train free troops each round after Academy Charter. Evolved allies research is available from wave 1 (or instantly if the faction is meta-unlocked). SP costs scale with roster power. Secret paths: Tonic Stations Science (wave 55) and Hellgate Containment (wave 100, requires Marrow Choir + Emberblood research).',
+        body: 'Projects gate at minimum wave thresholds and prerequisite research. Military opens sappers, knights, officers, and siege. Defense opens castles, towers, and traps. Economy runs quarry → hamlet → village → town → city → metropolis. A Training Ground opens at wave 10; Academy Charter makes its recruits arrive one rank higher. Evolved allies research is available from wave 1 (or instantly if the faction is meta-unlocked). SP costs scale with roster power. Secret paths: Tonic Stations Science (wave 55) and Hellgate Containment (wave 100, requires Marrow Choir + Emberblood research).',
       },
     ];
 
@@ -1002,12 +961,10 @@ const Research = (() => {
         'Iron Weapons anchors the combat branch — sappers, knights, generals, scouts, pikemen, ballistas, and Veteran Doctrine (TP promotions).',
       defense:
         'Field Engineering and Fortification open watchtowers, spike traps, castle compounds, and fortress upgrades on settlements.',
-      support:
-        'Morale Arts unlocks bards — required alongside infantry and siege nodes for Expansion Training academies.',
+      support: 'Morale Arts unlocks bards.',
       economy:
         'Prospecting unlocks quarries and trade posts; Settlement Charter begins the hamlet ladder to Imperial Metropolis.',
-      academy:
-        'Academy Charter trains core troops free each round; Support Corps and Knight Order branch into specialist and officer halls.',
+      academy: 'Academy Charter: recruits raised at the Training Ground arrive at rank 2.',
       crossover:
         'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Hellbane still needs Hellgate Containment.',
       secret:

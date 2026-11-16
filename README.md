@@ -247,22 +247,23 @@ Expect gaps in the line while men heal.
 
 Every building needs a Builder on the field. One Builder runs two projects at a time. Each building has one job.
 
-| Building      | TP  | Job                                                                                | Needs             |
-| ------------- | --- | ---------------------------------------------------------------------------------- | ----------------- |
-| Outpost       | 4   | Cover for one soldier; an archer inside shoots further. Takes one upgrade, once    |                   |
-| Barracks      | 6   | Outpost upgrade: a free Footman every third dawn (first two Barracks count)        | Field Engineering |
-| Granary       | 6   | Outpost upgrade: 3 more soldiers before army upkeep starts (first three count)     | Field Engineering |
-| Wall          | 5   | Blocks movement; each wall holds up to 3 line-breakers a wave and makes them fight |                   |
-| Watchtower    | 4   | The night preview lists the next wave by type and number                           |                   |
-| Spike Trap    | 3   | 45 damage to the first enemy crossing, every 1.5 seconds                           | Field Engineering |
-| Medical Tent  | 5   | Heals the wounded (see above)                                                      |                   |
-| Mess Hall     | 5   | Soldiers near it keep their morale                                                 |                   |
-| Research Lab  | 18  | 6 science at every dawn (first two labs count), and a little from kills            |                   |
-| Trade Outpost | 10  | +2 TP at dawn                                                                      |                   |
-| Quarry        | 14  | +3 TP at dawn                                                                      | Prospecting       |
-| Castle        | 46  | A full compound: walls, outposts, a keep, a med tent and a mess hall               | Fortification     |
+| Building        | TP  | Job                                                                                     | Needs             |
+| --------------- | --- | --------------------------------------------------------------------------------------- | ----------------- |
+| Outpost         | 4   | Cover for one soldier; an archer inside shoots further. Takes one upgrade, once         |                   |
+| Barracks        | 6   | Outpost upgrade: a free Footman every third dawn (first two Barracks count)             | Field Engineering |
+| Granary         | 6   | Outpost upgrade: 3 more soldiers before army upkeep starts (first three count)          | Field Engineering |
+| Wall            | 5   | Blocks movement; each wall holds up to 3 line-breakers a wave and makes them fight      |                   |
+| Watchtower      | 4   | The night preview lists the next wave by type and number                                |                   |
+| Spike Trap      | 3   | 45 damage to the first enemy crossing, every 1.5 seconds                                | Field Engineering |
+| Medical Tent    | 5   | Heals the wounded (see above)                                                           |                   |
+| Mess Hall       | 5   | Soldiers near it keep their morale                                                      |                   |
+| Research Lab    | 18  | 6 science at every dawn (first two labs count), and a little from kills                 |                   |
+| Trade Outpost   | 10  | +2 TP at dawn                                                                           |                   |
+| Quarry          | 14  | +3 TP at dawn                                                                           | Prospecting       |
+| Castle          | 46  | A full compound: walls, outposts, a keep, a med tent and a mess hall                    | Fortification     |
+| Training Ground | 40  | A posted mentor of rank 2 or more raises one recruit of that type, a rank up, each dawn | Wave 10, one only |
 
-An Outpost becomes a Barracks **or** a Granary. The choice is final for that Outpost. DEMOLISH removes a building for part of its price, MOVE relocates a finished one, and `R` turns a wall before it is placed.
+An Outpost becomes a Barracks **or** a Granary. The choice is final for that Outpost. To post a mentor on the Training Ground, select one soldier of rank 2 or higher and move them onto it; they hold there, off the line, and are badly hurt if it falls. Academy Charter research makes the recruits arrive at rank 2. DEMOLISH removes a building for part of its price, MOVE relocates a finished one, and `R` turns a wall before it is placed.
 
 ---
 
@@ -282,7 +283,7 @@ A Research Lab pays science at each dawn. Open the Research panel and pick a pro
 | Siege Engineering | 34      | 9         | Ballista                       | Iron Weapons      |
 | Veteran Doctrine  | 34      | 10        | Paying TP to promote a veteran | Iron Weapons      |
 
-A lab built on wave 3 or 4 finishes Iron Weapons around wave 6. Later projects open academies, settlements and the champions' halls; the Research tab of the encyclopedia lists all of them.
+A lab built on wave 3 or 4 finishes Iron Weapons around wave 6. Later projects open settlements and the champions' halls; the Research tab of the encyclopedia lists all of them.
 
 ---
 
@@ -554,7 +555,6 @@ Two things stay secret until earned: a grand arena with its own roster, and one 
 
 Past wave 100 the same field and the same rules continue, with more to build:
 
-- **Academies** train one kind of soldier each round while a veteran of that kind is on the field to teach.
 - **Settlements** (Hamlet, Village, Town, City, Metropolis) pay TP every round: a Hamlet pays +5 TP/round. A Merchant Guild beside one adds to it.
 - **Loadouts** give the whole army one passive bonus.
 - The ten warlords return in order, stronger each time.

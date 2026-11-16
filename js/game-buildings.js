@@ -34,7 +34,7 @@ const GameBuildings = (() => {
   const GS = GameState;
   const { clampPos, invalidateObstacles, sanitizeTactical } = GameField;
   const { HUNT_LEASH_STRUCTURE_MULT, isLeashed, pointInHuntLeash } = GameMorale;
-  const { findNearestFoeInRange, findPlayerGeneral } = GameCombat;
+  const { findNearestFoeInRange, findPlayerGeneral, takeDamage } = GameCombat;
   const { damageBuilding, getEffectiveRange, inAttackRange, maxAttackRange } = GameTargeting;
   const { followPath, isBlocked, orderMove, pathToEnemyStructure, setUnitPath } = GameMovement;
   const { addHighlight } = GameArmy;
@@ -345,7 +345,15 @@ const GameBuildings = (() => {
     }
   }
 
-  function cleanupBuildingOccupants(b) {
+  function cleanupBuildingOccupants(b, fell = false) {
+    if (b.mentorId) {
+      // A mentor drilling on a Training Ground when it falls is caught in the collapse.
+      const m = GS.units.find((u) => u.id === b.mentorId && u.hp > 0);
+      if (fell && m && Math.hypot(m.x - b.x, m.y - b.y) <= (b.radius || 24) + 18) {
+        takeDamage(m, Math.ceil(m.maxHp * 0.6), {});
+      }
+      b.mentorId = null;
+    }
     if (b.garrisonUnitId) {
       const gu = GS.units.find((u) => u.id === b.garrisonUnitId);
       if (gu) releaseFromGarrison(gu);
@@ -439,7 +447,7 @@ const GameBuildings = (() => {
     if (!opts.silent && typeof BuildingArt !== 'undefined') {
       BuildingArt.noteDestroyed(b, GS.updateTick);
     }
-    cleanupBuildingOccupants(b);
+    cleanupBuildingOccupants(b, !opts.silent);
     detachBuildingFromBuilders(b);
     clearBuildingTargeting(b);
     removeBuildingRecord(b);
@@ -732,10 +740,10 @@ const GameBuildings = (() => {
     if (
       isAcademyBuild &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-      !canBuildAcademyType(type, GS.wave, GS.units)
+      !canBuildAcademyType(type, GS.wave, GS.buildings)
     ) {
       showMessage(
-        getAcademyBuildBlockReason(type, GS.wave, GS.units) ||
+        getAcademyBuildBlockReason(type, GS.wave, GS.buildings) ||
           'Cannot build this academy right now.'
       );
       return false;
@@ -911,9 +919,9 @@ const GameBuildings = (() => {
       return false;
     }
     const isAcademyBuild = bdef?.isAcademy && !bdef?.isCrossoverBarracks && !bdef?.isWweAcademy;
-    if (isAcademyBuild && !canBuildAcademyType(type, GS.wave, GS.units)) {
+    if (isAcademyBuild && !canBuildAcademyType(type, GS.wave, GS.buildings)) {
       showMessage(
-        getAcademyBuildBlockReason(type, GS.wave, GS.units) ||
+        getAcademyBuildBlockReason(type, GS.wave, GS.buildings) ||
           'Cannot build this academy right now.'
       );
       return false;

@@ -206,15 +206,13 @@ const Availability = (() => {
     let mentorOk = true;
     let mentorReason = '';
     if (!gs.creativeMode && isAcademy) {
-      if (typeof Game !== 'undefined' && Game.getAcademyBuildStatus) {
-        const st = Game.getAcademyBuildStatus(type);
-        mentorOk = !!st?.mentorOk;
-        const who = st?.mentorName || def.academyUnit || 'veteran';
-        mentorReason = `needs an Immortal ${who} on the field`;
-      } else if (gs.buildableAcademies) {
-        mentorOk = gs.buildableAcademies.includes(type);
-        mentorReason = 'needs an Immortal veteran of that troop on the field';
-      }
+      const reason =
+        typeof Game !== 'undefined' && Game.getAcademyBuildStatus
+          ? Game.getAcademyBuildStatus(type)?.reason
+          : null;
+      mentorOk = !reason;
+      // Panel reasons read as lower-case phrases: "opens at wave 10".
+      mentorReason = reason ? reason[0].toLowerCase() + reason.slice(1).replace(/\.$/, '') : '';
     }
     if (!mentorOk) return blocked(mentorReason, true, { cost, mentor: true, research: !unlocked });
     if (!unlocked) {

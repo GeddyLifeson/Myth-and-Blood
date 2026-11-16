@@ -252,54 +252,6 @@ const ContentExpansion = (() => {
         isFortressUpgrade: true,
         requiresHamletNearby: 80,
       },
-      academy_scout: {
-        name: 'Scout Academy',
-        cost: 40,
-        hp: 170,
-        cover: 0.35,
-        radius: 22,
-        blocksMove: false,
-        blocksLOS: true,
-        buildTime: 210,
-        isAcademy: true,
-        academyUnit: 'scout',
-      },
-      academy_bard: {
-        name: 'Bard Academy',
-        cost: 45,
-        hp: 165,
-        cover: 0.3,
-        radius: 22,
-        blocksMove: false,
-        blocksLOS: false,
-        buildTime: 210,
-        isAcademy: true,
-        academyUnit: 'bard',
-      },
-      academy_ballista: {
-        name: 'Ballista Academy',
-        cost: 55,
-        hp: 190,
-        cover: 0.4,
-        radius: 24,
-        blocksMove: false,
-        blocksLOS: true,
-        buildTime: 240,
-        isAcademy: true,
-        academyUnit: 'ballista',
-      },
-      academy_pikeman: {
-        name: 'Pikeman Academy',
-        cost: 40,
-        hp: 175,
-        cover: 0.35,
-        radius: 22,
-        blocksMove: false,
-        blocksLOS: true,
-        buildTime: 220,
-        isAcademy: true,
-        academyUnit: 'pikeman',
-      },
       perk_double_tap: {
         name: 'Twinshot Brew',
         cost: 11,
@@ -1004,13 +956,6 @@ const ContentExpansion = (() => {
       'boss_malachar',
     ]) {
       ENEMY_SPRITE_MAP[id] = id;
-    }
-
-    // Base ACADEMY_BUILD_TYPES already lists expansion academies; only fill gaps if needed.
-    if (typeof ACADEMY_BUILD_TYPES !== 'undefined') {
-      for (const id of ['academy_scout', 'academy_bard', 'academy_ballista', 'academy_pikeman']) {
-        if (!ACADEMY_BUILD_TYPES.includes(id)) ACADEMY_BUILD_TYPES.push(id);
-      }
     }
 
     ELITE_ENEMIES.push('sky_drake', 'bone_summoner');

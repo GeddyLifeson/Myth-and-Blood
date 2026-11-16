@@ -425,7 +425,7 @@ const GameViewState = (() => {
           : null
       ),
       buildableAcademies: cachedSnap('buildableAcademies', () =>
-        ACADEMY_BUILD_TYPES.filter((t) => canBuildAcademyType(t, GS.wave, GS.units))
+        ACADEMY_BUILD_TYPES.filter((t) => canBuildAcademyType(t, GS.wave, GS.buildings))
       ),
       loadout: svc('ContentExpansion') ? svc('ContentExpansion').getLoadout() : 'balanced',
       loadouts: cachedSnap('loadouts', () =>
