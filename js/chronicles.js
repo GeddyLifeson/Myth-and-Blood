@@ -3,9 +3,9 @@
  */
 const Chronicles = (() => {
   const STORAGE_KEY = 'myth-and-blood-chronicles-v1';
-  const MAX_ENTRIES = 32;
+  const MAX_ENTRIES = 24;
   const MAX_WAVE_ENTRIES = 12;
-  const MAX_RUN_ENTRIES = 20;
+  const MAX_RUN_ENTRIES = 12;
   const MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
   const MAX_SUMMARY_LEN = 720;
 
@@ -236,7 +236,7 @@ const Chronicles = (() => {
         },
       ];
     }
-    return list.slice(0, 32).map((e, i) => {
+    return list.slice(0, 24).map((e, i) => {
       const hidden = e.type !== 'run' && i >= 8;
       return {
         cat: 'chronicles',
