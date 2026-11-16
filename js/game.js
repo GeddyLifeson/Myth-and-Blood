@@ -777,6 +777,20 @@ const Game = (() => {
       },
     },
     removeCamp: { value: (b) => finalizeBuildingDestroyed(b, { silent: true, packedUp: true }) },
+    // A garrison that sallies is as strong as the wave's own troops of that type.
+    spawnDefender: {
+      value: (type, x, y) => {
+        const u = siegeCtx.spawnEnemy(type, x, y);
+        if (u && svc('GameDepth')) {
+          svc('GameDepth').applyEnemySpawnScaling(u, Math.max(1, GS.wave), {
+            cfg: GS.currentWaveConfig || getWaveConfig(Math.max(1, GS.wave)),
+            diff: getDifficulty(),
+            waveModifiers: GS.waveModifiers,
+          });
+        }
+        return u;
+      },
+    },
     campDamage: { value: (unit, b) => calcBuildingDamage(unit, b) },
     foeInReach: { value: (unit) => !!findNearestFoeInRange(unit) },
     markCrate: { value: () => SiegeLoop.forgeMaps() },
@@ -1430,6 +1444,7 @@ const Game = (() => {
     }
     if (svc('ModLoader')) svc('ModLoader').onGameStart(createGameContext());
     if (svc('Research')) svc('Research').resetRun();
+    Veterans.setHall([]);
     // Ensure expansion unit/building defs (ballista, bard, academies…) after any data reload race.
     if (svc('ContentExpansion')?.registerDefs) svc('ContentExpansion').registerDefs();
     else if (typeof ContentExpansion !== 'undefined' && ContentExpansion.registerDefs) {
@@ -2923,6 +2938,8 @@ const Game = (() => {
     startBranchTech,
     cancelBranchTech,
     upgradeSelectedVeteran,
+    raiseVeteran: (id) => GameArmy.raiseVeteran(id),
+    forgetSelectedTrait: (id) => GameArmy.forgetSelectedTrait(id),
     ascendSelectedUnit,
     recruitSelectedEcho,
     getAsymmetricMods,

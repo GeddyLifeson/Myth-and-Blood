@@ -349,6 +349,8 @@ const Encyclopedia = (() => {
     medical_tent: () =>
       'The wounded walk here on their own, heal to full and go back to their posts. Four beds.',
     mess_hall: () => 'Soldiers near it keep their morale.',
+    hall_of_veterans: () =>
+      'Keeps the roll of veterans who reached rank 6. Raises one fallen name a wave for TP; the veteran returns at rank 5 with a tenth less health for each death.',
     research_lab: () => {
       const r = G('EconomyRules')?.BUILDINGS?.research_lab;
       return `Pays science at every dawn${r ? ` (${r.dawnScience} per lab, first ${r.maxCounted} labs)` : ''}, and a little from kills. Science buys research.`;
@@ -449,7 +451,7 @@ const Encyclopedia = (() => {
         entry(
           'buildings',
           'War camps',
-          `From wave ${camps.FROM_WAVE} the enemy may raise a camp on the top edge at nightfall. While it stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid.\n\n${kinds
+          `The night before wave ${camps.FROM_WAVE} the enemy raises its first camp on the top edge, and more follow. While a camp stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid. Strike it with soldiers and its garrison comes out to fight.\n\nA camp left standing digs in each night, up to level III: more health, more guards and a stronger bonus. From level II it also sends raiders at your nearest building. After ${camps.LIFE_WAVES} waves it moves on.\n\n${kinds
             .map((k) => `${k.name}: ${k.line}`)
             .join('\n')}`,
           { refs: { builds: kinds.map((k) => k.type) } }
