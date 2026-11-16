@@ -792,6 +792,8 @@ const UI = (() => {
       }
       if (m.ironman) parts.push('Ironman');
     }
+    const ng = typeof NewGamePlus !== 'undefined' ? NewGamePlus.getPending() : null;
+    if (ng) parts.push(`New Game+ ${ng.tier}`);
     const text = parts.filter(Boolean).join(' · ');
     if (el.textContent !== text) el.textContent = text;
   }
@@ -1397,14 +1399,14 @@ const UI = (() => {
     const list = document.getElementById('raid-mission-list');
     const raids = gs.settlementRaids;
     if (!section || !summary || !list) return;
-    const show = !!(raids?.active || (gs.wave || 0) >= 140);
+    const show = !!raids?.active;
     section.style.display = show ? '' : 'none';
     if (!show) return;
-    summary.textContent = raids?.summary || `Unlocks wave ${raids?.waveMin || 150}`;
+    summary.textContent = raids?.summary || '';
     const missions = raids?.missions || [];
     if (!missions.length) {
       list.innerHTML =
-        '<p class="panel-hint">No enemy holds spotted - factions build in the north after wave 150.</p>';
+        '<p class="panel-hint">No war camp stands. When the enemy raises one, it is listed here: select hunters and dispatch them to raze it for loot.</p>';
       return;
     }
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1426,64 +1428,51 @@ const UI = (() => {
       .join('');
   }
 
+  /** The omen card on the field: tonight's omen (two options) and tomorrow's weather. */
   function refreshMapEventPanel(gs) {
-    const section = document.getElementById('planet-event-section');
+    const card = document.getElementById('omen-card');
+    const title = document.getElementById('omen-card-title');
+    const weatherEl = document.getElementById('omen-card-weather');
     const summary = document.getElementById('planet-event-summary');
     const list = document.getElementById('planet-event-choices');
+    const defEl = document.getElementById('omen-card-default');
+    if (!card || !title || !weatherEl || !summary || !list || !defEl) return;
     const me = gs.mapEvents;
-    if (!section || !summary || !list) return;
-    const wave = gs.wave || 0;
-    const waveMin = me?.waveMin || 12;
-    const show = !!(me?.active || me?.pending || me?.awaitingChoice || wave >= waveMin - 1);
-    section.style.display = show ? '' : 'none';
-    if (!show) return;
-
     const nightOk = gs.timeOfDay === 'night';
-    const canRespond = !!(me?.canRespond || (me?.pending && me?.awaitingChoice && nightOk));
+    const omen = me?.pending ? me.event : null;
+    const weather = me?.weather;
+    card.hidden = !nightOk || (!omen && !weather);
+    if (card.hidden) return;
+
+    card.style.borderLeftColor = omen?.color || weather?.color || '';
+    title.textContent = omen ? omen.name : 'Tomorrow';
+    weatherEl.textContent = weather ? weather.name : 'Clear skies';
+    summary.textContent = [omen?.prep, weather?.text].filter(Boolean).join(' ');
+
+    const choices = omen?.choices || [];
+    const chosen = omen?.choice;
+    defEl.textContent =
+      choices.length && !chosen
+        ? `Unanswered by dawn: ${omen.defaultLabel || 'the omen decides'}`
+        : '';
     const freeTp = gs.creativeMode && gs.creativeSettings?.freeResources;
-
-    if (me?.pending && me?.event?.prep) {
-      summary.textContent = `${me.event.name} - ${me.event.prep}${
-        nightOk ? '' : ' (night prep only)'
-      }`;
-    } else if (me?.activeSummary) {
-      summary.textContent = me.activeSummary;
-    } else {
-      summary.textContent = `Planet events unlock wave ${waveMin} (respond at night)`;
-    }
-
-    const choices = me?.event?.choices || [];
-    const chosen = me?.event?.choice;
-
-    if (!choices.length) {
-      list.innerHTML = chosen
-        ? '<p class="panel-hint">Response locked - effects apply at dawn.</p>'
-        : '<p class="panel-hint">No planet event pending - check again after a wave clears at night.</p>';
-      return;
-    }
-
-    const colorStyle = me.event?.color ? ` style="border-left-color:${me.event.color}"` : '';
     list.innerHTML = choices
       .map((ch) => {
         const isChosen = chosen === ch.id;
         const needTp = !freeTp && (ch.cost || 0) > 0 && (gs.tactical || 0) < (ch.cost || 0);
         let cls = '';
         let lockHint = '';
-        if (isChosen) {
-          cls = 'planet-event-chosen';
-        } else if (!nightOk) {
+        if (isChosen) cls = 'planet-event-chosen';
+        else if (chosen) {
           cls = 'planet-event-softlock';
-          lockHint = ' Night prep only - wait for night.';
-        } else if (!canRespond) {
-          cls = 'planet-event-softlock';
-          lockHint = ' Already answered or no pending event.';
+          lockHint = ' Already answered.';
         } else if (needTp) {
           cls = 'planet-event-softlock';
           lockHint = ` Need ${ch.cost} TP (have ${Math.floor(gs.tactical || 0)}).`;
         }
         const costLabel = ch.cost > 0 ? `${ch.cost} TP` : 'FREE';
         return (
-          `<button type="button" class="planet-event-btn ${cls}" data-map-choice="${ch.id}"${colorStyle}` +
+          `<button type="button" class="planet-event-btn ${cls}" data-map-choice="${ch.id}"` +
           ` title="${(ch.hint || ch.label || '') + lockHint}">` +
           `<span>${ch.label}</span><span class="planet-event-cost">${isChosen ? 'CHOSEN' : costLabel}</span>` +
           `<span class="planet-event-hint">${ch.hint || ''}${lockHint}</span></button>`
@@ -1710,13 +1699,13 @@ const UI = (() => {
         setLabel(btn, avail.ok ? `${def.name}, ${avail.cost} TP` : `${def.name}, ${avail.reason}`);
       }
     });
-    // The "Recruit cost +N%" chip reads the same price function as the buttons.
+    // The wages chip: what the next dawn takes for soldiers past the free number.
     const upkeepChip = document.getElementById('siege-upkeep');
     if (upkeepChip) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = `Recruit cost +${pct}%`;
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = `Wages -${wages} TP at dawn`;
       if (upkeepChip.textContent !== text) upkeepChip.textContent = text;
-      upkeepChip.hidden = pct <= 0;
+      upkeepChip.hidden = wages <= 0;
     }
     // A full bar: enough for the dearest troop or strike on offer.
     tpBarMax = Availability.tpBarMax(prices);
@@ -2289,12 +2278,12 @@ const UI = (() => {
           me?.activeSummary ||
           (me?.pending && me?.event?.name ? `${me.event.name} - respond` : null) ||
           me?.event?.name ||
-          'Planet';
+          'Omen';
         planetEl.textContent = (label || '-').slice(0, 28) + ((label || '').length > 28 ? '…' : '');
         planetEl.title =
           me?.event?.prep ||
           me?.activeSummary ||
-          'Dynamic map events - volcanic eruptions, awakening ruins, ley storms';
+          'Omens: a card on the field some nights, two options each';
         planetEl.className =
           'stat-value planet-event-value' + (me?.pending ? ' planet-event-active' : '');
         planetEl.style.color = me?.event?.color || '';
@@ -2774,9 +2763,12 @@ const UI = (() => {
         (gs.territoryTier ?? 0) > 0
           ? ` · Land ${['', 'I', 'II', 'III', 'IV', 'V', 'VI'][gs.territoryTier] || gs.territoryTier}`
           : '';
+      const run =
+        (gs.ngPlusTier ? ` · NG+${gs.ngPlusTier}` : '') +
+        (gs.postVictoryEndless ? ' · Endless' : '');
       waveText.textContent = gs.infiniteWaves
-        ? `${gs.wave}${land}`
-        : `${gs.wave} / ${gs.totalWaves}${land}`;
+        ? `${gs.wave}${land}${run}`
+        : `${gs.wave} / ${gs.totalWaves}${land}${run}`;
     }
     updateHudMeters(gs);
     if (armyText) armyText.textContent = String(gs.army ?? 0);
@@ -2833,14 +2825,13 @@ const UI = (() => {
       }
     }
 
-    // Army upkeep and breaches: the two numbers that decide what a recruit costs and
-    // whether the realm falls.
+    // Army wages and breaches: what the army costs each dawn and whether the realm falls.
     const upkeepEl = hudEls['upkeep-text'];
     if (upkeepEl) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = pct > 0 ? `recruits +${pct}%` : 'no upkeep';
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = wages > 0 ? `wages -${wages}` : 'no wages';
       if (upkeepEl.textContent !== text) upkeepEl.textContent = text;
-      upkeepEl.classList.toggle('raised', pct > 0);
+      upkeepEl.classList.toggle('raised', wages > 0);
     }
     const breachHud = hudEls['breach-hud'];
     if (breachHud) {

@@ -195,6 +195,8 @@ const Chronicles = (() => {
     if (dead.length)
       lines.push(`The fallen: ${dead.map((f) => `${f.name} (${f.kills})`).join(', ')}`);
     if (stats.honorNames?.length) lines.push(`Honored: ${stats.honorNames.slice(-5).join(', ')}`);
+    if (stats.ngPlusTier) lines.push(`New Game+ ${stats.ngPlusTier}.`);
+    if (stats.postVictoryEndless) lines.push('Endless run past the wave 100 victory.');
     if (branchLabel) lines.push(`Story path: ${branchLabel}`);
     if (stats.storyChoiceCount) lines.push(`${stats.storyChoiceCount} branching choices recorded.`);
     if (stats.victory && stats.victoryReason === 'economy') {

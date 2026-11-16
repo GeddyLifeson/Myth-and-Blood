@@ -303,12 +303,20 @@ const FactionHazards = (() => {
     return false;
   }
 
+  const HAZARD_HP_SHARE = 0.05;
+
+  function weatherIs(id) {
+    return typeof DynamicMapEvents !== 'undefined' && DynamicMapEvents.weatherIs(id);
+  }
+
   function applyToUnit(unit, hazards, spatial) {
     if (!unit || unit.hp <= 0 || unit.flying) return;
     // Preserve ability frost slow (frostTimer) — was wiped every hazard tick.
     const frostFloor =
       (unit.frostTimer || 0) > 0 ? Math.min(1, unit.frostSlow || unit._frostSlow || 0.55) : 1;
     unit.hazardSlow = frostFloor;
+    // Frost freezes laid hazards over.
+    if (weatherIs('frost')) return;
     let list = hazards;
     if (spatial?.queryHazardsAtInto && spatial.getMaxHazardRadius?.() > 0) {
       list = spatial.queryHazardsAtInto(unit.x, unit.y, spatial._hazardScratch || []);
@@ -330,8 +338,9 @@ const FactionHazards = (() => {
       }
 
       if (h.damage > 0 && (unit.team === 'player' || (h.affectsEnemy && unit.team === 'enemy'))) {
-        const dmg = h.damage;
-        if (dmg >= 0.2) {
+        // h.damage is a share of max HP per pulse, scaled so a pulse costs 1 to 2%.
+        const dmg = h.damage * (unit.maxHp || 100) * HAZARD_HP_SHARE;
+        if (dmg > 0 && !(h.type === 'orc_fire_pit' && weatherIs('rain'))) {
           unit.hp = Math.max(h.affectsEnemy ? 0 : 1, unit.hp - dmg);
           const label =
             h.type === 'orc_fire_pit'

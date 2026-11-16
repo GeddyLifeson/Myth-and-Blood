@@ -189,6 +189,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "NarrativeThread",
   "NeutralRelations",
   "NeutralWildlife",
+  "NewGamePlus",
   "Onboarding",
   "OnlineMultiplayer",
   "PERK_MAX",
@@ -247,6 +248,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "UnitDefs",
   "UpdateThrottle",
   "VET_STAR_COLORS",
+  "Veterans",
   "VisualPolish",
   "WALL_FACINGS",
   "WarCamps",
@@ -276,6 +278,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "createUnit",
   "cycleWallFacing",
   "depthRoll",
+  "endlessWaves",
   "ensureHealerStats",
   "findBestPerkBuilding",
   "findPromotableFootman",
@@ -383,6 +386,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "unitHasPerk",
   "upgradeVeteranUnit",
   "veteranStarScale",
-  "walkGrids"
+  "walkGrids",
+  "withEpithet"
 ].map((name) => [name, 'readonly'])
 );
