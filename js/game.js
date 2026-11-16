@@ -1578,6 +1578,10 @@ const Game = (() => {
             sanitizeTactical();
           }
         },
+        spendTp: (n) => {
+          GS.tactical = Math.max(0, GS.tactical - n);
+          sanitizeTactical();
+        },
         spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
         pushUnit: (u) => GS.units.push(u),
         hooks: { showMessage },
@@ -1726,7 +1730,7 @@ const Game = (() => {
         difficulty: GS.difficultyId,
         wave: GS.wave,
         kills: GS.kills,
-        misses: GS.runPlayerDeaths,
+        breaches: typeof SiegeLoop !== 'undefined' ? SiegeLoop.exportState().breaches : 0,
         playerDeaths: GS.runPlayerDeaths,
         creative: GS.creativeMode,
       });
@@ -2273,6 +2277,7 @@ const Game = (() => {
         worldW: GS.worldW,
         rallyY: GS.rallyY,
         units: GS.units,
+        buildings: GS.buildings,
         damageUnit: (u, frac, opts = {}) => {
           if (u.hp <= 0) return;
           takeDamage(u, Math.max(1, u.maxHp * frac), opts);

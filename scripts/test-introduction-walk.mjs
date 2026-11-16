@@ -52,24 +52,29 @@ function hire(type) {
 /** Order a building on the field, trying spots until one takes; it is finished at once. */
 function build(type) {
   const n = GS.buildings.length;
-  for (let y = 480; y <= 660; y += 45) {
-    for (let x = 300; x <= 1000; x += 80) {
-      Game.selectBuild(type);
-      Game.handleClick(x, y);
-      Game.clearPlacementMode();
-      // A spot out of the builder's reach is taken as a march order; drop it, or two of
-      // them fill his project slots and the spot beside him is refused.
-      for (const u of mine()) {
-        if (u.building?.pending) u.building = null;
-        if (u.buildQueue) u.buildQueue = u.buildQueue.filter((b) => !b.pending);
+  // Spots within the builder's reach first: a site out of reach only sends him walking.
+  const b0 = mine().find((u) => u.type === 'builder');
+  const spots = [];
+  if (b0) {
+    for (let r = 30; r <= 90; r += 30) {
+      for (let a = 0; a < 12; a++) {
+        const wx = b0.x + Math.cos((a / 12) * Math.PI * 2) * r;
+        const wy = b0.y + Math.sin((a / 12) * Math.PI * 2) * r;
+        spots.push([GS.viewX + wx * GS.viewScale, GS.viewY + wy * GS.viewScale]);
       }
-      if (GS.buildings.length > n) {
-        const b = GS.buildings[GS.buildings.length - 1];
-        // Waiting out the build time teaches nothing here.
-        b.complete = true;
-        b.buildProgress = b.buildTime || 1;
-        return true;
-      }
+    }
+  }
+  for (let y = 480; y <= 660; y += 45) for (let x = 300; x <= 1000; x += 80) spots.push([x, y]);
+  for (const [x, y] of spots) {
+    Game.selectBuild(type);
+    Game.handleClick(x, y);
+    Game.clearPlacementMode();
+    if (GS.buildings.length > n) {
+      const b = GS.buildings[GS.buildings.length - 1];
+      // Waiting out the build time teaches nothing here.
+      b.complete = true;
+      b.buildProgress = b.buildTime || 1;
+      return true;
     }
   }
   return false;

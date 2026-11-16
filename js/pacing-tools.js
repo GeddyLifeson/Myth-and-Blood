@@ -231,12 +231,6 @@ const PacingTools = (() => {
     return parts.join(' · ');
   }
 
-  function formatIntelNote(ctx = {}) {
-    if (queue.length >= 6) return `Pacing: ${queue.length} messages queued`;
-    if ((ctx.gameSpeed | 0) >= 8) return `Simulation ${normalizeSpeed(ctx.gameSpeed)}×`;
-    return '';
-  }
-
   function renderSpeedButtons(containerSelector, activeSpeed, onPick) {
     if (typeof document === 'undefined') return;
     const el = document.querySelector(containerSelector);
@@ -275,7 +269,6 @@ const PacingTools = (() => {
     getSnapshot,
     getStateSnapshot,
     formatHudLine,
-    formatIntelNote,
     renderSpeedButtons,
   };
 })();

@@ -169,7 +169,7 @@ const StrategyCounterplay = (() => {
     return found;
   }
 
-  function applyToPressure(pressure, strategies = activeStrategies) {
+  function applyToPressure(pressure, strategies = getActive()) {
     if (!pressure || !strategies.length) return pressure;
     const poolExtras = [...(pressure.poolExtras || [])];
     const weights = { ...(pressure.weights || {}) };
@@ -296,7 +296,14 @@ const StrategyCounterplay = (() => {
     }
   }
 
+  /** Counters reach the host only when an omen card says the host scouted your line. */
   function getActive() {
+    const scouted = typeof DynamicMapEvents !== 'undefined' && DynamicMapEvents.hostScouted?.();
+    return scouted ? activeStrategies.slice() : [];
+  }
+
+  /** What the host would counter if it looked: named on the scouting omen's card. */
+  function getDetected() {
     return activeStrategies.slice();
   }
 
@@ -323,6 +330,7 @@ const StrategyCounterplay = (() => {
     formatCounterIntel,
     maybeAnnounce,
     getActive,
+    getDetected,
     STRATEGIES,
   };
 })();

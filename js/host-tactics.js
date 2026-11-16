@@ -598,6 +598,9 @@ const HostTactics = (() => {
     if (!st.patches.length) return;
     const b = st.tactic.burn || { dps: 5 };
     st.patches = st.patches.filter((p) => p.until > ctx.tick);
+    // Rain puts the fires out.
+    if (typeof DynamicMapEvents !== 'undefined' && DynamicMapEvents.weatherIs('rain'))
+      st.patches = [];
     for (const p of st.patches) {
       const r2 = p.r * p.r;
       for (const u of ctx.units) {
@@ -984,6 +987,7 @@ const HostTactics = (() => {
       tacticId: st.tactic ? st.tactic.id : null,
       leadId: st.plan ? st.plan.leadId : null,
       leadShare: st.leadShare,
+      total: st.total,
       kinds: st.kinds,
       threat: st.threat,
       targetThreat: st.targetThreat,

@@ -297,6 +297,18 @@ const GameField = (() => {
       placed.push(deco);
     }
 
+    if (typeof ProcGenObstacles !== 'undefined') {
+      const session = svc('GameModes') ? svc('GameModes').getSession() : null;
+      const rocks = ProcGenObstacles.fieldOutcrops({
+        worldW: GS.worldW,
+        rallyY: GS.rallyY,
+        seed: session?.seed ?? Math.floor(Math.random() * 1e9),
+        placed,
+      });
+      GS.decorations.push(...rocks);
+      placed.push(...rocks);
+    }
+
     if (svc('GameDepth')) {
       const hazCtx = {};
       GS.hazards = svc('GameDepth').spawnHazards(

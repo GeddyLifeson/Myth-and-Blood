@@ -501,10 +501,6 @@ const GameWaves = (() => {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
     }
-    if (typeof PacingTools !== 'undefined') {
-      const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-      if (ptNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
-    }
     if (typeof EternalLegacyTree !== 'undefined') {
       const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
       if (elNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;

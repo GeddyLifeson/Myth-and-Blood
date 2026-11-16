@@ -861,7 +861,11 @@ const Roster = (() => {
       target.hexUntil = tick + p.hex.ticks;
       target.hexPct = p.hex.pct;
     }
-    if (p.plague) {
+    const rained =
+      FIRE_TYPES[attacker.type] &&
+      typeof DynamicMapEvents !== 'undefined' &&
+      DynamicMapEvents.weatherIs('rain');
+    if (p.plague && !rained) {
       target.poisonUntil = tick + p.plague.ticks;
       target.poisonDps = p.plague.dps;
       // Firebombs burn; bites and boils poison.
