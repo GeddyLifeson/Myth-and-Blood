@@ -7,7 +7,8 @@ const Formations = (() => {
       id: 'box',
       label: 'Box',
       short: 'Bx',
-      desc: 'Compact 3-wide grid',
+      desc: 'Compact 3-wide grid. Soldiers in it take 12% less damage.',
+      fx: { taken: 0.88 },
       cols: 3,
       spacing: { x: 14, y: 12 },
     },
@@ -15,28 +16,32 @@ const Formations = (() => {
       id: 'line',
       label: 'Line',
       short: 'Ln',
-      desc: 'Horizontal firing line',
+      desc: 'Horizontal firing line. Shooters in it aim 8 points better.',
+      fx: { aim: 8 },
       spacing: { x: 20, y: 0 },
     },
     column: {
       id: 'column',
       label: 'Column',
       short: 'Col',
-      desc: 'Single-file march column',
+      desc: 'Single-file march column. Soldiers in it chase 30% further from their posts.',
+      fx: { leash: 1.3 },
       spacing: { x: 0, y: 18 },
     },
     wedge: {
       id: 'wedge',
       label: 'Wedge',
       short: 'Wg',
-      desc: 'Spearhead pointing north',
+      desc: 'Spearhead pointing north. Melee hits 15% harder, and they take 10% more damage.',
+      fx: { melee: 1.15, taken: 1.1 },
       spacing: { x: 18, y: 15 },
     },
     spread: {
       id: 'spread',
       label: 'Spread',
       short: 'Sp',
-      desc: 'Wide loose formation',
+      desc: 'Wide loose formation. Blasts and splash do half damage to them.',
+      fx: { splashTaken: 0.5 },
       cols: 4,
       spacing: { x: 28, y: 22 },
     },
@@ -117,8 +122,56 @@ const Formations = (() => {
     return ORDER[next];
   }
 
+  const NO_FX = {};
+
+  function fxOf(unit) {
+    return (unit && unit.formation && FORMATIONS[unit.formation]?.fx) || NO_FX;
+  }
+
+  /**
+   * Put soldiers under a formation order, or lift it (a lone soldier has no formation).
+   * ponytail: the order stays on a survivor after his comrades die; count the members
+   * if that ever matters.
+   */
+  function assign(units, formationId) {
+    const id = units.length >= 2 && FORMATIONS[formationId] ? formationId : null;
+    for (const u of units) u.formation = u.team === 'player' ? id : null;
+  }
+
+  /** Why a formation cannot be ordered right now, or '' if it can. */
+  function blockedReason(selectedCount) {
+    return selectedCount >= 2 ? '' : 'Select two or more soldiers to order a formation.';
+  }
+
+  function dealtMult(unit) {
+    const fx = fxOf(unit);
+    return fx.melee && unit.combatType !== 'ranged' && !unit.projectile ? fx.melee : 1;
+  }
+
+  function takenMult(unit, opts) {
+    const fx = fxOf(unit);
+    const blast = opts && (opts.splash || opts.explosion);
+    return (fx.taken || 1) * (blast && fx.splashTaken ? fx.splashTaken : 1);
+  }
+
+  function aimBonus(unit) {
+    const fx = fxOf(unit);
+    return fx.aim && unit.combatType === 'ranged' ? fx.aim : 0;
+  }
+
+  function leashMult(unit) {
+    return fxOf(unit).leash || 1;
+  }
+
   return {
     FORMATIONS,
+    aimBonus,
+    assign,
+    blockedReason,
+    dealtMult,
+    fxOf,
+    leashMult,
+    takenMult,
     getFormation,
     getLabel,
     computeOffsets,

@@ -768,7 +768,12 @@ const Tooltips = (() => {
         (gs) => ({
           title: def?.label || fid,
           body: def?.desc || 'Formation preset for group moves.',
-          footer: `Alt+${['line', 'column', 'wedge', 'box', 'spread'].indexOf(fid) + 1} · ${gs?.selectionFormation === fid ? 'Active' : 'Click to set'}`,
+          footer:
+            (typeof Formations !== 'undefined' &&
+              Formations.blockedReason(
+                gs?.selectedUnitIds?.length || (gs?.selectedUnitId ? 1 : 0)
+              )) ||
+            `Alt+${['line', 'column', 'wedge', 'box', 'spread'].indexOf(fid) + 1} · ${gs?.selectionFormation === fid ? 'Active' : 'Click to set'}`,
         }),
         { placement: 'panel-left' }
       );

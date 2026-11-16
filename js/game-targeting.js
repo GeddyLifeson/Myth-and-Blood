@@ -32,6 +32,7 @@ const GameTargeting = (() => {
     SURROUND_SLOTS_MELEE,
     SURROUND_SLOTS_RANGED,
     foeInHuntLeash,
+    canRideDown,
     foeIsPastPost,
     isCrowdedOut,
     isLeashed,
@@ -249,12 +250,12 @@ const GameTargeting = (() => {
       svc('Spatial').queryFoesInto(unit.x, unit.y, runnerSeek, unit.team, svc('Spatial')._scratch);
       foeList = trimFoeListToNearest(unit, svc('Spatial')._scratch);
     } else {
-      foeList = GS.units.filter((u) => u.team !== unit.team && u.hp > 0 && !u.fleeing);
+      foeList = GS.units.filter((u) => u.team !== unit.team && u.hp > 0);
       if (foeList.length > tacticalFoeCap) trimFoeListToNearest(unit, foeList);
     }
 
     for (const foe of foeList) {
-      if (foe.team === unit.team || !isValidCombatFoe(foe)) continue;
+      if (foe.team === unit.team || !(isValidCombatFoe(foe) || canRideDown(unit, foe))) continue;
       if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
       if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;
       const dist = unitDistance(unit, foe);
@@ -301,7 +302,7 @@ const GameTargeting = (() => {
 
     if (options.length === 0) {
       for (const foe of foeList) {
-        if (foe.team === unit.team || !isValidCombatFoe(foe)) continue;
+        if (foe.team === unit.team || !(isValidCombatFoe(foe) || canRideDown(unit, foe))) continue;
         // Same fog gate as primary pass — otherwise units snipe invisible enemies as a fallback.
         if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
         if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;

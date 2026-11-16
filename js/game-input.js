@@ -125,6 +125,7 @@ const GameInput = (() => {
             x: liveUnits.length > 1 ? (i % 3) * 14 - 14 : 0,
             y: liveUnits.length > 1 ? Math.floor(i / 3) * 12 : 0,
           }));
+    if (typeof Formations !== 'undefined') Formations.assign(liveUnits, formationId);
     liveUnits.forEach((unit, i) => {
       const off = offsets[i] || { x: 0, y: 0 };
       orderMove(unit, anchor.x + off.x, anchor.y + off.y, true, { hold: opts.hold ?? false });

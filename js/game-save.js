@@ -98,6 +98,7 @@ const GameSave = (() => {
       attackSpeedMult: u.attackSpeedMult,
       huntMode: u.huntMode,
       holding: !!u.holding,
+      formation: u.formation || null,
       generalStars: u.generalStars,
       isGeneral: !!u.isGeneral,
       stationedKeep: u.stationedKeep,
@@ -529,6 +530,7 @@ const GameSave = (() => {
         u.medPrevHp = u.hp;
       }
       u.holding = !!u.canHunt && !!us.holding;
+      u.formation = us.formation || null;
       // Format 3 saves hunt as it was (a rout or a med-tent walk turns it off); older saves derive it.
       if (legacy)
         u.huntMode = !!u.canHunt && !u.holding && !(u.manualOrder && us.huntMode === false);

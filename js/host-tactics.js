@@ -624,7 +624,6 @@ const HostTactics = (() => {
     for (const r of due) {
       const u = ctx.spawnEnemy(r.type, r.x, r.y);
       if (!u) continue;
-      if (typeof Roster !== 'undefined') Roster.onSpawn(u, ctx.wave);
       u.maxHp = r.maxHp;
       u.hp = Math.max(1, Math.round(r.maxHp * r.hp));
       u.damage = r.damage;

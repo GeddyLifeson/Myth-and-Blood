@@ -403,9 +403,10 @@ const Roster = (() => {
       noPin: true,
     },
     goblin_engineer: {
-      role: 'Field engineer',
-      trait: 'Barricades — throws up cover for the host as it advances.',
-      weak: 'Barely fights.',
+      role: 'Wrecker',
+      trait: 'Crowbar: heads for your buildings and pulls them down while the host fights.',
+      weak: 'Barely fights; anything that reaches it kills it.',
+      prefer: 'building',
     },
     war_chief: {
       role: 'Commander',

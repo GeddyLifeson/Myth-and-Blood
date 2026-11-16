@@ -77,11 +77,7 @@ const GameUnitAi = (() => {
     if (unit.hp <= 0 || unit.fleeing || unit.combatType !== 'healer') return;
     if (unit.retreatingToMed || unit.atMedicalTent) return;
 
-    if (unit.pinned) {
-      unit.pinTimer--;
-      if (unit.pinTimer <= 0) unit.pinned = false;
-      return;
-    }
+    if (unit.pinned) return;
 
     if (
       typeof isSpecialistLateAbilityUnlocked === 'function' &&
@@ -383,11 +379,8 @@ const GameUnitAi = (() => {
     if ((unit.retreatingToMed || unit.atMedicalTent) && !medWaiting) return;
     if (isMarchingToOutpost(unit) || isMarchingToKeep(unit) || isMarchingToWallSlot(unit)) return;
 
-    if (unit.pinned) {
-      unit.pinTimer--;
-      if (unit.pinTimer <= 0) unit.pinned = false;
-      return;
-    }
+    // The pin timer counts down once a tick in the main loop, nowhere else.
+    if (unit.pinned) return;
 
     if (unit.combatType === 'healer') return;
 
