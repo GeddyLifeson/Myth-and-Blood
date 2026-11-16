@@ -551,7 +551,8 @@ const GameModes = (() => {
       );
     else if (wave < 200)
       tips.push('Waves 100–200: academy economy — hamlets behind walls, protect guilds.');
-    else tips.push('Waves 200+: enemy RTS — hunt engineers, siege enemy settlements first.');
+    else
+      tips.push('Waves 200+: late war. Burn war camps before they dig in and guard your guilds.');
 
     if (difficultyId === 'doomslayer')
       tips.push('Hellbane base: expect faster spawns — protect academies and barracks.');

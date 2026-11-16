@@ -905,11 +905,11 @@ const ContentExpansion = (() => {
         desc: 'Burrowers surfaced; -25% burrower HP next wave',
       },
       settlement_raid: {
-        name: 'Settlement Raid',
+        // EconomyRules.patchCampActions fills in the full text; the gate must be right from the start.
+        name: 'Raid the War Camp',
         cost: 7,
-        desc: 'Wave 150+ — strike an enemy hold for 45% of its health. No holds stand yet, so this is refused and costs nothing.',
-        kingdomStage: 3,
-        waveMin: 150,
+        desc: 'Raiders ride for the weakest war camp. Refused at no cost when no camp stands.',
+        waveMin: 5,
       },
     });
 
@@ -1147,229 +1147,23 @@ const ContentExpansion = (() => {
       .reduce((s, b) => s + (BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0), 0);
   }
 
-  const WAVE_EVENTS = {
-    hellscape_whisper: {
-      id: 'hellscape_whisper',
-      waveMin: 480,
-      waveMod: 37,
-      priority: 100,
-      label: 'Hellscape Whisper',
-      float: 'HELLSCAPE',
-      color: '#8040a0',
-      message: 'Hellscape whispers — void stalkers and abominations breach the line!',
-      spawns: ['void_stalker', 'abomination', 'necromancer'],
-      moralePenalty: 6,
-    },
-    dominion_surge: {
-      id: 'dominion_surge',
-      waveMin: 175,
-      waveMod: 40,
-      priority: 90,
-      label: 'Dominion Surge',
-      float: 'DOMINION',
-      color: '#e06040',
-      message: 'Dominion Surge — the host doubles down with elites and siege!',
-      spawns: ['war_chief', 'dark_knight', 'siege_tower', 'goblin_sapper'],
-      countMult: 1.14,
-    },
-    mirror_assault: {
-      id: 'mirror_assault',
-      waveMin: 95,
-      waveMod: 25,
-      priority: 80,
-      label: 'Mirror Assault',
-      float: 'MIRROR',
-      color: '#80a0c0',
-      message: 'Mirror Assault — assassins and dark knights echo your own tactics!',
-      spawns: ['assassin', 'dark_knight', 'berserker', 'assassin'],
-    },
-    siege_breach: {
-      id: 'siege_breach',
-      waveMin: 75,
-      waveMod: 35,
-      priority: 70,
-      label: 'Siege Breach',
-      float: 'BREACH',
-      color: '#c08050',
-      message: 'Siege Breach — burrowers and engineers target your walls!',
-      spawns: ['goblin_burrower', 'goblin_engineer', 'goblin_sapper', 'siege_tower'],
-    },
-    necromancer_conclave: {
-      id: 'necromancer_conclave',
-      waveMin: 40,
-      waveMod: 27,
-      priority: 65,
-      label: 'Necromancer Conclave',
-      float: 'CONCLAVE',
-      color: '#7040a0',
-      message: 'Necromancer Conclave — undead casters swell the host!',
-      spawns: ['necromancer', 'dark_mage', 'shaman'],
-    },
-    aerial_swarm: {
-      id: 'aerial_swarm',
-      waveMin: 35,
-      waveMod: 26,
-      priority: 60,
-      label: 'Aerial Swarm',
-      float: 'AERIAL',
-      color: '#60a0d0',
-      message: 'Aerial Swarm — harpies and drakes darken the sky!',
-      spawns: ['harpy', 'sky_drake', 'harpy', 'warg_rider'],
-    },
-    morale_crisis: {
-      id: 'morale_crisis',
-      waveMin: 60,
-      waveMod: 33,
-      priority: 55,
-      label: 'Morale Crisis',
-      float: 'CRISIS',
-      color: '#a06060',
-      message: 'Morale Crisis — whispers of defeat; assassins probe your line!',
-      spawns: ['assassin', 'assassin'],
-      moralePenalty: 8,
-    },
-    veteran_muster: {
-      id: 'veteran_muster',
-      waveMin: 50,
-      waveMod: 19,
-      priority: 50,
-      label: 'Veteran Muster',
-      float: 'MUSTER',
-      color: '#c0a040',
-      message: 'Veteran Muster — reserves arrive with coin and courage!',
-      grantTp: 6,
-      moraleBonus: 6,
-    },
-    gold_rush: {
-      id: 'gold_rush',
-      waveMin: 30,
-      waveMod: 21,
-      priority: 45,
-      label: 'Gold Rush',
-      float: 'GOLD RUSH',
-      color: '#e0c040',
-      message: 'Northern gold rush — merchants pay tribute! +8 TP',
-      grantTp: 8,
-    },
-    siege_push: {
-      id: 'siege_push',
-      waveMin: 23,
-      waveMod: 23,
-      priority: 40,
-      label: 'Siege Push',
-      float: 'SIEGE PUSH',
-      color: '#ff8040',
-      message: 'Siege Push — extra towers and sappers!',
-      spawns: ['siege_tower', 'goblin_sapper', 'siege_tower'],
-    },
-    blood_moon: {
-      id: 'blood_moon',
-      waveMin: 13,
-      waveMod: 13,
-      priority: 35,
-      label: 'Blood Moon',
-      float: 'BLOOD MOON',
-      color: '#c04080',
-      message: 'Blood Moon rises — flying predators join the hunt!',
-      spawns: ['harpy', 'sky_drake', 'berserker'],
-    },
-    // Early-war events: small swings from the first few waves so no two runs open alike.
-    night_raid: {
-      id: 'night_raid',
-      waveMin: 4,
-      waveMod: 4,
-      priority: 20,
-      label: 'Night Raid',
-      float: 'RAIDERS',
-      color: '#ff7050',
-      message: 'Raiders slipped in with the host — wargs and goblins on the flank!',
-      spawns: ['goblin', 'goblin', 'warg_rider'],
-    },
-    village_tithe: {
-      id: 'village_tithe',
-      waveMin: 3,
-      waveMod: 7,
-      priority: 25,
-      label: 'Village Tithe',
-      float: 'TITHE',
-      color: '#80c060',
-      message: 'A village sends its tithe. +3 TP',
-      grantTp: 3,
-    },
-    supply_caravan: {
-      id: 'supply_caravan',
-      waveMin: 17,
-      waveMod: 17,
-      priority: 30,
-      label: 'Supply Caravan',
-      float: 'CARAVAN',
-      color: '#80c060',
-      message: 'Supply caravan arrived! +5 TP',
-      grantTp: 5,
-    },
-  };
-
+  /** Field news now lives in the omen deck (js/dynamic-map-events.js); this is its "field" draw. */
   function pickWaveEvent(wave) {
-    if (typeof DynamicMapEvents === 'undefined' || DynamicMapEvents.eventSlot(wave) !== 'field') {
-      return null;
-    }
-    const live = Object.values(WAVE_EVENTS).filter((e) => !e.waveMin || wave >= e.waveMin);
-    return DynamicMapEvents.deckPick(live, wave, 23)?.id ?? null;
-  }
-
-  /** What the event deck holds for a wave, by name, whichever system speaks. */
-  function heraldNews(wave) {
     if (typeof DynamicMapEvents === 'undefined') return null;
-    const slot = DynamicMapEvents.eventSlot(wave);
-    if (slot === 'field') return WAVE_EVENTS[pickWaveEvent(wave)]?.label || null;
-    if (slot === 'planet') return DynamicMapEvents.pickEvent(wave)?.name || null;
-    if (slot === 'wildlife') {
-      return typeof NeutralWildlife !== 'undefined'
-        ? NeutralWildlife.pickWaveEvent(wave)?.label || null
-        : null;
-    }
-    return slot === 'hazard' ? 'enemy hazards laid on the field' : null;
+    const evt = DynamicMapEvents.pickEvent(wave);
+    return evt?.kind === 'field' ? evt.id : null;
   }
 
+  /** What the omen deck holds for a wave, by name. */
+  function heraldNews(wave) {
+    return typeof DynamicMapEvents !== 'undefined' ? DynamicMapEvents.heraldNews(wave) : null;
+  }
+
+  /** Dawn: the omen card's answer adds or turns back foes in the built host. */
   function applyWaveEvent(wave, spawnQueue) {
     waveEventId = pickWaveEvent(wave);
-    if (!waveEventId || !ctx) return spawnQueue;
-    const evt = WAVE_EVENTS[waveEventId];
-    if (!evt) return spawnQueue;
-    const q = [...spawnQueue];
-    if (evt.spawns?.length) {
-      for (const t of evt.spawns) {
-        if (typeof EnemyDefs !== 'undefined' && !EnemyDefs[t]) continue;
-        q.push(t);
-      }
-    }
-    if (evt.grantTp) {
-      ctx.tactical = Math.min(
-        typeof TP_SANITY_CAP !== 'undefined' ? TP_SANITY_CAP : 9999,
-        (ctx.tactical || 0) + evt.grantTp
-      );
-    }
-    if (evt.grantScience && ctx.grantScience) ctx.grantScience(evt.grantScience);
-    if (evt.countMult && ctx.pendingWaveMods) {
-      ctx.pendingWaveMods.countMult *= evt.countMult;
-    }
-    if (evt.moraleBonus && ctx.units) {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0 && u.morale != null) {
-          u.morale = Math.min(u.maxMorale, u.morale + evt.moraleBonus);
-        }
-      }
-    }
-    if (evt.moralePenalty && ctx.units) {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0 && u.morale != null) {
-          u.morale = Math.max(0, u.morale - evt.moralePenalty);
-        }
-      }
-    }
-    ctx.showMessage?.(evt.message, 320);
-    FloatingText?.status(ctx.worldW / 2, 56, evt.float || evt.label.toUpperCase(), evt.color);
-    return q;
+    if (typeof DynamicMapEvents === 'undefined') return spawnQueue;
+    return DynamicMapEvents.applyToQueue(wave, spawnQueue);
   }
 
   function spawnDestructibles(decorations, worldW, worldH, rallyY, tier) {
@@ -2110,8 +1904,8 @@ const ContentExpansion = (() => {
       },
       {
         cat: 'orders',
-        name: 'Settlement Raids (Wave 150+)',
-        body: 'Strike missions — select 2+ hunters and dispatch from the SETTLEMENT RAIDS panel; full TP + science loot when the hold is razed. Settlement Raid (spy, wave 150+) — 45% max HP sabotage on the weakest enemy hold. Counter-Hold (courier, wave 200+) — northern outpost, watchtower, scout, and 2 footmen next round.',
+        name: 'Strike Raids (Wave 6+)',
+        body: 'Every standing war camp is a mission on the STRIKE RAIDS panel. Select 2+ hunters and dispatch them: they march on the camp, and razing it pays TP and science on top of the bounty. A dug-in camp pays more. The spy can also send raiders at the weakest camp (Raid the War Camp). Counter-Hold (courier, wave 200+): northern outpost, watchtower, scout, and 2 footmen next round.',
       },
       {
         cat: 'perks',

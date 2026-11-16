@@ -184,6 +184,8 @@ const Chronicles = (() => {
       `${outcome} — ${diffLabel}. Survived ${stats.wave ?? 0} waves.`,
       `Kills: ${stats.kills ?? 0} · Losses: ${stats.playerDeaths ?? stats.misses ?? 0}`,
     ];
+    if (stats.ngPlusTier) lines.push(`New Game+ ${stats.ngPlusTier}.`);
+    if (stats.postVictoryEndless) lines.push('Endless run past the wave 100 victory.');
     if (branchLabel) lines.push(`Dominant story path: ${branchLabel}.`);
     if (stats.storyChoiceCount) lines.push(`${stats.storyChoiceCount} branching choices recorded.`);
     if (stats.victory && stats.victoryReason === 'economy') {

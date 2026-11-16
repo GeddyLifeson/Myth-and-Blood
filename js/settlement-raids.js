@@ -1,15 +1,21 @@
 /**
- * Enemy Settlement Raids — after wave 150, hostile factions raise northern outposts/hamlets.
- * Player receives raid missions: dispatch a strike force to raze them for big TP and science loot.
+ * Strike raids. Every standing war camp is a mission on the Ops panel: pick two to six
+ * hunters, dispatch them, and they march on the camp and tear it down. A camp razed by a
+ * dispatched force pays loot on top of its bounty; a dug-in camp pays more.
+ *
+ * The module keeps its old name: saves and the state snapshot refer to it. It used to wait
+ * for enemy settlements at wave 150, which no longer exist.
  */
 const SettlementRaids = (() => {
-  const SETTLEMENT_RAID_WAVE_MIN = 150;
-  const SETTLEMENT_RAID_WAVE_PEAK = 200;
+  /** Missions open with the camp war: keep equal to WarCamps.FROM_WAVE, which loads later. */
+  const SETTLEMENT_RAID_WAVE_MIN = 6;
+  const SETTLEMENT_RAID_WAVE_PEAK = 60;
   const MIN_STRIKE_FORCE = 2;
   const MAX_STRIKE_FORCE = 6;
   const MAX_ACTIVE_MISSIONS = 6;
 
   const TIER_REWARDS = {
+    camp: { tp: 5, science: 1, label: 'War camp' },
     outpost: { tp: 10, science: 1, label: 'Outpost' },
     hamlet: { tp: 18, science: 2, label: 'Hamlet' },
     guild: { tp: 26, science: 3, label: 'Guild' },
@@ -54,8 +60,15 @@ const SettlementRaids = (() => {
     };
   }
 
+  function campLevel(building) {
+    if (typeof WarCamps === 'undefined' || !WarCamps.isCamp(building)) return 0;
+    const rec = WarCamps.standing().find((c) => c.id === building.id);
+    return Math.max(1, rec?.level || 1);
+  }
+
   function classifySettlement(building) {
     if (!building) return 'outpost';
+    if (campLevel(building)) return 'camp';
     if (building.isHamlet || building.type === 'enemy_hamlet') return 'hamlet';
     if (building.isMerchantGuild || building.type === 'enemy_merchant_guild') return 'guild';
     if (building.type === 'enemy_shadow_academy' || building.type === 'enemy_war_academy')
@@ -71,9 +84,15 @@ const SettlementRaids = (() => {
       building.enemyFaction && typeof EnemyFactions !== 'undefined'
         ? (EnemyFactions.getFactionTier(building.enemyFaction, wave)?.stage || 1) * 0.06
         : 0;
-    const tp = Math.round(base.tp * intensity * (1 + stageBoost));
-    const science = base.science + (getRaidIntensity(wave) >= 1 ? 1 : 0);
-    return { tier, tp, science, label: base.label };
+    // A camp that has dug in holds more worth carrying off.
+    const dug = Math.max(1, campLevel(building));
+    const tp = Math.round(base.tp * intensity * (1 + stageBoost) * (1 + 0.5 * (dug - 1)));
+    const science = base.science + (getRaidIntensity(wave) >= 1 ? 1 : 0) + (dug >= 3 ? 1 : 0);
+    const label =
+      tier === 'camp' && typeof WarCamps !== 'undefined'
+        ? WarCamps.KINDS[WarCamps.kindOf(building)]?.name || base.label
+        : base.label;
+    return { tier, tp, science, label };
   }
 
   function formatMissionLabel(building, reward, factionId) {
@@ -121,7 +140,7 @@ const SettlementRaids = (() => {
         b &&
         b.owner === 'enemy' &&
         b.hp > 0 &&
-        (b.isEnemySettlement || b.isHamlet || b.isMerchantGuild));
+        (b.isEnemySettlement || b.isHamlet || b.isMerchantGuild || campLevel(b) > 0));
     const targets = (buildings || []).filter(isAttackable);
     const liveIds = new Set(targets.map((b) => b.id));
 
@@ -139,6 +158,7 @@ const SettlementRaids = (() => {
       const reward = computeReward(b, wave);
       m.rewardTp = reward.tp;
       m.rewardScience = reward.science;
+      m.label = formatMissionLabel(b, reward, m.factionId);
       m.x = b.x;
       m.y = b.y;
     }
@@ -194,11 +214,11 @@ const SettlementRaids = (() => {
 
     const hooks = ctx.hooks || {};
     hooks.showMessage?.(
-      `Strike force dispatched — ${fighters.length} hunters raid ${mission.label} (+${mission.rewardTp} TP on raze).`,
+      `Strike force dispatched: ${fighters.length} hunters march on the ${mission.label} (+${mission.rewardTp} TP if they raze it).`,
       360
     );
     hooks.floatingText?.(mission.x, mission.y - 24, 'STRIKE RAID', '#ff9040');
-    hooks.addHighlight?.('raid', `${mission.label} — strike force en route`);
+    hooks.addHighlight?.('raid', `${mission.label}: strike force on the march`);
 
     return { ok: true, mission, count: fighters.length };
   }
@@ -237,30 +257,30 @@ const SettlementRaids = (() => {
       ctx.grantTp?.(rewardTp);
       if (rewardScience > 0) ctx.grantScience?.(rewardScience);
       hooks.showMessage?.(
-        `Raid success — ${mission.label} razed! +${rewardTp} TP${rewardScience ? `, +${rewardScience} science` : ''}.`,
+        `Raid success: ${mission.label} razed. Loot +${rewardTp} TP${rewardScience ? `, +${rewardScience} science` : ''}.`,
         400
       );
       hooks.floatingText?.(building.x, building.y, `LOOT +${rewardTp} TP`, '#60c0ff');
-      hooks.addHighlight?.('raid', `Raid complete — +${rewardTp} TP`);
+      hooks.addHighlight?.('raid', `Raid complete: +${rewardTp} TP`);
       return { mission, rewardTp, rewardScience, strikeBonus: true };
     }
 
+    // A war camp burned without a strike force has already paid its bounty.
+    if (mission.tier === 'camp') return { mission, rewardTp: 0, partial: true };
     rewardTp = Math.max(2, Math.floor(mission.rewardTp * 0.3));
     totalLootTp += rewardTp;
     ctx.grantTp?.(rewardTp);
-    hooks.showMessage?.(`Enemy ${mission.label} destroyed — scavenged +${rewardTp} TP.`, 260);
+    hooks.showMessage?.(`Enemy ${mission.label} destroyed: scavenged +${rewardTp} TP.`, 260);
     return { mission, rewardTp, partial: true };
   }
 
   function checkWaveAnnouncement(wave, hooks = {}) {
     if (raidsAnnounced || wave !== SETTLEMENT_RAID_WAVE_MIN) return null;
     raidsAnnounced = true;
-    hooks.addHighlight?.('era', 'Settlement Raids');
     hooks.showMessage?.(
-      'Wave 150 — Settlement Raids! Enemy factions raise northern outposts and hamlets. Select hunters and dispatch strike forces for big TP loot.',
-      420
+      `Strike raids are open. Each war camp is listed on the Ops panel: select ${MIN_STRIKE_FORCE} or more hunters and dispatch them for loot on top of the bounty.`,
+      380
     );
-    hooks.floatingText?.(hooks.worldW / 2, 64, 'RAIDS OPEN', '#ff9040');
     return { wave: SETTLEMENT_RAID_WAVE_MIN };
   }
 
@@ -280,8 +300,8 @@ const SettlementRaids = (() => {
       summary: active
         ? list.length
           ? `${list.length} raid${list.length > 1 ? 's' : ''} · ${pending.length} open`
-          : 'Scan north for holds'
-        : `Unlocks wave ${SETTLEMENT_RAID_WAVE_MIN}`,
+          : 'No war camp stands'
+        : `Opens at wave ${SETTLEMENT_RAID_WAVE_MIN}`,
       totalCompleted: totalRaidsCompleted,
       totalLootTp,
       minStrikeForce: MIN_STRIKE_FORCE,

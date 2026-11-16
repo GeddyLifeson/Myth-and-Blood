@@ -376,10 +376,7 @@ const GameMovement = (() => {
 
     const doctrineSpd = (unit.doctrineSpeedTimer || 0) > 0 ? unit.doctrineSpeedMult || 1 : 1;
     const biomeSpd = getBiomeModifiersAt(unit.x, unit.y).speedMult || 1;
-    let mapEvtSpd = 1;
-    if (unit.team === 'player' && svc('DynamicMapEvents')) {
-      mapEvtSpd = svc('DynamicMapEvents').getActiveMods().playerSpeedMult || 1;
-    }
+    const mapEvtSpd = svc('DynamicMapEvents') ? svc('DynamicMapEvents').speedMult(unit) : 1;
     const speed =
       unit.speed *
       (unit.hazardSlow || 1) *

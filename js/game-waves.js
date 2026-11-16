@@ -25,11 +25,11 @@ const GameWaves = (() => {
     syncTerritory,
   } = GameField;
   const { addHighlight, applyPlayerStatMods, spawnUnit } = GameArmy;
-  const { isAttackableEnemyStructure } = GameBuildings;
+  const { isTargetableEnemyStructure } = GameBuildings;
   let TP_SANITY_CAP,
     announceAcademyEra,
     announceAttackSides,
-    announceEnemyRtsEra,
+    announceHostGrowth,
     announceHooks,
     announceKingdomEvolution,
     applyChampionWaveStartPulse,
@@ -53,7 +53,7 @@ const GameWaves = (() => {
       TP_SANITY_CAP,
       announceAcademyEra,
       announceAttackSides,
-      announceEnemyRtsEra,
+      announceHostGrowth,
       announceHooks,
       announceKingdomEvolution,
       applyChampionWaveStartPulse,
@@ -323,14 +323,6 @@ const GameWaves = (() => {
             (colonyPressure?.countMult || 1)
         )
       );
-      if (isRtsEra(waveNum)) {
-        const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
-        count = Math.floor(count * (1.22 + rtsProg * 0.28));
-      }
-      if (isEnemyRtsEra(waveNum)) {
-        const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
-        count = Math.floor(count * (1.1 + enemyRts * 0.18));
-      }
       count += getEnemyEconomySpawnBonus();
       count = Math.max(1, Math.floor(count * (asym.enemyCountMult || 1)));
       if (mods.stealReduction) count = Math.max(1, count - mods.stealReduction);
@@ -508,10 +500,6 @@ const GameWaves = (() => {
     if (typeof ProgressionRestarts !== 'undefined') {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
-    }
-    if (typeof PacingTools !== 'undefined') {
-      const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-      if (ptNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
     }
     if (typeof EternalLegacyTree !== 'undefined') {
       const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
@@ -824,7 +812,7 @@ const GameWaves = (() => {
     GS.spawnSectors = [];
     announceAcademyEra();
     announceRtsEra();
-    announceEnemyRtsEra();
+    announceHostGrowth();
     announceKingdomEvolution();
     if (svc('PlayerCounterEvolution') && svc('EnemyFactions')) {
       svc('PlayerCounterEvolution').checkWaveAnnouncement(GS.wave, announceHooks());
@@ -836,7 +824,7 @@ const GameWaves = (() => {
       svc('SettlementRaids').checkWaveAnnouncement(GS.wave, announceHooks());
       if (svc('SettlementRaids').isActive(GS.wave)) {
         svc('SettlementRaids').refreshMissions(GS.buildings, GS.wave, {
-          isAttackable: isAttackableEnemyStructure,
+          isAttackable: isTargetableEnemyStructure,
         });
       }
     }
