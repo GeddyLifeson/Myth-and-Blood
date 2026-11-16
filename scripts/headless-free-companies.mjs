@@ -1423,8 +1423,10 @@ function testSettlementRaids(exp) {
   }
   const { SettlementRaids, isKingdomRaidsUnlocked } = exp;
   assert(SettlementRaids, 'SettlementRaids module should exist');
-  assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 150, 'raid wave min should be 150');
-  assert(!SettlementRaids.isActive(149), 'inactive before wave 150');
+  // Strike raids open with the camp war, not with the old wave-150 settlements.
+  assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 6, 'raid wave min should be 6');
+  assert(!SettlementRaids.isActive(5), 'inactive before wave 6');
+  assert(SettlementRaids.isActive(6), 'active from wave 6');
   assert(SettlementRaids.isActive(160), 'active at wave 160');
   SettlementRaids.resetRun();
   const mockBld = {

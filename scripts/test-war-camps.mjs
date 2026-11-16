@@ -528,6 +528,70 @@ function toNight(api, wave) {
   ok(foes().filter((u) => u.campDefender).length <= out, 'it sallies once a night');
   ok(!GS.buildings.includes(b), 'the soldiers beat the garrison and burn the camp');
 }
+// --- 8. strike raids: every war camp is a mission, and razing it pays loot --------------
+{
+  const api = start(29);
+  const { Game, GameState: GS, WarCamps: W, sb } = api;
+  const Raids = vm.runInContext('SettlementRaids', sb);
+  // The HUD's copy of this is throttled; read the module the way the game does.
+  const raidSnap = () => Raids.getStateSnapshot(GS.wave, GS.buildings, {});
+  run(Game, 10);
+  toNight(api, 8);
+  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
+  W.resetRun();
+  GS.nightTimer = -100000;
+  const snap0 = raidSnap();
+  ok(
+    snap0 && snap0.active && snap0.missions.length === 0 && /No war camp/.test(snap0.summary),
+    `strike raids are open from wave ${snap0?.waveMin}, with nothing to raid yet (${snap0?.summary})`
+  );
+  const camp = Game.warCampHooks.raise({ kind: 'forge', sector: 'centre' });
+  const b = GS.buildings.find((x) => x.id === camp.id);
+  run(Game, 2);
+  const snap1 = raidSnap();
+  const m = snap1.missions[0];
+  ok(
+    snap1.missions.length === 1 && m.buildingId === b.id && m.label === 'Forge' && m.rewardTp > 0,
+    `a standing camp is a mission (${m?.label}, +${m?.rewardTp} TP)`
+  );
+  W.fortify(camp, Game.warCampHooks.ctx());
+  run(Game, 2);
+  const m2 = raidSnap().missions[0];
+  ok(m2.rewardTp > m.rewardTp, `a dug-in camp pays more (${m.rewardTp} -> ${m2.rewardTp} TP)`);
+
+  const men = [];
+  for (let i = 0; i < 6; i++) men.push(deploy(api, 'footman', 470 + i * 26, 540));
+  GS.selectedUnitIds = men.slice(0, 1).map((u) => u.id);
+  ok(Game.dispatchRaidStrike(m2.id) === false, 'one hunter is not a strike force');
+  GS.selectedUnitIds = men.map((u) => u.id);
+  ok(Game.dispatchRaidStrike(m2.id) !== false, 'six hunters are dispatched');
+  ok(
+    men.every((u) => u.raidTargetId === b.id),
+    'they are sent at the camp'
+  );
+  const tp0 = GS.tactical;
+  for (let i = 0; i < 6000 && GS.buildings.includes(b); i++) Game.update();
+  ok(!GS.buildings.includes(b), 'the strike force crosses the field and razes the camp');
+  ok(
+    GS.tactical - tp0 === W.bounty(camp) + m2.rewardTp,
+    `it pays the bounty and the loot (+${GS.tactical - tp0} TP = ${W.bounty(camp)} + ${m2.rewardTp})`
+  );
+  ok(
+    men.every((u) => !u.raidTargetId && !u.raidMissionId),
+    'and the mission ends'
+  );
+
+  // A camp burned without a strike force pays the bounty only.
+  const camp2 = Game.warCampHooks.raise({ kind: 'drums', sector: 'left' });
+  const b2 = GS.buildings.find((x) => x.id === camp2.id);
+  run(Game, 2);
+  const tp1 = GS.tactical;
+  Game.warCampHooks.hit(b2, b2.hp + 5);
+  ok(
+    GS.tactical - tp1 === W.bounty(camp2),
+    'a camp burned without a strike force pays the bounty only'
+  );
+}
 // --- 5. the spy raid --------------------------------------------------------------------
 {
   const api = start(21);
@@ -655,7 +719,7 @@ function toNight(api, wave) {
       GS.tactical = 40;
       GS.spyUsedThisWave = false;
       if (mode === 'disrupt') Game.executeSpyAction('disrupt');
-      Game.beginDayPhase(true);
+      Game.beginDayPhase(false); // the dawn itself: an early horn brings a vanguard
       sizes[mode].push(GS.spawnQueue.length);
     }
   }

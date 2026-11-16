@@ -265,7 +265,7 @@ const rngOf = (seed) => {
     const shown = SiegeLoop.getPreview();
     if (!shown || shown.count !== Object.values(night.counts).reduce((a, c) => a + c, 0))
       previewAgrees = false;
-    Game.beginDayPhase(true);
+    Game.beginDayPhase(false); // the dawn itself: an early horn brings a vanguard on top of the plan
     const dawn = JSON.parse(JSON.stringify(GS.sectorPlan));
     const queued = GS.spawnQueue.length;
     if (GS.spawnSectors.length !== queued) countsReal = false;

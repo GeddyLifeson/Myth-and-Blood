@@ -75,6 +75,7 @@ const Game = (() => {
     handlePointerMove,
     handlePointerUp,
     moveSelectionToWorld,
+    attackSelection,
     reformSelectionFormation,
     setSelectionFormation,
     trackPointer,
@@ -334,6 +335,7 @@ const Game = (() => {
   GS.decorations = [];
   GS.buildings = [];
   GS.moveMarkers = [];
+  GS.attackMarks = [];
   GS.tactical = STARTING_TP;
   GS.wave = 0;
   GS.kills = 0;
@@ -343,6 +345,8 @@ const Game = (() => {
   GS.structuresRazedThisWave = 0;
   GS.runStructuresRazed = 0;
   GS.campaignVictoryDeclared = false;
+  GS.postVictoryEndless = false;
+  GS.ngPlusTier = 0;
   GS.castleBreachWarned = false;
   GS.castleBreachRecorded = false;
   GS.spawnQueue = [];
@@ -607,6 +611,12 @@ const Game = (() => {
     },
     get cheatsUsed() {
       return !!GS.cheatsUsed;
+    },
+    get ngPlusTier() {
+      return GS.ngPlusTier || 0;
+    },
+    get postVictoryEndless() {
+      return !!GS.postVictoryEndless;
     },
     get modeId() {
       return getRunModeId();
@@ -1259,11 +1269,12 @@ const Game = (() => {
   function getDifficulty() {
     const base = getDifficultyDef(GS.difficultyId);
     const adv = getAdvancedMods();
+    const ng = svc('NewGamePlus')?.enemyMods(GS.ngPlusTier) || {};
     return {
       ...base,
-      enemyHpMult: base.enemyHpMult * adv.enemyHpMult,
-      enemyDmgMult: base.enemyDmgMult * adv.enemyDmgMult,
-      enemyCountMult: base.enemyCountMult * adv.enemyCountMult,
+      enemyHpMult: base.enemyHpMult * adv.enemyHpMult * (ng.enemyHpMult || 1),
+      enemyDmgMult: base.enemyDmgMult * adv.enemyDmgMult * (ng.enemyDmgMult || 1),
+      enemyCountMult: base.enemyCountMult * adv.enemyCountMult * (ng.enemyCountMult || 1),
       spawnIntervalMult: base.spawnIntervalMult * adv.spawnIntervalMult,
       eliteChanceMult: base.eliteChanceMult * adv.eliteChanceMult,
       tpPerRoundBonus: base.tpPerRoundBonus,
@@ -1334,6 +1345,7 @@ const Game = (() => {
     releaseAllBuildings();
     refreshUnitCounts();
     GS.moveMarkers = [];
+    GS.attackMarks = [];
     // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
@@ -1356,6 +1368,8 @@ const Game = (() => {
     GS.castleBreachRecorded = false;
     GS.runStructuresRazed = 0;
     GS.campaignVictoryDeclared = false;
+    GS.postVictoryEndless = false;
+    GS.ngPlusTier = 0;
     GS.spawnQueue = [];
     GS.spawnDelayBonus = 0;
     GS.pendingReinforce = [];
@@ -1444,6 +1458,7 @@ const Game = (() => {
     }
     if (svc('ModLoader')) svc('ModLoader').onGameStart(createGameContext());
     if (svc('Research')) svc('Research').resetRun();
+    Veterans.setHall([]);
     // Ensure expansion unit/building defs (ballista, bard, academies…) after any data reload race.
     if (svc('ContentExpansion')?.registerDefs) svc('ContentExpansion').registerDefs();
     else if (typeof ContentExpansion !== 'undefined' && ContentExpansion.registerDefs) {
@@ -1565,6 +1580,21 @@ const Game = (() => {
         spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
         pushUnit: (u) => GS.units.push(u),
         hooks: { showMessage },
+      });
+    }
+    if (svc('NewGamePlus')) {
+      GS.ngPlusTier = svc('NewGamePlus').applyRunStart({
+        creative: GS.creativeMode,
+        jumpIn: academyEraMode,
+        deployY: GS.deployY,
+        rallyY: GS.rallyY,
+        spawnUnit: (type, x, y, team) => {
+          const u = spawnUnit(type, x, y, team);
+          if (u) applyPlayerStatMods(u);
+          return u;
+        },
+        pushUnit: (u) => GS.units.push(u),
+        showMessage,
       });
     }
     if (typeof EternalLegacyTree !== 'undefined' && !GS.creativeMode && !academyEraMode) {
@@ -1729,6 +1759,8 @@ const Game = (() => {
         honorNames,
         storyBranch,
         storyChoiceCount,
+        ngPlusTier: GS.ngPlusTier || 0,
+        postVictoryEndless: !!GS.postVictoryEndless,
       });
     }
     if (!GS.creativeMode && typeof Analytics !== 'undefined') {
@@ -2577,6 +2609,9 @@ const Game = (() => {
     updateManualMarches();
     updateHoldPosts();
     updatePostReturn();
+    for (let mi = GS.attackMarks.length - 1; mi >= 0; mi--) {
+      if (--GS.attackMarks[mi].life <= 0) GS.attackMarks.splice(mi, 1);
+    }
     for (let mi = GS.moveMarkers.length - 1; mi >= 0; mi--) {
       if (--GS.moveMarkers[mi].life <= 0) {
         GS.moveMarkers[mi] = GS.moveMarkers[GS.moveMarkers.length - 1];
@@ -2832,6 +2867,7 @@ const Game = (() => {
     setSelectionFormation,
     reformSelectionFormation,
     moveSelectionToWorld,
+    attackSelection,
     /** War camps: test and creative hooks (raise one, hit one, read the damage a soldier does). */
     warCampHooks: {
       ctx: () => warCampCtx,
@@ -2859,6 +2895,7 @@ const Game = (() => {
     applyCheatEffect,
     markCheatsUsed,
     cheatsUsed: () => !!GS.cheatsUsed,
+    getDifficulty,
     getDifficultyPercent,
     beginDayPhase,
     isDayPhase,
@@ -2936,6 +2973,8 @@ const Game = (() => {
     startBranchTech,
     cancelBranchTech,
     upgradeSelectedVeteran,
+    raiseVeteran: (id) => GameArmy.raiseVeteran(id),
+    forgetSelectedTrait: (id) => GameArmy.forgetSelectedTrait(id),
     ascendSelectedUnit,
     recruitSelectedEcho,
     getAsymmetricMods,

@@ -36,7 +36,7 @@ const GameCampaign = (() => {
   const {
     countLiveEnemyEconomyBuildings,
     countLiveNorthernHolds,
-    isAttackableEnemyStructure,
+    isTargetableEnemyStructure,
     noteEnemyEconomyPresence,
     onBuildingComplete,
   } = GameBuildings;
@@ -116,13 +116,18 @@ const GameCampaign = (() => {
     playSfx('reinforce');
   }
 
-  function announceEnemyRtsEra() {
-    if (GS.wave !== RTS_ERA_WAVE) return;
+  /** Past the victory the host grows every wave; every 25th wave says by how much. */
+  function announceHostGrowth() {
+    const w = GS.wave;
+    if (GS.creativeMode || w <= ACADEMY_ERA_WAVE || w % 25 !== 0) return;
+    const at = (n) => getWaveConfig(n);
+    const hp = Math.round((at(w).hpScale / at(ACADEMY_ERA_WAVE).hpScale) * 100);
+    const count = Math.round((at(w).count / at(ACADEMY_ERA_WAVE).count) * 100);
     showMessage(
-      'Wave 200 — late assault escalation. Expect denser packs and tougher foes from the north.',
+      `Wave ${w}: the host fields ${count}% of its wave 100 numbers at ${hp}% of its strength.`,
       380
     );
-    svc('FloatingText').status(GS.worldW / 2, 56, 'LATE WAR', '#ff8060');
+    svc('FloatingText').status(GS.worldW / 2, 56, `HOST ${hp}%`, '#ff8060');
     playSfx('waveStart');
   }
 
@@ -389,7 +394,7 @@ const GameCampaign = (() => {
       if (svc('SettlementRaids') && svc('SettlementRaids').isActive(p.wave)) {
         p.raidSnap =
           svc('SettlementRaids').refreshMissions(GS.buildings, p.wave, {
-            isAttackable: isAttackableEnemyStructure,
+            isAttackable: isTargetableEnemyStructure,
           }) || [];
       }
       if (svc('FactionReputation')) {
@@ -766,7 +771,7 @@ const GameCampaign = (() => {
     bind,
     announceAcademyEra,
     announceAttackSides,
-    announceEnemyRtsEra,
+    announceHostGrowth,
     announceKingdomEvolution,
     bootstrapAcademyEraStart,
     bootstrapPlaceComplete,
