@@ -246,12 +246,7 @@ const GameCombat = (() => {
           dmg * (EternalLegacyTree.getCombinedEffects(null, GS.wave).playerDmgMult || 1)
         );
       }
-      if (typeof FoundationalMedievalLayer !== 'undefined') {
-        const fmods = FoundationalMedievalLayer.getRunModifiers(GS.wave);
-        if (unit.type === 'archer' && fmods.archerDmgMult > 1) {
-          dmg = Math.round(dmg * fmods.archerDmgMult);
-        }
-      }
+      if (typeof Honours !== 'undefined') dmg = Math.round(dmg * Honours.getDamageMult(unit));
     }
     if (unit.team === 'player' && svc('GameDepth') && svc('GameDepth').isVanillaAlly(unit)) {
       let obsoleteMult = svc('GameDepth').getVanillaObsoleteMult(unit, GS.wave);

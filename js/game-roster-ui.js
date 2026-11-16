@@ -306,10 +306,7 @@ const GameRosterUi = (() => {
           combatType: u.combatType || 'melee',
           experience: Math.floor(u.experience || 0),
           canPromote: u.type === 'footman' && footmanEligibleForGeneral(u) && !findPlayerGeneral(),
-          ascensionOffer:
-            typeof AscensionSystem !== 'undefined'
-              ? AscensionSystem.getUnitAscensionOffer(u, GS.wave)
-              : null,
+          honourOffer: typeof Honours !== 'undefined' ? Honours.getOffer(u) : null,
           ascensionLabel: u.ascensionLabel || null,
           ascensionWeapon: u.ascensionWeapon || null,
           echoOffer:

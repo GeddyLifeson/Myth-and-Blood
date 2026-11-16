@@ -646,11 +646,13 @@ const UX = (() => {
           ${u.canHold ? `<button class="unit-quick-btn" data-action="hunt-toggle" title="${u.holding ? 'Release the hold: hunt from this post again (H)' : 'Stay put and fight only what comes in reach (Shift+H). Shift+click the map to move and hold.'}">${u.holding ? 'Release hold' : 'Hold here'}</button>` : ''}
           <button class="unit-quick-btn" data-action="focus" title="Center camera">Focus</button>
           <button class="unit-quick-btn" data-action="deselect" title="Clear selection">Deselect</button>
-          ${
-            u.ascensionOffer
-              ? `<button class="unit-quick-btn ascension-btn" data-action="ascend" title="${escapeHtml(u.ascensionOffer.stage.desc || u.ascensionOffer.stage.label)}">Ascend: ${escapeHtml(u.ascensionOffer.stage.label)} (${u.ascensionOffer.cost} Legacy)</button>`
-              : ''
-          }
+          ${(u.honourOffer?.options || [])
+            .map(
+              (h) =>
+                `<button class="unit-quick-btn ascension-btn" data-action="honour-${h.id}" ${h.enabled ? '' : 'disabled aria-disabled="true"'} title="${escapeHtml(h.enabled ? h.desc : `${h.desc} ${h.reason}`)}">Honour: ${escapeHtml(h.label)}</button>`
+            )
+            .join('')}
+          ${u.honourOffer?.options?.[0]?.reason ? `<div class="unit-info-status">Honour waiting: ${escapeHtml(u.honourOffer.options[0].reason)}</div>` : ''}
           ${
             u.echoOffer
               ? `<button class="unit-quick-btn echo-btn" data-action="recruit-echo" title="${escapeHtml(u.echoOffer.label)}">Echo: ${escapeHtml(u.echoOffer.short)} (${u.echoOffer.cost} LP)</button>`
@@ -729,7 +731,7 @@ const UX = (() => {
         else if (action === 'hunt-off') Game.setSelectedHunt?.(false);
         else if (action === 'promote') Game.creativePromoteSelectedGeneral?.();
         else if (action === 'vet-upgrade') Game.upgradeSelectedVeteran?.();
-        else if (action === 'ascend') Game.ascendSelectedUnit?.();
+        else if (action?.startsWith('honour-')) Game.ascendSelectedUnit?.(action.slice(7));
         else if (action === 'recruit-echo') Game.recruitSelectedEcho?.();
         else if (action?.startsWith('form-')) {
           const map = {
