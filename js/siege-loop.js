@@ -1806,12 +1806,16 @@ const SiegeLoop = (() => {
       ctx.showMessage(`Not ready — ${Math.ceil((readyAt - tick) / 60)}s.`, 120);
       return false;
     }
+    // The General's stance (js/general-orders.js) widens his reach or speeds the recharge.
+    const go = typeof GeneralOrders !== 'undefined' ? GeneralOrders : null;
+    const radius = go ? go.orderRadius(ORDER_RADIUS) : ORDER_RADIUS;
+    const cdMult = go ? go.cooldownMult() : 1;
     let reached = 0;
     for (const u of ctx.units) {
       if (u.team !== 'player' || u.hp <= 0) continue;
       const dx = u.x - general.x;
       const dy = u.y - general.y;
-      if (dx * dx + dy * dy > ORDER_RADIUS * ORDER_RADIUS) continue;
+      if (dx * dx + dy * dy > radius * radius) continue;
       reached++;
       if (kind === 'warCry') {
         u.warCryUntil = tick + 8 * 60;
@@ -1822,24 +1826,24 @@ const SiegeLoop = (() => {
     }
     ctx.ach?.('tally', { k: kind === 'warCry' ? 'warCry' : 'holdLine' });
     if (kind === 'warCry') {
-      run.warCryReady = tick + WAR_CRY_COOLDOWN;
+      run.warCryReady = tick + Math.round(WAR_CRY_COOLDOWN * cdMult);
       ctx.float(general.x, general.y - 30, 'WAR CRY', '#ffb060');
       ctx.playSfx('warCry');
       run.rings.push({
         x: general.x,
         y: general.y,
-        max: ORDER_RADIUS,
+        max: radius,
         age: 0,
         color: '255,150,60',
       });
     } else {
-      run.holdLineReady = tick + HOLD_LINE_COOLDOWN;
+      run.holdLineReady = tick + Math.round(HOLD_LINE_COOLDOWN * cdMult);
       ctx.float(general.x, general.y - 30, 'HOLD THE LINE', '#c0d8ff');
       ctx.playSfx('holdLine');
       run.rings.push({
         x: general.x,
         y: general.y,
-        max: ORDER_RADIUS,
+        max: radius,
         age: 0,
         color: '170,200,255',
       });
@@ -2357,11 +2361,16 @@ const SiegeLoop = (() => {
       // The tooltip names the key bound right now.
       const key = keyName('order', order);
       btn.title = `${label}${key ? ` (${key})` : ''}: ${what}`;
-      btn.hidden = !hasGeneral || !intro.unlocked.orders;
+      // Greyed with the reason when the General is gone, not hidden.
+      btn.hidden = !intro.unlocked.orders;
       const wait = Math.ceil((readyAt - ctx.tick) / 60);
-      btn.disabled = wait > 0 || ctx.isNight;
-      btn.textContent = wait > 0 ? `${label} ${wait}s` : label;
+      btn.disabled = !hasGeneral || wait > 0 || ctx.isNight;
+      btn.textContent = wait > 0 && hasGeneral ? `${label} ${wait}s` : label;
+      if (!hasGeneral && typeof GeneralOrders !== 'undefined')
+        btn.title = GeneralOrders.lostReason();
+      else if (ctx.isNight) btn.title += ' (by day only)';
     }
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.syncBar(ctx, !intro.unlocked.orders);
     const up = el('siege-upkeep');
     if (up && typeof EconomyRules !== 'undefined') {
       const wages = dawnWages(ctx);

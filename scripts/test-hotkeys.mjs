@@ -337,6 +337,8 @@ ok(ev({ key: '1', code: 'Digit1', ctrlKey: true }) === 'ctrl+1', 'Ctrl+1');
     ['holdHere'],
     ['order', 'warCry'],
     ['order', 'holdLine'],
+    ['order', 'advance'],
+    ['order', 'fall_back'],
     ['pause'],
     ['beginDay'],
     ['speedUp'],

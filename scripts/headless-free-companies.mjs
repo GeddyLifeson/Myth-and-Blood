@@ -240,7 +240,7 @@ function loadGame() {
       getUnlockedAttackSides, canSpendTpVeteranUpgrade, getVeteranUpgradeCost, upgradeVeteranUnit,
       isEnemyHordeGruntType, getUnlockedEvilHeroes, EVIL_HERO_WAVES,
       getKingdomEvolutionStage, getKingdomStageBuffs, isKingdomRaidsUnlocked, isKingdomLoadoutsUnlocked,
-      KINGDOM_DOCTRINES, getUnlockedKingdomDoctrines, getTerritoryTier, getWorldSize,
+      getTerritoryTier, getWorldSize,
       BASE_FIELD_W, BASE_FIELD_H, isEliteEnemy
     })`,
     vm.createContext(sb)
@@ -1722,7 +1722,6 @@ function testKingdomEvolution(exp) {
     isKingdomLoadoutsUnlocked,
     Game,
     ColonyValue,
-    KINGDOM_DOCTRINES,
   } = exp;
   assert(typeof getKingdomEvolutionStage === 'function', 'getKingdomEvolutionStage should exist');
   assert(getKingdomEvolutionStage(1).stage === 1, 'wave 1 should be Outpost stage');
@@ -1744,8 +1743,8 @@ function testKingdomEvolution(exp) {
   assert(gs.kingdomStage === 1, 'creative start should expose kingdomStage');
   assert(gs.kingdomEvolution?.shortName, 'getState should expose kingdomEvolution');
   assert(gs.kingdomEvolutionMeter?.fill >= 0, 'getState should expose evolution meter fill');
-  assert(gs.kingdomDoctrines?.imperial_march, 'imperial march doctrine should exist');
-  assert(Array.isArray(gs.unlockedKingdomDoctrines), 'unlocked doctrines list exposed');
+  // Kingdom doctrines became the General's orders (js/general-orders.js).
+  assert(!('kingdomDoctrines' in gs), 'kingdom doctrines are folded into the General order bar');
   if (ColonyValue?.computeEvolutionMeter) {
     const meter = ColonyValue.computeEvolutionMeter({
       wave: 100,

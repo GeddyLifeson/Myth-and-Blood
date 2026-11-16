@@ -103,6 +103,8 @@ The tables below are generated from the key maps. To regenerate them: `node scri
 | Shift+H             | Hold here                                                                        |
 | [                   | War Cry (General)                                                                |
 | ]                   | Hold the Line (General)                                                          |
+| .                   | Advance (General)                                                                |
+| ,                   | Fall Back (General)                                                              |
 | Z                   | Balanced loadout                                                                 |
 | D                   | Begin the day (night only)                                                       |
 | ↑ ↓ ← →             | Pan the map                                                                      |
@@ -360,12 +362,22 @@ The Sapper is a field engineer and needs Iron Weapons.
 
 ## The General's orders
 
-The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy on the field goes for him. With him on the field, by day:
+The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy on the field goes for him. Move him like any soldier; his reach is drawn around him as a dashed ring. The order bar sits in the strip at the top of the field:
 
-| Order         | Key | Effect on soldiers within 190 of him               | Ready again |
-| ------------- | --- | -------------------------------------------------- | ----------- |
-| War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 seconds  |
-| Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 seconds  |
+| Order         | Key | Effect on soldiers in his reach                    | Ready again (from the rear) |
+| ------------- | --- | -------------------------------------------------- | --------------------------- |
+| War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 s (27 s)                 |
+| Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 s (36 s)                 |
+| Advance       | `.` | Step forward one rank                              | 20 s (12 s)                 |
+| Fall Back     | `,` | Withdraw to the muster line, healers first         | 20 s (12 s)                 |
+
+War Cry and Hold the Line are given by day; Advance and Fall Back at any time.
+
+**Stance.** _Command from the rear_ (the default): orders recharge 40% faster. _Lead from the front_: his reach grows from 190 to 247 and the enemy goes for him even harder. The ring turns red.
+
+**If he falls**, the army takes a morale shock and the bar greys out. When a veteran footman (a rank star or a name) stands on the field, _Promote a veteran_ makes him the new General and the bar comes back.
+
+The kingdom doctrines of older builds (Outpost Stand, Royal Muster and the rest) are these orders now.
 
 He also walks to soldiers whose nerve has broken and steadies them. Stationed in a Castle keep, he fills the castle walls with footmen.
 
@@ -396,31 +408,25 @@ Three more spells belong to one of the champion companies and appear when it is 
 
 Both are introduced on wave 8, in the right-hand panel. An action on cooldown shows the waves left in place of its price.
 
-**Spy** (acts on the next wave):
+**Spy** (acts on the next wave; one action a wave). Each one shows on the field:
 
-| Action               | TP                  | Effect                                                             | Limit              |
-| -------------------- | ------------------- | ------------------------------------------------------------------ | ------------------ |
-| Scout Report         | 2                   | The night preview lists the next wave by type and number           |                    |
-| Deep Infiltration    | 3                   | The first 30% of the next wave arrive at 60% health                |                    |
-| Forge Maps           | 3                   | A marked crate lands at dawn: never bait, always TP                |                    |
-| Raid War Chest       | 4                   | +6 TP now; 2 more enemies next wave                                | once every 3 waves |
-| Steal War Chest      | 4                   | +4 TP; 2 fewer enemies next wave                                   |                    |
-| Poison Caches        | 4                   | Next wave has 20% less health                                      |                    |
-| Disrupt Supply Lines | 5, +1 every 6 waves | 25% fewer enemies, but 12% tougher and 15% faster                  | once every 3 waves |
-| Sabotage Siege       | 5                   | No siege towers or engineers next wave; the host arrives 10 s late |                    |
-| Assassinate Captain  | 6                   | No elites next wave (a warlord still comes)                        |                    |
+| Action             | TP                   | Effect                                                                                      | Limit              |
+| ------------------ | -------------------- | ------------------------------------------------------------------------------------------- | ------------------ |
+| Scout Report       | 2                    | Night only. The preview lists the next wave by type; head counts are pinned on the top edge |                    |
+| Ambush on the Road | 3                    | A marked ambush; the first 30% of the next wave arrive at 60% health, tagged AMBUSHED       |                    |
+| Mark the Warlord   | 6, +1 every 10 waves | The boss or strongest elite is outlined in blood and takes 25% more damage                  | once every 2 waves |
+| Turncoats          | 5                    | 3 to 5 of the next wave's common soldiers change sides at your line and fight as footmen    | once every 2 waves |
+| Raid the War Camp  | 6, +1 every 10 waves | Raiders ride for the weakest war camp                                                       | once every 2 waves |
 
-**Courier** (needs a Courier on the field):
+**Courier** (needs a Courier on the field). He rides off the bottom edge and back, about 20 seconds; the order lands when he returns, and is lost if he falls on the road:
 
-| Message                | TP                       | Effect                                                | Limit              |
-| ---------------------- | ------------------------ | ----------------------------------------------------- | ------------------ |
-| Tax Levy               | 1                        | +5 TP at the next wave clear; every soldier −2 morale | once every 3 waves |
-| Open War Chest         | 2                        | +4 TP now                                             | once every 3 waves |
-| Royal Decree           | 2                        | +5 morale for every soldier                           |                    |
-| Supply Train           | 3                        | Heals every soldier 25                                |                    |
-| Request Reinforcements | 4 × upkeep               | 2 Footmen at the next dawn                            | once every 2 waves |
-| Medical Evac           | 4                        | The wounded fall back to the med tents                |                    |
-| Call the Banner        | 6, +2 per call, × upkeep | 1 Knight at once; needs Iron Weapons                  | once every 4 waves |
+| Order          | TP         | Effect                                                          | Limit              |
+| -------------- | ---------- | --------------------------------------------------------------- | ------------------ |
+| Reinforcements | 4 × upkeep | Two footmen and an archer march in at the muster line           | once every 2 waves |
+| Field Surgeons | 3          | The wounded at the muster line heal half their health over 15 s | once every 2 waves |
+| Fresh Arrows   | 3          | Ranged soldiers shoot 35% faster for 20 seconds                 | once every 2 waves |
+
+No spy or courier action pays TP any more.
 
 Prices and cooldowns live in `data/strikes.json`, `js/units.js` and `js/economy-rules.js`.
 
