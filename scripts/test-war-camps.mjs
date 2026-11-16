@@ -196,12 +196,14 @@ function toNight(api, wave) {
   GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
   W.resetRun();
   Game.warCampHooks.raise({ kind: 'forge' });
+  // Follow this one camp by id: a later night may raise another forge by chance.
+  const lone = camps(GS, W).find((b) => W.kindOf(b) === 'forge')?.id;
   let stood = 0;
-  for (let i = 0; i < 6 && camps(GS, W).some((b) => W.kindOf(b) === 'forge'); i++) {
+  for (let i = 0; i < 6 && camps(GS, W).some((b) => b.id === lone); i++) {
     Game.beginDayPhase(true);
     stood++;
     toNight(api);
-    for (const b of camps(GS, W)) if (W.kindOf(b) !== 'forge') b.hp = 0;
+    for (const b of camps(GS, W)) if (b.id !== lone) b.hp = 0;
   }
   ok(
     stood === W.LIFE_WAVES,
@@ -734,7 +736,7 @@ function toNight(api, wave) {
 // --- 8. events: about one wave in four ------------------------------------------------------
 {
   const { DynamicMapEvents: D, ContentExpansion: C, NeutralWildlife: N } = start(11);
-  const seen = { planet: 0, field: 0, wildlife: 0, hazard: 0 };
+  const seen = { planet: 0, field: 0, wildlife: 0, hazard: 0, scouts: 0 };
   let heraldMissed = 0;
   let evWaves = 0;
   let total = 0;
@@ -745,17 +747,18 @@ function toNight(api, wave) {
     D.resetRun(`seed-${seed}`);
     let last = 0;
     for (let wave = 1; wave <= 300; wave++) {
-      const hits = [
-        D.pickEvent(wave) && 'planet',
-        C.pickWaveEvent(wave) && 'field',
-        N.pickWaveEvent(wave) && 'wildlife',
-        D.eventSlot(wave) === 'hazard' && 'hazard',
-      ].filter(Boolean);
+      // Scouts with nothing to counter fall back to field news; wildlife lives in the deck.
+      const kind = D.pickEvent(wave)?.kind;
+      const slot = D.eventSlot(wave);
+      const hits = kind ? [kind] : [];
+      if (N.pickWaveEvent(wave)) hits.push('wildlife-old');
+      if (!!C.pickWaveEvent(wave) !== (kind === 'field')) hits.push('field-mismatch');
       if (!C.heraldNews(wave) !== !hits.length) heraldMissed++;
       total++;
       if (
         hits.length > 1 ||
-        (hits.length === 1) !== (D.eventSlot(wave) !== null && hits[0] === D.eventSlot(wave))
+        (hits.length === 1) !==
+          (slot !== null && (hits[0] === slot || (slot === 'scouts' && hits[0] === 'field')))
       )
         mismatched++;
       if (hits.length) {
@@ -783,11 +786,11 @@ function toNight(api, wave) {
     heraldMissed === 0,
     `the herald names the deck's event on every event wave, and only then (${heraldMissed} off)`
   );
-  const planet = Object.values(D.EVENTS).every((e) => e.choices.length >= 2);
-  ok(planet, 'every planet event offers a real choice');
+  const two = Object.values(D.OMENS).every((e) => e.options.length === 2);
+  ok(two, 'every omen offers two options');
 }
 
-// --- 9. faction hazards change only on the deck's hazard waves -------------------------------
+// --- 9. faction hazards change only when the trap omen is left to stand -------------------------------
 {
   const api = start(13);
   const { Game, GameState: GS, DynamicMapEvents: D } = api;
@@ -801,7 +804,7 @@ function toNight(api, wave) {
     const before = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
     Game.beginDayPhase(true);
     const after = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
-    const due = D.eventSlot(GS.wave) === 'hazard';
+    const due = D.hazardsLaid(GS.wave);
     if (due) hazardWaves++;
     if (before !== after) {
       changed++;

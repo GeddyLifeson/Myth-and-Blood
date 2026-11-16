@@ -83,6 +83,7 @@ function buildIndexHtml(bundleName, cssName) {
   out = out.replace(/\s*<link rel="stylesheet" href="css\/settings\.css" \/>/, '');
   out = out.replace(/\s*<link rel="stylesheet" href="css\/teach\.css" \/>/, '');
   out = out.replace(/\s*<link rel="stylesheet" href="css\/achievements\.css" \/>/, '');
+  out = out.replace(/\s*<link rel="stylesheet" href="css\/muster\.css" \/>/, '');
   // So is mobile.css (phone layout, all inside one media query), last as in index.html.
   out = out.replace(/\s*<link rel="stylesheet" href="css\/mobile\.css" \/>/, '');
   if (/href="css\/(?!style\.)[^"]+\.css"/.test(out)) {
@@ -133,6 +134,7 @@ async function main() {
     'settings.css',
     'teach.css',
     'achievements.css',
+    'muster.css',
     'mobile.css',
   ]
     .map((f) => readFileSync(join(ROOT, 'css', f), 'utf8'))
