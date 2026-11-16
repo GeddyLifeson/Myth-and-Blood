@@ -1768,10 +1768,8 @@ const UI = (() => {
     const formSection = hudEls['formation-section'];
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
     if (formSection) {
-      // With one soldier picked the buttons stay, greyed; the tooltip gives the reason.
-      formSection.style.display = selCount >= 1 ? '' : 'none';
+      formSection.style.display = selCount >= 2 ? '' : 'none';
       hudBtns.formation.forEach((btn) => {
-        btn.disabled = selCount < 2;
         btn.classList.toggle('selected', btn.dataset.formation === gs.selectionFormation);
       });
     }
