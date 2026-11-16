@@ -112,6 +112,7 @@ export const GAME_SCRIPTS = [
   'roster.js',
   'sapper-kit.js',
   'war-camps.js',
+  'ground.js',
   'game-core.js',
   'game-state.js',
   'procgen-obstacles.js',

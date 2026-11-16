@@ -325,6 +325,11 @@ const WarCamps = (() => {
       let pool = (planned || SECTORS).filter((s) => !used.has(s));
       if (!pool.length) pool = SECTORS.filter((s) => !used.has(s));
       if (!pool.length) pool = SECTORS;
+      // Among the sectors it may use, the host camps on a top plot the player has taken.
+      if (typeof Ground !== 'undefined') {
+        const contested = pool.filter((s) => Ground.isHeld(`${s}_front`));
+        if (contested.length) pool = contested;
+      }
       sector = pool[Math.floor(ctx.rng() * pool.length)];
     }
     const site =

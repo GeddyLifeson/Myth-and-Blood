@@ -99,6 +99,7 @@ export const HEADLESS_FILES = [
   'roster.js',
   'sapper-kit.js',
   'war-camps.js',
+  'ground.js',
   'game-core.js',
   'game-state.js',
   'game-field.js',
