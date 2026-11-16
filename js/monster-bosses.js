@@ -725,9 +725,28 @@ const MonsterBosses = (() => {
     return ROSTER_BY_TYPE[unit.type]?.name || unit.bossName || 'The warlord';
   }
 
-  function hold(unit, ticks) {
+  /** Stun a soldier caught by a move. */
+  function stun(unit, ticks) {
     unit.pinned = true;
     unit.pinTimer = Math.max(unit.pinTimer || 0, ticks);
+  }
+
+  // A boss winding up or staggered stands still and holds his blows. This is not a pin:
+  // players cannot pin a named boss, and the rules that say so stay true.
+  function hold(unit, until) {
+    const bm = unit.bossMove;
+    if (!(bm.holdUntil > until)) bm.holdUntil = until;
+    bm.hx = unit.x;
+    bm.hy = unit.y;
+  }
+
+  function keepHeld(unit, tick) {
+    const bm = unit.bossMove;
+    if (!(bm.holdUntil > tick)) return;
+    unit.x = bm.hx;
+    unit.y = bm.hy;
+    unit.path = [];
+    unit.actionTimer = Math.max(unit.actionTimer || 0, 2);
   }
 
   function startMove(unit, ctx, rushed) {
@@ -755,7 +774,7 @@ const MonsterBosses = (() => {
       spots: at.spots || null,
       targetId: at.targetId ?? null,
     });
-    hold(unit, windup + 2);
+    hold(unit, ctx.tick + windup + 1);
     ctx.float(unit.x, unit.y - 40, m.name.toUpperCase(), '#ff5040');
     ctx.playSfx('bossWarn');
     return true;
@@ -766,7 +785,7 @@ const MonsterBosses = (() => {
     bm.id = null;
     bm.idx = (bm.idx || 0) + 1;
     bm.cd = Math.round(MOVE_COOLDOWN * PHASE_COOLDOWN[phaseOf(unit) - 1]);
-    if (unit.pinTimer > STAGGER_TICKS) unit.pinTimer = 1;
+    bm.holdUntil = 0;
   }
 
   function stagger(unit, ctx, why) {
@@ -774,8 +793,7 @@ const MonsterBosses = (() => {
     endMove(unit);
     unit.bossMove.staggered = (unit.bossMove.staggered || 0) + 1;
     unit.bossMove.stunUntil = ctx.tick + STAGGER_TICKS;
-    hold(unit, STAGGER_TICKS);
-    unit.pinTimer = STAGGER_TICKS;
+    hold(unit, ctx.tick + STAGGER_TICKS);
     unit.exposeUntil = ctx.tick + STAGGER_TICKS + 30;
     unit.exposePct = Math.max(unit.exposePct || 0, EXPOSE_PCT);
     ctx.float(unit.x, unit.y - 40, 'STAGGERED', '#ffd040');
@@ -789,7 +807,7 @@ const MonsterBosses = (() => {
 
   function hurtFoe(boss, u, m, ctx) {
     ctx.hurt(u, boss.damage * m.dmg, boss);
-    if (m.stun && u.hp > 0) hold(u, m.stun);
+    if (m.stun && u.hp > 0) stun(u, m.stun);
     if ((m.burn || m.plague) && u.hp > 0) {
       u.poisonUntil = ctx.tick + 240;
       u.poisonDps = m.burn || m.plague;
@@ -909,8 +927,8 @@ const MonsterBosses = (() => {
           bm.rushNext = true;
         }
       }
+      keepHeld(u, ctx.tick);
       if (bm.id) {
-        hold(u, 2);
         if (--bm.t <= 0) land(u, ctx);
         continue;
       }

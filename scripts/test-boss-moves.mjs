@@ -120,7 +120,10 @@ for (const id of Object.keys(MB.MOVES)) {
   const x0 = g.x;
   const y0 = g.y;
   step(ctx, g.bossMove.total - 5);
-  ok(g.x === x0 && g.y === y0 && g.pinned, 'he is held in place during the wind-up');
+  ok(
+    g.x === x0 && g.y === y0 && !g.pinned,
+    'he is held in place during the wind-up, without a pin'
+  );
   step(ctx, 10);
   ok(!g.bossMove.id, 'the charge lands');
   ok(
@@ -142,7 +145,11 @@ for (const id of Object.keys(MB.MOVES)) {
   step(ctx, g.bossMove.t + 1);
   ok(pike.hp === 100 && behind.hp === 100, 'the pike stops the charge: nobody is hit');
   ok(g.exposeUntil > ctx.tick && g.exposePct >= 0.3, 'Gorath is exposed after the block');
-  ok(g.pinned && g.bossMove.stunUntil > landsAt + 100, 'and stunned for a while');
+  ok(g.bossMove.stunUntil > landsAt + 100, 'and stunned for a while');
+  const gx = g.x;
+  g.x += 30;
+  step(ctx, 1);
+  ok(g.x === gx && !g.pinned, 'held in place while stunned, without a pin');
   ok(g.y < pike.y, 'he stops in front of the pike');
   ok(
     ctx.said.some((t) => t.includes('stunned and exposed')),
