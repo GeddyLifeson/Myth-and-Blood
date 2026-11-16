@@ -44,6 +44,7 @@ const GameDayNight = (() => {
   let ach,
     checkRosterSynergy,
     emitNightBegin,
+    endGame,
     floatStatus,
     getAsymmetricMods,
     getDifficulty,
@@ -59,6 +60,7 @@ const GameDayNight = (() => {
       ach,
       checkRosterSynergy,
       emitNightBegin,
+      endGame,
       floatStatus,
       getAsymmetricMods,
       getDifficulty,
@@ -168,11 +170,34 @@ const GameDayNight = (() => {
     svc('Legacy')?.recordCampaignVictory?.();
     playSfx('victory', typeof Cosmetics !== 'undefined' ? Cosmetics.getVictoryThemeId() : null);
     addHighlight('era', 'Campaign won — wave 100 cleared');
-    showMessage(
-      'VICTORY — wave 100 is cleared and the realm stands. The siege is endless: fight on for score.',
-      520,
-      { priority: 'high', bypassQueue: true }
-    );
+    offerPostVictoryChoice();
+  }
+
+  /** Continue this run endlessly, or end it as a victory and queue New Game+. */
+  function offerPostVictoryChoice() {
+    if (typeof NewGamePlus === 'undefined') return;
+    setPaused(true);
+    return NewGamePlus.offerVictoryChoice({
+      tier: GS.ngPlusTier || 0,
+      onContinue: () => {
+        GS.postVictoryEndless = true;
+        setPaused(false);
+        showMessage(
+          'Endless run: the host keeps growing. Your score is marked past the victory.',
+          420,
+          {
+            priority: 'high',
+            bypassQueue: true,
+          }
+        );
+      },
+      onNewGamePlus: () => {
+        NewGamePlus.queue(GS.ngPlusTier || 0, GS.units);
+        GS.victoryReason = 'campaign';
+        setPaused(false);
+        endGame(true);
+      },
+    });
   }
 
   function enterNightPhase() {
@@ -433,13 +458,18 @@ const GameDayNight = (() => {
         manual,
       });
     }
+    const offer = manual ? SiegeLoop.earlyCallOffer(secondsLeft, siegeCtx) : null;
     const earlyTp = manual ? SiegeLoop.earlyCallBonus(secondsLeft, siegeCtx) : 0;
+    startNextWave();
     if (earlyTp > 0) {
       GS.tactical += earlyTp;
       sanitizeTactical();
-      showMessage(`Horn sounded early — +${earlyTp} TP. The assault begins!`, 200);
-    } else if (manual) showMessage('Dawn breaks — the assault begins!', 160);
-    startNextWave();
+      const n = callVanguard(offer.share);
+      showMessage(
+        `Horn sounded early: +${earlyTp} TP. ${n} of the next host march with this wave.`,
+        220
+      );
+    } else if (manual) showMessage('Dawn breaks. The assault begins!', 160);
     SiegeLoop.onWaveStart(siegeCtx);
     invalidateStateCache();
   }
@@ -504,6 +534,39 @@ const GameDayNight = (() => {
     return out;
   }
 
+  const UNPAID_MORALE = 10;
+
+  /**
+   * The early-call bet: part of the next host joins the wave that starts now, and the next
+   * wave is that much smaller. Copies come from this wave's own queue, bosses left out.
+   * @returns {number} foes added
+   */
+  function callVanguard(share) {
+    const q = GS.spawnQueue;
+    const picks = [];
+    for (let i = 0; i < q.length; i++) {
+      if (q[i] !== GS.bossTrackId && !EnemyDefs[q[i]]?.boss) picks.push(i);
+    }
+    const n = picks.length ? SiegeLoop.vanguardSize(share, q.length) : 0;
+    // Each copy keeps the entry sector of the one it copies, so the markers stay true.
+    const paired = Array.isArray(GS.spawnSectors) && GS.spawnSectors.length === q.length;
+    for (let k = 0; k < n; k++) {
+      const i = picks[Math.floor(gameRandom() * picks.length)];
+      q.push(q[i]);
+      if (!paired) continue;
+      const sector = GS.spawnSectors[i];
+      GS.spawnSectors.push(sector);
+      const counts = GS.sectorPlan && GS.sectorPlan.counts;
+      if (counts && sector in counts) {
+        counts[sector]++;
+        GS.sectorPlan.total = (GS.sectorPlan.total || 0) + 1;
+      }
+    }
+    GS.waveEnemyTotal += n;
+    GS.pendingWaveMods.stealReduction = (GS.pendingWaveMods.stealReduction || 0) + n;
+    return n;
+  }
+
   function awardRoundTP() {
     if (GS.tpAwardedForWave === GS.wave) return;
     GS.tpAwardedForWave = GS.wave;
@@ -514,17 +577,34 @@ const GameDayNight = (() => {
       typeof TechTreeBranches !== 'undefined' && !GS.creativeMode
         ? TechTreeBranches.getCombinedEffects(GS.wave).tpIncomeMult || 1
         : 1;
-    const gained = Math.max(0, Math.floor(getTpPerRound() * techTpMult + GS.pendingLevy));
-    GS.tactical += gained;
+    // Wages are reckoned on the army that fought, before the Barracks muster below.
+    const siegeEntries = SiegeLoop.dawnEntries(siegeCtx);
+    const works = payDawnWorks();
     const levyPaid = GS.pendingLevy;
     GS.pendingLevy = 0;
+    const income = Math.floor(getTpPerRound() * techTpMult);
+    const ledger = EconomyRules.buildLedger([
+      { label: 'crown', tp: Math.max(0, income - eco - works.tp) },
+      { label: 'settlements', tp: eco },
+      { label: 'works', tp: works.tp },
+      { label: 'levy', tp: levyPaid },
+      ...siegeEntries,
+    ]);
+    SiegeLoop.noteLedger(ledger);
+    GS.tactical += ledger.total;
+    // Wages the purse cannot cover go unpaid, and the troops feel it.
+    const unpaid = GS.tactical < 0 ? -GS.tactical : 0;
+    if (unpaid > 0) {
+      GS.tactical = 0;
+      for (const u of GS.units) {
+        if (u.team === 'player' && u.hp > 0 && u.maxMorale > 0) {
+          u.morale = Math.max(0, u.morale - UNPAID_MORALE);
+        }
+      }
+    }
     sanitizeTactical();
-    const works = payDawnWorks();
-    const ecoParts = [];
-    if (eco > 0) ecoParts.push(`+${eco} from settlements`);
-    if (works.tp > 0) ecoParts.push(`+${works.tp} from works`);
-    if (levyPaid > 0) ecoParts.push(`+${levyPaid} levy`);
-    const ecoNote = ecoParts.length ? ` (${ecoParts.join(', ')})` : '';
+    const gained = Math.max(0, ledger.total);
+    const ecoNote = ` (${ledger.text}${unpaid > 0 ? `; ${unpaid} unpaid, morale -${UNPAID_MORALE}` : ''})`;
     // Wave summary banner (kills / TP / casualties) — richer than a single toast
     if (typeof GameFeedback !== 'undefined') {
       const fbStats = GameFeedback.getWaveStats?.() || {};
@@ -538,21 +618,26 @@ const GameDayNight = (() => {
       if (summary?.lines?.length) {
         showMessage(
           summary.perfect
-            ? `Clean sweep! +${gained} TP · ${summary.kills} kills · 0 lost${ecoNote}`
-            : `Round complete! +${gained} TP · ${summary.kills} kills · ${summary.deaths} lost${ecoNote}`,
+            ? `Clean sweep! ${summary.kills} kills · 0 lost · TP${ecoNote}`
+            : `Round complete! ${summary.kills} kills · ${summary.deaths} lost · TP${ecoNote}`,
           summary.perfect ? 340 : 280
         );
         if (svc('FloatingText')) {
-          svc('FloatingText').status(GS.worldW / 2, GS.rallyY - 40, `+${gained} TP`, '#80ffa0');
+          svc('FloatingText').status(
+            GS.worldW / 2,
+            GS.rallyY - 40,
+            `${ledger.total >= 0 ? '+' : ''}${ledger.total} TP`,
+            ledger.total >= 0 ? '#80ffa0' : '#ff8070'
+          );
           if (summary.perfect) {
             svc('FloatingText').status(GS.worldW / 2, GS.rallyY - 56, 'CLEAN SWEEP', '#c0ffa0');
           }
         }
       } else {
-        showMessage(`Round complete! +${gained} Tactical Points${ecoNote}`);
+        showMessage(`Round complete! Tactical Points${ecoNote}`);
       }
     } else {
-      showMessage(`Round complete! +${gained} Tactical Points${ecoNote}`);
+      showMessage(`Round complete! Tactical Points${ecoNote}`);
     }
   }
 
@@ -710,6 +795,7 @@ const GameDayNight = (() => {
   return {
     bind,
     CAMPAIGN_VICTORY_WAVE,
+    offerPostVictoryChoice,
     applyChampionWaveStartPulse,
     beginDayPhase,
     enterNightPhase,

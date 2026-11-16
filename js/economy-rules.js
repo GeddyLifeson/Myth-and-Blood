@@ -7,6 +7,8 @@
  *    bonus starting TP.
  *  - Starter buildings: income at dawn, walls that hold line-breakers, the medical tent's
  *    stretcher bearers, and the either/or Outpost upgrade (Barracks or Granary).
+ *  - The dawn ledger: every income and standing cost settles in one line at wave clear,
+ *    including wages for soldiers past the free number.
  */
 const EconomyRules = (() => {
   /** Ribbons + Crown Legacies + Crown of Ages together add at most this much starting TP. */
@@ -30,6 +32,15 @@ const EconomyRules = (() => {
     'spy:turncoats': { cost: 5, cooldown: 2 },
   };
 
+  /**
+   * Wages: the first `free` soldiers are fed for nothing; every `headsPerTp` soldiers past
+   * that cost 1 TP at each dawn (rounded up). Builders and couriers are not counted.
+   */
+  const WAGES = { free: 14, headsPerTp: 2 };
+
+  /** A clean wave (no soldier lost, no breach) pays this, +1 for every `waveStep` waves. */
+  const CLEAN_BOUNTY = { base: 2, waveStep: 10 };
+
   /** Buildings: numbers the game and the manual both read. */
   const BUILDINGS = {
     /** A wall stops this many line-breakers per wave within `holdRadius` of it. */
@@ -38,7 +49,7 @@ const EconomyRules = (() => {
     medical_tent: { saveRadius: 220, savesPerWave: 1, saveHp: 0.25 },
     /** Free footman at dawn every `musterEvery` waves, per Barracks (first two count). */
     barracks: { musterEvery: 3, maxCounted: 2 },
-    /** Soldiers fed before the recruit surcharge starts, per Granary (first three count). */
+    /** Soldiers fed before wages start, per Granary (first three count). */
     granary: { freeArmy: 3, maxCounted: 3 },
     /** Science at dawn per standing lab (first two count). */
     research_lab: { dawnScience: 6, maxCounted: 2 },
@@ -225,7 +236,7 @@ const EconomyRules = (() => {
     return n;
   }
 
-  /** Extra soldiers fed before the recruit surcharge (Granaries). */
+  /** Extra soldiers fed before wages start (Granaries). */
   function freeArmyBonus(buildings) {
     const g = BUILDINGS.granary;
     return Math.min(g.maxCounted, countUpgrade(buildings, 'granary')) * g.freeArmy;
@@ -333,6 +344,31 @@ const EconomyRules = (() => {
     }
   }
 
+  // ------------------------------------------------------------ dawn ledger
+  /** TP owed at dawn for soldiers past the free number. */
+  function dawnWages(army, freeBonus = 0) {
+    const over = Math.max(0, (army || 0) - WAGES.free - Math.max(0, freeBonus || 0));
+    return Math.ceil(over / WAGES.headsPerTp);
+  }
+
+  function cleanBounty(wave) {
+    return CLEAN_BOUNTY.base + Math.floor(Math.max(0, wave || 0) / CLEAN_BOUNTY.waveStep);
+  }
+
+  /**
+   * Sum the dawn's entries into one line the player can read.
+   * @param {{label: string, tp: number}[]} entries zero entries are left out
+   * @returns {{lines: {label: string, tp: number}[], total: number, text: string}}
+   */
+  function buildLedger(entries) {
+    const lines = (entries || [])
+      .filter((e) => e && Number.isFinite(e.tp) && Math.round(e.tp) !== 0)
+      .map((e) => ({ label: e.label, tp: Math.round(e.tp) }));
+    const total = lines.reduce((a, e) => a + e.tp, 0);
+    const parts = lines.map((e) => `${e.tp > 0 ? '+' : ''}${e.tp} ${e.label}`);
+    return { lines, total, text: parts.length ? `${parts.join(', ')} = ${total}` : '0' };
+  }
+
   // ------------------------------------------------------------------ save
   function exportState() {
     return { readyWave: { ...readyWave }, uses: { ...uses }, startBonusLeft };
@@ -355,6 +391,8 @@ const EconomyRules = (() => {
     START_TP_BONUS_CAP,
     ACTIONS,
     BUILDINGS,
+    WAGES,
+    CLEAN_BOUNTY,
     OUTPOST_UPGRADES,
     resetRun,
     rule,
@@ -373,6 +411,9 @@ const EconomyRules = (() => {
     freeArmyBonus,
     barracksMuster,
     dawnScience,
+    dawnWages,
+    cleanBounty,
+    buildLedger,
     tryHoldRunner,
     claimStretcher,
     syncActionDefs,

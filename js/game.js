@@ -346,6 +346,8 @@ const Game = (() => {
   GS.structuresRazedThisWave = 0;
   GS.runStructuresRazed = 0;
   GS.campaignVictoryDeclared = false;
+  GS.postVictoryEndless = false;
+  GS.ngPlusTier = 0;
   GS.castleBreachWarned = false;
   GS.castleBreachRecorded = false;
   GS.spawnQueue = [];
@@ -612,6 +614,12 @@ const Game = (() => {
     },
     get cheatsUsed() {
       return !!GS.cheatsUsed;
+    },
+    get ngPlusTier() {
+      return GS.ngPlusTier || 0;
+    },
+    get postVictoryEndless() {
+      return !!GS.postVictoryEndless;
     },
     get modeId() {
       return getRunModeId();
@@ -1260,11 +1268,12 @@ const Game = (() => {
   function getDifficulty() {
     const base = getDifficultyDef(GS.difficultyId);
     const adv = getAdvancedMods();
+    const ng = svc('NewGamePlus')?.enemyMods(GS.ngPlusTier) || {};
     return {
       ...base,
-      enemyHpMult: base.enemyHpMult * adv.enemyHpMult,
-      enemyDmgMult: base.enemyDmgMult * adv.enemyDmgMult,
-      enemyCountMult: base.enemyCountMult * adv.enemyCountMult,
+      enemyHpMult: base.enemyHpMult * adv.enemyHpMult * (ng.enemyHpMult || 1),
+      enemyDmgMult: base.enemyDmgMult * adv.enemyDmgMult * (ng.enemyDmgMult || 1),
+      enemyCountMult: base.enemyCountMult * adv.enemyCountMult * (ng.enemyCountMult || 1),
       spawnIntervalMult: base.spawnIntervalMult * adv.spawnIntervalMult,
       eliteChanceMult: base.eliteChanceMult * adv.eliteChanceMult,
       tpPerRoundBonus: base.tpPerRoundBonus,
@@ -1359,6 +1368,8 @@ const Game = (() => {
     GS.castleBreachRecorded = false;
     GS.runStructuresRazed = 0;
     GS.campaignVictoryDeclared = false;
+    GS.postVictoryEndless = false;
+    GS.ngPlusTier = 0;
     GS.spawnQueue = [];
     GS.spawnDelayBonus = 0;
     GS.pendingReinforce = [];
@@ -1566,9 +1577,28 @@ const Game = (() => {
             sanitizeTactical();
           }
         },
+        spendTp: (n) => {
+          GS.tactical = Math.max(0, GS.tactical - n);
+          sanitizeTactical();
+        },
         spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
         pushUnit: (u) => GS.units.push(u),
         hooks: { showMessage },
+      });
+    }
+    if (svc('NewGamePlus')) {
+      GS.ngPlusTier = svc('NewGamePlus').applyRunStart({
+        creative: GS.creativeMode,
+        jumpIn: academyEraMode,
+        deployY: GS.deployY,
+        rallyY: GS.rallyY,
+        spawnUnit: (type, x, y, team) => {
+          const u = spawnUnit(type, x, y, team);
+          if (u) applyPlayerStatMods(u);
+          return u;
+        },
+        pushUnit: (u) => GS.units.push(u),
+        showMessage,
       });
     }
     if (typeof EternalLegacyTree !== 'undefined' && !GS.creativeMode && !academyEraMode) {
@@ -1699,7 +1729,7 @@ const Game = (() => {
         difficulty: GS.difficultyId,
         wave: GS.wave,
         kills: GS.kills,
-        misses: GS.runPlayerDeaths,
+        breaches: typeof SiegeLoop !== 'undefined' ? SiegeLoop.exportState().breaches : 0,
         playerDeaths: GS.runPlayerDeaths,
         creative: GS.creativeMode,
       });
@@ -1733,6 +1763,8 @@ const Game = (() => {
         honorNames,
         storyBranch,
         storyChoiceCount,
+        ngPlusTier: GS.ngPlusTier || 0,
+        postVictoryEndless: !!GS.postVictoryEndless,
       });
     }
     if (!GS.creativeMode && typeof Analytics !== 'undefined') {
@@ -2245,6 +2277,7 @@ const Game = (() => {
         worldW: GS.worldW,
         rallyY: GS.rallyY,
         units: GS.units,
+        buildings: GS.buildings,
         damageUnit: (u, frac, opts = {}) => {
           if (u.hp <= 0) return;
           takeDamage(u, Math.max(1, u.maxHp * frac), opts);
@@ -2868,6 +2901,7 @@ const Game = (() => {
     applyCheatEffect,
     markCheatsUsed,
     cheatsUsed: () => !!GS.cheatsUsed,
+    getDifficulty,
     getDifficultyPercent,
     beginDayPhase,
     isDayPhase,

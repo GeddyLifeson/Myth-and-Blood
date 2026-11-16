@@ -185,7 +185,7 @@ const UX = (() => {
       maxWave: 80,
       when: (gs) => gs.kingdomRaidsUnlocked || (gs.hamletCount ?? 0) > 0 || gs.hasResearchLab,
       title: 'Settlement Economy',
-      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in - enemy settlement raids (wave 150+) and northern holds target economy sites first.',
+      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in: raiders from a dug-in war camp go for the nearest one.',
       highlight: 'left-panel',
     },
     {
@@ -196,10 +196,11 @@ const UX = (() => {
       highlight: 'tab-ops',
     },
     {
-      minWave: 150,
-      when: (gs) => gs.settlementRaids?.active,
-      title: 'Settlement Raids',
-      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes - keep builders repairing and footmen garrisoned on economy tiles.',
+      minWave: 6,
+      maxWave: 20,
+      when: (gs) => (gs.settlementRaids?.missions?.length ?? 0) > 0,
+      title: 'Strike Raids',
+      body: 'Every standing war camp is listed under <strong>Ops</strong>. Select two or more hunters and dispatch them: they march on the camp, and razing it pays loot on top of the bounty. A dug-in camp pays more.',
       highlight: 'tab-ops',
     },
     {
@@ -208,7 +209,7 @@ const UX = (() => {
       when: (gs) =>
         (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 || !!gs.counterEvolution?.summary,
       title: 'Counter-Offensives',
-      body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair with spy disruption and settlement raids to collapse a realm before evolution outpaces you.',
+      body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair them with spy disruption and strike raids on war camps.',
       highlight: 'right-panel',
     },
   ];
