@@ -1,0 +1,85 @@
+{
+  "bpm": 120,
+  "pieces": [
+    {
+      "name": "boss_death",
+      "startBar": 0,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 0,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "general_down",
+      "startBar": 4,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 8,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "building_collapse",
+      "startBar": 8,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 16,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "thunder",
+      "startBar": 12,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 24,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "promotion",
+      "startBar": 16,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 32,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "era_fanfare",
+      "startBar": 20,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 40,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "doctrine",
+      "startBar": 24,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 48,
+      "seconds": 8,
+      "tailSeconds": 0
+    },
+    {
+      "name": "hero_recruit",
+      "startBar": 28,
+      "bars": 4,
+      "tailBars": 0,
+      "loop": false,
+      "start": 56,
+      "seconds": 8,
+      "tailSeconds": 0
+    }
+  ]
+}
