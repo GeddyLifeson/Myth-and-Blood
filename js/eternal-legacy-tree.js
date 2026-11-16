@@ -1,5 +1,5 @@
 /**
- * Crown of Ages — Eternal Legacy Tech Tree + Echoes of the Past.
+ * Crown of Ages: Eternal Legacy Tech Tree + Echoes of the Past.
  * Persistent branching paths from medieval tactics through galactic eras;
  * early units and heroes ascend rather than becoming obsolete.
  */
@@ -18,7 +18,7 @@ const EternalLegacyTree = (() => {
       id: 'iron_crown',
       label: 'Iron Crown',
       epithet: 'the Iron Crown path',
-      desc: 'Martial ascension — footmen, knights, and siege memory endure.',
+      desc: 'Martial ascension: footmen, knights, and siege memory endure.',
       color: '#c04040',
     },
     silver_diplomat: {
@@ -32,14 +32,14 @@ const EternalLegacyTree = (() => {
       id: 'arcane_scholar',
       label: 'Arcane Scholar',
       epithet: 'the Arcane Resonance path',
-      desc: 'Magic and research compound — nothing fades, only amplifies.',
+      desc: 'Magic and research compound: nothing fades, only amplifies.',
       color: '#8060e0',
     },
     pragmatist: {
       id: 'pragmatist',
       label: 'Pragmatist',
       epithet: 'the Eternal Champion path',
-      desc: 'Crossover heroes and veterans adapt — heroes never retire.',
+      desc: 'Crossover heroes and veterans adapt: heroes never retire.',
       color: '#c0a040',
     },
   };
@@ -62,7 +62,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'First Echo',
       hint: 'Complete any campaign run',
-      desc: '+2 TP — the Crown remembers your first victory.',
+      desc: '+2 TP: the Crown remembers your first victory.',
       cost: 0,
       prereq: [],
       unlock: (leg) => (leg.victories || 0) >= 1,
@@ -86,8 +86,8 @@ const EternalLegacyTree = (() => {
       branch: 'iron_crown',
       tier: 1,
       name: 'Longbow Legacy Seed',
-      hint: 'Crystallize Longbow path — heavy archer & footman play (waves 1–150)',
-      desc: 'Foundational DNA — opens martial echo branches.',
+      hint: 'Crystallize Longbow path: heavy archer & footman play (waves 1–150)',
+      desc: 'Foundational DNA: opens martial echo branches.',
       cost: 1,
       prereq: ['crown_age_mark'],
       foundationPath: 'longbow_legacy',
@@ -100,8 +100,8 @@ const EternalLegacyTree = (() => {
       branch: 'arcane_scholar',
       tier: 1,
       name: 'Arcane Dominion Seed',
-      hint: 'Crystallize Arcane path — academies & research (waves 1–150)',
-      desc: 'Foundational DNA — opens scholarly echo branches.',
+      hint: 'Crystallize Arcane path: academies & research (waves 1–150)',
+      desc: 'Foundational DNA: opens scholarly echo branches.',
       cost: 1,
       prereq: ['crown_age_mark'],
       foundationPath: 'arcane_dominion',
@@ -113,8 +113,8 @@ const EternalLegacyTree = (() => {
       branch: 'pragmatist',
       tier: 1,
       name: 'Mythic Alliance Seed',
-      hint: 'Crystallize Mythic path — evolved heroes (waves 1–150)',
-      desc: 'Foundational DNA — Dunmar Fusewick, Tavish Coalheart, and mythic champions echo forever.',
+      hint: 'Crystallize Mythic path: evolved heroes (waves 1–150)',
+      desc: 'Foundational DNA: Dunmar Fusewick, Tavish Coalheart, and mythic champions echo forever.',
       cost: 1,
       prereq: ['crown_age_mark'],
       foundationPath: 'mythic_alliance',
@@ -127,7 +127,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Volley Tradition',
       hint: '30+ archer kills (lifetime)',
-      desc: 'Archers +4% damage — medieval volleys echo forever.',
+      desc: 'Archers +4% damage: medieval volleys echo forever.',
       cost: 2,
       prereq: ['crown_age_mark'],
       foundationPath: 'longbow_legacy',
@@ -142,7 +142,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Shield Wall Memory',
       hint: 'Reach wave 30+ or invest Longbow Legacy seed',
-      desc: 'Footmen & pikemen +4% HP — the line never breaks.',
+      desc: 'Footmen & pikemen +4% HP: the line never breaks.',
       cost: 2,
       prereq: ['crown_age_mark'],
       foundationPath: 'longbow_legacy',
@@ -157,7 +157,7 @@ const EternalLegacyTree = (() => {
       tier: 2,
       name: 'Siege Memory',
       hint: '400+ lifetime kills',
-      desc: 'Player damage +3% — siege craft carried forward.',
+      desc: 'Player damage +3%: siege craft carried forward.',
       cost: 3,
       prereq: ['iron_shield_wall'],
       unlock: (leg) => (leg.totalKills || 0) >= 400,
@@ -207,7 +207,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Arrow Ward',
       hint: 'Clear 15+ waves (lifetime)',
-      desc: 'Archers +5% HP — silver wards protect the line.',
+      desc: 'Archers +5% HP: silver wards protect the line.',
       cost: 2,
       prereq: ['crown_age_mark'],
       unlock: (leg) => (leg.totalWavesCleared || 0) >= 15,
@@ -245,7 +245,7 @@ const EternalLegacyTree = (() => {
       tier: 3,
       name: 'Bastion Age',
       hint: 'Reach wave 100+',
-      desc: 'Buildings +5% HP — settlements endure epochs.',
+      desc: 'Buildings +5% HP: settlements endure epochs.',
       cost: 4,
       prereq: ['silver_rampart_echo'],
       unlock: (leg) => (leg.maxWaveEver || 0) >= 100,
@@ -257,7 +257,7 @@ const EternalLegacyTree = (() => {
       tier: 3,
       name: 'Diplomat Pact',
       hint: 'Win 2+ campaign victories',
-      desc: '+2 morale at run start — silver composure.',
+      desc: '+2 morale at run start: silver composure.',
       cost: 3,
       prereq: ['silver_healer_chorus'],
       unlock: (leg) => (leg.victories || 0) >= 2,
@@ -281,7 +281,7 @@ const EternalLegacyTree = (() => {
       tier: 1,
       name: 'Arcane Spark',
       hint: 'Deploy mages 15+ times',
-      desc: 'Mages +5% damage — first sparks never fade.',
+      desc: 'Mages +5% damage: first sparks never fade.',
       cost: 2,
       prereq: ['crown_age_mark'],
       foundationPath: 'arcane_dominion',
@@ -388,7 +388,7 @@ const EternalLegacyTree = (() => {
       tier: 3,
       name: 'Favorite Eternal',
       hint: '50+ kills with favorite unit type',
-      desc: 'Favorite troop +7% damage — never obsolete.',
+      desc: 'Favorite troop +7% damage: never obsolete.',
       cost: 4,
       prereq: ['prag_veteran_echo'],
       unlock: (leg) => {
@@ -494,7 +494,7 @@ const EternalLegacyTree = (() => {
 
   /** One Muster perk per branch: what slotting it switches on. */
   function getBranchPerks() {
-    ensureLoaded();
+    load();
     return Object.values(BRANCHES).map((b) => ({
       id: b.id,
       label: b.label,
@@ -855,7 +855,7 @@ const EternalLegacyTree = (() => {
       summary: data.investedIds.length
         ? `${data.investedIds.length} echoes invested · ${available} shards free`
         : foundationPaths.length
-          ? `${foundationPaths.length} path(s) crystallized — invest seeds on the tree`
+          ? `${foundationPaths.length} path(s) crystallized: invest seeds on the tree`
           : 'Invest Echo Shards to ascend medieval paths through galactic eras',
     };
   }
@@ -880,12 +880,12 @@ const EternalLegacyTree = (() => {
       snap.nodes
         .filter((n) => n.invested)
         .map((n) => `${n.name} (${n.branchLabel})`)
-        .join(' · ') || 'None invested — earn Echo Shards from lifetime milestones.';
+        .join(' · ') || 'None invested: earn Echo Shards from lifetime milestones.';
     return [
       {
         cat: 'legacy',
-        name: 'Crown of Ages — Echoes of the Past',
-        body: `A branching eternal tech tree. Medieval archers, evolved heroes, and early tactics ascend through empire and galactic eras — nothing becomes obsolete. Invested: ${snap.investedCount}/${snap.totalCount}. Echo Shards: ${snap.available} free of ${snap.shards}. Active echoes: ${invested}`,
+        name: 'Crown of Ages: Echoes of the Past',
+        body: `A branching eternal tech tree. Medieval archers, evolved heroes, and early tactics ascend through empire and galactic eras: nothing becomes obsolete. Invested: ${snap.investedCount}/${snap.totalCount}. Echo Shards: ${snap.available} free of ${snap.shards}. Active echoes: ${invested}`,
       },
     ];
   }
@@ -918,7 +918,7 @@ const EternalLegacyTree = (() => {
       return `${avail} Echo Shards to spend at the Muster`;
     }
     if (wave >= 100 && data.investedIds.some((id) => TREE_NODES[id]?.ascends?.length)) {
-      return 'Echoes of the Past — early units ascend at empire scale';
+      return 'Echoes of the Past: early units ascend at empire scale';
     }
     return '';
   }

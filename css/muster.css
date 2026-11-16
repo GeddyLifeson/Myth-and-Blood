@@ -164,8 +164,9 @@ body.ui-v2 .muster-panel {
   margin-top: 10px;
 }
 @media (max-width: 820px) {
+  /* One scrolling column: grid rows squeezed into the panel height overlapped. */
   .muster-columns {
-    grid-template-columns: 1fr;
+    display: block;
     overflow-y: auto;
   }
   .muster-col {

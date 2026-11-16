@@ -207,7 +207,7 @@ const AdvancedDifficulty = (() => {
     {
       id: 'economy_crunch',
       label: 'Economy Crunch',
-      desc: 'Tight TP and morale — plan every purchase.',
+      desc: 'Tight TP and morale: plan every purchase.',
       mods: ['tp_drought', 'morale_crisis', 'miss_tight'],
     },
     {
@@ -231,7 +231,7 @@ const AdvancedDifficulty = (() => {
     {
       id: 'blitz',
       label: 'Blitz Pace',
-      desc: 'Fast spawns, fewer elites, TP bonus — race the waves.',
+      desc: 'Fast spawns, fewer elites, TP bonus: race the waves.',
       mods: ['spawn_faster', 'elite_less', 'tp_bonus', 'night_terror'],
     },
     {
@@ -243,13 +243,13 @@ const AdvancedDifficulty = (() => {
     {
       id: 'sky_raid',
       label: 'Sky Raid',
-      desc: 'Flyers and warg riders — bring anti-air.',
+      desc: 'Flyers and warg riders: bring anti-air.',
       mods: ['flyer_swarm', 'cavalry_raiders', 'enemy_count_up'],
     },
     {
       id: 'fog_siege',
       label: 'Fog Siege',
-      desc: 'Limited vision — scouts and watchtowers under siege pressure.',
+      desc: 'Limited vision: scouts and watchtowers under siege pressure.',
       mods: ['fog_of_war', 'siege_heavy', 'spawn_faster'],
     },
     {

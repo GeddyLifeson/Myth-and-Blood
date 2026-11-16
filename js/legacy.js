@@ -215,7 +215,7 @@ const Legacy = (() => {
       {
         cat: 'legacy',
         name: 'Peak Survival',
-        body: `Highest wave reached: ${leg.maxWaveEver || '—'}. By difficulty — ${diffLines}`,
+        body: `Highest wave reached: ${leg.maxWaveEver || 'none'}. By difficulty: ${diffLines}`,
         classified:
           leg.maxWaveEver >= 200
             ? "The Crown's war council notes your name among commanders who survived the Enemy RTS era. Settlement raids and mirrored economies did not end you."
@@ -226,8 +226,8 @@ const Legacy = (() => {
         cat: 'legacy',
         name: 'Favorite Unit',
         body: leg.favoriteUnitName
-          ? `${leg.favoriteUnitName} leads your legacy — ${leg.unitKills[leg.favoriteUnitType] || 0} kills credited, ${leg.unitDeploys[leg.favoriteUnitType] || 0} deployments.`
-          : 'Deploy troops and earn kills — your favorite will be tracked automatically.',
+          ? `${leg.favoriteUnitName} leads your legacy: ${leg.unitKills[leg.favoriteUnitType] || 0} kills credited, ${leg.unitDeploys[leg.favoriteUnitType] || 0} deployments.`
+          : 'Deploy troops and earn kills; your favorite will be tracked automatically.',
       },
       {
         cat: 'legacy',
@@ -235,7 +235,7 @@ const Legacy = (() => {
         body: `${leg.honorCount} soldiers named by the Crown. Recent: ${recentHonors}`,
         classified:
           leg.honorCount >= 3
-            ? "Veteran scribes whisper that honor names are not random — each is hashed from the soldier's service ID, drawn from ancient prefix pools (Syr, Dame, Magister…) and a royal name ledger."
+            ? "Veteran scribes whisper that honor names are not random. Each is hashed from the soldier's service ID, drawn from ancient prefix pools (Syr, Dame, Magister…) and a royal name ledger."
             : "Earn three honor names to unlock the Crown's naming cipher.",
         classifiedRule: 'honor:3',
       },

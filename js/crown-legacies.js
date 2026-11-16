@@ -694,9 +694,12 @@ const CrownLegacies = (() => {
     const host = document.getElementById('muster-perks');
     if (!host) return;
     const snap = getMenuSnapshot();
-    const groups = ['ribbon', 'legacy', 'echo']
+    const groups = ['legacy', 'echo', 'ribbon']
       .map((g) => {
-        const list = snap.perks.filter((p) => p.group === g);
+        // Unlocked perks first; locked ones keep their order below with the reason shown.
+        const list = snap.perks
+          .filter((p) => p.group === g)
+          .sort((a, b) => Number(b.unlocked) - Number(a.unlocked));
         if (!list.length) return '';
         const open = list.filter((p) => p.unlocked).length;
         return (
