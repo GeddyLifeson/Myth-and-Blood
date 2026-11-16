@@ -36,7 +36,7 @@ const GameCampaign = (() => {
   const {
     countLiveEnemyEconomyBuildings,
     countLiveNorthernHolds,
-    isAttackableEnemyStructure,
+    isTargetableEnemyStructure,
     noteEnemyEconomyPresence,
     onBuildingComplete,
   } = GameBuildings;
@@ -389,7 +389,7 @@ const GameCampaign = (() => {
       if (svc('SettlementRaids') && svc('SettlementRaids').isActive(p.wave)) {
         p.raidSnap =
           svc('SettlementRaids').refreshMissions(GS.buildings, p.wave, {
-            isAttackable: isAttackableEnemyStructure,
+            isAttackable: isTargetableEnemyStructure,
           }) || [];
       }
       if (svc('FactionReputation')) {
