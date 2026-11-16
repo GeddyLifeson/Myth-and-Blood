@@ -752,7 +752,7 @@ const GameCampaign = (() => {
       unitCounts.livePlayerByType[unitType] = (unitCounts.livePlayerByType[unitType] || 0) + 1;
       unitCounts.player++;
       // Keep the upkeep count in step at once, so the next recruit in the same tick is priced right.
-      if (type !== 'builder' && type !== 'courier' && unitCounts.upkeepArmy != null)
+      if (unitType !== 'builder' && unitType !== 'courier' && unitCounts.upkeepArmy != null)
         unitCounts.upkeepArmy++;
     }
     if (trained > 0) {
