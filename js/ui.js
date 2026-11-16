@@ -2768,9 +2768,12 @@ const UI = (() => {
         (gs.territoryTier ?? 0) > 0
           ? ` · Land ${['', 'I', 'II', 'III', 'IV', 'V', 'VI'][gs.territoryTier] || gs.territoryTier}`
           : '';
+      const run =
+        (gs.ngPlusTier ? ` · NG+${gs.ngPlusTier}` : '') +
+        (gs.postVictoryEndless ? ' · Endless' : '');
       waveText.textContent = gs.infiniteWaves
-        ? `${gs.wave}${land}`
-        : `${gs.wave} / ${gs.totalWaves}${land}`;
+        ? `${gs.wave}${land}${run}`
+        : `${gs.wave} / ${gs.totalWaves}${land}${run}`;
     }
     updateHudMeters(gs);
     if (armyText) armyText.textContent = String(gs.army ?? 0);

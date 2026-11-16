@@ -128,7 +128,6 @@ GameServicesSystem.SERVICE_IDS = [
   'DynamicMapEvents',
   'Legacy',
   'Chronicles',
-  'NewGamePlus',
   'StoryLore',
   'AsymmetricWarfare',
   'SettlementRaids',
