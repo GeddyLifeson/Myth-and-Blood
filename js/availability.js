@@ -236,6 +236,9 @@ const Availability = (() => {
       const n = def.requiresBuilders;
       return blocked(`needs ${n} living Builder${n === 1 ? '' : 's'}`, false, { cost });
     }
+    const retired =
+      typeof GameBuildings !== 'undefined' ? GameBuildings.retiredBuildReason(type) : null;
+    if (retired) return blocked(retired, true, { cost });
     if (def.upgradeOf && typeof GameBuildings !== 'undefined' && !gs.creativeMode) {
       if (!GameBuildings.upgradeHosts(def).length) {
         const host = BuildDefs[def.upgradeOf]?.name || 'building';

@@ -166,6 +166,12 @@ function upgrade(api, host, type) {
   ok(Perks.isRetiredStation('perk_stamin_up'), 'the rest are retired');
   GS.tactical = 100;
   ok(!GameBuildings.finalizeBuild('perk_stamin_up', 500, 500), 'a retired station is refused');
+  GS.units.push(api.createUnit('builder', 400, 600, 'player'));
+  GS.units.push(api.createUnit('builder', 420, 600, 'player'));
+  const n = GS.buildings.length;
+  ok(!GameBuildings.finalizeBuild('hamlet', 400, 650), 'a Hamlet is no longer built by hand');
+  ok(GS.buildings.length === n && GS.tactical === 100, 'and costs nothing');
+  ok(/plots/.test(GameBuildings.retiredBuildReason('metropolis')), 'the reason names the plots');
   for (const t of Perks.PerkBuildTypes) {
     const id = t.replace('perk_', '');
     ok(/but /.test(Perks.PerkDefs[id].desc), `${id} says what it costs`);

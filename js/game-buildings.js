@@ -208,6 +208,25 @@ const GameBuildings = (() => {
     return Math.floor(base * (diff.tpMult || 1)) + cmdBonus;
   }
 
+  // Claimed plots rank up from Hamlet to Metropolis on their own (js/ground.js); the ids stay
+  // so old saves keep their settlements.
+  const PLOT_GROWN = new Set([
+    'hamlet',
+    'village',
+    'town',
+    'city',
+    'metropolis',
+    'merchant_guild',
+    'fortress_upgrade',
+  ]);
+
+  /** Why a building can no longer be placed, or null. */
+  function retiredBuildReason(type) {
+    if (PLOT_GROWN.has(type)) return 'claimed plots grow into settlements on their own';
+    if (svc('Perks')?.isRetiredStation?.(type)) return 'this tonic is no longer brewed';
+    return null;
+  }
+
   const INCOME_SITE_CAP = 6;
 
   function incomeSiteTp(b) {
@@ -780,8 +799,9 @@ const GameBuildings = (() => {
         if (chk.warn) showMessage(chk.warn, 280);
       }
     }
-    if (svc('Perks')?.isRetiredStation?.(type)) {
-      showMessage('That tonic station is no longer brewed.');
+    const retired = retiredBuildReason(type);
+    if (retired) {
+      showMessage(`${def.name}: ${retired}.`);
       return false;
     }
     if (
@@ -1440,6 +1460,7 @@ const GameBuildings = (() => {
     resolveFortressUpgradeSite,
     resolveOutpostUpgradeSite,
     upgradeHosts,
+    retiredBuildReason,
     upgradeSiteError,
     shouldPrioritizeEnemyStructure,
     spawnHamletFortressWalls,
