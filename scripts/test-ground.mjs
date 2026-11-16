@@ -50,6 +50,7 @@ function stub(units, wave = 5) {
     worldW: 400,
     worldH: 600,
     units,
+    isNight: true,
     said,
     showMessage: (t) => said.push(t),
   };
@@ -81,6 +82,11 @@ const man = (x, y, team = 'player', type = 'footman') => ({ x, y, team, type, hp
   const two = stub([man(50, 300), man(60, 300)]);
   tickGround(G, two, G.CLAIM_TICKS + 50);
   ok(!G.isHeld('left_mid'), 'two soldiers do not claim a plot');
+
+  const day = stub([man(50, 300), man(60, 300), man(70, 300)]);
+  day.isNight = false;
+  tickGround(G, day, G.CLAIM_TICKS + 50);
+  ok(!G.isHeld('left_mid') && plot(G, 'left_mid').meter === 0, 'nor do three by day');
 
   const three = stub([man(50, 300), man(60, 300), man(70, 300), man(80, 310, 'player', 'builder')]);
   tickGround(G, three, G.CLAIM_TICKS / 2);

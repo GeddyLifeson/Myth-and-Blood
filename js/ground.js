@@ -4,8 +4,9 @@
  * The field is three sectors wide (the host's entry sectors) and three bands deep. The bottom
  * band is home ground and is always held. The six plots above it are taken and lost:
  *
- *   - A plot next to held ground is claimed by standing three soldiers in it, with no enemy
- *     in it, until the banner is up. Burning a war camp claims the plot it stood in at once.
+ *   - A plot next to held ground is claimed at night by standing three soldiers in it until
+ *     the banner is up. By day an army chasing the host would take the whole field without
+ *     meaning to. Burning a war camp claims the plot it stood in at once, day or night.
  *   - A held plot is lost when enemies stand in it with no soldier of yours there. That is the
  *     price of ground: every plot needs men in it whenever the host comes through.
  *   - Buildings go on held ground only.
@@ -168,7 +169,7 @@ const Ground = (() => {
         } else if (s.meter < 1) {
           s.meter = Math.min(1, s.meter + CHECK_EVERY / CLAIM_TICKS);
         }
-      } else if (m >= CLAIM_SOLDIERS && f === 0 && touchesHeld(p)) {
+      } else if (ctx.isNight && m >= CLAIM_SOLDIERS && f === 0 && touchesHeld(p)) {
         s.meter += CHECK_EVERY / CLAIM_TICKS;
         if (s.meter >= 1) claim(p, ctx);
       } else if (s.meter > 0) {
@@ -205,7 +206,7 @@ const Ground = (() => {
     const p = plotAt(x, y, worldW, worldH);
     if (!p || isHeld(p.id)) return { ok: true };
     const way = touchesHeld(p)
-      ? `stand ${CLAIM_SOLDIERS} soldiers in it until the banner is up`
+      ? `stand ${CLAIM_SOLDIERS} soldiers in it at night until the banner is up`
       : 'take the ground next to it first, or burn a war camp in it';
     return { ok: false, reason: `${p.name} is not yours yet: ${way}.` };
   }

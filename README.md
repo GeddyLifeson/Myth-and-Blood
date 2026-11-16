@@ -42,7 +42,7 @@ Press `?` at any time for the keys that work on the screen in front of you.
 - **Every 5th wave** is a horde: more enemies, arriving faster. After it you choose one of three **spoils**.
 - **Every 10th wave** a named warlord leads the host in place of the horde.
 - **War camps.** The enemy raises camps along the top edge. A camp left standing makes the next wave stronger.
-- **Ground.** The bottom of the field is yours. The six plots above it are taken by standing three soldiers in one, or by burning a war camp in it. You can build only on ground you hold. Each plot grows from Hamlet to Metropolis while it stands and pays TP every night. Enemies standing in a plot with no soldier of yours there take it back.
+- **Ground.** The bottom of the field is yours. The six plots above it are taken at night by standing three soldiers in one, or at any time by burning a war camp in it. You can build only on ground you hold. Each plot grows from Hamlet to Metropolis while it stands and pays TP every night. Enemies standing in a plot with no soldier of yours there take it back.
 - **The end.** The run ends when too many enemies have crossed your line (the breach limit), or when you have no soldiers left and nothing that can train one. There is no last wave. Clearing wave 100 is recorded once as the campaign victory (it unlocks the victory achievements and legacy credit) and the siege goes on. Waves 10, 25, 50 and 100 also carry ribbons. The run is scored when it ends.
 
 On your first runs the game introduces one system per early wave with a line at the bottom of the screen. It stops for good once you have reached wave 10, and **Skip the introduction** in the pause menu turns it off at once.
