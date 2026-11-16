@@ -2606,6 +2606,9 @@ body.ui-v2 #begin-day-btn .bd-time::before {
   content: 'night ends in ';
   font-weight: 400;
 }
+body.ui-v2 #begin-day-btn:disabled .bd-time::before {
+  content: 'horn ready in ';
+}
 body.ui-v2 #begin-day-btn .bd-key {
   grid-column: 2;
   grid-row: 1 / span 2;

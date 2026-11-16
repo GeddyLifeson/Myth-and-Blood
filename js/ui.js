@@ -1053,7 +1053,7 @@ const UI = (() => {
 
     document.getElementById('begin-day-btn')?.addEventListener('click', () => {
       AudioEngine.SFX.click();
-      Game.beginDayPhase(true);
+      Game.soundHorn();
       UI.updateHUD(true);
     });
 
@@ -2806,12 +2806,28 @@ const UI = (() => {
           beginDayBtn._keyEl = beginDayBtn.querySelector('.bd-key');
           beginDayBtn._barEl = beginDayBtn.querySelector('.night-prep-bar');
         }
-        if (beginDayBtn._timeEl.textContent !== t) beginDayBtn._timeEl.textContent = t;
+        const lock = gs.hornLockSeconds || 0;
+        const shown = lock > 0 ? `${lock}s` : t;
+        if (beginDayBtn._timeEl.textContent !== shown) beginDayBtn._timeEl.textContent = shown;
         const key = shortKey(
           typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', 'beginDay') : 'd'
         );
         if (beginDayBtn._keyEl.textContent !== key) beginDayBtn._keyEl.textContent = key;
-        beginDayBtn.setAttribute('aria-label', `Begin the day now. The night ends in ${t}`);
+        beginDayBtn.disabled = lock > 0;
+        // Keep the hotkey title (set in main.js) to put back once the horn is ready.
+        if (lock > 0) {
+          beginDayBtn._baseTitle ??= beginDayBtn.title;
+          beginDayBtn.title = `The host is still gathering. Horn ready in ${lock}s.`;
+        } else if (beginDayBtn._baseTitle != null) {
+          beginDayBtn.title = beginDayBtn._baseTitle;
+          beginDayBtn._baseTitle = null;
+        }
+        beginDayBtn.setAttribute(
+          'aria-label',
+          lock > 0
+            ? `Begin Day is ready in ${lock} seconds. The night ends in ${t}`
+            : `Begin the day now. The night ends in ${t}`
+        );
         beginDayBtn.classList.toggle('begin-day-urgent', sec <= 15);
         beginDayBtn.classList.toggle('begin-day-ready', sec > 15);
         const maxSec = Math.max(

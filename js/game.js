@@ -2847,6 +2847,7 @@ const Game = (() => {
     cheatsUsed: () => !!GS.cheatsUsed,
     getDifficultyPercent,
     beginDayPhase,
+    soundHorn: GameDayNight.soundHorn,
     isDayPhase,
     isNightPhase,
     isCreativeMode,
