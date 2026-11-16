@@ -57,6 +57,12 @@ function build(type) {
       Game.selectBuild(type);
       Game.handleClick(x, y);
       Game.clearPlacementMode();
+      // A spot out of the builder's reach is taken as a march order; drop it, or two of
+      // them fill his project slots and the spot beside him is refused.
+      for (const u of mine()) {
+        if (u.building?.pending) u.building = null;
+        if (u.buildQueue) u.buildQueue = u.buildQueue.filter((b) => !b.pending);
+      }
       if (GS.buildings.length > n) {
         const b = GS.buildings[GS.buildings.length - 1];
         // Waiting out the build time teaches nothing here.

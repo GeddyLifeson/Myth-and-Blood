@@ -29,9 +29,23 @@ const GameRender = (() => {
   const { isBuildSiteBlocked } = GameBuildings;
   const { getWaveAttackSides } = GameWaves;
   const { getDayLightLevel, getNightSecondsRemaining, isDayPhase, isNightPhase } = GameDayNight;
-  let cachedSnap, directShowMessage, getState, isEnemyHiddenByFog, siegeCtx, warCampCtx;
+  let cachedSnap,
+    directShowMessage,
+    getState,
+    getUnitById,
+    isEnemyHiddenByFog,
+    siegeCtx,
+    warCampCtx;
   function bind(api) {
-    ({ cachedSnap, directShowMessage, getState, isEnemyHiddenByFog, siegeCtx, warCampCtx } = api);
+    ({
+      cachedSnap,
+      directShowMessage,
+      getState,
+      getUnitById,
+      isEnemyHiddenByFog,
+      siegeCtx,
+      warCampCtx,
+    } = api);
   }
 
   /** Visual/presentation tick — runs every frame, separate from simulation logic. */
@@ -318,6 +332,18 @@ const GameRender = (() => {
 
       for (const m of GS.moveMarkers) {
         if (isInView(m.x, m.y, 12)) svc('SpriteGen').drawMoveMarker(GS.ctx, m.x, m.y);
+      }
+
+      // Attack orders: a red ring closing on the enemy or the camp that was clicked.
+      for (const m of GS.attackMarks) {
+        const at = m.unitId ? getUnitById(m.unitId) : m;
+        if (!at || (m.unitId && at.hp <= 0) || !isInView(at.x, at.y, 40)) continue;
+        const t = m.life / 90;
+        GS.ctx.strokeStyle = `rgba(255,72,40,${0.35 + 0.6 * t})`;
+        GS.ctx.lineWidth = 2.5;
+        GS.ctx.beginPath();
+        GS.ctx.arc(at.x, at.y, (m.r || 13) + 14 * t, 0, Math.PI * 2);
+        GS.ctx.stroke();
       }
 
       drawPostMarkers();

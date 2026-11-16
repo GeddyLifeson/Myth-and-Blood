@@ -610,6 +610,10 @@
               </div>
               <div class="pane-section" data-section="halls">
                 <div class="panel-header">HALLS</div>
+                <button class="build-btn" data-build="hall_of_veterans">
+                  <span>Hall of Veterans</span><span class="cost">60</span>
+                </button>
+                <div id="hall-roll"></div>
                 <button
                   id="champions-hall-open"
                   class="meta-btn secret-panel-btn"
@@ -789,11 +793,12 @@
                 </p>
               </div>
               <div id="raid-section" class="raid-section" style="display: none">
-                <div class="panel-header">SETTLEMENT RAIDS</div>
+                <div class="panel-header">STRIKE RAIDS</div>
                 <p id="raid-summary-text" class="raid-summary-text">Unlocks wave 150</p>
                 <div id="raid-mission-list" class="raid-mission-list"></div>
                 <p class="panel-hint">
-                  Select 2+ hunters, then dispatch. Big TP + science on raze.
+                  Select 2+ hunters, then dispatch them at a war camp. Razing it pays loot on top of
+                  the bounty.
                 </p>
               </div>
               <div
@@ -1610,8 +1615,8 @@
         </div>
         <div id="hint-bar">
           <span class="hint-text"
-            >Drag to pan · Shift+drag select · Right-click deselect · Night = prep (+35% build) · D
-            skip dawn · Tab next soldier · Space pause · ? keys</span
+            >Drag to pan · Shift+drag select · Click an enemy to attack · Right-click deselect ·
+            Night = prep (+35% build) · D skip dawn · Tab next soldier · Space pause · ? keys</span
           ><button
             id="hint-log-btn"
             class="hint-log-btn"
@@ -2653,6 +2658,7 @@
     <script src="js/narrative-thread.js"></script>
     <script src="js/tech-tree-branches.js"></script>
     <script src="js/chronicles.js"></script>
+    <script src="js/new-game-plus.js"></script>
     <script src="js/story-lore.js"></script>
     <script src="js/lore-data.js"></script>
     <script src="js/encyclopedia.js"></script>
@@ -2708,6 +2714,7 @@
     <script src="js/game-combat.js"></script>
     <script src="js/game-targeting.js"></script>
     <script src="js/game-movement.js"></script>
+    <script src="js/veterans.js"></script>
     <script src="js/game-army.js"></script>
     <script src="js/game-buildings.js"></script>
     <script src="js/game-garrison.js"></script>

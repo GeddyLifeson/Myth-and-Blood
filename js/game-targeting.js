@@ -293,6 +293,8 @@ const GameTargeting = (() => {
       score += engagers.filter((u) => u.type === unit.type).length * 90;
       score += engagers.length * 18;
       if (foe.id === unit.combatTargetId && isPursuableFoe(unit, foe)) score -= 28;
+      // An attack order outweighs everything else he can see.
+      if (foe.id === unit.attackOrderId) score -= 2000;
       if (svc('StrategyCounterplay')) {
         score += svc('StrategyCounterplay').getTargetScoreBias(unit, foe);
       }

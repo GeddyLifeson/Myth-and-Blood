@@ -84,6 +84,12 @@ const GameSave = (() => {
       vetTier: u.vetTier,
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
+      traits: u.traits ? [...u.traits] : [],
+      forgot: u.forgot ? [...u.forgot] : [],
+      deeds: u.deeds ? JSON.parse(JSON.stringify(u.deeds)) : null,
+      hallId: u.hallId || null,
+      timesRaised: u.timesRaised || 0,
+      vetStatTierApplied: u.vetStatTierApplied || 0,
       experience: u.experience,
       morale: u.morale,
       maxMorale: u.maxMorale,
@@ -261,6 +267,7 @@ const GameSave = (() => {
     'colonyThreatMods',
     'generalThreatCd',
     'generalThreatCount',
+    'hallRaisedWave',
     'hazards',
     'huntQuietTicks',
     'huntSweep',
@@ -379,6 +386,7 @@ const GameSave = (() => {
       waveModifiers: { ...GS.waveModifiers },
       pendingWaveMods: { ...GS.pendingWaveMods },
       fallenPool: GS.fallenPool.map((f) => ({ ...f })),
+      hallOfVeterans: Veterans.exportHall(),
       // Mid-combat projectiles (arrows/bolts still in flight).
       projectiles: GS.projectiles.map((p) => captureSaveFields(p, {}, null)),
       units: collectAliveUnitSnaps(),
@@ -442,6 +450,8 @@ const GameSave = (() => {
       rng: svc('GameModes')?.getRngState?.() ?? null,
       sessionHighlights: GS.sessionHighlights.map((h) => ({ ...h })),
       campaignVictoryDeclared: !!GS.campaignVictoryDeclared,
+      postVictoryEndless: !!GS.postVictoryEndless,
+      ngPlusTier: GS.ngPlusTier || 0,
       // Mode rules + advanced difficulty — required so load/quickload keeps fog/horde/challenge.
       advancedMods: svc('AdvancedDifficulty') ? svc('AdvancedDifficulty').getActiveIds() : [],
       modeSession: svc('GameModes') ? svc('GameModes').getSession() : null,
@@ -569,6 +579,11 @@ const GameSave = (() => {
       }
       if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
     }
+    // Saves from before deeds existed: a veteran keeps its rank and starts its record now.
+    if (us.deeds === undefined) {
+      u.deeds = null;
+      Veterans.migrate(u);
+    }
     // Paths are never saved; the unit asks for a new one on its next step.
     u.path = [];
     u.pathIndex = 0;
@@ -622,18 +637,25 @@ const GameSave = (() => {
     if (snap.waveModifiers) GS.waveModifiers = { ...snap.waveModifiers };
     if (snap.pendingWaveMods) GS.pendingWaveMods = { ...snap.pendingWaveMods };
     GS.fallenPool = Array.isArray(snap.fallenPool) ? snap.fallenPool.map((f) => ({ ...f })) : [];
+    Veterans.setHall(snap.hallOfVeterans);
     GS.sessionHighlights = Array.isArray(snap.sessionHighlights)
       ? snap.sessionHighlights.map((h) => ({ ...h }))
       : [];
     // Older saves past wave 100 predate the flag; treat them as already won.
     GS.campaignVictoryDeclared =
       snap.campaignVictoryDeclared ?? (snap.wave || 0) > CAMPAIGN_VICTORY_WAVE;
+    // Saves from before the victory choice kept playing past 100, which is an endless run.
+    GS.postVictoryEndless =
+      snap.postVictoryEndless ??
+      (!!GS.campaignVictoryDeclared && (snap.wave || 0) > CAMPAIGN_VICTORY_WAVE);
+    GS.ngPlusTier = Math.max(0, Math.floor(Number(snap.ngPlusTier) || 0));
     // Short-lived state that is not saved starts clean.
     GS.moraleCascadeState = { recentBreaks: [], cascade: false, tick: 0 };
     GS.huntSweep = false;
     GS.huntQuietTicks = 0;
     GS.huntFront = Infinity;
     GS.moveMarkers = [];
+    GS.attackMarks = [];
     GS.selectedUnitId = null;
     GS.selectedUnitIds = [];
     GS.bossTrackId = null;

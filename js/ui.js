@@ -792,6 +792,8 @@ const UI = (() => {
       }
       if (m.ironman) parts.push('Ironman');
     }
+    const ng = typeof NewGamePlus !== 'undefined' ? NewGamePlus.getPending() : null;
+    if (ng) parts.push(`New Game+ ${ng.tier}`);
     const text = parts.filter(Boolean).join(' · ');
     if (el.textContent !== text) el.textContent = text;
   }
@@ -1389,14 +1391,14 @@ const UI = (() => {
     const list = document.getElementById('raid-mission-list');
     const raids = gs.settlementRaids;
     if (!section || !summary || !list) return;
-    const show = !!(raids?.active || (gs.wave || 0) >= 140);
+    const show = !!raids?.active;
     section.style.display = show ? '' : 'none';
     if (!show) return;
-    summary.textContent = raids?.summary || `Unlocks wave ${raids?.waveMin || 150}`;
+    summary.textContent = raids?.summary || '';
     const missions = raids?.missions || [];
     if (!missions.length) {
       list.innerHTML =
-        '<p class="panel-hint">No enemy holds spotted - factions build in the north after wave 150.</p>';
+        '<p class="panel-hint">No war camp stands. When the enemy raises one, it is listed here: select hunters and dispatch them to raze it for loot.</p>';
       return;
     }
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);
@@ -1702,13 +1704,13 @@ const UI = (() => {
         setLabel(btn, avail.ok ? `${def.name}, ${avail.cost} TP` : `${def.name}, ${avail.reason}`);
       }
     });
-    // The "Recruit cost +N%" chip reads the same price function as the buttons.
+    // The wages chip: what the next dawn takes for soldiers past the free number.
     const upkeepChip = document.getElementById('siege-upkeep');
     if (upkeepChip) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = `Recruit cost +${pct}%`;
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = `Wages -${wages} TP at dawn`;
       if (upkeepChip.textContent !== text) upkeepChip.textContent = text;
-      upkeepChip.hidden = pct <= 0;
+      upkeepChip.hidden = wages <= 0;
     }
     // A full bar: enough for the dearest troop or strike on offer.
     tpBarMax = Availability.tpBarMax(prices);
@@ -2766,9 +2768,12 @@ const UI = (() => {
         (gs.territoryTier ?? 0) > 0
           ? ` · Land ${['', 'I', 'II', 'III', 'IV', 'V', 'VI'][gs.territoryTier] || gs.territoryTier}`
           : '';
+      const run =
+        (gs.ngPlusTier ? ` · NG+${gs.ngPlusTier}` : '') +
+        (gs.postVictoryEndless ? ' · Endless' : '');
       waveText.textContent = gs.infiniteWaves
-        ? `${gs.wave}${land}`
-        : `${gs.wave} / ${gs.totalWaves}${land}`;
+        ? `${gs.wave}${land}${run}`
+        : `${gs.wave} / ${gs.totalWaves}${land}${run}`;
     }
     updateHudMeters(gs);
     if (armyText) armyText.textContent = String(gs.army ?? 0);
@@ -2825,14 +2830,13 @@ const UI = (() => {
       }
     }
 
-    // Army upkeep and breaches: the two numbers that decide what a recruit costs and
-    // whether the realm falls.
+    // Army wages and breaches: what the army costs each dawn and whether the realm falls.
     const upkeepEl = hudEls['upkeep-text'];
     if (upkeepEl) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = pct > 0 ? `recruits +${pct}%` : 'no upkeep';
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = wages > 0 ? `wages -${wages}` : 'no wages';
       if (upkeepEl.textContent !== text) upkeepEl.textContent = text;
-      upkeepEl.classList.toggle('raised', pct > 0);
+      upkeepEl.classList.toggle('raised', wages > 0);
     }
     const breachHud = hudEls['breach-hud'];
     if (breachHud) {
