@@ -430,11 +430,12 @@ const GameMovement = (() => {
             ny = dy / dist;
           const ca = clampPos(a.x - nx * push, a.y - ny * push);
           const cb = clampPos(b.x + nx * push, b.y + ny * push);
-          if (!aHold && !isBlocked(ca.x, ca.y, a, 0)) {
+          // Terrain only: stacked allies always "block" the push, which froze the stack for good.
+          if (!aHold && !isTerrainBlocked(ca.x, ca.y, a)) {
             a.x = ca.x;
             a.y = ca.y;
           }
-          if (!bHold && !isBlocked(cb.x, cb.y, b, 0)) {
+          if (!bHold && !isTerrainBlocked(cb.x, cb.y, b)) {
             b.x = cb.x;
             b.y = cb.y;
           }
