@@ -596,6 +596,24 @@ const GameRender = (() => {
         }
       }
 
+      // Units behind a tree were drawn over its canopy and looked like they walked into it.
+      if (fieldArt && gfxQ?.drawDecor !== false && sorted.length) {
+        GS.ctx.save();
+        GS.ctx.globalAlpha = 0.72;
+        for (const d of GS.decorations) {
+          if (d.type !== 'tree' || !isInView(d.x, d.y, d.size || 16)) continue;
+          const s = (d.size || 14) * 1.2;
+          for (const u of sorted) {
+            if (u.y >= d.y - 2) break;
+            if (u.y > d.y - s * 1.4 && Math.abs(u.x - d.x) < s * 0.7) {
+              fieldArt.drawDecor(GS.ctx, d);
+              break;
+            }
+          }
+        }
+        GS.ctx.restore();
+      }
+
       const vBounds = getVisibleBounds(140);
       if (svc('ContentExpansion') && svc('ContentExpansion').getFortifyZones) {
         StrikeFX?.drawFortifyZones?.(

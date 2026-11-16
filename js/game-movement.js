@@ -273,6 +273,101 @@ const GameMovement = (() => {
     return { x: sx, y: sy };
   }
 
+  const AVOID_LOOK = 46;
+  const avoidOut = { x: 0, y: 0 };
+  // Off the unit object so saves and co-op snapshots never carry it.
+  const avoidMemo = new WeakMap();
+
+  // Ally or neutral in the way that is not walking our way; foes are left alone so melee can close.
+  function unitIsInTheWay(unit, u, dirX, dirY) {
+    if (u === unit || !unitBlocksMovement(u)) return false;
+    if (u.team !== unit.team && !(u.team === 'neutral' || u.isNeutral)) return false;
+    if (u.targetX == null || u.targetY == null) return true;
+    const hx = u.targetX - u.x,
+      hy = u.targetY - u.y;
+    const hl = Math.hypot(hx, hy);
+    return hl < 4 || (hx * dirX + hy * dirY) / hl < 0.7;
+  }
+
+  /**
+   * Sideways push away from the nearest thing on the line ahead (trees, rocks, buildings,
+   * standing people), so units curve around it instead of walking into it. Keeps the side
+   * it picked for an obstacle until it is past, so it does not dither left and right.
+   */
+  function avoidanceVector(unit, dirX, dirY, dist) {
+    avoidOut.x = 0;
+    avoidOut.y = 0;
+    const look = Math.min(AVOID_LOOK, dist);
+    if (look < 6) return avoidOut;
+    const clear = UNIT_COLLISION + 4;
+    let bestT = look,
+      bestLat = 0,
+      bestR = 0,
+      bestKey = null;
+    const consider = (ox, oy, r, key) => {
+      const rx = ox - unit.x,
+        ry = oy - unit.y;
+      const t = rx * dirX + ry * dirY;
+      // Something standing on the destination itself is for arrival and separation to sort out.
+      if (t <= 0 || t - r >= bestT || t >= dist - 4) return;
+      const lat = rx * -dirY + ry * dirX;
+      const reach = r + clear;
+      if (Math.abs(lat) >= reach) return;
+      bestT = Math.max(0, t - r);
+      bestLat = lat;
+      bestR = reach;
+      bestKey = key;
+    };
+    const scanR = look + 40;
+    if (useSpatialQueries()) {
+      const sp = svc('Spatial');
+      const near = sp.queryStaticInto(unit.x, unit.y, scanR, sp._scratch);
+      for (let i = 0; i < near.length; i++) {
+        const d = near[i];
+        if (!obstacleBlocksForUnit(d, unit)) continue;
+        const r = terrainBlockRadius(d.ref || d);
+        if (r > 0) consider(d.x, d.y, r, d.ref || d);
+      }
+      // Hordes on the advance push straight through each other; that pace is deliberate.
+      if (!(unit.team === 'enemy' && enemyIsAdvancing(unit))) {
+        sp.forUnitsInRadius(unit.x, unit.y, look + UNIT_COLLISION, (entry) => {
+          if (entry.kind !== 'unit') return;
+          const u = entry.ref;
+          if (unitIsInTheWay(unit, u, dirX, dirY)) consider(u.x, u.y, UNIT_COLLISION, u);
+        });
+      }
+    } else {
+      for (const d of allObstacles()) {
+        if (obstacleBlocksForUnit(d, unit)) consider(d.x, d.y, d.radius || 14, d.ref || d);
+      }
+      if (!(unit.team === 'enemy' && enemyIsAdvancing(unit))) {
+        for (const u of GS.units) {
+          if (posDistSq(unit.x, unit.y, u.x, u.y) > scanR * scanR) continue;
+          if (unitIsInTheWay(unit, u, dirX, dirY)) consider(u.x, u.y, UNIT_COLLISION, u);
+        }
+      }
+    }
+    const memo = avoidMemo.get(unit);
+    if (!bestKey) {
+      if (memo) memo.key = null;
+      return avoidOut;
+    }
+    let side = bestLat > 0 ? -1 : 1;
+    if (memo?.key === bestKey) side = memo.side;
+    // Dead ahead: keep right, so two people walking at each other pass instead of mirroring.
+    else if (Math.abs(bestLat) < 3) side = 1;
+    if (memo) {
+      memo.key = bestKey;
+      memo.side = side;
+    } else avoidMemo.set(unit, { key: bestKey, side });
+    // Stronger the closer and more head-on the obstacle is.
+    const urgency =
+      ((1 - bestT / look) * (1 - Math.abs(bestLat) / bestR) + 0.25) * Math.min(1, dist / 48);
+    avoidOut.x = -dirY * side * urgency * 1.6;
+    avoidOut.y = dirX * side * urgency * 1.6;
+    return avoidOut;
+  }
+
   function steerToward(unit, tx, ty) {
     const dx = tx - unit.x,
       dy = ty - unit.y;
@@ -301,8 +396,9 @@ const GameMovement = (() => {
         : unit.team === 'player' && unitHasActiveMarch(unit)
           ? 0.55
           : 1.4;
-    let ux = dx / dist + sep.x * sepWeight;
-    let uy = dy / dist + sep.y * sepWeight;
+    const av = avoidanceVector(unit, dx / dist, dy / dist, dist);
+    let ux = dx / dist + sep.x * sepWeight + av.x;
+    let uy = dy / dist + sep.y * sepWeight + av.y;
     const ulen = Math.hypot(ux, uy) || 1;
     ux /= ulen;
     uy /= ulen;
