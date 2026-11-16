@@ -62,6 +62,15 @@
     <div id="app">
       <canvas id="game-canvas"></canvas>
       <div id="ui-overlay">
+        <div id="omen-card" class="omen-card" hidden aria-live="polite">
+          <div class="omen-card-head">
+            <span id="omen-card-title" class="omen-card-title">Omen</span>
+            <span id="omen-card-weather" class="omen-card-weather"></span>
+          </div>
+          <p id="planet-event-summary" class="planet-event-summary"></p>
+          <div id="planet-event-choices" class="planet-event-choices"></div>
+          <p id="omen-card-default" class="omen-card-default"></p>
+        </div>
         <div id="left-panel" class="side-panel">
           <nav class="side-panel-tabs" role="tablist" aria-label="Recruit, build and cast">
             <button
@@ -1113,14 +1122,6 @@
                     <span id="diff-text" class="stat-value diff-value">Normal</span>
                   </div>
                 </div>
-              </div>
-              <div id="planet-event-section" class="planet-event-section" style="display: none">
-                <div class="panel-header">PLANET EVENT</div>
-                <p id="planet-event-summary" class="planet-event-summary">Unlocks wave 12</p>
-                <div id="planet-event-choices" class="planet-event-choices"></div>
-                <p class="panel-hint">
-                  Night only - the planet fights back. Your choice helps or hurts dawn.
-                </p>
               </div>
               <div id="faction-intel-section" class="faction-intel-section" style="display: none">
                 <div class="panel-header">FACTION INTEL</div>

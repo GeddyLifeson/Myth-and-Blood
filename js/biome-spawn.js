@@ -127,13 +127,9 @@ const BiomeSpawn = (() => {
     return { weights: merged, profile };
   }
 
-  function adjustSpawnCount(count, wave, ctx = {}) {
-    const profile = getDominantProfile(ctx);
-    let c = Math.max(1, Math.floor(count * (profile.countMult || 1)));
-    if (profile.biome === 'corrupted' || profile.biome === 'hellscape') {
-      c = Math.max(1, c + Math.floor((ctx.territoryTier || 0) * 0.15));
-    }
-    return c;
+  /** Terrain no longer adds bodies in secret; the head count is the wave's own. */
+  function adjustSpawnCount(count) {
+    return Math.max(1, Math.floor(count));
   }
 
   /**

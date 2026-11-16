@@ -70,7 +70,7 @@ const GameTargeting = (() => {
       const op = GS.buildings.find((b) => b.id === unit.garrisoned && b.complete);
       if (op) r += op.rangeBonus || BuildDefs.outpost.rangeBonus;
     }
-    return r;
+    return svc('DynamicMapEvents') ? r * svc('DynamicMapEvents').rangeMult(unit) : r;
   }
 
   function maxAttackRange(unit) {
