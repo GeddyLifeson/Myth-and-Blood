@@ -1362,7 +1362,10 @@ function upgradeVeteranUnit(unit) {
   unit.experience = (unit.experience || 0) + 5;
   // A new rank can open a trait slot for a deed already done.
   if (typeof Veterans !== 'undefined' && typeof GameArmy !== 'undefined') {
-    GameArmy.notifyTraits(unit, Veterans.check(unit, Game.getState?.()?.wave || 0));
+    GameArmy.notifyTraits(
+      unit,
+      Veterans.check(unit, typeof GameState !== 'undefined' ? GameState.wave : 0)
+    );
   }
   return unit;
 }

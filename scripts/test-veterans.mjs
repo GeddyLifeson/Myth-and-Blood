@@ -48,7 +48,7 @@ kill(a, 'orc', 1, { isNamedBoss: true });
 ok(!a.traits.includes('giantsbane'), 'a second trait waits for a second slot');
 sb.upgradeVeteranUnit(a);
 ok(a.traits.includes('giantsbane'), 'rank 2 opens the second slot');
-ok(Veterans.damageMult(foe('goblin'), a) === 1.1, 'Giantsbane: +10% taken from horde grunts');
+ok(Veterans.damageMult(foe('goblin'), a) === 1.1, 'Giantsbane: +10% taken from goblins');
 kill(a, 'orc', 2, { isNamedBoss: true });
 ok(
   a.traits.includes('kingslayer') && !a.traits.includes('giantsbane') && a.traits.length === 2,

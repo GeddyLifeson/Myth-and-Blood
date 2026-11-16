@@ -190,11 +190,11 @@ const Veterans = (() => {
       measure: 'Transgression',
       deed: 'Killed a named boss',
       gain: '+20% damage to named bosses',
-      cost: '+10% damage taken from horde grunts',
+      cost: '+10% damage taken from goblins',
       need: (d) => d.boss >= 1,
       fx: [
         { deal: 1.2, foe: 'boss' },
-        { take: 1.1, foe: 'grunt' },
+        { take: 1.1, foe: GOBLINS },
       ],
     },
     kingslayer: {
@@ -202,12 +202,12 @@ const Veterans = (() => {
       measure: 'Transgression',
       deed: 'Killed 3 named bosses',
       gain: '+35% damage to named bosses',
-      cost: '+20% damage taken from horde grunts',
+      cost: '+20% damage taken from goblins',
       replaces: 'giantsbane',
       need: (d) => d.boss >= 3,
       fx: [
         { deal: 1.35, foe: 'boss' },
-        { take: 1.2, foe: 'grunt' },
+        { take: 1.2, foe: GOBLINS },
       ],
     },
     chiefslayer: {
@@ -215,11 +215,11 @@ const Veterans = (() => {
       measure: 'Transgression',
       deed: 'Killed a war chief',
       gain: '+25% damage to war chiefs',
-      cost: '+10% damage taken from orcs',
+      cost: '+10% damage taken from berserkers',
       need: (d) => sum(d, ['war_chief']) >= 1,
       fx: [
         { deal: 1.25, foe: ['war_chief'] },
-        { take: 1.1, foe: ORCS },
+        { take: 1.1, foe: ['berserker'] },
       ],
     },
     last_breath: {
@@ -251,11 +251,11 @@ const Veterans = (() => {
       measure: 'Vector',
       deed: 'Cut down 6 line-breakers',
       gain: '+30% damage to line-breakers',
-      cost: '-10% damage to elites',
+      cost: '-10% damage to siege towers',
       need: (d) => d.runner >= 6,
       fx: [
         { deal: 1.3, foe: 'runner' },
-        { deal: 0.9, foe: 'elite' },
+        { deal: 0.9, foe: ['siege_tower'] },
       ],
     },
     fuse_cutter: {
@@ -730,12 +730,12 @@ const Veterans = (() => {
       measure: 'Vector',
       deed: 'Cut down 15 line-breakers',
       gain: '+45% damage to line-breakers',
-      cost: '-15% damage to elites',
+      cost: '-15% damage to siege towers',
       replaces: 'runner_catcher',
       need: (d) => d.runner >= 15,
       fx: [
         { deal: 1.45, foe: 'runner' },
-        { deal: 0.85, foe: 'elite' },
+        { deal: 0.85, foe: ['siege_tower'] },
       ],
     },
     mob_cutter: {
