@@ -319,9 +319,30 @@ const GameCombat = (() => {
     return best;
   }
 
+  /** The enemy this soldier was ordered onto, while the order stands. */
+  function orderedFoe(unit) {
+    if (!unit.attackOrderId) return null;
+    const foe = getUnitById(unit.attackOrderId);
+    if (!foe || !isValidCombatFoe(foe) || GS.updateTick > (unit.attackOrderUntil || 0)) {
+      unit.attackOrderId = null;
+      return null;
+    }
+    return foe;
+  }
+
   function findCombatTarget(unit) {
     const locked = unit.combatTargetId ? getUnitById(unit.combatTargetId) : null;
     if (locked && !isPursuableFoe(unit, locked)) unit.combatTargetId = null;
+    // Focus fire: the ordered enemy is struck before a nearer one, once it is in reach.
+    const ordered = orderedFoe(unit);
+    if (
+      ordered &&
+      inAttackRange(unit, ordered) &&
+      lineOfSight(unit.x, unit.y, ordered.x, ordered.y)
+    ) {
+      unit.structureTargetId = null;
+      return ordered;
+    }
     const adjacent = findNearestFoeInRange(unit);
     if (adjacent) {
       unit.structureTargetId = null;
