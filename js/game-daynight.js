@@ -180,6 +180,8 @@ const GameDayNight = (() => {
     GS.timeOfDay = 'night';
     GS.nightTimer = 0;
     refreshUnitCounts();
+    // Before the round's TP, so a plot that just became a hamlet pays tonight.
+    if (typeof Ground !== 'undefined') Ground.onNightBegin(siegeCtx);
     awardRoundTP();
     syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.

@@ -1324,6 +1324,7 @@ const Game = (() => {
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
     if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
+    if (typeof Ground !== 'undefined') Ground.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
       diff.startingTp +
@@ -2048,6 +2049,7 @@ const Game = (() => {
     if (GS.state === 'playing') {
       SiegeLoop.update(siegeCtx);
       if (typeof WarCamps !== 'undefined') WarCamps.update(warCampCtx);
+      if (typeof Ground !== 'undefined') Ground.update(siegeCtx);
       Roster.update(siegeCtx);
     }
     markUpdatePhase('update-begin', `w${GS.wave} u${GS.units.length}`);

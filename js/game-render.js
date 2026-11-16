@@ -645,6 +645,8 @@ const GameRender = (() => {
         svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
       if (typeof WarCamps !== 'undefined') WarCamps.draw(GS.ctx, warCampCtx, GS.updateTick);
+      if (typeof Ground !== 'undefined')
+        Ground.draw(GS.ctx, siegeCtx, GS.updateTick, !!GS.selectedBuild);
       Roster.drawOverlays(GS.ctx, GS.units, GS.updateTick);
       svc('Particles').draw(GS.ctx, vBounds);
       svc('FloatingText').draw(GS.ctx, vBounds);

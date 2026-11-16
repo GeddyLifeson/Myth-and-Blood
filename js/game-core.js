@@ -551,7 +551,8 @@ const GameCore = (() => {
   }
 
   function getRawSettlementTpBonus() {
-    return unitCounts.hamletTpBonus + unitCounts.merchantGuildTpBonus;
+    const ground = typeof Ground !== 'undefined' ? Ground.income() : 0;
+    return unitCounts.hamletTpBonus + unitCounts.merchantGuildTpBonus + ground;
   }
 
   function getSettlementTpBonus() {
