@@ -1950,23 +1950,16 @@ const UI = (() => {
 
     const epfHud = document.getElementById('epf-hud');
     const epfText = document.getElementById('epf-text');
-    const epfSnap = gs.eternalPaths;
     if (epfHud && epfText) {
-      const line =
-        typeof EternalPathFramework !== 'undefined'
-          ? EternalPathFramework.formatHudLine({ wave: gs.wave })
-          : epfSnap?.hudLine || '';
-      // Only surface once the framework itself has something to say (it returns '' pre-wave-50
-      // with no dominant path). A blanket `wave >= 1` forced this into view - and its bare '?'
-      // fallback text - from turn one, before any path exists to report on.
-      const show = !!line || !!epfSnap?.dominantPathId;
-      epfHud.style.display = show ? '' : 'none';
-      if (show) {
-        epfText.textContent = line || 'Path ?';
-        if (epfSnap?.dominantColor) epfHud.style.borderColor = epfSnap.dominantColor;
-        epfHud.title = epfSnap?.dominantLabel
-          ? `${epfSnap.dominantLabel} - investment strengthens every era`
-          : 'Four Eternal Paths evolve Medieval → Kingdom → Galactic';
+      const hud =
+        typeof RunPath !== 'undefined' && !gs.creativeMode ? RunPath.getHud(gs.wave) : null;
+      epfHud.style.display = hud ? '' : 'none';
+      if (hud) {
+        epfText.textContent = hud.text;
+        epfHud.style.borderColor = hud.color || '';
+        epfHud.classList.toggle('run-path-locked', hud.locked);
+        epfHud.classList.toggle('run-path-pending', hud.pending);
+        epfHud.title = hud.title;
       }
     }
 

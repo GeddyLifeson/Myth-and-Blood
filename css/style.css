@@ -1155,6 +1155,27 @@ body.window-borderless .window-drag-handle {
 .ascension-btn:hover {
   background: rgba(80, 64, 24, 0.85) !important;
 }
+.ascension-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.epf-hud.run-path-locked {
+  opacity: 0.5;
+}
+.epf-hud.run-path-pending {
+  border-color: #c8202a !important;
+  animation: runPathPulse 1.6s ease-in-out infinite;
+}
+@keyframes runPathPulse {
+  50% {
+    box-shadow: 0 0 6px #c8202a;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .epf-hud.run-path-pending {
+    animation: none;
+  }
+}
 .ascension-badge {
   color: #e8c870;
   font-style: italic;

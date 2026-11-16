@@ -1,592 +1,208 @@
 /**
- * Ascension System — era-transition ascensions using Legacy Points.
- * Max veterans, buildings, and heroes ascend at Kingdom (150) and Galactic (400) gates.
- * Example: Immortal Footman → Paragon of the Realm → Stellar Warden (plasma halberd).
+ * Honours: after each boss wave the player may give one honour to one living veteran.
+ * A soldier holds one honour, shown in his name, and it dies with him.
+ *   Standard Bearer: soldiers near him do not lose morale from seeing comrades fall.
+ *   Captain: soldiers of his type near him deal +10% damage.
+ *   Old Hand: new recruits of his type arrive with 6 experience.
+ * This replaced wave-150/400 Legacy Point ascension; AscensionSystem stays as an alias.
  */
-const AscensionSystem = (() => {
-  const STORAGE_KEY = 'myth-and-blood-ascension-meta-v1';
+const Honours = (() => {
+  const RADIUS = 160;
+  const CAPTAIN_MULT = 1.1;
+  const OLD_HAND_XP = 6;
 
-  const ERA_GATES = {
-    kingdom: {
-      id: 'kingdom',
-      wave: 150,
-      label: 'Kingdom Era',
-      pointGrant: 18,
-      desc: 'The realm widens — ascend veterans into realm paragons.',
+  const HONOURS = {
+    standard_bearer: {
+      id: 'standard_bearer',
+      label: 'Standard Bearer',
+      desc: 'Soldiers near him do not lose morale from seeing comrades fall.',
     },
-    galactic: {
-      id: 'galactic',
-      wave: 400,
-      label: 'Galactic Era',
-      pointGrant: 28,
-      desc: 'Intergalactic layer unlocks — ascend paragons into stellar champions.',
+    captain: {
+      id: 'captain',
+      label: 'Captain',
+      desc: 'Soldiers of his type near him deal +10% damage.',
+    },
+    old_hand: {
+      id: 'old_hand',
+      label: 'Old Hand',
+      desc: `New recruits of his type arrive with ${OLD_HAND_XP} experience.`,
     },
   };
 
-  const UNIT_CHAINS = {
-    footman: {
-      kingdom: {
-        id: 'paragon_realm',
-        label: 'Paragon of the Realm',
-        short: 'Paragon',
-        cost: 14,
-        minVetTier: 4,
-        hpMult: 1.22,
-        dmgMult: 1.18,
-        moraleBonus: 5,
-        desc: 'Royal guard of the empire — never mere fodder.',
-      },
-      galactic: {
-        id: 'stellar_warden',
-        label: 'Stellar Warden',
-        short: 'Warden',
-        weapon: 'Plasma Halberd',
-        cost: 24,
-        requiresStage: 'paragon_realm',
-        hpMult: 1.38,
-        dmgMult: 1.28,
-        rangeBonus: 14,
-        desc: 'Post-human sentinel wielding a plasma halberd across the void.',
-      },
-    },
-    archer: {
-      kingdom: {
-        id: 'volley_saint',
-        label: 'Volley Saint',
-        short: 'Saint',
-        cost: 14,
-        minVetTier: 4,
-        dmgMult: 1.24,
-        rangeBonus: 18,
-        desc: 'Imperial volley canonized — every arrow an edict.',
-      },
-      galactic: {
-        id: 'void_sniper',
-        label: 'Void Sniper',
-        short: 'Sniper',
-        weapon: 'Quantum Longbow',
-        cost: 24,
-        requiresStage: 'volley_saint',
-        dmgMult: 1.32,
-        rangeBonus: 28,
-        desc: 'Ancestral spirits and quantum aim-assist guide transhuman shots.',
-      },
-    },
-    knight: {
-      kingdom: {
-        id: 'realm_champion',
-        label: 'Champion of the Realm',
-        short: 'Champion',
-        cost: 16,
-        minVetTier: 4,
-        hpMult: 1.26,
-        dmgMult: 1.2,
-        desc: 'Honor-bound knight elevated to imperial champion.',
-      },
-      galactic: {
-        id: 'star_lancer',
-        label: 'Star Trenchsaw',
-        short: 'Trenchsaw',
-        weapon: 'Solar Lance',
-        cost: 26,
-        requiresStage: 'realm_champion',
-        hpMult: 1.4,
-        dmgMult: 1.3,
-        desc: 'Charges through vacuum in blazing coronal plate.',
-      },
-    },
-    mage: {
-      kingdom: {
-        id: 'court_scholarch',
-        label: 'Court Scholarch',
-        short: 'Scholarch',
-        cost: 15,
-        minVetTier: 3,
-        dmgMult: 1.26,
-        rangeBonus: 16,
-        desc: 'Arcane dominion made flesh — towers bow to their will.',
-      },
-      galactic: {
-        id: 'aether_weaver',
-        label: 'Aether Weaver',
-        short: 'Weaver',
-        weapon: 'Reality Staff',
-        cost: 26,
-        requiresStage: 'court_scholarch',
-        dmgMult: 1.36,
-        rangeBonus: 22,
-        desc: 'Bends local physics — star-system scale sorcery.',
-      },
-    },
-    healer: {
-      kingdom: {
-        id: 'sanctuary_keeper',
-        label: 'Sanctuary Keeper',
-        short: 'Keeper',
-        cost: 12,
-        minVetTier: 3,
-        hpMult: 1.15,
-        healMult: 1.3,
-        desc: 'Empire-wide healing doctrine personified.',
-      },
-      galactic: {
-        id: 'genesis_medic',
-        label: 'Genesis Medic',
-        short: 'Medic',
-        cost: 22,
-        requiresStage: 'sanctuary_keeper',
-        healMult: 1.45,
-        hpMult: 1.2,
-        desc: 'Regenerates tissue at the cellular level across eras.',
-      },
-    },
-    dunmar_fusewick: {
-      kingdom: {
-        id: 'siege_legend',
-        label: 'Siege Legend',
-        short: 'Legend',
-        cost: 18,
-        minVetTier: 2,
-        dmgMult: 1.2,
-        hpMult: 1.15,
-        desc: 'Crossover champion sworn to the crown.',
-      },
-      galactic: {
-        id: 'orbital_breaker',
-        label: 'Orbital Breaker',
-        short: 'Breaker',
-        weapon: 'Planetary Frag',
-        cost: 28,
-        requiresStage: 'siege_legend',
-        dmgMult: 1.35,
-        desc: 'Frag Out scales to orbital bombardment.',
-      },
-    },
-    tavish_coalheart: {
-      kingdom: {
-        id: 'mythic_champion',
-        label: 'Mythic Champion',
-        short: 'Champion',
-        cost: 20,
-        minVetTier: 1,
-        dmgMult: 1.22,
-        hpMult: 1.18,
-        desc: 'Living legend of the mythic alliance.',
-      },
-      galactic: {
-        id: 'pantheon_herald',
-        label: 'Pantheon Herald',
-        short: 'Herald',
-        cost: 30,
-        requiresStage: 'mythic_champion',
-        dmgMult: 1.4,
-        hpMult: 1.28,
-        desc: 'Literal god-tier crossover ascendant.',
-      },
-    },
-  };
-
-  const BUILDING_CHAINS = {
-    wall: {
-      kingdom: {
-        id: 'bulwark_ages',
-        label: 'Bulwark of Ages',
-        cost: 12,
-        hpMult: 1.35,
-        desc: 'Walls remember every siege.',
-      },
-      galactic: {
-        id: 'stellar_aegis',
-        label: 'Stellar Aegis',
-        cost: 20,
-        requiresStage: 'bulwark_ages',
-        hpMult: 1.55,
-        desc: 'Orbital shield lattice woven into stone.',
-      },
-    },
-    barracks: {
-      kingdom: {
-        id: 'regiment_hall',
-        label: 'Regiment Hall',
-        cost: 14,
-        desc: 'Trains paragons — +1 morale to spawned troops.',
-        spawnMoraleBonus: 3,
-      },
-      galactic: {
-        id: 'void_muster',
-        label: 'Void Muster Yard',
-        cost: 22,
-        requiresStage: 'regiment_hall',
-        spawnMoraleBonus: 5,
-        desc: 'Galactic muster — veterans ascend on deploy.',
-      },
-    },
-    academy_footman: {
-      kingdom: {
-        id: 'paragon_academy',
-        label: 'Paragon Academy',
-        cost: 16,
-        desc: 'Graduates begin one vet tier higher.',
-        academyVetBonus: 1,
-      },
-      galactic: {
-        id: 'stellar_academy',
-        label: 'Stellar Academy',
-        cost: 24,
-        requiresStage: 'paragon_academy',
-        academyVetBonus: 2,
-        desc: 'Post-human drill from day one.',
-      },
-    },
-  };
-
-  let run = null;
-  let meta = { totalAscensions: 0, totalLegacySpent: 0 };
-  let kingdomAnnounced = false;
-  let galacticAnnounced = false;
-
-  function loadMeta() {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) meta = { ...meta, ...JSON.parse(raw) };
-    } catch (_) {
-      /* ignore */
-    }
-  }
-
-  function saveMeta() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(meta));
-    } catch (_) {
-      /* ignore */
-    }
-  }
+  let state = null;
+  // id -> live unit, rebuilt when honours change or a save loads.
+  let live = new Map();
 
   function resetRun() {
-    run = {
-      legacyPoints: 0,
-      legacyEarned: 0,
-      eraClaimed: { kingdom: false, galactic: false },
-      ascendedUnits: 0,
-      ascendedBuildings: 0,
-      log: [],
-    };
-    kingdomAnnounced = false;
-    galacticAnnounced = false;
+    state = { pending: 0, holders: [] };
+    live = new Map();
   }
 
-  function onRunStart(ctx = {}) {
-    loadMeta();
-    if (!run) resetRun();
-    if (ctx.creative) return;
+  function units() {
+    return globalThis.GameState?.units || [];
   }
 
-  function getChainKey(unit) {
-    if (!unit?.type) return null;
-    if (UNIT_CHAINS[unit.type]) return unit.type;
-    return null;
-  }
-
-  function getEraForWave(wave) {
-    if ((wave | 0) >= ERA_GATES.galactic.wave) return 'galactic';
-    if ((wave | 0) >= ERA_GATES.kingdom.wave) return 'kingdom';
-    return null;
-  }
-
-  function getStageDef(chain, era) {
-    return chain?.[era] || null;
-  }
-
-  function getUnitAscensionOffer(unit, wave = 0) {
-    if (!unit || unit.team !== 'player' || unit.hp <= 0) return null;
-    const key = getChainKey(unit);
-    const chain = key ? UNIT_CHAINS[key] : null;
-    if (!chain) return null;
-    const era = getEraForWave(wave);
-    if (!era) return null;
-    const stage = getStageDef(chain, era);
-    if (!stage) return null;
-    if (unit.ascensionStageId === stage.id) return null;
-    if (stage.requiresStage && unit.ascensionStageId !== stage.requiresStage) {
-      const priorEra = era === 'galactic' ? 'kingdom' : null;
-      if (!priorEra || unit.ascensionStageId !== getStageDef(chain, priorEra)?.id) return null;
-    }
-    if ((unit.vetTier || 0) < (stage.minVetTier || 4)) return null;
-    if (unit.isGeneral && key === 'footman') return null;
-    return { era, stage, chainKey: key, cost: stage.cost };
-  }
-
-  function getBuildingAscensionOffer(building, wave = 0) {
-    if (!building || building.owner !== 'player' || !building.complete || building.hp <= 0) {
-      return null;
-    }
-    const chain = BUILDING_CHAINS[building.type];
-    if (!chain) return null;
-    const era = getEraForWave(wave);
-    if (!era) return null;
-    const stage = getStageDef(chain, era);
-    if (!stage) return null;
-    if (building.ascensionStageId === stage.id) return null;
-    if (stage.requiresStage && building.ascensionStageId !== stage.requiresStage) return null;
-    return { era, stage, cost: stage.cost, buildingType: building.type };
-  }
-
-  function grantLegacyPoints(amount, reason = '') {
-    if (!run || amount <= 0) return 0;
-    run.legacyPoints += amount;
-    run.legacyEarned += amount;
-    if (reason) run.log.unshift({ at: Date.now(), text: `+${amount} Legacy — ${reason}` });
-    return amount;
-  }
-
-  function spendLegacyPoints(amount) {
-    if (!run || amount > run.legacyPoints) return false;
-    run.legacyPoints -= amount;
-    meta.totalLegacySpent += amount;
-    saveMeta();
-    return true;
-  }
-
-  function countImmortalVeterans(units = []) {
-    const maxTier = typeof MAX_VETERAN_TIER !== 'undefined' ? MAX_VETERAN_TIER : 6;
-    return units.filter((u) => u.team === 'player' && u.hp > 0 && (u.vetTier || 0) >= maxTier)
-      .length;
-  }
-
-  function applyStageToUnit(unit, stage, era) {
-    const hpRatio = unit.maxHp > 0 ? unit.hp / unit.maxHp : 1;
-    if (stage.hpMult) {
-      unit.maxHp = Math.floor(unit.maxHp * stage.hpMult);
-      unit.hp = Math.max(1, Math.floor(unit.maxHp * hpRatio));
-    }
-    if (stage.dmgMult && unit.damage) {
-      unit.damage = Math.floor(unit.damage * stage.dmgMult);
-    }
-    if (stage.healMult && unit.healAmount) {
-      unit.healAmount = Math.floor(unit.healAmount * stage.healMult);
-    }
-    if (stage.rangeBonus && unit.range) {
-      unit.range = Math.floor(unit.range + stage.rangeBonus);
-    }
-    if (stage.moraleBonus) {
-      unit.maxMorale = Math.min(100, unit.maxMorale + stage.moraleBonus);
-      unit.morale = Math.min(unit.maxMorale, unit.morale + stage.moraleBonus);
-    }
-    unit.ascensionStageId = stage.id;
-    unit.ascensionLabel = stage.label;
-    unit.ascensionShort = stage.short || stage.label;
-    unit.ascensionWeapon = stage.weapon || null;
-    unit.ascensionEra = era;
-    unit.ascensionTitle = stage.weapon ? `${stage.label} (${stage.weapon})` : stage.label;
-    unit.ascensionApplied = true;
-  }
-
-  function applyStageToBuilding(building, stage, era) {
-    if (stage.hpMult && building.maxHp) {
-      const ratio = building.hp / building.maxHp;
-      building.maxHp = Math.floor(building.maxHp * stage.hpMult);
-      building.hp = Math.max(1, Math.floor(building.maxHp * ratio));
-    }
-    building.ascensionStageId = stage.id;
-    building.ascensionLabel = stage.label;
-    building.ascensionEra = era;
-    building.spawnMoraleBonus = (building.spawnMoraleBonus || 0) + (stage.spawnMoraleBonus || 0);
-    building.academyVetBonus = (building.academyVetBonus || 0) + (stage.academyVetBonus || 0);
-    building.ascensionApplied = true;
-  }
-
-  function tryAscendUnit(unit, wave, ctx = {}) {
-    const offer = getUnitAscensionOffer(unit, wave);
-    if (!offer) return { ok: false, msg: 'Not eligible for ascension.' };
-    if (!spendLegacyPoints(offer.cost)) {
-      return {
-        ok: false,
-        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
-      };
-    }
-    applyStageToUnit(unit, offer.stage, offer.era);
-    run.ascendedUnits += 1;
-    meta.totalAscensions += 1;
-    saveMeta();
-    const msg = `Ascended — ${offer.stage.label}${offer.stage.weapon ? ` (${offer.stage.weapon})` : ''}!`;
-    run.log.unshift({ at: Date.now(), text: msg });
-    ctx.showMessage?.(msg, 360);
-    ctx.addHighlight?.('ascension', msg);
-    if (typeof AudioEngine !== 'undefined') AudioEngine?.SFX?.reinforce?.();
-    return { ok: true, stage: offer.stage.id, label: offer.stage.label };
-  }
-
-  function tryAscendBuilding(building, wave, ctx = {}) {
-    const offer = getBuildingAscensionOffer(building, wave);
-    if (!offer) return { ok: false, msg: 'Building not eligible for ascension.' };
-    if (!spendLegacyPoints(offer.cost)) {
-      return {
-        ok: false,
-        msg: `Need ${offer.cost} Legacy Points (${run.legacyPoints} available).`,
-      };
-    }
-    applyStageToBuilding(building, offer.stage, offer.era);
-    run.ascendedBuildings += 1;
-    meta.totalAscensions += 1;
-    saveMeta();
-    const msg = `Ascended — ${building.ascensionLabel}!`;
-    run.log.unshift({ at: Date.now(), text: msg });
-    ctx.showMessage?.(msg, 320);
-    return { ok: true, stage: offer.stage.id };
-  }
-
-  function reapplyAscensionBonuses(unit) {
-    if (!unit?.ascensionStageId) return unit;
-    const key = getChainKey(unit);
-    const chain = key ? UNIT_CHAINS[key] : null;
-    if (!chain) return unit;
-    for (const era of ['kingdom', 'galactic']) {
-      const s = getStageDef(chain, era);
-      if (s?.id === unit.ascensionStageId) {
-        unit.ascensionLabel = s.label;
-        unit.ascensionShort = s.short || s.label;
-        unit.ascensionWeapon = s.weapon || unit.ascensionWeapon || null;
-        unit.ascensionTitle = s.weapon ? `${s.label} (${s.weapon})` : s.label;
-      }
-    }
-    return unit;
-  }
-
-  function applySpawnBonusesFromBuildings(unit, buildings = []) {
-    if (!unit || unit.team !== 'player') return;
-    let morale = 0;
-    let vetBonus = 0;
-    for (const b of buildings) {
-      if (b.owner !== 'player' || !b.complete || b.hp <= 0) continue;
-      morale += b.spawnMoraleBonus || 0;
-      vetBonus = Math.max(vetBonus, b.academyVetBonus || 0);
-    }
-    if (morale > 0) unit.morale = Math.min(unit.maxMorale, unit.morale + morale);
-    if (vetBonus > 0 && (unit.vetTier || 0) < vetBonus) {
-      unit.vetTier = Math.max(unit.vetTier || 0, vetBonus);
-      if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(unit);
+  function relink(list = units()) {
+    live = new Map();
+    for (const h of state.holders) {
+      const u = list.find((x) => x.id === h.id && x.hp > 0 && x.honour === h.honour);
+      if (u) live.set(h.id, u);
     }
   }
 
-  function getDisplayTitle(unit) {
-    if (!unit?.ascensionTitle) return null;
-    if (unit.honorName && isValidHonorName?.(unit.honorName)) {
-      return `${unit.honorName}, ${unit.ascensionShort || unit.ascensionLabel}`;
-    }
-    return unit.ascensionTitle;
+  function isBossWave(wave) {
+    const w = wave | 0;
+    return globalThis.GameDepth?.isBossWave?.(w) ?? (w >= 10 && w % 10 === 0);
+  }
+
+  function nameOf(u) {
+    const base =
+      u.honorName || (typeof getUnitTypeName === 'function' ? getUnitTypeName(u) : u.type);
+    return `${HONOURS[u.honour]?.label || ''} ${base}`.trim();
   }
 
   function onWaveStart(wave, ctx = {}) {
-    if (!run) resetRun();
-    if (ctx.creative) return null;
-    for (const gate of Object.values(ERA_GATES)) {
-      if ((wave | 0) !== gate.wave || run.eraClaimed[gate.id]) continue;
-      run.eraClaimed[gate.id] = true;
-      let grant = gate.pointGrant;
-      const immortals = countImmortalVeterans(ctx.units || []);
-      if (immortals > 0) grant += immortals * 3;
-      grantLegacyPoints(grant, `${gate.label} transition`);
-      const announceKey = gate.id === 'kingdom' ? 'kingdomAnnounced' : 'galacticAnnounced';
-      if (gate.id === 'kingdom' && !kingdomAnnounced) {
-        kingdomAnnounced = true;
-        ctx.showMessage?.(
-          `Ascension unlocked — ${grant} Legacy Points. Max veterans can ascend at era transitions (unit panel).`,
-          440
-        );
-        ctx.addHighlight?.(
-          'milestone',
-          `${gate.label} — ascend Immortal troops with Legacy Points`
-        );
-      }
-      if (gate.id === 'galactic' && !galacticAnnounced) {
-        galacticAnnounced = true;
-        ctx.showMessage?.(
-          `Galactic Ascension — ${grant} Legacy Points. Paragons become Stellar Wardens, Void Snipers, and more.`,
-          460
-        );
-        ctx.addHighlight?.('milestone', 'Stellar Ascension — plasma halberds and orbital legends');
-      }
+    if (!state || ctx.creative) return;
+    relink(ctx.units || units());
+    const fallen = state.holders.filter((h) => !live.has(h.id));
+    for (const h of fallen) {
+      ctx.showMessage?.(
+        `${h.name} has fallen. The ${HONOURS[h.honour].label} honour dies with him.`,
+        280
+      );
     }
-    return getStateSnapshot({ wave });
+    state.holders = state.holders.filter((h) => live.has(h.id));
+    if (isBossWave((wave | 0) - 1)) {
+      state.pending++;
+      ctx.showMessage?.('The boss is down. Select a veteran to give him an honour.', 300);
+    }
   }
 
-  function getStateSnapshot(ctx = {}) {
-    const wave = ctx.wave | 0;
-    const era = getEraForWave(wave);
+  /** Honour buttons for the unit panel; null when no honour is waiting. */
+  function getOffer(u) {
+    if (!state?.pending || !u || u.team !== 'player') return null;
+    let reason = null;
+    if (u.hp <= 0) reason = 'He is dead.';
+    else if (u.honour) reason = `Already the ${HONOURS[u.honour].label}.`;
+    else if ((u.vetTier || 0) < 1) reason = 'Needs a veteran: rank I or higher.';
     return {
-      active: !!era,
-      legacyPoints: run?.legacyPoints || 0,
-      legacyEarned: run?.legacyEarned || 0,
-      era,
-      eraLabel: era ? ERA_GATES[era]?.label : null,
-      ascendedUnits: run?.ascendedUnits || 0,
-      ascendedBuildings: run?.ascendedBuildings || 0,
-      totalAscensions: meta.totalAscensions || 0,
-      kingdomGate: ERA_GATES.kingdom.wave,
-      galacticGate: ERA_GATES.galactic.wave,
-      eraClaimed: { ...(run?.eraClaimed || {}) },
-      hudLine: formatHudLine(ctx),
+      pending: state.pending,
+      options: Object.values(HONOURS).map((h) => ({
+        id: h.id,
+        label: h.label,
+        desc: h.desc,
+        enabled: !reason,
+        reason,
+      })),
     };
   }
 
-  function formatHudLine(ctx = {}) {
-    if (!run) return '';
-    const wave = ctx.wave | 0;
-    const era = getEraForWave(wave);
-    if (!era && (run.legacyPoints || 0) <= 0) return '';
-    const pts = run.legacyPoints || 0;
-    const asc = run.ascendedUnits + run.ascendedBuildings;
-    if (era) return `${pts} Legacy · ${asc} ascended`;
-    return pts > 0 ? `${pts} Legacy` : '';
+  function give(u, honourId, ctx = {}) {
+    const offer = getOffer(u);
+    if (!offer) return { ok: false, msg: 'No honour to give. One is earned after each boss wave.' };
+    if (!HONOURS[honourId]) return { ok: false, msg: 'Choose an honour.' };
+    if (offer.options[0].reason) return { ok: false, msg: offer.options[0].reason };
+    u.honour = honourId;
+    state.pending--;
+    state.holders.push({ id: u.id, honour: honourId, name: nameOf(u) });
+    live.set(u.id, u);
+    ctx.showMessage?.(`${nameOf(u)}: ${HONOURS[honourId].desc}`, 280);
+    ctx.addHighlight?.('honour', nameOf(u));
+    return { ok: true };
   }
 
-  function formatIntelNote(ctx = {}) {
-    const wave = ctx.wave | 0;
-    const parts = [];
-    if (run?.legacyPoints > 0) parts.push(`${run.legacyPoints} legacy`);
-    if (run?.ascendedUnits > 0) parts.push(`${run.ascendedUnits} ascended`);
-    const era = getEraForWave(wave);
-    if (era && !run?.eraClaimed?.[era]) parts.push(`${ERA_GATES[era].label} gate`);
-    return parts.length ? `Ascension: ${parts.join(', ')}` : '';
+  function near(a, b) {
+    const dx = a.x - b.x;
+    const dy = a.y - b.y;
+    return dx * dx + dy * dy <= RADIUS * RADIUS;
   }
 
-  loadMeta();
+  function holdersOf(honourId) {
+    const out = [];
+    for (const u of live.values()) if (u.hp > 0 && u.honour === honourId) out.push(u);
+    return out;
+  }
+
+  /** Damage multiplier for a player attacker from a nearby Captain of his type. */
+  function getDamageMult(attacker) {
+    if (!attacker || attacker.team !== 'player' || !live.size) return 1;
+    for (const c of holdersOf('captain')) {
+      if (c.type === attacker.type && near(c, attacker)) return CAPTAIN_MULT;
+    }
+    return 1;
+  }
+
+  /** True when a Standard Bearer stands near this soldier. */
+  function shieldsMorale(observer) {
+    if (!observer || !live.size) return false;
+    return holdersOf('standard_bearer').some((b) => b.team === observer.team && near(b, observer));
+  }
+
+  /** Called once when a player soldier is recruited. */
+  function onRecruit(u) {
+    if (!u || u.team !== 'player' || !live.size) return;
+    if (holdersOf('old_hand').some((h) => h.type === u.type && h.id !== u.id)) {
+      u.experience = Math.max(u.experience || 0, OLD_HAND_XP);
+    }
+  }
+
+  function getDisplayTitle(u) {
+    if (u?.honour && HONOURS[u.honour]) return nameOf(u);
+    // Soldiers ascended under the old system keep their title.
+    return u?.ascensionLabel || null;
+  }
+
+  function getStateSnapshot() {
+    if (!state) return null;
+    return { pending: state.pending, holders: state.holders.map((h) => ({ ...h })) };
+  }
+
+  function formatIntelNote() {
+    return state?.pending ? `Honours: ${state.pending} to give` : '';
+  }
+
   resetRun();
 
-  // Run state in saves: see js/save-registry.js.
+  // Run state in saves: see js/save-registry.js. Version 1 held Legacy Points.
   if (typeof SaveRegistry !== 'undefined') {
     SaveRegistry.register('AscensionSystem', {
-      save: () => ({ run, kingdomAnnounced, galacticAnnounced }),
+      version: 2,
+      save: () => ({ pending: state.pending, holders: state.holders }),
       load(data) {
         resetRun();
         if (!data) return;
-        if (data.run && typeof data.run === 'object') run = { ...run, ...data.run };
-        kingdomAnnounced = !!data.kingdomAnnounced;
-        galacticAnnounced = !!data.galacticAnnounced;
+        state.pending = Math.max(0, data.pending | 0);
+        state.holders = (Array.isArray(data.holders) ? data.holders : []).filter(
+          (h) => h && HONOURS[h.honour]
+        );
+        relink();
       },
+      // Legacy Points had no use below wave 150 and do not carry over.
+      migrate: () => ({ pending: 0, holders: [] }),
     });
   }
 
   return {
-    UNIT_CHAINS,
+    HONOURS,
     resetRun,
-    onRunStart,
+    onRunStart: resetRun,
     onWaveStart,
-    getUnitAscensionOffer,
-    getBuildingAscensionOffer,
-    tryAscendUnit,
-    tryAscendBuilding,
-    reapplyAscensionBonuses,
-    applySpawnBonusesFromBuildings,
+    getOffer,
+    give,
+    getDamageMult,
+    shieldsMorale,
+    onRecruit,
     getDisplayTitle,
-    grantLegacyPoints,
-    spendLegacyPoints,
     getStateSnapshot,
-    formatHudLine,
+    formatHudLine: () => '',
     formatIntelNote,
   };
 })();
 
+// The old name; callers (waves, HUD, unit names, saves) still use it.
+const AscensionSystem = Honours;
+
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a
 // classic script is not a property of globalThis, so it must be exported explicitly.
+globalThis.Honours = Honours;
 globalThis.AscensionSystem = AscensionSystem;
