@@ -694,7 +694,7 @@ const UX = (() => {
     if (!v) return '';
     const rows = v.traits.map(
       (t) =>
-        `<div class="unit-info-row trait-row" title="${escapeHtml(t.measure)}"><strong>${escapeHtml(t.name)}</strong> ${escapeHtml(t.deed)}: ${escapeHtml(t.gain)}, ${escapeHtml(t.cost)}</div>`
+        `<div class="unit-info-row trait-row" title="${escapeHtml(t.measure)}"><strong>${escapeHtml(t.name)}</strong> ${escapeHtml(t.deed)}: ${escapeHtml(t.gain)}, ${escapeHtml(t.cost)} <button class="unit-quick-btn trait-forget-btn" data-trait="${escapeHtml(t.id)}" title="Give up this trait for good to free the slot for the next deed">Give up</button></div>`
     );
     const free = v.slots - v.traits.length;
     let slots = `Trait slots ${v.traits.length}/${v.slots}`;
@@ -780,6 +780,7 @@ const UX = (() => {
         else if (action === 'hunt-off') Game.setSelectedHunt?.(false);
         else if (action === 'promote') Game.creativePromoteSelectedGeneral?.();
         else if (action === 'vet-upgrade') Game.upgradeSelectedVeteran?.();
+        else if (btn.dataset.trait) Game.forgetSelectedTrait?.(btn.dataset.trait);
         else if (action === 'ascend') Game.ascendSelectedUnit?.();
         else if (action === 'recruit-echo') Game.recruitSelectedEcho?.();
         else if (action?.startsWith('form-')) {

@@ -31,9 +31,9 @@ for (const [id, t] of Object.entries(Veterans.TRAITS)) {
   ok(t.name && t.deed && t.gain && t.cost && t.measure, `${id} names its deed, gain and price`);
   ok(!text.includes('—'), `${id} has no em dash`);
   ok((t.fx || []).length > 0 || t.stats, `${id} changes something`);
-  ok(/\d/.test(t.deed) || /a named boss|a war chief/.test(t.deed), `${id} counts a concrete deed`);
+  ok(/\d/.test(t.deed) || /^Killed /.test(t.deed), `${id} counts a concrete deed`);
 }
-ok(Object.keys(Veterans.TRAITS).length >= 25, 'the pool holds at least 25 traits');
+ok(Object.keys(Veterans.TRAITS).length >= 60, 'the pool holds at least 60 traits');
 
 const a = soldier();
 ok(Veterans.slots(a) === 0, 'a recruit has no trait slot');
@@ -163,6 +163,22 @@ const roll = Veterans.exportHall();
 Veterans.setHall([]);
 Veterans.importHall(roll);
 ok(Veterans.getHall()[0].fallen, 'a roll carried into a new run arrives fallen');
+
+const e = soldier();
+e.vetTier = 1;
+kill(e, 'troll', 5);
+kill(e, 'harpy', 10);
+ok(e.traits.length === 1 && e.traits[0] === 'trollfeller', 'one slot holds the first deed');
+ok(/ the Trollfeller$/.test(sb.getUnitDisplayName(e)), 'the first trait is worn as an epithet');
+ok(Veterans.forgetTrait(e, 'trollfeller', 5), 'a trait can be given up');
+ok(e.traits[0] === 'wing_clipper', 'the freed slot goes to the next earned deed');
+kill(e, 'troll', 1);
+ok(!e.traits.includes('trollfeller'), 'a trait given up is not earned again');
+kill(e, 'boss_gorath', 1, { isNamedBoss: true });
+ok(
+  Veterans.deeds(e).k.boss_gorath === 1 && Veterans.TRAITS.breakers_heir.need(Veterans.deeds(e)),
+  'a named boss kill earns the trait of that boss'
+);
 
 const n = failures();
 console.log(n ? `test-veterans: ${n} FAILED` : 'test-veterans: all passed');

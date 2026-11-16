@@ -423,6 +423,19 @@ const GameArmy = (() => {
     );
   }
 
+  function forgetSelectedTrait(id) {
+    const u = getSelectedUnit();
+    if (!u || !Veterans.TRAITS[id]) return false;
+    const before = [...(u.traits || [])];
+    if (!Veterans.forgetTrait(u, id, GS.wave)) return false;
+    showMessage(`${getUnitDisplayName(u)} gave up ${Veterans.TRAITS[id].name}.`, 200);
+    notifyTraits(
+      u,
+      u.traits.filter((t) => !before.includes(t))
+    );
+    return true;
+  }
+
   function standingHall() {
     return (
       GS.buildings.find(
@@ -630,6 +643,7 @@ const GameArmy = (() => {
     findLivePlayerOfType,
     hasCompanyHall,
     hasChampionsHall,
+    forgetSelectedTrait,
     getHallRoll,
     notifyHallDeath,
     notifyTraits,

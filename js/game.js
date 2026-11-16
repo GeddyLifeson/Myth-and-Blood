@@ -2938,6 +2938,7 @@ const Game = (() => {
     cancelBranchTech,
     upgradeSelectedVeteran,
     raiseVeteran: (id) => GameArmy.raiseVeteran(id),
+    forgetSelectedTrait: (id) => GameArmy.forgetSelectedTrait(id),
     ascendSelectedUnit,
     recruitSelectedEcho,
     getAsymmetricMods,

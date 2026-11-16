@@ -1419,9 +1419,14 @@ function getUnitDisplayName(unit) {
   }
   if (unit.honorName) {
     if (!isValidHonorName(unit.honorName)) repairHonorName(unit);
-    if (isValidHonorName(unit.honorName)) return unit.honorName;
+    if (isValidHonorName(unit.honorName)) return withEpithet(unit, unit.honorName);
   }
-  return getUnitTypeName(unit);
+  return withEpithet(unit, getUnitTypeName(unit));
+}
+
+function withEpithet(unit, name) {
+  const e = typeof Veterans !== 'undefined' ? Veterans.epithet(unit) : '';
+  return e ? `${name} ${e}` : name;
 }
 
 function unitDisplayName(unit) {
@@ -1822,6 +1827,7 @@ function createUnit(type, x, y, team, opts = {}) {
   u.vetStatTierApplied = 0;
   u.vetUpgradeEligible = false;
   u.traits = [];
+  u.forgot = [];
   u.deeds = null;
   u.hallId = null;
   u.timesRaised = 0;

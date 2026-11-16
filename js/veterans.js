@@ -330,13 +330,445 @@ const Veterans = (() => {
     },
   };
 
+  const pct = (m) => Math.round(Math.abs(m - 1) * 100);
+  const price = ([kind, mult, label]) =>
+    kind === 'deal'
+      ? `-${pct(mult)}% damage to ${label}`
+      : `+${pct(mult)}% damage taken from ${label}`;
+  const priceFx = ([kind, mult, , foe]) =>
+    kind === 'deal' ? { deal: mult, foe } : { take: mult, foe };
+
+  /** A bane: so many kills of some enemy types, more damage to them, one named price. */
+  function bane(id, name, measure, label, types, count, deal, cost) {
+    TRAITS[id] = {
+      name,
+      measure,
+      deed: `Killed ${count} ${label}`,
+      gain: `+${pct(deal)}% damage to ${label}`,
+      cost: price(cost),
+      need: (d) => sum(d, types) >= count,
+      fx: [{ deal, foe: types }, priceFx(cost)],
+    };
+  }
+
+  /** A boss trait: earned by killing one named boss, it turns on that boss's own kind. */
+  function bossTrait(id, name, measure, boss, bossType, gain, cost) {
+    const [kind, mult, label, foe] = gain;
+    TRAITS[id] = {
+      name,
+      measure,
+      deed: `Killed ${boss}`,
+      gain:
+        kind === 'deal'
+          ? `+${pct(mult)}% damage to ${label}`
+          : `-${pct(mult)}% damage taken from ${label}`,
+      cost: price(cost),
+      need: (d) => sum(d, [bossType]) >= 1,
+      fx: [kind === 'deal' ? { deal: mult, foe } : { take: mult, foe }, priceFx(cost)],
+    };
+  }
+
+  bane('wing_clipper', 'Wing-Clipper', 'Reach', 'harpies', ['harpy'], 10, 1.3, [
+    'take',
+    1.1,
+    'sky drakes',
+    ['sky_drake'],
+  ]);
+  bane(
+    'mole_catcher',
+    'Mole-Catcher',
+    'Discernment',
+    'goblin burrowers',
+    ['goblin_burrower'],
+    10,
+    1.3,
+    ['deal', 0.9, 'harpies', ['harpy']]
+  );
+  bane('bone_breaker', 'Bone-Breaker', 'Ruin', 'bone summoners', ['bone_summoner'], 5, 1.35, [
+    'take',
+    1.1,
+    'wailing wraiths',
+    ['wailing_wraith'],
+  ]);
+  bane('drake_downer', 'Drake-Downer', 'Reach', 'sky drakes', ['sky_drake'], 4, 1.35, [
+    'deal',
+    0.9,
+    'goblin burrowers',
+    ['goblin_burrower'],
+  ]);
+  bane(
+    'shield_splitter',
+    'Shield-Splitter',
+    'Ruin',
+    'orc shieldbearers',
+    ['orc_shieldbearer'],
+    10,
+    1.3,
+    ['take', 1.1, 'orc archers', ['orc_archer']]
+  );
+  bane(
+    'fire_queller',
+    'Fire-Queller',
+    'Continuity',
+    'goblin firebrands',
+    ['goblin_firebrand'],
+    10,
+    1.3,
+    ['take', 1.1, 'hellmortar packs', ['hellmortar_pack']]
+  );
+  bane(
+    'wraith_layer',
+    'Wraith-Layer',
+    'Discernment',
+    'wailing wraiths',
+    ['wailing_wraith'],
+    8,
+    1.3,
+    ['take', 1.1, 'necromancers', ['necromancer']]
+  );
+  bane('rat_catcher', 'Rat-Catcher', 'Celerity', 'plague rats', ['plague_rat'], 25, 1.3, [
+    'deal',
+    0.9,
+    'abominations',
+    ['abomination'],
+  ]);
+  bane(
+    'legion_breaker',
+    'Legion-Breaker',
+    'Ruin',
+    'hellbound legionnaires',
+    ['hellbound_legionnaire'],
+    10,
+    1.25,
+    ['take', 1.1, 'hellmortar packs', ['hellmortar_pack']]
+  );
+  bane(
+    'strider_hobbler',
+    'Strider-Hobbler',
+    'Vector',
+    'nightmare striders',
+    ['nightmare_strider'],
+    8,
+    1.3,
+    ['deal', 0.9, 'orc shieldbearers', ['orc_shieldbearer']]
+  );
+  bane(
+    'champions_end',
+    "Champion's End",
+    'Volition',
+    'dreadborn champions',
+    ['dreadborn_champion'],
+    4,
+    1.3,
+    ['take', 1.1, 'berserkers', ['berserker']]
+  );
+  bane(
+    'prophet_silencer',
+    'Prophet-Silencer',
+    'Discernment',
+    'warp prophets',
+    ['warp_prophet'],
+    5,
+    1.35,
+    ['take', 1.15, 'grim revenants', ['grim_revenant']]
+  );
+  bane('revenant_layer', 'Revenant-Layer', 'Sustain', 'grim revenants', ['grim_revenant'], 6, 1.3, [
+    'take',
+    1.1,
+    'warp prophets',
+    ['warp_prophet'],
+  ]);
+  bane(
+    'shadow_flayer',
+    'Shadow-Flayer',
+    'Discernment',
+    'umbral stalkers',
+    ['umbral_stalker'],
+    6,
+    1.35,
+    ['deal', 0.9, 'dark knights', ['dark_knight']]
+  );
+  bane(
+    'juggernaut_stopper',
+    'Juggernaut-Stopper',
+    'Transgression',
+    'cinderbound juggernauts',
+    ['cinderbound_juggernaut'],
+    2,
+    1.3,
+    ['deal', 0.9, 'plague rats', ['plague_rat']]
+  );
+  bane('mortar_spiker', 'Mortar-Spiker', 'Reach', 'hellmortar packs', ['hellmortar_pack'], 4, 1.4, [
+    'deal',
+    0.9,
+    'nightmare striders',
+    ['nightmare_strider'],
+  ]);
+  bane(
+    'abominations_bane',
+    "Abomination's Bane",
+    'Transgression',
+    'abominations',
+    ['abomination'],
+    2,
+    1.3,
+    ['take', 1.1, 'plague rats', ['plague_rat']]
+  );
+  bane('behemoth_feller', 'Behemoth-Feller', 'Ruin', 'behemoths', ['behemoth'], 2, 1.3, [
+    'deal',
+    0.9,
+    'goblins',
+    GOBLINS,
+  ]);
+  bane(
+    'colossus_cracker',
+    'Colossus-Cracker',
+    'Transgression',
+    'iron colossi',
+    ['iron_colossus'],
+    2,
+    1.35,
+    ['deal', 0.9, 'harpies', ['harpy']]
+  );
+  bane('void_hunter', 'Void-Hunter', 'Vector', 'void stalkers', ['void_stalker'], 3, 1.35, [
+    'take',
+    1.1,
+    'umbral stalkers',
+    ['umbral_stalker'],
+  ]);
+  bane('wyrmslayer', 'Wyrmslayer', 'Transgression', 'elder wyrms', ['elder_wyrm'], 1, 1.3, [
+    'take',
+    1.1,
+    'goblin firebrands',
+    ['goblin_firebrand'],
+  ]);
+
+  bossTrait(
+    'breakers_heir',
+    "Breaker's Heir",
+    'Continuity',
+    'Gorath the Breaker',
+    'boss_gorath',
+    ['take', 0.85, 'orcs and orc shieldbearers', ['orc', 'orc_shieldbearer']],
+    ['deal', 0.9, 'trolls', ['troll']]
+  );
+  bossTrait(
+    'pale_bane',
+    'Pale-Bane',
+    'Sustain',
+    'Morwen the Pale',
+    'boss_morwen',
+    ['take', 0.8, 'necromancers and bone summoners', ['necromancer', 'bone_summoner']],
+    ['take', 1.1, 'berserkers', ['berserker']]
+  );
+  bossTrait(
+    'mountain_climber',
+    'Mountain-Climber',
+    'Ruin',
+    'Thokk the Mountain',
+    'boss_thokk',
+    ['deal', 1.25, 'trolls and behemoths', ['troll', 'behemoth']],
+    ['take', 1.1, 'harpies', ['harpy']]
+  );
+  bossTrait(
+    'ash_walker',
+    'Ash-Walker',
+    'Continuity',
+    'Grimm Ashborne',
+    'boss_grimm',
+    [
+      'take',
+      0.75,
+      'goblin firebrands and hellmortar packs',
+      ['goblin_firebrand', 'hellmortar_pack'],
+    ],
+    ['deal', 0.9, 'wailing wraiths', ['wailing_wraith']]
+  );
+  bossTrait(
+    'hollow_seer',
+    'Hollow-Seer',
+    'Discernment',
+    'Vexis the Hollow',
+    'boss_vexis',
+    ['deal', 1.3, 'assassins and umbral stalkers', ['assassin', 'umbral_stalker']],
+    ['take', 1.1, 'dark mages', ['dark_mage']]
+  );
+  bossTrait(
+    'iron_breaker',
+    'Iron-Breaker',
+    'Transgression',
+    'Iron Lord Karg',
+    'boss_karg',
+    ['deal', 1.3, 'siege towers and iron colossi', ['siege_tower', 'iron_colossus']],
+    ['deal', 0.9, 'goblins', GOBLINS]
+  );
+  bossTrait(
+    'wyrm_orphaner',
+    'Wyrm-Orphaner',
+    'Reach',
+    'Sylvara Wyrm-Mother',
+    'boss_sylvara',
+    ['deal', 1.3, 'sky drakes and elder wyrms', ['sky_drake', 'elder_wyrm']],
+    ['take', 1.1, 'harpies', ['harpy']]
+  );
+  bossTrait(
+    'rot_proof',
+    'Rot-Proof',
+    'Sustain',
+    'the Rotfather',
+    'boss_rotfather',
+    ['take', 0.75, 'plague rats and abominations', ['plague_rat', 'abomination']],
+    ['deal', 0.9, 'dark knights', ['dark_knight']]
+  );
+  bossTrait(
+    'marshals_ruin',
+    "Marshal's Ruin",
+    'Suasion',
+    'Dread Marshal Volk',
+    'boss_volk',
+    ['deal', 1.2, 'war chiefs and dreadborn champions', ['war_chief', 'dreadborn_champion']],
+    ['take', 1.1, 'hellbound legionnaires', ['hellbound_legionnaire']]
+  );
+  bossTrait(
+    'eternals_end',
+    "Eternal's End",
+    'Transgression',
+    'Malachar the Eternal',
+    'boss_malachar',
+    ['deal', 1.15, 'named bosses', 'boss'],
+    ['take', 1.15, 'elites', 'elite']
+  );
+
+  Object.assign(TRAITS, {
+    iron_will: {
+      name: 'Iron Will',
+      measure: 'Volition',
+      deed: 'Ended 6 waves below a quarter health',
+      gain: '+10 morale',
+      cost: '5% slower on the march',
+      need: (d) => d.close >= 6,
+      fx: [],
+      stats: { maxMorale: 10, speed: 0.95 },
+    },
+    wall_warden: {
+      name: 'Wall-Warden',
+      measure: 'Continuity',
+      deed: 'Made 40 kills from a wall',
+      gain: '-20% damage taken while on a wall',
+      cost: '+15% damage taken off the wall',
+      need: (d) => d.wall >= 40,
+      fx: [
+        { take: 0.8, when: 'wall' },
+        { take: 1.15, when: 'offwall' },
+      ],
+    },
+    stone_still: {
+      name: 'Stone-Still',
+      measure: 'Volition',
+      deed: 'Made 50 kills while ordered to hold',
+      gain: '-15% damage taken while holding',
+      cost: '+10% damage taken while hunting',
+      need: (d) => d.held >= 50,
+      fx: [
+        { take: 0.85, when: 'holding' },
+        { take: 1.1, when: 'hunting' },
+      ],
+    },
+    wound_fury: {
+      name: 'Wound-Fury',
+      measure: 'Celerity',
+      deed: 'Made 25 kills while below half health',
+      gain: '+20% damage while below a quarter health',
+      cost: '+10% damage taken while above 90% health',
+      need: (d) => d.hurt >= 25,
+      fx: [
+        { deal: 1.2, when: 'low25' },
+        { take: 1.1, when: 'high90' },
+      ],
+    },
+    sharpshooter: {
+      name: 'Sharpshooter',
+      measure: 'Reach',
+      deed: 'Shot down 50 enemy shooters',
+      gain: '+35% damage to enemy shooters',
+      cost: '+10% damage taken from enemies that fight hand to hand',
+      replaces: 'counter_archer',
+      need: (d) => d.ranged >= 50,
+      fx: [
+        { deal: 1.35, foe: 'ranged' },
+        { take: 1.1, foe: 'melee' },
+      ],
+    },
+    apex_hunter: {
+      name: 'Apex-Hunter',
+      measure: 'Ruin',
+      deed: 'Killed 15 monsters',
+      gain: '+40% damage to monsters',
+      cost: '+20% damage taken from dark mages',
+      replaces: 'beast_slayer',
+      need: (d) => d.monster >= 15,
+      fx: [
+        { deal: 1.4, foe: 'monster' },
+        { take: 1.2, foe: ['dark_mage'] },
+      ],
+    },
+    elite_bane: {
+      name: 'Elite-Bane',
+      measure: 'Acumen',
+      deed: 'Killed 40 elites',
+      gain: '+25% damage to elites',
+      cost: '-20% damage to horde grunts',
+      replaces: 'elite_hunter',
+      need: (d) => d.elite >= 40,
+      fx: [
+        { deal: 1.25, foe: 'elite' },
+        { deal: 0.8, foe: 'grunt' },
+      ],
+    },
+    runners_doom: {
+      name: "Runner's Doom",
+      measure: 'Vector',
+      deed: 'Cut down 15 line-breakers',
+      gain: '+45% damage to line-breakers',
+      cost: '-15% damage to elites',
+      replaces: 'runner_catcher',
+      need: (d) => d.runner >= 15,
+      fx: [
+        { deal: 1.45, foe: 'runner' },
+        { deal: 0.85, foe: 'elite' },
+      ],
+    },
+    mob_cutter: {
+      name: 'Mob-Cutter',
+      measure: 'Acumen',
+      deed: 'Killed 80 horde grunts',
+      gain: '+15% damage to horde grunts',
+      cost: '-10% damage to elites',
+      need: (d) => d.grunt >= 80,
+      fx: [
+        { deal: 1.15, foe: 'grunt' },
+        { deal: 0.9, foe: 'elite' },
+      ],
+    },
+  });
+
   let hall = [];
   let nextHallId = 1;
 
   function deeds(unit) {
     const d = unit.deeds || (unit.deeds = {});
     d.k = d.k || {};
-    for (const key of ['boss', 'elite', 'monster', 'runner', 'ranged', 'held', 'wall', 'hurt'])
+    for (const key of [
+      'boss',
+      'elite',
+      'monster',
+      'grunt',
+      'runner',
+      'ranged',
+      'held',
+      'wall',
+      'hurt',
+    ])
       d[key] = d[key] || 0;
     for (const key of ['close', 'heldWaves', 'waves']) d[key] = d[key] || 0;
     return d;
@@ -390,7 +822,7 @@ const Veterans = (() => {
     const t = TRAITS[id];
     if (!t || !unit || unit.team !== 'player') return false;
     const traits = unit.traits || (unit.traits = []);
-    if (traits.includes(id)) return false;
+    if (traits.includes(id) || (unit.forgot || []).includes(id)) return false;
     const old = t.replaces ? traits.indexOf(t.replaces) : -1;
     if (old >= 0) {
       applyStats(unit, TRAITS[t.replaces].stats, true);
@@ -431,6 +863,7 @@ const Veterans = (() => {
     if (foeIs(foe, 'boss')) d.boss++;
     if (foeIs(foe, 'elite')) d.elite++;
     if (foeIs(foe, 'monster')) d.monster++;
+    if (foeIs(foe, 'grunt')) d.grunt++;
     if (foeIs(foe, 'runner')) d.runner++;
     if (foeIs(foe, 'ranged') && (killer.combatType === 'ranged' || killer.projectile)) d.ranged++;
     if (killer.holding) {
@@ -488,6 +921,23 @@ const Veterans = (() => {
     const open = slots(unit);
     const nextTier = SLOT_TIERS.find((t) => (unit?.vetTier || 0) < t) || null;
     return { traits: held, slots: open, maxSlots: SLOT_TIERS.length, nextSlotTier: nextTier };
+  }
+
+  /** Gives up a trait for good to free its slot for the next deed. */
+  function forgetTrait(unit, id, wave = 0) {
+    const i = (unit?.traits || []).indexOf(id);
+    if (i < 0) return false;
+    unit.traits.splice(i, 1);
+    applyStats(unit, TRAITS[id]?.stats, true);
+    (unit.forgot || (unit.forgot = [])).push(id);
+    check(unit, wave);
+    return true;
+  }
+
+  /** "the Trollfeller": the first trait a veteran earned, worn after the name. */
+  function epithet(unit) {
+    const t = TRAITS[(unit?.traits || [])[0]];
+    return t ? `the ${t.name}` : '';
   }
 
   /** Old saves have ranks but no deeds: credit the waves and kills the unit already shows. */
@@ -607,7 +1057,9 @@ const Veterans = (() => {
     describe,
     endWave,
     entryOf,
+    epithet,
     exportHall,
+    forgetTrait,
     getHall,
     grantTrait,
     hallBuildBlock,

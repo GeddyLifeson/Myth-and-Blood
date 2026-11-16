@@ -85,6 +85,7 @@ const GameSave = (() => {
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
       traits: u.traits ? [...u.traits] : [],
+      forgot: u.forgot ? [...u.forgot] : [],
       deeds: u.deeds ? JSON.parse(JSON.stringify(u.deeds)) : null,
       hallId: u.hallId || null,
       timesRaised: u.timesRaised || 0,
