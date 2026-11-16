@@ -196,9 +196,6 @@ const GameRender = (() => {
         GS.ctx.arc(stationedGen.x, stationedGen.y, aura.radius, 0, Math.PI * 2);
         GS.ctx.stroke();
       }
-      if (typeof GeneralOrders !== 'undefined') {
-        GeneralOrders.drawField(GS.ctx, GS.updateTick, isInView);
-      }
 
       if (gfxQ?.drawDecor !== false) {
         if (propArt) propArt.drawWrecks(GS.ctx, GS.updateTick, isInView);
@@ -719,6 +716,10 @@ const GameRender = (() => {
 
       // Status marks go over the night and weather layers so they read in the dark.
       Roster.drawMarks(GS.ctx, GS.units, GS.updateTick, getDayLightLevel());
+      // The General's reach and the spy and courier marks: over the night, like the marks above.
+      if (typeof GeneralOrders !== 'undefined') {
+        GeneralOrders.drawField(GS.ctx, GS.updateTick, isInView);
+      }
 
       GS.ctx.globalAlpha = 1;
       GS.ctx.setLineDash([]);

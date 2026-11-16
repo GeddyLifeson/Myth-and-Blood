@@ -338,8 +338,8 @@ const GeneralOrders = (() => {
     const plan = GS.nextWavePlan && GS.nextWavePlan.wave === GS.wave + 1 ? GS.nextWavePlan : null;
     if (night && (GS.pendingWaveMods?.softenShare || 0) > 0) {
       const x = sectorCentre(busiestSector(plan));
-      drawDaggers(c, x, 46, px);
-      label(c, 'AMBUSH', x, 72, BONE);
+      drawDaggers(c, x, 74, px);
+      label(c, 'AMBUSH', x, 100, BONE);
     }
     if (night && plan && GS.scoutedWave === GS.wave + 1) {
       for (const s of plan.sectors || []) {
