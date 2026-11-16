@@ -962,15 +962,6 @@ const ContentExpansion = (() => {
           },
         },
       });
-      let perkBuildReady = false;
-      try {
-        perkBuildReady = typeof PerkBuildTypes !== 'undefined';
-      } catch (_) {
-        /* TDZ when scripts are bundled */
-      }
-      if (perkBuildReady) {
-        PerkBuildTypes.push('perk_double_tap', 'perk_mule_kick', 'perk_sleight');
-      }
     }
 
     HONOR_PREFIX_BY_TYPE.scout = ['Ranger', 'Syr', 'Pathfinder'];

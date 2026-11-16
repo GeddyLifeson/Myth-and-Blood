@@ -812,8 +812,9 @@ const Research = (() => {
     if (BuildDefs[type]?.isWweAcademy) {
       return isFactionUnlocked('champions', opts);
     }
-    // A building upgrade opens with the building it goes on.
-    if (BuildDefs[type]?.upgradeOf) return isBuildUnlocked(BuildDefs[type].upgradeOf, opts);
+    // A building upgrade opens with the building it goes on (Outpost ones keep their node).
+    const up = BuildDefs[type];
+    if (up?.upgradeOf && !up.isOutpostUpgrade) return isBuildUnlocked(up.upgradeOf, opts);
     if (BuildDefs[type]?.isPerkMachine) {
       return completed.has('perk_science') || !!opts.perksMetaUnlocked;
     }

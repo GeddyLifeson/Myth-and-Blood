@@ -157,19 +157,25 @@ function unitHasPerk(unit, perkId) {
   return (unit.perks || []).includes(perkId);
 }
 
+// A General's own tag matched no tonic, so Last Stand could never be drunk; he drinks as support.
+function perkTag(unit) {
+  const tag = getHeroCombatTag(unit);
+  return tag === 'general' ? 'support' : tag;
+}
+
 function perkMatchesUnit(perkId, unit) {
   const def = PerkDefs[perkId];
   if (!def) return false;
   if (def.generalOnly && !unit.isGeneral) return false;
   if (perkId === 'tombstone' && !unit.isGeneral) return false;
-  const tag = getHeroCombatTag(unit);
+  const tag = perkTag(unit);
   return def.tags.includes(tag);
 }
 
 function scorePerkForUnit(perkId, unit) {
   if (!perkMatchesUnit(perkId, unit)) return -1;
   const def = PerkDefs[perkId];
-  const tag = getHeroCombatTag(unit);
+  const tag = perkTag(unit);
   let score = 1;
   if (tag === 'melee' && perkId === 'melee_macchiato') score += 5;
   if (tag === 'melee' && perkId === 'jugger_nog') score += 3;
