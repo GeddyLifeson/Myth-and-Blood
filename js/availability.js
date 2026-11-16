@@ -214,6 +214,9 @@ const Availability = (() => {
       // Panel reasons read as lower-case phrases: "opens at wave 10".
       mentorReason = reason ? reason[0].toLowerCase() + reason.slice(1).replace(/\.$/, '') : '';
     }
+    if (type === 'hall_of_veterans' && !gs.creativeMode && gs.hallBuildBlock) {
+      return blocked(gs.hallBuildBlock, true, { cost });
+    }
     if (!mentorOk) return blocked(mentorReason, true, { cost, mentor: true, research: !unlocked });
     if (!unlocked) {
       const perkNode = def.isPerkMachine

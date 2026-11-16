@@ -110,6 +110,17 @@
     "requiresBuilders": 1,
     "isResearchLab": true
   },
+  "hall_of_veterans": {
+    "name": "Hall of Veterans",
+    "cost": 60,
+    "hp": 260,
+    "cover": 0.4,
+    "radius": 26,
+    "blocksMove": false,
+    "blocksLOS": true,
+    "buildTime": 260,
+    "requiresBuilders": 1
+  },
   "watchtower": {
     "name": "Watchtower",
     "cost": 4,

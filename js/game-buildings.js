@@ -420,6 +420,32 @@ const GameBuildings = (() => {
     );
   }
 
+  /** Loot for a strike force that razed its target (`at` needs only id, x and y). */
+  function payRaidLoot(b) {
+    if (svc('SettlementRaids')) {
+      svc('SettlementRaids').onSettlementDestroyed(b, {
+        units: GS.units,
+        grantTp: (n) => {
+          if (n > 0 && !(GS.creativeMode && GS.creativeSettings.freeResources)) {
+            GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
+            svc('FloatingText').status(b.x, b.y - 8, `+${n} TP`, '#60c0ff');
+          }
+        },
+        grantScience: (n) => {
+          if (n > 0 && svc('Research') && svc('Research').grantSciencePoints) {
+            svc('Research').grantSciencePoints(n, { showMessage });
+            svc('FloatingText').status(b.x, b.y + 10, `+${n} SP`, '#a080ff');
+          }
+        },
+        hooks: {
+          showMessage,
+          addHighlight,
+          floatingText: floatStatus,
+        },
+      });
+    }
+  }
+
   function finalizeBuildingDestroyed(b, opts = {}) {
     if (!b || b._destroyed) return false;
     const wasProducer = isUnitProducingBuilding(b);
@@ -458,6 +484,7 @@ const GameBuildings = (() => {
         GS.structuresRazedThisWave++;
         GS.runStructuresRazed++;
         WarCamps.onDestroyed(wasWarCamp, opts.attacker || null, warCampCtx);
+        payRaidLoot(wasWarCamp);
       }
     } else if (opts.message) showMessage(opts.message);
     else if (!opts.silent) {
@@ -480,28 +507,7 @@ const GameBuildings = (() => {
       if (svc('FactionReputation')) {
         svc('FactionReputation').onEnemyStructureDestroyed(b, GS.wave, { hooks: { showMessage } });
       }
-      if (svc('SettlementRaids')) {
-        svc('SettlementRaids').onSettlementDestroyed(b, {
-          units: GS.units,
-          grantTp: (n) => {
-            if (n > 0 && !(GS.creativeMode && GS.creativeSettings.freeResources)) {
-              GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + n);
-              svc('FloatingText').status(b.x, b.y - 8, `+${n} TP`, '#60c0ff');
-            }
-          },
-          grantScience: (n) => {
-            if (n > 0 && svc('Research') && svc('Research').grantSciencePoints) {
-              svc('Research').grantSciencePoints(n, { showMessage });
-              svc('FloatingText').status(b.x, b.y + 10, `+${n} SP`, '#a080ff');
-            }
-          },
-          hooks: {
-            showMessage,
-            addHighlight,
-            floatingText: floatStatus,
-          },
-        });
-      }
+      payRaidLoot(b);
       if (svc('AsymmetricWarfare')) {
         const lvl = svc('AsymmetricWarfare').onHostStructureDestroyed();
         if (lvl?.delta < 0) {
@@ -736,6 +742,10 @@ const GameBuildings = (() => {
       showMessage('Research Tonic Stations Science at the Research Lab first!');
       return false;
     }
+    if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
+      showMessage(`The Hall of Veterans ${Veterans.hallBuildBlock()}.`);
+      return false;
+    }
     const isAcademyBuild = def?.isAcademy && !def?.isCrossoverBarracks && !def?.isWweAcademy;
     if (
       isAcademyBuild &&
@@ -916,6 +926,10 @@ const GameBuildings = (() => {
       !(research && research.isBuildUnlocked(type, getResearchOpts()))
     ) {
       showMessage('Research Tonic Stations Science at the Research Lab first!');
+      return false;
+    }
+    if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
+      showMessage(`The Hall of Veterans ${Veterans.hallBuildBlock()}.`);
       return false;
     }
     const isAcademyBuild = bdef?.isAcademy && !bdef?.isCrossoverBarracks && !bdef?.isWweAcademy;
@@ -1358,6 +1372,7 @@ const GameBuildings = (() => {
     getTpPerRound,
     inBuildingAttackRange,
     isAttackableEnemyStructure,
+    isTargetableEnemyStructure,
     isBuildSiteBlocked,
     isNorthernHold,
     normalizeEnemyEconomyBuilding,
