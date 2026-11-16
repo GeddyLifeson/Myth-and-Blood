@@ -195,6 +195,22 @@ const man = (x, y, team = 'player', type = 'footman') => ({ x, y, team, type, hp
   G.onNightBegin({ wave: GS.wave, showMessage() {} });
   ok(Game.getState().tpPerRound === base + 3, 'held settlements add to the TP each wave');
 
+  GS.buildings = GS.buildings.filter((x) => !api.WarCamps.isCamp(x));
+  api.WarCamps.resetRun();
+  GS.nextWavePlan = null;
+  const sectors = new Set();
+  for (let i = 0; i < 6; i++) {
+    sectors.add(Game.warCampHooks.raise({ kind: 'drums', silent: true })?.sector);
+    GS.buildings = GS.buildings.filter((x) => !api.WarCamps.isCamp(x));
+    api.WarCamps.resetRun();
+  }
+  ok(
+    sectors.size === 1 && sectors.has('left'),
+    'with every sector open, the host camps on the held top plot'
+  );
+  GS.buildings = GS.buildings.filter((x) => !api.WarCamps.isCamp(x));
+  api.WarCamps.resetRun();
+
   const snap = JSON.parse(JSON.stringify(Game.exportGameState()));
   G.resetRun();
   ok(Game.importGameState(snap) !== false, 'the save loads');
