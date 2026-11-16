@@ -301,53 +301,11 @@ const GameArmy = (() => {
     if (typeof EternalLegacyTree !== 'undefined' && !GS.creativeMode) {
       EternalLegacyTree.applyUnitBonuses(u, GS.wave);
     }
-    if (typeof FoundationalMedievalLayer !== 'undefined' && !GS.creativeMode) {
-      const fmods = FoundationalMedievalLayer.getRunModifiers(GS.wave);
-      if (fmods.footmanHpMult > 1 && (u.type === 'footman' || u.type === 'pikeman')) {
-        u.maxHp = Math.floor(u.maxHp * fmods.footmanHpMult);
-        u.hp = Math.min(u.hp, u.maxHp);
-      }
-      if (fmods.mythicMorale > 0 && u.team === 'player') {
-        const mythic =
-          (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(u.type)) ||
-          (typeof isChampionUnit === 'function' && isChampionUnit(u.type)) ||
-          u.type === 'doomslayer_hero';
-        if (mythic) u.morale = Math.min(u.maxMorale, u.morale + fmods.mythicMorale);
-      }
-      u.foundationalDnaApplied = true;
-    }
-    if (typeof AscensionSystem !== 'undefined' && !GS.creativeMode) {
-      AscensionSystem.applySpawnBonusesFromBuildings(u, GS.buildings);
-      AscensionSystem.reapplyAscensionBonuses(u);
-    }
-    if (typeof ThematicEraSynergies !== 'undefined' && !GS.creativeMode) {
-      ThematicEraSynergies.applyThematicUnitBonuses(u, GS.wave);
-    }
-    if (typeof HybridPowerFantasy !== 'undefined' && !GS.creativeMode) {
-      HybridPowerFantasy.applyUnitFantasy(u, GS.wave);
-    }
     if (typeof NarrativeThread !== 'undefined' && !GS.creativeMode) {
       NarrativeThread.applyLegendBonuses(u, GS.wave);
     }
-    if (typeof EternalPathFramework !== 'undefined' && !GS.creativeMode) {
-      EternalPathFramework.applyPathUnitBonuses(u, GS.wave);
-    }
-    if (typeof MartialPathEvolution !== 'undefined' && !GS.creativeMode) {
-      MartialPathEvolution.captureGeneFather(u, GS.wave);
-      MartialPathEvolution.applyLegionUnitBonuses(u, GS.wave);
-    }
-    if (typeof ArcanePathEvolution !== 'undefined' && !GS.creativeMode) {
-      ArcanePathEvolution.captureFoundingMage(u, GS.wave);
-      ArcanePathEvolution.applyWeaverUnitBonuses(u, GS.wave);
-    }
-    if (typeof TechPathEvolution !== 'undefined' && !GS.creativeMode) {
-      TechPathEvolution.captureFoundingBuilder(u, GS.wave);
-      TechPathEvolution.applyFoundryUnitBonuses(u, GS.wave);
-    }
-    if (typeof MythicPathEvolution !== 'undefined' && !GS.creativeMode) {
-      MythicPathEvolution.captureFirstChampion(u, GS.wave);
-      MythicPathEvolution.applyChampionUnitBonuses(u, GS.wave);
-    }
+    if (typeof RunPath !== 'undefined' && !GS.creativeMode) RunPath.applyUnit(u);
+    if (typeof Honours !== 'undefined' && !GS.creativeMode) Honours.onRecruit(u);
     if (typeof TechTreeBranches !== 'undefined' && !GS.creativeMode) {
       const fx = TechTreeBranches.getCombinedEffects(GS.wave);
       // These four were shown on the tree ("Dmg ×1.xx") but never applied.
@@ -491,17 +449,17 @@ const GameArmy = (() => {
     return true;
   }
 
-  function ascendSelectedUnit() {
-    if (GS.creativeMode || typeof AscensionSystem === 'undefined') return false;
+  function ascendSelectedUnit(honourId) {
+    if (GS.creativeMode || typeof Honours === 'undefined') return false;
     const id = GS.selectedUnitId || GS.selectedUnitIds[0];
     const u = id ? getUnitById(id) : null;
     if (!u || u.hp <= 0) {
-      showMessage('Select a veteran to ascend.', 180);
+      showMessage('Select a veteran to honour.', 180);
       return false;
     }
-    const result = AscensionSystem.tryAscendUnit(u, GS.wave, { showMessage, addHighlight });
+    const result = Honours.give(u, honourId, { showMessage, addHighlight });
     if (!result.ok) {
-      showMessage(result.msg || 'Cannot ascend.', 220);
+      showMessage(result.msg || 'Cannot honour him.', 220);
       return false;
     }
     svc('UI').updateHUD(true);

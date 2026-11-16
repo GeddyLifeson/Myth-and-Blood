@@ -1,0 +1,17 @@
+{
+  "iron_raider": {
+    "name": "Iron Raider",
+    "hp": 70,
+    "accuracy": 30,
+    "damage": 16,
+    "range": 22,
+    "meleeRange": 22,
+    "speed": 0.9,
+    "type": "melee",
+    "morale": 12,
+    "role": "Deserter",
+    "trait": "Wears stolen legion plate; shrugs off the first arrows.",
+    "weak": "Slow; cavalry runs it down.",
+    "sprite": { "body": "#3a2a2a", "accent": "#7a6a6a", "mark": "#a3141a", "size": 8 }
+  }
+}

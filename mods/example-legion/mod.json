@@ -3,7 +3,7 @@
   "name": "Iron Legion",
   "version": "1.0.0",
   "author": "Myth & Blood",
-  "description": "Adds Iron Guard troops and Iron Bastion outposts.",
+  "description": "Adds Iron Guard troops, Iron Bastion outposts, Iron Raider deserters every 5 waves and the Legion Drill spoil.",
   "units": "units.json",
   "buildings": "buildings.json",
   "script": "mod.js",
@@ -12,5 +12,8 @@
   "hud": {
     "deploy": true,
     "build": true
-  }
+  },
+  "enemies": "enemies.json",
+  "waves": "waves.json",
+  "spoils": "spoils.json"
 }

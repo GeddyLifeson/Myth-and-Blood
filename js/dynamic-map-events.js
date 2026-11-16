@@ -881,7 +881,7 @@ const DynamicMapEvents = (() => {
       for (const u of ctx.units || []) {
         if (u.hp <= 0 || u.team === 'neutral') continue;
         if (m.surgeTeam === 'player' && u.team !== 'player') continue;
-        if (Math.random() > 0.35) continue;
+        if ((globalThis.simRandom || Math.random)() > 0.35) continue;
         ctx.damageUnit?.(u, m.surgeDamage, { attackerTeam: 'neutral' });
       }
     }

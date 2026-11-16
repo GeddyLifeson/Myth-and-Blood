@@ -2606,6 +2606,9 @@ body.ui-v2 #begin-day-btn .bd-time::before {
   content: 'night ends in ';
   font-weight: 400;
 }
+body.ui-v2 #begin-day-btn:disabled .bd-time::before {
+  content: 'horn ready in ';
+}
 body.ui-v2 #begin-day-btn .bd-key {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -4962,6 +4965,62 @@ body.ui-v2 .intel-faction-card.intel-card-dormant {
 }
 body.ui-v2 .intel-faction-stage {
   color: var(--bone-dim) !important;
+}
+
+/* Creative Lab and level editor: the one modal look (ink, red frame, square corners). */
+body.ui-v2 .creative-panel.creative-modal {
+  color: var(--bone);
+  background: var(--ink);
+  border: 2px solid #c8202a;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  backdrop-filter: none;
+}
+body.ui-v2 .creative-modal .creative-panel-title.modal-title {
+  margin: 0;
+  font-size: var(--fs-4);
+}
+body.ui-v2 .creative-modal .creative-panel-sub,
+body.ui-v2 .creative-modal .creative-hint,
+body.ui-v2 .creative-modal .creative-label {
+  color: var(--text-secondary);
+}
+body.ui-v2 .creative-modal .creative-section {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+body.ui-v2 .creative-modal .creative-section-head {
+  font-family: var(--font-head);
+  color: var(--blood);
+}
+body.ui-v2 .creative-modal .creative-btn,
+body.ui-v2 .creative-modal .creative-select,
+body.ui-v2 .creative-modal .creative-input,
+body.ui-v2 .creative-modal .creative-textarea {
+  color: var(--bone);
+  background: var(--ink-3);
+  border: 1px solid var(--bone-mute);
+  border-radius: 0;
+}
+body.ui-v2 .creative-modal .creative-btn:hover:not(:disabled) {
+  background: #3a1216;
+  border-color: var(--blood);
+}
+body.ui-v2 .creative-modal .creative-btn.primary,
+body.ui-v2 .creative-modal .creative-btn.active {
+  color: #fff;
+  background: var(--blood-deep);
+  border-color: #c8202a;
+}
+body.ui-v2 .creative-modal .creative-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lb-cheated,
+.online-cheated {
+  color: var(--text-muted, #a69a86);
+  font-style: italic;
 }
 
 /* A doctrine waiting for a choice: the button that opens it stands out. */

@@ -84,6 +84,7 @@ const GameSave = (() => {
       vetTier: u.vetTier,
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
+      soldierName: u.soldierName,
       traits: u.traits ? [...u.traits] : [],
       forgot: u.forgot ? [...u.forgot] : [],
       deeds: u.deeds ? JSON.parse(JSON.stringify(u.deeds)) : null,
@@ -529,6 +530,9 @@ const GameSave = (() => {
     if (!u) return null;
     if (us.id) u.id = us.id;
     Object.assign(u, us);
+    if (u.team === 'player' && u.soldierName) SoldierNames.remember(u.soldierName);
+    else if (u.team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(u.type)))
+      u.soldierName = SoldierNames.roll();
     if (legacy) stopPostReturn(u);
     if (u.team === 'player') {
       if (legacy) {
@@ -875,6 +879,8 @@ const GameSave = (() => {
     if (rolledAnew || !snap.modules?.SiegeLoop?.data?.preview) SiegeLoop.refreshPreview(siegeCtx);
     if (svc('UX')) svc('UX').onPauseChanged(true);
     syncInteractionState({ refreshCounts: true });
+    const modNote = svc('ModLoader')?.missingWarning?.();
+    if (modNote) warnings.push(modNote);
     if (droppedUnits) {
       warnings.push(
         `${droppedUnits} soldier${droppedUnits === 1 ? '' : 's'} in this save belong${droppedUnits === 1 ? 's' : ''} to content that is not loaded (a mod that is off?) and ${droppedUnits === 1 ? 'was' : 'were'} left out.`
