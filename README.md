@@ -261,7 +261,7 @@ Every building needs a Builder on the field. One Builder runs two projects at a 
 | Trade Outpost   | 10  | +2 TP at dawn                                                                           |                   |
 | Quarry          | 14  | +3 TP at dawn                                                                           | Prospecting       |
 | Castle          | 46  | A full compound: walls, outposts, a keep, a med tent and a mess hall                    | Fortification     |
-| Training Ground | 40  | A posted mentor of rank 2 or more raises one recruit of that type, a rank up, each dawn | Wave 10, one only |
+| Training Ground | 30  | A posted mentor of rank 2 or more raises one recruit of that type, a rank up, each dawn | Wave 10, one only |
 
 An Outpost becomes a Barracks **or** a Granary. The choice is final for that Outpost. To post a mentor on the Training Ground, select one soldier of rank 2 or higher and move them onto it; they hold there, off the line, and are badly hurt if it falls. Academy Charter research makes the recruits arrive at rank 2. DEMOLISH removes a building for part of its price, MOVE relocates a finished one, and `R` turns a wall before it is placed.
 

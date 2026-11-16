@@ -165,7 +165,7 @@
   },
   "training_ground": {
     "name": "Training Ground",
-    "cost": 40,
+    "cost": 30,
     "hp": 220,
     "cover": 0.4,
     "radius": 24,

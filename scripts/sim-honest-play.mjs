@@ -39,8 +39,8 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 
 function playOne(diff, seed) {
   const { sb, cvs } = boot(seed);
-  const { Game, SpriteGen, UnitDefs } = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, UnitDefs })`,
+  const { Game, SpriteGen, UnitDefs, GameState, syncVeteranStatsToTier } = vm.runInContext(
+    `${code}\n({ Game, SpriteGen, UnitDefs, GameState, syncVeteranStatsToTier })`,
     vm.createContext(sb)
   );
   SpriteGen.prewarmCache = () => {};
@@ -60,6 +60,7 @@ function playOne(diff, seed) {
   let lastWave = -1;
   let lastWaveTick = 0;
   let stalledAt = null;
+  // While saving for the ground the bot buys no troops.
   // Training Ground A/B: 0 waiting, 1 mentor made, 2 builder placed, 3 ground placed, 4 done.
   let tgStep = TG ? 0 : 4;
   let tgTries = 0;
@@ -116,15 +117,16 @@ function playOne(diff, seed) {
           Game.selectDeploy('builder');
           Game.handleClick(640, 600);
           tgStep = 2;
-        } else if (tgStep === 2 && s.tactical >= 40) {
+        } else if (tgStep === 2 && s.tactical >= 30) {
           Game.selectBuild('training_ground');
-          if (Game.handleClick(700 + (tgTries % 6) * 16, 600 - (tgTries % 3) * 14)) {
-            const g = GameState.buildings.find((b) => b.type === 'training_ground');
+          Game.handleClick(700 + (tgTries % 6) * 16, 600 - (tgTries % 3) * 14);
+          const g = GameState.buildings.find((b) => b.type === 'training_ground');
+          if (g && mentor.hp > 0) {
             Game.selectUnit(mentor.id);
             Game.moveSelectionToWorld(g.x, g.y);
             Game.clearSelection?.();
             tgStep = 3;
-          } else if (++tgTries >= 40) tgStep = 4;
+          } else if (g || ++tgTries >= 40) tgStep = 4;
         }
       }
       if (s.timeOfDay === 'night') {
@@ -145,7 +147,7 @@ function playOne(diff, seed) {
           } else if (t % 20 === 0) {
             Game.beginDayPhase(true);
           }
-        } else if (s.canDeploy && s.tactical >= cost) {
+        } else if (s.canDeploy && s.tactical >= cost && !(tgStep >= 1 && tgStep < 3)) {
           const before = s.army ?? 0;
           Game.selectDeploy(type);
           Game.handleClick(480 + ((deployed * 37) % 320), 520 + ((deployed * 53) % 90));

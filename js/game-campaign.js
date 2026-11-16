@@ -11,7 +11,6 @@ const GameCampaign = (() => {
     playSfx,
     releaseUnitRecord,
     svc,
-    unitCounts,
   } = GameCore;
   const GS = GameState;
   const {
@@ -658,32 +657,6 @@ const GameCampaign = (() => {
       );
     }
     if (anyCompleted) invalidateObstacles();
-  }
-
-  function spawnAcademyUnit(academy, unitType) {
-    // Beside the mentor's drill spot at the ground's front edge.
-    const sx = academy.x + 18;
-    const sy = academy.y + 30;
-    const u = spawnUnit(unitType, sx, sy, 'player');
-    if (!u) {
-      showMessage(`Academy failed to train ${unitType} — unit definition missing.`, 280);
-      return null;
-    }
-    applyPlayerStatMods(u);
-    u.targetY = GS.rallyY;
-    u.huntMode = GS.globalHunt && u.canHunt;
-    if (u.canHunt && !u.huntMode) {
-      u.manualOrder = true;
-      u.holdX = u.x;
-      u.holdY = u.y;
-      u.targetX = u.x;
-      u.targetY = u.y;
-      u.pathTargetId = 'hold';
-    }
-    if (svc('ContentExpansion')) svc('ContentExpansion').applyLoadoutToUnit(u);
-    GS.units.push(u);
-    svc('Particles').dust(sx, sy);
-    return u;
   }
 
   /** The mentor posted at a Training Ground, if alive and standing at the post. */
