@@ -145,6 +145,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "GameWaves",
   "GeneralOrders",
   "GfxQuality",
+  "Ground",
   "HAMLET_AURA_RADIUS",
   "HAMLET_TP_PER_ROUND",
   "HONOR_NAME_POOL",

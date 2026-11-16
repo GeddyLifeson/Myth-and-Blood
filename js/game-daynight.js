@@ -205,6 +205,8 @@ const GameDayNight = (() => {
     GS.timeOfDay = 'night';
     GS.nightTimer = 0;
     refreshUnitCounts();
+    // Before the round's TP, so a plot that just became a hamlet pays tonight.
+    if (typeof Ground !== 'undefined') Ground.onNightBegin(siegeCtx);
     awardRoundTP();
     syncEconomyActions();
     // Decide now where tomorrow's host comes from, so the night can show it.
@@ -570,7 +572,7 @@ const GameDayNight = (() => {
   function awardRoundTP() {
     if (GS.tpAwardedForWave === GS.wave) return;
     GS.tpAwardedForWave = GS.wave;
-    const eco = getSettlementTpBonus();
+    const eco = getSettlementTpBonus(true);
     // No arbitrary 120 ceiling — multi-hamlet / high-wave income was being clipped.
     // Bank still hard-capped by sanitizeTactical / TP_SANITY_CAP.
     const techTpMult =
