@@ -97,6 +97,34 @@ const CrownLegacies = (() => {
       unlock: (leg) => (leg.honorCount || 0) >= 8,
       effects: { extraHeirSlot: 1 },
     },
+    // Trade-offs: a real gain paid for inside the run.
+    honor_guard: {
+      id: 'honor_guard',
+      name: 'Honor Guard',
+      hint: 'Crown 1 honor name (lifetime)',
+      desc: '+1 honor heir slot. Cost: 3 fewer starting TP',
+      tradeoff: true,
+      unlock: (leg) => (leg.honorCount || 0) >= 1,
+      effects: { extraHeirSlot: 1, startTp: -3 },
+    },
+    second_wall: {
+      id: 'second_wall',
+      name: 'Second Wall',
+      hint: 'Reach wave 20+ on any run',
+      desc: '+2 breach limit. Cost: 10% more enemies',
+      tradeoff: true,
+      unlock: (leg) => (leg.maxWaveEver || 0) >= 20,
+      effects: { missLimitDelta: 2, enemyCountMult: 1.1 },
+    },
+    blood_price: {
+      id: 'blood_price',
+      name: 'Blood Price',
+      hint: '200+ lifetime kills',
+      desc: '+8% damage. Cost: your troops take 6% more damage',
+      tradeoff: true,
+      unlock: (leg) => (leg.totalKills || 0) >= 200,
+      effects: { playerDmgMult: 1.08, damageTakenMult: 1.06 },
+    },
   };
 
   const CORE_LINE_TYPES = new Set(['footman', 'archer', 'pikeman']);
@@ -249,6 +277,7 @@ const CrownLegacies = (() => {
     const legacies = Object.values(PASSIVE_LEGACIES).map((def) => ({
       id: def.id,
       group: 'legacy',
+      tradeoff: !!def.tradeoff,
       name: def.name,
       desc: def.desc,
       hint: def.hint,
@@ -321,7 +350,9 @@ const CrownLegacies = (() => {
   }
 
   function getMaxHeirSlots() {
-    const extra = (data.activeIds || []).includes('blood_crown') ? 1 : 0;
+    let extra = 0;
+    for (const id of data.activeIds || [])
+      extra += PASSIVE_LEGACIES[id]?.effects.extraHeirSlot || 0;
     return BASE_HEIR_SLOTS + extra;
   }
 
@@ -363,6 +394,8 @@ const CrownLegacies = (() => {
       favoriteType: null,
       damageTakenMult: 1,
       extraHeirSlot: 0,
+      missLimitDelta: 0,
+      enemyCountMult: 1,
     };
     for (const id of currentSlots()) {
       const def = PASSIVE_LEGACIES[id];
@@ -379,6 +412,8 @@ const CrownLegacies = (() => {
       if (e.favoriteDmgMult) out.favoriteDmgMult *= e.favoriteDmgMult;
       if (e.damageTakenMult) out.damageTakenMult *= e.damageTakenMult;
       if (e.extraHeirSlot) out.extraHeirSlot += e.extraHeirSlot;
+      if (e.missLimitDelta) out.missLimitDelta += e.missLimitDelta;
+      if (e.enemyCountMult) out.enemyCountMult *= e.enemyCountMult;
       if (e.useFavoriteType) {
         out.favoriteType = leg ? leg.favoriteUnitType || cachedFavoriteType : cachedFavoriteType;
       }
@@ -466,6 +501,7 @@ const CrownLegacies = (() => {
     invalidate();
     const fx = getCombinedEffects();
     if (fx.startTp > 0) ctx.grantTp?.(fx.startTp);
+    else if (fx.startTp < 0) ctx.spendTp?.(-fx.startTp);
     let heirs = 0;
     const list = getActiveHeirs();
     for (let i = 0; i < list.length; i++) {
@@ -599,7 +635,13 @@ const CrownLegacies = (() => {
     if (!p.unlocked) reason = `Locked: ${p.hint}`;
     else if (!slotted && full) reason = 'All slots taken: clear one first';
     const disabled = !!reason;
-    const status = slotted ? 'SLOTTED' : p.unlocked ? 'SLOT' : 'LOCKED';
+    const status = slotted
+      ? 'SLOTTED'
+      : p.unlocked
+        ? p.tradeoff
+          ? 'TRADE-OFF'
+          : 'SLOT'
+        : 'LOCKED';
     const cls = `muster-perk${slotted ? ' slotted' : ''}${disabled ? ' unavailable' : ''}`;
     return (
       `<button type="button" class="${cls}" data-perk="${esc(p.id)}"${disabled ? ' disabled' : ''}` +

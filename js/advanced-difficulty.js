@@ -376,6 +376,12 @@ const AdvancedDifficulty = (() => {
         }
       }
     }
+    // Muster trade-off perks pay their cost through the same wave and breach rules.
+    if (typeof CrownLegacies !== 'undefined' && CrownLegacies.getCombinedEffects) {
+      const perk = CrownLegacies.getCombinedEffects();
+      combined.missLimitDelta += perk.missLimitDelta || 0;
+      combined.enemyCountMult *= perk.enemyCountMult || 1;
+    }
     return combined;
   }
 

@@ -1548,6 +1548,10 @@ const Game = (() => {
             sanitizeTactical();
           }
         },
+        spendTp: (n) => {
+          GS.tactical = Math.max(0, GS.tactical - n);
+          sanitizeTactical();
+        },
         spawnUnit: (type, x, y, team, opts) => spawnUnit(type, x, y, team, opts),
         pushUnit: (u) => GS.units.push(u),
         hooks: { showMessage },

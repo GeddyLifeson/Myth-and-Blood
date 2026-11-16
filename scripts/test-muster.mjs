@@ -36,11 +36,17 @@ function boot(initial = {}, ribbons = []) {
     SiegeLoop: { getRibbons: () => ribbons },
   });
   ctx.globalThis = ctx;
-  const code = ['save-registry.js', 'legacy.js', 'crown-legacies.js', 'eternal-legacy-tree.js']
+  const code = [
+    'save-registry.js',
+    'advanced-difficulty.js',
+    'legacy.js',
+    'crown-legacies.js',
+    'eternal-legacy-tree.js',
+  ]
     .map(src)
     .join('\n;\n');
   const mods = vm.runInContext(
-    `${code}\n({ SaveRegistry, Legacy, CrownLegacies, EternalLegacyTree })`,
+    `${code}\n({ SaveRegistry, AdvancedDifficulty, Legacy, CrownLegacies, EternalLegacyTree })`,
     ctx
   );
   const realGet = mods.Legacy.get;
@@ -210,6 +216,54 @@ const ETERNAL = 'myth-and-blood-eternal-legacy-v1';
   listener({ target: { closest: () => btn } });
   ok(pending === null, 'Decline clears the pending run');
   ok(!/New Game\+/.test(host.innerHTML), 'and the section disappears');
+}
+
+// --- trade-off perks: each gain comes with a cost paid in the run
+{
+  const m = boot({
+    [LEGACY]: {
+      totalKills: 300,
+      maxWaveEver: 25,
+      honorNames: [
+        { name: 'Syr Aldric', type: 'footman', wave: 22 },
+        { name: 'Dame Elara', type: 'archer', wave: 35 },
+        { name: 'Magister Voss', type: 'mage', wave: 48 },
+      ],
+    },
+    [CROWN]: { version: 2, slotsOwned: 3 },
+  });
+  const perks = m.CrownLegacies.getMenuSnapshot().perks.filter((p) => p.tradeoff);
+  ok(perks.length === 3 && perks.every((p) => p.unlocked), 'three trade-off perks unlocked');
+  ok(
+    perks.every((p) => /Cost:/.test(p.desc)),
+    'each names its cost'
+  );
+
+  const base = m.AdvancedDifficulty.getCombinedMods();
+  ok(m.CrownLegacies.toggleSlot('second_wall').ok, 'slot Second Wall');
+  const wall = m.AdvancedDifficulty.getCombinedMods();
+  ok(wall.missLimitDelta === base.missLimitDelta + 2, 'Second Wall: +2 breach limit');
+  ok(
+    Math.abs(wall.enemyCountMult - base.enemyCountMult * 1.1) < 1e-9,
+    'Second Wall: 10% more enemies'
+  );
+
+  ok(m.CrownLegacies.toggleSlot('blood_price').ok, 'slot Blood Price');
+  const fx = m.CrownLegacies.getCombinedEffects();
+  ok(
+    fx.playerDmgMult > 1.07 && fx.damageTakenMult > 1.05,
+    'Blood Price: more damage dealt and taken'
+  );
+
+  ok(m.CrownLegacies.toggleSlot('honor_guard').ok, 'slot Honor Guard');
+  ok(m.CrownLegacies.getMenuSnapshot().maxHeirs === 3, 'Honor Guard: third heir slot');
+  let spent = 0;
+  let granted = 0;
+  m.CrownLegacies.applyRunStartBonuses({
+    grantTp: (n) => (granted += n),
+    spendTp: (n) => (spent += n),
+  });
+  ok(spent === 3 && granted === 0, `Honor Guard: 3 fewer starting TP (spent ${spent})`);
 }
 
 process.exit(failures() ? 1 : 0);
