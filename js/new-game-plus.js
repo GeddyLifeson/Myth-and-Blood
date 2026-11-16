@@ -79,7 +79,10 @@ const NewGamePlus = (() => {
     const tier = clampTier((fromTier || 0) + 1);
     const hall =
       typeof Veterans !== 'undefined' && Veterans.exportHall ? Veterans.exportHall() || [] : null;
-    data.pending = hall ? { tier, hall, veterans: [] } : { tier, veterans: pickVeterans(units) };
+    // An empty Hall (no veteran reached the top rank) still carries the best living veterans.
+    data.pending = hall?.length
+      ? { tier, hall, veterans: [] }
+      : { tier, veterans: pickVeterans(units) };
     data.bestTier = Math.max(data.bestTier, tier);
     save();
     return data.pending;
