@@ -176,11 +176,12 @@ const AsymmetricWarfare = (() => {
 
     return {
       ratio,
-      enemyCountMult: Math.max(0.9, Math.min(1.38, 0.94 + ratio * 0.14)),
-      enemyIntervalMult: Math.max(0.72, Math.min(1.08, 1.04 - ratio * 0.08)),
-      planetCreepMult: Math.max(1, Math.min(1.45, 1 + (ratio - 1) * 0.18)),
-      eliteSlotBonus: Math.max(0, Math.floor((threatLevel - 4) / 5)),
-      multiFlankBias: threatLevel >= 8 ? Math.min(0.55, 0.12 + (threatLevel - 8) * 0.025) : 0,
+      // The host no longer grows in secret: enemy-side outputs are neutral, the omen deck speaks instead.
+      enemyCountMult: 1,
+      enemyIntervalMult: 1,
+      planetCreepMult: 1,
+      eliteSlotBonus: 0,
+      multiFlankBias: 0,
       commanderNightPrepMult:
         authority >= 82 ? 1.1 : authority >= 58 ? 1.06 : authority >= 32 ? 1.03 : 1,
       commanderBuilderMult:

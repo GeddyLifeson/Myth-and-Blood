@@ -18,6 +18,7 @@ const Research = (() => {
     'medical_tent',
     'mess_hall',
     'research_lab',
+    'hall_of_veterans',
     'watchtower',
     'trade_outpost',
     'enemy_hamlet',

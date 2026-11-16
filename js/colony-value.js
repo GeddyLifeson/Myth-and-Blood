@@ -239,8 +239,8 @@ class ColonyValueSystem {
    * Convert kingdom strength into wave pressure. Stat multipliers stay modest because
    * getWaveConfig().hpScale/dmgScale already escalates enemies with wave number.
    */
-  deriveWavePressure(colony, wave) {
-    const ratio = colony?.threatRatio || 1;
+  /** Host size factor from the kingdom's value against the wave's expected value. */
+  hostCountMult(ratio, wave) {
     let countCurve = wave < 10 ? 0.38 : wave < 25 ? 0.48 : 0.55;
     if (typeof getKingdomStageBuffs === 'function') {
       const kb = getKingdomStageBuffs(wave);
@@ -248,7 +248,23 @@ class ColonyValueSystem {
         countCurve = Math.min(0.78, countCurve * kb.colonyPressureCurve);
       }
     }
-    const countMult = Math.max(0.7, Math.min(1.55, Math.pow(ratio, countCurve)));
+    return Math.max(0.7, Math.min(1.55, Math.pow(ratio || 1, countCurve)));
+  }
+
+  /**
+   * The kingdom value as one readable phrase: "Kingdom value 412 of 450 expected: host -3%".
+   * Shown in the night preview so the host size is never a hidden multiplier.
+   */
+  formatValueLine(colony, wave) {
+    if (!colony || !colony.total) return '';
+    const pct = Math.round((this.hostCountMult(colony.threatRatio, wave) - 1) * 100);
+    const host = pct === 0 ? 'host as planned' : `host ${pct > 0 ? '+' : ''}${pct}%`;
+    return `Kingdom value ${colony.total} of ${colony.baseline} expected: ${host}`;
+  }
+
+  deriveWavePressure(colony, wave) {
+    const ratio = colony?.threatRatio || 1;
+    const countMult = this.hostCountMult(ratio, wave);
     const statPressure = 1 + (ratio - 1) * 0.08;
     const hpMult = Math.max(0.9, Math.min(1.14, statPressure));
     const dmgMult = Math.max(0.9, Math.min(1.12, statPressure));
@@ -524,9 +540,11 @@ class ColonyValueSystem {
     ];
     if (pressure) {
       const hostPct = Math.round((pressure.countMult - 1) * 100);
-      const hostWord =
-        hostPct > 4 ? `+${hostPct}% larger` : hostPct < -4 ? `${hostPct}% lighter` : 'matched';
-      lines.push('', `Next wave host pressure: ${hostWord} assault`);
+      const hostWord = hostPct === 0 ? 'as planned' : `${hostPct > 0 ? '+' : ''}${hostPct}% foes`;
+      lines.push('', `Next wave host size: ${hostWord}`);
+      lines.push(
+        'Value counts soldiers by price, buildings, banked TP and income. More value, bigger host.'
+      );
       lines.push(
         `Spawn HP ×${(pressure.hpMult || 1).toFixed(2)} · Damage ×${(pressure.dmgMult || 1).toFixed(2)}`
       );
@@ -555,10 +573,10 @@ class ColonyValueSystem {
 
   formatNightPreview(colony, nextWave, pressure) {
     const sizePct = Math.round(((pressure?.countMult || 1) - 1) * 100);
-    const sizeWord = sizePct > 6 ? 'larger' : sizePct < -6 ? 'lighter' : 'matched';
     const tier = colony?.tier?.label || 'On-pace';
-    if (sizeWord === 'matched') return `Wave ${nextWave}: ${tier} threat · matched assault.`;
-    return `Wave ${nextWave}: ${tier} threat · expect a ${sizeWord} assault.`;
+    const value = colony?.total ? `kingdom value ${colony.total} of ${colony.baseline}` : '';
+    const host = sizePct === 0 ? 'host as planned' : `host ${sizePct > 0 ? '+' : ''}${sizePct}%`;
+    return `Wave ${nextWave}: ${tier} threat${value ? `, ${value}` : ''} · ${host}.`;
   }
 
   formatThreatTierTable() {
