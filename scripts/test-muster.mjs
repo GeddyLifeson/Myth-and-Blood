@@ -48,7 +48,7 @@ function boot(initial = {}, ribbons = []) {
     counts.legacyGet++;
     return realGet();
   };
-  return { ...mods, counts, store };
+  return { ...mods, counts, store, ctx };
 }
 
 const CROWN = 'myth-and-blood-crown-legacies-v1';
@@ -178,6 +178,38 @@ const ETERNAL = 'myth-and-blood-eternal-legacy-v1';
     misses: 3,
   });
   ok(!/lost|losses/.test(old), 'old record without a losses count shows none');
+}
+
+// --- a pending New Game+ run shows its tier and veterans, and can be declined
+{
+  const m = boot({ [LEGACY]: {} });
+  let pending = {
+    tier: 2,
+    veterans: [{ type: 'archer', vetTier: 3, kills: 41, name: 'Dame Elara' }],
+  };
+  let listener = null;
+  const host = {
+    innerHTML: '',
+    addEventListener: (_, fn) => (listener = fn),
+    querySelector: () => null,
+  };
+  m.ctx.document = { getElementById: (id) => (id === 'muster-perks' ? host : null) };
+  m.ctx.NewGamePlus = {
+    getPending: () => pending,
+    clearPending: () => (pending = null),
+    enemyMods: (t) => ({ enemyHpMult: 1 + 0.2 * t, enemyDmgMult: 1.24, enemyCountMult: 1.16 }),
+  };
+  m.CrownLegacies.bindMuster();
+  m.CrownLegacies.renderMuster();
+  ok(/New Game\+ tier 2/.test(host.innerHTML), 'Muster shows the pending NG+ tier');
+  ok(
+    /Dame Elara/.test(host.innerHTML) && /\+40% HP/.test(host.innerHTML),
+    'and its veterans and cost'
+  );
+  const btn = { disabled: false, dataset: { ngplusDecline: '1' } };
+  listener({ target: { closest: () => btn } });
+  ok(pending === null, 'Decline clears the pending run');
+  ok(!/New Game\+/.test(host.innerHTML), 'and the section disappears');
 }
 
 process.exit(failures() ? 1 : 0);

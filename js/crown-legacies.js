@@ -689,6 +689,35 @@ const CrownLegacies = (() => {
       .join('');
   }
 
+  /** A pending New Game+ run (js/new-game-plus.js): its tier, carried veterans, and a way out. */
+  function renderNewGamePlus() {
+    const ngp = globalThis.NewGamePlus;
+    const pending = ngp?.getPending?.();
+    if (!pending) return '';
+    const mods = ngp.enemyMods?.(pending.tier);
+    const pct = (m) => Math.round(((m || 1) - 1) * 100);
+    const harder = mods
+      ? `Enemies +${pct(mods.enemyHpMult)}% HP, +${pct(mods.enemyDmgMult)}% damage, +${pct(mods.enemyCountMult)}% numbers.`
+      : '';
+    const vets = (pending.veterans || [])
+      .map((v) => {
+        const typeLabel =
+          typeof formatUnitTypeName === 'function' ? formatUnitTypeName(v.type) : v.type;
+        return (
+          `<div class="muster-perk slotted"><span class="muster-perk-name">${esc(v.name || typeLabel)}</span>` +
+          `<span class="muster-perk-status">VETERAN ${esc(v.vetTier ?? '')}</span>` +
+          `<span class="muster-perk-desc">${esc(typeLabel)} · ${v.kills | 0} kills</span></div>`
+        );
+      })
+      .join('');
+    return (
+      `<div class="muster-group muster-ngplus"><div class="muster-group-head">New Game+ tier ${pending.tier | 0}</div>` +
+      `<p class="muster-empty">${harder} These veterans march with you.</p>` +
+      `<div class="muster-grid">${vets || '<p class="muster-empty">No veterans carried.</p>'}</div>` +
+      `<button type="button" class="menu-btn small-btn" data-ngplus-decline="1">Decline New Game+ (start fresh)</button></div>`
+    );
+  }
+
   function renderMuster() {
     if (typeof document === 'undefined') return;
     const host = document.getElementById('muster-perks');
@@ -709,6 +738,7 @@ const CrownLegacies = (() => {
       })
       .join('');
     host.innerHTML =
+      renderNewGamePlus() +
       `<div class="muster-shards">Echo Shards: <b>${snap.shards}</b></div>` +
       `<div class="muster-head">PERK SLOTS <span>${snap.activeIds.length}/${snap.slotsOwned}</span></div>` +
       `<div class="muster-slots">${renderSlots(snap)}</div>` +
@@ -733,6 +763,7 @@ const CrownLegacies = (() => {
       if (el.dataset.perk) toggleLegacy(el.dataset.perk);
       else if (el.dataset.heir) toggleHeir(el.dataset.heir);
       else if (el.dataset.buySlot) buySlot();
+      else if (el.dataset.ngplusDecline) globalThis.NewGamePlus?.clearPending?.();
       else if (el.dataset.node && typeof EternalLegacyTree !== 'undefined') {
         EternalLegacyTree.investNode(el.dataset.node);
       } else return;
