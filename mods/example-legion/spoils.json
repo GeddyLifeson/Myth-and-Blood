@@ -1,0 +1,7 @@
+{
+  "legion_drill": {
+    "name": "Legion Drill",
+    "desc": "Your troops take 5% less damage.",
+    "fx": { "dmgTakenMult": -0.05 }
+  }
+}

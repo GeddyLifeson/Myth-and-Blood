@@ -879,6 +879,8 @@ const GameSave = (() => {
     if (rolledAnew || !snap.modules?.SiegeLoop?.data?.preview) SiegeLoop.refreshPreview(siegeCtx);
     if (svc('UX')) svc('UX').onPauseChanged(true);
     syncInteractionState({ refreshCounts: true });
+    const modNote = svc('ModLoader')?.missingWarning?.();
+    if (modNote) warnings.push(modNote);
     if (droppedUnits) {
       warnings.push(
         `${droppedUnits} soldier${droppedUnits === 1 ? '' : 's'} in this save belong${droppedUnits === 1 ? 's' : ''} to content that is not loaded (a mod that is off?) and ${droppedUnits === 1 ? 'was' : 'were'} left out.`

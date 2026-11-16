@@ -380,6 +380,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "scaleAbilityDef",
   "scaleUnitHp",
   "scorePerkForUnit",
+  "simRandom",
   "smoothstep",
   "syncVeteranStatsToTier",
   "terrainBlockRadius",

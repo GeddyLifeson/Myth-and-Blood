@@ -1057,7 +1057,7 @@ const GameCore = (() => {
     if (b.isHamlet) dmg = Math.floor(dmg * 1.2);
     if (b.isMerchantGuild) dmg = Math.floor(dmg * 1.1);
     if (b.type === 'wall') dmg = Math.floor(dmg * 0.95);
-    return Math.max(14, dmg + Math.floor(Math.random() * 4));
+    return Math.max(14, dmg + Math.floor((globalThis.simRandom || Math.random)() * 4));
   }
 
   function isBuildingPathTarget(id) {
