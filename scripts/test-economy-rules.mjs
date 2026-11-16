@@ -543,10 +543,7 @@ function previewCtx(GS) {
   ok(!GS.buildings.includes(scaffold), 'the scaffolding is consumed');
   ok(op.upgrade === 'granary' && op.type === 'outpost', 'the Outpost is now a Granary');
   ok(R.freeArmyBonus(GS.buildings) === 3, 'which feeds 3 more soldiers');
-  ok(
-    SiegeLoop.deployCostMult(17, 3) === 1 && SiegeLoop.deployCostMult(17, 0) > 1,
-    'so the surcharge starts at 17 soldiers, not 14'
-  );
+  ok(R.dawnWages(17, 3) === 0 && R.dawnWages(17, 0) === 2, 'so wages start at 17 soldiers, not 14');
   Game.selectBuild('outpost_barracks');
   Game.handleClick(SX, SY);
   ok(

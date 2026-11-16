@@ -1702,13 +1702,13 @@ const UI = (() => {
         setLabel(btn, avail.ok ? `${def.name}, ${avail.cost} TP` : `${def.name}, ${avail.reason}`);
       }
     });
-    // The "Recruit cost +N%" chip reads the same price function as the buttons.
+    // The wages chip: what the next dawn takes for soldiers past the free number.
     const upkeepChip = document.getElementById('siege-upkeep');
     if (upkeepChip) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = `Recruit cost +${pct}%`;
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = `Wages -${wages} TP at dawn`;
       if (upkeepChip.textContent !== text) upkeepChip.textContent = text;
-      upkeepChip.hidden = pct <= 0;
+      upkeepChip.hidden = wages <= 0;
     }
     // A full bar: enough for the dearest troop or strike on offer.
     tpBarMax = Availability.tpBarMax(prices);
@@ -2825,14 +2825,13 @@ const UI = (() => {
       }
     }
 
-    // Army upkeep and breaches: the two numbers that decide what a recruit costs and
-    // whether the realm falls.
+    // Army wages and breaches: what the army costs each dawn and whether the realm falls.
     const upkeepEl = hudEls['upkeep-text'];
     if (upkeepEl) {
-      const pct = Availability.deployPrice('footman', gs).upkeepPct;
-      const text = pct > 0 ? `recruits +${pct}%` : 'no upkeep';
+      const wages = gs.siegeLoop?.wages ?? 0;
+      const text = wages > 0 ? `wages -${wages}` : 'no wages';
       if (upkeepEl.textContent !== text) upkeepEl.textContent = text;
-      upkeepEl.classList.toggle('raised', pct > 0);
+      upkeepEl.classList.toggle('raised', wages > 0);
     }
     const breachHud = hudEls['breach-hud'];
     if (breachHud) {
