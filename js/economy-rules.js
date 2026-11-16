@@ -27,6 +27,7 @@ const EconomyRules = (() => {
     'spy:settlement_raid': { cost: 6, cooldown: 2, waveStep: 10 },
     'spy:infiltrate': { cost: 3, softenShare: 0.3, softenHp: 0.6 },
     'spy:assassin': { cost: 6, cooldown: 2, waveStep: 10 },
+    'spy:turncoats': { cost: 5, cooldown: 2 },
   };
 
   /** Buildings: numbers the game and the manual both read. */

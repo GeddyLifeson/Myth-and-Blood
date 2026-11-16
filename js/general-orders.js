@@ -53,6 +53,9 @@ const GeneralOrders = (() => {
   let lastGeneral = null;
   /** The wave whose strongest foe gets marked (Mark the Warlord), 0 when none. */
   let warlordWave = 0;
+  /** Turncoats: the wave they are bought in, and how many have yet to change sides. */
+  let turncoatWave = 0;
+  let turncoatsLeft = 0;
   let pulses = [];
 
   function resetRun() {
@@ -62,6 +65,8 @@ const GeneralOrders = (() => {
     fallen = false;
     lastGeneral = null;
     warlordWave = 0;
+    turncoatWave = 0;
+    turncoatsLeft = 0;
     pulses = [];
     GS.courierRide = null;
   }
@@ -203,6 +208,35 @@ const GeneralOrders = (() => {
     warlordWave = wave;
   }
 
+  /** 3 to 5 of the wave's common soldiers, more as the waves grow. */
+  function buyTurncoats(wave) {
+    turncoatWave = wave;
+    turncoatsLeft = Math.min(5, 3 + Math.floor(wave / 20));
+    return turncoatsLeft;
+  }
+
+  function isRabble(u) {
+    if (u.isNamedBoss || u.isBoss) return false;
+    if (typeof isEliteEnemy === 'function' && isEliteEnemy(u)) return false;
+    return true;
+  }
+
+  /** At the line the bought man walks out of the host and takes up a footman's place. */
+  function turnCoat(u, hooks) {
+    u.hp = 0;
+    u.fledBattle = true;
+    u.turnedCoat = true;
+    const f = GameArmy.spawnUnit('footman', u.x, u.y, 'player');
+    f.targetY = GS.rallyY;
+    f.turncoat = true;
+    GS.units.push(f);
+    float(u.x, u.y - 24, 'TURNCOAT', BONE);
+    pulses.push({ x: u.x, y: u.y, max: 40, age: 0 });
+    GameCore.svc('Particles')?.dust?.(u.x, u.y);
+    turncoatsLeft--;
+    if (!turncoatsLeft) say(hooks, 'The last of the bought men has crossed to your side.', 200);
+  }
+
   /** The boss first, then the toughest elite; any foe once the whole host is on the field. */
   function pickWarlord() {
     let best = null;
@@ -245,6 +279,18 @@ const GeneralOrders = (() => {
           w.warlordMarked = true;
           warlordWave = 0;
           float(w.x, w.y - 30, 'MARKED', BLOOD);
+        }
+      }
+    }
+    if (turncoatWave) {
+      if (GS.wave > turncoatWave || !turncoatsLeft) {
+        turncoatWave = 0;
+        turncoatsLeft = 0;
+      } else if (GS.wave === turncoatWave && GS.timeOfDay !== 'night' && GS.updateTick % 10 === 0) {
+        for (const u of GS.units) {
+          if (!turncoatsLeft) break;
+          if (u.team !== 'enemy' || u.hp <= 0 || u.y < GS.rallyY - 50 || !isRabble(u)) continue;
+          turnCoat(u, hooks);
         }
       }
     }
@@ -340,6 +386,9 @@ const GeneralOrders = (() => {
       const x = sectorCentre(busiestSector(plan));
       drawDaggers(c, x, 74, px);
       label(c, 'AMBUSH', x, 100, BONE);
+    }
+    if (night && turncoatWave === GS.wave + 1 && turncoatsLeft) {
+      label(c, `${turncoatsLeft} TURNCOATS IN THE HOST`, GS.worldW / 2, 124, BONE);
     }
     if (night && plan && GS.scoutedWave === GS.wave + 1) {
       for (const s of plan.sectors || []) {
@@ -440,6 +489,8 @@ const GeneralOrders = (() => {
       fallen,
       hadGeneral,
       warlordWave,
+      turncoatWave,
+      turncoatsLeft,
       radius: orderRadius(),
       cooldownMult: cooldownMult(),
     };
@@ -454,6 +505,8 @@ const GeneralOrders = (() => {
         hadGeneral,
         fallen,
         warlordWave,
+        turncoatWave,
+        turncoatsLeft,
         courierRide: GS.courierRide ? { ...GS.courierRide } : null,
       }),
       load(data) {
@@ -470,6 +523,8 @@ const GeneralOrders = (() => {
         hadGeneral = !!data.hadGeneral;
         fallen = !!data.fallen;
         if (Number.isFinite(data.warlordWave)) warlordWave = data.warlordWave;
+        if (Number.isFinite(data.turncoatWave)) turncoatWave = data.turncoatWave;
+        if (Number.isFinite(data.turncoatsLeft)) turncoatsLeft = data.turncoatsLeft;
         const ride = data.courierRide;
         if (ride && typeof ride === 'object' && CourierMessages[ride.msg]) {
           GS.courierRide = { ...ride };
@@ -493,6 +548,7 @@ const GeneralOrders = (() => {
     setStance,
     promote,
     markWarlord,
+    buyTurncoats,
     tick,
     drawField,
     syncBar,

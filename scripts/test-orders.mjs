@@ -65,8 +65,8 @@ function rideOut(api, max = 3600) {
 {
   const { SpyActions } = start(21);
   ok(
-    Object.keys(SpyActions).sort().join() === 'assassin,infiltrate,scout,settlement_raid',
-    `spy network has four actions: ${Object.keys(SpyActions).sort().join(', ')}`
+    Object.keys(SpyActions).sort().join() === 'assassin,infiltrate,scout,settlement_raid,turncoats',
+    `spy network has five actions: ${Object.keys(SpyActions).sort().join(', ')}`
   );
   ok(SpyActions.scout.nightOnly === true, 'Scout Report is a night action');
 }
@@ -240,6 +240,40 @@ function rideOut(api, max = 3600) {
   GameCombat.takeDamage(twin, 40);
   const ratio = (hp1 - big.hp) / Math.max(1, hp2 - twin.hp);
   ok(Math.abs(ratio - 1.25) < 0.08, `he takes 25% more damage (x${ratio.toFixed(2)})`);
+}
+
+// --- 5b. Turncoats -----------------------------------------------------------------------
+{
+  const api = start(27);
+  const { Game, GameState: GS, GeneralOrders: GO, spawnUnit } = api;
+  ok(toNight(Game, GS), 'first night');
+  GS.tactical = 50;
+  ok(Game.executeSpyAction('turncoats') === true, 'turncoats are bought in tomorrow’s host');
+  const n = GO.getState().turncoatsLeft;
+  ok(n >= 3 && n <= 5, `${n} of them`);
+  Game.beginDayPhase(true);
+  run(Game, 30);
+  const far = spawnUnit('goblin', 300, 80, 'enemy');
+  const elite = spawnUnit('troll', 340, GS.rallyY, 'enemy');
+  const near = [0, 1, 2, 3, 4, 5].map((i) =>
+    spawnUnit('goblin', 200 + i * 30, GS.rallyY - 20, 'enemy')
+  );
+  GS.units.push(far, elite, ...near);
+  ok(GS.timeOfDay !== 'night', 'still day');
+  const before = mine(GS).length;
+  // Only the goblins placed at the line may turn: the rest of the host is kept back.
+  for (const u of GS.units) if (u.team === 'enemy' && !near.includes(u) && u !== elite) u.y = 60;
+  run(Game, 12);
+  // Units are pooled once gone, so count by what is left on each side.
+  const still = near.filter((u) => u.team === 'enemy' && u.hp > 0).length;
+  const turned = mine(GS).filter((u) => u.turncoat).length;
+  ok(turned === n && still === near.length - n, `${turned} goblins at the line changed sides`);
+  ok(
+    far.team === 'enemy' && far.hp > 0 && elite.hp > 0,
+    'not the one still far off, nor the elite'
+  );
+  ok(mine(GS).length === before + n, 'each one stands with you as a footman');
+  ok(GO.getState().turncoatsLeft === 0, 'and no more turn');
 }
 
 // --- 6. saves: the order state round-trips; a save from before the rework loads ---------------

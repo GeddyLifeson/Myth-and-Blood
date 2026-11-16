@@ -57,6 +57,11 @@
       "name": "Mark the Warlord",
       "cost": 6,
       "desc": "The boss of the next wave, or its strongest elite, is outlined in blood and takes 25% more damage from everything."
+    },
+    "turncoats": {
+      "name": "Turncoats",
+      "cost": 5,
+      "desc": "Bought men in the next wave's rabble: 3 to 5 of its common soldiers throw down their colours when they reach your line and fight for you as footmen."
     }
   },
   "fxLife": {

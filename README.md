@@ -414,6 +414,7 @@ Both are introduced on wave 8, in the right-hand panel. An action on cooldown sh
 | Scout Report       | 2                    | Night only. The preview lists the next wave by type; head counts are pinned on the top edge |                    |
 | Ambush on the Road | 3                    | A marked ambush; the first 30% of the next wave arrive at 60% health, tagged AMBUSHED       |                    |
 | Mark the Warlord   | 6, +1 every 10 waves | The boss or strongest elite is outlined in blood and takes 25% more damage                  | once every 2 waves |
+| Turncoats          | 5                    | 3 to 5 of the next wave's common soldiers change sides at your line and fight as footmen    | once every 2 waves |
 | Raid the War Camp  | 6, +1 every 10 waves | Raiders ride for the weakest war camp                                                       | once every 2 waves |
 
 **Courier** (needs a Courier on the field). He rides off the bottom edge and back, about 20 seconds; the order lands when he returns, and is lost if he falls on the road:

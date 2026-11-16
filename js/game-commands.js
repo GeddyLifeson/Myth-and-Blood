@@ -331,6 +331,12 @@ const GameCommands = (() => {
         'Assassins mark the warlord: when the next wave comes, its strongest foe is outlined in blood and takes 25% more damage.',
         300
       );
+    } else if (action === 'turncoats') {
+      const n = typeof GeneralOrders !== 'undefined' ? GeneralOrders.buyTurncoats(GS.wave + 1) : 0;
+      showMessage(
+        `Gold changes hands: ${n} of the next wave's rabble will throw down their colours at your line and fight for you.`,
+        300
+      );
     } else if (action === 'infiltrate') {
       // Used to run the same code as Scout Report. Now it is an ambush on the road.
       const r = rules?.rule(ruleKey) || { softenShare: 0.3, softenHp: 0.6 };
