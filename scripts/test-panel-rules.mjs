@@ -552,7 +552,10 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   ok(toNight(Game, GS), 'next night');
   GS.tactical = 500;
   a = PanelModel.action('spy', 'assassin', Game.getState());
-  ok(a.wait === cd - 1 && a.waitText === PanelModel.waitLabel(cd - 1), `a wave later: ${a.waitText}`);
+  ok(
+    a.wait === cd - 1 && a.waitText === PanelModel.waitLabel(cd - 1),
+    `a wave later: ${a.waitText}`
+  );
   other = PanelModel.action('spy', 'infiltrate', Game.getState());
   ok(
     other.ok && other.wait === 0 && PanelModel.usesLeft('spy', Game.getState()) === 1,

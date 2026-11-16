@@ -475,7 +475,7 @@ function toNight(api, wave) {
   GS.tactical = 40;
   ok(
     Game.executeSpyAction('disrupt') === false && GS.tactical === 40,
-    'Disrupt is cut from the spy network; the late squad stays for any future cut'
+    'Disrupt is cut from the spy network; the late squad rule stays for the wave code'
   );
   void W;
 }

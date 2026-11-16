@@ -53,7 +53,10 @@ function addUnit(api, type) {
 {
   const { EconomyRules: R } = start(3);
   R.resetRun();
-  ok(!R.rule('courier:levy') && !R.rule('spy:disrupt'), 'Tax Levy and Disrupt have no price any more');
+  ok(
+    !R.rule('courier:levy') && !R.rule('spy:disrupt'),
+    'Tax Levy and Disrupt have no price any more'
+  );
   ok(R.getCost('courier:reinforce', { wave: 1 }) === 4, 'Reinforcements cost 4 TP');
   ok(
     R.getCost('courier:reinforce', { wave: 5, upkeepMult: 1.5 }) === 6,
