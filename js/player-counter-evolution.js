@@ -8,12 +8,9 @@ const PlayerCounterEvolution = (() => {
   const MIN_EXPEDITION_FORCE = 1;
   const MAX_EXPEDITION_FORCE = 4;
 
+  // No TP: an expedition is paid in a weaker host tomorrow and a little science, not money.
   const EXPEDITION_LOOT = {
-    // Was 6 / 3 / 4: four footmen brought home about three waves of base income.
-    baseTp: 4,
     baseScience: 1,
-    perSurvivorTp: 2,
-    perStageTp: 3,
     perStageScience: 1,
     fullPartyScience: 1,
   };
@@ -188,17 +185,11 @@ const PlayerCounterEvolution = (() => {
   function computeExpeditionLoot(expedition, survivors, wave) {
     const stage = expedition.targetStage || 1;
     const scale = getExpeditionLootScale(wave);
-    let tp = Math.round(
-      (EXPEDITION_LOOT.baseTp +
-        survivors * EXPEDITION_LOOT.perSurvivorTp +
-        stage * EXPEDITION_LOOT.perStageTp) *
-        scale
-    );
     let science = Math.round(
       (EXPEDITION_LOOT.baseScience + stage * EXPEDITION_LOOT.perStageScience) * scale
     );
     if (survivors >= expedition.unitIds.length) science += EXPEDITION_LOOT.fullPartyScience;
-    return { tp, science };
+    return { tp: 0, science };
   }
 
   function buildExpeditionTargets(wave) {
@@ -326,7 +317,7 @@ const PlayerCounterEvolution = (() => {
 
     const hooks = ctx.hooks || {};
     hooks.showMessage?.(
-      `Expedition dispatched — ${fighters.length} troops march off-map against ${target.shortName}. Each has a ${Math.round(getExpeditionSurvivalRate(fighters.length) * 100)}% chance to come home on wave ${returnWave}, with ~${lootPreview.tp} TP / ${lootPreview.science} SP loot.`,
+      `Expedition dispatched — ${fighters.length} troops march off-map against ${target.shortName}. Each has a ${Math.round(getExpeditionSurvivalRate(fighters.length) * 100)}% chance to come home on wave ${returnWave}, and ${target.shortName} fields a smaller host while they are out. ~${lootPreview.science} SP loot.`,
       400
     );
     hooks.floatingText?.(ctx.worldW / 2, 92, 'EXPEDITION', '#5080d0');
@@ -391,19 +382,15 @@ const PlayerCounterEvolution = (() => {
           ? EnemyFactions.getFactionTier(exp.factionId, wave)?.stage || 1
           : 1;
       const loot = computeExpeditionLoot(exp, survivors, wave);
-      if (loot.tp > 0) ctx.grantTp?.(loot.tp);
       if (loot.science > 0) ctx.grantScience?.(loot.science);
 
       const effStage = getEffectiveStage(exp.factionId, wave, baseStage);
       const lostNote = fallen.length ? ` Lost on the march: ${fallen.join(', ')}.` : '';
       hooks.showMessage?.(
-        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} came home, +${loot.tp} TP, +${loot.science} SP.${lostNote} ${exp.factionName} set back to S${effStage}.`,
+        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} came home, +${loot.science} SP.${lostNote} ${exp.factionName} set back to S${effStage}.`,
         400
       );
       hooks.floatingText?.(ctx.worldW / 2, 108, 'EXPEDITION HOME', '#80c0ff');
-      if (loot.tp > 0) {
-        hooks.floatingText?.(ctx.worldW / 2, 122, `+${loot.tp} TP`, '#e0c040');
-      }
 
       if (typeof AsymmetricWarfare !== 'undefined') {
         AsymmetricWarfare.addThreatXp(-4 - exp.stagePenalty * 2, 'expedition_return');

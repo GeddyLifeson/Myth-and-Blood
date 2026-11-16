@@ -1565,7 +1565,7 @@ const UI = (() => {
                   Math.max(minForce, selCount || minForce),
                   (wave || 0) + 1
                 );
-                return ` · ~${preview.tp} TP / ${preview.science} SP loot`;
+                return ` · ~${preview.science} SP loot`;
               })()
             : '';
         return (

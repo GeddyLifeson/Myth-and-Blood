@@ -173,12 +173,6 @@ const GameViewState = (() => {
       doctrineUsedThisWave: GS.doctrineUsedThisWave,
       counterDoctrineUsedThisWave: GS.counterDoctrineUsedThisWave,
       expeditionUsedThisWave: GS.expeditionUsedThisWave,
-      kingdomDoctrines: typeof KINGDOM_DOCTRINES !== 'undefined' ? KINGDOM_DOCTRINES : {},
-      unlockedKingdomDoctrines: cachedSnap('unlockedKingdomDoctrines', () =>
-        typeof getUnlockedKingdomDoctrines === 'function'
-          ? getUnlockedKingdomDoctrines(GS.wave)
-          : []
-      ),
       kingdomEvolutionMeter: getLiveEvolutionMeter(),
       army,
       enemyCount: unitCounts.enemy,

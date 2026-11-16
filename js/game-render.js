@@ -196,6 +196,9 @@ const GameRender = (() => {
         GS.ctx.arc(stationedGen.x, stationedGen.y, aura.radius, 0, Math.PI * 2);
         GS.ctx.stroke();
       }
+      if (typeof GeneralOrders !== 'undefined') {
+        GeneralOrders.drawField(GS.ctx, GS.updateTick, isInView);
+      }
 
       if (gfxQ?.drawDecor !== false) {
         if (propArt) propArt.drawWrecks(GS.ctx, GS.updateTick, isInView);

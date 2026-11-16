@@ -486,44 +486,6 @@
                 </button>
               </div>
               <div
-                id="doctrine-section"
-                class="doctrine-section pane-section"
-                data-section="doctrines"
-              >
-                <div class="panel-header">KINGDOM DOCTRINES</div>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="outpost_stand"
-                  data-kingdom-stage="1"
-                >
-                  <span>Outpost Stand</span><span class="cost">4</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="royal_muster"
-                  data-kingdom-stage="2"
-                >
-                  <span>Royal Muster</span><span class="cost">5</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="imperial_march"
-                  data-kingdom-stage="3"
-                >
-                  <span>Imperial March</span><span class="cost">8</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="hellforge_decree"
-                  data-kingdom-stage="4"
-                >
-                  <span>Hellforge Decree</span><span class="cost">10</span>
-                </button>
-                <p class="panel-hint">
-                  One kingdom doctrine a wave. More open as the kingdom grows.
-                </p>
-              </div>
-              <div
                 id="counter-doctrine-section"
                 class="counter-doctrine-section pane-section"
                 data-section="counter"
@@ -744,48 +706,21 @@
                 <div class="panel-header">
                   SPY NETWORK <span id="spy-uses" class="uses-badge"></span>
                 </div>
-                <button class="spy-btn" data-spy="steal">
-                  <span>Steal Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="disrupt">
-                  <span>Disrupt Lines</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="assassin">
-                  <span>Assassinate</span><span class="cost">6</span>
-                </button>
                 <button class="spy-btn" data-spy="scout">
                   <span>Scout Report</span><span class="cost">2</span>
                 </button>
-                <button class="spy-btn" data-spy="poison">
-                  <span>Poison Caches</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="sabotage">
-                  <span>Sabotage</span><span class="cost">5</span>
-                </button>
                 <button class="spy-btn" data-spy="infiltrate">
-                  <span>Infiltrate</span><span class="cost">3</span>
+                  <span>Ambush</span><span class="cost">3</span>
                 </button>
-                <button class="spy-btn" data-spy="bribery">
-                  <span>Bribe</span><span class="cost">6</span>
-                </button>
-                <button class="spy-btn" data-spy="muster">
-                  <span>Muster</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="war_chest">
-                  <span>War Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="forge_maps">
-                  <span>Forge Maps</span><span class="cost">3</span>
-                </button>
-                <button class="spy-btn" data-spy="tunnel">
-                  <span>Tunnel</span><span class="cost">5</span>
+                <button class="spy-btn" data-spy="assassin">
+                  <span>Mark Warlord</span><span class="cost">6</span>
                 </button>
                 <button class="spy-btn" data-spy="settlement_raid">
                   <span>Raid War Camp</span><span class="cost">6</span>
                 </button>
                 <p class="panel-hint">
-                  One spy action a wave. Scout Report and Infiltrate show the exact roster of the
-                  next wave.
+                  One spy action a wave. Each one shows on the field: pinned head counts, a marked
+                  ambush, a warlord outlined in blood, raiders riding for a camp.
                 </p>
               </div>
               <div id="raid-section" class="raid-section" style="display: none">
@@ -823,47 +758,17 @@
                   COURIER MSGS <span id="courier-uses" class="uses-badge"></span>
                 </div>
                 <button class="courier-btn" data-courier="reinforce">
-                  <span>Reinforce</span><span class="cost">4</span>
+                  <span>Reinforcements</span><span class="cost">4</span>
                 </button>
-                <button class="courier-btn" data-courier="decree">
-                  <span>Decree</span><span class="cost">2</span>
+                <button class="courier-btn" data-courier="surgeons">
+                  <span>Field Surgeons</span><span class="cost">3</span>
                 </button>
-                <button class="courier-btn" data-courier="levy">
-                  <span>Tax Levy</span><span class="cost">1</span>
-                </button>
-                <button class="courier-btn" data-courier="banner">
-                  <span>Call Banner</span><span class="cost">6</span>
-                </button>
-                <button class="courier-btn" data-courier="supplies">
-                  <span>Supplies</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="truce">
-                  <span>Truce</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="hunt_pact">
-                  <span>Hunt Pact</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="evacuate">
-                  <span>Med Evac</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="herald">
-                  <span>Herald</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="muster">
-                  <span>Emergency</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="war_chest">
-                  <span>War Chest</span><span class="cost">2</span>
-                </button>
-                <button
-                  class="courier-btn kingdom-stage-btn"
-                  data-courier="counter_hold"
-                  data-kingdom-stage="4"
-                >
-                  <span>Counter-Hold</span><span class="cost">5</span>
+                <button class="courier-btn" data-courier="arrows">
+                  <span>Fresh Arrows</span><span class="cost">3</span>
                 </button>
                 <p class="panel-hint">
-                  One message a wave, and a Courier must be alive on the field.
+                  The Courier rides off the bottom edge and back, about 20 seconds. The order lands
+                  when he returns; if he falls on the road, it is lost.
                 </p>
               </div>
               <div id="loadout-section" class="loadout-section" style="display: none">
@@ -2717,6 +2622,7 @@
     <script src="js/game-daynight.js"></script>
     <script src="js/game-campaign.js"></script>
     <script src="js/game-commands.js"></script>
+    <script src="js/general-orders.js"></script>
     <script src="js/game-creative.js"></script>
     <script src="js/game-render.js"></script>
     <script src="js/game-roster-ui.js"></script>

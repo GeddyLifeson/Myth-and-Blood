@@ -131,6 +131,7 @@ export const GAME_SCRIPTS = [
   'game-daynight.js',
   'game-campaign.js',
   'game-commands.js',
+  'general-orders.js',
   'game-creative.js',
   'game-render.js',
   'game-roster-ui.js',

@@ -287,6 +287,8 @@ const GameTargeting = (() => {
       if (unit.team === 'enemy' && foe.isGeneral) {
         score -= unit.type === 'assassin' ? 1200 : 800;
         if (foe.stationedKeep && unit.type !== 'assassin') score += 400;
+        // Lead from the front (js/general-orders.js): he draws the enemy to him.
+        if (foe.leadsFromFront) score -= 300;
       }
       if (sameTypeEngaging(foe, unit)) score += 200;
       score += engagers.filter((u) => u.type === unit.type).length * 90;

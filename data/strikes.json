@@ -42,45 +42,21 @@
     }
   },
   "spyActions": {
-    "steal": {
-      "name": "Steal War Chest",
-      "cost": 4,
-      "desc": "+4 TP, enemy loses 2 units next wave"
-    },
-    "disrupt": {
-      "name": "Disrupt Supply Lines",
-      "cost": 5,
-      "desc": "Next wave: 25% fewer enemies in the main host, 12% tougher and 15% faster. Half of those cut off catch up as a follow-up squad late in the wave. Price rises 1 TP every 6 waves."
-    },
-    "assassin": {
-      "name": "Assassinate Captain",
-      "cost": 6,
-      "desc": "No elite enemies next wave"
-    },
     "scout": {
       "name": "Scout Report",
       "cost": 2,
-      "desc": "Next wave's make-up shown in the night preview now, as a watchtower would."
-    },
-    "poison": {
-      "name": "Poison Caches",
-      "cost": 4,
-      "desc": "Next wave enemies -20% HP"
-    },
-    "sabotage": {
-      "name": "Sabotage Siege",
-      "cost": 5,
-      "desc": "No siege towers or engineers next wave, and the host arrives 10 seconds late."
+      "nightOnly": true,
+      "desc": "At night only. Tomorrow's host by type goes into the night preview at once, and the head count for each third of the top edge is pinned on the field."
     },
     "infiltrate": {
-      "name": "Deep Infiltration",
+      "name": "Ambush on the Road",
       "cost": 3,
-      "desc": "Ambush on the road: the first 30% of the next wave arrive at 60% health."
+      "desc": "An ambush waits where the host comes in, marked on the field. The first 30% of the next wave arrive at 60% health, each tagged AMBUSHED."
     },
-    "bribery": {
-      "name": "Bribe Informant",
+    "assassin": {
+      "name": "Mark the Warlord",
       "cost": 6,
-      "desc": "50% chance -3 foes; reveals flanks"
+      "desc": "The boss of the next wave, or its strongest elite, is outlined in blood and takes 25% more damage from everything."
     }
   },
   "fxLife": {

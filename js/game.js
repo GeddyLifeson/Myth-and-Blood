@@ -195,6 +195,7 @@ const Game = (() => {
     sendCourierMessage,
     startBranchTech,
     startResearch,
+    tickOrders,
     useAbility,
   } = GameCommands;
   const {
@@ -392,6 +393,7 @@ const Game = (() => {
   GS.pendingReinforce = [];
   GS.pendingLevy = 0;
   GS.courierCooldown = 0;
+  GS.courierRide = null;
   GS.courierMessagesUsedThisWave = 0;
   GS.spyUsedThisWave = false;
   GS.doctrineUsedThisWave = false;
@@ -1161,10 +1163,6 @@ const Game = (() => {
       courierMessagesUsedThisWave: GS.courierMessagesUsedThisWave,
       courierMessagesPerWave: getCourierMessagesPerWave(),
       courierUsedThisWave: GS.courierMessagesUsedThisWave >= getCourierMessagesPerWave(),
-      unlockedDoctrineCount:
-        typeof getUnlockedKingdomDoctrines === 'function'
-          ? getUnlockedKingdomDoctrines(GS.wave).length
-          : 0,
       spyNetwork: GS.spyNetwork,
       hasCourier: unitCounts.hasCourier,
     };
@@ -1324,6 +1322,7 @@ const Game = (() => {
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
     if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
       diff.startingTp +
@@ -2126,6 +2125,7 @@ const Game = (() => {
         }
       }
     }
+    tickOrders();
 
     if (GS.updateTick % 3 === 0) {
       for (const b of GS.buildings) {

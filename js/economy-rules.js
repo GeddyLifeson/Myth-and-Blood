@@ -20,26 +20,13 @@ const EconomyRules = (() => {
    *  - upkeep: the army surcharge on recruits applies to this price too.
    */
   const ACTIONS = {
-    'courier:levy': { cost: 1, cooldown: 3, pay: 5, morale: 2 },
-    'courier:banner': { cost: 6, cooldown: 4, costStep: 2, upkeep: true, needsDeploy: 'knight' },
     'courier:reinforce': { cost: 4, cooldown: 2, upkeep: true },
-    'courier:war_chest': { cost: 2, cooldown: 3 },
-    'spy:disrupt': {
-      cost: 5,
-      cooldown: 3,
-      waveStep: 6,
-      countMult: 0.75,
-      hpMult: 1.12,
-      speedMult: 1.15,
-      // Half of the foes cut off on the road catch up as a follow-up squad late in the wave.
-      rejoinShare: 0.5,
-    },
+    'courier:surgeons': { cost: 3, cooldown: 2 },
+    'courier:arrows': { cost: 3, cooldown: 2 },
     // The raid on a war camp (WarCamps.orderRaid): refused at no cost when no camp stands.
     'spy:settlement_raid': { cost: 6, cooldown: 2, waveStep: 10 },
-    'spy:war_chest': { cost: 4, cooldown: 3 },
     'spy:infiltrate': { cost: 3, softenShare: 0.3, softenHp: 0.6 },
-    'spy:sabotage': { cost: 5, delayTicks: 600 },
-    'spy:forge_maps': { cost: 3 },
+    'spy:assassin': { cost: 6, cooldown: 2, waveStep: 10 },
   };
 
   /** Buildings: numbers the game and the manual both read. */
@@ -193,10 +180,10 @@ const EconomyRules = (() => {
    * @returns {number} how many were added
    */
   function rejoinSquad(queue, countMult) {
-    const r = ACTIONS['spy:disrupt'];
     if (!queue || !queue.length || !(countMult > 0) || countMult >= 1) return 0;
     const cut = Math.round(queue.length * (1 / countMult - 1));
-    const n = Math.max(1, Math.round(cut * r.rejoinShare));
+    // Half of those cut off catch up.
+    const n = Math.max(1, Math.round(cut * 0.5));
     const defs = typeof EnemyDefs !== 'undefined' ? EnemyDefs : null;
     const pool = queue.filter((t) => !(defs && defs[t] && defs[t].isNamedBoss));
     if (!pool.length) return 0;
@@ -353,8 +340,13 @@ const EconomyRules = (() => {
   function importState(s) {
     resetRun();
     if (!s || typeof s !== 'object') return;
-    if (s.readyWave && typeof s.readyWave === 'object') readyWave = { ...s.readyWave };
-    if (s.uses && typeof s.uses === 'object') uses = { ...s.uses };
+    // Actions cut since the save was made (Tax Levy, Disrupt...) are dropped, not carried.
+    const known = (o) =>
+      Object.fromEntries(
+        Object.entries(o || {}).filter(([k, v]) => ACTIONS[k] && Number.isFinite(v))
+      );
+    if (s.readyWave && typeof s.readyWave === 'object') readyWave = known(s.readyWave);
+    if (s.uses && typeof s.uses === 'object') uses = known(s.uses);
     if (Number.isFinite(s.startBonusLeft)) startBonusLeft = s.startBonusLeft;
   }
 
