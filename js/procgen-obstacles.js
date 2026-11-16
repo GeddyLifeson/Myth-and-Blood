@@ -1,25 +1,7 @@
 /**
- * WFC-shaped obstacle clusters, ported from the standalone procgen-lab
- * project (a separate local project). Unlike Miami Vice RTS's integration,
- * this game has no discrete terrain grid to write into -- buildings and
- * decorations are free-floating circles (x, y, radius) in a continuous
- * world (see js/spatial.js). So the adapter here is a blob->circle
- * conversion: run the dungeon tileset's WFC solve over a region, flood-fill
- * each contiguous "wall" blob, and emit one decoration-shaped circle per
- * blob at its centroid, sized to the blob's footprint.
- *
- * This is a STANDALONE UTILITY, not wired into the live spawn pipeline
- * (populateNewTerritory etc.) -- deciding where WFC-shaped obstacle
- * clusters fit into existing spawn budgets/pacing is a game-balance call,
- * not this adapter's to make. Call ProcGenObstacles.generateClusters(...)
- * and push the results into GS.decorations yourself where it makes sense.
- *
- * Example:
- *   const clusters = ProcGenObstacles.generateClusters({
- *     originX: 400, originY: 400, worldWidth: 600, worldHeight: 600,
- *     seed: 'territory-tier-3-north',
- *   });
- *   GS.decorations.push(...clusters);
+ * Per-run rock outcrops in no-man's-land. A small wave-function-collapse solve over a
+ * rectangle; each contiguous "wall" blob becomes one decoration circle (the field has no
+ * tile grid, only circles). game-field.js calls fieldOutcrops() once per battlefield.
  */
 const ProcGenObstacles = (() => {
   const DIRS = {
@@ -68,9 +50,7 @@ const ProcGenObstacles = (() => {
     return items[items.length - 1];
   }
 
-  // xmur3 + mulberry32 -- deterministic string-seeded RNG, same as
-  // procgen-lab/js/rng.js and Miami Vice RTS's own hashSeed/mulberry32 (so
-  // this behaves the same way seeds already do elsewhere in this codebase).
+  // xmur3 + mulberry32: a deterministic string-seeded RNG.
   function makeRng(seedStr) {
     let h = 1779033703 ^ String(seedStr).length;
     for (let i = 0; i < String(seedStr).length; i++) {
@@ -254,5 +234,43 @@ const ProcGenObstacles = (() => {
     });
   }
 
-  return { generateClusters };
+  const OUTCROP_MAX = 3;
+  const OUTCROP_MAX_R = 32;
+
+  /**
+   * Up to three outcrops between the enemy's entry and the player's rally line, the biggest
+   * blobs of the solve, clear of what is already on the field. Each run's seed gives its own.
+   * @param {{worldW:number, rallyY:number, seed:string|number, placed?:Array}} opts
+   */
+  function fieldOutcrops(opts) {
+    const top = 110;
+    const bottom = Math.max(top + 120, (opts.rallyY || 500) - 140);
+    const blobs = generateClusters({
+      originX: opts.worldW * 0.12,
+      originY: top,
+      worldWidth: opts.worldW * 0.76,
+      worldHeight: bottom - top,
+      cellSize: 32,
+      seed: `outcrop-${opts.seed}`,
+      minBlobCells: 2,
+    });
+    const placed = [...(opts.placed || [])];
+    const out = [];
+    for (const b of blobs.sort((x, y) => y.radius - x.radius)) {
+      if (out.length >= OUTCROP_MAX) break;
+      const r = Math.min(OUTCROP_MAX_R, b.radius);
+      const clear = placed.every(
+        (d) => Math.hypot(d.x - b.x, d.y - b.y) > r + (d.radius || d.size || 16) + 40
+      );
+      if (!clear) continue;
+      const rock = { ...b, id: `outcrop_${out.length}`, radius: r, size: r, outcrop: true };
+      out.push(rock);
+      placed.push(rock);
+    }
+    return out;
+  }
+
+  return { generateClusters, fieldOutcrops };
 })();
+
+globalThis.ProcGenObstacles = ProcGenObstacles;

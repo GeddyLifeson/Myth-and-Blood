@@ -26,6 +26,8 @@ const Tooltips = (() => {
       '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
     trade_outpost:
       '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
+    hall_of_veterans:
+      '60 TP, 1 Builder. Can be built once a veteran has reached rank 6. Keeps the roll of top-rank veterans and raises one fallen name a wave for TP. The raised veteran returns at rank 5 with 10% less health for each death.',
     research_lab: 'Needs 1 Builder. While it stands, every doctrine choice comes 5 waves sooner.',
     fortress_upgrade:
       'Place on a completed settlement: +HP, cover, +1 TP/round, and raises a palisade wall ring.',
@@ -387,11 +389,24 @@ const Tooltips = (() => {
       const eco = gs?.settlementTpBonus ?? 0;
       return {
         title: 'Tactical Points',
-        body: 'TP pays for troops, buildings, spells, spies and messages. You are paid when a wave is cleared.',
+        body: 'TP pays for troops, buildings, spells, spies and messages. Everything settles in one ledger when a wave is cleared: income, spoils, a bounty for a clean wave, minus wages and upkeep.',
         footer:
           `You have ${Math.floor(gs?.tactical ?? 0)} TP · +${total} a wave` +
-          (eco > 0 ? ` (${eco} from settlements)` : ''),
+          (eco > 0 ? ` (${eco} from settlements)` : '') +
+          (gs?.siegeLoop?.wages > 0 ? ` · wages -${gs.siegeLoop.wages}` : '') +
+          (gs?.siegeLoop?.ledger ? ` · last dawn: ${gs.siegeLoop.ledger}` : ''),
       };
+    }
+    // The early horn is a bet: say what it pays and what it brings before it is taken.
+    function earlyBetText(g) {
+      if (typeof SiegeLoop === 'undefined' || !g) return '';
+      const o = SiegeLoop.earlyCallOffer(g.nightSecondsLeft ?? 0, {
+        wave: g.wave ?? 0,
+        creative: !!g.creativeMode,
+      });
+      return o.steps > 0
+        ? ` · now: +${o.tp} TP, ${Math.round(o.share * 100)}% of the next host comes along`
+        : '';
     }
     if (tipKey === 'wave') {
       const night = gs?.timeOfDay === 'night';
@@ -399,21 +414,19 @@ const Tooltips = (() => {
         title: night ? `Night before wave ${(gs?.wave ?? 0) + 1}` : `Wave ${gs?.wave ?? 0}`,
         body: 'Night: recruit, build and reposition; no enemy comes. Day: the host attacks from the north. The bar shows how far the night or the wave has run.',
         footer: night
-          ? `${gs?.nightSecondsLeft ?? 0}s of night left · Begin Day starts the wave now`
+          ? `${gs?.nightSecondsLeft ?? 0}s of night left · Begin Day starts the wave now` +
+            earlyBetText(gs)
           : `${gs?.enemyCount ?? 0} foes on the field`,
       };
     }
     if (tipKey === 'army') {
-      const pct =
-        typeof Availability !== 'undefined' && gs
-          ? Availability.deployPrice('footman', gs).upkeepPct
-          : 0;
+      const wages = gs?.siegeLoop?.wages ?? 0;
       return {
-        title: 'Army and upkeep',
-        body: 'Soldiers on the field. A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head. A Granary feeds 3 more before that starts.',
+        title: 'Army and wages',
+        body: 'Soldiers on the field. A big host is hard to feed: past 14 soldiers, every 2 cost 1 TP in wages at each dawn. A Granary feeds 3 more. Builders and couriers are not paid.',
         footer:
           `${gs?.army ?? 0} soldiers · ` +
-          (pct > 0 ? `recruits cost +${pct}%` : 'no upkeep surcharge yet'),
+          (wages > 0 ? `wages -${wages} TP at dawn` : 'no wages yet'),
       };
     }
     if (tipKey === 'breach') {

@@ -10,6 +10,7 @@ const DamagePreview = (() => {
     return {
       wave: Math.max(1, gs.wave ?? 1),
       difficultyId: gs.difficulty ?? 'normal',
+      ngPlusTier: gs.ngPlusTier || 0,
       lastStandActive: !!gs.lastStandActive,
       generalStationed: !!gs.generalStationed,
       generalAura: gs.generalAura || null,
@@ -23,12 +24,13 @@ const DamagePreview = (() => {
     const diff = typeof getDifficultyDef === 'function' ? getDifficultyDef(ctx.difficultyId) : {};
     const adv =
       typeof AdvancedDifficulty !== 'undefined' ? AdvancedDifficulty.getCombinedMods() : null;
+    const ng = typeof NewGamePlus !== 'undefined' ? NewGamePlus.enemyMods(ctx.ngPlusTier) : null;
     return {
       allyDmgMult: (diff.allyDmgMult || 1) * (adv?.allyDmgMult || 1),
-      enemyHpMult: (diff.enemyHpMult || 1) * (adv?.enemyHpMult || 1),
+      enemyHpMult: (diff.enemyHpMult || 1) * (adv?.enemyHpMult || 1) * (ng?.enemyHpMult || 1),
       waveDmgScaleMult: diff.waveDmgScaleMult || 1,
       waveHpScaleMult: diff.waveHpScaleMult || 1,
-      enemyDmgMult: diff.enemyDmgMult || 1,
+      enemyDmgMult: (diff.enemyDmgMult || 1) * (ng?.enemyDmgMult || 1),
       eliteChanceMult: diff.eliteChanceMult || 1,
     };
   }

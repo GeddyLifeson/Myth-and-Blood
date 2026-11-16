@@ -116,9 +116,6 @@ const ProgressionRestarts = (() => {
     ctx.addHighlight?.('era', `${def.name} — wave ${def.wave}`);
     ctx.showMessage?.(`Wave ${def.wave} — ${def.name}. ${def.tagline}`, 440);
     ctx.showMessage?.(`Now open: ${def.opens.join('; ')}.`, 380);
-    if (science > 0) {
-      ctx.showMessage?.(`Your scholars mark the new era: +${science} science.`, 300);
-    }
     ctx.floatingText?.((ctx.worldW || 400) / 2, 56, def.shortName.toUpperCase(), def.color);
     ctx.playSfx?.('reinforce');
 

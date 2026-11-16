@@ -304,7 +304,7 @@ Later charters open academies, settlements and the companies' barracks.
 
 **Factions.** One faction leads each wave and fights its own way. The night preview names it, and the Enemies tab of the encyclopedia gives its tactic and what beats it.
 
-**War camps.** Camps go up along the top edge. A camp still standing when the next wave forms makes that wave stronger. Destroy it and the bonus is gone. Soldiers sent that far north are not holding your line.
+**War camps.** Camps go up along the top edge. A camp still standing when the next wave forms makes that wave stronger. Destroy it and the bonus is gone. Soldiers sent that far north are not holding your line. The first camp rises the night before wave 6, after a scouts' warning. Strike a camp with soldiers and its garrison comes out to fight. A camp left standing digs in each night (up to level III): more health, more guards, a stronger bonus, and from level II raiders sent at your nearest building.
 
 **Warlords.** Every tenth wave is led by a named warlord with a pack of his own. There are ten. After the tenth the first returns, stronger. Each changes at half health; the Bosses tab says how.
 

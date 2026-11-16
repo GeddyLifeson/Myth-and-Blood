@@ -397,12 +397,29 @@ function addUnit(api, type) {
     0
   );
   ok(uncapped > 6, `ribbons alone are worth +${uncapped} starting TP when all are earned`);
-  const api = start(16, 'normal', { 'myth-and-blood-ribbons-v1': allRibbons });
+  const unslotted = start(16, 'normal', {
+    'myth-and-blood-ribbons-v1': allRibbons,
+    'myth-and-blood-crown-legacies-v1': JSON.stringify({ version: 2, activeIds: [] }),
+  });
+  ok(
+    unslotted.GameState.tactical === unslotted.DIFFICULTIES.normal.startingTp,
+    `earned but unslotted ribbons add no starting TP (got ${unslotted.GameState.tactical})`
+  );
+  // Ribbons count only while slotted at the Muster: the three richest TP ribbons make +7.
+  const slotted = JSON.stringify({
+    version: 2,
+    slotsOwned: 3,
+    activeIds: ['ribbon:quarter_siege', 'ribbon:ten_dawns', 'ribbon:council_seat'],
+  });
+  const api = start(16, 'normal', {
+    'myth-and-blood-ribbons-v1': allRibbons,
+    'myth-and-blood-crown-legacies-v1': slotted,
+  });
   const base = api.DIFFICULTIES.normal.startingTp;
   ok(api.EconomyRules.START_TP_BONUS_CAP === 6, 'the cap is +6');
   ok(
     api.GameState.tactical === base + 6,
-    `starting TP is ${base} + 6 with every ribbon earned (got ${api.GameState.tactical})`
+    `starting TP is ${base} + 6 with three TP ribbons slotted (got ${api.GameState.tactical})`
   );
   ok(
     api.EconomyRules.grantStartTp(4) === 0,
@@ -529,10 +546,7 @@ function previewCtx(GS) {
   ok(!GS.buildings.includes(scaffold), 'the scaffolding is consumed');
   ok(op.upgrade === 'granary' && op.type === 'outpost', 'the Outpost is now a Granary');
   ok(R.freeArmyBonus(GS.buildings) === 3, 'which feeds 3 more soldiers');
-  ok(
-    SiegeLoop.deployCostMult(17, 3) === 1 && SiegeLoop.deployCostMult(17, 0) > 1,
-    'so the surcharge starts at 17 soldiers, not 14'
-  );
+  ok(R.dawnWages(17, 3) === 0 && R.dawnWages(17, 0) === 2, 'so wages start at 17 soldiers, not 14');
   Game.selectBuild('outpost_barracks');
   Game.handleClick(SX, SY);
   ok(

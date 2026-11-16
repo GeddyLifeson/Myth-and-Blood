@@ -164,21 +164,21 @@ const Encyclopedia = (() => {
     );
     add(
       'Night and day',
-      `Night is for preparing: recruit, build, research, send the spy and the courier, and move soldiers to their posts. The top of the screen shows what the next wave is likely to bring. Press ${kBegin} to sound the horn when you are ready. Sounding it early pays 1 TP for every 10 seconds of night left, up to 5. Day is the fight; it ends when the last enemy is dead.`
+      `Night is for preparing: recruit, build, research, send the spy and the courier, and move soldiers to their posts. The top of the screen shows what the next wave is likely to bring. Press ${kBegin} to sound the horn when you are ready. Sounding it early is a bet: every 10 seconds of night left pays 1 TP (up to 5), and brings 5% of the next host forward into this wave, taken off the next one. Day is the fight; it ends when the last enemy is dead.`
     );
     add(
       'Tactical Points (TP)',
-      'TP pays for everything: soldiers, buildings, spells, spy and courier work. You are paid when a wave is cleared, a little more each wave, and less on the harder difficulties. Trade outposts and quarries pay at dawn. Crates, spoils and early horns add more. There is no cap on what you can hold.'
+      'TP pays for everything: soldiers, buildings, spells, spy and courier work. You are paid when a wave is cleared, a little more each wave, and less on the harder difficulties. Everything settles in one ledger when a wave is cleared, shown as a line like +7 crown, +2 works, -4 wages = 5. A clean wave (nobody lost, no breach) pays a small bounty. Crates and early horns add more. There is no cap on what you can hold.'
     );
     add(
       'Recruiting',
       'Pick a troop on the left or press its number key, then click the field. One click places one soldier. Hold Shift while clicking to keep the same troop in hand and place several. A troop you cannot afford or have not researched is greyed out, and its tooltip says why.'
     );
     add(
-      'Army upkeep',
-      `The first 14 soldiers cost their listed price. Every soldier past that makes each new recruit 7% dearer. The price on the button is always the price you will pay. Builders and couriers do not count toward the 14.${
+      'Army wages',
+      `Army upkeep is paid as wages, not on the price tag: recruits always cost their listed price. The first 14 soldiers are fed free; every 2 past that cost 1 TP in wages at each dawn, paid in the ledger. Wages the purse cannot cover go unpaid and every soldier loses 10 morale. Builders and couriers are not paid.${
         granary
-          ? ` Each ${buildName('outpost_granary')} feeds ${granary.freeArmy} more before the surcharge starts (the first ${granary.maxCounted} count).`
+          ? ` Each ${buildName('outpost_granary')} feeds ${granary.freeArmy} more before wages start (the first ${granary.maxCounted} count).`
           : ''
       }`
     );
@@ -337,7 +337,7 @@ const Encyclopedia = (() => {
     },
     outpost_granary: () => {
       const r = G('EconomyRules')?.BUILDINGS?.granary;
-      return `Outpost upgrade. Feeds ${r ? r.freeArmy : 3} more soldiers before army upkeep starts.${r ? ` The first ${r.maxCounted} count.` : ''} The choice is final for that Outpost.`;
+      return `Outpost upgrade. Feeds ${r ? r.freeArmy : 3} more soldiers before wages start.${r ? ` The first ${r.maxCounted} count.` : ''} The choice is final for that Outpost.`;
     },
     wall: () => {
       const r = G('EconomyRules')?.BUILDINGS?.wall;
@@ -349,10 +349,9 @@ const Encyclopedia = (() => {
     medical_tent: () =>
       'The wounded walk here on their own, heal to full and go back to their posts. Four beds.',
     mess_hall: () => 'Soldiers near it keep their morale.',
-    research_lab: () => {
-      const r = G('EconomyRules')?.BUILDINGS?.research_lab;
-      return `Pays science at every dawn${r ? ` (${r.dawnScience} per lab, first ${r.maxCounted} labs)` : ''}, and a little from kills. Science buys research.`;
-    },
+    hall_of_veterans: () =>
+      'Keeps the roll of veterans who reached rank 6. Raises one fallen name a wave for TP; the veteran returns at rank 5 with a tenth less health for each death.',
+    research_lab: () => 'While it stands, every doctrine choice comes five waves sooner.',
     trade_outpost: () => {
       const d = G('BuildDefs')?.trade_outpost;
       return `Pays ${d?.tpPerRound ?? 2} TP at dawn.`;
@@ -449,7 +448,7 @@ const Encyclopedia = (() => {
         entry(
           'buildings',
           'War camps',
-          `From wave ${camps.FROM_WAVE} the enemy may raise a camp on the top edge at nightfall. While it stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid.\n\n${kinds
+          `The night before wave ${camps.FROM_WAVE} the enemy raises its first camp on the top edge, and more follow. While a camp stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid. Strike it with soldiers and its garrison comes out to fight.\n\nA camp left standing digs in each night, up to level III: more health, more guards and a stronger bonus. From level II it also sends raiders at your nearest building. After ${camps.LIFE_WAVES} waves it moves on.\n\n${kinds
             .map((k) => `${k.name}: ${k.line}`)
             .join('\n')}`,
           { refs: { builds: kinds.map((k) => k.type) } }
@@ -462,23 +461,24 @@ const Encyclopedia = (() => {
   // ----------------------------------------------------------------- research
   function buildResearchEntries() {
     const Rs = G('Research');
-    const out = [
-      entry(
-        'research',
-        'How research works',
-        `Build a ${buildName('research_lab')}. It pays science at every dawn, and kills add a little. Open the Research panel and choose a project; one runs at a time. A lab built early brings the first iron-armed troops around wave 6.`
-      ),
-    ];
     const nodes = (Rs?.ALL_NODES || []).filter((n) => !n.faction && !n.crossover);
+    // The rules pages and the doctrine pairs are written by Research; charters are listed here.
+    const charterNames = new Set((Rs?.ALL_NODES || []).map((n) => n.name));
+    const out = (Rs?.getEncyclopediaEntries?.() || [])
+      .filter((e) => !charterNames.has(e.name))
+      .map((e) => entry('research', e.name, e.body));
     for (const n of nodes) {
-      const opens = [...(n.deploy || []).map(unitName), ...(n.build || []).map(buildName)];
+      const builds = (n.build || []).filter((t) => !Rs.STARTER_BUILD.has(t));
+      // A charter that only ever opened troops, or is retired, has nothing to say.
+      if (n.retired || (!builds.length && !n.feature)) continue;
+      const opens = builds.map(buildName);
       out.push(
         entry('research', n.name, n.desc || '', {
           researchId: n.id,
-          refs: { units: n.deploy || [], builds: n.build || [] },
+          refs: { units: [], builds },
           tags: [
-            { k: 'role', v: `${n.cost} science` },
-            n.wave ? { k: 'weak', v: `from wave ${n.wave}` } : null,
+            { k: 'role', v: 'charter' },
+            n.wave ? { k: 'weak', v: `granted at wave ${n.wave}` } : null,
             opens.length ? { k: 'counter', v: `opens ${opens.join(', ')}` } : null,
           ].filter(Boolean),
         })
