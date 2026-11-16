@@ -792,6 +792,8 @@ const UI = (() => {
       }
       if (m.ironman) parts.push('Ironman');
     }
+    const ng = typeof NewGamePlus !== 'undefined' ? NewGamePlus.getPending() : null;
+    if (ng) parts.push(`New Game+ ${ng.tier}`);
     const text = parts.filter(Boolean).join(' · ');
     if (el.textContent !== text) el.textContent = text;
   }

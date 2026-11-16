@@ -29,7 +29,7 @@ const GameWaves = (() => {
   let TP_SANITY_CAP,
     announceAcademyEra,
     announceAttackSides,
-    announceEnemyRtsEra,
+    announceHostGrowth,
     announceHooks,
     announceKingdomEvolution,
     applyChampionWaveStartPulse,
@@ -53,7 +53,7 @@ const GameWaves = (() => {
       TP_SANITY_CAP,
       announceAcademyEra,
       announceAttackSides,
-      announceEnemyRtsEra,
+      announceHostGrowth,
       announceHooks,
       announceKingdomEvolution,
       applyChampionWaveStartPulse,
@@ -323,14 +323,6 @@ const GameWaves = (() => {
             (colonyPressure?.countMult || 1)
         )
       );
-      if (isRtsEra(waveNum)) {
-        const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
-        count = Math.floor(count * (1.22 + rtsProg * 0.28));
-      }
-      if (isEnemyRtsEra(waveNum)) {
-        const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
-        count = Math.floor(count * (1.1 + enemyRts * 0.18));
-      }
       count += getEnemyEconomySpawnBonus();
       count = Math.max(1, Math.floor(count * (asym.enemyCountMult || 1)));
       if (mods.stealReduction) count = Math.max(1, count - mods.stealReduction);
@@ -823,7 +815,7 @@ const GameWaves = (() => {
     GS.spawnSectors = [];
     announceAcademyEra();
     announceRtsEra();
-    announceEnemyRtsEra();
+    announceHostGrowth();
     announceKingdomEvolution();
     if (svc('PlayerCounterEvolution') && svc('EnemyFactions')) {
       svc('PlayerCounterEvolution').checkWaveAnnouncement(GS.wave, announceHooks());

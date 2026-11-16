@@ -51,6 +51,7 @@ export const HEADLESS_FILES = [
   'narrative-thread.js',
   'tech-tree-branches.js',
   'chronicles.js',
+  'new-game-plus.js',
   'story-lore.js',
   'lore-data.js',
   'game-modes.js',

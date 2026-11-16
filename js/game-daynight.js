@@ -44,6 +44,7 @@ const GameDayNight = (() => {
   let ach,
     checkRosterSynergy,
     emitNightBegin,
+    endGame,
     floatStatus,
     getAsymmetricMods,
     getDifficulty,
@@ -59,6 +60,7 @@ const GameDayNight = (() => {
       ach,
       checkRosterSynergy,
       emitNightBegin,
+      endGame,
       floatStatus,
       getAsymmetricMods,
       getDifficulty,
@@ -168,11 +170,34 @@ const GameDayNight = (() => {
     svc('Legacy')?.recordCampaignVictory?.();
     playSfx('victory', typeof Cosmetics !== 'undefined' ? Cosmetics.getVictoryThemeId() : null);
     addHighlight('era', 'Campaign won — wave 100 cleared');
-    showMessage(
-      'VICTORY — wave 100 is cleared and the realm stands. The siege is endless: fight on for score.',
-      520,
-      { priority: 'high', bypassQueue: true }
-    );
+    offerPostVictoryChoice();
+  }
+
+  /** Continue this run endlessly, or end it as a victory and queue New Game+. */
+  function offerPostVictoryChoice() {
+    if (typeof NewGamePlus === 'undefined') return;
+    setPaused(true);
+    return NewGamePlus.offerVictoryChoice({
+      tier: GS.ngPlusTier || 0,
+      onContinue: () => {
+        GS.postVictoryEndless = true;
+        setPaused(false);
+        showMessage(
+          'Endless run: the host keeps growing. Your score is marked past the victory.',
+          420,
+          {
+            priority: 'high',
+            bypassQueue: true,
+          }
+        );
+      },
+      onNewGamePlus: () => {
+        NewGamePlus.queue(GS.ngPlusTier || 0, GS.units);
+        GS.victoryReason = 'campaign';
+        setPaused(false);
+        endGame(true);
+      },
+    });
   }
 
   function enterNightPhase() {
@@ -709,6 +734,7 @@ const GameDayNight = (() => {
   return {
     bind,
     CAMPAIGN_VICTORY_WAVE,
+    offerPostVictoryChoice,
     applyChampionWaveStartPulse,
     beginDayPhase,
     enterNightPhase,

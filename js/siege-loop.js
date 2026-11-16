@@ -1871,6 +1871,8 @@ const SiegeLoop = (() => {
       modifiers,
       modifierMult,
       total: Math.round(base * difficultyMult * modifierMult),
+      ngPlusTier: Math.max(0, Math.floor(input.ngPlusTier || 0)),
+      endless: !!input.endless,
     };
   }
 
@@ -1923,7 +1925,12 @@ const SiegeLoop = (() => {
       breaches: run.breaches,
       lost: ctx.soldiersLost || 0,
       difficulty: ctx.difficultyId || 'normal',
-      modifiers: activeScoreModifiers(),
+      modifiers: [
+        ...activeScoreModifiers(),
+        ...[globalThis.NewGamePlus?.scoreModifier(ctx.ngPlusTier)].filter(Boolean),
+      ],
+      ngPlusTier: ctx.ngPlusTier || 0,
+      endless: !!ctx.postVictoryEndless,
     });
   }
 
@@ -2071,6 +2078,7 @@ const SiegeLoop = (() => {
         `${SCORE_LABELS[score.difficulty]} difficulty: ×${score.difficultyMult}`,
       ];
       for (const m of score.modifiers) rows.push(`${m.label}: ×${m.mult.toFixed(2)}`);
+      if (score.endless) rows.push('Endless run: played on past the wave 100 victory');
       html +=
         `<h3>Score: ${n(score.total)}${run.scoreIsBest ? ' — new best' : ''}</h3>` +
         rows.map((l) => `<div>${esc(l)}</div>`).join('') +
