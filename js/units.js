@@ -1360,6 +1360,13 @@ function upgradeVeteranUnit(unit) {
   applyVeteranTierStep(unit, unit.vetTier);
   unit.vetStatTierApplied = unit.vetTier;
   unit.experience = (unit.experience || 0) + 5;
+  // A new rank can open a trait slot for a deed already done.
+  if (typeof Veterans !== 'undefined' && typeof GameArmy !== 'undefined') {
+    GameArmy.notifyTraits(
+      unit,
+      Veterans.check(unit, typeof GameState !== 'undefined' ? GameState.wave : 0)
+    );
+  }
   return unit;
 }
 
@@ -1415,9 +1422,14 @@ function getUnitDisplayName(unit) {
   }
   if (unit.honorName) {
     if (!isValidHonorName(unit.honorName)) repairHonorName(unit);
-    if (isValidHonorName(unit.honorName)) return unit.honorName;
+    if (isValidHonorName(unit.honorName)) return withEpithet(unit, unit.honorName);
   }
-  return getUnitTypeName(unit);
+  return withEpithet(unit, getUnitTypeName(unit));
+}
+
+function withEpithet(unit, name) {
+  const e = typeof Veterans !== 'undefined' ? Veterans.epithet(unit) : '';
+  return e ? `${name} ${e}` : name;
 }
 
 function unitDisplayName(unit) {
@@ -1817,6 +1829,11 @@ function createUnit(type, x, y, team, opts = {}) {
   u.vetTier = 0;
   u.vetStatTierApplied = 0;
   u.vetUpgradeEligible = false;
+  u.traits = [];
+  u.forgot = [];
+  u.deeds = null;
+  u.hallId = null;
+  u.timesRaised = 0;
   u.baseMaxHp = null;
   u.baseDamage = null;
   u.ipScaleWave = 0;

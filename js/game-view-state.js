@@ -424,6 +424,8 @@ const GameViewState = (() => {
             }
           : null
       ),
+      hallRoll: GameArmy.getHallRoll(),
+      hallBuildBlock: Veterans.hallBuildBlock(),
       buildableAcademies: cachedSnap('buildableAcademies', () =>
         ACADEMY_BUILD_TYPES.filter((t) => canBuildAcademyType(t, GS.wave, GS.units))
       ),

@@ -1444,6 +1444,7 @@ const Game = (() => {
     }
     if (svc('ModLoader')) svc('ModLoader').onGameStart(createGameContext());
     if (svc('Research')) svc('Research').resetRun();
+    Veterans.setHall([]);
     // Ensure expansion unit/building defs (ballista, bard, academies…) after any data reload race.
     if (svc('ContentExpansion')?.registerDefs) svc('ContentExpansion').registerDefs();
     else if (typeof ContentExpansion !== 'undefined' && ContentExpansion.registerDefs) {
@@ -2936,6 +2937,8 @@ const Game = (() => {
     startBranchTech,
     cancelBranchTech,
     upgradeSelectedVeteran,
+    raiseVeteran: (id) => GameArmy.raiseVeteran(id),
+    forgetSelectedTrait: (id) => GameArmy.forgetSelectedTrait(id),
     ascendSelectedUnit,
     recruitSelectedEcho,
     getAsymmetricMods,

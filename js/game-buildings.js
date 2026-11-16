@@ -728,6 +728,10 @@ const GameBuildings = (() => {
       showMessage('Research Tonic Stations Science at the Research Lab first!');
       return false;
     }
+    if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
+      showMessage(`The Hall of Veterans ${Veterans.hallBuildBlock()}.`);
+      return false;
+    }
     const isAcademyBuild = def?.isAcademy && !def?.isCrossoverBarracks && !def?.isWweAcademy;
     if (
       isAcademyBuild &&
@@ -908,6 +912,10 @@ const GameBuildings = (() => {
       !(research && research.isBuildUnlocked(type, getResearchOpts()))
     ) {
       showMessage('Research Tonic Stations Science at the Research Lab first!');
+      return false;
+    }
+    if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
+      showMessage(`The Hall of Veterans ${Veterans.hallBuildBlock()}.`);
       return false;
     }
     const isAcademyBuild = bdef?.isAcademy && !bdef?.isCrossoverBarracks && !bdef?.isWweAcademy;

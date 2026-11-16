@@ -278,6 +278,7 @@ const GameDayNight = (() => {
       u.experience = (u.experience || 0) + 1;
       u.morale = Math.min(u.maxMorale, u.morale + 1);
       if (!isSpecialistUnit(u)) notifyVetStarEvent(u, addVetStar(u));
+      GameArmy.notifyTraits(u, Veterans.endWave(u, GS.wave));
     }
     GS.waveProgress = 1;
     if (typeof OnlineMultiplayer !== 'undefined') OnlineMultiplayer.onWaveComplete(GS.wave);

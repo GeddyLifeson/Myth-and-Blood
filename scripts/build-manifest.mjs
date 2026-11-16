@@ -122,6 +122,7 @@ export const GAME_SCRIPTS = [
   'game-combat.js',
   'game-targeting.js',
   'game-movement.js',
+  'veterans.js',
   'game-army.js',
   'game-buildings.js',
   'game-garrison.js',
