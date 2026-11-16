@@ -548,9 +548,10 @@ const GameCampaign = (() => {
     svc('GameEvents').on(E.BOSS_SLAIN, (p) => {
       if (!svc('MonsterBosses')) return;
       const evo = svc('MonsterBosses').onBossSlain(p.bossType, p.wave);
+      if (evo?.deathLine) showMessage(evo.deathLine, 300);
       if (evo?.nextEvolution?.label) {
         showMessage(
-          `${p.name} banished — next encounter: ${evo.nextEvolution.label} cycle with a stronger pack.`,
+          `${p.name} will return: ${evo.nextEvolution.label}, with a stronger guard.`,
           300
         );
       }

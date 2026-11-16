@@ -672,7 +672,6 @@ const ContentExpansion = (() => {
         type: 'melee',
         reward: 0,
         morale: 32,
-        enrageBoss: true,
         spriteScale: 1.75,
       },
       boss_morwen: {
@@ -690,9 +689,6 @@ const ContentExpansion = (() => {
         projectile: 'bolt',
         reward: 0,
         morale: 28,
-        summoner: true,
-        summonType: 'goblin',
-        summonCooldown: 220,
         spriteScale: 1.55,
       },
       boss_thokk: {
@@ -710,7 +706,6 @@ const ContentExpansion = (() => {
         reward: 0,
         morale: 34,
         siegeMult: 3.5,
-        enrageBoss: true,
         spriteScale: 1.85,
       },
       boss_grimm: {
@@ -727,7 +722,6 @@ const ContentExpansion = (() => {
         type: 'melee',
         reward: 0,
         morale: 30,
-        fireAura: true,
         spriteScale: 1.7,
       },
       boss_vexis: {
@@ -814,7 +808,6 @@ const ContentExpansion = (() => {
         reward: 0,
         morale: 35,
         siegeMult: 3.8,
-        enrageBoss: true,
         spriteScale: 1.85,
       },
       boss_malachar: {
@@ -831,7 +824,6 @@ const ContentExpansion = (() => {
         type: 'melee',
         reward: 0,
         morale: 40,
-        enrageBoss: true,
         huntsGeneral: true,
         siegeMult: 2.5,
         regen: true,
@@ -1427,7 +1419,9 @@ const ContentExpansion = (() => {
     if (unit.siegeMult > 1 && (target?.type === 'siege_tower' || target?.siegeDeployed)) {
       d = Math.round(d * unit.siegeMult);
     }
-    if (unit.type === 'war_chief' || unit.isNamedBoss || EnemyDefs[unit.type]?.enrageBoss) {
+    // Named bosses enrage once, through their phase (js/roster.js); stacking this on top
+    // doubled it.
+    if (unit.type === 'war_chief') {
       unit.enrageTimer = unit.enrageTimer || 0;
       if (unit.hp / unit.maxHp < 0.5) {
         unit.enrageTimer = 300;

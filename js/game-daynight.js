@@ -602,9 +602,6 @@ const GameDayNight = (() => {
         const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: side });
         u.entrySector = sector;
         if (svc('EnemyFactions')) u.enemyFaction = svc('EnemyFactions').getUnitFaction(type);
-        if (svc('MonsterBosses') && GS.namedBossWave) {
-          svc('MonsterBosses').applyPackTags(u, GS.namedBossWave.type);
-        }
         u.rotation = enemyRotationForSide(side);
         const cfg = GS.currentWaveConfig || getWaveConfig(GS.wave);
         const diff = getDifficulty();

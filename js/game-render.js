@@ -770,7 +770,9 @@ const GameRender = (() => {
     const bossUnit = GS.units.find(
       (u) => u.team === 'enemy' && u.hp > 0 && (u.isNamedBoss || u.type === 'war_chief')
     );
-    if (bossUnit) {
+    if (bossUnit && bossUnit.isNamedBoss && svc('MonsterBosses')) {
+      svc('MonsterBosses').drawBar(GS.ctx, bossUnit, GS.canvas.width, GS.updateTick);
+    } else if (bossUnit) {
       const bossLabel =
         bossUnit.bossName ||
         EnemyDefs[bossUnit.type]?.bossName ||

@@ -572,7 +572,7 @@ const Roster = (() => {
       role: 'Boss — warlord',
       trait:
         'War Banner and Blood Rage. At half health he enrages and sounds the charge: the whole warband runs.',
-      weak: 'Kill his escort first; the banner only helps those near him.',
+      weak: 'Pikemen or knights in his charge lane; the banner only helps those near him.',
       warAura: { r: 130 },
       bloodRage: 1.25,
       phase: { enrage: 1.3 },
@@ -581,7 +581,7 @@ const Roster = (() => {
       role: 'Boss — hexer',
       trait:
         'Hex and Grave Call. At half health she raises a pack of plague rats, and every fallen foe on the field stands up again.',
-      weak: 'Cavalry; she is fragile for a boss.',
+      weak: 'Cavalry, scouts and knights break her Grave Call.',
       kite: true,
       hex: { pct: 0.25, ticks: 300 },
       phase: { summon: ['plague_rat', 6] },
@@ -589,7 +589,7 @@ const Roster = (() => {
     boss_thokk: {
       role: 'Boss — mountain',
       trait: 'Trample and Regrowth. At half health his regrowth doubles and the pack stampedes.',
-      weak: 'Ballistae and mages; he is very slow.',
+      weak: 'Ballistae and crossbows topple his Earthshatter; he is very slow.',
       cleave: { r: 42, pct: 0.5 },
       regen: 0.008,
       noPin: true,
@@ -598,7 +598,7 @@ const Roster = (() => {
     boss_grimm: {
       role: 'Boss — cinder knight',
       trait: 'Plate and Cinder Hide. At half health he enrages and the ground around him burns.',
-      weak: 'Mages; keep melee off him.',
+      weak: 'Mages break his Cinder Brand; keep melee off him.',
       armourVsRanged: 0.7,
       thorns: 8,
       noPin: true,
@@ -608,7 +608,7 @@ const Roster = (() => {
       role: 'Boss — shadow',
       trait:
         'Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder and steps through a rift to behind your line.',
-      weak: 'Low health for a boss; pin it with a tight formation.',
+      weak: 'A bodyguard beside the marked soldier turns his pounce.',
       prefer: 'support',
       pounce: 2,
       backstab: 1.5,
@@ -617,7 +617,7 @@ const Roster = (() => {
     boss_karg: {
       role: 'Boss — forge walker',
       trait: 'Iron Shell; heads for your buildings. At half health it calls goblin sappers.',
-      weak: 'Sappers and mages.',
+      weak: 'Sappers and ballistae crack his ram.',
       prefer: 'building',
       armourVsRanged: 0.6,
       thorns: 6,
@@ -627,7 +627,7 @@ const Roster = (() => {
     boss_sylvara: {
       role: 'Boss — wyrm mother',
       trait: 'Wyrmfire. At half health she calls a flight of harpies and rings herself in fire.',
-      weak: 'Ballistae.',
+      weak: 'Ballistae and crossbows drive off her Wyrmfire Rain.',
       kite: true,
       splashEvery: { n: 1, r: 48, pct: 0.5 },
       phase: { summon: ['harpy', 5] },
@@ -636,7 +636,7 @@ const Roster = (() => {
       role: 'Boss — plague lord',
       trait:
         'Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him and the fallen rise again.',
-      weak: 'Kill him far from your line.',
+      weak: 'Mages and ballistae lance his Rupture; kill him far from your line.',
       plague: { dps: 4, ticks: 300 },
       regen: 0.008,
       deathBurst: { r: 70, dmg: 60 },
@@ -645,7 +645,7 @@ const Roster = (() => {
     boss_volk: {
       role: 'Boss — dread marshal',
       trait: 'War Banner and Suppressing Fire. At half health he enrages and sounds the charge.',
-      weak: 'Cavalry; break his escort and he is alone.',
+      weak: 'Riders on him silence his Hammerfall.',
       warAura: { r: 140 },
       hex: { pct: 0.2, ticks: 240 },
       noPin: true,
@@ -655,7 +655,7 @@ const Roster = (() => {
       role: 'Boss — the eternal',
       trait:
         'Hex, Regrowth and War Banner. At half health he enrages, calls dark knights, and the fallen rise again.',
-      weak: 'Everything you have, at once.',
+      weak: 'Every counter you have: read which move he marks.',
       warAura: { r: 150 },
       hex: { pct: 0.25, ticks: 300 },
       regen: 0.006,
@@ -911,6 +911,9 @@ const Roster = (() => {
     if (!(amount > 0)) return amount;
     const tick = ctx.tick;
     const attacker = opts && opts.attacker;
+    // Blows during a boss's wind-up can break his move (js/monster-bosses.js).
+    if (unit.isNamedBoss && attacker && typeof MonsterBosses !== 'undefined')
+      MonsterBosses.onHit(unit, amount, attacker, ctx);
     // A Sapper's blast goes through armour: no ward, brace, plate, shield or flat resistance.
     if (opts && opts.demolition) {
       return (unit.exposeUntil || 0) > tick ? amount * (1 + (unit.exposePct || 0)) : amount;
@@ -1218,6 +1221,8 @@ const Roster = (() => {
     if (typeof SapperKit !== 'undefined') SapperKit.update(ctx);
     // The leading faction's tactic (js/host-tactics.js).
     if (typeof HostTactics !== 'undefined') HostTactics.update(ctx);
+    // Named bosses' signature moves (js/monster-bosses.js).
+    if (typeof MonsterBosses !== 'undefined') MonsterBosses.update(ctx);
   }
 
   // ---------------------------------------------------------------- overlays
@@ -1823,6 +1828,7 @@ const Roster = (() => {
     c.restore();
     if (typeof SapperKit !== 'undefined') SapperKit.drawOver(c, tick);
     if (typeof HostTactics !== 'undefined') HostTactics.drawOver(c, tick);
+    if (typeof MonsterBosses !== 'undefined') MonsterBosses.drawOver(c, units, tick);
   }
 
   // ---------------------------------------------------------------------- AI
