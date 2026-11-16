@@ -1177,7 +1177,7 @@ const GameBuildings = (() => {
       const soften = 0.48 + Math.min(0.42, GS.wave / 115);
       dmg = Math.max(4, Math.floor(dmg * soften));
     }
-    return Math.max(4, dmg + Math.floor(Math.random() * 4));
+    return Math.max(4, dmg + Math.floor((globalThis.simRandom || Math.random)() * 4));
   }
 
   function getBuildingPursuitTarget(unit) {

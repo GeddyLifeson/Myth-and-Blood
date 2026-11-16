@@ -900,7 +900,7 @@
       },
       beginDay: (_arg, gs) => {
         if (gs.timeOfDay !== 'night') return false;
-        Game.beginDayPhase(true);
+        Game.soundHorn();
         return true;
       },
       ability: (id) => selectByKey('ability', id),

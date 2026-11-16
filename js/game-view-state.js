@@ -413,6 +413,7 @@ const GameViewState = (() => {
       nightProgress: isNightPhase() ? GS.nightTimer / getNightPrepTicks() : 0,
       nightPrepTicks: getNightPrepTicks(),
       nightSecondsLeft: getNightSecondsRemaining(),
+      hornLockSeconds: GameDayNight.getHornLockSecondsLeft(),
       nightPrepSeconds: typeof NIGHT_PREP_SECONDS !== 'undefined' ? NIGHT_PREP_SECONDS : 60,
       worldW: GS.worldW,
       worldH: GS.worldH,

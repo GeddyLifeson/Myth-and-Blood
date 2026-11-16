@@ -1479,6 +1479,7 @@ const Game = (() => {
     if (svc('NeutralWildlife')) svc('NeutralWildlife').resetRun();
     if (svc('NeutralRelations')) svc('NeutralRelations').resetRun();
     if (svc('CompanyTraining')) svc('CompanyTraining').resetRun();
+    if (typeof MercenaryCamp !== 'undefined') MercenaryCamp.reset();
     if (svc('DynamicMapEvents'))
       svc('DynamicMapEvents').resetRun(svc('GameModes')?.getSession?.()?.seed);
     if (svc('StrategyCounterplay')) svc('StrategyCounterplay').resetRun();
@@ -2527,7 +2528,7 @@ const Game = (() => {
           const hit = getUnitById(p.targetId);
           const shooter = p.sourceId ? getUnitById(p.sourceId) : null;
           // p.accuracy already paid the enemy sight penalty when the shot was fired.
-          if (hit?.hp > 0 && Math.random() * 100 <= p.accuracy) {
+          if (hit?.hp > 0 && (globalThis.simRandom || Math.random)() * 100 <= p.accuracy) {
             p.landed = true;
             // Prefer live shooter so vet/aura/crossover/WWE modifiers apply (not a bare damage stub).
             const src =
@@ -2584,7 +2585,11 @@ const Game = (() => {
               }
               if (splashHits >= 1) ach('mage_splash', { hitCount: splashHits + 1 });
             }
-            if (shooter?.hasDoubleTap && hit.hp > 0 && Math.random() < 0.4) {
+            if (
+              shooter?.hasDoubleTap &&
+              hit.hp > 0 &&
+              (globalThis.simRandom || Math.random)() < 0.4
+            ) {
               takeDamage(hit, Math.round(dmg * 0.55), { attackerTeam: p.team });
             }
           }
@@ -2906,6 +2911,7 @@ const Game = (() => {
     getDifficulty,
     getDifficultyPercent,
     beginDayPhase,
+    soundHorn: GameDayNight.soundHorn,
     isDayPhase,
     isNightPhase,
     isCreativeMode,
