@@ -384,6 +384,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "unitHasPerk",
   "upgradeVeteranUnit",
   "veteranStarScale",
-  "walkGrids"
+  "walkGrids",
+  "withEpithet"
 ].map((name) => [name, 'readonly'])
 );
