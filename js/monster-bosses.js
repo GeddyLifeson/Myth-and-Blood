@@ -1053,6 +1053,62 @@ const MonsterBosses = (() => {
     c.restore();
   }
 
+  const sec = (ticks) => `${+(ticks / 60).toFixed(1)} s`;
+  const pct = (x) => `${Math.round(x * 100)}%`;
+  const COUNTER_NAMES = {
+    pikeman: 'pikemen',
+    knight: 'knights',
+    cavalry: 'cavalry',
+    scout: 'scouts',
+    ballista: 'ballistae',
+    crossbowman: 'crossbowmen',
+    mage: 'mages',
+    sapper: 'sappers',
+    footman: 'footmen',
+    general: 'the General',
+  };
+  const listOf = (types) => {
+    const n = types.map((t) => COUNTER_NAMES[t] || t);
+    return n.length > 1 ? `${n.slice(0, -1).join(', ')} or ${n[n.length - 1]}` : n[0];
+  };
+
+  /** One move in exact numbers: wind-up, area, effect, and what breaks it. */
+  function describeMove(id) {
+    const m = MOVES[id];
+    if (!m) return '';
+    const area =
+      m.shape === 'lane'
+        ? `a lane ${m.len} px long and ${m.width} px wide towards ${m.siege ? 'your nearest building' : 'your thickest ranks'} (within ${m.reach} px)`
+        : m.shape === 'self'
+          ? `a ${m.radius} px ring around himself`
+          : m.shape === 'mark'
+            ? `one of your archers, crossbowmen, mages, healers, bards or ballistae within ${m.reach} px`
+            : m.shape === 'circles'
+              ? `${m.count} circles of ${m.radius} px on ${m.prey === 'ranged' ? 'your shooters' : 'your soldiers'} within ${m.reach} px`
+              : `a ${m.radius} px circle on your thickest ranks within ${m.reach} px`;
+    const fx = [];
+    if (m.summon) fx.push(`raises ${m.summon[1]} revenants (+1 for each return visit)`);
+    if (m.dmg)
+      fx.push(
+        `${pct(m.dmg)} of his damage to ${m.shape === 'mark' ? 'the marked soldier' : 'everyone inside'}`
+      );
+    if (m.shape === 'lane') fx.push('he ends at the far end of the lane');
+    if (m.shape === 'mark') fx.push('he steps out beside the marked soldier');
+    if (m.stun) fx.push(`${sec(m.stun)} stun`);
+    if (m.burn) fx.push(`burning for ${m.burn} a second for 4 s`);
+    if (m.plague) fx.push(`plague for ${m.plague} a second for 4 s`);
+    if (m.siege) fx.push('buildings in the lane take his siege damage');
+    if (m.healPer) fx.push(`he heals ${pct(m.healPer)} of his health per soldier caught (up to 5)`);
+    const c = m.counter;
+    const answer =
+      c.kind === 'block'
+        ? `${listOf(c.types)} in the lane${c.braced ? ', or a footman or pikeman with 2 shield mates beside him,' : ''} stop it`
+        : c.kind === 'guard'
+          ? `${listOf(c.types)} within ${c.r} px of the marked soldier turn it`
+          : `hits from ${listOf(c.types)} worth ${pct(c.pct)} of his health during the wind-up break it`;
+    return `${m.name}: ${sec(m.windup)} wind-up, held in place, on ${area}; then ${fx.join(', ')}. Answer: ${answer}; he is then stunned for ${sec(STAGGER_TICKS)} and takes ${pct(EXPOSE_PCT)} more damage. Every ${sec(MOVE_COOLDOWN)} (II: ${sec(MOVE_COOLDOWN * PHASE_COOLDOWN[1])}, III: ${sec(MOVE_COOLDOWN * PHASE_COOLDOWN[2])}, wind-up 30% shorter).`;
+  }
+
   function deathLine(bossType) {
     return ROSTER_BY_TYPE[bossType]?.death || null;
   }
@@ -1110,6 +1166,7 @@ const MonsterBosses = (() => {
           boss.lore,
           '',
           `Signature: ${moves.join(', ')}.`,
+          ...boss.moves.map(describeMove),
           boss.mechanics,
           '',
           `Answer: ${boss.counter}`,
@@ -1188,6 +1245,7 @@ const MonsterBosses = (() => {
     drawBar,
     nextMove,
     phaseOf,
+    describeMove,
   };
 })();
 

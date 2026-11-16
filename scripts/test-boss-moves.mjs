@@ -12,7 +12,7 @@ import { ok, failures, boot } from './lib/harness.mjs';
 
 const MB = vm.runInContext(
   `${readFileSync(join(JS, 'monster-bosses.js'), 'utf8')}\nMonsterBosses`,
-  vm.createContext({ console, Math })
+  vm.createContext({ console, Math, EnemyDefs: {} })
 );
 
 let nextId = 1;
@@ -89,6 +89,19 @@ for (const entry of MB.BOSS_ROSTER) {
     ),
     `${entry.name}: no em dash in player text`
   );
+}
+
+// 1b. Traits are given in exact numbers: every move's wind-up, area and answer.
+for (const id of Object.keys(MB.MOVES)) {
+  const d = MB.describeMove(id);
+  ok(
+    /\d s wind-up/.test(d) && /\d+ px/.test(d) && /Answer: .*\d/.test(d),
+    `${id} is described in numbers`
+  );
+}
+{
+  const gorath = MB.getEncyclopediaEntries().find((e) => e.name.startsWith('Gorath'));
+  ok(gorath.body.includes('190 px long'), 'the encyclopedia shows the exact move');
 }
 
 // 2. Ash Charge, uncountered: telegraphed, he stands still, then everyone in the lane is hit.

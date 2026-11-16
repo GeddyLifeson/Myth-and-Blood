@@ -571,7 +571,7 @@ const Roster = (() => {
     boss_gorath: {
       role: 'Boss — warlord',
       trait:
-        'War Banner and Blood Rage. At half health he enrages and sounds the charge: the whole warband runs.',
+        'War Banner: every ally within 130 px deals 15% more damage. Blood Rage: below half health he deals 25% more. Phase II (half health): +30% damage and his warband charges.',
       weak: 'Pikemen or knights in his charge lane; the banner only helps those near him.',
       warAura: { r: 130 },
       bloodRage: 1.25,
@@ -580,7 +580,7 @@ const Roster = (() => {
     boss_morwen: {
       role: 'Boss — hexer',
       trait:
-        'Hex and Grave Call. At half health she raises a pack of plague rats, and every fallen foe on the field stands up again.',
+        'Keeps her distance. Hex: a soldier she strikes deals 25% less damage for 5 s. Phase II (half health): raises 6 plague rats; the faction raises its fallen.',
       weak: 'Cavalry, scouts and knights break her Grave Call.',
       kite: true,
       hex: { pct: 0.25, ticks: 300 },
@@ -588,7 +588,8 @@ const Roster = (() => {
     },
     boss_thokk: {
       role: 'Boss — mountain',
-      trait: 'Trample and Regrowth. At half health his regrowth doubles and the pack stampedes.',
+      trait:
+        'Trample: every blow also hits everyone within 42 px of his target for 50%. Regrowth: heals 0.8% of his health a second. Cannot be pinned. Phase II (half health): regrowth doubles to 1.6% a second.',
       weak: 'Ballistae and crossbows topple his Earthshatter; he is very slow.',
       cleave: { r: 42, pct: 0.5 },
       regen: 0.008,
@@ -597,7 +598,8 @@ const Roster = (() => {
     },
     boss_grimm: {
       role: 'Boss — cinder knight',
-      trait: 'Plate and Cinder Hide. At half health he enrages and the ground around him burns.',
+      trait:
+        'Plate: takes 30% less from arrows, bolts and spells. Cinder Hide: every melee blow on him burns the striker for 8. Cannot be pinned. Phase II (half health): +30% damage.',
       weak: 'Mages break his Cinder Brand; keep melee off him.',
       armourVsRanged: 0.7,
       thorns: 8,
@@ -607,7 +609,7 @@ const Roster = (() => {
     boss_vexis: {
       role: 'Boss — shadow',
       trait:
-        'Pounce and Backstab; hunts archers, mages and healers. At half health it strikes 40% harder and steps through a rift to behind your line.',
+        'Goes for archers, mages and healers first. Pounce: his first blow on a soldier deals double. Backstab: 50% more from behind. Phase II (half health): +40% damage and a rift behind your line.',
       weak: 'A bodyguard beside the marked soldier turns his pounce.',
       prefer: 'support',
       pounce: 2,
@@ -616,7 +618,8 @@ const Roster = (() => {
     },
     boss_karg: {
       role: 'Boss — forge walker',
-      trait: 'Iron Shell; heads for your buildings. At half health it calls goblin sappers.',
+      trait:
+        'Goes for your buildings first. Iron Shell: takes 40% less from arrows, bolts and spells; every melee blow on him costs the striker 6. Cannot be pinned. Phase II (half health): calls 4 goblin sappers.',
       weak: 'Sappers and ballistae crack his ram.',
       prefer: 'building',
       armourVsRanged: 0.6,
@@ -626,7 +629,8 @@ const Roster = (() => {
     },
     boss_sylvara: {
       role: 'Boss — wyrm mother',
-      trait: 'Wyrmfire. At half health she calls a flight of harpies and rings herself in fire.',
+      trait:
+        'Flies and keeps her distance. Wyrmfire: every breath also burns everyone within 48 px of the target for 50%. Phase II (half health): calls 5 harpies.',
       weak: 'Ballistae and crossbows drive off her Wyrmfire Rain.',
       kite: true,
       splashEvery: { n: 1, r: 48, pct: 0.5 },
@@ -635,7 +639,7 @@ const Roster = (() => {
     boss_rotfather: {
       role: 'Boss — plague lord',
       trait:
-        'Plague, Regrowth and Rupture. At half health a swarm of rats pours out of him and the fallen rise again.',
+        'Plague: a soldier he strikes takes 4 a second for 5 s. Regrowth: heals 0.8% of his health a second. Rupture on death: 60 damage to everyone within 70 px. Phase II (half health): 8 plague rats pour out.',
       weak: 'Mages and ballistae lance his Rupture; kill him far from your line.',
       plague: { dps: 4, ticks: 300 },
       regen: 0.008,
@@ -644,7 +648,8 @@ const Roster = (() => {
     },
     boss_volk: {
       role: 'Boss — dread marshal',
-      trait: 'War Banner and Suppressing Fire. At half health he enrages and sounds the charge.',
+      trait:
+        'War Banner: every ally within 140 px deals 15% more damage. Hex: a soldier he strikes deals 20% less for 4 s. Cannot be pinned. Phase II (half health): +30% damage.',
       weak: 'Riders on him silence his Hammerfall.',
       warAura: { r: 140 },
       hex: { pct: 0.2, ticks: 240 },
@@ -654,7 +659,7 @@ const Roster = (() => {
     boss_malachar: {
       role: 'Boss — the eternal',
       trait:
-        'Hex, Regrowth and War Banner. At half health he enrages, calls dark knights, and the fallen rise again.',
+        'War Banner over 150 px (+15% damage). Hex: struck soldiers deal 25% less for 5 s. Regrowth 0.6% of his health a second. Cannot be pinned. Phase II (half health): +35% damage and 3 dark knights.',
       weak: 'Every counter you have: read which move he marks.',
       warAura: { r: 150 },
       hex: { pct: 0.25, ticks: 300 },
