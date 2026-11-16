@@ -129,7 +129,16 @@ const GameViewState = (() => {
       creativeSettings: { ...GS.creativeSettings },
       creativeSettingsSig: getCreativeSettingsSig(),
       difficulty: GS.difficultyId,
-      difficultyLabel: getDifficulty().label,
+      // NG+ tier and the post-victory endless run ride on the label every HUD line already shows.
+      difficultyLabel: [
+        getDifficulty().label,
+        svc('NewGamePlus')?.label(GS.ngPlusTier),
+        GS.postVictoryEndless ? 'Endless' : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      ngPlusTier: GS.ngPlusTier || 0,
+      postVictoryEndless: !!GS.postVictoryEndless,
       difficultyPercent: getDifficultyPercent(),
       gameMode: svc('GameModes') ? svc('GameModes').getSession() : null,
       scalingTips: cachedSnap('scalingTips', () =>

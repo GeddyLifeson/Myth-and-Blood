@@ -792,6 +792,8 @@ const UI = (() => {
       }
       if (m.ironman) parts.push('Ironman');
     }
+    const ng = typeof NewGamePlus !== 'undefined' ? NewGamePlus.getPending() : null;
+    if (ng) parts.push(`New Game+ ${ng.tier}`);
     const text = parts.filter(Boolean).join(' · ');
     if (el.textContent !== text) el.textContent = text;
   }
@@ -2766,9 +2768,12 @@ const UI = (() => {
         (gs.territoryTier ?? 0) > 0
           ? ` · Land ${['', 'I', 'II', 'III', 'IV', 'V', 'VI'][gs.territoryTier] || gs.territoryTier}`
           : '';
+      const run =
+        (gs.ngPlusTier ? ` · NG+${gs.ngPlusTier}` : '') +
+        (gs.postVictoryEndless ? ' · Endless' : '');
       waveText.textContent = gs.infiniteWaves
-        ? `${gs.wave}${land}`
-        : `${gs.wave} / ${gs.totalWaves}${land}`;
+        ? `${gs.wave}${land}${run}`
+        : `${gs.wave} / ${gs.totalWaves}${land}${run}`;
     }
     updateHudMeters(gs);
     if (armyText) armyText.textContent = String(gs.army ?? 0);

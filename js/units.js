@@ -1520,15 +1520,28 @@ function isFirstBloodWave(waveNum) {
 }
 
 /** Health and damage scale every enemy type gets at this wave; getWaveConfig and spawning share it. */
+/** Waves past 200: the 100-200 ramp has finished, so the endless host keeps growing linearly. */
+function endlessWaves(waveNum) {
+  return Math.max(0, (waveNum | 0) - RTS_ERA_WAVE);
+}
+
 function getEnemyWaveScale(waveNum) {
   const eased = academyEase(waveNum);
   const post = postAcademyEase(waveNum);
   const early = Math.min(40, Math.max(0, waveNum - 2));
   const surge = Math.min(MID_PRESSURE_UNTIL, early);
+  const endless = endlessWaves(waveNum);
   return {
-    hp: 1 + eased * 3.15 + post * 1.85 + early * EARLY_HP_PER_WAVE + surge * EARLY_HP_EXTRA,
+    hp:
+      1 +
+      eased * 3.15 +
+      post * 1.85 +
+      early * EARLY_HP_PER_WAVE +
+      surge * EARLY_HP_EXTRA +
+      endless * 0.04,
     dmg:
       1 +
+      endless * 0.02 +
       eased * 1.95 +
       post * 1.15 +
       early * EARLY_DMG_PER_WAVE +
@@ -1564,8 +1577,12 @@ function getWaveConfig(waveNum) {
       ? Math.min(90, 4 + waveNum * MID_COUNT_PER_WAVE + pressureWaves * MID_PRESSURE_EXTRA)
       : 0;
   const firstBlood = isFirstBloodWave(waveNum) ? FIRST_BLOOD_COUNT : 0;
+  // ponytail: +40 cap on endless headcount keeps the field drawable; stats carry the rest.
   const count = Math.floor(
-    Math.max(templateCount, academyCount, midCount) + post * 38 + firstBlood
+    Math.max(templateCount, academyCount, midCount) +
+      post * 70 +
+      firstBlood +
+      Math.min(40, endlessWaves(waveNum) * 0.4)
   );
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));

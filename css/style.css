@@ -5622,6 +5622,7 @@ body.game-playing #night-prep-card:not([hidden]) {
 .inpage-dialog-message {
   font-size: 15px;
   line-height: 1.45;
+  white-space: pre-line;
 }
 .inpage-dialog-input {
   display: block;

@@ -67,6 +67,7 @@ export const GAME_SCRIPTS = [
   'narrative-thread.js',
   'tech-tree-branches.js',
   'chronicles.js',
+  'new-game-plus.js',
   'story-lore.js',
   'lore-data.js',
   'encyclopedia.js',
