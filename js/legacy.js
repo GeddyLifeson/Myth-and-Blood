@@ -200,8 +200,8 @@ const Legacy = (() => {
         body: `Highest wave reached: ${leg.maxWaveEver || '—'}. By difficulty — ${diffLines}`,
         classified:
           leg.maxWaveEver >= 200
-            ? "The Crown's war council notes your name among commanders who survived the Enemy RTS era. Settlement raids and mirrored economies did not end you."
-            : 'Field reports beyond wave 200 remain sealed until a commander proves the realm can endure the Enemy RTS.',
+            ? "The Crown's war council notes your name among commanders who held past the two hundredth dawn. Dug-in war camps and their raiders did not end you."
+            : 'Field reports beyond wave 200 remain sealed until a commander proves the realm can endure the late war.',
         classifiedRule: 'wave:200',
       },
       {

@@ -174,6 +174,13 @@ const UX = (() => {
       highlight: 'tab-ops',
     },
     {
+      minWave: 5,
+      maxWave: 14,
+      title: 'War Camps',
+      body: "The enemy now raises <strong>war camps</strong> on the top edge at night. Each one strengthens the next wave. Select soldiers and click a camp to attack it, drop a strike on it, or send the spy's raid. Its garrison comes out to fight. A camp left standing digs in and sends raiders at your buildings.",
+      highlight: 'tab-ops',
+    },
+    {
       minWave: 30,
       maxWave: 80,
       when: (gs) => gs.kingdomRaidsUnlocked || (gs.hamletCount ?? 0) > 0 || gs.hasResearchLab,
@@ -184,8 +191,8 @@ const UX = (() => {
     {
       minWave: 100,
       when: (gs) => gs.wave >= 100 || gs.rtsEra,
-      title: 'RTS Escalation',
-      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling - promote core veterans or field more operatives to keep pace.',
+      title: 'Empire Ascendant',
+      body: 'From wave 100 the hosts come heavier and enemy <strong>operatives</strong> grow with your own. Nothing is taken from you: your field, walls and veterans stand. Keep burning <strong>war camps</strong> before they dig in.',
       highlight: 'tab-ops',
     },
     {
