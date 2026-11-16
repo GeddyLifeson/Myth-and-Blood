@@ -68,6 +68,14 @@ const soldier = (createUnit, type) => createUnit(type, 100, 100, 'player');
     'a retired charter opens nothing, and a save that holds it still loads'
   );
   hamlet.retired = false;
+
+  // A charter whose only building became a starter drops out by itself.
+  Research.STARTER_BUILD.add('quarry');
+  ok(
+    !Research.getEncyclopediaEntries().some((e) => e.name === 'Prospecting'),
+    'a charter with nothing left to open is not listed'
+  );
+  Research.STARTER_BUILD.delete('quarry');
 }
 
 // --- doctrine timing ---------------------------------------------------------------------

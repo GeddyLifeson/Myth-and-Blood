@@ -960,7 +960,9 @@ const Research = (() => {
   function formatUnlocksLine(node) {
     if (node.retired) return '';
     const bits = [];
-    if (node.build?.length) bits.push(node.build.map(buildName).join(', '));
+    // A building that has since become a starter is no longer this charter's to open.
+    const builds = (node.build || []).filter((t) => !STARTER_BUILD.has(t));
+    if (builds.length) bits.push(builds.map(buildName).join(', '));
     if (node.faction) bits.push('company barracks');
     if (node.feature === 'tp_veteran_upgrade') bits.push('TP veteran promotions');
     if (node.id === 'doom_protocol') bits.push('Hellbane');
