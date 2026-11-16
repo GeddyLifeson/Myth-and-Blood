@@ -18,7 +18,7 @@ const SiegeLoop = (() => {
   const MAX_EDICT_STACKS = 3;
   // Early call: every 10 s of night given up pays this much TP and brings this share of
   // the next host forward into the wave that starts now.
-  const EARLY_STEP_TP = 2;
+  const EARLY_STEP_TP = 1;
   const EARLY_STEP_SHARE = 0.05;
   const EARLY_MAX_STEPS = 5;
 

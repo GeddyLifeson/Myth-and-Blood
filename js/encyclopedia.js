@@ -164,7 +164,7 @@ const Encyclopedia = (() => {
     );
     add(
       'Night and day',
-      `Night is for preparing: recruit, build, research, send the spy and the courier, and move soldiers to their posts. The top of the screen shows what the next wave is likely to bring. Press ${kBegin} to sound the horn when you are ready. Sounding it early is a bet: every 10 seconds of night left pays 2 TP (up to 10), and brings 5% of the next host forward into this wave, taken off the next one. Day is the fight; it ends when the last enemy is dead.`
+      `Night is for preparing: recruit, build, research, send the spy and the courier, and move soldiers to their posts. The top of the screen shows what the next wave is likely to bring. Press ${kBegin} to sound the horn when you are ready. Sounding it early is a bet: every 10 seconds of night left pays 1 TP (up to 5), and brings 5% of the next host forward into this wave, taken off the next one. Day is the fight; it ends when the last enemy is dead.`
     );
     add(
       'Tactical Points (TP)',
