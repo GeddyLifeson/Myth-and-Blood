@@ -5055,6 +5055,7 @@ body.ui-v2 .msg-log-alert .msg-log-text {
 }
 body.ui-v2 .msg-log-count {
   color: var(--bone);
+}
 
 /* Creative Lab and level editor: the one modal look (ink, red frame, square corners). */
 body.ui-v2 .creative-panel.creative-modal {
