@@ -988,6 +988,7 @@ const HostTactics = (() => {
       tacticId: st.tactic ? st.tactic.id : null,
       leadId: st.plan ? st.plan.leadId : null,
       leadShare: st.leadShare,
+      total: st.total,
       kinds: st.kinds,
       threat: st.threat,
       targetThreat: st.targetThreat,
