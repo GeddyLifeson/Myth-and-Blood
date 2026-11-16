@@ -78,12 +78,14 @@ const MobileUI = (() => {
       class: 'm-stat',
       title: 'Enemies that got through, of the number the realm survives',
     });
+    els.path = make('span', { id: 'm-path', class: 'm-stat', role: 'button', tabindex: '0' });
+    els.path.addEventListener('click', () => globalThis.RunPath?.openCard());
     els.pause = button('m-pause', '⏸', 'Pause', () => forward('top-pause-btn'));
     els.pause.setAttribute('aria-label', 'Pause menu');
     els.more = button('m-more-btn', '☰', 'More', () => toggleSheet('more'));
     els.more.setAttribute('aria-label', 'More: speed, settings, sound, log');
     const spacer = make('span', { class: 'm-spacer' });
-    hud.append(els.phase, els.tp, els.army, els.breach, spacer, els.pause, els.more);
+    hud.append(els.phase, els.tp, els.army, els.breach, els.path, spacer, els.pause, els.more);
 
     // Bottom bar: the two sheets, Hunt, Hold, box-select.
     const bar = make('div', { id: 'm-bar' });
@@ -395,6 +397,15 @@ const MobileUI = (() => {
     if (showBreach) {
       setText(els.breach, `☠ ${siege.breaches}/${siege.breachLimit}`);
       els.breach.classList.toggle('danger', siege.breaches >= siege.breachLimit - 1);
+    }
+
+    const path = globalThis.RunPath?.getHud(gs.wave);
+    show(els.path, !!path && !gs.creativeMode);
+    if (path) {
+      setText(els.path, path.short);
+      els.path.title = path.title;
+      els.path.style.opacity = path.locked ? '0.5' : '';
+      els.path.classList.toggle('danger', path.pending);
     }
 
     setText(els.hold, gs.heldCount ? `HOLD · ${gs.heldCount}` : 'HOLD');

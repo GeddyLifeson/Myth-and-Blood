@@ -17,6 +17,9 @@
       "accent": "#9098a8",
       "mark": "#c0a040",
       "size": 9
-    }
+    },
+    "role": "Shield wall",
+    "trait": "Heavy plate; holds a gap alone.",
+    "weak": "Slow to reach shooters."
   }
 }

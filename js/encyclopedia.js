@@ -457,6 +457,13 @@ const Encyclopedia = (() => {
         )
       );
     }
+    out.push(
+      entry(
+        'buildings',
+        'Ground and settlements',
+        'The bottom of the field is home ground. The six plots above it can be taken: at night, stand three soldiers in a plot next to ground you hold until the banner is up. Burning a war camp claims its plot at once. You can build only on ground you hold. Each plot is a settlement that grows the longer it stands, from Hamlet to Metropolis, and pays TP at nightfall by its rank, with one more on the top plots. A plot is lost, and its settlement with it, when enemies stand in it and no soldier of yours is there.'
+      )
+    );
     const camps = G('WarCamps');
     if (camps) {
       const kinds = Object.values(camps.KINDS);

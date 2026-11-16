@@ -12,7 +12,9 @@ const MAP_EXPAND_H = 110;
 const ACADEMY_ERA_WAVE = 100;
 const RTS_ERA_WAVE = 200;
 const NIGHT_TICKS_PER_SECOND = 60;
-const NIGHT_PREP_SECONDS = 60;
+const NIGHT_PREP_SECONDS = 75;
+// The horn stays quiet this long into each night, so every wave gets a real planning window.
+const HORN_LOCK_SECONDS = 25;
 const NIGHT_PREP_TICKS = NIGHT_TICKS_PER_SECOND * NIGHT_PREP_SECONDS;
 const NIGHT_BUILD_MULT = 1.35;
 const ACADEMY_HYBRID_WAVES = 5;
@@ -1006,7 +1008,7 @@ function rollHonorName(unit) {
   const h = hashUnitId(unit.id);
   const prefixes = HONOR_PREFIX_BY_TYPE[unit.type] || HONOR_PREFIX_BY_TYPE.footman;
   const prefix = prefixes[h % prefixes.length];
-  const given = HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
+  const given = unit.soldierName || HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
   return `${prefix} ${given}`;
 }
 
@@ -1744,6 +1746,10 @@ function createUnit(type, x, y, team, opts = {}) {
 
   const u = allocUnitObject();
   u.id = Math.random().toString(36).slice(2, 9);
+  u.soldierName =
+    team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(type))
+      ? SoldierNames.roll()
+      : null;
   u.type = type;
   u.spriteType = spriteType;
   u.team = team;
@@ -1821,7 +1827,7 @@ function createUnit(type, x, y, team, opts = {}) {
   u.frameTimer = 0;
   u.animState = 'idle';
   u.attackAnimTimer = 0;
-  u.actionTimer = Math.floor(Math.random() * 50);
+  u.actionTimer = Math.floor((globalThis.simRandom || Math.random)() * 50);
   u.pinned = false;
   u.fleeing = false;
   u.demoralized = false;

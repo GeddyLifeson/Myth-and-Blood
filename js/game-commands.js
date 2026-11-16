@@ -394,7 +394,7 @@ const GameCommands = (() => {
     } else if (action === 'bribery') {
       GS.pendingWaveMods.revealed = true;
       GS.waveModifiers.revealed = true;
-      if (Math.random() < 0.5) GS.pendingWaveMods.stealReduction += 3;
+      if ((globalThis.simRandom || Math.random)() < 0.5) GS.pendingWaveMods.stealReduction += 3;
       else {
         GS.tactical = Math.max(0, GS.tactical - 2);
         showMessage('Informant double-crossed! -2 TP', 180);

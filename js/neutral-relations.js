@@ -138,7 +138,7 @@ const NeutralRelations = (() => {
       delta = isPactActive(wave) ? -4 : -8;
       if (reputation <= -20) delta -= 2;
       addReputation(delta, wave);
-      if (delta <= -8 && ctx.hooks?.showMessage && Math.random() < 0.4) {
+      if (delta <= -8 && ctx.hooks?.showMessage && (globalThis.simRandom || Math.random)() < 0.4) {
         ctx.hooks.showMessage(
           `Wildlife remembers the slaughter — ${getStance().label} (${reputation}).`,
           240
@@ -170,7 +170,7 @@ const NeutralRelations = (() => {
 
   function rollDiplomacyEvent(wave, ctx = {}) {
     if (!isActive(wave) || wave - lastDiplomacyWave < 6) return null;
-    if (wave % 17 !== 0 && Math.random() > 0.22) return null;
+    if (wave % 17 !== 0 && (globalThis.simRandom || Math.random)() > 0.22) return null;
     lastDiplomacyWave = wave;
 
     const stance = getStance();
