@@ -171,7 +171,7 @@ const GameInput = (() => {
     moveSelectionToWorld(cx, cy, formationId, { hold: 'keep' });
     const label =
       typeof Formations !== 'undefined' ? Formations.getLabel(formationId) : formationId;
-    showMessage(`${label} formation — ${live.length} units`, 160);
+    showMessage(`${label} formation: ${live.length} units`, 160);
     playSfx('click');
     syncInteractionState();
     return true;

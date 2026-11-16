@@ -8,7 +8,7 @@ const GameViewState = (() => {
   const GS = GameState;
   const { getLivingPlanetCtx } = GameField;
   const { getGeneralAura, getGeneralBuffStrength } = GameCombat;
-  const { getTpPerRound, isAttackableEnemyStructure } = GameBuildings;
+  const { getTpPerRound, isTargetableEnemyStructure } = GameBuildings;
   const { getWaveAttackSides } = GameWaves;
   const { getDayLightLevel, getNightSecondsRemaining, isNightPhase } = GameDayNight;
   const {
@@ -312,12 +312,15 @@ const GameViewState = (() => {
         () => null
       ),
       asymmetricWarfare: getAsymmetricSnapshot(),
-      settlementRaids: pathSnap('settlementRaids', 150, () =>
-        svc('SettlementRaids')
-          ? svc('SettlementRaids').getStateSnapshot(GS.wave, GS.buildings, {
-              isAttackable: isAttackableEnemyStructure,
-            })
-          : null
+      settlementRaids: pathSnap(
+        'settlementRaids',
+        svc('SettlementRaids')?.SETTLEMENT_RAID_WAVE_MIN || 6,
+        () =>
+          svc('SettlementRaids')
+            ? svc('SettlementRaids').getStateSnapshot(GS.wave, GS.buildings, {
+                isAttackable: isTargetableEnemyStructure,
+              })
+            : null
       ),
       multiFrontSiege: cachedSnap('multiFrontSiege', () =>
         svc('MultiFrontSiege') && svc('EnemyFactions')

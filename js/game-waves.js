@@ -25,7 +25,7 @@ const GameWaves = (() => {
     syncTerritory,
   } = GameField;
   const { addHighlight, applyPlayerStatMods, spawnUnit } = GameArmy;
-  const { isAttackableEnemyStructure } = GameBuildings;
+  const { isTargetableEnemyStructure } = GameBuildings;
   let TP_SANITY_CAP,
     announceAcademyEra,
     announceAttackSides,
@@ -835,7 +835,7 @@ const GameWaves = (() => {
       svc('SettlementRaids').checkWaveAnnouncement(GS.wave, announceHooks());
       if (svc('SettlementRaids').isActive(GS.wave)) {
         svc('SettlementRaids').refreshMissions(GS.buildings, GS.wave, {
-          isAttackable: isAttackableEnemyStructure,
+          isAttackable: isTargetableEnemyStructure,
         });
       }
     }

@@ -1389,14 +1389,14 @@ const UI = (() => {
     const list = document.getElementById('raid-mission-list');
     const raids = gs.settlementRaids;
     if (!section || !summary || !list) return;
-    const show = !!(raids?.active || (gs.wave || 0) >= 140);
+    const show = !!raids?.active;
     section.style.display = show ? '' : 'none';
     if (!show) return;
-    summary.textContent = raids?.summary || `Unlocks wave ${raids?.waveMin || 150}`;
+    summary.textContent = raids?.summary || '';
     const missions = raids?.missions || [];
     if (!missions.length) {
       list.innerHTML =
-        '<p class="panel-hint">No enemy holds spotted - factions build in the north after wave 150.</p>';
+        '<p class="panel-hint">No war camp stands. When the enemy raises one, it is listed here: select hunters and dispatch them to raze it for loot.</p>';
       return;
     }
     const selCount = gs.selectedUnitIds?.length || (gs.selectedUnitId ? 1 : 0);

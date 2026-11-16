@@ -905,11 +905,11 @@ const ContentExpansion = (() => {
         desc: 'Burrowers surfaced; -25% burrower HP next wave',
       },
       settlement_raid: {
-        name: 'Settlement Raid',
+        // EconomyRules.patchCampActions fills in the full text; the gate must be right from the start.
+        name: 'Raid the War Camp',
         cost: 7,
-        desc: 'Wave 150+ — strike an enemy hold for 45% of its health. No holds stand yet, so this is refused and costs nothing.',
-        kingdomStage: 3,
-        waveMin: 150,
+        desc: 'Raiders ride for the weakest war camp. Refused at no cost when no camp stands.',
+        waveMin: 5,
       },
     });
 
@@ -2105,8 +2105,8 @@ const ContentExpansion = (() => {
       },
       {
         cat: 'orders',
-        name: 'Settlement Raids (Wave 150+)',
-        body: 'Strike missions — select 2+ hunters and dispatch from the SETTLEMENT RAIDS panel; full TP + science loot when the hold is razed. Settlement Raid (spy, wave 150+) — 45% max HP sabotage on the weakest enemy hold. Counter-Hold (courier, wave 200+) — northern outpost, watchtower, scout, and 2 footmen next round.',
+        name: 'Strike Raids (Wave 6+)',
+        body: 'Every standing war camp is a mission on the STRIKE RAIDS panel. Select 2+ hunters and dispatch them: they march on the camp, and razing it pays TP and science on top of the bounty. A dug-in camp pays more. The spy can also send raiders at the weakest camp (Raid the War Camp). Counter-Hold (courier, wave 200+): northern outpost, watchtower, scout, and 2 footmen next round.',
       },
       {
         cat: 'perks',
