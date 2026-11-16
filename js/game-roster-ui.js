@@ -42,20 +42,23 @@ const GameRosterUi = (() => {
     } = api);
   }
 
-  function hireHero(id) {
+  /** opts.fromCamp: a Mercenary Camp hire, at listed price and without the company's hall. */
+  function hireHero(id, opts = {}) {
     const def = HeroDefs[id];
     if (!def) return false;
     if (getHeroesOnField().includes(id)) {
       showMessage(`${def.name} is already on the field!`);
       return false;
     }
-    if (!hasCompanyHall(def.faction)) {
+    if (!opts.fromCamp && !hasCompanyHall(def.faction)) {
       showMessage(`Build a ${FreeCompanies[def.faction]?.label || 'crossover'} barracks first!`);
       return false;
     }
-    const costMult = svc('FactionDepth')
-      ? svc('FactionDepth').getDeployCostMult(def.faction, GS.wave, GS.units)
-      : 1;
+    const costMult = opts.fromCamp
+      ? 1
+      : svc('FactionDepth')
+        ? svc('FactionDepth').getDeployCostMult(def.faction, GS.wave, GS.units)
+        : 1;
     const deployCost = Math.ceil(def.cost * costMult);
     if (GS.tactical < deployCost) {
       showMessage(`Need ${deployCost} TP to deploy ${def.name}!`);
