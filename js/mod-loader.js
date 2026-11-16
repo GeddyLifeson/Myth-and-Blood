@@ -1,6 +1,8 @@
 /**
- * Mod loader — JSON packs + optional scripts for custom units and buildings.
- * Drop folders under mods/ and list them in mods/manifest.json.
+ * Mod loader: JSON packs plus an optional script. A mod can add troops (with a roster
+ * profile), buildings, enemies, extra waves and spoils. Drop a folder under mods/ and list
+ * it in mods/manifest.json; mod.json names each file (units, buildings, enemies, waves,
+ * spoils). Saves record which mods were on and warn when one is missing.
  */
 const ModAPI = (() => {
   const hooks = { onLoad: [], onGameStart: [] };
@@ -73,6 +75,35 @@ const ModLoader = (() => {
 
   const BUILDING_REQUIRED = ['name', 'cost', 'hp', 'radius', 'buildTime'];
 
+  const ENEMY_REQUIRED = [
+    'name',
+    'hp',
+    'accuracy',
+    'damage',
+    'range',
+    'meleeRange',
+    'speed',
+    'type',
+    'morale',
+  ];
+  const ENEMY_TYPES = new Set(['melee', 'ranged', 'healer', 'siege', 'builder']);
+
+  // What the unit panel shows for a mod troop or enemy that brings no role, trait or weakness.
+  const DEFAULT_PROFILES = {
+    melee: { role: 'Line fighter', trait: 'Fights hand to hand.', weak: 'Kited by archers.' },
+    ranged: { role: 'Shooter', trait: 'Hits from range.', weak: 'Dies fast once reached.' },
+    healer: { role: 'Support', trait: 'Mends those nearby.', weak: 'Barely fights back.' },
+    cavalry: { role: 'Rider', trait: 'Fast flanker.', weak: 'Pikes and spears.' },
+    builder: { role: 'Worker', trait: 'Builds and repairs.', weak: 'Not a fighter.' },
+    courier: { role: 'Runner', trait: 'Carries orders.', weak: 'Not a fighter.' },
+    general: {
+      role: 'Commander',
+      trait: 'Leads the soldiers near him.',
+      weak: 'Every foe wants him.',
+    },
+    siege: { role: 'Siege engine', trait: 'Batters walls.', weak: 'Slow and lightly guarded.' },
+  };
+
   const UNIT_TYPES = new Set([
     'melee',
     'ranged',
@@ -85,6 +116,10 @@ const ModLoader = (() => {
 
   let catalog = [];
   let enabled = [];
+  /** Mod ids the last loaded save expected that are not loaded now. */
+  let missingFromSave = [];
+  /** Spoil effect keys the game understands, read from the built-in spoils once. */
+  let spoilFxKeys = null;
   let loaded = new Map();
   let lastErrors = [];
   let ready = false;
@@ -124,6 +159,9 @@ const ModLoader = (() => {
       version: m.version,
       units: m.unitIds.length,
       buildings: m.buildingIds.length,
+      enemies: m.enemyIds.length,
+      waves: m.waves.length,
+      spoils: m.spoilIds.length,
       errors: m.errors,
     }));
   }
@@ -163,6 +201,92 @@ const ModLoader = (() => {
     if (def.cover == null) def.cover = 0.3;
   }
 
+  function validateEnemy(id, def) {
+    const missing = ENEMY_REQUIRED.filter((k) => def[k] == null);
+    if (missing.length) throw new Error(`enemies.${id} missing: ${missing.join(', ')}`);
+    if (!ENEMY_TYPES.has(def.type))
+      throw new Error(`enemies.${id}.type must be one of: ${[...ENEMY_TYPES].join(', ')}`);
+    if (def.reward == null) def.reward = 0;
+  }
+
+  function roster() {
+    return typeof Roster !== 'undefined' ? Roster : null;
+  }
+
+  /** Give a mod troop or enemy the role, trait and weakness the unit panel reads. */
+  function registerProfile(id, def, team) {
+    const r = roster();
+    if (!r || !def) return;
+    const base = DEFAULT_PROFILES[def.type] || DEFAULT_PROFILES.melee;
+    const profile = {
+      role: def.role || base.role,
+      trait: def.trait || base.trait,
+      weak: def.weak || def.weakness || base.weak,
+      modId: def.modId,
+    };
+    if (team === 'enemy') r.ENEMIES[id] = profile;
+    else r.PROFILES[id] = profile;
+  }
+
+  function knownSpoilFx() {
+    if (spoilFxKeys) return spoilFxKeys;
+    if (typeof SiegeLoop === 'undefined' || !SiegeLoop.EDICTS) return null;
+    spoilFxKeys = new Set();
+    for (const e of Object.values(SiegeLoop.EDICTS)) {
+      if (!e.modId) Object.keys(e.fx || {}).forEach((k) => spoilFxKeys.add(k));
+    }
+    return spoilFxKeys;
+  }
+
+  function validateSpoil(id, def) {
+    if (typeof SiegeLoop === 'undefined') throw new Error('spoils need the siege loop');
+    if (!def || !def.name || !def.desc || !def.fx || typeof def.fx !== 'object')
+      throw new Error(`spoils.${id} needs name, desc and fx`);
+    const keys = knownSpoilFx();
+    const bad = Object.keys(def.fx).filter((k) => !keys.has(k));
+    if (bad.length) throw new Error(`spoils.${id}.fx has unknown keys: ${bad.join(', ')}`);
+    for (const [k, v] of Object.entries(def.fx)) {
+      if (typeof v !== 'number' || !Number.isFinite(v))
+        throw new Error(`spoils.${id}.fx.${k} must be a number`);
+    }
+  }
+
+  /** A wave entry: { wave } or { every, from }, plus add: { enemyType: count }. */
+  function validateWave(w, i) {
+    if (!w || typeof w !== 'object') throw new Error(`waves[${i}] must be an object`);
+    if (!Number.isInteger(w.wave) && !(Number.isInteger(w.every) && w.every > 0))
+      throw new Error(`waves[${i}] needs a wave number or every`);
+    if (!w.add || typeof w.add !== 'object' || !Object.keys(w.add).length)
+      throw new Error(`waves[${i}].add must list enemies`);
+    for (const [type, n] of Object.entries(w.add)) {
+      if (typeof EnemyDefs === 'undefined' || !EnemyDefs[type])
+        throw new Error(`waves[${i}].add: unknown enemy "${type}"`);
+      if (!Number.isInteger(n) || n < 1 || n > 60)
+        throw new Error(`waves[${i}].add.${type} must be a whole number from 1 to 60`);
+    }
+  }
+
+  function waveMatches(w, wave) {
+    if (Number.isInteger(w.wave)) return wave === w.wave;
+    const from = Number.isInteger(w.from) ? w.from : 1;
+    return wave >= from && (wave - from) % w.every === 0;
+  }
+
+  /** The wave's spawn queue with every loaded mod's extra enemies added at the back. */
+  function applyModWaves(wave, queue) {
+    const out = Array.isArray(queue) ? queue.slice() : [];
+    for (const mod of loaded.values()) {
+      for (const w of mod.waves) {
+        if (!waveMatches(w, wave)) continue;
+        for (const [type, n] of Object.entries(w.add)) {
+          if (!EnemyDefs[type]) continue;
+          for (let i = 0; i < n; i++) out.push(type);
+        }
+      }
+    }
+    return out;
+  }
+
   function applySprite(def, type) {
     if (!def?.sprite || typeof def.sprite !== 'object') return;
     ModAPI.registerUnitStyle(type, def.sprite);
@@ -176,6 +300,14 @@ const ModLoader = (() => {
   }
 
   function removeModFromDefs(modId) {
+    const owned = (reg) => {
+      if (!reg) return;
+      for (const id of Object.keys(reg)) if (reg[id]?.modId === modId) delete reg[id];
+    };
+    if (typeof EnemyDefs !== 'undefined') owned(EnemyDefs);
+    if (typeof SiegeLoop !== 'undefined') owned(SiegeLoop.EDICTS);
+    owned(roster()?.PROFILES);
+    owned(roster()?.ENEMIES);
     if (typeof UnitDefs !== 'undefined') {
       for (const id of Object.keys(UnitDefs)) {
         if (UnitDefs[id]?.modId === modId) delete UnitDefs[id];
@@ -337,6 +469,7 @@ const ModLoader = (() => {
       decorate: applySprite,
       tag: { isModUnit: true },
     });
+    for (const id of unitIds) registerProfile(id, UnitDefs[id], 'player');
 
     const buildingIds = mergeDefCollection(modId, buildings, errors, {
       kind: 'building',
@@ -344,6 +477,35 @@ const ModLoader = (() => {
       registry: () => BuildDefs,
       validate: validateBuilding,
       tag: { isModBuilding: true },
+    });
+
+    const enemyIds = mergeDefCollection(modId, opts.enemies || {}, errors, {
+      kind: 'enemy',
+      overwrite,
+      registry: () => EnemyDefs,
+      validate: validateEnemy,
+      decorate: applySprite,
+      tag: { isModEnemy: true },
+    });
+    for (const id of enemyIds) registerProfile(id, EnemyDefs[id], 'enemy');
+
+    // Read before merging, so only the built-in spoils define the allowed effects.
+    knownSpoilFx();
+    const spoilIds = mergeDefCollection(modId, opts.spoils || {}, errors, {
+      kind: 'spoil',
+      overwrite,
+      registry: () => SiegeLoop.EDICTS,
+      validate: validateSpoil,
+    });
+
+    const waves = [];
+    (Array.isArray(opts.waves) ? opts.waves : []).forEach((w, i) => {
+      try {
+        validateWave(w, i);
+        waves.push({ wave: w.wave, every: w.every, from: w.from, add: { ...w.add } });
+      } catch (err) {
+        errors.push(`${modId}: ${err.message}`);
+      }
     });
 
     registerUnlocks(manifest);
@@ -354,6 +516,9 @@ const ModLoader = (() => {
       manifest,
       unitIds,
       buildingIds,
+      enemyIds,
+      spoilIds,
+      waves,
       errors,
     });
 
@@ -361,7 +526,7 @@ const ModLoader = (() => {
       injectHudButtons(loaded.get(modId));
     }
 
-    return { unitIds, buildingIds, errors };
+    return { unitIds, buildingIds, enemyIds, spoilIds, waves, errors };
   }
 
   async function loadModFromPaths(baseUrl, entry) {
@@ -370,12 +535,17 @@ const ModLoader = (() => {
     const manifest = await fetchJson(`${root}mod.json`);
     const modId = manifest.id || entry.id || folder;
 
-    let units = {};
-    let buildings = {};
-    if (manifest.units) units = await fetchJson(`${root}${manifest.units}`);
-    if (manifest.buildings) buildings = await fetchJson(`${root}${manifest.buildings}`);
+    const part = (key, empty) =>
+      manifest[key] ? fetchJson(`${root}${manifest[key]}`) : Promise.resolve(empty);
+    const units = await part('units', {});
+    const buildings = await part('buildings', {});
+    const extra = {
+      enemies: await part('enemies', {}),
+      waves: await part('waves', []),
+      spoils: await part('spoils', {}),
+    };
 
-    const result = mergeModPack(modId, manifest, units, buildings);
+    const result = mergeModPack(modId, manifest, units, buildings, extra);
 
     if (manifest.script && !result.errors.length) {
       try {
@@ -390,11 +560,39 @@ const ModLoader = (() => {
     return result;
   }
 
-  /** Test / tooling entry — inject a mod without fetch. */
-  function injectMod(manifest, units = {}, buildings = {}) {
+  /** Test / tooling entry: inject a mod without fetch. `extra` = { enemies, waves, spoils }. */
+  function injectMod(manifest, units = {}, buildings = {}, extra = {}) {
     const modId = manifest.id;
     if (!modId) throw new Error('injectMod: manifest.id required');
-    return mergeModPack(modId, manifest, units, buildings);
+    return mergeModPack(modId, manifest, units, buildings, extra);
+  }
+
+  /** Ids of the mods loaded right now, as a save records them. */
+  function getLoadedIds() {
+    return [...loaded.keys()];
+  }
+
+  /** The warning to show after loading a save that needs mods that are off, or null. */
+  function missingWarning() {
+    const n = missingFromSave.length;
+    if (!n) return null;
+    return `This save was made with ${n === 1 ? 'a mod that is' : 'mods that are'} not loaded: ${missingFromSave.join(', ')}. Its content was left out; turn ${n === 1 ? 'it' : 'them'} on in Settings and load again to keep it.`;
+  }
+
+  function getMissingFromSave() {
+    return [...missingFromSave];
+  }
+
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('ModLoader', {
+      save() {
+        return { ids: getLoadedIds() };
+      },
+      load(data) {
+        const ids = Array.isArray(data?.ids) ? data.ids.filter((x) => typeof x === 'string') : [];
+        missingFromSave = ids.filter((id) => !loaded.has(id));
+      },
+    });
   }
 
   async function loadCatalog() {
@@ -564,6 +762,10 @@ const ModLoader = (() => {
     init,
     reload,
     injectMod,
+    applyModWaves,
+    getLoadedIds,
+    missingWarning,
+    getMissingFromSave,
     setEnabled,
     getEnabled,
     getCatalog,

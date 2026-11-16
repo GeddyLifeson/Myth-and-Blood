@@ -1055,7 +1055,7 @@ const UI = (() => {
 
     document.getElementById('begin-day-btn')?.addEventListener('click', () => {
       AudioEngine.SFX.click();
-      Game.beginDayPhase(true);
+      Game.soundHorn();
       UI.updateHUD(true);
     });
 
@@ -1659,13 +1659,11 @@ const UI = (() => {
     }
     const crossBtn = hudEls['companies-open'];
     if (crossBtn) {
-      // Always show the Free Companies entry; dim when locked so players know where it is.
+      const hb = FreeCompaniesScreen.hudButton(gs);
       crossBtn.style.display = '';
-      crossBtn.classList.toggle('disabled', !gs.crossoverUnlocked);
-      crossBtn.title = gs.crossoverUnlocked
-        ? 'Free Companies - faction barracks & operatives'
-        : 'Free Companies - unlock a crossover faction (meta or research) to open';
-      crossBtn.textContent = gs.crossoverUnlocked ? 'FREE COMPANIES' : 'FREE COMPANIES · LOCKED';
+      crossBtn.classList.toggle('disabled', hb.disabled);
+      crossBtn.title = hb.title;
+      crossBtn.textContent = hb.text;
     }
     const perkSection = hudEls['perk-build-section'];
     if (perkSection) perkSection.style.display = gs.perksUnlocked ? '' : 'none';
@@ -1960,23 +1958,16 @@ const UI = (() => {
 
     const epfHud = document.getElementById('epf-hud');
     const epfText = document.getElementById('epf-text');
-    const epfSnap = gs.eternalPaths;
     if (epfHud && epfText) {
-      const line =
-        typeof EternalPathFramework !== 'undefined'
-          ? EternalPathFramework.formatHudLine({ wave: gs.wave })
-          : epfSnap?.hudLine || '';
-      // Only surface once the framework itself has something to say (it returns '' pre-wave-50
-      // with no dominant path). A blanket `wave >= 1` forced this into view - and its bare '?'
-      // fallback text - from turn one, before any path exists to report on.
-      const show = !!line || !!epfSnap?.dominantPathId;
-      epfHud.style.display = show ? '' : 'none';
-      if (show) {
-        epfText.textContent = line || 'Path ?';
-        if (epfSnap?.dominantColor) epfHud.style.borderColor = epfSnap.dominantColor;
-        epfHud.title = epfSnap?.dominantLabel
-          ? `${epfSnap.dominantLabel} - investment strengthens every era`
-          : 'Four Eternal Paths evolve Medieval → Kingdom → Galactic';
+      const hud =
+        typeof RunPath !== 'undefined' && !gs.creativeMode ? RunPath.getHud(gs.wave) : null;
+      epfHud.style.display = hud ? '' : 'none';
+      if (hud) {
+        epfText.textContent = hud.text;
+        epfHud.style.borderColor = hud.color || '';
+        epfHud.classList.toggle('run-path-locked', hud.locked);
+        epfHud.classList.toggle('run-path-pending', hud.pending);
+        epfHud.title = hud.title;
       }
     }
 
@@ -2806,12 +2797,28 @@ const UI = (() => {
           beginDayBtn._keyEl = beginDayBtn.querySelector('.bd-key');
           beginDayBtn._barEl = beginDayBtn.querySelector('.night-prep-bar');
         }
-        if (beginDayBtn._timeEl.textContent !== t) beginDayBtn._timeEl.textContent = t;
+        const lock = gs.hornLockSeconds || 0;
+        const shown = lock > 0 ? `${lock}s` : t;
+        if (beginDayBtn._timeEl.textContent !== shown) beginDayBtn._timeEl.textContent = shown;
         const key = shortKey(
           typeof Hotkeys !== 'undefined' ? Hotkeys.keyFor('night', 'beginDay') : 'd'
         );
         if (beginDayBtn._keyEl.textContent !== key) beginDayBtn._keyEl.textContent = key;
-        beginDayBtn.setAttribute('aria-label', `Begin the day now. The night ends in ${t}`);
+        beginDayBtn.disabled = lock > 0;
+        // Keep the hotkey title (set in main.js) to put back once the horn is ready.
+        if (lock > 0) {
+          beginDayBtn._baseTitle ??= beginDayBtn.title;
+          beginDayBtn.title = `The host is still gathering. Horn ready in ${lock}s.`;
+        } else if (beginDayBtn._baseTitle != null) {
+          beginDayBtn.title = beginDayBtn._baseTitle;
+          beginDayBtn._baseTitle = null;
+        }
+        beginDayBtn.setAttribute(
+          'aria-label',
+          lock > 0
+            ? `Begin Day is ready in ${lock} seconds. The night ends in ${t}`
+            : `Begin the day now. The night ends in ${t}`
+        );
         beginDayBtn.classList.toggle('begin-day-urgent', sec <= 15);
         beginDayBtn.classList.toggle('begin-day-ready', sec > 15);
         const maxSec = Math.max(

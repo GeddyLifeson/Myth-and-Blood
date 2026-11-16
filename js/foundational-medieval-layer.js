@@ -1,13 +1,13 @@
 /**
- * Foundational Medieval Layer (Waves 1–150) — pure tactical era.
- * Tracks cultural/thematic DNA: Longbow Legacy, Arcane Dominion, Mythic Alliance.
- * Crystallized paths unlock early Crown of Ages branches.
+ * Foundational Medieval Layer: what the player has fielded, built and researched this run.
+ * It grants nothing in battle. TechTreeBranches reads the tally to pick its root, the
+ * crown thread names the line after it, and the Crown of Ages seed branches unlock when a
+ * chosen path is completed (RunPath calls markCrystallized).
  */
 const FoundationalMedievalLayer = (() => {
   const STORAGE_KEY = 'myth-and-blood-foundational-medieval-v1';
   const WAVE_MAX = 150;
   const WAVE_MIN_TRACK = 1;
-  const CRYSTALLIZE_MIN_SCORE = 18;
 
   const PATHS = {
     longbow_legacy: {
@@ -202,112 +202,21 @@ const FoundationalMedievalLayer = (() => {
     run.creative = !!ctx.creative;
   }
 
-  function onWaveComplete(wave, ctx = {}) {
-    if (!run || run.creative) return null;
-    run.wave = wave | 0;
-    if (wave === 75 && run.leading) {
-      const path = PATHS[run.leading];
-      ctx.showMessage?.(
-        `Foundational era — ${path?.label || run.leading} culture strengthens (wave ${wave}).`,
-        300
-      );
-    }
-    if (wave >= WAVE_MAX) return crystallize(ctx);
-    return null;
+  function onWaveStart(wave) {
+    if (run && !run.creative) run.wave = wave | 0;
   }
 
-  function onWaveStart(wave, ctx = {}) {
-    if (!run || run.creative) return null;
-    run.wave = wave | 0;
-    if (wave === WAVE_MAX && !run.crystallizedThisRun) {
-      return crystallize(ctx);
-    }
-    return null;
-  }
-
-  function crystallize(ctx = {}) {
-    if (!run || run.crystallizedThisRun) return null;
+  /** Record a completed path; unlocks its Crown of Ages seed branch on the main menu. */
+  function markCrystallized(pathId) {
+    if (!PATHS[pathId] || run?.crystallizedThisRun) return false;
     load();
-    refreshLeading();
-    const pathId = run.leading;
-    const score = pathId ? run.scores[pathId] || 0 : 0;
-    if (!pathId || score < CRYSTALLIZE_MIN_SCORE) {
-      if ((ctx.wave | 0) >= WAVE_MAX - 1) {
-        ctx.showMessage?.(
-          'Foundational era ends — no dominant cultural path crystallized. Invest heavily in one doctrine before wave 150.',
-          340
-        );
-      }
-      return null;
-    }
-
-    const path = PATHS[pathId];
     persistent.crystallized[pathId] = (persistent.crystallized[pathId] || 0) + 1;
     persistent.totalCrystallizations = (persistent.totalCrystallizations || 0) + 1;
-    persistent.lastCrystallized = {
-      pathId,
-      label: path?.label,
-      score,
-      wave: run.wave || WAVE_MAX,
-      at: Date.now(),
-    };
-    run.crystallizedThisRun = true;
+    persistent.lastCrystallized = { pathId, label: PATHS[pathId].label, wave: run?.wave || 0 };
+    if (run) run.crystallizedThisRun = true;
     save();
-
-    if (typeof EternalLegacyTree !== 'undefined') {
-      EternalLegacyTree.refreshUnlocks?.();
-    }
-
-    if (!ctx.silent) {
-      ctx.showMessage?.(
-        `${path?.label || pathId} crystallized — Crown of Ages seed branch unlocked on the main menu.`,
-        400
-      );
-    }
-    ctx.addHighlight?.('era', path?.label || pathId);
-
-    return { pathId, path, score, seedNodeId: path?.seedNodeId };
-  }
-
-  /**
-   * Jump-in seed (§7) — act as if the player already finished the medieval foundation.
-   * pathPreset: martial|arcane|tech|mythic (mapped onto Longbow/Arcane/Mythic DNA).
-   */
-  function bootstrapForWave(wave, ctx = {}) {
-    const w = wave | 0;
-    if (!run) resetRun();
-    run.creative = false;
-    run.wave = Math.min(WAVE_MAX, Math.max(w, WAVE_MAX));
-    const preset = ctx.pathPreset || ctx.pathId || null;
-    // Map eternal presets → foundational DNA ids
-    const map = {
-      martial: 'longbow_legacy',
-      arcane: 'arcane_dominion',
-      mythic: 'mythic_alliance',
-      tech: 'arcane_dominion', // tech leans arcane foundation in this layer
-      longbow_legacy: 'longbow_legacy',
-      arcane_dominion: 'arcane_dominion',
-      mythic_alliance: 'mythic_alliance',
-    };
-    const pathId = map[preset] || 'longbow_legacy';
-    run.scores = {
-      longbow_legacy: pathId === 'longbow_legacy' ? 40 : 8,
-      arcane_dominion: pathId === 'arcane_dominion' ? 40 : 8,
-      mythic_alliance: pathId === 'mythic_alliance' ? 40 : 8,
-    };
-    run.leading = pathId;
-    if (w >= WAVE_MAX || w >= 100) {
-      crystallize({ ...ctx, silent: true, wave: WAVE_MAX });
-    }
-    return { ok: true, pathId, scores: { ...run.scores }, crystallized: run.crystallizedThisRun };
-  }
-
-  function onRunEnd(ctx = {}) {
-    if (!run || run.creative) return null;
-    if (!run.crystallizedThisRun && run.wave >= 50) {
-      return crystallize(ctx);
-    }
-    return null;
+    if (typeof EternalLegacyTree !== 'undefined') EternalLegacyTree.refreshUnlocks?.();
+    return true;
   }
 
   function hasCrystallizedPath(pathId) {
@@ -344,83 +253,40 @@ const FoundationalMedievalLayer = (() => {
     };
   }
 
-  function getPersistentSnapshot() {
-    load();
-    return {
-      crystallized: { ...persistent.crystallized },
-      lastCrystallized: persistent.lastCrystallized,
-      totalCrystallizations: persistent.totalCrystallizations || 0,
-      paths: getCrystallizedPaths(),
-    };
-  }
-
-  function getStateSnapshot(ctx = {}) {
-    const wave = ctx.wave | 0;
-    return {
-      ...getRunSnapshot(),
-      persistent: getPersistentSnapshot(),
-      hudLine: formatHudLine({ wave }),
-      inFoundationalEra: isActiveWave(wave),
-    };
-  }
-
-  function formatHudLine(ctx = {}) {
-    const wave = ctx.wave | 0;
-    if (!isActiveWave(wave) || !run) return '';
+  function getRunSnapshot() {
+    if (!run) return { active: false };
     refreshLeading();
-    if (!run.leading) return `DNA ? · w${wave}`;
-    const path = PATHS[run.leading];
-    const score = run.scores[run.leading] || 0;
-    return `${path?.short || 'DNA'} ${score} · w${wave}`;
+    const leading = run.leading ? PATHS[run.leading] : null;
+    return {
+      active: isActiveWave(run.wave),
+      wave: run.wave,
+      scores: { ...run.scores },
+      deploys: { ...run.deploys },
+      kills: { ...run.kills },
+      builds: { ...run.builds },
+      scienceEarned: run.scienceEarned || 0,
+      leading: run.leading,
+      leadingLabel: leading?.label || null,
+      leadingShort: leading?.short || null,
+      leadingColor: leading?.color || null,
+      mythicHeroes: Object.keys(run.mythicHeroes),
+      researchCount: run.research?.length || 0,
+      crystallizedThisRun: run.crystallizedThisRun,
+    };
   }
 
-  function formatIntelNote(ctx = {}) {
-    const wave = ctx.wave | 0;
-    if (!isActiveWave(wave) || !run) return '';
-    if (wave === 50) return 'Foundational era — your cultural DNA is forming';
-    if (wave === 100)
-      return 'Halfway through the medieval foundation — path crystallizes at wave 150';
-    if (wave === 140) return 'Ten waves to crystallize Longbow, Arcane, or Mythic path';
-    if (wave >= WAVE_MAX && run.leading) {
-      const path = PATHS[run.leading];
-      return `${path?.label || 'Path'} crystallized — Crown of Ages seed unlocked`;
-    }
-    return '';
-  }
-
-  function getRunModifiers(wave = 0) {
-    if (!run || run.creative || !isActiveWave(wave) || !run.leading) {
-      return { archerDmgMult: 1, scienceGainMult: 1, mythicMorale: 0 };
-    }
-    if (run.leading === 'longbow_legacy') {
-      return { archerDmgMult: 1.02, footmanHpMult: 1.02, scienceGainMult: 1, mythicMorale: 0 };
-    }
-    if (run.leading === 'arcane_dominion') {
-      return { archerDmgMult: 1, scienceGainMult: 1.08, mythicMorale: 0 };
-    }
-    if (run.leading === 'mythic_alliance') {
-      return { archerDmgMult: 1, scienceGainMult: 1, mythicMorale: 2 };
-    }
-    return { archerDmgMult: 1, scienceGainMult: 1, mythicMorale: 0 };
-  }
-
-  function getLegacyEntries() {
-    const snap = getPersistentSnapshot();
-    const paths =
-      snap.paths.map((p) => `${p.label} (×${p.count})`).join(' · ') ||
-      'None yet — dominate waves 1–150 with archers, academies, or evolved heroes.';
-    return [
-      {
-        cat: 'legacy',
-        name: 'Foundational Medieval Layer',
-        body: `Pure tactical era (waves 1–150). Your empire's cultural DNA crystallizes at wave 150 into Longbow Legacy, Arcane Dominion, or Mythic Alliance — unlocking early Crown of Ages branches. Crystallized: ${paths}`,
-      },
-    ];
-  }
+  // Battle effects moved to RunPath; these stay so older callers read neutral values.
+  const NEUTRAL = Object.freeze({ archerDmgMult: 1, scienceGainMult: 1, mythicMorale: 0 });
+  const getRunModifiers = () => NEUTRAL;
+  const onWaveComplete = () => null;
+  const onRunEnd = () => null;
+  const getStateSnapshot = () => null;
+  const formatHudLine = () => '';
+  const formatIntelNote = () => '';
 
   load();
 
-  // Run state in saves: see js/save-registry.js.
+  // Run state in saves: see js/save-registry.js. The shape is unchanged from version 1.
   if (typeof SaveRegistry !== 'undefined') {
     SaveRegistry.register('FoundationalMedievalLayer', {
       save: () => ({ run }),
@@ -445,8 +311,7 @@ const FoundationalMedievalLayer = (() => {
     recordResearch,
     recordScience,
     recordFaction,
-    crystallize,
-    bootstrapForWave,
+    markCrystallized,
     hasCrystallizedPath,
     getCrystallizedPaths,
     getRunSnapshot,
@@ -454,7 +319,6 @@ const FoundationalMedievalLayer = (() => {
     formatHudLine,
     formatIntelNote,
     getRunModifiers,
-    getLegacyEntries,
   };
 })();
 

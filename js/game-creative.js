@@ -409,6 +409,7 @@ const GameCreative = (() => {
       interval: Math.max(12, parseInt(spec.interval, 10) || 50),
       hpMult: parseFloat(spec.hpMult) || 1,
       dmgMult: parseFloat(spec.dmgMult) || 1,
+      sector: ['left', 'centre', 'right'].includes(spec.sector) ? spec.sector : null,
       text: typeof text === 'string' ? text : CreativeTools?.formatWaveComposer(queue),
     };
     showMessage(`Custom wave queued: ${queue.length} enemies.`, 220);
@@ -428,6 +429,9 @@ const GameCreative = (() => {
       creativeClearWaveSpawns();
     }
     GS.spawnQueue = [...GS.creativeCustomWave.queue];
+    // A chosen sector pins every spawn there; otherwise the wave plan spreads them.
+    const sector = GS.creativeCustomWave.sector;
+    GS.spawnSectors = sector ? GS.spawnQueue.map(() => sector) : [];
     GS.waveEnemyTotal = GS.spawnQueue.length;
     GS.waveProgress = 0;
     GS.spawnTimer = 8;

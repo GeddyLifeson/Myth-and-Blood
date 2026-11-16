@@ -1743,7 +1743,7 @@ const SiegeLoop = (() => {
 
   // --------------------------------------------------------- deaths and kills
   function veteranLabel(unit, ctx) {
-    return unit.honorName || ctx.unitName(unit);
+    return unit.honorName || unit.soldierName || ctx.unitName(unit);
   }
 
   function onUnitDeath(unit, killer, ctx) {

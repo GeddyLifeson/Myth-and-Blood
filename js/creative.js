@@ -214,9 +214,82 @@ const CreativeMode = (() => {
     renderPresetButtons();
   }
 
+  const SECTOR_NAMES = { '': 'Any sector', left: 'Left', centre: 'Centre', right: 'Right' };
+
+  /** The panel wears the same head, title and close button as every other modal. */
+  function applyModalStyle() {
+    const panel = document.getElementById('creative-panel');
+    if (!panel) return;
+    panel.classList.add('creative-modal');
+    panel.querySelector('.creative-panel-head')?.classList.add('modal-head');
+    panel.querySelector('.creative-panel-title')?.classList.add('modal-title');
+    const close = document.getElementById('creative-close-panel');
+    if (close) {
+      close.classList.add('modal-close');
+      close.textContent = 'Close';
+      close.setAttribute('aria-label', 'Close Creative Lab (P)');
+    }
+  }
+
+  /**
+   * War camps and sectors arrived with the combat rebuild after the panel was laid out:
+   * raise any camp in any sector, and aim a custom wave at one sector.
+   */
+  function buildCampSection() {
+    const panel = document.getElementById('creative-panel');
+    if (!panel || document.getElementById('creative-camp-section')) return;
+    const camps = typeof WarCamps !== 'undefined' ? WarCamps : null;
+    const kinds = camps ? Object.entries(camps.KINDS) : [];
+    const sec = document.createElement('div');
+    sec.className = 'creative-section';
+    sec.id = 'creative-camp-section';
+    const sectorOpts = Object.entries(SECTOR_NAMES)
+      .map(([id, name]) => `<option value="${id}">${name}</option>`)
+      .join('');
+    sec.innerHTML =
+      `<div class="creative-section-head">WAR CAMPS &amp; SECTORS</div>` +
+      `<div class="creative-row">` +
+      `<select id="creative-camp-kind" class="creative-select">${kinds.map(([id, k]) => `<option value="${id}">${k.name}</option>`).join('')}</select>` +
+      `<select id="creative-camp-sector" class="creative-select">${sectorOpts}</select>` +
+      `<button type="button" id="creative-raise-camp" class="creative-btn">Raise camp</button>` +
+      `</div>` +
+      `<p id="creative-camp-hint" class="creative-hint"></p>` +
+      `<div class="creative-row"><label class="creative-label" for="creative-wave-sector">Custom wave comes from</label>` +
+      `<select id="creative-wave-sector" class="creative-select">${sectorOpts}</select></div>`;
+    const composer = document
+      .getElementById('creative-wave-composer')
+      ?.closest('.creative-section');
+    if (composer) composer.after(sec);
+    else panel.appendChild(sec);
+
+    const raise = document.getElementById('creative-raise-camp');
+    const hint = document.getElementById('creative-camp-hint');
+    const kindSel = document.getElementById('creative-camp-kind');
+    const describe = () => {
+      const k = camps?.KINDS[kindSel?.value];
+      if (hint) hint.textContent = k ? `Until it burns, ${k.line}.` : '';
+    };
+    if (!camps || !Game.warCampHooks) {
+      raise.disabled = true;
+      raise.title = 'War camps are not loaded in this build.';
+      if (hint) hint.textContent = 'War camps are not loaded in this build.';
+      return;
+    }
+    kindSel?.addEventListener('change', describe);
+    describe();
+    raise.addEventListener('click', () => {
+      const sector = document.getElementById('creative-camp-sector')?.value || null;
+      const camp = Game.warCampHooks.raise({ kind: kindSel.value, sector, force: true });
+      if (!camp) Game.showMessage?.('No open ground for a camp there. Try another sector.', 200);
+      UI.updateHUD(true);
+    });
+  }
+
   function init() {
     if (typeof LevelEditor !== 'undefined') LevelEditor.init();
     populateSelects();
+    applyModalStyle();
+    buildCampSection();
 
     document.getElementById('creative-start-btn')?.addEventListener('click', () => {
       AudioEngine.resume().then((ok) => {
@@ -364,7 +437,8 @@ const CreativeMode = (() => {
     document.getElementById('creative-parse-wave')?.addEventListener('click', () => {
       const text = document.getElementById('creative-wave-composer')?.value || '';
       const interval = parseInt(document.getElementById('creative-wave-interval')?.value, 10) || 50;
-      Game.setCustomWave?.({ text, interval });
+      const sector = document.getElementById('creative-wave-sector')?.value || null;
+      Game.setCustomWave?.({ text, interval, sector });
       UI.updateHUD(true);
     });
     document.getElementById('creative-launch-wave')?.addEventListener('click', () => {
