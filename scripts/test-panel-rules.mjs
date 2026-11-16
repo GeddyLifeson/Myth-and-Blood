@@ -271,39 +271,33 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
     ok(GS.selectedDeploy === 'footman', `soldier ${i + 1}: Footman is still armed`);
   }
   {
+    // A big army pays wages at dawn; the price tag stays at the list price.
     const p = Availability.deployPrice('footman', (Game.beginPresentationFrame(), Game.getState()));
     ok(
-      p.raised &&
+      !p.raised &&
         p.base === UnitDefs.footman.cost &&
         p.total === Game.getDeployCost('footman') &&
-        p.upkeepPct > 0,
+        p.upkeepPct === 0,
       `price breakdown: ${Availability.deployPriceText('footman', Game.getState())}`
     );
-    ok(
-      Math.ceil(p.base * (1 + p.upkeepPct / 100)) === p.total,
-      'base price plus the upkeep percentage shown gives the price charged'
-    );
-    GS.tactical = p.total - 1;
+    GS.tactical = UnitDefs.archer.cost - 1;
     const r = Availability.check('deploy', 'archer', Game.getState());
     const archer = Game.getDeployCost('archer');
     ok(
-      archer > UnitDefs.archer.cost &&
-        (GS.tactical >= archer ? r.ok : r.reason === `needs ${archer} TP, you have ${GS.tactical}`),
-      `affordability uses the charged price: Archer ${archer} TP (base ${UnitDefs.archer.cost}), ${r.ok ? 'affordable' : r.reason}`
+      archer === UnitDefs.archer.cost && r.reason === `needs ${archer} TP, you have ${GS.tactical}`,
+      `affordability uses the charged price: Archer ${archer} TP, ${r.ok ? 'affordable' : r.reason}`
     );
     GS.tactical = UnitDefs.footman.cost;
     const f = Availability.check('deploy', 'footman', Game.getState());
-    ok(
-      !f.ok && f.reason === `needs ${p.total} TP, you have ${UnitDefs.footman.cost}`,
-      `holding only the base price: ${f.reason}`
-    );
+    ok(f.ok, `holding the list price is enough: ${f.reason || 'ok'}`);
     GS.tactical = 1000 - paid.reduce((a, b) => a + b, 0);
   }
   ok(
     paid.join() === due.join(),
     `three Shift-clicks charged ${paid.join(', ')} (due ${due.join(', ')})`
   );
-  ok(new Set(paid).size > 1, 'the price rose from one soldier to the next (upkeep)');
+  ok(new Set(paid).size === 1, 'the price does not rise from one soldier to the next');
+  ok(Game.getState().siegeLoop.wages > 0, 'the big army owes wages at dawn instead');
   ok(
     GS.tactical === 1000 - paid.reduce((a, b) => a + b, 0),
     'the purse is down by exactly the three prices'

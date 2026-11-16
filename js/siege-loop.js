@@ -16,25 +16,29 @@ const SiegeLoop = (() => {
   const ORDER_RADIUS = 190;
   const REAR_ATTACK_MULT = 1.25;
   const MAX_EDICT_STACKS = 3;
-  const ARMY_FREE = 14;
-  const ARMY_UPKEEP = 0.07;
+  // Early call: every 10 s of night given up pays this much TP and brings this share of
+  // the next host forward into the wave that starts now.
+  const EARLY_STEP_TP = 1;
+  const EARLY_STEP_SHARE = 0.05;
+  const EARLY_MAX_STEPS = 5;
 
   // ---------------------------------------------------------------- edicts
   const EDICTS = {
+    // Strong picks carry a standing cost, paid in the dawn ledger or the breach limit.
     sharpened_steel: {
       name: 'Sharpened Steel',
-      desc: 'Your troops deal 10% more damage.',
-      fx: { dmgMult: 0.1 },
+      desc: 'Your troops deal 10% more damage. The smiths take 1 TP every dawn.',
+      fx: { dmgMult: 0.1, dawnCost: 1 },
     },
     hardened_shields: {
       name: 'Hardened Shields',
-      desc: 'Your troops take 8% less damage.',
-      fx: { dmgTakenMult: -0.08 },
+      desc: 'Your troops take 8% less damage. The armourers take 1 TP every dawn.',
+      fx: { dmgTakenMult: -0.08, dawnCost: 1 },
     },
     war_levy: {
       name: 'War Levy',
-      desc: '+2 TP for every wave you clear.',
-      fx: { tpPerWave: 2 },
+      desc: '+3 TP every dawn. The angry villages let 1 more foe through: breach limit -1.',
+      fx: { tpPerWave: 3, breachLimit: -1 },
     },
     second_wall: {
       name: 'Second Wall',
@@ -53,18 +57,18 @@ const SiegeLoop = (() => {
     },
     veterans_due: {
       name: 'Veterans’ Due',
-      desc: 'Every kill earns one extra point of experience.',
-      fx: { xpBonus: 1 },
+      desc: 'Every kill earns one extra point of experience. Veterans claim 2 TP every dawn.',
+      fx: { xpBonus: 1, dawnCost: 2 },
     },
     scavengers: {
       name: 'Scavengers',
-      desc: 'Supply crates land more often and are never trapped.',
-      fx: { crateRate: 0.6, safeCrates: 1 },
+      desc: 'Supply crates land twice as often and are never trapped.',
+      fx: { crateRate: 1, safeCrates: 1 },
     },
     caltrops: {
       name: 'Caltrops',
-      desc: 'Line-breakers move 20% slower.',
-      fx: { runnerSlow: 0.2 },
+      desc: 'Line-breakers move 30% slower.',
+      fx: { runnerSlow: 0.3 },
     },
     giant_killers: {
       name: 'Giant Killers',
@@ -73,18 +77,19 @@ const SiegeLoop = (() => {
     },
     war_chest: {
       name: 'War Chest',
-      desc: '+15 TP right now.',
-      instantTp: 15,
+      desc: '10 TP right now, plus 1 for every wave cleared. No standing cost.',
+      instantTp: (wave) => 10 + Math.max(0, wave || 0),
       fx: {},
     },
     flanking_drill: {
       name: 'Flanking Drill',
-      desc: 'Attacks from behind hit 20% harder still.',
-      fx: { rearBonus: 0.2 },
+      desc: 'Attacks from behind hit 35% harder still.',
+      fx: { rearBonus: 0.35 },
     },
     early_horn: {
       name: 'Early Horn',
-      desc: 'Calling a wave early pays double.',
+      desc: 'Calling a wave early pays double TP for the same vanguard. Once per siege.',
+      maxStacks: 1,
       fx: { earlyCallMult: 1 },
     },
   };
@@ -323,12 +328,9 @@ const SiegeLoop = (() => {
   const unitDef = (type) => (typeof UnitDefs !== 'undefined' ? def(UnitDefs, type) : null);
   const buildDef = (type) => (typeof BuildDefs !== 'undefined' ? def(BuildDefs, type) : null);
   const buildCost = (type) => buildDef(type)?.cost ?? 0;
-  /** What the next recruit of this type is charged, upkeep included. */
+  /** What the next recruit of this type is charged (Warband doubles it). */
   function recruitCost(ctx, type) {
-    const base = unitDef(type)?.cost ?? 0;
-    return Math.ceil(
-      base * deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0)
-    );
+    return Math.ceil((unitDef(type)?.cost ?? 0) * deployCostMult());
   }
   /** Can the purse pay? A caller that does not report a purse (a test) is not held back. */
   const canPay = (ctx, cost) => ctx.tp == null || ctx.tp >= cost;
@@ -338,7 +340,9 @@ const SiegeLoop = (() => {
   const liveCrates = () => run.crates.filter((c) => !c.spent);
   const firstHunter = (ctx) => troops(ctx).find((u) => u.canHunt && !u.isGeneral) || null;
   const armyForUpkeep = (ctx) => ctx.upkeepArmy ?? ctx.army ?? 0;
-  const freeArmy = (ctx) => ARMY_FREE + Math.max(0, ctx.freeArmyBonus || 0);
+  // EconomyRules loads after this file, so its numbers are read when needed.
+  const baseFreeArmy = () => (typeof EconomyRules !== 'undefined' ? EconomyRules.WAGES.free : 14);
+  const freeArmy = (ctx) => baseFreeArmy() + Math.max(0, ctx.freeArmyBonus || 0);
 
   const btnTroop = (type) => `.deploy-btn[data-unit="${type}"]`;
   const btnBuild = (type) => `.build-btn[data-build="${type}"]`;
@@ -554,7 +558,7 @@ const SiegeLoop = (() => {
       wave: 2,
       ready: (ctx) => armyForUpkeep(ctx) >= freeArmy(ctx) - 1,
       text: (ctx) =>
-        `A big army is dear. Past ${freeArmy(ctx)} soldiers, every hire costs ${Math.round(ARMY_UPKEEP * 100)}% more for each soldier over. The prices on the buttons already include it.`,
+        `A big army is dear. Past ${freeArmy(ctx)} soldiers, every 2 cost 1 TP in wages at each dawn. The chip at the top shows what the next dawn will take.`,
       target: () => ({ dom: ['#siege-upkeep', btnTroop('footman')] }),
     },
     {
@@ -862,6 +866,7 @@ const SiegeLoop = (() => {
     counted: true,
     warband: false,
     breaches: 0,
+    waveBreaches: 0,
     edicts: [],
     drafts: [],
     crates: [],
@@ -910,12 +915,16 @@ const SiegeLoop = (() => {
       earlyCallMult: 0,
       earlyCallFlat: 0,
       startTp: 0,
+      dawnCost: 0,
     };
     const add = (src) => {
       for (const k in src) out[k] = (out[k] || 0) + src[k];
     };
     if (run && run.counted) {
-      for (const r of RIBBONS) if (store.earned.includes(r.id)) add(r.fx);
+      // A ribbon's bonus applies only while it is slotted at the Muster (js/crown-legacies.js).
+      const slotted = (id) =>
+        typeof CrownLegacies === 'undefined' || CrownLegacies.isSlotted(`ribbon:${id}`);
+      for (const r of RIBBONS) if (store.earned.includes(r.id) && slotted(r.id)) add(r.fx);
     }
     if (run) for (const id of run.edicts) if (EDICTS[id]) add(EDICTS[id].fx);
     return out;
@@ -962,13 +971,38 @@ const SiegeLoop = (() => {
     return !!run.warband;
   }
 
-  /** Warband: half as many soldiers, each worth far more. */
-  function deployCostMult(army = 0, freeBonus = 0) {
-    // A big host is hard to feed: past 14 soldiers every recruit costs 7% more per head.
-    // Granaries (an Outpost upgrade) feed a few more before the surcharge starts.
-    const free = ARMY_FREE + Math.max(0, freeBonus || 0);
-    const upkeep = run.active && !run.creativeRun ? 1 + Math.max(0, army - free) * ARMY_UPKEEP : 1;
-    return (run.warband ? 2 : 1) * upkeep;
+  /**
+   * Warband: half as many soldiers, each worth far more. A big army is paid for in wages at
+   * dawn (dawnWages), not on the price tag; callers still pass the army size.
+   */
+  function deployCostMult() {
+    return run.warband ? 2 : 1;
+  }
+
+  /** The last dawn's ledger, for the TP tooltip. */
+  function noteLedger(ledger) {
+    run.lastLedger = ledger ? { text: ledger.text, total: ledger.total } : null;
+  }
+
+  /** Wages due at the coming dawn for the army as it stands. */
+  function dawnWages(ctx) {
+    if (!run.active || run.creativeRun || typeof EconomyRules === 'undefined') return 0;
+    return EconomyRules.dawnWages(armyForUpkeep(ctx), ctx.freeArmyBonus || 0);
+  }
+
+  /**
+   * This siege's entries in the dawn ledger: spoils income, the clean-wave bounty, wages
+   * and the standing cost of spoils. Read once, at wave clear, before onNightBegin.
+   */
+  function dawnEntries(ctx) {
+    if (!run.active || ctx.creative || typeof EconomyRules === 'undefined') return [];
+    const clean = (ctx.casualties || 0) === 0 && !run.waveBreaches && ctx.wave > 0;
+    return [
+      { label: 'spoils', tp: fx.tpPerWave },
+      { label: 'clean bounty', tp: clean ? EconomyRules.cleanBounty(ctx.wave) : 0 },
+      { label: 'wages', tp: -dawnWages(ctx) },
+      { label: 'spoils upkeep', tp: -fx.dawnCost },
+    ];
   }
 
   function applySpawnMods(unit) {
@@ -1000,7 +1034,7 @@ const SiegeLoop = (() => {
     if (!isRunnerCandidate(unit)) return;
     const quick = (unit.speed || 0) >= 0.65;
     // A bigger host draws more runners: the enemy probes for gaps instead of fighting it head-on.
-    const crowd = Math.min(0.25, Math.max(0, (ctx.army || 0) - ARMY_FREE) * 0.005);
+    const crowd = Math.min(0.25, Math.max(0, (ctx.army || 0) - baseFreeArmy()) * 0.005);
     const chance = Math.min(0.55, (quick ? 0.2 : 0.1) + ctx.wave * 0.004 + crowd);
     if (ctx.rng() >= chance) return;
     unit.lineBreaker = true;
@@ -1164,6 +1198,7 @@ const SiegeLoop = (() => {
     unit.hp = 0;
     unit.breachedLine = true;
     run.breaches++;
+    run.waveBreaches = (run.waveBreaches || 0) + 1;
     run.lastBreachAt = { x: unit.x, y: unit.y };
     run.cleanStreak = 0;
     const limit = breachLimit(ctx);
@@ -1199,7 +1234,9 @@ const SiegeLoop = (() => {
     const held = {};
     for (const id of run.edicts) held[id] = (held[id] || 0) + 1;
     for (const d of run.drafts) for (const id of d) held[id] = (held[id] || 0) + 1;
-    let pool = Object.keys(EDICTS).filter((id) => (held[id] || 0) < MAX_EDICT_STACKS);
+    let pool = Object.keys(EDICTS).filter(
+      (id) => (held[id] || 0) < (EDICTS[id].maxStacks || MAX_EDICT_STACKS)
+    );
     if (pool.length < 3) pool = ['war_chest', 'war_chest', 'war_chest'];
     const picks = [];
     while (picks.length < 3 && pool.length) {
@@ -1220,7 +1257,9 @@ const SiegeLoop = (() => {
     run.edicts.push(id);
     ctx.ach?.('edict', { id, stacks: run.edicts.filter((e) => e === id).length });
     fx = computeFx();
-    if (def.instantTp) ctx.addTp(def.instantTp);
+    if (def.instantTp) {
+      ctx.addTp(typeof def.instantTp === 'function' ? def.instantTp(ctx.wave) : def.instantTp);
+    }
     if (isRecorded()) {
       store.stats.edicts++;
       checkRibbons(ctx);
@@ -1296,6 +1335,11 @@ const SiegeLoop = (() => {
       host,
       // War camps standing at the top edge and what each adds to this wave.
       camps: typeof WarCamps !== 'undefined' ? WarCamps.previewLine(ctx) : '',
+      // The kingdom's value and what it does to the host size, in plain numbers.
+      value:
+        typeof ColonyValue !== 'undefined' && !ctx.creative
+          ? ColonyValue.formatValueLine(ColonyValue.compute(), next)
+          : '',
     };
   }
 
@@ -1348,6 +1392,7 @@ const SiegeLoop = (() => {
     } else if (!h && p.names.length) parts.push(p.names.join(', '));
     if (p.runners && !h) parts.push('line-breakers likely');
     if (p.camps) parts.push(`War camps: ${p.camps}`);
+    if (p.value) parts.push(p.value);
     return parts.join(' · ');
   }
 
@@ -1373,7 +1418,6 @@ const SiegeLoop = (() => {
       breaches: run.breaches,
       left: breachLimit(ctx) - run.breaches,
     });
-    if (fx.tpPerWave > 0) ctx.addTp(fx.tpPerWave);
     if (ctx.wave > 0 && ctx.wave % SPOILS_EVERY === 0 && !ctx.creative) {
       run.drafts.push(rollSpoils(ctx));
       ctx.showMessage('Spoils of war — choose one reward before the next assault.', 260);
@@ -1411,12 +1455,31 @@ const SiegeLoop = (() => {
     return run.preview;
   }
 
+  /**
+   * The early call is a bet: TP for each 10 s of night given up, and the same share of the
+   * next host marching with the wave that starts now (it is taken off the next wave).
+   * @returns {{steps: number, tp: number, share: number}}
+   */
+  function earlyCallOffer(secondsLeft, ctx) {
+    const none = { steps: 0, tp: 0, share: 0 };
+    if (!run.active || !ctx || ctx.creative || ctx.wave < 1) return none;
+    const steps = Math.min(EARLY_MAX_STEPS, Math.floor((secondsLeft || 0) / 10));
+    if (steps <= 0) return none;
+    const tp = steps * EARLY_STEP_TP * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
+    return { steps, tp, share: steps * EARLY_STEP_SHARE };
+  }
+
+  /** How many of the next host come early: a share of the wave just queued, at least one. */
+  function vanguardSize(share, queueLength) {
+    if (!(share > 0) || !(queueLength > 0)) return 0;
+    return Math.max(1, Math.round(queueLength * share));
+  }
+
   /** TP for sounding the horn before the night runs out. */
   function earlyCallBonus(secondsLeft, ctx) {
-    if (!run.active || ctx.creative || ctx.wave < 1) return 0;
-    const base = Math.min(5, Math.floor(secondsLeft / 10));
-    if (base <= 0) return 0;
-    const bonus = base * (1 + fx.earlyCallMult) + fx.earlyCallFlat;
+    const offer = earlyCallOffer(secondsLeft, ctx);
+    if (offer.steps <= 0) return 0;
+    const bonus = offer.tp;
     run.tally.earlyCalls++;
     ctx.ach?.('tally', { k: 'earlyCalls' });
     if (isRecorded()) {
@@ -1431,7 +1494,11 @@ const SiegeLoop = (() => {
     if (!run.active) return;
     // Yesterday's dead sink into the mud; unclaimed spoils are picked for you.
     if (run.stains.length > 70) run.stains.splice(0, run.stains.length - 70);
-    while (run.drafts.length) claimSpoils(Math.floor(ctx.rng() * 3), ctx);
+    while (run.drafts.length) {
+      const n = run.drafts[0].length;
+      if (!claimSpoils(Math.floor(ctx.rng() * n), ctx)) run.drafts.shift();
+    }
+    run.waveBreaches = 0;
     run.preview = null;
     run.crateTimer = 300 + Math.floor(ctx.rng() * 500);
     run.lastCombatTick = ctx.tick;
@@ -1871,6 +1938,8 @@ const SiegeLoop = (() => {
       modifiers,
       modifierMult,
       total: Math.round(base * difficultyMult * modifierMult),
+      ngPlusTier: Math.max(0, Math.floor(input.ngPlusTier || 0)),
+      endless: !!input.endless,
     };
   }
 
@@ -1923,7 +1992,12 @@ const SiegeLoop = (() => {
       breaches: run.breaches,
       lost: ctx.soldiersLost || 0,
       difficulty: ctx.difficultyId || 'normal',
-      modifiers: activeScoreModifiers(),
+      modifiers: [
+        ...activeScoreModifiers(),
+        ...[globalThis.NewGamePlus?.scoreModifier(ctx.ngPlusTier)].filter(Boolean),
+      ],
+      ngPlusTier: ctx.ngPlusTier || 0,
+      endless: !!ctx.postVictoryEndless,
     });
   }
 
@@ -1959,6 +2033,7 @@ const SiegeLoop = (() => {
     for (const k of TICK_STAMPS) stamps[k] = run[k] ? run[k] - now : null;
     return {
       breaches: run.breaches,
+      waveBreaches: run.waveBreaches || 0,
       edicts: [...run.edicts],
       drafts: run.drafts.map((d) => [...d]),
       cleanStreak: run.cleanStreak,
@@ -2004,6 +2079,7 @@ const SiegeLoop = (() => {
     run.creativeRun = !!ctx.creative;
     if (snap) {
       run.breaches = snap.breaches || 0;
+      run.waveBreaches = snap.waveBreaches || 0;
       run.edicts = (snap.edicts || []).filter((id) => EDICTS[id]);
       run.drafts = (snap.drafts || []).filter((d) => Array.isArray(d) && d.length);
       run.cleanStreak = snap.cleanStreak || 0;
@@ -2071,6 +2147,7 @@ const SiegeLoop = (() => {
         `${SCORE_LABELS[score.difficulty]} difficulty: ×${score.difficultyMult}`,
       ];
       for (const m of score.modifiers) rows.push(`${m.label}: ×${m.mult.toFixed(2)}`);
+      if (score.endless) rows.push('Endless run: played on past the wave 100 victory');
       html +=
         `<h3>Score: ${n(score.total)}${run.scoreIsBest ? ' — new best' : ''}</h3>` +
         rows.map((l) => `<div>${esc(l)}</div>`).join('') +
@@ -2266,15 +2343,12 @@ const SiegeLoop = (() => {
       btn.textContent = wait > 0 ? `${label} ${wait}s` : label;
     }
     const up = el('siege-upkeep');
-    if (up) {
-      const pct = Math.round(
-        (deployCostMult(ctx.upkeepArmy ?? ctx.army ?? 0, ctx.freeArmyBonus || 0) /
-          (run.warband ? 2 : 1) -
-          1) *
-          100
-      );
-      up.hidden = pct <= 0;
-      up.textContent = `Recruit cost +${pct}%`;
+    if (up && typeof EconomyRules !== 'undefined') {
+      const wages = dawnWages(ctx);
+      const free = EconomyRules.WAGES.free + (ctx.freeArmyBonus || 0);
+      up.hidden = wages <= 0;
+      up.textContent = `Wages -${wages} TP at dawn`;
+      up.title = `${armyForUpkeep(ctx)} soldiers, ${free} fed free. Every ${EconomyRules.WAGES.headsPerTp} past that cost 1 TP at each dawn. Builders and couriers are not paid.`;
     }
     const e = el('siege-edicts');
     if (e) {
@@ -2596,6 +2670,8 @@ const SiegeLoop = (() => {
       breachLimit: breachLimit(ctx),
       edicts: run.edicts.map((id) => EDICTS[id]?.name || id),
       pendingSpoils: run.drafts.length,
+      wages: dawnWages(ctx),
+      ledger: run.lastLedger ? run.lastLedger.text : '',
       spoilsChoices: run.drafts[0] ? [...run.drafts[0]] : [],
       preview: previewText(run.preview),
       crates: run.crates.filter((c) => !c.spent).map((c) => ({ x: c.x, y: c.y })),
@@ -2622,6 +2698,11 @@ const SiegeLoop = (() => {
     endRun,
     isWarband,
     deployCostMult,
+    dawnWages,
+    dawnEntries,
+    noteLedger,
+    earlyCallOffer,
+    vanguardSize,
     applySpawnMods,
     tagEnemySpawn,
     unopposedBreaks,

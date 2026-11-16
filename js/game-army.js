@@ -402,6 +402,94 @@ const GameArmy = (() => {
     return u;
   }
 
+  function notifyTraits(unit, ids) {
+    for (const id of ids || []) {
+      const t = Veterans.TRAITS[id];
+      svc('FloatingText')?.status?.(
+        unit.x,
+        unit.y - 18,
+        t.name.toUpperCase(),
+        VET_STAR_COLORS.gold
+      );
+      showMessage(`${getUnitDisplayName(unit)} earned ${t.name}: ${t.gain}, ${t.cost}.`, 260);
+    }
+  }
+
+  function notifyHallDeath(unit, entry) {
+    if (!entry) return;
+    showMessage(
+      `${entry.name} has fallen. The name stays on the Hall of Veterans roll and can be raised there.`,
+      300
+    );
+  }
+
+  function forgetSelectedTrait(id) {
+    const u = getSelectedUnit();
+    if (!u || !Veterans.TRAITS[id]) return false;
+    const before = [...(u.traits || [])];
+    if (!Veterans.forgetTrait(u, id, GS.wave)) return false;
+    showMessage(`${getUnitDisplayName(u)} gave up ${Veterans.TRAITS[id].name}.`, 200);
+    notifyTraits(
+      u,
+      u.traits.filter((t) => !before.includes(t))
+    );
+    return true;
+  }
+
+  function standingHall() {
+    return (
+      GS.buildings.find(
+        (b) => b.owner === 'player' && b.type === 'hall_of_veterans' && b.complete && b.hp > 0
+      ) || null
+    );
+  }
+
+  function raiseBlock(entry) {
+    if (!entry.fallen) return 'still on the field';
+    if (!standingHall()) return 'needs a standing Hall of Veterans';
+    if (GS.hallRaisedWave === GS.wave) return 'the Hall raises one veteran a wave';
+    const cost = Veterans.raiseCost(entry);
+    if (GS.tactical < cost) return `needs ${cost} TP`;
+    return null;
+  }
+
+  function getHallRoll() {
+    return Veterans.getHall().map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      fallen: !!e.fallen,
+      deaths: e.deaths || 0,
+      fellWave: e.fellWave,
+      traits: (e.traits || []).map((id) => Veterans.TRAITS[id]?.name).filter(Boolean),
+      cost: Veterans.raiseCost(e),
+      block: raiseBlock(e),
+    }));
+  }
+
+  function raiseVeteran(id) {
+    const entry = Veterans.getHall().find((e) => e.id === id);
+    if (!entry) return false;
+    const block = raiseBlock(entry);
+    if (block) {
+      showMessage(`Cannot raise ${entry.name}: ${block}.`, 200);
+      return false;
+    }
+    const hall = standingHall();
+    const u = spawnUnit(entry.type, hall.x, hall.y + (hall.radius || 24) + 14, 'player');
+    if (!u) return false;
+    GS.tactical -= Veterans.raiseCost(entry);
+    GS.hallRaisedWave = GS.wave;
+    Veterans.restore(u, entry);
+    GS.units.push(u);
+    svc('FloatingText')?.status?.(u.x, u.y - 18, 'RAISED', VET_STAR_COLORS.gold);
+    showMessage(
+      `${entry.name} walks out of the Hall at rank ${Veterans.RAISED_TIER}, weaker for the grave.`,
+      280
+    );
+    return true;
+  }
+
   function ascendSelectedUnit() {
     if (GS.creativeMode || typeof AscensionSystem === 'undefined') return false;
     const id = GS.selectedUnitId || GS.selectedUnitIds[0];
@@ -555,7 +643,12 @@ const GameArmy = (() => {
     findLivePlayerOfType,
     hasCompanyHall,
     hasChampionsHall,
+    forgetSelectedTrait,
+    getHallRoll,
+    notifyHallDeath,
+    notifyTraits,
     notifyVetStarEvent,
+    raiseVeteran,
     recordFootmanCommandElevation,
     recruitSelectedEcho,
     spawnUnit,
