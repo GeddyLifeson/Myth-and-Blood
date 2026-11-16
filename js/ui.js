@@ -1089,6 +1089,14 @@ const UI = (() => {
       });
     });
 
+    document.getElementById('gameover-setup-btn')?.addEventListener('click', () => {
+      if (restartInFlight) return;
+      AudioEngine.SFX.click?.();
+      hideGameOverScreen();
+      Game.quitToMenu?.();
+      document.getElementById('menu-setup-btn')?.click();
+    });
+
     document.getElementById('gameover-menu-btn')?.addEventListener('click', () => {
       if (restartInFlight) return;
       AudioEngine.SFX.click?.();

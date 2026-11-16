@@ -1312,10 +1312,8 @@ const UX = (() => {
     stats.innerHTML = `
       <div class="result-stat-card"><span>Waves held</span><strong>${Math.max(0, gs.wave - 1)}</strong></div>
       <div class="result-stat-card"><span>Kills</span><strong>${gs.kills ?? 0}</strong></div>
-      <div class="result-stat-card"><span>Soldiers lost</span><strong>${losses}</strong></div>
       <div class="result-stat-card"><span>Best streak</span><strong>${fb.bestStreak || 0}</strong></div>
       <div class="result-stat-card"><span>Clean waves</span><strong>${fb.cleanSweeps || 0}</strong></div>
-      <div class="result-stat-card"><span>Difficulty</span><strong>${escapeHtml(gs.difficultyLabel ?? 'Normal')}</strong></div>
       <div class="result-stat-card wide"><span>Achievements</span><strong>${ach.unlocked} / ${ach.total}</strong></div>
     `;
 

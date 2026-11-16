@@ -4246,8 +4246,7 @@ body.ui-v2 .result-siege {
   max-width: none;
   margin: 0;
   padding: 10px 14px;
-  columns: 2 240px;
-  column-gap: 22px;
+  columns: 1;
   font-family: var(--font-body);
   font-size: var(--fs-2);
   line-height: 1.45;
@@ -4962,4 +4961,41 @@ body.ui-v2 .intel-faction-card.intel-card-dormant {
 }
 body.ui-v2 .intel-faction-stage {
   color: var(--bone-dim) !important;
+}
+
+/* Game over: the cause line and the named dead. */
+body.ui-v2 .result-siege .result-cause {
+  margin: 0 0 8px;
+  color: #fff;
+  font-weight: 700;
+  column-span: all;
+}
+body.ui-v2 .result-fallen {
+  min-height: 0;
+  max-height: 190px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-1);
+  color: var(--bone-dim);
+}
+body.ui-v2 .result-fallen h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-head);
+  font-size: var(--fs-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+body.ui-v2 .result-fallen ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+body.ui-v2 .result-fallen li.vet b {
+  color: var(--blood);
+}
+body.ui-v2 .result-fallen p {
+  margin: 0;
 }
