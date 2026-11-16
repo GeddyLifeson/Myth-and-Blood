@@ -215,7 +215,10 @@ const GameCommands = (() => {
     clearSelection();
     if (!toggleOff) {
       GS.selectedDemolish = true;
-      showMessage('Demolish — click a completed structure. Refunds 50% TP.', 200);
+      showMessage(
+        'Demolish — click a completed structure. Refunds up to 50% TP, less if damaged.',
+        200
+      );
     }
     syncInteractionState();
     playSfx('click');

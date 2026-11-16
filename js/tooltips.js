@@ -11,21 +11,23 @@ const Tooltips = (() => {
   const FADE_MS = 400;
 
   const BUILD_NOTES = {
-    outpost: 'Forward cover with one garrison slot. Archers inside gain +55 range.',
-    wall: 'Blocks movement. Two footman slots per segment when a General commands the Keep. Castle walls face N/E/S/W. Press R while placing to set facing; ROTATE tool turns completed walls.',
+    outpost:
+      'Forward cover with one garrison slot. Archers inside gain +55 range. Takes one upgrade: Barracks or Granary.',
+    wall: 'Blocks movement. Two footman slots per segment when a General commands the Keep. Castle walls face N/E/S/W. Press R while placing to set facing; ROTATE tool turns completed walls. Takes one upgrade: Rampart or Snare Line.',
     castle:
       'Compound: 4 walls, 4 outposts, Keep, med tent, and mess hall - requires Fortification research.',
     medical_tent:
-      'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside.',
-    mess_hall: 'Morale aura for nearby troops - stacks with bards and rallies.',
+      'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside. Takes one upgrade: Surgery or Triage.',
+    mess_hall:
+      'Morale aura for nearby troops - stacks with bards and rallies. Takes one upgrade: Tavern or Kitchens.',
     watchtower:
-      '5 TP. Reveals stealth and burrowers; enemies nearby suffer accuracy penalties. Archers gain +35 range. Requires Field Engineering.',
+      'Reveals stealth and burrowers; enemies in sight lose accuracy. Takes one upgrade: Beacon or Spotter’s Perch.',
     spike_trap:
-      '3 TP. Hidden spikes - first enemy crossing each cooldown takes heavy damage. Requires Field Engineering.',
+      'Hidden spikes: the first enemy across it each reset takes heavy damage. Takes one upgrade: Barbed Pit or Hair Trigger. Requires Field Engineering.',
     quarry:
-      '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
+      'Pays at the end of each wave in which no enemy came within 110 of it. Blocks movement. Shares the 6-site income cap. Requires Prospecting.',
     trade_outpost:
-      '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
+      'Pays at the end of each wave in which no enemy came within 160 of it; lifts morale nearby. Shares the 6-site income cap.',
     research_lab:
       '45 TP, 2 Builders. Analyzes slain foes for Science Points - stronger enemies yield more SP (wave cap). Required to research.',
     fortress_upgrade:
@@ -194,6 +196,9 @@ const Tooltips = (() => {
       }
     } else if (!body && def?.isAcademy) {
       body = ACADEMY_NOTE;
+    } else if (!body && def?.upgradeNote) {
+      const host = BuildDefs[def.upgradeOf]?.name || 'building';
+      body = `${host} upgrade, one per ${host}: ${def.upgradeNote}`;
     } else if (!body && def?.isPerkMachine) {
       const perk = PerkDefs?.[def.perkId];
       body = perk
@@ -205,7 +210,7 @@ const Tooltips = (() => {
         : 'Field structure - place with a Builder.';
     }
     if (def?.requiresBuilders) body += ` Requires ${def.requiresBuilders} live Builders.`;
-    if (def?.tpPerRound) body += ` +${def.tpPerRound} TP/round.`;
+    if (def?.tpPerRound) body += ` +${def.tpPerRound} TP a wave.`;
     if (def?.isWatchtower) body += ` Vision ${def.visionRadius || 200}.`;
     if (def?.isTrap) body += ` Trap damage ${def.trapDamage || 45}.`;
     let footer = fmtCost(def?.cost ?? 0, freeTp);
@@ -328,7 +333,7 @@ const Tooltips = (() => {
     const tips = {
       'demolish-btn': {
         title: 'Demolish',
-        body: 'Remove a completed player structure. Refunds 50% of its build cost in TP.',
+        body: 'Remove a completed player structure. Refunds up to 50% of its build cost in TP, scaled by its remaining health.',
         footer: 'Click structure · Esc to cancel',
       },
       'move-building-btn': {

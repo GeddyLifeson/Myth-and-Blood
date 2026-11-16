@@ -138,6 +138,7 @@ const Game = (() => {
     spawnHamletFortressWalls,
     updateEnemySiege,
     updateEnemyWallAttack,
+    updateIncomeSiteThreat,
     updatePlayerStructureAttack,
   } = GameBuildings;
   const {
@@ -2258,6 +2259,7 @@ const Game = (() => {
 
     markUpdatePhase('garrisons');
     updateOutposts();
+    updateIncomeSiteThreat();
     updateCastleKeeps();
     updateWallGarrison();
     updateMedicalRetreats();

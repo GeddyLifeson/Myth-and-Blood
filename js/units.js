@@ -1974,7 +1974,8 @@ function createBuilding(type, x, y, owner, opts = {}) {
   b.tpPerRound = def.tpPerRound || 0;
   b.isFortressUpgrade = def.isFortressUpgrade || false;
   // Outpost upgrade (Barracks / Granary) and per-wave job counters; pooled records must reset.
-  b.isOutpostUpgrade = def.isOutpostUpgrade || false;
+  // Scaffolding of any building upgrade (Outpost, Wall, Med Tent and the rest).
+  b.isOutpostUpgrade = def.isOutpostUpgrade || !!def.upgradeOf;
   b.upgrade = null;
   b.upgradeName = null;
   b.upgradePending = false;

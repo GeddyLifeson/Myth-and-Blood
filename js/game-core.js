@@ -828,8 +828,10 @@ const GameCore = (() => {
     return unitCounts.hasCourier;
   }
 
+  // Half the price at full health, less as it is damaged: a falling wall is not worth selling.
   function getBuildingRefund(b) {
-    return Math.floor((BuildDefs[b.type]?.cost ?? 0) * 0.5);
+    const health = b.maxHp > 0 ? Math.max(0, Math.min(1, b.hp / b.maxHp)) : 1;
+    return Math.floor((BuildDefs[b.type]?.cost ?? 0) * 0.5 * health);
   }
 
   function manualMoveReached(unit) {

@@ -23,7 +23,10 @@
     "buildTime": 120,
     "isOutpostUpgrade": true,
     "requiresOutpostNearby": 44,
-    "hpBonus": 100
+    "hpBonus": 100,
+    "upgradeOf": "outpost",
+    "upgradeId": "barracks",
+    "upgradeNote": "A free footman musters here every third dawn. Two garrison slots."
   },
   "outpost_granary": {
     "name": "Granary",
@@ -36,7 +39,10 @@
     "buildTime": 120,
     "isOutpostUpgrade": true,
     "requiresOutpostNearby": 44,
-    "hpBonus": 40
+    "hpBonus": 40,
+    "upgradeOf": "outpost",
+    "upgradeId": "granary",
+    "upgradeNote": "Feeds 3 more soldiers before the recruit surcharge starts."
   },
   "wall": {
     "name": "Wall",
@@ -49,6 +55,42 @@
     "buildTime": 180,
     "wallProtection": 0.45,
     "facing": "north"
+  },
+  "wall_rampart": {
+    "name": "Rampart",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "wall",
+    "upgradeId": "rampart",
+    "upgradeNote": "Soldiers behind it take 65% less damage instead of 45%, and it gains 150 HP.",
+    "requiresHostNearby": 44,
+    "hpBonus": 150,
+    "set": {
+      "wallProtection": 0.65
+    }
+  },
+  "wall_snare": {
+    "name": "Snare Line",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "wall",
+    "upgradeId": "snare",
+    "upgradeNote": "Holds 6 line-breakers a wave instead of 3.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "holdsPerWave": 6
+    }
   },
   "castle": {
     "name": "Castle",
@@ -86,6 +128,42 @@
     "isMedical": true,
     "healRate": 0.03
   },
+  "medical_tent_surgery": {
+    "name": "Surgery",
+    "cost": 7,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "medical_tent",
+    "upgradeId": "surgery",
+    "upgradeNote": "Soldiers resting here heal 2.5 times as fast.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "healRate": 0.075
+    }
+  },
+  "medical_tent_triage": {
+    "name": "Triage",
+    "cost": 7,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "medical_tent",
+    "upgradeId": "triage",
+    "upgradeNote": "Carries in 2 struck-down soldiers a wave instead of 1.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "savesPerWave": 2
+    }
+  },
   "mess_hall": {
     "name": "Mess Hall",
     "cost": 5,
@@ -97,6 +175,39 @@
     "buildTime": 120,
     "isMessHall": true,
     "moraleAura": 4
+  },
+  "mess_hall_tavern": {
+    "name": "Tavern",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "mess_hall",
+    "upgradeId": "tavern",
+    "upgradeNote": "Its morale aura is twice as strong.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "moraleAura": 8
+    }
+  },
+  "mess_hall_kitchens": {
+    "name": "Kitchens",
+    "cost": 6,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "mess_hall",
+    "upgradeId": "kitchens",
+    "upgradeNote": "Feeds 4 more soldiers before the recruit surcharge starts.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0
   },
   "research_lab": {
     "name": "Research Lab",
@@ -123,6 +234,42 @@
     "visionRadius": 200,
     "rangeBonus": 35
   },
+  "watchtower_beacon": {
+    "name": "Beacon",
+    "cost": 5,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "watchtower",
+    "upgradeId": "beacon",
+    "upgradeNote": "Sees 330 instead of 200: hidden foes are revealed and lose aim over a wider ring.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "visionRadius": 330
+    }
+  },
+  "watchtower_spotter": {
+    "name": "Spotter's Perch",
+    "cost": 5,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "watchtower",
+    "upgradeId": "spotter",
+    "upgradeNote": "Foes in sight lose 16 accuracy instead of 8.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "intelPenalty": 16
+    }
+  },
   "spike_trap": {
     "name": "Spike Trap",
     "cost": 3,
@@ -136,6 +283,43 @@
     "trapDamage": 45,
     "trapCooldown": 90
   },
+  "spike_trap_barbed": {
+    "name": "Barbed Pit",
+    "cost": 4,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "spike_trap",
+    "upgradeId": "barbed",
+    "upgradeNote": "Springs for 110 damage, but resets in 150 ticks instead of 90.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "trapDamage": 110,
+      "trapReset": 150
+    }
+  },
+  "spike_trap_hair": {
+    "name": "Hair Trigger",
+    "cost": 4,
+    "hp": 100,
+    "cover": 0,
+    "radius": 14,
+    "blocksMove": false,
+    "blocksLOS": false,
+    "buildTime": 120,
+    "upgradeOf": "spike_trap",
+    "upgradeId": "hair",
+    "upgradeNote": "Resets in 35 ticks instead of 90. Same 45 damage.",
+    "requiresHostNearby": 44,
+    "hpBonus": 0,
+    "set": {
+      "trapReset": 35
+    }
+  },
   "quarry": {
     "name": "Quarry",
     "cost": 14,
@@ -147,7 +331,8 @@
     "buildTime": 160,
     "requiresBuilders": 1,
     "isResourceGen": true,
-    "tpPerRound": 3
+    "tpPerRound": 3,
+    "raidReach": 110
   },
   "trade_outpost": {
     "name": "Trade Outpost",
@@ -161,7 +346,8 @@
     "requiresBuilders": 1,
     "isResourceGen": true,
     "tpPerRound": 2,
-    "moraleAura": 2
+    "moraleAura": 2,
+    "raidReach": 160
   },
   "academy_footman": {
     "name": "Footman Academy",

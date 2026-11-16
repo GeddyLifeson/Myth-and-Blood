@@ -240,7 +240,8 @@ const EconomyRules = (() => {
   /** Extra soldiers fed before the recruit surcharge (Granaries). */
   function freeArmyBonus(buildings) {
     const g = BUILDINGS.granary;
-    return Math.min(g.maxCounted, countUpgrade(buildings, 'granary')) * g.freeArmy;
+    const kitchens = Math.min(2, countUpgrade(buildings, 'kitchens')) * 4;
+    return Math.min(g.maxCounted, countUpgrade(buildings, 'granary')) * g.freeArmy + kitchens;
   }
 
   /** Free footmen due at this dawn (Barracks). */
@@ -275,7 +276,7 @@ const EconomyRules = (() => {
         w.holdWave = wave;
         w.holdsUsed = 0;
       }
-      if (w.holdsUsed >= r.holdsPerWave) continue;
+      if (w.holdsUsed >= (w.holdsPerWave || r.holdsPerWave)) continue;
       const dx = unit.x - w.x;
       const dy = unit.y - w.y;
       if (dx * dx + dy * dy > reach2) continue;
@@ -299,7 +300,7 @@ const EconomyRules = (() => {
     let bestD = Infinity;
     for (const b of buildings || []) {
       if (!liveOwn(b) || !b.isMedical) continue;
-      if (b.saveWave === wave && (b.savesUsed || 0) >= r.savesPerWave) continue;
+      if (b.saveWave === wave && (b.savesUsed || 0) >= (b.savesPerWave || r.savesPerWave)) continue;
       const dx = x - b.x;
       const dy = y - b.y;
       const d = dx * dx + dy * dy;

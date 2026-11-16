@@ -195,7 +195,7 @@ const GameBuildings = (() => {
     const waveBonus = Math.min(5, Math.floor(eased * 5 * waveScale));
     const postBonus = Math.floor(post * 4 * waveScale);
     const diff = getDifficulty();
-    const ecoGen = svc('ContentExpansion') ? svc('ContentExpansion').getEconomyTpBonus() : 0;
+    const ecoGen = getPayingIncomeSites().reduce((s, b) => s + incomeSiteTp(b), 0);
     const base =
       TP_PER_ROUND +
       bonus +
@@ -208,12 +208,48 @@ const GameBuildings = (() => {
     return Math.floor(base * (diff.tpMult || 1)) + cmdBonus;
   }
 
+  const INCOME_SITE_CAP = 6;
+
+  function incomeSiteTp(b) {
+    return BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0;
+  }
+
+  function isIncomeSiteRaided(b) {
+    return b.raidedWave === GS.wave;
+  }
+
+  /** Quarries and trade posts that pay at the end of this wave: no enemy came within reach. */
+  function getPayingIncomeSites() {
+    return GS.buildings
+      .filter((b) => b.owner === 'player' && b.complete && b.hp > 0 && b.isResourceGen)
+      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
+      .slice(0, INCOME_SITE_CAP)
+      .filter((b) => !isIncomeSiteRaided(b));
+  }
+
+  /** Marks an income site raided for this wave once any enemy gets within its reach. */
+  function updateIncomeSiteThreat() {
+    if (isNightPhase() || GS.updateTick % 10 !== 0) return;
+    for (const b of GS.buildings) {
+      if (b.owner !== 'player' || !b.complete || b.hp <= 0 || !b.isResourceGen) continue;
+      if (isIncomeSiteRaided(b)) continue;
+      const reach = BuildDefs[b.type]?.raidReach || 120;
+      for (const u of GS.units) {
+        if (u.team !== 'enemy' || u.hp <= 0) continue;
+        if (posDistSq(u.x, u.y, b.x, b.y) > reach * reach) continue;
+        b.raidedWave = GS.wave;
+        svc('FloatingText')?.status?.(b.x, b.y - 22, 'RAIDED', '#ff6040');
+        break;
+      }
+    }
+  }
+
   function isBuildSiteBlocked(wx, wy, bdef, excludeBuildingIds = null) {
     const margin = bdef?.radius ? Math.floor(bdef.radius * 0.55) : 12;
     const exclude = excludeBuildingIds
       ? new Set(Array.isArray(excludeBuildingIds) ? excludeBuildingIds : [excludeBuildingIds])
       : null;
-    const snapOnHamlet = (bdef?.isFortressUpgrade || bdef?.isOutpostUpgrade) && exclude?.size;
+    const snapOnHamlet = (bdef?.isFortressUpgrade || upgradeHostType(bdef)) && exclude?.size;
     if (!snapOnHamlet && isBlocked(wx, wy, null, margin)) return true;
     for (const b of GS.buildings) {
       if (exclude?.has(b.id)) continue;
@@ -244,34 +280,58 @@ const GameBuildings = (() => {
     return { x: best.x, y: best.y, hamlet: best };
   }
 
+  function upgradeHostType(def) {
+    return def?.upgradeOf || (def?.isOutpostUpgrade ? 'outpost' : null);
+  }
+
+  /** Why an upgrade cannot be placed here, in words a player reads. */
+  function upgradeSiteError(def) {
+    const host = BuildDefs[upgradeHostType(def)]?.name || 'building';
+    return `Place this on a finished ${host} that has no upgrade yet (one per ${host}).`;
+  }
+
+  /** Finished, standing, not yet upgraded buildings this upgrade could go on. */
+  function upgradeHosts(def) {
+    const hostType = upgradeHostType(def);
+    if (!hostType) return [];
+    return GS.buildings.filter(
+      (b) =>
+        b.type === hostType &&
+        b.owner === 'player' &&
+        b.complete &&
+        b.hp > 0 &&
+        !b.upgrade &&
+        !b.upgradePending
+    );
+  }
+
   /**
-   * Outpost upgrades (Barracks or Granary) are placed on a finished Outpost that has not
-   * been upgraded yet. Each Outpost takes one, once: that is the either/or.
+   * Upgrades go on a finished building of their host type that has none yet. Each starter
+   * building takes one of its two upgrades, once: that is the either/or.
    */
   function resolveOutpostUpgradeSite(wx, wy, def) {
     let best = null;
     let bestD = Infinity;
-    const maxDist = def.requiresOutpostNearby || 44;
-    for (const b of GS.buildings) {
-      if (b.type !== 'outpost' || b.owner !== 'player' || !b.complete || b.hp <= 0) continue;
-      if (b.upgrade || b.upgradePending) continue;
+    const maxDist = def.requiresHostNearby || def.requiresOutpostNearby || 44;
+    for (const b of upgradeHosts(def)) {
       const d2 = posDistSq(b.x, b.y, wx, wy);
       if (d2 < maxDist * maxDist && d2 < bestD) {
         bestD = d2;
         best = b;
       }
     }
-    return best ? { x: best.x, y: best.y, outpost: best } : null;
+    return best ? { x: best.x, y: best.y, outpost: best, host: best } : null;
   }
 
-  /** The upgrade's scaffolding is done: turn its Outpost into a Barracks or a Granary. */
+  /** The upgrade's scaffolding is done: apply it to the building it stands on. */
   function completeOutpostUpgrade(b) {
     const def = BuildDefs[b.type] || {};
-    const info = typeof EconomyRules !== 'undefined' ? EconomyRules.OUTPOST_UPGRADES[b.type] : null;
+    const hostType = upgradeHostType(def);
+    const hostName = BuildDefs[hostType]?.name || 'building';
     let host = null;
     let bestD = Infinity;
     for (const o of GS.buildings) {
-      if (o.type !== 'outpost' || o.owner !== 'player' || !o.complete || o.hp <= 0) continue;
+      if (o.type !== hostType || o.owner !== 'player' || !o.complete || o.hp <= 0) continue;
       if (o.upgrade) continue;
       const d2 = posDistSq(o.x, o.y, b.x, b.y);
       if (d2 < 60 * 60 && d2 < bestD) {
@@ -285,20 +345,21 @@ const GameBuildings = (() => {
       releaseBuildingRecord(b);
     }
     invalidateObstacles();
-    if (!host || !info) {
-      // The Outpost fell while the work was under way: the price comes back.
+    if (!host || !def.upgradeId) {
+      // The host fell while the work was under way: the price comes back.
       GS.tactical += def.cost || 0;
       sanitizeTactical();
-      showMessage('The Outpost was lost before its upgrade finished — TP refunded.', 240);
+      showMessage(`The ${hostName} was lost before its upgrade finished. TP refunded.`, 240);
       return;
     }
-    host.upgrade = info.id;
-    host.upgradeName = info.label;
+    host.upgrade = def.upgradeId;
+    host.upgradeName = def.name;
     host.upgradePending = false;
+    Object.assign(host, def.set || {});
     host.maxHp = Math.floor(host.maxHp + (def.hpBonus || 0));
     host.hp = Math.min(host.maxHp, host.hp + (def.hpBonus || 0));
-    svc('FloatingText')?.status?.(host.x, host.y - 24, info.label.toUpperCase(), '#ffe080');
-    showMessage(`Outpost upgraded to ${info.label}. ${info.note}`, 320);
+    svc('FloatingText')?.status?.(host.x, host.y - 24, def.name.toUpperCase(), '#ffe080');
+    showMessage(`${hostName} upgraded to ${def.name}. ${def.upgradeNote || ''}`, 320);
     refreshUnitCounts();
   }
 
@@ -719,6 +780,10 @@ const GameBuildings = (() => {
         if (chk.warn) showMessage(chk.warn, 280);
       }
     }
+    if (svc('Perks')?.isRetiredStation?.(type)) {
+      showMessage('That tonic station is no longer brewed.');
+      return false;
+    }
     if (
       def.isPerkMachine &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
@@ -754,10 +819,10 @@ const GameBuildings = (() => {
       excludeBuildId = site.hamlet.id;
     }
     let upgradeHost = null;
-    if (def.isOutpostUpgrade) {
+    if (upgradeHostType(def)) {
       const site = resolveOutpostUpgradeSite(wx, wy, def);
       if (!site) {
-        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        showMessage(upgradeSiteError(def));
         return false;
       }
       buildX = site.x;
@@ -929,7 +994,17 @@ const GameBuildings = (() => {
       showMessage(`Builder at max projects (${BUILDER_MAX_PROJECTS})!`);
       return false;
     }
-    if (isBuildSiteBlocked(wx, wy, bdef)) {
+    let upgradeSite = null;
+    if (upgradeHostType(bdef)) {
+      upgradeSite = resolveOutpostUpgradeSite(wx, wy, bdef);
+      if (!upgradeSite) {
+        showMessage(upgradeSiteError(bdef));
+        return false;
+      }
+      wx = upgradeSite.x;
+      wy = upgradeSite.y;
+    }
+    if (isBuildSiteBlocked(wx, wy, bdef, upgradeSite?.host.id)) {
       showMessage('Not enough space here!');
       return false;
     }
@@ -1006,7 +1081,7 @@ const GameBuildings = (() => {
       svc('FloatingText').status(b.x, b.y - 20, 'SCIENCE', '#80c0ff');
     }
     if (svc('ContentExpansion')) svc('ContentExpansion').onBuildingComplete(b);
-    if (b.isOutpostUpgrade || BuildDefs[b.type]?.isOutpostUpgrade) completeOutpostUpgrade(b);
+    if (b.isOutpostUpgrade || upgradeHostType(BuildDefs[b.type])) completeOutpostUpgrade(b);
     // A watchtower finished at night reports on the coming wave straight away.
     if (b.isWatchtower && isNightPhase()) SiegeLoop.refreshPreview?.(siegeCtx);
     ach('building_complete', {
@@ -1348,6 +1423,10 @@ const GameBuildings = (() => {
     getBuildingPursuitTarget,
     getEnemyStructureSeekDist,
     getTpPerRound,
+    getPayingIncomeSites,
+    incomeSiteTp,
+    isIncomeSiteRaided,
+    updateIncomeSiteThreat,
     inBuildingAttackRange,
     isAttackableEnemyStructure,
     isBuildSiteBlocked,
@@ -1360,6 +1439,8 @@ const GameBuildings = (() => {
     relocateBuilding,
     resolveFortressUpgradeSite,
     resolveOutpostUpgradeSite,
+    upgradeHosts,
+    upgradeSiteError,
     shouldPrioritizeEnemyStructure,
     spawnHamletFortressWalls,
     updateEnemySiege,
