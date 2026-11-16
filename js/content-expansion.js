@@ -1120,8 +1120,8 @@ const ContentExpansion = (() => {
       decorations.push({
         type: t,
         id: `dest_${i}_${Date.now()}`,
-        x: 70 + Math.random() * (worldW - 140),
-        y: rallyY - 100 + Math.random() * (worldH - rallyY - 100),
+        x: 70 + (globalThis.simRandom || Math.random)() * (worldW - 140),
+        y: rallyY - 100 + (globalThis.simRandom || Math.random)() * (worldH - rallyY - 100),
         size: t === 'supply_crate' ? 16 : 14,
         hp: t === 'supply_crate' ? 40 : 30,
         maxHp: t === 'supply_crate' ? 40 : 30,
@@ -1278,7 +1278,12 @@ const ContentExpansion = (() => {
         const nearPlayer = units.some(
           (p) => p.team === 'player' && p.hp > 0 && Math.hypot(p.x - u.x, p.y - u.y) < 90
         );
-        if (!u.burrowed && u.burrowTimer > 120 && !nearPlayer && Math.random() < 0.02) {
+        if (
+          !u.burrowed &&
+          u.burrowTimer > 120 &&
+          !nearPlayer &&
+          (globalThis.simRandom || Math.random)() < 0.02
+        ) {
           u.burrowed = true;
           u.speed *= 0.35;
         } else if (u.burrowed && nearPlayer) {
@@ -1298,7 +1303,7 @@ const ContentExpansion = (() => {
         if (u.summonTimer <= 0) {
           u.summonTimer = u.summonCooldown || 280;
           const st = u.summonType || 'goblin';
-          const sx = u.x + (Math.random() - 0.5) * 40;
+          const sx = u.x + ((globalThis.simRandom || Math.random)() - 0.5) * 40;
           const sy = u.y + 20;
           const minion = ctx.createUnit(st, sx, sy, 'enemy');
           if (minion) {

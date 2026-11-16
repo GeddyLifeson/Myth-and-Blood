@@ -184,7 +184,7 @@ const GameCombat = (() => {
   }
 
   function calcDamage(unit, target, baseRand = 10) {
-    let dmg = unit.damage + Math.floor(Math.random() * baseRand);
+    let dmg = unit.damage + Math.floor((globalThis.simRandom || Math.random)() * baseRand);
     dmg += getExperienceDamageBonus(unit.experience);
     dmg += (unit.vetTier || 0) * DIFFICULTY_TUNING.tierFlatDamage;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -246,12 +246,7 @@ const GameCombat = (() => {
           dmg * (EternalLegacyTree.getCombinedEffects(null, GS.wave).playerDmgMult || 1)
         );
       }
-      if (typeof FoundationalMedievalLayer !== 'undefined') {
-        const fmods = FoundationalMedievalLayer.getRunModifiers(GS.wave);
-        if (unit.type === 'archer' && fmods.archerDmgMult > 1) {
-          dmg = Math.round(dmg * fmods.archerDmgMult);
-        }
-      }
+      if (typeof Honours !== 'undefined') dmg = Math.round(dmg * Honours.getDamageMult(unit));
     }
     if (unit.team === 'player' && svc('GameDepth') && svc('GameDepth').isVanillaAlly(unit)) {
       let obsoleteMult = svc('GameDepth').getVanillaObsoleteMult(unit, GS.wave);
@@ -368,7 +363,11 @@ const GameCombat = (() => {
     if (!Number.isFinite(amount) || amount <= 0) return 0;
     if (unit.isDoomslayer && unit.team === 'player') amount *= 0.08;
     if (unit.isGeneral && (unit.w2wBuffTimer || 0) > 0) amount *= 0.42;
-    if (unit.isWwe && unit.wweAbility === 'rope_dancers_leap' && Math.random() < 0.35) {
+    if (
+      unit.isWwe &&
+      unit.wweAbility === 'rope_dancers_leap' &&
+      (globalThis.simRandom || Math.random)() < 0.35
+    ) {
       svc('FloatingText').status(unit.x, unit.y, 'DODGE', '#80c0ff');
       return 0;
     }
@@ -513,7 +512,7 @@ const GameCombat = (() => {
       !Roster.blocksPin(unit) &&
       !unit.isNamedBoss &&
       !(unit.team === 'enemy' && (unit.pinImmuneUntil || 0) > GS.updateTick) &&
-      Math.random() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
+      (globalThis.simRandom || Math.random)() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
     ) {
       unit.pinned = true;
       unit.pinTimer = 50;
@@ -592,7 +591,7 @@ const GameCombat = (() => {
           }
           notifyVetStarEvent(killer, addVetStar(killer));
           GameArmy.notifyTraits(killer, Veterans.recordKill(killer, unit, GS.wave));
-          if (killer.hasVultureAid && Math.random() < 0.35) {
+          if (killer.hasVultureAid && (globalThis.simRandom || Math.random)() < 0.35) {
             GS.tactical += 1;
             svc('FloatingText').status(killer.x, killer.y, '+1 TP', '#c0ffa0');
           }
@@ -867,7 +866,7 @@ const GameCombat = (() => {
 
     if (useMelee && (isMeleeCombat(unit) || unit.combatType === 'ranged')) {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
-      const meleeHit = unit.isDoomslayer || Math.random() * 100 <= hit;
+      const meleeHit = unit.isDoomslayer || (globalThis.simRandom || Math.random)() * 100 <= hit;
       if (meleeHit) {
         const dmg = unit.isDoomslayer ? abyssWalkerDamage(target) : calcDamage(unit, target, 12);
         takeDamage(target, dmg, {
@@ -879,7 +878,7 @@ const GameCombat = (() => {
         applyHeroOnHit(unit, target, dmg);
         if (unit.hasElementalPop)
           svc('Perks').applyElementalPopSplash(unit, target, GS.units, takeDamage);
-        if (unit.hasDoubleTap && target.hp > 0 && Math.random() < 0.45) {
+        if (unit.hasDoubleTap && target.hp > 0 && (globalThis.simRandom || Math.random)() < 0.45) {
           takeDamage(target, Math.round(dmg * 0.55), {
             attackerTeam: unit.team,
             attacker: unit,
@@ -920,7 +919,11 @@ const GameCombat = (() => {
         angle: Math.atan2(target.y - unit.y, target.x - unit.x),
       });
       unit.projectile === 'arrow' ? playSfx('arrowShoot') : playSfx('magicCast');
-    } else if (isMeleeCombat(unit) && dist <= unit.meleeRange && Math.random() * 100 <= hit) {
+    } else if (
+      isMeleeCombat(unit) &&
+      dist <= unit.meleeRange &&
+      (globalThis.simRandom || Math.random)() * 100 <= hit
+    ) {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
       takeDamage(target, calcDamage(unit, target, 10), {
         attackerTeam: unit.team,

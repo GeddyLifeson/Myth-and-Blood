@@ -317,6 +317,7 @@ const FreeCompaniesScreen = (() => {
   }
 
   function renderRoster(gs) {
+    if (typeof MercenaryCamp !== 'undefined') MercenaryCamp.render(gs);
     const grid = document.getElementById('companies-roster-grid');
     if (!grid) return;
     const unlocked = sortUnlockedFactions(getUnlockedFactions());
@@ -350,14 +351,15 @@ const FreeCompaniesScreen = (() => {
       ? [...entries].sort((a, b) => (a[0] === featuredId ? -1 : b[0] === featuredId ? 1 : 0))
       : entries;
     const recruited = new Set(MetaProgress.getHeroesRecruited?.() || []);
-    grid.innerHTML =
-      sortedEntries
-        .map(([id, def]) => {
-          const onField = gs?.crossoverOnField?.includes(id);
-          const canAfford = (gs?.tactical ?? 0) >= def.cost;
-          const hasBase = hasFactionBuilding(activeFaction, gs);
-          const isFeatured = id === featuredId;
-          return `
+    grid.innerHTML = !unlocked.length
+      ? '<p class="company-empty">No free company has answered yet. Companies you earn through achievements or research appear here, with their halls.</p>'
+      : sortedEntries
+          .map(([id, def]) => {
+            const onField = gs?.crossoverOnField?.includes(id);
+            const canAfford = (gs?.tactical ?? 0) >= def.cost;
+            const hasBase = hasFactionBuilding(activeFaction, gs);
+            const isFeatured = id === featuredId;
+            return `
         <div class="hero-card company-card ${selectedId === id ? 'selected' : ''} ${isFeatured ? 'company-featured' : ''} ${!canAfford || !hasBase || onField ? 'cant-afford' : ''}" data-crossover="${id}">
           ${isFeatured ? '<div class="company-featured-badge">Featured</div>' : ''}
           <div class="hero-card-name" style="color:${def.color}">${HeroCast.displayName(id)}</div>
@@ -365,13 +367,14 @@ const FreeCompaniesScreen = (() => {
           <div class="hero-card-cost">${def.cost} TP</div>
           <div class="hero-card-stats">HP ${def.hp} · DMG ${def.damage} · ${HeroCast.typeLabel(def.type)}${HeroCast.cohortLabel(id) ? ` · ${HeroCast.cohortLabel(id)}` : ''}</div>
           <div class="hero-card-ability">${def.abilityDesc}</div>
+          ${CompanySynergies.cardLine(id, gs?.units)}
           ${recruited.has(id) ? '<div class="hero-recruited">★ Signed</div>' : ''}
           ${onField ? '<div class="hero-on-field">ON FIELD</div>' : ''}
           ${!hasBase ? '<div class="company-need-base">Needs its hall on the field</div>' : ''}
         </div>
       `;
-        })
-        .join('') || '<p class="company-empty">No heroes of this company can be hired yet.</p>';
+          })
+          .join('') || '<p class="company-empty">No heroes of this company can be hired yet.</p>';
 
     grid.querySelectorAll('.company-card').forEach((card) => {
       card.addEventListener('click', () => {
@@ -391,13 +394,15 @@ const FreeCompaniesScreen = (() => {
     const seasonals = typeof FactionDepth !== 'undefined' ? FactionDepth.getSeasonalEvents() : [];
     const seasonal =
       seasonals.find((e) => e.factions?.includes(activeFaction)) || seasonals[0] || null;
-    const synHint =
-      typeof FactionDepth !== 'undefined'
-        ? FactionDepth.SYNERGIES.filter((s) => s.factions.includes(activeFaction))
-            .slice(0, 2)
-            .map((s) => s.name)
-            .join(', ')
-        : '';
+    const synHint = CompanySynergies.list()
+      .filter((s) => s.factions.includes(activeFaction))
+      .map((s) => `${s.name} (${s.desc})`)
+      .join('<br>');
+    const buildBtn = document.getElementById('companies-build-btn');
+    if (buildBtn) {
+      buildBtn.disabled = !unlocked.length;
+      buildBtn.title = unlocked.length ? '' : 'No free company has answered yet';
+    }
     const recruitBtn = document.getElementById('companies-recruit-btn');
     if (recruitBtn) {
       if (!selectedId) {
@@ -422,19 +427,43 @@ const FreeCompaniesScreen = (() => {
         : '';
       detail.innerHTML = `<strong>${HeroCast.fullName(selectedId)}</strong> · ${HeroCast.factionOf(selectedId)}<br><em>${HeroCast.description(selectedId)}</em><br>${d.abilityDesc}<br>Cost: ${d.cost} TP${costNote} · ${HeroCast.tagLabel(d.combatTag)}${fieldNote}`;
     } else if (detail) {
-      if (prof) {
+      if (prof && unlocked.length) {
         const company = HeroCast.faction(activeFaction);
         detail.innerHTML = `<strong style="color:${company?.crest || 'inherit'}">${prof.label}</strong>${title ? ` · <em>${title}</em>` : ''}<br>
           ${company?.lore || ''}<br>
           Mastery: ${mastery} pts · ${prof.identity}<br>
           <span class="company-weakness">Weakness: ${prof.weakness}</span><br>
-          ${synHint ? `Synergies: ${synHint}` : ''}${seasonal?.factions?.includes(activeFaction) ? `<br>In season: ${seasonal.name}` : ''}`;
+          ${synHint ? `Synergies:<br>${synHint}` : ''}${seasonal?.factions?.includes(activeFaction) ? `<br>In season: ${seasonal.name}` : ''}`;
       } else {
         detail.textContent = unlocked.length
           ? 'Choose a hero below.'
           : 'Unlock a free company first, then build its hall and hire its heroes here.';
       }
     }
+  }
+
+  /** Text and state for the HUD button; the camp opens it for every run from wave 10. */
+  function hudButton(gs) {
+    const campOpen = MercenaryCamp.isOpen(gs);
+    if (gs?.crossoverUnlocked) {
+      return {
+        disabled: false,
+        text: 'FREE COMPANIES',
+        title: 'Free companies and the Mercenary Camp',
+      };
+    }
+    if (campOpen) {
+      return {
+        disabled: false,
+        text: 'MERCENARY CAMP',
+        title: 'Three sellswords a night, one hire',
+      };
+    }
+    return {
+      disabled: true,
+      text: 'MERCENARY CAMP · WAVE 10',
+      title: `The Mercenary Camp opens at wave ${MercenaryCamp.OPEN_WAVE}`,
+    };
   }
 
   function togglePanel(factionId) {
@@ -466,7 +495,7 @@ const FreeCompaniesScreen = (() => {
   const SCREEN_TEXT = {
     title: 'FREE COMPANIES',
     subtitle:
-      'Orders, warbands, guilds and sellswords for hire. Raise a company’s hall on the field, then hire its heroes here.',
+      'Orders, warbands, guilds and sellswords for hire. From wave 10 the Mercenary Camp offers three each night; a company’s own hall opens its whole roster.',
     build: 'RAISE THIS COMPANY’S HALL',
     recruit: 'HIRE SELECTED',
     empty: 'Choose a hero below.',
@@ -484,6 +513,12 @@ const FreeCompaniesScreen = (() => {
     set('#companies-build-btn', SCREEN_TEXT.build);
     set('#companies-recruit-btn', SCREEN_TEXT.recruit);
     set('#companies-selected-detail', SCREEN_TEXT.empty);
+    if (!screen.querySelector('#mercenary-camp')) {
+      const camp = document.createElement('div');
+      camp.id = 'mercenary-camp';
+      camp.className = 'mercenary-camp';
+      screen.querySelector('#companies-tabs')?.before(camp);
+    }
     // The detail text is several lines long; let the card grid give way, not this box.
     const detail = screen.querySelector('#companies-selected-detail');
     if (detail) detail.style.flexShrink = '0';
@@ -497,13 +532,12 @@ const FreeCompaniesScreen = (() => {
         (typeof MetaProgress !== 'undefined' && MetaProgress.isAnyCompanyUnlocked?.()) ||
         (typeof Research !== 'undefined' &&
           Object.keys(FreeCompanies || {}).some((f) => Research.isFactionUnlocked?.(f, {})));
-      if (!unlocked) {
+      if (!unlocked && !MercenaryCamp.isOpen(Game.getState?.())) {
         // Prefer in-game toast if HUD is live.
         if (typeof UI !== 'undefined' && UI.updateHUD) {
           const box = document.getElementById('message-box');
           if (box) {
-            box.textContent =
-              'No free company has answered yet. Earn one through achievements or research.';
+            box.textContent = `The Mercenary Camp opens at wave ${MercenaryCamp.OPEN_WAVE}. Free companies are earned through achievements or research.`;
             box.classList.add('show');
             setTimeout(() => box.classList.remove('show'), 2800);
           }
@@ -539,6 +573,191 @@ const FreeCompaniesScreen = (() => {
     getSelected,
     select,
     rosterForFaction,
+    hudButton,
     SCREEN_TEXT,
   };
 })();
+
+/**
+ * Synergies as a player reads them: which pairings a hero belongs to, and which one hiring
+ * them would complete. Mirrors FactionDepth.computeSynergies.
+ */
+const CompanySynergies = (() => {
+  function list() {
+    return typeof FactionDepth !== 'undefined' ? FactionDepth.SYNERGIES || [] : [];
+  }
+
+  function presentCompanies(units) {
+    if (typeof FactionDepth === 'undefined') return new Set();
+    return new Set(Object.keys(FactionDepth.countHeroUnits(units || []).byFaction));
+  }
+
+  function isActive(syn, present) {
+    if (syn.minFactions) {
+      return present.size >= syn.minFactions && syn.factions.every((f) => present.has(f));
+    }
+    if (syn.requiresOtherFaction) return present.has('champions') && present.size >= 2;
+    return syn.factions.every((f) => present.has(f));
+  }
+
+  /** { completes: synergies this hire turns on, partners: unmet pairings that include them }. */
+  function forHire(companyId, units) {
+    const now = presentCompanies(units);
+    const after = new Set(now).add(companyId);
+    const completes = list().filter((s) => !isActive(s, now) && isActive(s, after));
+    const partners = list().filter(
+      (s) => s.factions.includes(companyId) && !isActive(s, after) && !s.requiresOtherFaction
+    );
+    return { completes, partners };
+  }
+
+  function partnerNames(syn, companyId) {
+    return syn.factions
+      .filter((f) => f !== companyId)
+      .map((f) => (typeof HeroCast !== 'undefined' ? HeroCast.factionShort(f) : f))
+      .join(' + ');
+  }
+
+  /** One line for a hero card. */
+  function cardLine(heroId, units) {
+    const fid = HeroDefs[heroId]?.faction;
+    if (!fid) return '';
+    const { completes, partners } = forHire(fid, units);
+    if (completes.length) {
+      return `<div class="hero-synergy hero-synergy-on">Completes ${completes.map((s) => `${s.name}: ${s.desc.split(': ').pop()}`).join(' · ')}</div>`;
+    }
+    if (partners.length) {
+      return `<div class="hero-synergy">Pairs with ${partners.map((s) => `${partnerNames(s, fid)} (${s.name})`).join(' or ')}</div>`;
+    }
+    return '';
+  }
+
+  return { list, isActive, forHire, cardLine, presentCompanies };
+})();
+
+/**
+ * Mercenary Camp: from wave 10, three random operatives from any company are offered each
+ * night at their listed price, one hire a night, no company hall needed. The offers are
+ * drawn when the wave number changes and are kept in the save so a reload cannot reroll.
+ */
+const MercenaryCamp = (() => {
+  const OPEN_WAVE = 10;
+  const OFFER_COUNT = 3;
+  let offerWave = -1;
+  let offers = [];
+  let hiredWave = -1;
+
+  function reset() {
+    offerWave = -1;
+    offers = [];
+    hiredWave = -1;
+  }
+
+  function isOpen(gs) {
+    return (gs?.wave || 0) >= OPEN_WAVE;
+  }
+
+  function onField(gs) {
+    return new Set(gs?.crossoverOnField || []);
+  }
+
+  function draw(gs, rng = Math.random) {
+    const busy = onField(gs);
+    const pool = Object.keys(HeroDefs).filter((id) => !busy.has(id));
+    const picked = [];
+    while (picked.length < OFFER_COUNT && pool.length) {
+      picked.push(pool.splice(Math.floor(rng() * pool.length), 1)[0]);
+    }
+    return picked;
+  }
+
+  function getOffers(gs, rng) {
+    if (!isOpen(gs)) return [];
+    if (offerWave !== gs.wave) {
+      offerWave = gs.wave;
+      offers = draw(gs, rng);
+    }
+    return [...offers];
+  }
+
+  function canHire(id, gs) {
+    if (!isOpen(gs)) return { ok: false, reason: `The camp opens at wave ${OPEN_WAVE}` };
+    if (!getOffers(gs).includes(id)) return { ok: false, reason: 'Not on offer tonight' };
+    if (onField(gs).has(id)) return { ok: false, reason: 'On the field' };
+    if (hiredWave === offerWave) return { ok: false, reason: 'Tonight’s hire is taken' };
+    const cost = HeroDefs[id]?.cost ?? Infinity;
+    if ((gs?.tactical ?? 0) < cost) return { ok: false, reason: `Need ${cost} TP` };
+    return { ok: true, cost };
+  }
+
+  function hire(id) {
+    const gs = typeof Game !== 'undefined' ? Game.getState() : null;
+    const check = canHire(id, gs);
+    if (!check.ok) return check;
+    if (!Game.hireHero(id, { fromCamp: true })) return { ok: false, reason: 'Hire failed' };
+    hiredWave = offerWave;
+    return { ok: true };
+  }
+
+  function render(gs) {
+    const host = document.getElementById('mercenary-camp');
+    if (!host) return;
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
+    if (!isOpen(gs)) {
+      host.innerHTML = `<div class="skill-tree-title">MERCENARY CAMP</div>
+        <p class="panel-hint">The camp opens at wave ${OPEN_WAVE}. Each night it offers three sellswords from any company, one hire a night.</p>`;
+      return;
+    }
+    const units = gs?.units;
+    const cards = getOffers(gs)
+      .map((id) => {
+        const d = HeroDefs[id];
+        const check = canHire(id, gs);
+        return `<div class="hero-card company-card ${check.ok ? '' : 'cant-afford'}">
+          <div class="hero-card-name" style="color:${d.color}">${esc(HeroCast.displayName(id))}</div>
+          <div class="hero-card-stats hero-card-title"><em>${esc(HeroCast.title(id))}</em> · ${esc(HeroCast.factionShort(d.faction))}</div>
+          <div class="hero-card-cost">${d.cost} TP</div>
+          <div class="hero-card-stats">HP ${d.hp} · DMG ${d.damage} · ${esc(HeroCast.typeLabel(d.type))}</div>
+          <div class="hero-card-ability">${esc(d.abilityDesc)}</div>
+          ${CompanySynergies.cardLine(id, units)}
+          <button type="button" class="menu-btn primary camp-hire" data-camp-hire="${esc(id)}" ${check.ok ? '' : 'disabled'}
+            title="${esc(check.ok ? `Hire for ${check.cost} TP` : check.reason)}">${check.ok ? 'HIRE' : esc(check.reason)}</button>
+        </div>`;
+      })
+      .join('');
+    const note =
+      hiredWave === offerWave
+        ? 'Tonight’s hire is done. New offers after the next wave.'
+        : 'Three sellswords tonight. One hire a night, no hall needed.';
+    host.innerHTML = `<div class="skill-tree-title">MERCENARY CAMP</div><p class="panel-hint">${note}</p>
+      <div class="champions-roster-grid camp-grid">${cards}</div>`;
+    if (host.dataset.campBound) return;
+    host.dataset.campBound = '1';
+    host.addEventListener('click', (e) => {
+      const btn = e.target.closest?.('[data-camp-hire]');
+      if (!btn || btn.disabled) return;
+      hire(btn.dataset.campHire);
+      FreeCompaniesScreen.renderRoster(Game.getState());
+      if (typeof CompanyTraining !== 'undefined') CompanyTraining.renderPanel();
+      if (typeof UI !== 'undefined') UI.updateHUD?.(true);
+    });
+  }
+
+  if (typeof SaveRegistry !== 'undefined') {
+    SaveRegistry.register('MercenaryCamp', {
+      save: () => ({ offerWave, offers, hiredWave }),
+      load(data) {
+        reset();
+        if (!data) return;
+        offerWave = Number.isInteger(data.offerWave) ? data.offerWave : -1;
+        offers = (Array.isArray(data.offers) ? data.offers : []).filter((id) => HeroDefs[id]);
+        hiredWave = Number.isInteger(data.hiredWave) ? data.hiredWave : -1;
+      },
+    });
+  }
+
+  return { OPEN_WAVE, reset, isOpen, getOffers, canHire, hire, render };
+})();
+
+globalThis.CompanySynergies = CompanySynergies;
+globalThis.MercenaryCamp = MercenaryCamp;

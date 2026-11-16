@@ -202,7 +202,7 @@ const GameBuildings = (() => {
       waveBonus +
       postBonus +
       diff.tpPerRoundBonus +
-      getSettlementTpBonus() +
+      getSettlementTpBonus(true) +
       ecoGen;
     const cmdBonus = getAsymmetricMods().commanderTpRoundBonus || 0;
     return Math.floor(base * (diff.tpMult || 1)) + cmdBonus;
@@ -484,6 +484,8 @@ const GameBuildings = (() => {
         GS.structuresRazedThisWave++;
         GS.runStructuresRazed++;
         WarCamps.onDestroyed(wasWarCamp, opts.attacker || null, warCampCtx);
+        if (typeof Ground !== 'undefined')
+          Ground.onCampDestroyed(wasWarCamp.x, wasWarCamp.y, siegeCtx);
         payRaidLoot(wasWarCamp);
       }
     } else if (opts.message) showMessage(opts.message);
@@ -546,6 +548,13 @@ const GameBuildings = (() => {
     if (isBuildSiteBlocked(pos.x, pos.y, def, b.id)) {
       showMessage('Not enough space here!');
       return false;
+    }
+    if (typeof Ground !== 'undefined' && !GS.creativeMode) {
+      const ground = Ground.canBuildAt(pos.x, pos.y, GS.worldW, GS.worldH);
+      if (!ground.ok) {
+        showMessage(ground.reason, 300);
+        return false;
+      }
     }
     b.x = pos.x;
     b.y = pos.y;
@@ -863,6 +872,13 @@ const GameBuildings = (() => {
       showMessage('Not enough TP!');
       return false;
     }
+    if (typeof Ground !== 'undefined' && !GS.creativeMode) {
+      const ground = Ground.canBuildAt(wx, wy, GS.worldW, GS.worldH);
+      if (!ground.ok) {
+        showMessage(ground.reason, 300);
+        return false;
+      }
+    }
     if (GS.creativeMode && GS.creativeSettings.instantBuild) {
       return finalizeBuild(type, wx, wy);
     }
@@ -1169,7 +1185,7 @@ const GameBuildings = (() => {
       const soften = 0.48 + Math.min(0.42, GS.wave / 115);
       dmg = Math.max(4, Math.floor(dmg * soften));
     }
-    return Math.max(4, dmg + Math.floor(Math.random() * 4));
+    return Math.max(4, dmg + Math.floor((globalThis.simRandom || Math.random)() * 4));
   }
 
   function getBuildingPursuitTarget(unit) {

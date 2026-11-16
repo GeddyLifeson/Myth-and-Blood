@@ -22,6 +22,8 @@ const DIFFS = (process.env.HONEST_DIFFS || 'baby,normal,chad,doomslayer').split(
 // With HONEST_TENT the bot buys a Builder and a Medical Tent as soon as it can afford both.
 const WITH_TENT = !!process.env.HONEST_TENT;
 const TG = process.env.HONEST_TG || '';
+// HONEST_PATH=martial|arcane|mythic: the bot picks that run path as soon as it opens.
+const PATH = process.env.HONEST_PATH || '';
 // Deploy order the bot cycles through; it buys the next one it can afford.
 const ROSTER = [
   'footman',
@@ -39,8 +41,8 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 
 function playOne(diff, seed) {
   const { sb, cvs } = boot(seed);
-  const { Game, SpriteGen, UnitDefs, GameState, syncVeteranStatsToTier } = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, UnitDefs, GameState, syncVeteranStatsToTier })`,
+  const { Game, SpriteGen, UnitDefs, RunPath, GameState, syncVeteranStatsToTier } = vm.runInContext(
+    `${code}\n({ Game, SpriteGen, UnitDefs, RunPath, GameState, syncVeteranStatsToTier })`,
     vm.createContext(sb)
   );
   SpriteGen.prewarmCache = () => {};
@@ -65,10 +67,13 @@ function playOne(diff, seed) {
   let tgStep = TG ? 0 : 4;
   let tgTries = 0;
   let mentor = null;
+  let firstDeathWave = null;
   for (; t < MAX_TICKS; t++) {
     // getState() is cached per presented frame, so ask the game directly whether it ended.
     if (!Game.isPlaying()) break;
     const s = Game.getState();
+    if (PATH && RunPath.canChoose(s.wave)) RunPath.choose(PATH, { wave: s.wave });
+    if (firstDeathWave == null && (s.playerDeaths ?? 0) > 0) firstDeathWave = s.wave;
     // A wave that never ends is a soft-lock (for example an enemy jittering in place).
     if (s.wave !== lastWave) {
       lastWave = s.wave;
@@ -204,6 +209,7 @@ function playOne(diff, seed) {
             ? 'defeat'
             : fin.state,
     stalled: stalledAt != null,
+    firstDeathWave,
     ticks: t,
     deployed,
     maxArmy,
@@ -232,7 +238,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, Number(process.env.HONEST_SEED0 || 4000) + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.tg ? ' · tg ' + JSON.stringify(r.tg) : ''}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.tg ? ' · tg ' + JSON.stringify(r.tg) : ''}${r.threw ? ' · ' + r.threw : ''}``${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} (first w${r.firstDeathWave}) · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }
