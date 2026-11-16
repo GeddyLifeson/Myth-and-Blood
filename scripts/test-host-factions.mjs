@@ -60,7 +60,11 @@ const waves = (api, last = LAST_WAVE) => {
   const api = start(4131);
   const EF = api.EnemyFactions;
   const rows = waves(api).filter((r) => r.wave >= 4);
-  const bad = rows.filter((r) => !(r.share >= 0.7 && r.share <= 0.8));
+  // A host of 6 has no whole split inside 70-80% (4 is 67%, 5 is 83%); there one body off is
+  // the best rounding can do.
+  const fits = (n) => Math.ceil(n * 0.7 - 1e-9) <= Math.floor(n * 0.8 + 1e-9);
+  const slack = (r) => (fits(r.state.total) ? 0 : 1 / r.state.total);
+  const bad = rows.filter((r) => !(r.share >= 0.7 - slack(r) && r.share <= 0.8 + slack(r)));
   ok(
     bad.length === 0,
     `the leading faction is 70-80% of the host on waves 4-${LAST_WAVE} (${rows.length} waves; off: ${bad.map((r) => `${r.wave}:${r.share.toFixed(2)}`).join(' ') || 'none'})`
