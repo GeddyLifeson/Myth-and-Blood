@@ -605,7 +605,10 @@ const GameInput = (() => {
         const nextCost = getDeployCost(GS.selectedDeploy);
         if (GS.tactical < nextCost) {
           GS.selectedDeploy = null;
-          showMessage(`The next one costs ${nextCost} TP, which you do not have. Recruiting ended.`, 200);
+          showMessage(
+            `The next one costs ${nextCost} TP, which you do not have. Recruiting ended.`,
+            200
+          );
         }
       }
       return ackInteraction(true);
