@@ -803,7 +803,7 @@ const UX = (() => {
         'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
     else
       hint =
-        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
+        'Drag empty map to select · Shift+drag · G formation · Click an enemy to attack · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
       hint = `${gs.story.branchLabel}${gs.story.summary ? ` - ${gs.story.summary}` : ''} · ${hint}`;

@@ -632,6 +632,7 @@ const GameSave = (() => {
     GS.huntQuietTicks = 0;
     GS.huntFront = Infinity;
     GS.moveMarkers = [];
+    GS.attackMarks = [];
     GS.selectedUnitId = null;
     GS.selectedUnitIds = [];
     GS.bossTrackId = null;

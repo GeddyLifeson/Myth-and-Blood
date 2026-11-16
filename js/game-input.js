@@ -30,6 +30,8 @@ const GameInput = (() => {
     getDeployCost,
     getResearchOpts,
     getUnitById,
+    isEnemyHiddenByFog,
+    maxAttackRange,
     orderMove,
     placeBuilding,
     refreshUnitCounts,
@@ -65,6 +67,8 @@ const GameInput = (() => {
       getDeployCost,
       getResearchOpts,
       getUnitById,
+      isEnemyHiddenByFog,
+      maxAttackRange,
       orderMove,
       placeBuilding,
       refreshUnitCounts,
@@ -127,13 +131,63 @@ const GameInput = (() => {
           }));
     liveUnits.forEach((unit, i) => {
       const off = offsets[i] || { x: 0, y: 0 };
+      unit.attackOrderId = null;
       orderMove(unit, anchor.x + off.x, anchor.y + off.y, true, { hold: opts.hold ?? false });
     });
     // A move that lands on a war camp is the order to attack it; any other move cancels that.
-    if (typeof WarCamps !== 'undefined') WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx);
+    const camp =
+      typeof WarCamps !== 'undefined' ? WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx) : null;
+    if (camp) GS.attackMarks.push({ x: camp.x, y: camp.y, r: 30, life: 90 });
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
+    syncInteractionState();
+    return true;
+  }
+
+  const ATTACK_ORDER_TICKS = 1800;
+
+  function canTakeAttackOrder(u) {
+    return (
+      u.team === 'player' &&
+      u.combatType !== 'builder' &&
+      u.combatType !== 'courier' &&
+      u.combatType !== 'healer' &&
+      maxAttackRange(u) > 0
+    );
+  }
+
+  /** The enemy under the pointer that the selection could be ordered onto, or null. */
+  function attackableFoeAt(wx, wy) {
+    const foe = getUnitAt(wx, wy, 'enemy');
+    return foe && foe.hp > 0 && !isEnemyHiddenByFog(foe) ? foe : null;
+  }
+
+  /**
+   * Order the selected soldiers onto one enemy. Each walks only as far as he needs to
+   * reach it (archers stop at bow range), keeps it as his target over nearer ones, and
+   * takes the spot he fights from as his post. A plain move cancels the order.
+   */
+  function attackSelection(foe) {
+    const fighters = getSelectedLiveUnits().filter(canTakeAttackOrder);
+    if (!foe || !fighters.length) return false;
+    for (const u of fighters) {
+      const reach = Math.max(14, maxAttackRange(u) * 0.8);
+      const dx = u.x - foe.x;
+      const dy = u.y - foe.y;
+      const d = Math.hypot(dx, dy) || 1;
+      const stand = d <= reach ? u : { x: foe.x + (dx / d) * reach, y: foe.y + (dy / d) * reach };
+      orderMove(u, stand.x, stand.y, true, { hold: false });
+      // The red mark on the enemy says where they are going; no yellow one at each stop.
+      GS.moveMarkers.pop();
+      u.attackOrderId = foe.id;
+      u.attackOrderUntil = GS.updateTick + ATTACK_ORDER_TICKS;
+      u.combatTargetId = foe.id;
+      u.campOrderId = null;
+    }
+    GS.attackMarks.push({ unitId: foe.id, life: 90 });
+    svc('FloatingText')?.status?.(foe.x, foe.y - 22, 'ATTACK', '#ff6040');
+    playSfx('click');
     syncInteractionState();
     return true;
   }
@@ -214,8 +268,23 @@ const GameInput = (() => {
     GS.pointerScreen = { sx, sy };
   }
 
+  /** A crosshair over anything the selection would attack on a click. */
+  function updateOrderCursor(sx, sy) {
+    if (!GS.canvas || GS.state !== 'playing' || !canBoxSelectNow()) return;
+    let aim = false;
+    if (getSelectedUnitIds().length) {
+      const w = screenToWorld(sx, sy);
+      aim =
+        !!attackableFoeAt(w.x, w.y) ||
+        (typeof WarCamps !== 'undefined' && !!WarCamps.campAt(w.x, w.y, warCampCtx));
+    }
+    const want = aim ? 'crosshair' : 'grab';
+    if (GS.canvas.style.cursor !== want) GS.canvas.style.cursor = want;
+  }
+
   function handlePointerMove(sx, sy) {
     trackPointer(sx, sy);
+    if (!GS.boxSelect && !GS.isPanning) updateOrderCursor(sx, sy);
     if (GS.boxSelect) {
       GS.boxSelect.endSx = sx;
       GS.boxSelect.endSy = sy;
@@ -649,6 +718,9 @@ const GameInput = (() => {
       ) {
         return ackInteraction(true);
       }
+      // A click on an enemy is the order to attack it.
+      const foe = opts.shiftKey || opts.hold ? null : attackableFoeAt(pos.x, pos.y);
+      if (foe && attackSelection(foe)) return true;
       // Shift + click (or a long press on touch) = go there and hold.
       moveSelectionToWorld(pos.x, pos.y, undefined, { hold: !!(opts.shiftKey || opts.hold) });
       return true;
@@ -676,6 +748,7 @@ const GameInput = (() => {
   }
 
   return {
+    attackSelection,
     bind,
     canBoxSelectNow,
     getSelectedLiveUnits,
