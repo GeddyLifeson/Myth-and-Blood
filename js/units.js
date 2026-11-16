@@ -12,7 +12,9 @@ const MAP_EXPAND_H = 110;
 const ACADEMY_ERA_WAVE = 100;
 const RTS_ERA_WAVE = 200;
 const NIGHT_TICKS_PER_SECOND = 60;
-const NIGHT_PREP_SECONDS = 60;
+const NIGHT_PREP_SECONDS = 75;
+// The horn stays quiet this long into each night, so every wave gets a real planning window.
+const HORN_LOCK_SECONDS = 25;
 const NIGHT_PREP_TICKS = NIGHT_TICKS_PER_SECOND * NIGHT_PREP_SECONDS;
 const NIGHT_BUILD_MULT = 1.35;
 const ACADEMY_HYBRID_WAVES = 5;

@@ -2905,6 +2905,7 @@ const Game = (() => {
     getDifficulty,
     getDifficultyPercent,
     beginDayPhase,
+    soundHorn: GameDayNight.soundHorn,
     isDayPhase,
     isNightPhase,
     isCreativeMode,

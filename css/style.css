@@ -1467,6 +1467,14 @@ body.window-borderless .window-drag-handle {
 .cycle-btn:hover {
   background: linear-gradient(180deg, #6070b0, #405080);
 }
+.cycle-btn:disabled {
+  opacity: 0.55;
+  filter: grayscale(0.7);
+  cursor: not-allowed;
+}
+#begin-day-btn:disabled .bd-time::before {
+  content: 'horn in ';
+}
 .cycle-btn .night-prep-bar {
   position: absolute;
   left: 0;

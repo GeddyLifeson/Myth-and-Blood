@@ -149,6 +149,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "HAMLET_TP_PER_ROUND",
   "HONOR_NAME_POOL",
   "HONOR_PREFIX_BY_TYPE",
+  "HORN_LOCK_SECONDS",
   "HeroCast",
   "HeroDefs",
   "HostTactics",

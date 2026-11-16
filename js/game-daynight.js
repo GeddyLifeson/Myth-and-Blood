@@ -440,6 +440,28 @@ const GameDayNight = (() => {
     return Math.max(0, Math.ceil((getNightPrepTicks() - GS.nightTimer) / tps));
   }
 
+  /** Seconds until the player may sound the horn; never more than 40% of a shortened night. */
+  function getHornLockSecondsLeft() {
+    if (!isNightPhase() || GS.creativeMode) return 0;
+    const tps = typeof NIGHT_TICKS_PER_SECOND !== 'undefined' ? NIGHT_TICKS_PER_SECOND : 60;
+    const lockSec = typeof HORN_LOCK_SECONDS !== 'undefined' ? HORN_LOCK_SECONDS : 0;
+    const lockTicks = Math.min(lockSec * tps, Math.floor(getNightPrepTicks() * 0.4));
+    return Math.max(0, Math.ceil((lockTicks - GS.nightTimer) / tps));
+  }
+
+  /** The player's horn (button, D key): held while the night is young. */
+  function soundHorn() {
+    const wait = getHornLockSecondsLeft();
+    if (wait > 0) {
+      showMessage(`The host is still gathering. The horn is ready in ${wait}s.`, 120, {
+        priority: 'low',
+      });
+      return false;
+    }
+    beginDayPhase(true);
+    return true;
+  }
+
   function beginDayPhase(manual = false) {
     if (!isNightPhase()) return;
     if (SiegeLoop.isSpoilsHeld()) return;
@@ -802,11 +824,13 @@ const GameDayNight = (() => {
     beginDayPhase,
     enterNightPhase,
     getDayLightLevel,
+    getHornLockSecondsLeft,
     getNightSecondsRemaining,
     getSightPenaltyForUnit,
     isDayPhase,
     isNightPhase,
     resetWaveModifiers,
+    soundHorn,
     updateDayNightCycle,
   };
 })();
