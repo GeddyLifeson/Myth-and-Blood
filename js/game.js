@@ -75,6 +75,7 @@ const Game = (() => {
     handlePointerMove,
     handlePointerUp,
     moveSelectionToWorld,
+    attackSelection,
     reformSelectionFormation,
     setSelectionFormation,
     trackPointer,
@@ -334,6 +335,7 @@ const Game = (() => {
   GS.decorations = [];
   GS.buildings = [];
   GS.moveMarkers = [];
+  GS.attackMarks = [];
   GS.tactical = STARTING_TP;
   GS.wave = 0;
   GS.kills = 0;
@@ -1334,6 +1336,7 @@ const Game = (() => {
     releaseAllBuildings();
     refreshUnitCounts();
     GS.moveMarkers = [];
+    GS.attackMarks = [];
     // Ribbons, Crown Legacies and Crown of Ages all add starting TP. Together they are capped
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
@@ -2578,6 +2581,9 @@ const Game = (() => {
     updateManualMarches();
     updateHoldPosts();
     updatePostReturn();
+    for (let mi = GS.attackMarks.length - 1; mi >= 0; mi--) {
+      if (--GS.attackMarks[mi].life <= 0) GS.attackMarks.splice(mi, 1);
+    }
     for (let mi = GS.moveMarkers.length - 1; mi >= 0; mi--) {
       if (--GS.moveMarkers[mi].life <= 0) {
         GS.moveMarkers[mi] = GS.moveMarkers[GS.moveMarkers.length - 1];
@@ -2833,6 +2839,7 @@ const Game = (() => {
     setSelectionFormation,
     reformSelectionFormation,
     moveSelectionToWorld,
+    attackSelection,
     /** War camps: test and creative hooks (raise one, hit one, read the damage a soldier does). */
     warCampHooks: {
       ctx: () => warCampCtx,
