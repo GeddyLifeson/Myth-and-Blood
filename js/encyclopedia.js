@@ -449,7 +449,7 @@ const Encyclopedia = (() => {
         entry(
           'buildings',
           'War camps',
-          `From wave ${camps.FROM_WAVE} the enemy may raise a camp on the top edge at nightfall. While it stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid.\n\n${kinds
+          `The night before wave ${camps.FROM_WAVE} the enemy raises its first camp on the top edge, and more follow. While a camp stands, the next wave gets its bonus; burn it before dawn and the bonus is gone. Soldiers attack a camp only on your order: move them onto it, land a strike, or send the spy's raid. Strike it with soldiers and its garrison comes out to fight.\n\nA camp left standing digs in each night, up to level III: more health, more guards and a stronger bonus. From level II it also sends raiders at your nearest building. After ${camps.LIFE_WAVES} waves it moves on.\n\n${kinds
             .map((k) => `${k.name}: ${k.line}`)
             .join('\n')}`,
           { refs: { builds: kinds.map((k) => k.type) } }
