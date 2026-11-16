@@ -225,7 +225,7 @@ const GameInput = (() => {
     moveSelectionToWorld(cx, cy, formationId, { hold: 'keep' });
     const label =
       typeof Formations !== 'undefined' ? Formations.getLabel(formationId) : formationId;
-    showMessage(`${label} formation — ${live.length} units`, 160);
+    showMessage(`${label} formation: ${live.length} units`, 160);
     playSfx('click');
     syncInteractionState();
     return true;
@@ -420,7 +420,7 @@ const GameInput = (() => {
         }
       }
       if (GS.paused) {
-        showMessage('Game is paused — press Space or Esc to resume.', 180, {
+        showMessage('Game is paused. Press Space or Esc to resume.', 180, {
           priority: 'critical',
           bypassQueue: true,
         });
@@ -487,7 +487,7 @@ const GameInput = (() => {
       }
       GS.moveBuildingTarget = target;
       showMessage(
-        `Moving ${BuildDefs[target.type]?.name || 'structure'} — click destination.`,
+        `Moving ${BuildDefs[target.type]?.name || 'structure'}: click the destination.`,
         200
       );
       playSfx('click');
@@ -507,12 +507,12 @@ const GameInput = (() => {
 
     if (GS.selectedDeploy) {
       if (!canDeployUnitType(GS.selectedDeploy)) {
-        showMessage('Creative mode — troop deploy disabled in lab settings (Academy Deploy off).');
+        showMessage('Creative mode: troop deploy disabled in lab settings (Academy Deploy off).');
         return false;
       }
       const def = ensurePlayerUnitDef(GS.selectedDeploy);
       if (!def) {
-        showMessage(`Cannot deploy ${GS.selectedDeploy} — unit data missing.`, 260);
+        showMessage(`Cannot deploy ${GS.selectedDeploy}: unit data missing.`, 260);
         return false;
       }
       if (
@@ -605,7 +605,7 @@ const GameInput = (() => {
         const nextCost = getDeployCost(GS.selectedDeploy);
         if (GS.tactical < nextCost) {
           GS.selectedDeploy = null;
-          showMessage(`The next one costs ${nextCost} TP — not enough. Recruiting ended.`, 200);
+          showMessage(`The next one costs ${nextCost} TP, which you do not have. Recruiting ended.`, 200);
         }
       }
       return ackInteraction(true);
