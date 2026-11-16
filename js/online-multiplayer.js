@@ -540,8 +540,8 @@ const OnlineMultiplayer = (() => {
               : '<p class="online-card-meta">No scores yet. Both players run the same seed, then swap match codes.</p>'
           }
           ${pvp.status === 'resolved' ? `<div class="online-card-winner">Winner: ${escapeHtml(pvp.entries[0]?.name || '?')}</div>` : ''}
-          <button type="button" id="online-copy-pvp" class="menu-btn small-btn">COPY PVP CODE</button>
-          <button type="button" id="online-copy-pvpdata" class="menu-btn small-btn">COPY FULL MATCH DATA</button>
+          <button type="button" id="online-copy-pvp" class="menu-btn small-btn">COPY DUEL CODE</button>
+          <button type="button" id="online-copy-pvpdata" class="menu-btn small-btn">COPY DUEL RESULTS</button>
         </div>`
           : ''
       }

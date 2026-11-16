@@ -236,7 +236,7 @@ GameModes.setMenuMode('seed');
 GameModes.setMenuSeed('realm-42');
 GameModes.beginSession('normal');
 const ref = GameModes.createRng('realm-42');
-const seq = [simRandom(), simRandom(), simRandom()];
+const seq = [globalThis.simRandom(), globalThis.simRandom(), globalThis.simRandom()];
 const want = [ref(), ref(), ref()];
 assert(
   seq.every((v, i) => v === want[i]),
