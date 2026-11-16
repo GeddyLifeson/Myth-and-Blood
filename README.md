@@ -102,6 +102,8 @@ The tables below are generated from the key maps. To regenerate them: `node scri
 | Shift+H             | Hold here                                                                        |
 | [                   | War Cry (General)                                                                |
 | ]                   | Hold the Line (General)                                                          |
+| .                   | Advance (General)                                                                |
+| ,                   | Fall Back (General)                                                              |
 | Z                   | Balanced loadout                                                                 |
 | D                   | Begin the day (night only)                                                       |
 | ↑ ↓ ← →             | Pan the map                                                                      |
@@ -365,8 +367,8 @@ The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy 
 | ------------- | --- | -------------------------------------------------- | --------------------------- |
 | War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 s (27 s)                 |
 | Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 s (36 s)                 |
-| Advance       |     | Step forward one rank                              | 20 s (12 s)                 |
-| Fall Back     |     | Withdraw to the muster line, healers first         | 20 s (12 s)                 |
+| Advance       | `.` | Step forward one rank                              | 20 s (12 s)                 |
+| Fall Back     | `,` | Withdraw to the muster line, healers first         | 20 s (12 s)                 |
 
 War Cry and Hold the Line are given by day; Advance and Fall Back at any time.
 
