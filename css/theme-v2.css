@@ -3369,6 +3369,7 @@ body.ui-v2 .inpage-dialog,
 }
 /* Frame */
 body.ui-v2 .screen:not(#menu-screen) > .menu-content,
+body.ui-v2 .screen:not(#menu-screen) > .modal-box,
 body.ui-v2 .research-panel-inner,
 body.ui-v2 .faction-intel-panel-inner,
 body.ui-v2 .menu-sheet > .modal-box,
@@ -4998,4 +4999,13 @@ body.ui-v2 .result-fallen li.vet b {
 }
 body.ui-v2 .result-fallen p {
   margin: 0;
+}
+
+body.ui-v2 .cheat-void-warning {
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  color: #fff;
+  background: #1a0806;
+  border: 1px solid #c0241c;
+  font-weight: 700;
 }

@@ -2396,22 +2396,40 @@
         </div>
       </div>
 
-      <div id="cheats-screen" class="screen">
-        <div class="menu-content cheats-panel">
-          <h2 class="cheat-title">CHEAT CODES</h2>
-          <p class="cheat-subtitle">
-            Type a code you heard somewhere. Unlocks persist between runs.
-          </p>
-          <input
-            id="cheat-input"
-            class="cheat-input"
-            type="text"
-            placeholder="Enter cheat code"
-            autocomplete="off"
-          />
-          <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
-          <p id="cheat-result" class="cheat-result"></p>
-          <button id="cheats-close" class="menu-btn">CLOSE</button>
+      <div
+        id="cheats-screen"
+        class="screen"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cheats-title"
+      >
+        <div class="modal-box cheats-panel">
+          <div class="modal-head">
+            <h2 id="cheats-title" class="modal-title">CHEAT CODES</h2>
+            <button type="button" id="cheats-close" class="modal-close" aria-label="Close">
+              Close
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="cheat-subtitle">
+              Type a code you heard somewhere. Unlocks persist between runs.
+            </p>
+            <p id="cheat-void-warning" class="cheat-void-warning">
+              Any code voids the run: no score, ribbons or achievements are recorded for it.
+            </p>
+            <input
+              id="cheat-input"
+              class="cheat-input"
+              type="text"
+              placeholder="Enter cheat code"
+              autocomplete="off"
+              aria-label="Cheat code"
+            />
+            <p id="cheat-result" class="cheat-result" aria-live="polite"></p>
+          </div>
+          <div class="modal-actions">
+            <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
+          </div>
         </div>
       </div>
 
