@@ -57,6 +57,9 @@ function build(type) {
       Game.selectBuild(type);
       Game.handleClick(x, y);
       Game.clearPlacementMode();
+      // An order a Builder has to walk to is queued first; give him the time to get there.
+      const queued = () => mine().some((u) => (u.buildQueue || []).some((j) => j.type === type));
+      for (let i = 0; i < 900 && GS.buildings.length === n && queued(); i++) Game.update();
       if (GS.buildings.length > n) {
         const b = GS.buildings[GS.buildings.length - 1];
         // Waiting out the build time teaches nothing here.
@@ -88,7 +91,7 @@ const ACTIONS = {
   build: () => hire('builder'),
   wall: () => build('wall'),
   lab: () => build('research_lab'),
-  research: () => Research.startResearch('iron_weapons', GS.wave, GS.buildings) !== false,
+  research: () => Research.startResearch('heavy_horse', GS.wave, GS.buildings) !== false,
   medtent: () => build('medical_tent'),
   sapper: () => hire('sapper'),
 };

@@ -397,7 +397,7 @@ const PlayerCounterEvolution = (() => {
       const effStage = getEffectiveStage(exp.factionId, wave, baseStage);
       const lostNote = fallen.length ? ` Lost on the march: ${fallen.join(', ')}.` : '';
       hooks.showMessage?.(
-        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} came home, +${loot.tp} TP, +${loot.science} SP.${lostNote} ${exp.factionName} set back to S${effStage}.`,
+        `Expedition returns from ${exp.factionName} — ${survivors}/${exp.unitIds.length} came home, +${loot.tp} TP.${lostNote} ${exp.factionName} set back to S${effStage}.`,
         400
       );
       hooks.floatingText?.(ctx.worldW / 2, 108, 'EXPEDITION HOME', '#80c0ff');

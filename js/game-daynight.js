@@ -513,7 +513,12 @@ const GameDayNight = (() => {
       typeof TechTreeBranches !== 'undefined' && !GS.creativeMode
         ? TechTreeBranches.getCombinedEffects(GS.wave).tpIncomeMult || 1
         : 1;
-    const gained = Math.max(0, Math.floor(getTpPerRound() * techTpMult + GS.pendingLevy));
+    const doctrineTpMult =
+      svc('Research') && !GS.creativeMode ? svc('Research').getDoctrineEffects().tpIncomeMult : 1;
+    const gained = Math.max(
+      0,
+      Math.floor(getTpPerRound() * techTpMult * doctrineTpMult + GS.pendingLevy)
+    );
     GS.tactical += gained;
     const levyPaid = GS.pendingLevy;
     GS.pendingLevy = 0;

@@ -18,7 +18,7 @@ const DynamicMapEvents = (() => {
       waveMod: 16,
       prep: 'The northern caldera rumbles — choose a response before dawn.',
       choices: [
-        { id: 'harness', label: 'Harness Lava', cost: 4, hint: '+6 TP, +2 SP · light north burns' },
+        { id: 'harness', label: 'Harness Lava', cost: 4, hint: '+6 TP · light north burns' },
         {
           id: 'evacuate',
           label: 'Evacuate Line',
@@ -104,7 +104,7 @@ const DynamicMapEvents = (() => {
       priority: 80,
       prep: 'A mirrored tear in the north — loot the echo or seal it before assassins spill through.',
       choices: [
-        { id: 'loot', label: 'Loot Echo', cost: 3, hint: '+10 TP · +2 SP · light assassin probe' },
+        { id: 'loot', label: 'Loot Echo', cost: 3, hint: '+10 TP · light assassin probe' },
         { id: 'seal', label: 'Seal Rift', cost: 5, hint: '−14% enemy spawns · walls +10%' },
         { id: 'ignore', label: 'Let Bleed', cost: 0, hint: 'Assassins emerge · −5 morale' },
       ],
@@ -120,7 +120,7 @@ const DynamicMapEvents = (() => {
       prep: 'RTS-era storm fronts collide — fortify, raid, or weather the surge.',
       choices: [
         { id: 'fortify', label: 'Fortify Realm', cost: 5, hint: 'Walls +18% · night build +20%' },
-        { id: 'raid', label: 'Raid Storm', cost: 4, hint: '+14 TP · +3 SP · +8% player damage' },
+        { id: 'raid', label: 'Raid Storm', cost: 4, hint: '+14 TP · +8% player damage' },
         { id: 'ignore', label: 'Ride It Out', cost: 0, hint: 'Chip damage · −8% player speed' },
       ],
     },
@@ -134,7 +134,7 @@ const DynamicMapEvents = (() => {
       priority: 100,
       prep: 'The planet core pulses — channel relic energy or brace for aberrations.',
       choices: [
-        { id: 'channel', label: 'Channel Pulse', cost: 6, hint: '+16 TP · +4 SP · guardians rise' },
+        { id: 'channel', label: 'Channel Pulse', cost: 6, hint: '+16 TP · guardians rise' },
         {
           id: 'brace',
           label: 'Brace North',

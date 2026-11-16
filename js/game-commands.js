@@ -77,7 +77,7 @@ const GameCommands = (() => {
 
   function startResearch(id) {
     if (!svc('Research')) return false;
-    const ok = svc('Research').startResearch(id, GS.wave, GS.buildings, showMessage);
+    const ok = svc('Research').startResearch(id, GS.wave, GS.buildings, showMessage, GS.units);
     if (ok) {
       syncInteractionState();
       svc('Research').renderPanel?.(GS.wave, GS.buildings, { force: true });
@@ -140,18 +140,7 @@ const GameCommands = (() => {
       const researchLocked =
         svc('Research') && !svc('Research').isDeployUnlocked(type, getResearchOpts());
       if (researchLocked) {
-        const need =
-          type === 'ballista'
-            ? 'Locked: Research Lab → Iron Weapons → Siege Engineering (wave 9+, 34 SP).'
-            : type === 'bard'
-              ? 'Locked: Research Lab → Morale Arts (wave 4+, 18 SP).'
-              : type === 'scout' || type === 'pikeman'
-                ? 'Locked: Research Lab → Iron Weapons → Advanced Infantry (wave 7+, 26 SP).'
-                : type === 'sapper' || type === 'knight' || type === 'crossbowman'
-                  ? 'Locked: Research Lab → Iron Weapons first.'
-                  : type === 'general'
-                    ? 'Locked: Research Lab → Iron Weapons → Command Theory.'
-                    : 'Research this unit at the Research Lab first!';
+        const need = `Locked: ${svc('Research').getLockReason('deploy', type) || 'not available in this siege'}.`;
         showMessage(need, 320);
         // Still allow selection so the button highlights; map click re-checks.
       } else {

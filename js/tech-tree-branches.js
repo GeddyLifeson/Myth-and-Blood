@@ -657,42 +657,19 @@ const TechTreeBranches = (() => {
     return true;
   }
 
-  function startInvest(id, wave, ctx = {}) {
-    if (!state?.rootLocked) {
-      ctx.showMessage?.('Root branch locks at wave 50.', 220);
-      return false;
+  /** Science points are gone: a branch node is granted when its wave comes. */
+  function grantNodesThrough(wave, ctx = {}) {
+    for (const node of getNodesForBranch()) {
+      if (!state.invested.has(node.id) && prereqsMet(node, wave)) completeInvest(node.id, ctx);
     }
-    if (state.invested.has(id)) return false;
-    if (state.activeId && state.activeId !== id) {
-      ctx.showMessage?.('Finish or cancel the current branch project first.', 220);
-      return false;
-    }
-    if (typeof Research !== 'undefined' && Research.getActiveInfo?.()) {
-      ctx.showMessage?.('Finish core research before starting branch tech.', 220);
-      return false;
-    }
-    const node = BY_ID[id];
-    if (!node || !prereqsMet(node, wave)) {
-      ctx.showMessage?.('Branch prerequisites or wave not met.', 200);
-      return false;
-    }
-    if (typeof Research !== 'undefined' && Research.countLabs?.(ctx.buildings) <= 0) {
-      ctx.showMessage?.('Build a Research Lab to invest branch tech.', 220);
-      return false;
-    }
-    state.activeId = id;
-    state.activeProgress = 0;
-    ctx.showMessage?.(`Branch tech started: ${node.name} (${node.cost} SP)`, 260);
-    return true;
   }
 
-  function cancelInvest(ctx = {}) {
-    if (!state?.activeId) return false;
-    const name = BY_ID[state.activeId]?.name || 'Branch tech';
-    state.activeId = null;
-    state.activeProgress = 0;
-    ctx.showMessage?.(`Cancelled branch: ${name}`, 160);
-    return true;
+  function startInvest() {
+    return false;
+  }
+
+  function cancelInvest() {
+    return false;
   }
 
   function getNodesForUI(wave) {
@@ -750,6 +727,12 @@ const TechTreeBranches = (() => {
     const mount = document.getElementById('tech-branch-tree');
     if (!mount) return;
     const ui = getNodesForUI(wave);
+    // Nothing to show before the root locks; an empty box only pushed the doctrines down.
+    mount.hidden = !ui.rootLocked;
+    if (!ui.rootLocked) {
+      mount.innerHTML = '';
+      return;
+    }
     const rootLine = ui.rootLocked
       ? `<p class="tech-branch-root locked" style="border-color:${ui.root?.color}">ROOT: <strong>${ui.root?.label}</strong> — ${ui.root?.epithet}</p>`
       : `<p class="tech-branch-root pending">Root locks wave <strong>${ROOT_LOCK_WAVE}</strong> — leading: ${Object.entries(
@@ -772,10 +755,10 @@ const TechTreeBranches = (() => {
               .map(
                 (n) => `
               <button type="button" class="tech-branch-node ${n.done ? 'done' : ''} ${n.active ? 'active' : ''} ${n.locked ? 'locked' : ''}"
-                data-branch-tech="${n.id}" ${n.done || n.locked || (state?.activeId && !n.active) ? 'disabled' : ''}
+                data-branch-tech="${n.id}" disabled
                 title="${n.desc || ''}">
                 <span class="tech-branch-node-name">${n.name}</span>
-                <span class="tech-branch-node-cost">${n.done ? '✓' : `${n.cost} SP`}</span>
+                <span class="tech-branch-node-cost">${n.done ? '✓' : `Wave ${n.wave}`}</span>
                 <span class="tech-branch-node-desc">${n.desc || ''}</span>
               </button>`
               )
@@ -811,14 +794,6 @@ const TechTreeBranches = (() => {
       ${fxLine ? `<p class="tech-branch-fx">${fxLine}</p>` : ''}
       ${roadsNotTaken}
       <div class="tech-branch-tiers">${tierBlocks || '<p class="tech-branch-hint">Root locks at wave 50.</p>'}</div>`;
-
-    mount.querySelectorAll('[data-branch-tech]').forEach((btn) => {
-      btn.onclick = () => {
-        if (typeof Game !== 'undefined' && Game.startBranchTech) {
-          Game.startBranchTech(btn.dataset.branchTech);
-        }
-      };
-    });
   }
 
   function onWaveStart(wave, ctx = {}) {
@@ -829,6 +804,7 @@ const TechTreeBranches = (() => {
       rootAnnounced = true;
     }
     if (wave > ROOT_LOCK_WAVE && !state.rootLocked) resolveRootAtWave(wave, ctx);
+    if (state.rootLocked) grantNodesThrough(wave, { ...ctx, wave });
     return getStateSnapshot({ wave });
   }
 

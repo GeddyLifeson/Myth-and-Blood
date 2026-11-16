@@ -26,8 +26,7 @@ const Tooltips = (() => {
       '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
     trade_outpost:
       '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
-    research_lab:
-      '45 TP, 2 Builders. Analyzes slain foes for Science Points - stronger enemies yield more SP (wave cap). Required to research.',
+    research_lab: 'Needs 1 Builder. While it stands, every doctrine choice comes 5 waves sooner.',
     fortress_upgrade:
       'Place on a completed settlement: +HP, cover, +1 TP/round, and raises a palisade wall ring.',
     hamlet: '100 TP, 5 Builders, 5-wave build. +5 TP/round. Requires Settlement Charter research.',
@@ -46,7 +45,7 @@ const Tooltips = (() => {
       'Cheap melee line-holder. Garrisons walls under General command. Earns combat stars from kills.',
     archer: 'Long-range DPS. Garrison outposts for extended range. Keep behind cover.',
     crossbowman:
-      '5 TP armour piercer. Slow to reload, but 40% more damage to armoured foes and siege engines. Unlock: Research Lab → Iron Weapons.',
+      '5 TP armour piercer. Slow to reload, but 40% more damage to armoured foes and siege engines.',
     mage: 'Arcane bolts with splash. Strong vs clustered swarms.',
     cavalry: 'Fast melee with charge bonus. Hunts stragglers and flanks.',
     healer:
@@ -55,11 +54,10 @@ const Tooltips = (() => {
     sapper:
       'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close - keep him behind the line.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
-    bard: '5 TP morale aura support. Unlock: Research Lab → Morale Arts (wave 5+), then deploy (or Bard Academy with Immortal bard mentor).',
+    bard: '5 TP morale aura support. A Bard Academy needs an Immortal bard mentor.',
     ballista:
-      '6 TP long-range siege crew. Bonus vs flyers and structures. Unlock: Research Lab → Iron Weapons → Siege Engineering (wave 12+), then click Ballista and place on the map (Shift-click to place more). Academy needs an Immortal ballista mentor.',
-    pikeman:
-      '4 TP anti-cavalry and anti-air line. Unlock: Research Lab → Iron Weapons → Advanced Infantry.',
+      '6 TP long-range siege crew. Bonus vs flyers and structures. Click Ballista and place it on the map (Shift-click to place more). Academy needs an Immortal ballista mentor.',
+    pikeman: '4 TP anti-cavalry and anti-air line.',
     builder: 'Erects structures within build range. Auto-repair toggle in meta panel.',
     courier: 'Dispatches one royal message per wave. Must be alive on the field.',
     general: 'Command aura buffs nearby troops. Auto-paths to Keep; mans castle walls.',

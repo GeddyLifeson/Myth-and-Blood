@@ -70,11 +70,11 @@ function addUnit(api, type) {
   ok(R.getCost('courier:banner', { wave: 9 }) === 8, 'each earlier call adds 2 TP');
   ok(
     !R.canUse('courier:banner', { wave: 20, isDeployUnlocked: () => false }).ok,
-    'no banner knight before knights are researched'
+    'no banner knight while knights are closed'
   );
   ok(
     R.canUse('courier:banner', { wave: 20, isDeployUnlocked: () => true }).ok,
-    'the banner answers once Iron Weapons is done'
+    'the banner answers when knights can be recruited'
   );
 
   ok(R.getCost('spy:disrupt', { wave: 3 }) === 5, 'Disrupt costs 5 TP early');
@@ -158,14 +158,8 @@ function addUnit(api, type) {
   GS.courierCooldown = 0;
   GS.courierMessagesUsedThisWave = 0;
   const knightsBefore = mine(GS).filter((u) => u.type === 'knight').length;
-  ok(
-    Game.sendCourierMessage('banner') === false,
-    'Call the Banner is refused without Iron Weapons'
-  );
-  ok(mine(GS).filter((u) => u.type === 'knight').length === knightsBefore, 'no knight arrived');
-  api.Research.completeResearch('iron_weapons');
   GS.tactical = 20;
-  ok(Game.sendCourierMessage('banner') === true, 'with Iron Weapons the banner is answered');
+  ok(Game.sendCourierMessage('banner') === true, 'the banner is answered from the first wave');
   ok(
     mine(GS).filter((u) => u.type === 'knight').length === knightsBefore + 1,
     'one knight arrived'
@@ -234,16 +228,12 @@ function addUnit(api, type) {
     'a lab costs 18 TP and one builder'
   );
   ok(
-    node('iron_weapons').cost === 20 && node('iron_weapons').wave === 3,
-    'Iron Weapons: 20 SP from wave 3'
+    node('field_engineering').wave === 3 && node('fortification').wave === 6,
+    'Field Engineering comes at wave 3 and Fortification at wave 6'
   );
   ok(
-    node('command_theory').cost === 30 && node('command_theory').wave === 6,
-    'Command Theory: 30 SP from wave 6'
-  );
-  ok(
-    node('advanced_infantry').wave === 7 && node('siege_engineering').wave === 9,
-    'later tiers open a few waves apart'
+    node('prospecting').wave === 8 && node('siege_engineering').wave === 9,
+    'later charters come a few waves apart'
   );
   ok(
     Research.isBuildUnlocked('watchtower') && Research.isBuildUnlocked('trade_outpost'),
@@ -257,19 +247,15 @@ function addUnit(api, type) {
   run(Game, 20);
   place(api, 'research_lab', 300, 420);
   GS.wave = 3;
+  run(Game, 2);
   ok(
-    Research.startResearch('iron_weapons', 3, GS.buildings, () => {}),
-    'Iron Weapons can start on wave 3'
+    Research.isBuildUnlocked('outpost_barracks'),
+    'Field Engineering is granted when wave 3 comes, with nothing to pay'
   );
-  let waves = 0;
-  while (!Research.isResearched('iron_weapons') && waves < 10) {
-    waves++;
-    Research.onWaveCleared({ wave: 3 + waves, buildings: GS.buildings });
-  }
-  ok(
-    waves <= 4,
-    `dawn science alone finishes Iron Weapons in ${waves} waves (kills make it faster)`
-  );
+  GS.wave = 5;
+  GS.timeOfDay = 'night';
+  run(Game, 2);
+  ok(!!Research.getActiveInfo(), 'with a lab standing the first doctrine is ready after wave 5');
   ok(
     Research.isDeployUnlocked('knight') && Research.isDeployUnlocked('crossbowman'),
     'knights and crossbowmen are open'
