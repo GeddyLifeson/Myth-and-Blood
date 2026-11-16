@@ -245,6 +245,8 @@ const GameRosterUi = (() => {
         if (!u || u.hp <= 0) return null;
         const displayName =
           typeof getUnitDisplayName === 'function' ? getUnitDisplayName(u) : u.type;
+        const shownName =
+          u.soldierName && !u.honorName ? `${u.soldierName}, ${displayName}` : displayName;
         const roleLabel =
           typeof getUnitRoleLabel === 'function'
             ? getUnitRoleLabel(u)
@@ -264,7 +266,7 @@ const GameRosterUi = (() => {
           id: u.id,
           type: u.type,
           spriteType: u.spriteType || u.type,
-          displayName,
+          displayName: shownName,
           roleLabel,
           honorName: u.honorName,
           kills: u.kills || 0,

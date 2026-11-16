@@ -84,6 +84,7 @@ const GameSave = (() => {
       vetTier: u.vetTier,
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
+      soldierName: u.soldierName,
       traits: u.traits ? [...u.traits] : [],
       forgot: u.forgot ? [...u.forgot] : [],
       deeds: u.deeds ? JSON.parse(JSON.stringify(u.deeds)) : null,
@@ -529,6 +530,9 @@ const GameSave = (() => {
     if (!u) return null;
     if (us.id) u.id = us.id;
     Object.assign(u, us);
+    if (u.team === 'player' && u.soldierName) SoldierNames.remember(u.soldierName);
+    else if (u.team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(u.type)))
+      u.soldierName = SoldierNames.roll();
     if (legacy) stopPostReturn(u);
     if (u.team === 'player') {
       if (legacy) {

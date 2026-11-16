@@ -1006,7 +1006,7 @@ function rollHonorName(unit) {
   const h = hashUnitId(unit.id);
   const prefixes = HONOR_PREFIX_BY_TYPE[unit.type] || HONOR_PREFIX_BY_TYPE.footman;
   const prefix = prefixes[h % prefixes.length];
-  const given = HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
+  const given = unit.soldierName || HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
   return `${prefix} ${given}`;
 }
 
@@ -1744,6 +1744,10 @@ function createUnit(type, x, y, team, opts = {}) {
 
   const u = allocUnitObject();
   u.id = Math.random().toString(36).slice(2, 9);
+  u.soldierName =
+    team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(type))
+      ? SoldierNames.roll()
+      : null;
   u.type = type;
   u.spriteType = spriteType;
   u.team = team;
