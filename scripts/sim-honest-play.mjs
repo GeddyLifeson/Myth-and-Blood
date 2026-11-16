@@ -238,7 +238,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, Number(process.env.HONEST_SEED0 || 4000) + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.tg ? ' · tg ' + JSON.stringify(r.tg) : ''}${r.threw ? ' · ' + r.threw : ''}``${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} (first w${r.firstDeathWave}) · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} (first w${r.firstDeathWave}) · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.tg ? ' · tg ' + JSON.stringify(r.tg) : ''}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }
