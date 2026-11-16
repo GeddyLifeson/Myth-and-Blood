@@ -16,7 +16,7 @@ function start(storage = {}) {
   const { sb, cvs } = boot(7);
   for (const k in storage) sb.localStorage.setItem(k, storage[k]);
   const api = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, GameState, GameDayNight, NewGamePlus, SiegeLoop, SaveFormat, getWaveConfig, getEnemyWaveScale })`,
+    `${code}\n({ Game, SpriteGen, GameState, GameDayNight, NewGamePlus, SiegeLoop, SaveFormat, Veterans, getWaveConfig, getEnemyWaveScale })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -113,6 +113,18 @@ function start(storage = {}) {
   GS.ngPlusTier = 0;
   api.Game.importGameState(saved);
   ok(GS.ngPlusTier === 1, 'NG+ tier survives save and load');
+}
+
+// A filled Hall of Veterans is what New Game+ carries; its names arrive fallen.
+{
+  const api = start();
+  api.Veterans.setHall([{ id: 1, type: 'footman', name: 'Brannoc', kills: 30 }]);
+  api.NewGamePlus.queue(0, api.GameState.units);
+  ok(api.NewGamePlus.getPending()?.hall?.length === 1, 'a filled Hall is queued');
+  api.Veterans.setHall([]);
+  api.Game.start();
+  const hall = api.Veterans.getHall();
+  ok(hall.length === 1 && hall[0].fallen, 'the Hall comes back with its names fallen');
 }
 
 // Waves past 200 keep escalating.
