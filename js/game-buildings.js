@@ -1030,6 +1030,18 @@ const GameBuildings = (() => {
     );
   }
 
+  // War camps are not enemy economy (they must not count toward it), but they can be struck.
+  function isTargetableEnemyStructure(b) {
+    if (isAttackableEnemyStructure(b)) return true;
+    return (
+      !!b &&
+      b.owner === 'enemy' &&
+      b.hp > 0 &&
+      typeof WarCamps !== 'undefined' &&
+      WarCamps.isCamp(b)
+    );
+  }
+
   function getEnemyStructureSeekDist(unit) {
     const mapReach = Math.hypot(GS.worldW * 0.92, GS.worldH * 0.88);
     const rtsReach = isEnemyRtsEra(GS.wave) ? GS.worldH * 0.98 : 0;
@@ -1055,7 +1067,12 @@ const GameBuildings = (() => {
     let best = null;
     let bestScore = Infinity;
     for (const b of GS.buildings) {
-      if (!isAttackableEnemyStructure(b)) continue;
+      // Soldiers never walk off to a camp unordered, but one already in reach gets hit.
+      if (
+        !isAttackableEnemyStructure(b) &&
+        !(isTargetableEnemyStructure(b) && inBuildingAttackRange(unit, b))
+      )
+        continue;
       const d = Math.hypot(b.x - unit.x, b.y - unit.y);
       if (d > maxDist) continue;
       if (
@@ -1136,7 +1153,7 @@ const GameBuildings = (() => {
   function getBuildingPursuitTarget(unit) {
     if (unit.raidTargetId) {
       const raidBld = GS.buildings.find((x) => x.id === unit.raidTargetId);
-      if (isAttackableEnemyStructure(raidBld)) return raidBld;
+      if (isTargetableEnemyStructure(raidBld)) return raidBld;
       unit.raidTargetId = null;
       unit.raidMissionId = null;
     }
@@ -1145,7 +1162,7 @@ const GameBuildings = (() => {
       (isBuildingPathTarget(unit.pathTargetId) ? unit.pathTargetId.slice(4) : null);
     if (!raw) return null;
     const b = GS.buildings.find((x) => x.id === raw);
-    return isAttackableEnemyStructure(b) ? b : null;
+    return isTargetableEnemyStructure(b) ? b : null;
   }
 
   function updatePlayerStructureAttack(unit) {

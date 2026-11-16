@@ -296,6 +296,38 @@ function toNight(api, wave) {
   ok(b2.hp === hpB, 'a strike elsewhere does not');
 }
 
+// --- 3b. soldiers already beside a camp strike it without an order ----------------------
+{
+  const api = start(11);
+  const { Game, GameState: GS, WarCamps: W } = api;
+  run(Game, 10);
+  toNight(api, 8);
+  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
+  W.resetRun();
+  const camp = Game.warCampHooks.raise({ kind: 'forge', sector: 'centre' });
+  const b = GS.buildings.find((x) => x.id === camp.id);
+  const men = [];
+  for (let i = 0; i < 4; i++) men.push(deploy(api, 'footman', 470 + i * 26, 540));
+  ok(men.every(Boolean), 'four footmen are fielded');
+  men.forEach((u, i) => {
+    u.x = b.x - 30 + i * 20;
+    u.y = b.y + (b.radius || 24) + 14;
+    u.path = [];
+    u.manualOrder = false;
+  });
+  const hp0 = b.hp;
+  GS.nightTimer = -100000;
+  run(Game, 600);
+  ok(b.hp < hp0, `footmen standing at the camp's edge hit it unordered (${hp0} -> ${b.hp})`);
+  // Each blow lands once: the camp is not struck twice per swing by two attack loops.
+  const swings = men.reduce((n, u) => n + (u.hp > 0 ? 1 : 0), 0) * Math.ceil(600 / 58);
+  const blow = Game.warCampHooks.damageOf(men[0], b);
+  ok(
+    hp0 - b.hp <= swings * (blow + 4),
+    `no blow is counted twice (${hp0 - b.hp} dealt, at most ${swings * (blow + 4)})`
+  );
+}
+
 // --- 4. save and load -------------------------------------------------------------------
 {
   const api = start(9);
