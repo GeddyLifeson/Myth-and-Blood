@@ -3,9 +3,9 @@
  */
 const Chronicles = (() => {
   const STORAGE_KEY = 'myth-and-blood-chronicles-v1';
-  const MAX_ENTRIES = 24;
-  const MAX_WAVE_ENTRIES = 18;
-  const MAX_RUN_ENTRIES = 8;
+  const MAX_ENTRIES = 32;
+  const MAX_WAVE_ENTRIES = 12;
+  const MAX_RUN_ENTRIES = 20;
   const MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
   const MAX_SUMMARY_LEN = 720;
 
@@ -27,6 +27,7 @@ const Chronicles = (() => {
       kills: entry.kills,
       armySize: entry.armySize,
       storyBranch: entry.storyBranch || null,
+      score: entry.score ?? null,
     };
   }
 
@@ -146,24 +147,23 @@ const Chronicles = (() => {
         : stats.storyBranch
       : null;
     const lines = [
-      `Wave ${wave} secured on ${diffLabel}.`,
-      `Army: ${stats.armySize ?? '?'} · TP: ${stats.tactical ?? '?'} · Losses: ${stats.playerDeaths ?? stats.misses ?? 0}`,
+      `Wave ${wave} held on ${diffLabel}. Army ${stats.armySize ?? '?'} · TP ${stats.tactical ?? '?'} · Lost ${stats.playerDeaths ?? stats.misses ?? 0}`,
       `Roster: ${roster}`,
     ];
-    if (branchLabel) lines.push(`Story thread: ${branchLabel}.`);
-    if (story) lines.push(`Recent choices: ${story}.`);
-    if (stats.hordeWave)
-      lines.push(`Horde assault repelled${stats.siegeWave ? ' (siege elements)' : ''}.`);
-    else if (stats.siegeWave) lines.push('Siege assault repelled.');
+    if (stats.hordeWave) {
+      lines.push(`Horde repelled${stats.siegeWave ? ' (siege elements)' : ''}.`);
+    } else if (stats.siegeWave) lines.push('Siege repelled.');
     if (stats.bossWave) lines.push('Boss wave defeated.');
     if (stats.planetChoice) lines.push(`Planet response: ${stats.planetChoice}.`);
+    if (branchLabel) lines.push(`Story thread: ${branchLabel}.`);
+    if (story) lines.push(`Recent choices: ${story}.`);
     if (highlights.length) lines.push(`Notable: ${highlights.join(' · ')}`);
     append({
       type: 'wave',
       wave,
       difficulty: stats.difficulty,
-      title: `After-Action — Wave ${wave}`,
-      summary: lines.join(' '),
+      title: `Wave ${wave} held`,
+      summary: lines.join('\n'),
       kills: stats.sessionKills,
       armySize: stats.armySize,
       storyBranch: stats.storyBranch,
@@ -173,36 +173,43 @@ const Chronicles = (() => {
   function appendRunReport(stats = {}) {
     if (stats.creative) return;
     const diffLabel = getDifficultyDef?.(stats.difficulty)?.label || stats.difficulty || 'Normal';
-    const outcome = stats.victory ? 'VICTORY' : 'DEFEAT';
-    const highlights = pickHighlights(stats.highlights, 6);
+    const outcome = stats.victory ? 'Victory' : 'Defeat';
+    const result = globalThis.SiegeLoop?.lastResult?.() || {};
+    const highlights = pickHighlights(stats.highlights, 4);
     const branchLabel = stats.storyBranch
       ? typeof StoryLore !== 'undefined'
         ? StoryLore.BRANCHES?.[stats.storyBranch]?.label || stats.storyBranch
         : stats.storyBranch
       : null;
+    const n = (v) => Number(v).toLocaleString('en-US');
+    const lost = stats.playerDeaths ?? stats.misses ?? 0;
     const lines = [
-      `${outcome} — ${diffLabel}. Survived ${stats.wave ?? 0} waves.`,
-      `Kills: ${stats.kills ?? 0} · Losses: ${stats.playerDeaths ?? stats.misses ?? 0}`,
+      `${outcome} on wave ${stats.wave ?? 0} · ${diffLabel}`,
+      `${result.score ? `Score ${n(result.score.total)} · ` : ''}${n(stats.kills ?? 0)} kills · ${lost} soldiers lost`,
     ];
-    if (branchLabel) lines.push(`Dominant story path: ${branchLabel}.`);
+    if (result.cause) lines.push(result.cause);
+    const dead = (result.fallen || [])
+      .filter((f) => f.vet !== false)
+      .sort((a, b) => (b.kills || 0) - (a.kills || 0))
+      .slice(0, 5);
+    if (dead.length)
+      lines.push(`The fallen: ${dead.map((f) => `${f.name} (${f.kills})`).join(', ')}`);
+    if (stats.honorNames?.length) lines.push(`Honored: ${stats.honorNames.slice(-5).join(', ')}`);
+    if (branchLabel) lines.push(`Story path: ${branchLabel}`);
     if (stats.storyChoiceCount) lines.push(`${stats.storyChoiceCount} branching choices recorded.`);
     if (stats.victory && stats.victoryReason === 'economy') {
-      lines.push('Northern purge complete — all enemy economy structures destroyed.');
+      lines.push('Northern purge complete: every enemy economy structure destroyed.');
     }
-    if (stats.honorNames?.length) {
-      lines.push(`Honored: ${stats.honorNames.slice(-5).join(', ')}`);
-    }
-    if (highlights.length) {
-      lines.push(`Chronicle highlights: ${highlights.join(' · ')}`);
-    }
+    if (highlights.length) lines.push(`Moments: ${highlights.join(' · ')}`);
     append({
       type: 'run',
       wave: stats.wave,
       difficulty: stats.difficulty,
       victory: !!stats.victory,
-      title: `Campaign Chronicle — ${outcome}`,
-      summary: lines.join(' '),
+      title: `${outcome}, wave ${stats.wave ?? 0}`,
+      summary: lines.join('\n'),
       kills: stats.kills,
+      score: result.score ? result.score.total : null,
     });
   }
 
@@ -210,8 +217,14 @@ const Chronicles = (() => {
     return [...entries].reverse();
   }
 
-  function getEncyclopediaEntries() {
+  /** Past runs first, newest first; then the wave reports. */
+  function getOrdered() {
     const list = getAll();
+    return [...list.filter((e) => e.type === 'run'), ...list.filter((e) => e.type !== 'run')];
+  }
+
+  function getEncyclopediaEntries() {
+    const list = getOrdered();
     if (!list.length) {
       return [
         {
@@ -221,19 +234,21 @@ const Chronicles = (() => {
         },
       ];
     }
-    return list.slice(0, 24).map((e, i) => ({
-      cat: 'chronicles',
-      name: e.title || (e.type === 'run' ? 'Run Report' : `Wave ${e.wave}`),
-      body: e.summary,
-      chronicleMeta: new Date(e.at).toLocaleDateString(),
-      chronicleType: e.type,
-      storyBranch: e.storyBranch,
-      classifiedRule: i >= 8 ? 'waves_cleared:20' : null,
-      classified:
-        i >= 8
+    return list.slice(0, 32).map((e, i) => {
+      const hidden = e.type !== 'run' && i >= 8;
+      return {
+        cat: 'chronicles',
+        name: e.title || (e.type === 'run' ? 'Run Report' : `Wave ${e.wave}`),
+        body: e.summary,
+        chronicleMeta: new Date(e.at).toLocaleDateString(),
+        chronicleType: e.type,
+        storyBranch: e.storyBranch,
+        classifiedRule: hidden ? 'waves_cleared:20' : null,
+        classified: hidden
           ? `Archive entry #${list.length - i} — full tactical appendix retained in royal storage.`
           : null,
-    }));
+      };
+    });
   }
 
   load();

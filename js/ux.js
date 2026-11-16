@@ -283,7 +283,7 @@ const UX = (() => {
     if (/breach|has fallen|realm falls|line is broken|warlord|boss|wiped out/i.test(text)) {
       return 'alert';
     }
-    if (/gold|TP|spoils|crate|upkeep|recruit|trained|built|forged|cost/i.test(text)) {
+    if (/\bgold\b|\bTP\b|spoils|crate|upkeep|recruit|trained|built|forged|cost/i.test(text)) {
       return 'supply';
     }
     return 'event';
@@ -1352,7 +1352,6 @@ const UX = (() => {
       subtitle.textContent += ' · Cheats used - run not recorded';
     }
 
-    const losses = gs.playerDeaths ?? gs.misses ?? 0;
     const ach = gs.achievements || { unlocked: 0, total: 316 };
     const fb = gs.feedback || {};
     stats.innerHTML = `

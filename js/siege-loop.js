@@ -2118,6 +2118,7 @@ const SiegeLoop = (() => {
   function endRun(ctx) {
     if (ctx && ctx.ambience) ctx.ambience('off');
     if (run.active) {
+      run.cause = causeOfLoss(ctx);
       run.score = scoreRun(ctx);
       if (run.score) {
         run.scoreBest = getBestScores()[run.score.difficulty] || 0;
@@ -2686,6 +2687,11 @@ const SiegeLoop = (() => {
     recordScore,
     renderBestScores,
     lastScore: () => run.score || null,
+    lastResult: () => ({
+      cause: run.cause || '',
+      fallen: run.fallen.slice(),
+      score: run.score || null,
+    }),
     skipIntroduction,
     forceIntroduction,
     dismissPrompt,

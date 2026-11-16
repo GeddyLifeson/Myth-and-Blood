@@ -1825,6 +1825,10 @@
                 <div id="best-score-list" class="ribbon-list"></div>
               </details>
               <details class="menu-section">
+                <summary>Run history</summary>
+                <div id="records-run-stats" class="analytics-insights"></div>
+              </details>
+              <details class="menu-section">
                 <summary>Ribbons <span id="ribbon-count" class="ribbon-count"></span></summary>
                 <p class="ribbon-intro">
                   Earned across all your runs. Each one gives a small bonus on every run after.
@@ -2234,15 +2238,13 @@
 
           <div class="settings-tab-panel" data-tab="privacy">
             <div class="settings-group">
-              <div class="settings-group-head">ANONYMOUS ANALYTICS</div>
+              <div class="settings-group-head">RUN STATS</div>
               <p class="analytics-intro">
-                Help balance the game by sharing anonymous strategy trends and where runs end. No
-                account, names, or save files - only loadouts, formations, wave counts, and
-                outcomes. Off by default.
+                Keeps loadouts, formations, wave counts and outcomes of your runs in this browser,
+                for the Records sheet. Nothing is sent anywhere. Off by default.
               </p>
               <label class="settings-row check"
-                ><input type="checkbox" id="set-analytics-optin" /> Share anonymous run analytics
-                (opt-in)</label
+                ><input type="checkbox" id="set-analytics-optin" /> Keep local run stats</label
               >
               <div class="settings-row analytics-actions">
                 <button type="button" id="analytics-export-btn" class="menu-btn small-btn">
