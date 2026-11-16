@@ -84,6 +84,11 @@ const GameSave = (() => {
       vetTier: u.vetTier,
       statModsApplied: u.statModsApplied,
       honorName: u.honorName,
+      traits: u.traits ? [...u.traits] : [],
+      deeds: u.deeds ? JSON.parse(JSON.stringify(u.deeds)) : null,
+      hallId: u.hallId || null,
+      timesRaised: u.timesRaised || 0,
+      vetStatTierApplied: u.vetStatTierApplied || 0,
       experience: u.experience,
       morale: u.morale,
       maxMorale: u.maxMorale,
@@ -260,6 +265,7 @@ const GameSave = (() => {
     'colonyThreatMods',
     'generalThreatCd',
     'generalThreatCount',
+    'hallRaisedWave',
     'hazards',
     'huntQuietTicks',
     'huntSweep',
@@ -378,6 +384,7 @@ const GameSave = (() => {
       waveModifiers: { ...GS.waveModifiers },
       pendingWaveMods: { ...GS.pendingWaveMods },
       fallenPool: GS.fallenPool.map((f) => ({ ...f })),
+      hallOfVeterans: Veterans.exportHall(),
       // Mid-combat projectiles (arrows/bolts still in flight).
       projectiles: GS.projectiles.map((p) => captureSaveFields(p, {}, null)),
       units: collectAliveUnitSnaps(),
@@ -567,6 +574,11 @@ const GameSave = (() => {
       }
       if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
     }
+    // Saves from before deeds existed: a veteran keeps its rank and starts its record now.
+    if (us.deeds === undefined) {
+      u.deeds = null;
+      Veterans.migrate(u);
+    }
     // Paths are never saved; the unit asks for a new one on its next step.
     u.path = [];
     u.pathIndex = 0;
@@ -620,6 +632,7 @@ const GameSave = (() => {
     if (snap.waveModifiers) GS.waveModifiers = { ...snap.waveModifiers };
     if (snap.pendingWaveMods) GS.pendingWaveMods = { ...snap.pendingWaveMods };
     GS.fallenPool = Array.isArray(snap.fallenPool) ? snap.fallenPool.map((f) => ({ ...f })) : [];
+    Veterans.setHall(snap.hallOfVeterans);
     GS.sessionHighlights = Array.isArray(snap.sessionHighlights)
       ? snap.sessionHighlights.map((h) => ({ ...h }))
       : [];

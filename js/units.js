@@ -1360,6 +1360,10 @@ function upgradeVeteranUnit(unit) {
   applyVeteranTierStep(unit, unit.vetTier);
   unit.vetStatTierApplied = unit.vetTier;
   unit.experience = (unit.experience || 0) + 5;
+  // A new rank can open a trait slot for a deed already done.
+  if (typeof Veterans !== 'undefined' && typeof GameArmy !== 'undefined') {
+    GameArmy.notifyTraits(unit, Veterans.check(unit, Game.getState?.()?.wave || 0));
+  }
   return unit;
 }
 
@@ -1817,6 +1821,10 @@ function createUnit(type, x, y, team, opts = {}) {
   u.vetTier = 0;
   u.vetStatTierApplied = 0;
   u.vetUpgradeEligible = false;
+  u.traits = [];
+  u.deeds = null;
+  u.hallId = null;
+  u.timesRaised = 0;
   u.baseMaxHp = null;
   u.baseDamage = null;
   u.ipScaleWave = 0;

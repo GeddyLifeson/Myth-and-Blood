@@ -26,6 +26,8 @@ const Tooltips = (() => {
       '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
     trade_outpost:
       '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
+    hall_of_veterans:
+      '60 TP, 1 Builder. Can be built once a veteran has reached rank 6. Keeps the roll of top-rank veterans and raises one fallen name a wave for TP. The raised veteran returns at rank 5 with 10% less health for each death.',
     research_lab:
       '45 TP, 2 Builders. Analyzes slain foes for Science Points - stronger enemies yield more SP (wave cap). Required to research.',
     fortress_upgrade:

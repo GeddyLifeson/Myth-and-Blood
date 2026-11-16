@@ -593,6 +593,7 @@ const UX = (() => {
         u.roster
           ? `<div class="unit-info-row roster-row">${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>`
           : '',
+        formatTraits(u),
         `<div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>`,
         u.scaling?.kind === 'vanilla' && u.obsoletePct != null && u.obsoletePct < 90
           ? `<div class="unit-info-status obsolete-hint">${escapeHtml(
@@ -685,6 +686,49 @@ const UX = (() => {
     }
     bindUnitQuickActions();
     keepCardClear();
+  }
+
+  /** Earned traits with their deed, gain and price, then what the next rank opens. */
+  function formatTraits(u) {
+    const v = u.vet;
+    if (!v) return '';
+    const rows = v.traits.map(
+      (t) =>
+        `<div class="unit-info-row trait-row" title="${escapeHtml(t.measure)}"><strong>${escapeHtml(t.name)}</strong> ${escapeHtml(t.deed)}: ${escapeHtml(t.gain)}, ${escapeHtml(t.cost)}</div>`
+    );
+    const free = v.slots - v.traits.length;
+    let slots = `Trait slots ${v.traits.length}/${v.slots}`;
+    if (free > 0) slots += ', open for the next deed';
+    if (v.nextSlotTier) slots += `. Rank ${v.nextSlotTier} opens another`;
+    const hall = u.onHallRoll
+      ? `<div class="unit-info-row trait-row">On the Hall of Veterans roll${u.timesRaised ? `, raised ${u.timesRaised} time${u.timesRaised === 1 ? '' : 's'} (-10% health each)` : ''}</div>`
+      : '';
+    return `${rows.join('')}<div class="unit-info-row trait-slots">${escapeHtml(slots)}.</div>${hall}`;
+  }
+
+  let hallRollKey = '';
+  /** The Hall roll in the Halls pane: every top-rank name, and a Raise button for the fallen. */
+  function updateHallRoll(gs) {
+    const box = document.getElementById('hall-roll');
+    if (!box) return;
+    const roll = gs.hallRoll || [];
+    const key = JSON.stringify(roll);
+    if (key === hallRollKey) return;
+    hallRollKey = key;
+    box.innerHTML = roll.length
+      ? roll
+          .map((e) => {
+            const traits = e.traits.length ? escapeHtml(e.traits.join(', ')) : 'no traits';
+            if (!e.fallen)
+              return `<div class="hall-row"><strong>${escapeHtml(e.name)}</strong> on the field. ${traits}</div>`;
+            const why = e.block ? ` title="${escapeHtml(e.block)}"` : '';
+            return `<div class="hall-row fallen"><strong>${escapeHtml(e.name)}</strong> fell on wave ${e.fellWave}. ${traits}<button class="unit-quick-btn hall-raise-btn${e.block ? ' locked' : ''}" data-hall-id="${e.id}"${why}>Raise (${e.cost} TP)${e.block ? `: ${escapeHtml(e.block)}` : ''}</button></div>`;
+          })
+          .join('')
+      : '<p class="panel-hint">No names yet. A veteran is written here on reaching rank 6.</p>';
+    box.querySelectorAll('.hall-raise-btn').forEach((btn) => {
+      btn.onclick = () => Game.raiseVeteran?.(Number(btn.dataset.hallId));
+    });
   }
 
   /** "Bronze 2", "Silver 1", "Gold 3" or "Recruit": the rank in words. */
@@ -1350,6 +1394,7 @@ const UX = (() => {
 
   function onGameUpdate(gs) {
     updateUnitPanel(gs);
+    updateHallRoll(gs);
     keepCardClear();
     updateHintBar(gs);
     updatePauseMenu(gs);

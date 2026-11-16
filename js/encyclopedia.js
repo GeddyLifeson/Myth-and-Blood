@@ -349,6 +349,8 @@ const Encyclopedia = (() => {
     medical_tent: () =>
       'The wounded walk here on their own, heal to full and go back to their posts. Four beds.',
     mess_hall: () => 'Soldiers near it keep their morale.',
+    hall_of_veterans: () =>
+      'Keeps the roll of veterans who reached rank 6. Raises one fallen name a wave for TP; the veteran returns at rank 5 with a tenth less health for each death.',
     research_lab: () => {
       const r = G('EconomyRules')?.BUILDINGS?.research_lab;
       return `Pays science at every dawn${r ? ` (${r.dawnScience} per lab, first ${r.maxCounted} labs)` : ''}, and a little from kills. Science buys research.`;

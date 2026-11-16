@@ -371,6 +371,7 @@ const GameCombat = (() => {
     }
     if (unit.team === 'player') actual = SiegeLoop.modifyDamageTaken(unit, actual, GS.updateTick);
     actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
+    actual *= Veterans.damageMult(opts.attacker, unit);
     if (!(actual > 0)) return 0;
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
     // from out of reach must not hold a wave open forever, nor a stream of raised minions.
@@ -569,6 +570,7 @@ const GameCombat = (() => {
             FoundationalMedievalLayer.recordKill(killer.type, GS.wave);
           }
           notifyVetStarEvent(killer, addVetStar(killer));
+          GameArmy.notifyTraits(killer, Veterans.recordKill(killer, unit, GS.wave));
           if (killer.hasVultureAid && Math.random() < 0.35) {
             GS.tactical += 1;
             svc('FloatingText').status(killer.x, killer.y, '+1 TP', '#c0ffa0');
@@ -646,6 +648,7 @@ const GameCombat = (() => {
         GS.runPlayerDeaths++;
         GS.playerCasualtiesThisWave++;
         if (typeof GameFeedback !== 'undefined') GameFeedback.onPlayerDeath();
+        GameArmy.notifyHallDeath(unit, Veterans.onDeath(unit, GS.wave));
         if (unit.isGeneral) {
           releaseFromKeep(unit);
           ach('general_fell', { wave: GS.wave });

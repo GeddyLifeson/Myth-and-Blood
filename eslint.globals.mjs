@@ -247,6 +247,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "UnitDefs",
   "UpdateThrottle",
   "VET_STAR_COLORS",
+  "Veterans",
   "VisualPolish",
   "WALL_FACINGS",
   "WarCamps",
