@@ -69,6 +69,7 @@ const GeneralOrders = (() => {
     turncoatsLeft = 0;
     pulses = [];
     GS.courierRide = null;
+    GS.sortie = null;
   }
 
   function general() {
@@ -407,6 +408,17 @@ const GeneralOrders = (() => {
       c.strokeStyle = BLOOD;
       c.stroke();
     }
+    const so = GS.sortie;
+    if (so && so.phase === 'fight') {
+      const men = GS.units.filter((u) => so.unitIds.includes(u.id) && u.hp > 0);
+      const x = men.length ? men.reduce((a, u) => a + u.x, 0) / men.length : GS.worldW / 2;
+      c.lineWidth = 3 * px;
+      c.strokeStyle = `rgba(160, 24, 24, ${0.5 + 0.3 * Math.sin(tickNow * 0.2)})`;
+      c.beginPath();
+      c.arc(x, 46, 54, 0, Math.PI * 2);
+      c.stroke();
+      label(c, 'SORTIE', x, 118, BLOOD);
+    }
     const ride = GS.courierRide;
     if (ride && ride.phase === 'away') {
       const left = Math.max(0, Math.ceil((ride.awayTicks - ride.t) / 60));
@@ -508,6 +520,7 @@ const GeneralOrders = (() => {
         turncoatWave,
         turncoatsLeft,
         courierRide: GS.courierRide ? { ...GS.courierRide } : null,
+        sortie: GS.sortie ? JSON.parse(JSON.stringify(GS.sortie)) : null,
       }),
       load(data) {
         resetRun();
@@ -525,6 +538,7 @@ const GeneralOrders = (() => {
         if (Number.isFinite(data.warlordWave)) warlordWave = data.warlordWave;
         if (Number.isFinite(data.turncoatWave)) turncoatWave = data.turncoatWave;
         if (Number.isFinite(data.turncoatsLeft)) turncoatsLeft = data.turncoatsLeft;
+        if (data.sortie && Array.isArray(data.sortie.unitIds)) GS.sortie = data.sortie;
         const ride = data.courierRide;
         if (ride && typeof ride === 'object' && CourierMessages[ride.msg]) {
           GS.courierRide = { ...ride };

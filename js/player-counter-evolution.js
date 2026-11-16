@@ -317,10 +317,10 @@ const PlayerCounterEvolution = (() => {
 
     const hooks = ctx.hooks || {};
     hooks.showMessage?.(
-      `Expedition dispatched — ${fighters.length} troops march off-map against ${target.shortName}. Each has a ${Math.round(getExpeditionSurvivalRate(fighters.length) * 100)}% chance to come home on wave ${returnWave}, and ${target.shortName} fields a smaller host while they are out. ~${lootPreview.science} SP loot.`,
+      `Sortie! ${fighters.length} troops march up the field to strike the ${target.shortName} vanguard. Each has a ${Math.round(getExpeditionSurvivalRate(fighters.length) * 100)}% chance to walk back; if any do, ${target.shortName} fields a smaller host tomorrow. ~${lootPreview.science} SP.`,
       400
     );
-    hooks.floatingText?.(ctx.worldW / 2, 92, 'EXPEDITION', '#5080d0');
+    hooks.floatingText?.(ctx.worldW / 2, 92, 'SORTIE', '#5080d0');
     hooks.addHighlight?.('counter', `Expedition → ${target.shortName}`);
 
     return { ok: true, expedition, count: fighters.length };
@@ -401,6 +401,39 @@ const PlayerCounterEvolution = (() => {
 
     activeExpeditions = remaining;
     return resolved;
+  }
+
+  /**
+   * A sortie fought on the field (js/game-commands.js) is over: the soldiers are already
+   * home. Any survivor counts as a success and sets the faction back for tomorrow.
+   */
+  function completeSortie(expId, survivors, wave, ctx = {}) {
+    const exp = activeExpeditions.find((e) => e.id === expId);
+    if (!exp) return null;
+    activeExpeditions = activeExpeditions.filter((e) => e !== exp);
+    const hooks = ctx.hooks || {};
+    if (!survivors) {
+      hooks.showMessage?.(
+        `The sortie against ${exp.factionName} was cut down to the last man.`,
+        320
+      );
+      return { expedition: exp, survivors: 0, debuff: null, loot: { tp: 0, science: 0 } };
+    }
+    const debuff = applyDebuff(exp.factionId, wave + 1, {
+      stagePenalty: exp.stagePenalty,
+      durationWaves: exp.durationWaves,
+      spawnMult: exp.spawnMult,
+      buildingSkipWaves: exp.buildingSkipWaves,
+      label: 'Sortie',
+    });
+    const loot = computeExpeditionLoot(exp, survivors, wave);
+    if (loot.science > 0) ctx.grantScience?.(loot.science);
+    hooks.showMessage?.(
+      `The sortie comes home: ${survivors}/${exp.unitIds.length} back, +${loot.science} SP. ${exp.factionName} fields a smaller host tomorrow.`,
+      360
+    );
+    hooks.floatingText?.(ctx.worldW / 2 || 200, 108, 'SORTIE HOME', '#80c0ff');
+    return { expedition: exp, survivors, debuff, loot };
   }
 
   function checkWaveAnnouncement(wave, hooks = {}) {
@@ -509,6 +542,7 @@ const PlayerCounterEvolution = (() => {
     recallAll,
     attachAway,
     resolveExpeditions,
+    completeSortie,
     computeExpeditionLoot,
     getExpeditionLootScale,
     checkWaveAnnouncement,

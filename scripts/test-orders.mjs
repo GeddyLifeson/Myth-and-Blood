@@ -15,7 +15,7 @@ function start(seed) {
   const { sb, cvs } = boot(seed);
   const api = vm.runInContext(
     `${code}\n({ Game, SpriteGen, GameState, SpyActions, CourierMessages, EconomyRules,
-      GeneralOrders, GameCombat, promoteFootmanToGeneral, spawnUnit: GameArmy.spawnUnit })`,
+      GeneralOrders, GameCombat, promoteFootmanToGeneral, EnemyFactions, PlayerCounterEvolution, spawnUnit: GameArmy.spawnUnit })`,
     vm.createContext(sb)
   );
   api.SpriteGen.prewarmCache = () => {};
@@ -274,6 +274,68 @@ function rideOut(api, max = 3600) {
   );
   ok(mine(GS).length === before + n, 'each one stands with you as a footman');
   ok(GO.getState().turncoatsLeft === 0, 'and no more turn');
+}
+
+// --- 5c. the expedition is a sortie fought on the field ---------------------------------------
+{
+  const api = start(28);
+  const { Game, GameState: GS, EnemyFactions, PlayerCounterEvolution: PCE } = api;
+  ok(toNight(Game, GS), 'first night');
+  GS.wave = 25;
+  const men = mine(GS)
+    .filter((u) => u.canHunt)
+    .slice(0, 3);
+  men[0].honorName = 'Aldric the Unbroken';
+  men[0].kills = 41;
+  const homes = men.map((u) => ({ id: u.id, x: u.x, y: u.y }));
+  GS.selectedUnitIds = men.map((u) => u.id);
+  const faction = EnemyFactions.getActiveFactions(25)[0];
+  const tp = GS.tactical;
+  ok(Game.dispatchExpedition(faction.id) === true, 'a sortie of three sets out');
+  ok(
+    men.every((u) => GS.units.includes(u)),
+    'they stay on the field, in sight'
+  );
+  // One is fated to fall, so the loss path is covered whatever the dice said.
+  GS.sortie.doomed = [men[2].id];
+  const doomed = [...GS.sortie.doomed];
+  run(Game, 240);
+  ok(
+    men.every((u) => u.y < homes.find((h) => h.id === u.id).y - 60),
+    'they march up the field'
+  );
+  let t = 0;
+  let fought = false;
+  while (GS.sortie && t++ < 3500) {
+    for (const u of GS.units) if (u.team === 'enemy') u.hp = 0;
+    if (GS.sortie?.phase === 'fight') fought = true;
+    Game.update();
+  }
+  ok(fought && !GS.sortie, `they fought at the top and the sortie ended (${Math.round(t / 60)} s)`);
+  const back = men.filter((u) => u.hp > 0);
+  ok(
+    back.length === men.length - doomed.length &&
+      doomed.every((id) => !back.some((u) => u.id === id)),
+    `${back.length} came back, ${doomed.length} fell in the fight`
+  );
+  ok(
+    back.every((u) => {
+      const h = homes.find((x) => x.id === u.id);
+      return Math.hypot(u.x - h.x, u.y - h.y) < 40 && !u.onExpedition;
+    }),
+    'the survivors are back at their posts'
+  );
+  if (back.includes(men[0])) {
+    ok(
+      men[0].honorName === 'Aldric the Unbroken' && men[0].kills === 41,
+      'the veteran keeps his record'
+    );
+  }
+  ok(GS.tactical === tp, 'no TP from the sortie');
+  ok(
+    !back.length || PCE.getFactionModifiers(faction.id, 26).active,
+    'a sortie with survivors weakens that faction tomorrow'
+  );
 }
 
 // --- 6. saves: the order state round-trips; a save from before the rework loads ---------------

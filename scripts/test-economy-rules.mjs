@@ -222,7 +222,7 @@ function addUnit(api, type) {
   );
 }
 
-// --- 5. expeditions return the same soldiers -------------------------------------------------
+// --- 5. expeditions from old saves return the same soldiers -------------------------------------------------
 {
   const api = start(14);
   const { Game, GameState: GS, PlayerCounterEvolution: PCE, EnemyFactions } = api;
@@ -240,7 +240,17 @@ function addUnit(api, type) {
   const ids = vets.map((u) => u.id);
   GS.selectedUnitIds = [...ids];
   const faction = EnemyFactions.getActiveFactions(25)[0];
-  ok(Game.dispatchExpedition(faction.id) === true, 'two soldiers march off on expedition');
+  // Expeditions are fought on the field now (test-orders.mjs). Saves from before still hold
+  // soldiers who marched off it; this dispatches the old way to keep that path covered.
+  const legacyDispatch = (unitIds) => {
+    const r = PCE.dispatchExpedition(faction.id, unitIds, GS.wave, { units: GS.units });
+    for (const id of unitIds) {
+      const i = GS.units.findIndex((u) => u.id === id);
+      if (i >= 0) GS.units.splice(i, 1);
+    }
+    return r.ok;
+  };
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'two soldiers march off on expedition');
   ok(!GS.units.includes(vets[0]) && !GS.units.includes(vets[1]), 'they are off the field');
   ok(
     vets[0].honorName === 'Aldric the Unbroken' && vets[0].kills === 41,
@@ -274,7 +284,7 @@ function addUnit(api, type) {
   GS.wave = 27;
   GS.expeditionUsedThisWave = false;
   GS.selectedUnitIds = [ids[1]];
-  ok(Game.dispatchExpedition(faction.id) === true, 'a second expedition leaves');
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'a second expedition leaves');
   const res2 = PCE.resolveExpeditions(28, {
     units: GS.units,
     rng: () => 0.999,
@@ -293,7 +303,7 @@ function addUnit(api, type) {
   GS.wave = 29;
   GS.expeditionUsedThisWave = false;
   GS.selectedUnitIds = [ids[0]];
-  ok(Game.dispatchExpedition(faction.id) === true, 'the veteran marches a second time');
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'the veteran marches a second time');
   ok(PCE.getAwayUnits().includes(vets[0]), 'the expedition holds his record while he is away');
   const snap = Game.exportGameState();
   const saved = (snap.expeditionAway || []).find((u) => u.id === ids[0]);

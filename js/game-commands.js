@@ -12,6 +12,7 @@ const GameCommands = (() => {
     isPlayerMageUnit,
     playSfx,
     strikeImpactFx,
+    gameRandom,
     svc,
     wallFacingRotation,
   } = GameCore;
@@ -19,7 +20,7 @@ const GameCommands = (() => {
   const { invalidateObstacles, sanitizeTactical } = GameField;
   const { applyGlobalHuntState } = GameStance;
   const { DRAGON_THEMED_STRIKES } = GameMorale;
-  const { damageInRadius } = GameCombat;
+  const { damageInRadius, takeDamage: damageUnit } = GameCombat;
   const { canDeployUnitType, notifyVetStarEvent, spawnUnit } = GameArmy;
   const { orderMove } = GameMovement;
   const { econCtx, syncEconomyActions } = GameWaves;
@@ -490,19 +491,10 @@ const GameCommands = (() => {
       }
       return false;
     }
-    // The soldiers leave the field but stay themselves: their records are kept by the
-    // expedition and put back when it returns, with name, rank and kills intact.
-    for (const uid of result.expedition.unitIds) {
-      const idx = GS.units.findIndex((u) => u.id === uid);
-      if (idx < 0) continue;
-      const [u] = GS.units.splice(idx, 1);
-      if (GS.selectedUnitId === uid) GS.selectedUnitId = null;
-      GS.selectedUnitIds = GS.selectedUnitIds.filter((id) => id !== uid);
-      u.path = [];
-      u.pathIndex = 0;
-      u.combatTargetId = null;
-      u.structureTargetId = null;
-    }
+    // A sortie on the field: the squad marches to the top edge, fights the vanguard where
+    // the player can see it, and whoever lives walks home, the same soldiers.
+    result.expedition.away = [];
+    startSortie(result.expedition);
     if (svc('FactionReputation')) {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
     }
@@ -829,9 +821,114 @@ const GameCommands = (() => {
     }
   }
 
-  /** Per-tick upkeep of courier orders on the field: the ride, surgeons, fresh arrows. */
+  const SORTIE_LEG_TICKS = 18 * 60;
+  const SORTIE_FIGHT_TICKS = 8 * 60;
+  /** Where the sortie meets the vanguard: just under the top edge. */
+  const SORTIE_Y = 46;
+
+  function startSortie(exp) {
+    const homes = {};
+    for (const id of exp.unitIds) {
+      const u = GS.units.find((x) => x.id === id);
+      if (!u) continue;
+      homes[id] = { x: u.x, y: u.y };
+      orderMove(u, u.x, SORTIE_Y, true, { hold: 'keep' });
+    }
+    const odds = svc('PlayerCounterEvolution').getExpeditionSurvivalRate(exp.unitIds.length);
+    // Each soldier's fate is drawn now, so a save mid-fight cannot reroll it.
+    const doomed = exp.unitIds.filter(() => gameRandom() > odds);
+    GS.sortie = {
+      expId: exp.id,
+      unitIds: [...exp.unitIds],
+      homes,
+      doomed,
+      fallen: 0,
+      phase: 'out',
+      t: 0,
+    };
+  }
+
+  function sortieMen() {
+    const s = GS.sortie;
+    return s.unitIds.map((id) => GS.units.find((u) => u.id === id)).filter((u) => u && u.hp > 0);
+  }
+
+  function endSortie() {
+    const s = GS.sortie;
+    const men = sortieMen();
+    for (const u of men) {
+      u.onExpedition = null;
+      u.expeditionTarget = null;
+      u.expeditions = (u.expeditions || 0) + 1;
+    }
+    svc('PlayerCounterEvolution').completeSortie(s.expId, men.length, GS.wave, {
+      grantScience: (n) => svc('Research')?.grantSciencePoints?.(n, { showMessage }),
+      hooks: uiHooks(),
+    });
+    GS.sortie = null;
+  }
+
+  function goHome(men) {
+    const s = GS.sortie;
+    for (const u of men) {
+      const h = s.homes[u.id] || { x: u.x, y: GS.rallyY };
+      orderMove(u, h.x, h.y, true, { hold: 'keep' });
+    }
+  }
+
+  function tickSortie() {
+    const s = GS.sortie;
+    if (!s) return;
+    s.t++;
+    const men = sortieMen();
+    if (!men.length) {
+      endSortie();
+      return;
+    }
+    // Dawn calls everyone home at once: the fight is over.
+    if (!isNightPhase() && s.phase !== 'back') {
+      s.phase = 'back';
+      goHome(men);
+    }
+    if (s.phase === 'out') {
+      if (men.every((u) => u.y <= SORTIE_Y + 30) || s.t > SORTIE_LEG_TICKS) {
+        s.phase = 'fight';
+        s.t = 0;
+        showMessage('The sortie meets the enemy vanguard at the top of the field.', 200);
+      }
+    } else if (s.phase === 'fight') {
+      if (s.t % 20 === 0) {
+        const u = men[s.t % men.length];
+        svc('Particles')?.blood?.(u.x + (s.t % 3) * 8 - 8, u.y - 6);
+      }
+      if (s.t % 90 === 0) {
+        const u = men[((s.t / 90) % men.length) | 0];
+        svc('FloatingText')?.status?.(u.x, u.y - 22, 'CLASH', '#a01818');
+      }
+      // The doomed fall one by one through the fight.
+      const due = Math.floor((s.t / SORTIE_FIGHT_TICKS) * s.doomed.length + 0.5);
+      while (s.fallen < due) {
+        s.fallen++;
+        const victim = GS.units.find((u) => u.id === s.doomed[s.fallen - 1] && u.hp > 0);
+        if (victim) damageUnit(victim, victim.hp * 10 + 999);
+      }
+      if (s.t >= SORTIE_FIGHT_TICKS) {
+        s.phase = 'back';
+        s.t = 0;
+        goHome(sortieMen());
+      }
+    } else if (
+      men.every((u) => Math.hypot(u.x - s.homes[u.id]?.x, u.y - s.homes[u.id]?.y) < 26) ||
+      s.t > SORTIE_LEG_TICKS
+    ) {
+      endSortie();
+    }
+  }
+
+  /** Per-tick upkeep of orders on the field: the courier's ride, surgeons, arrows, sorties. */
   function tickOrders() {
     tickCourierRide();
+    tickSortie();
     const tick = GS.updateTick;
     for (const u of GS.units) {
       if (u.team !== 'player') continue;

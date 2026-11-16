@@ -394,6 +394,7 @@ const Game = (() => {
   GS.pendingLevy = 0;
   GS.courierCooldown = 0;
   GS.courierRide = null;
+  GS.sortie = null;
   GS.courierMessagesUsedThisWave = 0;
   GS.spyUsedThisWave = false;
   GS.doctrineUsedThisWave = false;
