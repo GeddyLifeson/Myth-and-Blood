@@ -216,6 +216,9 @@ const Availability = (() => {
         mentorReason = 'needs an Immortal veteran of that troop on the field';
       }
     }
+    if (type === 'hall_of_veterans' && !gs.creativeMode && gs.hallBuildBlock) {
+      return blocked(gs.hallBuildBlock, true, { cost });
+    }
     if (!mentorOk) return blocked(mentorReason, true, { cost, mentor: true, research: !unlocked });
     if (!unlocked) {
       const perkNode = def.isPerkMachine

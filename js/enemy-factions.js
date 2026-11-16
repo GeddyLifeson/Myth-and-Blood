@@ -21,12 +21,12 @@ const EnemyFactions = (() => {
     3: {
       label: 'Fortified',
       short: 'Forts',
-      desc: 'Enemy outposts and hamlets rise in the north.',
+      desc: 'The host is rich enough to keep war camps standing on the top edge.',
     },
     4: {
       label: 'Kingdom',
       short: 'Kingdom',
-      desc: 'Full mirror settlements — counter-raids strike your hamlets.',
+      desc: 'Dug-in war camps send raiders at your buildings.',
     },
   };
 
@@ -73,7 +73,7 @@ const EnemyFactions = (() => {
           stage: 3,
           waveMin: 18,
           label: 'Siege Crew',
-          tagline: 'Engineers claim northern outposts — trade posts and quarries fund the swarm.',
+          tagline: 'Engineers and siege crews: the swarm brings towers and sappers.',
           units: [
             'goblin_sapper',
             'goblin_engineer',
@@ -94,7 +94,7 @@ const EnemyFactions = (() => {
           stage: 4,
           waveMin: 40,
           label: 'Goblin Kingdom',
-          tagline: 'Hamlets in the north — counter-raids probe your settlements.',
+          tagline: 'A goblin kingdom on the march: trolls walk with the engineers.',
           units: ['goblin_engineer', 'goblin_sapper', 'siege_tower', 'goblin_burrower', 'troll'],
           elites: ['goblin_engineer', 'siege_tower', 'troll'],
           subBosses: [],
@@ -149,7 +149,7 @@ const EnemyFactions = (() => {
           stage: 3,
           waveMin: 28,
           label: 'Siege Doctrine',
-          tagline: 'Warband quarries and outposts supply the northern siege train.',
+          tagline: 'The warbands bring a siege train and the smiths to keep it rolling.',
           units: ['orc', 'berserker', 'siege_tower', 'goblin_sapper', 'iron_colossus'],
           elites: ['war_chief', 'iron_colossus', 'siege_tower'],
           subBosses: ['boss_volk'],
@@ -164,7 +164,7 @@ const EnemyFactions = (() => {
           stage: 4,
           waveMin: 55,
           label: 'War Chief Realm',
-          tagline: 'Orc hamlets anchor the north — war chiefs counter-raid your economy.',
+          tagline: 'War chiefs lead in person and their raiders go for your buildings.',
           units: ['war_chief', 'berserker', 'troll', 'siege_tower', 'iron_colossus', 'orc'],
           elites: ['war_chief', 'iron_colossus'],
           subBosses: ['boss_karg', 'boss_volk'],
@@ -219,7 +219,7 @@ const EnemyFactions = (() => {
           stage: 3,
           waveMin: 35,
           label: 'Shadow Forts',
-          tagline: 'Dark outposts anchor the necromantic supply line.',
+          tagline: 'The legion marches with its necromancers close behind the line.',
           units: ['necromancer', 'bone_summoner', 'grim_revenant', 'dark_knight', 'shaman'],
           elites: ['grim_revenant', 'dreadborn_champion'],
           subBosses: ['boss_rotfather'],
@@ -234,7 +234,7 @@ const EnemyFactions = (() => {
           stage: 4,
           waveMin: 70,
           label: 'Undead Kingdom',
-          tagline: 'Shadow academies and hamlets — undead counter-raids scour your holdings.',
+          tagline: 'The full legion: death knights in front, the raised dead behind.',
           units: [
             'necromancer',
             'bone_summoner',
@@ -296,7 +296,7 @@ const EnemyFactions = (() => {
           stage: 3,
           waveMin: 58,
           label: 'Abyssal Pits',
-          tagline: 'Void quarries tear reality — northern pits feed the horror line.',
+          tagline: 'Rifts tear open wider and larger horrors step through.',
           units: ['abomination', 'void_stalker', 'elder_wyrm', 'behemoth'],
           elites: ['elder_wyrm', 'cinderbound_juggernaut'],
           subBosses: ['boss_sylvara'],
@@ -311,7 +311,7 @@ const EnemyFactions = (() => {
           stage: 4,
           waveMin: 90,
           label: 'Elder Dominion',
-          tagline: 'Elder wyrms nest in foe hamlets — abyssal counter-raids strike deep.',
+          tagline: 'Elder wyrms come with the abyssal host and strike deep.',
           units: [
             'elder_wyrm',
             'abomination',
@@ -451,7 +451,7 @@ const EnemyFactions = (() => {
           stage: 3,
           waveMin: 235,
           label: 'Northern Holds',
-          tagline: 'Enemy outposts and hamlets mirror your RTS economy.',
+          tagline: 'The mirror host fields an answer to every troop you rely on.',
           units: ['war_chief', 'goblin_engineer', 'necromancer', 'siege_tower', 'dark_knight'],
           elites: ['war_chief', 'goblin_engineer'],
           subBosses: ['boss_karg'],
@@ -1640,7 +1640,10 @@ const EnemyFactions = (() => {
     const breakdown = {};
     let total = 0;
     for (const f of active) {
-      const count = countFactionBuildings(buildings, f.id);
+      // War camps fly no faction's colours: they count for whoever leads the host.
+      const leads = (plans[wave + 1] || plans[wave])?.leadId === f.id;
+      const camps = leads && typeof WarCamps !== 'undefined' ? WarCamps.standing().length : 0;
+      const count = countFactionBuildings(buildings, f.id) + camps;
       const stage = f.currentTier?.stage || 1;
       const score = count * (10 + stage * 10);
       breakdown[f.id] = { count, score, tier: f.currentTier };
@@ -1923,11 +1926,15 @@ const EnemyFactions = (() => {
   function getStateSnapshot(wave, buildings, spawnQueue) {
     const active = getActiveFactions(wave);
     const hostKingdom = computeHostKingdomMeter(buildings, wave);
-    const raidingFactions = active
-      .filter((f) => f.currentTier.counterRaids)
-      .map((f) => f.shortName);
     const today = plans[wave] || null;
     const tomorrow = plans[wave + 1] || null;
+    // Raiders come from a dug-in war camp, for whoever leads the host.
+    const dugIn =
+      typeof WarCamps !== 'undefined' && WarCamps.standing().some((c) => (c.level || 1) >= 2);
+    const leadId = (tomorrow || today)?.leadId;
+    const raidingFactions = dugIn
+      ? active.filter((f) => f.id === leadId).map((f) => f.shortName)
+      : [];
     return {
       evolutionStages: EVOLUTION_STAGES,
       activeFactions: active.map((f) => {

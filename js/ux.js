@@ -174,25 +174,33 @@ const UX = (() => {
       highlight: 'tab-ops',
     },
     {
+      minWave: 5,
+      maxWave: 14,
+      title: 'War Camps',
+      body: "The enemy now raises <strong>war camps</strong> on the top edge at night. Each one strengthens the next wave. Select soldiers and click a camp to attack it, drop a strike on it, or send the spy's raid. Its garrison comes out to fight. A camp left standing digs in and sends raiders at your buildings.",
+      highlight: 'tab-ops',
+    },
+    {
       minWave: 30,
       maxWave: 80,
       when: (gs) => gs.kingdomRaidsUnlocked || (gs.hamletCount ?? 0) > 0 || gs.hasResearchLab,
       title: 'Settlement Economy',
-      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in - enemy settlement raids (wave 150+) and northern holds target economy sites first.',
+      body: 'Hamlets through Metropolises plus Merchant Guilds fuel your TP/round. Wall them in: raiders from a dug-in war camp go for the nearest one.',
       highlight: 'left-panel',
     },
     {
       minWave: 100,
       when: (gs) => gs.wave >= 100 || gs.rtsEra,
-      title: 'RTS Escalation',
-      body: 'Wave 100+ swells horde counts and raid pressure. Enemy <strong>evil operatives</strong> mirror your crossover scaling - promote core veterans or field more operatives to keep pace.',
+      title: 'Empire Ascendant',
+      body: 'From wave 100 the hosts come heavier and enemy <strong>operatives</strong> grow with your own. Nothing is taken from you: your field, walls and veterans stand. Keep burning <strong>war camps</strong> before they dig in.',
       highlight: 'tab-ops',
     },
     {
-      minWave: 150,
-      when: (gs) => gs.settlementRaids?.active,
-      title: 'Settlement Raids',
-      body: 'Host counter-raids now target your hamlets and guilds. Watch wave intel for inbound strikes - keep builders repairing and footmen garrisoned on economy tiles.',
+      minWave: 6,
+      maxWave: 20,
+      when: (gs) => (gs.settlementRaids?.missions?.length ?? 0) > 0,
+      title: 'Strike Raids',
+      body: 'Every standing war camp is listed under <strong>Ops</strong>. Select two or more hunters and dispatch them: they march on the camp, and razing it pays loot on top of the bounty. A dug-in camp pays more.',
       highlight: 'tab-ops',
     },
     {
@@ -201,7 +209,7 @@ const UX = (() => {
       when: (gs) =>
         (gs.counterEvolution?.activeExpeditions?.length ?? 0) > 0 || !!gs.counterEvolution?.summary,
       title: 'Counter-Offensives',
-      body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair with spy disruption and settlement raids to collapse a realm before evolution outpaces you.',
+      body: 'Launch expeditions from the right panel to debuff host factions temporarily. Pair them with spy disruption and strike raids on war camps.',
       highlight: 'right-panel',
     },
   ];
@@ -586,6 +594,7 @@ const UX = (() => {
         u.roster
           ? `<div class="unit-info-row roster-row">${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>`
           : '',
+        formatTraits(u),
         `<div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>`,
         u.scaling?.kind === 'vanilla' && u.obsoletePct != null && u.obsoletePct < 90
           ? `<div class="unit-info-status obsolete-hint">${escapeHtml(
@@ -680,6 +689,49 @@ const UX = (() => {
     keepCardClear();
   }
 
+  /** Earned traits with their deed, gain and price, then what the next rank opens. */
+  function formatTraits(u) {
+    const v = u.vet;
+    if (!v) return '';
+    const rows = v.traits.map(
+      (t) =>
+        `<div class="unit-info-row trait-row" title="${escapeHtml(t.measure)}"><strong>${escapeHtml(t.name)}</strong> ${escapeHtml(t.deed)}: ${escapeHtml(t.gain)}, ${escapeHtml(t.cost)} <button class="unit-quick-btn trait-forget-btn" data-trait="${escapeHtml(t.id)}" title="Give up this trait for good to free the slot for the next deed">Give up</button></div>`
+    );
+    const free = v.slots - v.traits.length;
+    let slots = `Trait slots ${v.traits.length}/${v.slots}`;
+    if (free > 0) slots += ', open for the next deed';
+    if (v.nextSlotTier) slots += `. Rank ${v.nextSlotTier} opens another`;
+    const hall = u.onHallRoll
+      ? `<div class="unit-info-row trait-row">On the Hall of Veterans roll${u.timesRaised ? `, raised ${u.timesRaised} time${u.timesRaised === 1 ? '' : 's'} (-10% health each)` : ''}</div>`
+      : '';
+    return `${rows.join('')}<div class="unit-info-row trait-slots">${escapeHtml(slots)}.</div>${hall}`;
+  }
+
+  let hallRollKey = '';
+  /** The Hall roll in the Halls pane: every top-rank name, and a Raise button for the fallen. */
+  function updateHallRoll(gs) {
+    const box = document.getElementById('hall-roll');
+    if (!box) return;
+    const roll = gs.hallRoll || [];
+    const key = JSON.stringify(roll);
+    if (key === hallRollKey) return;
+    hallRollKey = key;
+    box.innerHTML = roll.length
+      ? roll
+          .map((e) => {
+            const traits = e.traits.length ? escapeHtml(e.traits.join(', ')) : 'no traits';
+            if (!e.fallen)
+              return `<div class="hall-row"><strong>${escapeHtml(e.name)}</strong> on the field. ${traits}</div>`;
+            const why = e.block ? ` title="${escapeHtml(e.block)}"` : '';
+            return `<div class="hall-row fallen"><strong>${escapeHtml(e.name)}</strong> fell on wave ${e.fellWave}. ${traits}<button class="unit-quick-btn hall-raise-btn${e.block ? ' locked' : ''}" data-hall-id="${e.id}"${why}>Raise (${e.cost} TP)${e.block ? `: ${escapeHtml(e.block)}` : ''}</button></div>`;
+          })
+          .join('')
+      : '<p class="panel-hint">No names yet. A veteran is written here on reaching rank 6.</p>';
+    box.querySelectorAll('.hall-raise-btn').forEach((btn) => {
+      btn.onclick = () => Game.raiseVeteran?.(Number(btn.dataset.hallId));
+    });
+  }
+
   /** "Bronze 2", "Silver 1", "Gold 3" or "Recruit": the rank in words. */
   function rankName(u) {
     const tier = u.vetTier ? ` · Veteran ${u.vetTier}` : '';
@@ -729,6 +781,7 @@ const UX = (() => {
         else if (action === 'hunt-off') Game.setSelectedHunt?.(false);
         else if (action === 'promote') Game.creativePromoteSelectedGeneral?.();
         else if (action === 'vet-upgrade') Game.upgradeSelectedVeteran?.();
+        else if (btn.dataset.trait) Game.forgetSelectedTrait?.(btn.dataset.trait);
         else if (action === 'ascend') Game.ascendSelectedUnit?.();
         else if (action === 'recruit-echo') Game.recruitSelectedEcho?.();
         else if (action?.startsWith('form-')) {
@@ -803,7 +856,7 @@ const UX = (() => {
         'Drag empty map to box-select · Shift+drag · G reform · F focus · Tab next soldier · Space pause';
     else
       hint =
-        'Drag empty map to select · Shift+drag · G formation · Right-click deselect · Tab next soldier · ? keys';
+        'Drag empty map to select · Shift+drag · G formation · Click an enemy to attack · Right-click deselect · Tab next soldier · ? keys';
 
     if (gs.story?.branchLabel) {
       hint = `${gs.story.branchLabel}${gs.story.summary ? ` - ${gs.story.summary}` : ''} · ${hint}`;
@@ -1343,6 +1396,7 @@ const UX = (() => {
 
   function onGameUpdate(gs) {
     updateUnitPanel(gs);
+    updateHallRoll(gs);
     keepCardClear();
     updateHintBar(gs);
     updatePauseMenu(gs);
