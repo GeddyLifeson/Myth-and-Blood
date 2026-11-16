@@ -456,7 +456,7 @@ const GameTargeting = (() => {
     ) {
       return { kind: 'unit', target: general };
     }
-    if (general && (!general.stationedKeep || Math.random() < 0.55)) {
+    if (general && (!general.stationedKeep || (globalThis.simRandom || Math.random)() < 0.55)) {
       return { kind: 'unit', target: general };
     }
     const settlement = findNearestPlayerSettlement(unit);
@@ -469,7 +469,7 @@ const GameTargeting = (() => {
       : isRtsEra(GS.wave)
         ? 0.72
         : 0.35;
-    if (settlement && Math.random() < raidChance) {
+    if (settlement && (globalThis.simRandom || Math.random)() < raidChance) {
       return { kind: 'building', target: settlement };
     }
     const want = Roster.preference(unit);

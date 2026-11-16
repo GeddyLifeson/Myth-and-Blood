@@ -202,7 +202,7 @@ const NeutralWildlife = (() => {
       frameTimer: 0,
       animState: 'idle',
       attackAnimTimer: 0,
-      actionTimer: Math.floor(Math.random() * 40),
+      actionTimer: Math.floor((globalThis.simRandom || Math.random)() * 40),
       pinned: false,
       fleeing: false,
       demoralized: false,
@@ -210,8 +210,8 @@ const NeutralWildlife = (() => {
       chargeTimer: 0,
       rallyTimer: 0,
       spawnWave: wave,
-      wanderAngle: Math.random() * Math.PI * 2,
-      wanderTimer: 40 + Math.floor(Math.random() * 60),
+      wanderAngle: (globalThis.simRandom || Math.random)() * Math.PI * 2,
+      wanderTimer: 40 + Math.floor((globalThis.simRandom || Math.random)() * 60),
       eventId: opts.eventId || null,
     };
   }
@@ -478,8 +478,8 @@ const NeutralWildlife = (() => {
 
     unit.combatTargetId = null;
     if (unit.wanderTimer <= 0) {
-      unit.wanderAngle += (Math.random() - 0.5) * 1.2;
-      unit.wanderTimer = 50 + Math.floor(Math.random() * 40);
+      unit.wanderAngle += ((globalThis.simRandom || Math.random)() - 0.5) * 1.2;
+      unit.wanderTimer = 50 + Math.floor((globalThis.simRandom || Math.random)() * 40);
     }
     const wx = unit.x + Math.cos(unit.wanderAngle) * unit.speed * 0.6;
     const wy = unit.y + Math.sin(unit.wanderAngle) * unit.speed * 0.6;

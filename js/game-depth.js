@@ -270,16 +270,18 @@ class GameDepthSystem {
 
     const pickSwarm = () => {
       const opts = swarm.filter((t) => unlocked.has(t));
-      return opts[Math.floor(Math.random() * opts.length)] || 'goblin';
+      return opts[Math.floor((globalThis.simRandom || Math.random)() * opts.length)] || 'goblin';
     };
     const pickHarass = () => {
       const opts = harass.filter((t) => unlocked.has(t));
-      return opts.length ? opts[Math.floor(Math.random() * opts.length)] : pickSwarm();
+      return opts.length
+        ? opts[Math.floor((globalThis.simRandom || Math.random)() * opts.length)]
+        : pickSwarm();
     };
 
     const queue = [];
     for (let i = 0; i < count; i++) {
-      queue.push(Math.random() < 0.12 ? pickHarass() : pickSwarm());
+      queue.push((globalThis.simRandom || Math.random)() < 0.12 ? pickHarass() : pickSwarm());
     }
 
     let hasSiege = false;
@@ -305,8 +307,8 @@ class GameDepthSystem {
         'warp_prophet',
       ].filter((t) => unlocked.has(t));
       if (lightElites.length) {
-        queue[Math.floor(Math.random() * queue.length)] =
-          lightElites[Math.floor(Math.random() * lightElites.length)];
+        queue[Math.floor((globalThis.simRandom || Math.random)() * queue.length)] =
+          lightElites[Math.floor((globalThis.simRandom || Math.random)() * lightElites.length)];
       }
     }
 
@@ -375,7 +377,7 @@ class GameDepthSystem {
       Math.floor((typeof academyEase === 'function' ? academyEase(wave) : wave / 100) * 4)
     );
     for (let i = 0; i < extra; i++) {
-      queue.push(pool[Math.floor(Math.random() * pool.length)] || 'orc');
+      queue.push(pool[Math.floor((globalThis.simRandom || Math.random)() * pool.length)] || 'orc');
     }
     return queue;
   }
@@ -413,9 +415,9 @@ class GameDepthSystem {
       hazards.push({
         type: t,
         id: `haz_${i}_${Date.now()}`,
-        x: 80 + Math.random() * (worldW - 160),
-        y: rallyY - 120 + Math.random() * (worldH - rallyY - 80),
-        radius: 28 + Math.random() * 18,
+        x: 80 + (globalThis.simRandom || Math.random)() * (worldW - 160),
+        y: rallyY - 120 + (globalThis.simRandom || Math.random)() * (worldH - rallyY - 80),
+        radius: 28 + (globalThis.simRandom || Math.random)() * 18,
         damage: t === 'fire' ? 0.35 : 0,
         slow: t === 'swamp' ? 0.55 : 1,
       });

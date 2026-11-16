@@ -82,9 +82,9 @@ const GameWaves = (() => {
     let pos = {
       x:
         mf && mf.isSector(sector)
-          ? mf.spawnX(sector, GS.worldW, Math.random)
-          : m + Math.random() * (GS.worldW - m * 2),
-      y: 8 + Math.random() * 20,
+          ? mf.spawnX(sector, GS.worldW, globalThis.simRandom || Math.random)
+          : m + (globalThis.simRandom || Math.random)() * (GS.worldW - m * 2),
+      y: 8 + (globalThis.simRandom || Math.random)() * 20,
     };
     if (svc('BiomeSpawn')) {
       pos = svc('BiomeSpawn').biasSpawnPosition(
@@ -688,6 +688,7 @@ const GameWaves = (() => {
     if (!isHorde && svc('ContentExpansion')) {
       GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
     }
+    if (svc('ModLoader')) GS.spawnQueue = svc('ModLoader').applyModWaves(GS.wave, GS.spawnQueue);
     GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
     if (GS.currentHordeWave) GS.currentHordeWave.queue = GS.spawnQueue;
     GS.waveEnemyTotal = GS.spawnQueue.length;
@@ -992,7 +993,12 @@ const GameWaves = (() => {
     GS.spawnDelayBonus = 0;
 
     for (const t of GS.pendingReinforce) {
-      const u = spawnUnit(t, 60 + Math.random() * (GS.worldW - 120), GS.deployY - 10, 'player');
+      const u = spawnUnit(
+        t,
+        60 + (globalThis.simRandom || Math.random)() * (GS.worldW - 120),
+        GS.deployY - 10,
+        'player'
+      );
       if (!u) continue;
       applyPlayerStatMods(u);
       if (svc('ContentExpansion')) svc('ContentExpansion').applyLoadoutToUnit(u);

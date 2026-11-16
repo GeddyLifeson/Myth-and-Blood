@@ -477,8 +477,8 @@ const DynamicMapEvents = (() => {
       for (let i = 0; i < mods.spawnWildStalkers; i++) {
         const u = NeutralWildlife.createUnit(
           'wild_stalker',
-          eventSite?.x + (Math.random() - 0.5) * 60,
-          eventSite?.y + (Math.random() - 0.5) * 40,
+          eventSite?.x + ((globalThis.simRandom || Math.random)() - 0.5) * 60,
+          eventSite?.y + ((globalThis.simRandom || Math.random)() - 0.5) * 40,
           wave,
           { territoryTier: ctx.territoryTier }
         );
@@ -527,7 +527,7 @@ const DynamicMapEvents = (() => {
     if (m.surgeChip && updateTick % 200 === 0) {
       for (const u of ctx.units || []) {
         if (u.hp <= 0 || u.team === 'neutral') continue;
-        if (Math.random() > 0.35) continue;
+        if ((globalThis.simRandom || Math.random)() > 0.35) continue;
         ctx.damageUnit?.(u, m.surgeDamage, { attackerTeam: 'neutral' });
       }
     }
@@ -535,7 +535,7 @@ const DynamicMapEvents = (() => {
     if (m.quakePin && updateTick % 180 === 0) {
       for (const u of ctx.units || []) {
         if (u.hp <= 0 || u.team !== 'player') continue;
-        if (Math.random() > 0.25) continue;
+        if ((globalThis.simRandom || Math.random)() > 0.25) continue;
         u.pinned = true;
         u.pinTimer = 40;
       }
