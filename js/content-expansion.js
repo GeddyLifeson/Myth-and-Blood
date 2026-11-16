@@ -1660,7 +1660,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'ice_form') {
-      AudioEngine.play('magicCast');
+      AudioEngine.play('frost');
       StrikeFX?.play?.('frost_nova', wx, wy, ab.radius);
       StrikeFX?.impact?.('frost_nova', wx, wy, ab.radius, 1.1 * coolFx);
       for (const u of ctx.units) {
@@ -1690,7 +1690,7 @@ const ContentExpansion = (() => {
       return true;
     }
     if (ability === 'frost_nova') {
-      AudioEngine.play('magicCast');
+      AudioEngine.play('frost');
       StrikeFX?.play?.('frost_nova', wx, wy, ab.radius);
       StrikeFX?.impact?.('frost_nova', wx, wy, ab.radius, coolFx);
       if (typeof VisualPolish !== 'undefined') VisualPolish.addScreenShake(Math.round(4 * coolFx));

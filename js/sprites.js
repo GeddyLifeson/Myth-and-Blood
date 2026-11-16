@@ -6846,6 +6846,8 @@ const SpriteGen = (() => {
     bodyRadius,
     celebrate,
     gaitOf,
+    familyOf,
+    weaponOf: (type) => KIT[type]?.w,
     DEATH_CAUSES,
     DEATH_FRAMES,
     UNIT_CANVAS_UNITS,

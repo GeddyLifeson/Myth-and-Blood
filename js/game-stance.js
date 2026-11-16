@@ -4,8 +4,15 @@
  * names listed under bind() once every module is in.
  */
 const GameStance = (() => {
-  const { builderHasWork, clearHoldPost, distToHoldPost, hasHoldPost, isPlayerMarchingOrder, svc } =
-    GameCore;
+  const {
+    builderHasWork,
+    clearHoldPost,
+    distToHoldPost,
+    hasHoldPost,
+    isPlayerMarchingOrder,
+    playSfx,
+    svc,
+  } = GameCore;
   const GS = GameState;
   const { clampPos } = GameField;
   const { isInView } = GameCamera;
@@ -519,6 +526,7 @@ const GameStance = (() => {
       sent ? `${sent} soldier${sent > 1 ? 's' : ''} back to post.` : 'Already at their posts.',
       120
     );
+    if (sent) playSfx('orderRecall');
     syncInteractionState();
     return sent > 0;
   }

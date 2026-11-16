@@ -113,7 +113,7 @@ const GameCampaign = (() => {
       380
     );
     svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2, 'ACADEMY ERA', '#c0a040');
-    playSfx('reinforce');
+    playSfx('eraChange');
   }
 
   function announceEnemyRtsEra() {
@@ -123,7 +123,7 @@ const GameCampaign = (() => {
       380
     );
     svc('FloatingText').status(GS.worldW / 2, 56, 'LATE WAR', '#ff8060');
-    playSfx('waveStart');
+    playSfx('enemyEra');
   }
 
   function announceKingdomEvolution() {
@@ -145,7 +145,7 @@ const GameCampaign = (() => {
       (milestone?.shortName || evo?.shortName || title).toUpperCase(),
       milestone?.color || evo?.color || '#c0a040'
     );
-    if (GS.wave === KINGDOM_STAGE_WAVES.RISING) playSfx('reinforce');
+    if (GS.wave === KINGDOM_STAGE_WAVES.RISING) playSfx('landGained');
     if (GS.wave === 150) {
       showMessage('Wave 150 — mid-war pressure rises. Expect denser packs and named threats.', 300);
     }
@@ -654,7 +654,7 @@ const GameCampaign = (() => {
         showMessage(`${owner}${name} complete!${eco}`, 280);
         svc('Particles').dust(b.x, b.y);
         if (b.owner === 'enemy') {
-          playSfx('waveStart');
+          playSfx('enemyBuilt');
           noteEnemyEconomyPresence(b);
         }
       } else if (b.owner === 'player') {
@@ -758,7 +758,7 @@ const GameCampaign = (() => {
     if (trained > 0) {
       refreshUnitCounts();
       showMessage(`Academies trained ${trained} unit${trained > 1 ? 's' : ''} this round.`, 200);
-      playSfx('deploy');
+      playSfx('academyTrained');
     }
   }
 

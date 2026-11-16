@@ -169,6 +169,14 @@ const AudioEngine = (() => {
     musicSiegeLate: 'music_siege_late',
     musicHorde: 'music_horde',
     musicLastStand: 'music_last_stand',
+    bossDeath: 'boss_death',
+    generalDown: 'general_down',
+    buildingCollapse: 'building_collapse',
+    thunder: 'thunder',
+    promotion: 'promotion',
+    eraChange: 'era_fanfare',
+    doctrine: 'doctrine',
+    recruitHero: 'hero_recruit',
   };
   // Each enemy faction has a short theme, played when it takes the lead from another.
   const FACTION_CUES = {
@@ -199,6 +207,10 @@ const AudioEngine = (() => {
     mineBlast: 350,
     satchelBlast: 300,
     fuseHiss: 1200,
+    buildingCollapse: 1500,
+    thunder: 2500,
+    promotion: 1500,
+    recruitHero: 800,
   };
   // Long recorded stingers dip the music for their first seconds so they read over the loop.
   const DUCKED = new Set([
@@ -214,8 +226,29 @@ const AudioEngine = (() => {
     'hordeWarn',
     'dawnHorn',
     'lastBreach',
+    'bossDeath',
+    'generalDown',
+    'eraChange',
+    'doctrine',
     ...Object.values(FACTION_CUES),
   ]);
+  // Ducked stingers take turns. A higher one plays over a lower one; an equal or lower one
+  // waits for the playing one and is dropped if it has waited too long.
+  const STINGER_PRIORITY = {
+    defeat: 6,
+    victory: 6,
+    lastBreach: 5,
+    bossDeath: 5,
+    generalDown: 5,
+    bossRoar: 4,
+    breachHorn: 4,
+    enrage: 3,
+    veteranFallen: 3,
+    hordeWarn: 3,
+  };
+  const STINGER_HOLD_S = 2.5;
+  const STINGER_MAX_WAIT_MS = 4000;
+  const STINGER_QUEUE_MAX = 2;
   const sampleLastPlayed = {};
   const samples = {};
   let samplesRequested = false;
@@ -266,7 +299,7 @@ const AudioEngine = (() => {
     const gain = ctx.createGain();
     gain.gain.value = SAMPLE_GAIN[name] ?? 1;
     source.connect(gain);
-    gain.connect(dest || sfxGain);
+    gain.connect(dest || sfxOut());
     source.start();
     if (DUCKED.has(name)) duckMusic(Math.min(2.5, buffer.duration));
     return source;
@@ -294,6 +327,88 @@ const AudioEngine = (() => {
     return true;
   }
 
+  let stingerUntil = 0;
+  let stingerPriority = 0;
+  let stingerTimer = null;
+  const stingerQueue = []; // { name, pan, at }
+
+  /** True when a ducked stinger should wait for the one already playing. */
+  function stingerBusy(name) {
+    if (!DUCKED.has(name) || !samples[name] || !ctx) return false;
+    return ctx.currentTime < stingerUntil && (STINGER_PRIORITY[name] || 1) <= stingerPriority;
+  }
+
+  function queueStinger(name, pan) {
+    if (stingerQueue.some((q) => q.name === name)) return;
+    stingerQueue.push({ name, pan, at: Date.now() });
+    stingerQueue.sort((a, b) => (STINGER_PRIORITY[b.name] || 1) - (STINGER_PRIORITY[a.name] || 1));
+    stingerQueue.length = Math.min(stingerQueue.length, STINGER_QUEUE_MAX);
+    if (!stingerTimer) {
+      const ms = Math.max(50, (stingerUntil - ctx.currentTime) * 1000);
+      stingerTimer = setTimeout(drainStingers, ms);
+    }
+  }
+
+  function drainStingers() {
+    stingerTimer = null;
+    const now = Date.now();
+    while (stingerQueue.length && now - stingerQueue[0].at > STINGER_MAX_WAIT_MS)
+      stingerQueue.shift();
+    const next = stingerQueue.shift();
+    if (next) playPanned(next.name, next.pan);
+  }
+
+  function markStinger(name, buffer) {
+    if (!DUCKED.has(name)) return;
+    stingerUntil = ctx.currentTime + Math.min(STINGER_HOLD_S, buffer.duration);
+    stingerPriority = STINGER_PRIORITY[name] || 1;
+    if (stingerQueue.length && !stingerTimer) {
+      stingerTimer = setTimeout(drainStingers, Math.min(STINGER_HOLD_S, buffer.duration) * 1000);
+    }
+  }
+
+  // While a one-shot from playAt() is being built, its nodes connect here instead of sfxGain.
+  let panBus = null;
+  const PAN_WIDTH = 0.7;
+  const PAN_RELEASE_MS = 9000;
+
+  function sfxOut() {
+    return panBus || sfxGain;
+  }
+
+  /** -1..1 for a world x, measured from the middle of what the camera shows. */
+  function panFor(x) {
+    const gs = typeof GS !== 'undefined' ? GS : null;
+    if (!gs || !Number.isFinite(x) || !(gs.worldW > 0)) return 0;
+    const center = Number.isFinite(gs.cameraWorldX) ? gs.cameraWorldX : gs.worldW / 2;
+    const scale = (gs.baseViewScale || 0) * (gs.cameraZoom || 0);
+    const half = gs.canvas?.width && scale > 0 ? gs.canvas.width / (2 * scale) : gs.worldW / 2;
+    return Math.max(-1, Math.min(1, (x - center) / half)) * PAN_WIDTH;
+  }
+
+  function playPanned(name, pan, args = []) {
+    if (!ctx || !ctx.createStereoPanner || Math.abs(pan) < 0.05) return play(name, ...args);
+    const node = ctx.createStereoPanner();
+    node.pan.value = pan;
+    node.connect(sfxGain);
+    panBus = node;
+    try {
+      play(name, ...args);
+    } finally {
+      panBus = null;
+    }
+    setTimeout(() => node.disconnect(), PAN_RELEASE_MS);
+  }
+
+  /** Plays a cue panned by where it happens on the field. */
+  function playAt(name, x, ...args) {
+    try {
+      playPanned(name, panFor(x), args);
+    } catch (e) {
+      console.warn('AudioEngine.playAt failed', name, e);
+    }
+  }
+
   function play(name, ...args) {
     try {
       loadSamples();
@@ -301,8 +416,13 @@ const AudioEngine = (() => {
         const wait = SAMPLE_COOLDOWN[name] || 0;
         const now = Date.now();
         if (!wait || now - (sampleLastPlayed[name] || 0) >= wait) {
+          if (stingerBusy(name)) {
+            queueStinger(name, panBus ? panBus.pan.value : 0);
+            return;
+          }
           if (playSample(name)) {
             sampleLastPlayed[name] = now;
+            markStinger(name, samples[name]);
             return;
           }
         }
@@ -431,6 +551,7 @@ const AudioEngine = (() => {
   }
 
   function playTone(freq, duration, type = 'square', volume = 0.3, detune = 0) {
+    const out = sfxOut();
     whenReady(() => {
       const t = ctx.currentTime;
       const osc = ctx.createOscillator();
@@ -441,13 +562,14 @@ const AudioEngine = (() => {
       gain.gain.setValueAtTime(volume, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
       osc.connect(gain);
-      gain.connect(sfxGain);
+      gain.connect(out);
       osc.start(t);
       osc.stop(t + duration + 0.05);
     });
   }
 
   function playNoise(duration, volume = 0.2, filterFreq = 1000) {
+    const out = sfxOut();
     whenReady(() => {
       const t = ctx.currentTime;
       const bufferSize = Math.max(1, Math.floor(ctx.sampleRate * duration));
@@ -464,13 +586,14 @@ const AudioEngine = (() => {
       gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
       source.connect(filter);
       filter.connect(gain);
-      gain.connect(sfxGain);
+      gain.connect(out);
       source.start(t);
       source.stop(t + duration + 0.05);
     });
   }
 
   function sweep(startFreq, endFreq, duration, type = 'sawtooth', volume = 0.2) {
+    const out = sfxOut();
     whenReady(() => {
       const t = ctx.currentTime;
       const osc = ctx.createOscillator();
@@ -481,7 +604,7 @@ const AudioEngine = (() => {
       gain.gain.setValueAtTime(volume, t);
       gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
       osc.connect(gain);
-      gain.connect(sfxGain);
+      gain.connect(out);
       osc.start(t);
       osc.stop(t + duration + 0.05);
     });
@@ -501,6 +624,113 @@ const AudioEngine = (() => {
   }
 
   let moraleBreakAt = 0;
+  let lastSwingAt = 0;
+  let lastVoiceAt = 0;
+  let lastAckAt = 0;
+
+  function canAck() {
+    const now = performance.now?.() || Date.now();
+    if (now - lastAckAt < 120) return false;
+    lastAckAt = now;
+    return true;
+  }
+
+  const STONE_RE = /wall|tower|keep|castle|gate|fort|citadel|stone|quarry|metropolis/;
+  const WEAPON_CLASS = {
+    blade: [
+      'sword',
+      'greatsword',
+      'jaggedsword',
+      'twinblades',
+      'daggers',
+      'cleaver',
+      'sawblade',
+      'scythe',
+    ],
+    axe: ['axe', 'twinaxe', 'greataxe', 'jaggedaxe'],
+    blunt: [
+      'hammer',
+      'club',
+      'mace',
+      'fists',
+      'crook',
+      'spade',
+      'pick',
+      'skullstaff',
+      'staff',
+      'lute',
+    ],
+    pike: ['pike', 'lance', 'shortspear', 'crystalspear', 'javelin'],
+  };
+  const WEAPON_OF_CLASS = {};
+  for (const [k, list] of Object.entries(WEAPON_CLASS))
+    for (const w of list) WEAPON_OF_CLASS[w] = k;
+
+  /** blade, axe, blunt, pike or claw (beasts and anything that strikes without a weapon). */
+  function weaponClass(unit) {
+    const sprites = typeof SpriteGen !== 'undefined' ? SpriteGen : null;
+    const w = sprites?.weaponOf?.(unit?.type);
+    if (w && WEAPON_OF_CLASS[w]) return WEAPON_OF_CLASS[w];
+    if (!w || w === 'none') {
+      const fam = sprites?.familyOf?.(unit?.type, unit?.team);
+      if (fam && fam !== 'human') return 'claw';
+    }
+    return 'blade';
+  }
+
+  // Voice shapes: pitch glide from/to, length, formant centre, level, breath for the dead.
+  const VOICES = {
+    human: { from: 190, to: 110, dur: 0.35, formant: 700, vol: 0.2 },
+    goblin: { from: 560, to: 300, dur: 0.22, formant: 1800, vol: 0.16 },
+    orc: { from: 120, to: 70, dur: 0.5, formant: 420, vol: 0.24 },
+    undead: { from: 240, to: 200, dur: 0.6, formant: 900, vol: 0.12, hiss: 0.08 },
+    beast: { from: 320, to: 120, dur: 0.3, formant: 1100, vol: 0.18 },
+    giant: { from: 75, to: 40, dur: 0.85, formant: 300, vol: 0.28 },
+  };
+  const FAMILY_VOICE = {
+    goblin: 'goblin',
+    orc: 'orc',
+    undead: 'undead',
+    wraith: 'undead',
+    void: 'undead',
+    beast: 'beast',
+    rat: 'beast',
+    flyer: 'beast',
+    hell: 'giant',
+  };
+  const GIANT_TYPES = new Set(['troll', 'war_chief', 'dreadborn_champion']);
+
+  function voiceFamily(unit) {
+    if (!unit) return 'human';
+    if (unit.isNamedBoss || unit.isPlanetBoss || GIANT_TYPES.has(unit.type)) return 'giant';
+    const sprites = typeof SpriteGen !== 'undefined' ? SpriteGen : null;
+    return FAMILY_VOICE[sprites?.familyOf?.(unit.type, unit.team)] || 'human';
+  }
+
+  /** A voiced cry: a sawtooth glide through one band-pass formant. */
+  function voice(from, to, duration, formant, volume) {
+    const out = sfxOut();
+    whenReady(() => {
+      const t = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const band = ctx.createBiquadFilter();
+      const gain = ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(from, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(20, to), t + duration);
+      band.type = 'bandpass';
+      band.frequency.value = formant;
+      band.Q.value = 4;
+      gain.gain.setValueAtTime(0.001, t);
+      gain.gain.linearRampToValueAtTime(volume, t + 0.03);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + duration);
+      osc.connect(band);
+      band.connect(gain);
+      gain.connect(out);
+      osc.start(t);
+      osc.stop(t + duration + 0.05);
+    });
+  }
 
   const SFX = {
     swordHit() {
@@ -910,6 +1140,184 @@ const AudioEngine = (() => {
       playTone(147, 0.32, 'sawtooth', 0.18);
       later(260, () => playTone(110, 0.5, 'sawtooth', 0.18));
     },
+
+    // Events that used to share deploy, reinforce, magicCast or waveStart.
+    courierSent() {
+      playNoise(0.05, 0.12, 6000);
+      playTone(523, 0.07, 'triangle', 0.18);
+      later(70, () => playTone(784, 0.1, 'triangle', 0.16));
+    },
+    expeditionSent() {
+      [0, 140, 280].forEach((ms) => later(ms, () => playTone(98, 0.12, 'square', 0.2)));
+      later(280, () => playTone(196, 0.3, 'sawtooth', 0.12));
+    },
+    raidSent() {
+      sweep(220, 330, 0.18, 'sawtooth', 0.2);
+      playNoise(0.06, 0.16, 2400);
+    },
+    academyTrained() {
+      playTone(660, 0.25, 'triangle', 0.16);
+      later(90, () => playTone(880, 0.35, 'triangle', 0.14));
+    },
+    relocate() {
+      playNoise(0.25, 0.18, 600);
+      later(220, () => playTone(70, 0.14, 'sine', 0.24));
+    },
+    recruitHero() {
+      [392, 494, 587, 784].forEach((f, i) => later(i * 80, () => playTone(f, 0.2, 'square', 0.14)));
+    },
+    promotion() {
+      playTone(587, 0.18, 'triangle', 0.2);
+      later(110, () => playTone(880, 0.4, 'triangle', 0.18));
+    },
+    /** A veteran has earned a promotion that is waiting to be bought. */
+    promotionReady() {
+      playTone(880, 0.12, 'triangle', 0.12);
+      later(120, () => playTone(784, 0.2, 'triangle', 0.1));
+    },
+    honorName() {
+      playTone(1047, 0.3, 'triangle', 0.12);
+      later(80, () => playTone(1319, 0.5, 'triangle', 0.1));
+    },
+    eraChange() {
+      sweep(147, 220, 0.5, 'sawtooth', 0.18);
+      later(400, () => playTone(294, 0.7, 'sawtooth', 0.16));
+    },
+    landGained() {
+      playTone(147, 0.6, 'sawtooth', 0.14);
+      playTone(220, 0.6, 'sawtooth', 0.12);
+    },
+    doctrine() {
+      playTone(110, 0.5, 'sawtooth', 0.16);
+      later(250, () => playTone(165, 0.6, 'sawtooth', 0.14));
+    },
+    rallyHorn() {
+      sweep(196, 294, 0.35, 'sawtooth', 0.24);
+      later(330, () => playTone(294, 0.5, 'sawtooth', 0.2));
+    },
+    /** The General leaps from one wall to another. */
+    generalOrder() {
+      playNoise(0.08, 0.26, 300);
+      sweep(262, 392, 0.25, 'sawtooth', 0.18);
+    },
+    spyAction() {
+      playNoise(0.3, 0.08, 3000);
+      playTone(196, 0.25, 'triangle', 0.12);
+    },
+    dispel() {
+      sweep(1200, 300, 0.35, 'sine', 0.22);
+      playNoise(0.2, 0.1, 5000);
+    },
+    boltShot() {
+      sweep(300, 900, 0.12, 'triangle', 0.18);
+      playNoise(0.06, 0.08, 4000);
+    },
+    frost() {
+      playNoise(0.4, 0.14, 7000);
+      sweep(1500, 900, 0.4, 'sine', 0.16);
+    },
+    enemyEra() {
+      playTone(110, 0.8, 'sawtooth', 0.18);
+      playTone(117, 0.8, 'sawtooth', 0.14);
+    },
+    enemyBuilt() {
+      [0, 160, 320].forEach((ms) =>
+        later(ms, () => {
+          playNoise(0.04, 0.2, 3000);
+          playTone(440, 0.05, 'square', 0.1);
+        })
+      );
+    },
+    siegeDock() {
+      playTone(55, 0.4, 'sine', 0.3);
+      playNoise(0.3, 0.22, 400);
+      later(200, () => sweep(180, 120, 0.4, 'sawtooth', 0.1));
+    },
+
+    /** A melee swing, by what the attacker carries: blade, axe, blunt, pike or claw. */
+    meleeSwing(unit) {
+      const now = performance.now?.() || Date.now();
+      if (now - lastSwingAt < 40) return;
+      lastSwingAt = now;
+      const k = weaponClass(unit);
+      if (k === 'blade') {
+        playNoise(0.07, 0.16, 5200);
+        sweep(1400, 500, 0.08, 'triangle', 0.06);
+      } else if (k === 'axe') {
+        playNoise(0.1, 0.2, 2400);
+        sweep(500, 160, 0.12, 'sawtooth', 0.1);
+      } else if (k === 'blunt') {
+        playNoise(0.12, 0.2, 900);
+        playTone(90, 0.1, 'sine', 0.16);
+      } else if (k === 'pike') {
+        playNoise(0.05, 0.14, 3800);
+        sweep(900, 700, 0.06, 'square', 0.05);
+      } else {
+        playNoise(0.09, 0.18, 1600);
+        sweep(260, 520, 0.08, 'sawtooth', 0.08);
+      }
+    },
+    /** A cry as a unit dies, by family, in one of three pitches. */
+    deathVoice(unit) {
+      const now = performance.now?.() || Date.now();
+      if (now - lastVoiceAt < 90) return;
+      lastVoiceAt = now;
+      const v = VOICES[voiceFamily(unit)];
+      const p = [1, 1.12, 0.88][Math.floor(rand() * 3)];
+      voice(v.from * p, v.to * p, v.dur, v.formant, v.vol);
+      if (v.hiss) playNoise(v.dur, v.hiss, 5000);
+    },
+    bossDeath() {
+      sweep(180, 30, 1.6, 'sawtooth', 0.34);
+      playNoise(1.2, 0.3, 260);
+      later(500, () => playTone(73, 1.2, 'sawtooth', 0.2));
+    },
+    generalDown() {
+      playTone(294, 0.6, 'sawtooth', 0.18);
+      later(500, () => playTone(262, 0.6, 'sawtooth', 0.16));
+      later(1000, () => playTone(220, 1.2, 'sawtooth', 0.16));
+    },
+    /** An enemy strikes a building: stone rings, wood thuds. */
+    buildingHit(b) {
+      if (!canPlayHit(60)) return;
+      if (STONE_RE.test(b?.type || '')) {
+        playNoise(0.06, 0.24, 3200);
+        playTone(240 + rand() * 40, 0.08, 'square', 0.12);
+      } else {
+        playNoise(0.1, 0.26, 700);
+        playTone(110 + rand() * 20, 0.1, 'sine', 0.2);
+      }
+    },
+    buildingCollapse() {
+      playNoise(1.1, 0.4, 500);
+      sweep(120, 35, 0.9, 'sawtooth', 0.24);
+      later(250, () => playNoise(0.6, 0.24, 1800));
+    },
+    thunder() {
+      playNoise(1.4, 0.34, 260);
+      playTone(45, 1.2, 'sine', 0.22);
+    },
+    orderSelect() {
+      if (!canAck()) return;
+      playTone(330, 0.05, 'triangle', 0.1);
+      playNoise(0.03, 0.06, 2000);
+    },
+    orderMove() {
+      if (!canAck()) return;
+      const v = VOICES.human;
+      voice(v.from * 1.1, v.from * 0.95, 0.14, 650, 0.1);
+      later(60, () => playNoise(0.04, 0.1, 1200));
+    },
+    orderRecall() {
+      if (!canAck()) return;
+      playTone(392, 0.08, 'triangle', 0.12);
+      later(90, () => playTone(294, 0.12, 'triangle', 0.12));
+    },
+    orderHunt(on = true) {
+      if (!canAck()) return;
+      playTone(on ? 294 : 392, 0.08, 'sawtooth', 0.12);
+      later(90, () => playTone(on ? 392 : 294, 0.12, 'sawtooth', 0.12));
+    },
   };
 
   const MENU_THEME = {
@@ -1177,6 +1585,7 @@ const AudioEngine = (() => {
     }
     ambSource = null;
     ambDrone = null;
+    setRainLevel(0);
   }
 
   function ambienceGust() {
@@ -1252,7 +1661,51 @@ const AudioEngine = (() => {
       );
       if (ambTimer) clearTimeout(ambTimer);
       ambienceGust();
+      setRainLevel(RAIN_LEVEL[weatherType] || 0);
     });
+  }
+
+  // Rain: a filtered white-noise bed under the wind while it rains, louder in a storm.
+  let rainSource = null;
+  let rainGain = null;
+  let weatherType = 'clear';
+  const RAIN_LEVEL = { rain: 0.05, storm: 0.085 };
+
+  function setRainLevel(level) {
+    if (!ctx || !masterGain) return;
+    if (!rainSource && level > 0) {
+      const len = ctx.sampleRate * 2;
+      const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let i = 0; i < len; i++) data[i] = rand() * 2 - 1;
+      rainSource = ctx.createBufferSource();
+      rainSource.buffer = buffer;
+      rainSource.loop = true;
+      const band = ctx.createBiquadFilter();
+      band.type = 'bandpass';
+      band.frequency.value = 2600;
+      band.Q.value = 0.6;
+      rainGain = ctx.createGain();
+      rainGain.gain.value = 0;
+      rainSource.connect(band);
+      band.connect(rainGain);
+      rainGain.connect(masterGain);
+      rainSource.start();
+    }
+    rainGain?.gain.setTargetAtTime(muted ? 0 : level, ctx.currentTime, 1.5);
+  }
+
+  /** Weather from the field: { type: 'clear' | 'rain' | 'storm' | ... }. Cheap to call every frame. */
+  function setWeather(weather) {
+    const type = weather?.type || 'clear';
+    if (type === weatherType) return;
+    weatherType = type;
+    whenReady(() => setRainLevel(ambMode === 'off' ? 0 : RAIN_LEVEL[weatherType] || 0));
+  }
+
+  /** Thunder for a lightning flash at world x; it rolls in a beat after the light. */
+  function thunderAt(x) {
+    setTimeout(() => playAt('thunder', x), 250 + rand() * 900);
   }
 
   function startMusic() {
@@ -1279,6 +1732,12 @@ const AudioEngine = (() => {
     bindUnlock,
     whenReady,
     play,
+    playAt,
+    setWeather,
+    thunderAt,
+    weaponClass,
+    voiceFamily,
+    panFor,
     factionArrival,
     SFX,
     startMusic,

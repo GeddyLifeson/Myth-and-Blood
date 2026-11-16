@@ -216,7 +216,7 @@ const GameArmy = (() => {
     );
     showMessage(`${label} — promoted to V${u.vetTier}/${MAX_VETERAN_TIER}`, 220);
     svc('Particles').heal(u.x, u.y);
-    playSfx('reinforce');
+    playSfx('promotion');
     ach('vet_event', {
       event: u.honorName ? 'honored_upgrade' : 'tp_upgrade',
       unitType: u.type,
@@ -453,7 +453,7 @@ const GameArmy = (() => {
       320
     );
     svc('Particles').heal(unit.x, unit.y);
-    playSfx('reinforce');
+    playSfx('honorName');
     ach('vet_event', { event: 'honored', unitType: unit.type, honorName: unit.honorName });
     if (unit.type === 'footman') recordFootmanCommandElevation(unit);
     if (typeof NarrativeThread !== 'undefined' && !GS.creativeMode) {
@@ -504,7 +504,7 @@ const GameArmy = (() => {
               : '+HP, +damage, +speed';
       showMessage(`${label} — ${bonus}`);
       svc('Particles').heal(unit.x, unit.y);
-      playSfx('reinforce');
+      playSfx('promotion');
       // Specialist auto-ranks and combat promotions — refresh academy mentor gate.
       refreshAcademyMentorUnlocks(unit, {
         announce: isMaxLevelVeteran(unit),
@@ -520,7 +520,7 @@ const GameArmy = (() => {
         `${name} earned promotion — research Veteran Doctrine, then spend ${cost} TP (unit panel or U).`,
         340
       );
-      playSfx('reinforce');
+      playSfx('promotionReady');
     } else if (event === 'general_star') {
       svc('FloatingText').status(unit.x, unit.y, '★ Command', VET_STAR_COLORS.gold);
       showMessage(`${getUnitDisplayName(unit)} — command star earned (+aura)`, 220);

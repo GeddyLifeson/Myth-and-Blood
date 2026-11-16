@@ -83,3 +83,23 @@ The synthesized sequencer still plays until a loop has loaded, and whenever a fi
 | `music_siege_late` | wave 40 onward by day (looped)                              |
 | `music_horde`      | a horde by day (looped)                                     |
 | `music_last_stand` | three quarters of the breach limit used (looped)            |
+
+## Mix pass
+
+`gen_mix.py` writes a fourth score, `myth_and_blood_mix.musicxml`, and `mix.json`. Cut it with
+`python cut.py mix.wav mix.json ../../assets/sfx`.
+
+| File                | Used for                                |
+| ------------------- | --------------------------------------- |
+| `boss_death`        | a warlord or other major boss dies      |
+| `general_down`      | the General falls                       |
+| `building_collapse` | a building is destroyed                 |
+| `thunder`           | thunder after a storm's lightning flash |
+| `promotion`         | a veteran is promoted or earns a star   |
+| `era_fanfare`       | the realm enters a new era              |
+| `doctrine`          | a doctrine is enacted                   |
+| `hero_recruit`      | a hero or champion is hired             |
+
+Short, frequent sounds stay synthesized in `js/audio.js`: melee swings by weapon (blade, axe,
+blunt, pike, claw), death cries by family (human, goblin, orc, undead, beast, giant), building
+hits (stone or wood), order acknowledgements and the rain bed.

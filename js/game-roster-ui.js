@@ -95,7 +95,7 @@ const GameRosterUi = (() => {
     }
     ach('crossover_recruit', { crossoverId: id });
     if (def.jojoPart === 7 || def.combatType === 'cavalry') ach('jojo_cavalry');
-    playSfx('deploy');
+    playSfx('recruitHero');
     svc('Particles').dust(u.x, u.y);
     showMessage(`${def.name} — ${def.abilityDesc}`, 280);
     refreshUnitCounts();
@@ -141,7 +141,7 @@ const GameRosterUi = (() => {
       MythicPathEvolution.recordDeploy(id, GS.wave);
     }
     ach('wwe_recruit', { wweId: id });
-    playSfx('deploy');
+    playSfx('recruitHero');
     svc('Particles').dust(u.x, u.y);
     showMessage(`${def.name} — ${def.abilityDesc}`, 280);
     return true;
@@ -422,7 +422,9 @@ const GameRosterUi = (() => {
   /** Selection card: on = Hunt (release hold), off = Hold here. */
   function setSelectedHunt(on) {
     if (!getSelectedUnitIds().length) return 0;
-    return on ? orderHunt() : orderHoldHere();
+    const n = on ? orderHunt() : orderHoldHere();
+    if (n) playSfx('orderHunt', on);
+    return n;
   }
 
   function toggleSelectedHunt() {

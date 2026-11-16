@@ -589,7 +589,7 @@ const GameMorale = (() => {
     restoreTroopMorale(target, 16);
     svc('FloatingText').status(target.x, target.y, 'WALL TO WALL!', '#ffd700');
     svc('Particles').dust(general.x, general.y);
-    playSfx('reinforce');
+    playSfx('generalOrder');
     for (const ally of GS.units) {
       if (ally.team !== 'player' || ally.hp <= 0) continue;
       if (unitDistance(general, ally) > 55) continue;

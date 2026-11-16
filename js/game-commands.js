@@ -312,7 +312,7 @@ const GameCommands = (() => {
       GS.spyUsedThisWave = true;
       rules?.markUsed(ruleKey, GS.wave);
       syncEconomyActions();
-      playSfx('magicCast');
+      playSfx('spyAction');
       ach('spy', { action });
       syncInteractionState();
       return true;
@@ -325,7 +325,7 @@ const GameCommands = (() => {
         GS.spyUsedThisWave = true;
         rules?.markUsed(ruleKey, GS.wave);
         syncEconomyActions();
-        playSfx('magicCast');
+        playSfx('spyAction');
         ach('spy', { action });
         syncInteractionState();
         return true;
@@ -431,7 +431,7 @@ const GameCommands = (() => {
     }
     rules?.markUsed(ruleKey, GS.wave);
     syncEconomyActions();
-    playSfx('magicCast');
+    playSfx('spyAction');
     ach('spy', { action });
     syncInteractionState();
     return true;
@@ -503,7 +503,7 @@ const GameCommands = (() => {
     }
     GS.rallyTimer = Math.max(GS.rallyTimer, def.duration || 0);
     showMessage(`Kingdom Doctrine — ${def.name}: ${def.desc}`, 380);
-    playSfx('reinforce');
+    playSfx('doctrine');
     ach('ability', { ability: id });
     if (typeof Analytics !== 'undefined') Analytics.onKingdomDoctrine(id);
     if (typeof StoryLore !== 'undefined') {
@@ -561,7 +561,7 @@ const GameCommands = (() => {
       });
     }
     if (typeof Analytics !== 'undefined') Analytics.onCounterDoctrine(id);
-    playSfx('magicCast');
+    playSfx('dispel');
     if (typeof StoryLore !== 'undefined') {
       StoryLore.recordChoice({
         source: 'counter',
@@ -638,7 +638,7 @@ const GameCommands = (() => {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
     }
     GS.expeditionUsedThisWave = true;
-    playSfx('deploy');
+    playSfx('expeditionSent');
     syncInteractionState({ refreshCounts: true });
     return true;
   }
@@ -758,7 +758,7 @@ const GameCommands = (() => {
         hooks: { showMessage },
       });
     }
-    playSfx('deploy');
+    playSfx('raidSent');
     return true;
   }
 
@@ -856,7 +856,7 @@ const GameCommands = (() => {
           ? `Courier dispatched: ${def.name} (${rem} message left this wave)`
           : `Courier dispatched: ${def.name}`
       );
-      playSfx('deploy');
+      playSfx('courierSent');
       ach('courier', { message: msg });
       syncInteractionState({ refreshCounts: true });
       syncEconomyActions();
@@ -932,7 +932,7 @@ const GameCommands = (() => {
     } else {
       showMessage(`Courier dispatched: ${def.name}`);
     }
-    playSfx('deploy');
+    playSfx('courierSent');
     ach('courier', { message: msg });
     syncInteractionState({ refreshCounts: msg === 'banner' });
     syncEconomyActions();
@@ -1059,7 +1059,7 @@ const GameCommands = (() => {
       });
     } else if (ability === 'rally') {
       GS.rallyTimer = ab.duration;
-      playSfx('reinforce');
+      playSfx('rallyHorn');
       StrikeFX?.play?.('rally', wx, wy, 120);
       GS.units
         .filter((u) => u.team === 'player' && u.hp > 0)

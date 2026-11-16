@@ -119,6 +119,17 @@ const GameCore = (() => {
     }
   }
 
+  /** playSfx, panned by the event's world x. */
+  function playSfxAt(name, x, ...args) {
+    try {
+      const eng = svc('AudioEngine') || (typeof AudioEngine !== 'undefined' ? AudioEngine : null);
+      if (typeof eng?.playAt === 'function') eng.playAt(name, x, ...args);
+      else playSfx(name, ...args);
+    } catch (_) {
+      /* audio optional */
+    }
+  }
+
   function wireGameServices() {
     if (typeof GameServices === 'undefined') return;
     GameServices.registerFromGlobals();
@@ -1150,6 +1161,7 @@ const GameCore = (() => {
     tacticalFoeBestD,
     svc,
     playSfx,
+    playSfxAt,
     wireGameServices,
     clampCameraAxis,
     getPanelInsets,

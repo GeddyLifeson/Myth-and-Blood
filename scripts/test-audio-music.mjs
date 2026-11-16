@@ -142,6 +142,8 @@ ok(eng.factionArrival('goblin_hordes') === true, 'a change of lead plays again')
 ok(eng.factionArrival('no_such_faction') === false, 'an unknown faction plays nothing');
 
 started.length = 0;
+// Past the faction theme above, so the stinger queue does not hold the banner cues back.
+eng.init().currentTime = 100;
 eng.play('mineBlast');
 eng.play('satchelBlast');
 eng.play('fuseHiss');

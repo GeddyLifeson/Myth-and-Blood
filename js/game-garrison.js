@@ -159,7 +159,7 @@ const GameGarrison = (() => {
     unit.x = wall.x;
     unit.y = wall.y - 22;
     showMessage('Enemy siege tower is bridging the wall!');
-    playSfx('waveStart');
+    playSfx('siegeDock');
   }
 
   function isMarchingToOutpost(unit) {
