@@ -1896,6 +1896,7 @@ const Game = (() => {
       GS.selectedUnitId = u.id;
       GS.selectedUnitIds = [u.id];
     }
+    if (u.team === 'player') playSfx('orderSelect');
     clearPlacementModes();
     syncInteractionState();
     return true;

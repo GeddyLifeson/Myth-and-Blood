@@ -308,7 +308,7 @@ const GameCommands = (() => {
       GS.spyUsedThisWave = true;
       rules?.markUsed(ruleKey, GS.wave);
       syncEconomyActions();
-      playSfx('magicCast');
+      playSfx('spyAction');
       ach('spy', { action });
       syncInteractionState();
       return true;
@@ -366,7 +366,7 @@ const GameCommands = (() => {
     }
     rules?.markUsed(ruleKey, GS.wave);
     syncEconomyActions();
-    playSfx('magicCast');
+    playSfx('spyAction');
     ach('spy', { action });
     syncInteractionState();
     return true;
@@ -423,7 +423,7 @@ const GameCommands = (() => {
       });
     }
     if (typeof Analytics !== 'undefined') Analytics.onCounterDoctrine(id);
-    playSfx('magicCast');
+    playSfx('dispel');
     if (typeof StoryLore !== 'undefined') {
       StoryLore.recordChoice({
         source: 'counter',
@@ -491,7 +491,7 @@ const GameCommands = (() => {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
     }
     GS.expeditionUsedThisWave = true;
-    playSfx('deploy');
+    playSfx('expeditionSent');
     syncInteractionState({ refreshCounts: true });
     return true;
   }
@@ -607,7 +607,7 @@ const GameCommands = (() => {
         hooks: { showMessage },
       });
     }
-    playSfx('deploy');
+    playSfx('raidSent');
     return true;
   }
 
@@ -701,7 +701,7 @@ const GameCommands = (() => {
       `The Courier rides for the rear: ${def.name} when he is back, in about 20 seconds. If he falls on the road, the order is lost.`,
       300
     );
-    playSfx('deploy');
+    playSfx('courierSent');
     ach('courier', { message: msg });
     syncInteractionState();
     syncEconomyActions();
@@ -1055,7 +1055,7 @@ const GameCommands = (() => {
       });
     } else if (ability === 'rally') {
       GS.rallyTimer = ab.duration;
-      playSfx('reinforce');
+      playSfx('rallyHorn');
       StrikeFX?.play?.('rally', wx, wy, 120);
       GS.units
         .filter((u) => u.team === 'player' && u.hp > 0)

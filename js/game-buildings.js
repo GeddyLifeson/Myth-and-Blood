@@ -25,6 +25,7 @@ const GameBuildings = (() => {
     isSiegeableStructure,
     isUnitProducingBuilding,
     playSfx,
+    playSfxAt,
     posDistSq,
     releaseBuildingRecord,
     structureEdgeDistance,
@@ -574,7 +575,7 @@ const GameBuildings = (() => {
       const prefix = b.owner === 'enemy' ? 'Enemy ' : '';
       showMessage(`${prefix}${name} destroyed!`);
     }
-    if (!opts.silent && opts.playDeath !== false) playSfx('death');
+    if (!opts.silent && opts.playDeath !== false) playSfxAt('buildingCollapse', b.x);
     if (wasProducer) checkPlayerElimination();
     if (wasEnemyEconomy) {
       GS.structuresRazedThisWave++;
@@ -684,7 +685,7 @@ const GameBuildings = (() => {
     invalidateObstacles();
     svc('Particles').dust(pos.x, pos.y);
     showMessage(`${def.name} relocated.`);
-    playSfx('deploy');
+    playSfx('relocate');
     syncInteractionState();
     return true;
   }
@@ -1437,7 +1438,7 @@ const GameBuildings = (() => {
     if (best.isHamlet) dmg = Math.floor(dmg * 1.4);
     if (best.isMerchantGuild) dmg = Math.floor(dmg * 1.2);
     damageBuilding(best, dmg, unit);
-    playSfx('swordHit');
+    playSfxAt('buildingHit', best.x, best);
   }
 
   function updateSiegeTower(unit) {

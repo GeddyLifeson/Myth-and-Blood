@@ -959,6 +959,7 @@ const VisualPolish = (() => {
     }
 
     weather = pickWeather(wave, tick);
+    if (typeof AudioEngine !== 'undefined') AudioEngine.setWeather?.(weather);
 
     if (phase === 'night') {
       const vignette = ctx.createRadialGradient(
@@ -1043,7 +1044,9 @@ const VisualPolish = (() => {
       // particle (originally a spell-strike effect) and screen-shake helper.
       // Low per-frame odds keep it an occasional beat, not a constant strobe.
       if (Math.random() < 0.004 && typeof Particles !== 'undefined') {
-        Particles.lightning(worldW * Math.random(), mapH * (0.4 + Math.random() * 0.35));
+        const boltX = worldW * Math.random();
+        Particles.lightning(boltX, mapH * (0.4 + Math.random() * 0.35));
+        if (typeof AudioEngine !== 'undefined') AudioEngine.thunderAt?.(boltX);
         ctx.fillStyle = 'rgba(255,255,255,0.22)';
         ctx.fillRect(0, 0, worldW, mapH);
         addScreenShake(3);

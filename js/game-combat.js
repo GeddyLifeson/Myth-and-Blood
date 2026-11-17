@@ -13,6 +13,7 @@ const GameCombat = (() => {
     isValidCombatFoe,
     moraleBreakThreshold,
     playSfx,
+    playSfxAt,
     posDistSq,
     sampleKiEnergyArmy,
     svc,
@@ -545,11 +546,11 @@ const GameCombat = (() => {
     }
 
     // Audio tiers — throttled inside AudioEngine
-    if (crit) playSfx('impact', 'crit');
-    else if (willDie) playSfx('impact', 'kill');
-    else if (actual >= 28) playSfx('impact', 'heavy');
-    else if (actual >= 10) playSfx('impact', 'medium');
-    else playSfx('impact', 'light');
+    if (crit) playSfxAt('impact', unit.x, 'crit');
+    else if (willDie) playSfxAt('impact', unit.x, 'kill');
+    else if (actual >= 28) playSfxAt('impact', unit.x, 'heavy');
+    else if (actual >= 10) playSfxAt('impact', unit.x, 'medium');
+    else playSfxAt('impact', unit.x, 'light');
 
     // Camera punch on meaningful hits
     if (allowShake && svc('VisualPolish')) {
@@ -584,14 +585,18 @@ const GameCombat = (() => {
       unit.hp = 0;
       let quickRevived = false;
       unit.deathCause = Roster.deathCause(unit, opts, actual, GS.updateTick);
-      playSfx(
+      playSfxAt(
         'deathVar',
+        unit.x,
         unit.deathCause === 'fall'
           ? isMajorBossUnit(unit) || isMonsterEnemy(unit)
             ? 'big'
             : 'small'
           : unit.deathCause
       );
+      playSfxAt('deathVoice', unit.x, unit);
+      if (unit.team === 'enemy' && isMajorBossUnit(unit)) playSfxAt('bossDeath', unit.x);
+      if (unit.team === 'player' && unit.isGeneral) playSfxAt('generalDown', unit.x);
       if (unit.team === 'neutral' || unit.isNeutral) {
         if (svc('NeutralWildlife')) {
           svc('NeutralWildlife').onSlain(unit, {
@@ -926,6 +931,7 @@ const GameCombat = (() => {
 
     if (useMelee && (isMeleeCombat(unit) || unit.combatType === 'ranged')) {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
+      playSfxAt('meleeSwing', unit.x, unit);
       const meleeHit = unit.isDoomslayer || (globalThis.simRandom || Math.random)() * 100 <= hit;
       if (meleeHit) {
         const dmg = unit.isDoomslayer ? abyssWalkerDamage(target) : calcDamage(unit, target, 12);
@@ -978,13 +984,14 @@ const GameCombat = (() => {
         splash: unit.type === 'mage' || unit.type === 'dark_mage' || unit.type === 'necromancer',
         angle: Math.atan2(target.y - unit.y, target.x - unit.x),
       });
-      unit.projectile === 'arrow' ? playSfx('arrowShoot') : playSfx('magicCast');
+      unit.projectile === 'arrow' ? playSfx('arrowShoot') : playSfx('boltShot');
     } else if (
       isMeleeCombat(unit) &&
       dist <= unit.meleeRange &&
       (globalThis.simRandom || Math.random)() * 100 <= hit
     ) {
       CombatFX.meleeSlash(fx, fy, unit.rotation);
+      playSfxAt('meleeSwing', unit.x, unit);
       takeDamage(target, calcDamage(unit, target, 10), {
         attackerTeam: unit.team,
         attacker: unit,

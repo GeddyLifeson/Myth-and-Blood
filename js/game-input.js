@@ -147,6 +147,7 @@ const GameInput = (() => {
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
+    playSfx('orderMove');
     syncInteractionState();
     return true;
   }
