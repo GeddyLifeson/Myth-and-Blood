@@ -157,7 +157,7 @@ const GameCreative = (() => {
     if (
       isVanillaAcademyType(type) &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-      !canBuildAcademyType(type, GS.wave, GS.units)
+      !canBuildAcademyType(type, GS.wave, GS.buildings)
     )
       return false;
     let buildX = wx;

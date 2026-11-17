@@ -418,9 +418,9 @@ const Encyclopedia = (() => {
       );
     };
     group(
-      'Academies',
-      'Late works, opened by research. An academy trains one kind of soldier each round while a veteran of that kind is on the field to teach.',
-      (id, d) => d.isAcademy && /^academy_/.test(id)
+      'Training Ground',
+      'Opens at wave 10, one per field. Move one soldier of rank 2 or higher onto it and each dawn they raise a recruit of their type who arrives with a rank, while they stand off the line. If the ground falls with them on it, they are badly hurt.',
+      (id) => id === 'training_ground'
     );
     group(
       'Settlements',

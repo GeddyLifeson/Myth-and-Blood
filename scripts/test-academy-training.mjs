@@ -1,5 +1,6 @@
 /**
- * A finished academy trains one soldier of its kind at dawn, and the upkeep count rises with it.
+ * A finished Training Ground with a posted mentor trains one soldier of the mentor's kind at
+ * dawn, and the upkeep count rises with it.
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -14,9 +15,11 @@ const {
   SpriteGen,
   GameState: GS,
   GameCampaign,
+  GameCore,
   createBuilding,
+  createUnit,
 } = vm.runInContext(
-  `${code}\n({ Game, SpriteGen, GameState, GameCampaign, createBuilding })`,
+  `${code}\n({ Game, SpriteGen, GameState, GameCampaign, GameCore, createBuilding, createUnit })`,
   vm.createContext(sb)
 );
 SpriteGen.prewarmCache = () => {};
@@ -25,10 +28,17 @@ Game.setDifficulty('normal');
 Game.start();
 
 const cx = Game.getWorldCenter();
-const academy = createBuilding('academy_footman', cx.x, cx.y + 40, 'player');
+GS.wave = 10;
+const academy = createBuilding('training_ground', cx.x, cx.y + 40, 'player');
 academy.complete = true;
 academy.buildProgress = academy.buildTime;
 GS.buildings.push(academy);
+const mentor = createUnit('footman', academy.x - 18, academy.y + 30, 'player');
+mentor.vetTier = 2;
+GS.units.push(mentor);
+ok(GameCampaign.postToTrainingGround(mentor, academy.x, academy.y), 'a rank 2 footman is posted');
+GameCampaign.processAcademyTraining();
+const upkeepBefore = GameCore.unitCounts.upkeepArmy;
 
 const footmen = () =>
   GS.units.filter((u) => u.team === 'player' && u.hp > 0 && u.type === 'footman').length;
@@ -41,7 +51,11 @@ try {
   threw = e;
 }
 ok(!threw, `academy training runs without error${threw ? `: ${threw.message}` : ''}`);
-ok(footmen() === before + 1, 'the footman academy trains one footman');
+ok(footmen() === before + 1, 'the Training Ground trains one footman');
+ok(
+  GameCore.unitCounts.upkeepArmy === upkeepBefore + 1,
+  `the upkeep count rises with the recruit (${upkeepBefore} -> ${GameCore.unitCounts.upkeepArmy})`
+);
 
 if (failures()) process.exit(1);
 console.log('academy training: ok');

@@ -47,7 +47,7 @@ const GameModes = (() => {
       id: 'academy_era',
       label: 'Academy Era',
       rule: 'Start late, at wave 100, 105 or 200.',
-      desc: 'Start at wave 100 to 200 on the grown late-game field, with academies, hamlets and heavier assaults.',
+      desc: 'Start at wave 100 to 200 on the grown late-game field, with a Training Ground, hamlets and heavier assaults.',
     },
     {
       id: 'pve_horde',

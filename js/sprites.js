@@ -6205,31 +6205,15 @@ const SpriteGen = (() => {
       ctx.fillRect(b.x - 1, b.y - 14, 3, 10);
       ctx.fillStyle = '#4a3020';
       ctx.fillRect(b.x - 3, b.y + 2, 6, 8);
-    } else if (b.type?.startsWith('academy_')) {
-      const unit = b.academyUnit || b.type.replace('academy_', '');
-      const hue =
-        {
-          footman: '#7080a0',
-          archer: '#60a060',
-          mage: '#8060c0',
-          cavalry: '#a08050',
-          knight: '#9090b0',
-          sapper: '#a07040',
-          healer: '#60c080',
-          builder: '#c0a060',
-          courier: '#e0c080',
-          general: '#c0a040',
-        }[unit] || '#908070';
+    } else if (b.type === 'training_ground') {
       ctx.fillStyle = '#4a4038';
       ctx.fillRect(b.x - 20, b.y - 2, 40, 20);
-      ctx.fillStyle = hue;
+      ctx.fillStyle = '#7080a0';
       ctx.fillRect(b.x - 16, b.y - 16, 32, 16);
       ctx.fillStyle = '#f0e8c0';
       ctx.font = '7px Cinzel';
       ctx.textAlign = 'center';
-      ctx.fillText('ACAD', b.x, b.y - 6);
-      ctx.fillStyle = '#ffd700';
-      ctx.fillRect(b.x - 10, b.y - 22, 20, 6);
+      ctx.fillText('DRILL', b.x, b.y - 6);
     } else if (b.type === 'mess_hall') {
       ctx.fillStyle = '#5a4838';
       ctx.fillRect(b.x - 18, b.y - 4, 36, 18);

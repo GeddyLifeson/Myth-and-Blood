@@ -19,11 +19,7 @@ const ProgressionRestarts = (() => {
         'The host comes on heavier from here. Your field, your walls and your veterans stand.',
       color: '#e8a040',
       scienceBonus: 6,
-      opens: [
-        'heavier hosts and elite packs',
-        'the wave-100 research tier',
-        'academies for every troop with an Immortal mentor',
-      ],
+      opens: ['heavier hosts and elite packs', 'the wave-100 research tier'],
     },
     {
       wave: 200,

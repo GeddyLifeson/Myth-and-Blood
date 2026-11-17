@@ -542,8 +542,8 @@ function testAcademyEraMode(exp, academyWave) {
       'academy era should bootstrap settlement research'
     );
     assert(
-      Research.isBuildUnlocked('academy_footman', {}),
-      'academy era should bootstrap academy research'
+      Research.isBuildUnlocked('training_ground', {}),
+      'academy era can build a Training Ground'
     );
     assert(
       Research.isTpVeteranUpgradeUnlocked({}),
@@ -597,14 +597,17 @@ function testResearchEncyclopedia(Research) {
     return;
   }
   const entries = Research.getEncyclopediaEntries();
-  const nodeCount = Research.ALL_NODES?.filter((n) => !n.retired).length || 0;
-  const nodeEntries = entries.filter(
-    (e) => e.name === 'Veteran Doctrine' || e.name === 'Hellgate Containment'
-  );
+  // Charters that only open troops have no entry of their own; every other live one must.
+  const opens = (n) =>
+    (n.build || []).some((t) => !Research.STARTER_BUILD.has(t)) || n.faction || n.feature;
+  const missing = (Research.ALL_NODES || [])
+    .filter((n) => !n.retired && opens(n))
+    .filter((n) => !entries.some((e) => e.name === n.name));
   assert(
-    entries.length >= nodeCount + 8,
-    'encyclopedia should list all nodes plus overview/path entries'
+    missing.length === 0,
+    `encyclopedia should list every charter that opens something (${missing.map((n) => n.id)})`
   );
+  assert(entries.length >= 8, 'encyclopedia should carry the overview and path entries');
   const vet = entries.find((e) => e.name === 'Veteran Doctrine');
   assert(vet?.body?.includes('wave 10'), 'Veteran Doctrine should say the wave it is granted');
   const doom = entries.find((e) => e.name === 'Hellgate Containment');
@@ -624,7 +627,7 @@ function testResearchGates(Research, BuildDefs) {
   assert(!Research.isBuildUnlocked('castle', {}), 'castle should require fortification research');
   assert(!Research.isBuildUnlocked('hamlet', {}), 'hamlet should require settlement charter');
   assert(!Research.isBuildUnlocked('village', {}), 'village should require village rights');
-  assert(!Research.isBuildUnlocked('academy_footman', {}), 'academies should require research');
+  assert(Research.isBuildUnlocked('training_ground', {}), 'Training Ground needs no research');
   Research.completeResearch('fortification', noop);
   assert(Research.isBuildUnlocked('castle', {}), 'castle unlocks after fortification');
   Research.completeResearch('settlement_charter', noop);
