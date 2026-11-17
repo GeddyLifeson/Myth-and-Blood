@@ -198,6 +198,8 @@ const Hotkeys = (() => {
     bind('shift+h', 'holdHere', 'Hold here'),
     bind('[', 'order', 'War Cry (General)', 'warCry'),
     bind(']', 'order', 'Hold the Line (General)', 'holdLine'),
+    bind('.', 'order', 'Advance (General)', 'advance'),
+    bind(',', 'order', 'Fall Back (General)', 'fall_back'),
     bind('z', 'loadout', 'Balanced loadout', 'balanced'),
     bind('d', 'beginDay', 'Begin the day (night only)'),
     ...CAMERA,

@@ -272,6 +272,16 @@ const Cheats = (() => {
     panel.classList.toggle('active');
     const msg = document.getElementById('cheat-result');
     if (msg) msg.textContent = lastMessage || 'Enter a cheat code above.';
+    const warn = document.getElementById('cheat-void-warning');
+    if (warn) warn.textContent = voidWarning();
+  }
+
+  /** What a code costs, worded for where the player is: in a run, or on the menu before one. */
+  function voidWarning() {
+    const playing = typeof Game !== 'undefined' && Game.isPlaying();
+    return playing
+      ? 'A code voids this run: no score, ribbons or achievements are recorded for it.'
+      : 'A code voids the next run you start: no score, ribbons or achievements are recorded for it.';
   }
 
   function init() {
@@ -301,6 +311,7 @@ const Cheats = (() => {
     init,
     submit,
     togglePanel,
+    voidWarning,
     getLastMessage,
     getCodeHints,
     normalize,

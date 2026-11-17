@@ -426,6 +426,7 @@ const GameBuildings = (() => {
         grantScience: (n) => {
           if (n > 0 && svc('Research') && svc('Research').grantSciencePoints) {
             svc('Research').grantSciencePoints(n, { showMessage });
+            svc('FloatingText').status(b.x, b.y + 10, `+${n} SP`, '#a080ff');
           }
         },
         hooks: {

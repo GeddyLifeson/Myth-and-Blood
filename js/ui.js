@@ -1091,6 +1091,14 @@ const UI = (() => {
       });
     });
 
+    document.getElementById('gameover-setup-btn')?.addEventListener('click', () => {
+      if (restartInFlight) return;
+      AudioEngine.SFX.click?.();
+      hideGameOverScreen();
+      Game.quitToMenu?.();
+      document.getElementById('menu-setup-btn')?.click();
+    });
+
     document.getElementById('gameover-menu-btn')?.addEventListener('click', () => {
       if (restartInFlight) return;
       AudioEngine.SFX.click?.();
@@ -1411,8 +1419,9 @@ const UI = (() => {
           : selCount < minForce
             ? 'disabled'
             : '';
+        const sci = m.rewardScience ? ` · +${m.rewardScience} SP` : '';
         return (
-          `<button type="button" class="raid-mission-btn ${cls}" data-raid="${m.id}" title="Dispatch strike force to raze ${m.label}">` +
+          `<button type="button" class="raid-mission-btn ${cls}" data-raid="${m.id}" title="Dispatch strike force to raze ${m.label}${sci}">` +
           `<span>${m.label}</span><span class="raid-reward">${status}</span></button>`
         );
       })
@@ -1553,7 +1562,7 @@ const UI = (() => {
                   Math.max(minForce, selCount || minForce),
                   (wave || 0) + 1
                 );
-                return ` · ~${preview.tp} TP loot`;
+                return ` · ~${preview.science} SP loot`;
               })()
             : '';
         return (

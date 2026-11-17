@@ -256,7 +256,10 @@ const SettlementRaids = (() => {
       totalLootTp += rewardTp;
       ctx.grantTp?.(rewardTp);
       if (rewardScience > 0) ctx.grantScience?.(rewardScience);
-      hooks.showMessage?.(`Raid success: ${mission.label} razed. Loot +${rewardTp} TP.`, 400);
+      hooks.showMessage?.(
+        `Raid success: ${mission.label} razed. Loot +${rewardTp} TP${rewardScience ? `, +${rewardScience} science` : ''}.`,
+        400
+      );
       hooks.floatingText?.(building.x, building.y, `LOOT +${rewardTp} TP`, '#60c0ff');
       hooks.addHighlight?.('raid', `Raid complete: +${rewardTp} TP`);
       return { mission, rewardTp, rewardScience, strikeBonus: true };

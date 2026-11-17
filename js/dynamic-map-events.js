@@ -32,7 +32,7 @@ const DynamicMapEvents = (() => {
       waveMin: 18,
       text: 'The northern caldera rumbles.',
       options: [
-        pay('harness', 'Stoke the vents', 3, 'Lava scorches the north all wave', {
+        pay('harness', 'Stoke the vents', 3, 'Lava scorches the north all wave · +2 SP', {
           eruption: 0.3,
           sp: 2,
         }),
@@ -121,7 +121,7 @@ const DynamicMapEvents = (() => {
       waveMin: 95,
       text: 'A mirrored tear opens in the north.',
       options: [
-        free('loot', 'Loot the echo', '+10 TP · stalkers spill out', {
+        free('loot', 'Loot the echo', '+10 TP · +2 SP · stalkers spill out', {
           tp: 10,
           sp: 2,
           stalkers: 2,
@@ -144,7 +144,7 @@ const DynamicMapEvents = (() => {
           walls: 1.18,
           nightBuild: 1.2,
         }),
-        free('raid', 'Raid the storm', '+14 TP · lightning strikes both armies', {
+        free('raid', 'Raid the storm', '+14 TP · +3 SP · lightning strikes both armies', {
           tp: 14,
           sp: 3,
           chip: 0.28,
@@ -159,7 +159,7 @@ const DynamicMapEvents = (() => {
       waveMin: 450,
       text: 'The deep earth pulses.',
       options: [
-        pay('channel', 'Channel the pulse', 6, '+16 TP · +6 morale · 3 guardians wake', {
+        pay('channel', 'Channel the pulse', 6, '+16 TP · +4 SP · +6 morale · 3 guardians wake', {
           tp: 16,
           sp: 4,
           morale: 6,

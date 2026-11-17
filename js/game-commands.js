@@ -12,6 +12,7 @@ const GameCommands = (() => {
     isPlayerMageUnit,
     playSfx,
     strikeImpactFx,
+    gameRandom,
     svc,
     wallFacingRotation,
   } = GameCore;
@@ -19,14 +20,13 @@ const GameCommands = (() => {
   const { invalidateObstacles, sanitizeTactical } = GameField;
   const { applyGlobalHuntState } = GameStance;
   const { DRAGON_THEMED_STRIKES } = GameMorale;
-  const { damageInRadius } = GameCombat;
+  const { damageInRadius, takeDamage: damageUnit } = GameCombat;
   const { canDeployUnitType, notifyVetStarEvent, spawnUnit } = GameArmy;
-  const { tryMedicalRetreat } = GameMedical;
+  const { orderMove } = GameMovement;
   const { econCtx, syncEconomyActions } = GameWaves;
   const { isNightPhase } = GameDayNight;
   const { isKingdomActionUnlocked } = GameCampaign;
-  let TP_SANITY_CAP,
-    ach,
+  let ach,
     announceHooks,
     clearSelection,
     nextSectorIntel,
@@ -37,7 +37,6 @@ const GameCommands = (() => {
     warCampCtx;
   function bind(api) {
     ({
-      TP_SANITY_CAP,
       ach,
       announceHooks,
       clearSelection,
@@ -289,6 +288,11 @@ const GameCommands = (() => {
       showMessage('Spy network already used this wave!');
       return false;
     }
+    // By day the night preview is gone, and the report used to arrive at dawn, too late.
+    if (def.nightOnly && !isNightPhase()) {
+      showMessage(`${def.name}: scouts ride out at night, before the host marches.`);
+      return false;
+    }
 
     if (action === 'settlement_raid' && typeof WarCamps !== 'undefined') {
       // The raid goes for a war camp. No camp, no raid, and nothing is charged.
@@ -307,50 +311,22 @@ const GameCommands = (() => {
       return true;
     }
 
-    if (svc('ContentExpansion') && svc('ContentExpansion').handleSpyAction) {
-      const ok = svc('ContentExpansion').handleSpyAction(action);
-      if (ok) {
-        GS.tactical -= cost;
-        GS.spyUsedThisWave = true;
-        rules?.markUsed(ruleKey, GS.wave);
-        syncEconomyActions();
-        playSfx('magicCast');
-        ach('spy', { action });
-        syncInteractionState();
-        return true;
-      }
-      // Expansion handled the action type but refused (e.g. no raid targets) — do not fall through.
-      if (
-        action === 'settlement_raid' ||
-        action === 'tunnel' ||
-        action === 'deserter' ||
-        action === 'maps'
-      ) {
-        return false;
-      }
-    }
-
-    // Base spy actions — charge only on success.
     GS.tactical -= cost;
     GS.spyUsedThisWave = true;
 
-    if (action === 'steal') {
-      GS.tactical += 4;
-      GS.pendingWaveMods.stealReduction += 2;
-      showMessage('Spy stole enemy war chest! +4 TP');
-    } else if (action === 'disrupt') {
-      // A trade, not a discount: fewer come, but the ones who do are fed first and pushed hard.
-      const r = rules?.rule(ruleKey) || { countMult: 0.75, hpMult: 1.12, speedMult: 1.15 };
-      GS.pendingWaveMods.countMult = r.countMult;
-      GS.pendingWaveMods.hpMult = (GS.pendingWaveMods.hpMult || 1) * r.hpMult;
-      GS.pendingWaveMods.speedMult = r.speedMult;
+    if (action === 'assassin') {
+      // The mark lands on the field: the warlord is outlined and every blow on him bites deeper.
+      if (typeof GeneralOrders !== 'undefined') GeneralOrders.markWarlord(GS.wave + 1);
       showMessage(
-        `Supply lines disrupted! Next wave: ${Math.round((1 - r.countMult) * 100)}% fewer foes in the main host, ${Math.round((r.hpMult - 1) * 100)}% tougher and ${Math.round((r.speedMult - 1) * 100)}% faster. Half of those cut off catch up as a late squad.`,
+        'Assassins mark the warlord: when the next wave comes, its strongest foe is outlined in blood and takes 25% more damage.',
         300
       );
-    } else if (action === 'assassin') {
-      GS.pendingWaveMods.noElites = true;
-      showMessage('Enemy captain assassinated! No elites next wave.');
+    } else if (action === 'turncoats') {
+      const n = typeof GeneralOrders !== 'undefined' ? GeneralOrders.buyTurncoats(GS.wave + 1) : 0;
+      showMessage(
+        `Gold changes hands: ${n} of the next wave's rabble will throw down their colours at your line and fight for you.`,
+        300
+      );
     } else if (action === 'infiltrate') {
       // Used to run the same code as Scout Report. Now it is an ambush on the road.
       const r = rules?.rule(ruleKey) || { softenShare: 0.3, softenHp: 0.6 };
@@ -372,50 +348,17 @@ const GameCommands = (() => {
       else if (horde) extra = ' HORDE expected.';
       // The head count by type goes into the night preview now, not at dawn when it is too late.
       const preview = SiegeLoop.refreshPreview?.(siegeCtx);
-      const report = preview
-        ? SiegeLoop.previewText(preview)
-        : 'Scout intel locked — roster at dawn.';
+      const report = preview ? SiegeLoop.previewText(preview) : 'Scouts saw the host gather.';
       GS.nextWaveIntel = `${report}${sectorNote}${extra}`;
       showMessage(GS.nextWaveIntel, 340);
-    } else if (action === 'bribery') {
-      GS.pendingWaveMods.revealed = true;
-      GS.waveModifiers.revealed = true;
-      if ((globalThis.simRandom || Math.random)() < 0.5) GS.pendingWaveMods.stealReduction += 3;
-      else {
-        GS.tactical = Math.max(0, GS.tactical - 2);
-        showMessage('Informant double-crossed! -2 TP', 180);
-      }
-      GS.nextWaveIntel = `Bribed intel${nextSectorIntel()}`;
-      showMessage(GS.nextWaveIntel, 300);
-    } else if (action === 'poison') {
-      GS.pendingWaveMods.hpMult = 0.8;
-      showMessage('Enemy caches poisoned! Next wave -20% HP.');
-    } else if (action === 'sabotage') {
-      const r = rules?.rule(ruleKey) || { delayTicks: 600 };
-      GS.pendingWaveMods.noSiege = true;
-      GS.spawnDelayBonus = Math.max(GS.spawnDelayBonus, r.delayTicks);
-      const spiked = typeof WarCamps !== 'undefined' ? WarCamps.sabotage(warCampCtx) : null;
-      if (spiked) {
-        showMessage(
-          `Saboteurs spike the ${WarCamps.KINDS[spiked.kind].name}: no bonus from it this wave.`,
-          260
-        );
-      }
-      showMessage(
-        `Siege equipment sabotaged! No towers or engineers next wave, and the host is ${Math.round(r.delayTicks / 60)} seconds late.`,
-        300
-      );
     } else {
-      // Unknown action after expansion miss — refund.
+      // Not a spy action any more (cut in the orders rework): refund.
       GS.tactical += cost;
       GS.spyUsedThisWave = false;
       showMessage('Spy action failed.');
       return false;
     }
-    if (
-      svc('FactionReputation') &&
-      ['assassin', 'disrupt', 'poison', 'sabotage'].includes(action)
-    ) {
+    if (svc('FactionReputation') && action === 'assassin') {
       svc('FactionReputation').onSpyAggression(GS.wave, { hooks: { showMessage } });
     }
     rules?.markUsed(ruleKey, GS.wave);
@@ -426,85 +369,12 @@ const GameCommands = (() => {
     return true;
   }
 
-  function applyDoctrineToArmy(def) {
-    for (let i = 0; i < GS.units.length; i++) {
-      const u = GS.units[i];
-      if (u.team !== 'player' || u.hp <= 0) continue;
-      if (def.moraleBoost) {
-        u.morale = Math.min(u.maxMorale, u.morale + def.moraleBoost);
-        u.demoralized = false;
-        u.fleeing = false;
-        u.witnessDeaths = 0;
-      }
-      if (def.duration) {
-        if (def.damageMult) {
-          u.doctrineDmgMult = def.damageMult;
-          u.doctrineDmgTimer = Math.max(u.doctrineDmgTimer || 0, def.duration);
-        }
-        if (def.mitigation) {
-          u.doctrineMitigation = def.mitigation;
-          u.doctrineMitTimer = Math.max(u.doctrineMitTimer || 0, def.duration);
-        }
-        if (def.speedMult) {
-          u.doctrineSpeedMult = def.speedMult;
-          u.doctrineSpeedTimer = Math.max(u.doctrineSpeedTimer || 0, def.duration);
-        }
-        if (def.moraleBoost || def.damageMult) {
-          u.rallyTimer = Math.max(u.rallyTimer || 0, def.duration);
-        }
-      }
-      if (u.canHunt) applyGlobalHuntState(u);
-    }
-  }
-
+  /** Kingdom doctrines became the General's orders: war_cry, hold_line, advance, fall_back. */
   function executeDoctrine(id) {
-    const def = typeof KINGDOM_DOCTRINES !== 'undefined' ? KINGDOM_DOCTRINES[id] : null;
-    if (!def) {
-      showMessage('Unknown doctrine!');
-      return false;
-    }
-    if (!isKingdomActionUnlocked(def)) {
-      const need =
-        KINGDOM_EVOLUTION_STAGES?.[def.kingdomStage]?.name || `stage ${def.kingdomStage}`;
-      showMessage(`${def.name} unlocks in ${need}.`);
-      return false;
-    }
-    if (GS.doctrineUsedThisWave) {
-      showMessage('Kingdom doctrine already invoked this wave!');
-      return false;
-    }
-    if (GS.tactical < def.cost) {
-      showMessage('Not enough TP for kingdom doctrine!');
-      return false;
-    }
-    GS.tactical -= def.cost;
-    GS.doctrineUsedThisWave = true;
-
-    if (def.tpGrant) {
-      GS.tactical = Math.min(TP_SANITY_CAP, GS.tactical + def.tpGrant);
-    }
-    applyDoctrineToArmy(def);
-
-    const label = def.name.toUpperCase();
-    svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2 - 24, label, '#c0a040');
-    if (def.global) {
-      StrikeFX?.play?.('rally', GS.worldW / 2, GS.rallyY, Math.max(GS.worldW, GS.worldH) * 0.45);
-    }
-    GS.rallyTimer = Math.max(GS.rallyTimer, def.duration || 0);
-    showMessage(`Kingdom Doctrine — ${def.name}: ${def.desc}`, 380);
-    playSfx('reinforce');
-    ach('ability', { ability: id });
-    if (typeof Analytics !== 'undefined') Analytics.onKingdomDoctrine(id);
-    if (typeof StoryLore !== 'undefined') {
-      StoryLore.recordChoice({
-        source: 'doctrine',
-        choiceId: id,
-        label: def.name,
-        wave: GS.wave,
-      });
-    }
-    syncInteractionState();
-    return true;
+    if (typeof GeneralOrders === 'undefined') return false;
+    const ok = GeneralOrders.issue(id, { showMessage, playSfx });
+    if (ok) syncInteractionState();
+    return ok;
   }
 
   function executeCounterDoctrine(id) {
@@ -610,19 +480,10 @@ const GameCommands = (() => {
       }
       return false;
     }
-    // The soldiers leave the field but stay themselves: their records are kept by the
-    // expedition and put back when it returns, with name, rank and kills intact.
-    for (const uid of result.expedition.unitIds) {
-      const idx = GS.units.findIndex((u) => u.id === uid);
-      if (idx < 0) continue;
-      const [u] = GS.units.splice(idx, 1);
-      if (GS.selectedUnitId === uid) GS.selectedUnitId = null;
-      GS.selectedUnitIds = GS.selectedUnitIds.filter((id) => id !== uid);
-      u.path = [];
-      u.pathIndex = 0;
-      u.combatTargetId = null;
-      u.structureTargetId = null;
-    }
+    // A sortie on the field: the squad marches to the top edge, fights the vanguard where
+    // the player can see it, and whoever lives walks home, the same soldiers.
+    result.expedition.away = [];
+    startSortie(result.expedition);
     if (svc('FactionReputation')) {
       svc('FactionReputation').onExpedition(factionId, GS.wave, { hooks: { showMessage } });
     }
@@ -810,14 +671,17 @@ const GameCommands = (() => {
       showMessage('Courier is still riding...');
       return false;
     }
+    const courier = GS.units.find((u) => u.type === 'courier' && u.hp > 0 && u.courierReady);
+    if (!courier || GS.courierRide) {
+      showMessage('Courier is still riding...');
+      return false;
+    }
     GS.tactical -= cost;
     GS.courierMessagesUsedThisWave++;
     rules?.markUsed(ruleKey, GS.wave);
-    const courier = GS.units.find((u) => u.type === 'courier' && u.hp > 0);
-    let cdMult = courier?.courierCooldownMult || 1;
+    let cdMult = courier.courierCooldownMult || 1;
     // Twin Dispatch rides 20% cooler (faster) between messages.
     if (
-      courier &&
       typeof isSpecialistLateAbilityUnlocked === 'function' &&
       isSpecialistLateAbilityUnlocked(courier)
     ) {
@@ -827,101 +691,245 @@ const GameCommands = (() => {
           : null;
       cdMult *= twinCd ?? 1 / (typeof ABILITY_COOL_MULT === 'number' ? ABILITY_COOL_MULT : 1.2);
     }
-    GS.courierCooldown = Math.max(50, Math.floor(180 * cdMult));
-    if (courier) {
-      courier.courierReady = false;
-      courier.animState = 'walk';
-      notifyVetStarEvent(courier, trySpecialistRank(courier));
-    }
-
-    if (svc('ContentExpansion') && svc('ContentExpansion').handleCourierMessage(msg)) {
-      const rem = Math.max(0, msgCap - GS.courierMessagesUsedThisWave);
-      showMessage(
-        rem > 0
-          ? `Courier dispatched: ${def.name} (${rem} message left this wave)`
-          : `Courier dispatched: ${def.name}`
-      );
-      playSfx('deploy');
-      ach('courier', { message: msg });
-      syncInteractionState({ refreshCounts: true });
-      syncEconomyActions();
-      return true;
-    }
-
-    if (msg === 'reinforce') GS.pendingReinforce.push('footman', 'footman');
-    else if (msg === 'decree')
-      GS.units
-        .filter((u) => u.team === 'player')
-        .forEach((u) => {
-          u.morale = Math.min(u.maxMorale, u.morale + 5);
-          u.demoralized = false;
-          u.witnessDeaths = 0;
-        });
-    else if (msg === 'levy') {
-      // The levy is paid by the soldiers' families: it costs morale as well as a fee.
-      const r = rules?.rule(ruleKey) || { pay: 5, morale: 2 };
-      GS.pendingLevy += r.pay;
-      for (const u of GS.units) {
-        if (u.team !== 'player' || u.hp <= 0 || !(u.maxMorale > 0)) continue;
-        u.morale = Math.max(0, u.morale - r.morale);
-      }
-      svc('FloatingText')?.status?.(
-        GS.worldW / 2,
-        GS.rallyY - 40,
-        `LEVY -${r.morale} MORALE`,
-        '#ffb060'
-      );
-    } else if (msg === 'banner') {
-      const u = spawnUnit('knight', 200, GS.deployY, 'player');
-      u.targetY = GS.rallyY;
-      GS.units.push(u);
-    } else if (msg === 'supplies') {
-      GS.units
-        .filter((u) => u.team === 'player' && u.hp > 0)
-        .forEach((u) => (u.hp = Math.min(u.maxHp, u.hp + 25)));
-    } else if (msg === 'truce') {
-      GS.spawnDelayBonus += 90;
-      GS.units
-        .filter((u) => u.team === 'player' && u.hp > 0)
-        .forEach((u) => {
-          u.morale = Math.min(u.maxMorale, u.morale + 8);
-          u.demoralized = false;
-        });
-      if (svc('FactionReputation')) {
-        svc('FactionReputation').onTruce(GS.wave, {
-          worldW: GS.worldW,
-          hooks: uiHooks(),
-        });
-      }
-    } else if (msg === 'hunt_pact') {
-      if (svc('NeutralRelations')) {
-        svc('NeutralRelations').onHuntPact(GS.wave, {
-          worldW: GS.worldW,
-          worldH: GS.worldH,
-          rallyY: GS.rallyY,
-          territoryTier: GS.territoryTier,
-          spawnUnit: (u) => GS.units.push(u),
-          hooks: uiHooks(),
-        });
-      }
-    } else if (msg === 'evacuate') {
-      for (const u of GS.units) {
-        if (u.team !== 'player' || u.hp <= 0 || u.hp / u.maxHp > RETREAT_HP_RATIO) continue;
-        u.fightToDeath = false;
-        tryMedicalRetreat(u, { silent: true });
-      }
-    }
-    const remaining = Math.max(0, msgCap - GS.courierMessagesUsedThisWave);
-    if (remaining > 0) {
-      showMessage(`Courier dispatched: ${def.name} (${remaining} message left this wave)`);
-    } else {
-      showMessage(`Courier dispatched: ${def.name}`);
-    }
+    courier.courierReady = false;
+    notifyVetStarEvent(courier, trySpecialistRank(courier));
+    startCourierRide(courier, msg, cdMult);
+    showMessage(
+      `The Courier rides for the rear: ${def.name} when he is back, in about 20 seconds. If he falls on the road, the order is lost.`,
+      300
+    );
     playSfx('deploy');
     ach('courier', { message: msg });
-    syncInteractionState({ refreshCounts: msg === 'banner' });
+    syncInteractionState();
     syncEconomyActions();
     return true;
+  }
+
+  /** Ticks the Courier waits off the field before riding back (scaled by his cooldown mult). */
+  const COURIER_AWAY_TICKS = 16 * 60;
+  /** A leg that takes longer than this is cut short (blocked path): he is placed at the end. */
+  const COURIER_LEG_TICKS = 12 * 60;
+  /** Keeps Availability's "still riding" until the ride resolves. */
+  const COURIER_RIDING = 99999;
+  const SURGEON_TICKS = 15 * 60;
+  const ARROW_TICKS = 20 * 60;
+  const ARROW_MULT = 1.35;
+
+  function startCourierRide(courier, msg, cdMult = 1) {
+    GS.courierRide = {
+      msg,
+      courierId: courier.id,
+      phase: 'out',
+      t: 0,
+      awayTicks: Math.max(4 * 60, Math.round(COURIER_AWAY_TICKS * cdMult)),
+      homeX: courier.x,
+      homeY: courier.y,
+    };
+    GS.courierCooldown = COURIER_RIDING;
+    courier.animState = 'walk';
+    orderMove(courier, courier.x, GS.worldH - 4, true);
+  }
+
+  function endCourierRide() {
+    GS.courierRide = null;
+    // One more tick lets game.js mark the Courier ready again.
+    GS.courierCooldown = 1;
+  }
+
+  function isInMusterZone(u) {
+    return u.y >= GS.rallyY - 40;
+  }
+
+  /** The order lands where the Courier came back: at the muster line. */
+  function resolveCourierOrder(msg, courier) {
+    const tick = GS.updateTick;
+    if (msg === 'reinforce') {
+      const squad = ['footman', 'footman', 'archer'];
+      squad.forEach((type, i) => {
+        const u = spawnUnit(type, courier.x + (i - 1) * 18, GS.deployY, 'player');
+        u.targetY = GS.rallyY;
+        GS.units.push(u);
+      });
+      svc('FloatingText')?.status?.(courier.x, GS.rallyY - 20, 'REINFORCEMENTS', '#e8dcc0');
+      showMessage('Reinforcements march in at the muster line: two footmen and an archer.', 240);
+      syncInteractionState({ refreshCounts: true });
+    } else if (msg === 'surgeons') {
+      let n = 0;
+      for (const u of GS.units) {
+        if (u.team !== 'player' || u.hp <= 0 || u.hp >= u.maxHp || !isInMusterZone(u)) continue;
+        u.surgeonUntil = tick + SURGEON_TICKS;
+        n++;
+      }
+      svc('FloatingText')?.status?.(courier.x, GS.rallyY - 20, 'FIELD SURGEONS', '#c04040');
+      showMessage(`Field surgeons reach the muster line: ${n} wounded tended for 15 seconds.`, 240);
+    } else if (msg === 'arrows') {
+      let n = 0;
+      for (const u of GS.units) {
+        if (u.team !== 'player' || u.hp <= 0 || !u.projectile) continue;
+        if (!(u.freshArrowsUntil > tick)) u.attackSpeedMult = (u.attackSpeedMult || 1) * ARROW_MULT;
+        u.freshArrowsUntil = tick + ARROW_TICKS;
+        n++;
+      }
+      svc('FloatingText')?.status?.(courier.x, GS.rallyY - 20, 'FRESH ARROWS', '#e8dcc0');
+      showMessage(
+        `Fresh arrows handed out: ${n} ranged soldiers shoot faster for 20 seconds.`,
+        240
+      );
+    }
+  }
+
+  function tickCourierRide() {
+    const ride = GS.courierRide;
+    if (!ride) return;
+    const c = GS.units.find((u) => u.id === ride.courierId);
+    ride.t++;
+    if (!c || c.hp <= 0) {
+      const name = CourierMessages[ride.msg]?.name || 'the order';
+      showMessage(`The Courier fell on the road: ${name} is lost.`, 260);
+      endCourierRide();
+      return;
+    }
+    if (ride.phase === 'out') {
+      if (c.y >= GS.worldH - 14 || ride.t > COURIER_LEG_TICKS) {
+        ride.phase = 'away';
+        ride.t = 0;
+      }
+    } else if (ride.phase === 'away') {
+      if (ride.t >= ride.awayTicks) {
+        ride.phase = 'back';
+        ride.t = 0;
+        orderMove(c, ride.homeX, ride.homeY, true);
+      }
+    } else if (Math.hypot(c.x - ride.homeX, c.y - ride.homeY) < 20 || ride.t > COURIER_LEG_TICKS) {
+      resolveCourierOrder(ride.msg, c);
+      endCourierRide();
+    }
+  }
+
+  const SORTIE_LEG_TICKS = 18 * 60;
+  const SORTIE_FIGHT_TICKS = 8 * 60;
+  /** Where the sortie meets the vanguard: just under the top edge. */
+  const SORTIE_Y = 46;
+
+  function startSortie(exp) {
+    const homes = {};
+    for (const id of exp.unitIds) {
+      const u = GS.units.find((x) => x.id === id);
+      if (!u) continue;
+      homes[id] = { x: u.x, y: u.y };
+      orderMove(u, u.x, SORTIE_Y, true, { hold: 'keep' });
+    }
+    const odds = svc('PlayerCounterEvolution').getExpeditionSurvivalRate(exp.unitIds.length);
+    // Each soldier's fate is drawn now, so a save mid-fight cannot reroll it.
+    const doomed = exp.unitIds.filter(() => gameRandom() > odds);
+    GS.sortie = {
+      expId: exp.id,
+      unitIds: [...exp.unitIds],
+      homes,
+      doomed,
+      fallen: 0,
+      phase: 'out',
+      t: 0,
+    };
+  }
+
+  function sortieMen() {
+    const s = GS.sortie;
+    return s.unitIds.map((id) => GS.units.find((u) => u.id === id)).filter((u) => u && u.hp > 0);
+  }
+
+  function endSortie() {
+    const s = GS.sortie;
+    const men = sortieMen();
+    for (const u of men) {
+      u.onExpedition = null;
+      u.expeditionTarget = null;
+      u.expeditions = (u.expeditions || 0) + 1;
+    }
+    svc('PlayerCounterEvolution').completeSortie(s.expId, men.length, GS.wave, {
+      grantScience: (n) => svc('Research')?.grantSciencePoints?.(n, { showMessage }),
+      hooks: uiHooks(),
+    });
+    GS.sortie = null;
+  }
+
+  function goHome(men) {
+    const s = GS.sortie;
+    for (const u of men) {
+      const h = s.homes[u.id] || { x: u.x, y: GS.rallyY };
+      orderMove(u, h.x, h.y, true, { hold: 'keep' });
+    }
+  }
+
+  function tickSortie() {
+    const s = GS.sortie;
+    if (!s) return;
+    s.t++;
+    const men = sortieMen();
+    if (!men.length) {
+      endSortie();
+      return;
+    }
+    // Dawn calls everyone home at once: the fight is over.
+    if (!isNightPhase() && s.phase !== 'back') {
+      s.phase = 'back';
+      goHome(men);
+    }
+    if (s.phase === 'out') {
+      if (men.every((u) => u.y <= SORTIE_Y + 30) || s.t > SORTIE_LEG_TICKS) {
+        s.phase = 'fight';
+        s.t = 0;
+        showMessage('The sortie meets the enemy vanguard at the top of the field.', 200);
+      }
+    } else if (s.phase === 'fight') {
+      if (s.t % 20 === 0) {
+        const u = men[s.t % men.length];
+        svc('Particles')?.blood?.(u.x + (s.t % 3) * 8 - 8, u.y - 6);
+      }
+      if (s.t % 90 === 0) {
+        const u = men[((s.t / 90) % men.length) | 0];
+        svc('FloatingText')?.status?.(u.x, u.y - 22, 'CLASH', '#a01818');
+      }
+      // The doomed fall one by one through the fight.
+      const due = Math.floor((s.t / SORTIE_FIGHT_TICKS) * s.doomed.length + 0.5);
+      while (s.fallen < due) {
+        s.fallen++;
+        const victim = GS.units.find((u) => u.id === s.doomed[s.fallen - 1] && u.hp > 0);
+        if (victim) damageUnit(victim, victim.hp * 10 + 999);
+      }
+      if (s.t >= SORTIE_FIGHT_TICKS) {
+        s.phase = 'back';
+        s.t = 0;
+        goHome(sortieMen());
+      }
+    } else if (
+      men.every((u) => Math.hypot(u.x - s.homes[u.id]?.x, u.y - s.homes[u.id]?.y) < 26) ||
+      s.t > SORTIE_LEG_TICKS
+    ) {
+      endSortie();
+    }
+  }
+
+  /** Per-tick upkeep of orders on the field: the courier's ride, surgeons, arrows, sorties. */
+  function tickOrders() {
+    tickCourierRide();
+    tickSortie();
+    const tick = GS.updateTick;
+    for (const u of GS.units) {
+      if (u.team !== 'player') continue;
+      if (u.surgeonUntil) {
+        if (u.hp <= 0 || u.surgeonUntil <= tick) u.surgeonUntil = 0;
+        else {
+          u.hp = Math.min(u.maxHp, u.hp + (u.maxHp * 0.5) / SURGEON_TICKS);
+          if (tick % 45 === 0) svc('Particles')?.heal?.(u.x, u.y);
+        }
+      }
+      if (u.freshArrowsUntil && u.freshArrowsUntil <= tick) {
+        u.attackSpeedMult = (u.attackSpeedMult || ARROW_MULT) / ARROW_MULT;
+        u.freshArrowsUntil = 0;
+      }
+    }
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.tick({ showMessage, playSfx });
   }
 
   /** Nearest living player mage for Arcane Dispel range checks. */
@@ -1129,6 +1137,7 @@ const GameCommands = (() => {
     selectRotateWall,
     sendCourierMessage,
     startBranchTech,
+    tickOrders,
     startResearch,
     useAbility,
   };

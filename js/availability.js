@@ -263,6 +263,9 @@ const Availability = (() => {
     if (gs.spyUsedThisWave) {
       return blocked('the spy network was already used this wave', false, { cost, wait: 1 });
     }
+    if (def.nightOnly && gs.timeOfDay && gs.timeOfDay !== 'night') {
+      return blocked('scouts ride out at night', false, { cost });
+    }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }
@@ -277,12 +280,12 @@ const Availability = (() => {
     }
     const wait = cooldownLeft('courier', id, gs);
     if (wait > 0) return blocked(waitReason(wait), false, { cost, wait });
-    if (!gs.hasCourier) return blocked('needs a living Courier', false, { cost });
     const cap = Math.max(1, gs.courierMessagesPerWave || 1);
     if ((gs.courierMessagesUsedThisWave || 0) >= cap) {
       return blocked('the Courier has already ridden this wave', false, { cost, wait: 1 });
     }
     if (gs.courierCooldown > 0) return blocked('the Courier is still riding', false, { cost });
+    if (!gs.hasCourier) return blocked('needs a living Courier', false, { cost });
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }

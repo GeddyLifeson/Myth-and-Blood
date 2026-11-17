@@ -419,6 +419,8 @@ const Research = (() => {
   const DOCTRINE_STEP = 10;
   /** A standing Research Lab brings every doctrine choice forward by this many waves. */
   const LAB_HEAD_START = 5;
+  /** Science points (SP) from raids, sorties and omens: this many bring the next choice a wave sooner. */
+  const STUDY_PER_WAVE = 3;
 
   // One pair per boss wave. Taking one side closes the other for the run.
   // `types` limits the change to those troops (absent: every soldier); hp, dmg, speed,
@@ -618,6 +620,8 @@ const Research = (() => {
   let completed = new Set();
   /** Doctrine ids taken this run, one per tier, in order. */
   let picks = [];
+  /** SP gathered toward the next doctrine; spent when one is taken. */
+  let study = 0;
   let clearedWave = 0;
   let labsStanding = 0;
   let lastTickKey = -1;
@@ -660,6 +664,7 @@ const Research = (() => {
   function resetRun() {
     completed = new Set();
     picks = [];
+    study = 0;
     clearedWave = 0;
     labsStanding = 0;
     lastTickKey = -1;
@@ -726,8 +731,16 @@ const Research = (() => {
 
   // ---- doctrines ----------------------------------------------------------------------
   function doctrinesDue() {
-    const head = labsStanding > 0 ? LAB_HEAD_START : 0;
-    return Math.min(DOCTRINES.length, Math.floor((clearedWave + head) / DOCTRINE_STEP));
+    return Math.min(
+      DOCTRINES.length,
+      Math.floor((clearedWave + headStart(picks.length)) / DOCTRINE_STEP)
+    );
+  }
+
+  /** Waves by which tier `tier` comes early: the lab, and study for the next choice only. */
+  function headStart(tier) {
+    const lab = labsStanding > 0 ? LAB_HEAD_START : 0;
+    return lab + (tier === picks.length ? Math.floor(study / STUDY_PER_WAVE) : 0);
   }
 
   /** The pair waiting for a choice, or null. */
@@ -737,7 +750,7 @@ const Research = (() => {
 
   /** The wave after which tier `tier` (0-based) is offered. */
   function doctrineWave(tier) {
-    return (tier + 1) * DOCTRINE_STEP - (labsStanding > 0 ? LAB_HEAD_START : 0);
+    return Math.max(0, (tier + 1) * DOCTRINE_STEP - headStart(tier));
   }
 
   function isHero(u) {
@@ -797,6 +810,7 @@ const Research = (() => {
     const opt = pair && pair.find((o) => o.id === id);
     if (!opt) return false;
     picks.push(opt.id);
+    study = 0;
     for (const u of units || []) {
       if (u && u.team === 'player' && u.hp > 0) applyOption(u, opt);
     }
@@ -806,6 +820,15 @@ const Research = (() => {
     }
     refreshGame();
     return true;
+  }
+
+  /** Raids, sorties and omens pay SP. It is study: it brings the next doctrine sooner. */
+  function grantSciencePoints(amount) {
+    const n = Math.max(0, Number(amount) || 0);
+    if (!n) return 0;
+    study += n;
+    refreshGame();
+    return n;
   }
 
   /** Kept under its old name: the panel and Game.startResearch call it with a doctrine id. */
@@ -1013,7 +1036,7 @@ const Research = (() => {
       {
         cat: 'research',
         name: 'Doctrines',
-        body: `After every tenth wave you choose one of two doctrines. The one you take lasts for the rest of the siege and the other is closed. Soldiers already on the field change at once, and every later recruit arrives with it. A standing Research Lab brings each choice forward by ${LAB_HEAD_START} waves, so the first comes after wave ${DOCTRINE_STEP - LAB_HEAD_START}. Open DOCTRINES to choose; a choice not yet made waits for you.`,
+        body: `After every tenth wave you choose one of two doctrines. The one you take lasts for the rest of the siege and the other is closed. Soldiers already on the field change at once, and every later recruit arrives with it. A standing Research Lab brings each choice forward by ${LAB_HEAD_START} waves, so the first comes after wave ${DOCTRINE_STEP - LAB_HEAD_START}. Raids, sorties and omens pay science points (SP): every ${STUDY_PER_WAVE} bring the next choice one wave sooner, and they are spent when you choose. Open DOCTRINES to choose; a choice not yet made waits for you.`,
       },
       {
         cat: 'research',
@@ -1129,11 +1152,15 @@ const Research = (() => {
     if (buildings) labsStanding = countLabs(buildings);
 
     const pending = pendingDoctrine();
-    const sig = [wave, labsStanding, picks.length, completed.size, pending ? 1 : 0].join('|');
+    const sig = [wave, labsStanding, picks.length, completed.size, pending ? 1 : 0, study].join(
+      '|'
+    );
     if (!opts.force && sig === lastRenderSig && tree.childElementCount > 0) return;
     lastRenderSig = sig;
 
-    if (headEl) headEl.textContent = `Doctrines adopted: ${picks.length} of ${DOCTRINES.length}`;
+    if (headEl) {
+      headEl.textContent = `Doctrines adopted: ${picks.length} of ${DOCTRINES.length} · Study ${study} SP`;
+    }
     if (hintEl) {
       hintEl.textContent = pending
         ? 'A doctrine is ready. Choose one of the two; the other is closed for this siege.'
@@ -1143,7 +1170,7 @@ const Research = (() => {
               labsStanding > 0
                 ? ''
                 : ` A Research Lab would bring it ${LAB_HEAD_START} waves sooner.`
-            }`;
+            } Every ${STUDY_PER_WAVE} SP from raids, sorties and omens brings it one wave sooner.`;
     }
 
     const scrollTop = tree.scrollTop;
@@ -1229,7 +1256,7 @@ const Research = (() => {
   }
 
   function getSnapshot() {
-    return { completed: [...completed], doctrines: [...picks] };
+    return { completed: [...completed], doctrines: [...picks], study };
   }
 
   // Saves from before doctrines carry science points and an active project; both are
@@ -1242,6 +1269,7 @@ const Research = (() => {
     for (const id of snap.doctrines || []) {
       if (DOCTRINE_BY_ID[id]?.tier === picks.length) picks.push(id);
     }
+    study = Math.max(0, Number(snap.study) || 0);
     lastTickKey = -1;
     lastRenderSig = '';
     rebuildUnlockMaps();
@@ -1259,6 +1287,7 @@ const Research = (() => {
     tick,
     startResearch,
     pickDoctrine,
+    grantSciencePoints,
     applyDoctrines,
     getDoctrineEffects,
     getDoctrinePath,
@@ -1291,12 +1320,13 @@ const Research = (() => {
     STARTER_BUILD,
     // Science points are gone; these stay so older callers read zero instead of failing.
     cancelResearch: () => false,
-    grantSciencePoints: () => 0,
     onWaveStart: () => {},
     onEnemySlain: () => 0,
     onWaveCleared: () => 0,
     getKillScienceStatus: () => ({ earned: 0, cap: 0, labs: labsStanding }),
-    sciencePoints: 0,
+    get sciencePoints() {
+      return study;
+    },
     reserveScience: 0,
     get completedCount() {
       return completed.size;

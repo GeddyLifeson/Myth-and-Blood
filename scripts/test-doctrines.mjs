@@ -113,6 +113,25 @@ const soldier = (createUnit, type) => createUnit(type, 100, 100, 'player');
   ok(!Research.getActiveInfo(), 'without a lab the second choice waits for wave 20');
 }
 
+// --- study ---------------------------------------------------------------------------------
+{
+  const { Research } = start(8);
+  Research.resetRun();
+  tick(Research, 8, true);
+  ok(!Research.getActiveInfo(), 'no doctrine after wave 8');
+  Research.grantSciencePoints(5);
+  ok(!Research.getActiveInfo(), '5 SP bring it one wave sooner, which is not enough at wave 8');
+  Research.grantSciencePoints(1);
+  ok(!!Research.getActiveInfo(), '6 SP bring the first doctrine two waves sooner');
+  Research.pickDoctrine('heavy_horse');
+  ok(Research.sciencePoints === 0, 'the study is spent on the choice');
+  Research.grantSciencePoints(4);
+  const snap = JSON.parse(JSON.stringify(Research.getSnapshot()));
+  Research.resetRun();
+  Research.restoreSnapshot(snap);
+  ok(Research.sciencePoints === 4, 'study survives a save and load');
+}
+
 // --- doctrine effects --------------------------------------------------------------------
 {
   const { Research, createUnit } = start(5);
