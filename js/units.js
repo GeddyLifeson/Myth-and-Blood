@@ -1080,6 +1080,17 @@ function applyVeteranStarBump(unit, starTier) {
       bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
       break;
   }
+  // Shooters, riders and crews used to keep recruit morale for the whole run.
+  if (role === 'ranged' || role === 'siege' || role === 'cavalry') {
+    bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
+  }
+  // The one stat a line grows that its role does not: `starGrow` in data/units.json.
+  const grow = getPlayerUnitDef(unit.type)?.starGrow;
+  if (grow === 'reload') unit.reloadMult = Math.max(1, (unit.reloadMult || 1) / s.primary);
+  else if (grow === 'speed') unit.speed = Math.round(unit.speed * s.primary * 100) / 100;
+  else if (grow === 'song') {
+    unit.moraleAuraUnit = bumpScaledStat(unit.moraleAuraUnit || 3, s.primary);
+  }
 }
 
 /** Earn bronze stars from kills/survival; 3 bronze → 1 silver → 1 gold → veteran upgrade. */

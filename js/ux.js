@@ -640,6 +640,12 @@ const UX = (() => {
         u.roster
           ? `<div class="unit-info-row roster-row">${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>`
           : '',
+        u.line
+          ? `<div class="unit-info-row roster-row">${escapeHtml(u.line.job)}</div>${u.line.beats ? `<div class="unit-info-row roster-row">Strong against: ${escapeHtml(u.line.beats)}</div>` : ''}${u.line.stars ? `<div class="unit-info-row roster-row">${escapeHtml(u.line.stars)}</div>` : ''}`
+          : '',
+        u.formation
+          ? `<div class="unit-info-row roster-row">${escapeHtml(u.formation.label)} formation: ${escapeHtml(u.formation.desc)}</div>`
+          : '',
         formatTraits(u),
         `<div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>`,
         u.scaling?.kind === 'vanilla' && u.obsoletePct != null && u.obsoletePct < 90

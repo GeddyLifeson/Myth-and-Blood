@@ -114,7 +114,11 @@ const ContentExpansion = (() => {
   }
 
   function registerDefs() {
-    Object.assign(UnitDefs, {
+    // data/units.json is the source of truth; this table only fills in a troop it lacks.
+    const fillMissingUnitDefs = (src) => {
+      for (const k in src) if (!UnitDefs[k]) UnitDefs[k] = src[k];
+    };
+    fillMissingUnitDefs({
       scout: {
         name: 'Scout',
         cost: 4,
@@ -1334,6 +1338,7 @@ const ContentExpansion = (() => {
           const sy = u.y + 20;
           const minion = ctx.createUnit(st, sx, sy, 'enemy');
           if (minion) {
+            if (typeof GameCombat !== 'undefined') GameCombat.scaleMidWaveSpawn(minion);
             minion.maxHp = Math.floor(minion.maxHp * 0.7);
             minion.hp = minion.maxHp;
             minion.summoned = true;

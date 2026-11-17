@@ -727,6 +727,8 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   // End a real run and check the stored best.
   GS.wave = 4;
   GS.kills = 30;
+  // TP in the bank would let the player deploy again, so the run only ends without it.
+  GS.tactical = 0;
   for (const u of mine(GS)) Game.takeDamage(u, 99999);
   run(Game, 5);
   ok(!Game.isPlaying(), 'the run ended');

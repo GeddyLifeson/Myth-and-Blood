@@ -740,6 +740,7 @@ const Game = (() => {
       const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: 'north' });
       u.huntMode = true;
       u.mustered = true;
+      GameCombat.scaleMidWaveSpawn(u);
       GS.units.push(u);
       return u;
     },
@@ -2339,6 +2340,10 @@ const Game = (() => {
       // Hit flash and honor glow count down here, once per tick, not in draw().
       if (unit.hitFlash > 0) unit.hitFlash--;
       if (unit.honorGlowTimer > 0) unit.honorGlowTimer--;
+      if (unit.pinned) {
+        unit.pinTimer = (unit.pinTimer || 0) - 1;
+        if (unit.pinTimer <= 0) unit.pinned = false;
+      }
       const tier = throttleCtx ? svc('UpdateThrottle').getUnitTier(unit, throttleCtx) : 'full';
       const throttle = svc('UpdateThrottle');
       if (throttle?.shouldRunUnitAIMinimal(unit, tier, GS.updateTick)) {
@@ -2374,10 +2379,6 @@ const Game = (() => {
         }
         if (unit.combatTargetId) updateUnitCombat(unit);
         continue;
-      }
-      if (unit.pinned) {
-        unit.pinTimer = (unit.pinTimer || 0) - 1;
-        if (unit.pinTimer <= 0) unit.pinned = false;
       }
       if (unit.attackAnimTimer > 0) {
         unit.attackAnimTimer--;
@@ -2542,10 +2543,8 @@ const Game = (() => {
                     combatType: 'ranged',
                     projectile: p.type || 'arrow',
                   };
-            // Snapshot projectile damage at fire time when shooter still lives.
-            const dmgSrc =
-              shooter && shooter.hp > 0 ? { ...shooter, damage: p.damage ?? shooter.damage } : src;
-            const dmg = calcDamage(dmgSrc, hit, 8);
+            // The live shooter, so traits that count his hits or mark him see this one.
+            const dmg = calcDamage(src, hit, 8, p.damage ?? src.damage);
             takeDamage(hit, dmg, { attackerTeam: p.team, attacker: shooter || null });
             if (shooter && shooter.hp > 0) {
               applyChampionOnHit(shooter, hit, dmg);
