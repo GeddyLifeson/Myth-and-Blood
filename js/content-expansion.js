@@ -938,15 +938,6 @@ const ContentExpansion = (() => {
           },
         },
       });
-      let perkBuildReady = false;
-      try {
-        perkBuildReady = typeof PerkBuildTypes !== 'undefined';
-      } catch (_) {
-        /* TDZ when scripts are bundled */
-      }
-      if (perkBuildReady) {
-        PerkBuildTypes.push('perk_double_tap', 'perk_mule_kick', 'perk_sleight');
-      }
     }
 
     HONOR_PREFIX_BY_TYPE.scout = ['Ranger', 'Syr', 'Pathfinder'];
@@ -1230,7 +1221,7 @@ const ContentExpansion = (() => {
     for (const b of ctx.buildings) {
       if (!b.complete || !b.isWatchtower || b.hp <= 0 || b.owner !== 'player') continue;
       const vr = (b.visionRadius || 200) * visionMult;
-      if (Math.hypot(enemy.x - b.x, enemy.y - b.y) < vr) pen += 8;
+      if (Math.hypot(enemy.x - b.x, enemy.y - b.y) < vr) pen += b.intelPenalty || 8;
     }
     return Math.min(24, pen);
   }
@@ -1275,7 +1266,7 @@ const ContentExpansion = (() => {
         if (Math.hypot(u.x - b.x, u.y - b.y) > b.radius + 8) continue;
         const dmg = b.trapDamage || 45;
         ctx.takeDamage(u, dmg);
-        b.trapCooldown = BuildDefs.spike_trap?.trapCooldown || 90;
+        b.trapCooldown = b.trapReset || BuildDefs.spike_trap?.trapCooldown || 90;
         Particles?.explosion(b.x, b.y);
         FloatingText?.status(b.x, b.y, 'TRAP!', '#ff6040');
         break;
@@ -1560,7 +1551,7 @@ const ContentExpansion = (() => {
       const tp = b.tpPerRound || 1;
       if (active <= ECONOMY_GEN_TP_CAP) {
         ctx.showMessage(
-          `${BuildDefs[b.type]?.name} operational — +${tp} TP/round (${active}/${ECONOMY_GEN_TP_CAP} economy sites).`,
+          `${BuildDefs[b.type]?.name} operational: +${tp} TP after any wave no enemy reaches it (${active}/${ECONOMY_GEN_TP_CAP} income sites).`,
           260
         );
       } else {

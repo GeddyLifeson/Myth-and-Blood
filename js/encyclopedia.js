@@ -392,6 +392,19 @@ const Encyclopedia = (() => {
         })
       );
     }
+    // Building upgrades describe themselves in the data.
+    for (const [id, def] of Object.entries(defs)) {
+      if (!def.upgradeOf || BUILDING_JOBS[id]) continue;
+      const host = defs[def.upgradeOf]?.name || 'building';
+      out.push(
+        entry(
+          'buildings',
+          def.name,
+          `${host} upgrade. ${def.upgradeNote} The choice is final for that ${host}.`,
+          { buildId: id, tags: [{ k: 'role', v: `${def.cost} TP` }] }
+        )
+      );
+    }
     const group = (name, intro, pick) => {
       const members = Object.entries(defs).filter(([id, d]) => pick(id, d));
       if (!members.length) return;

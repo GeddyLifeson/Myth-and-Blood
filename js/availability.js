@@ -236,6 +236,20 @@ const Availability = (() => {
       const n = def.requiresBuilders;
       return blocked(`needs ${n} living Builder${n === 1 ? '' : 's'}`, false, { cost });
     }
+    const retired =
+      typeof GameBuildings !== 'undefined' ? GameBuildings.retiredBuildReason(type) : null;
+    if (retired) return blocked(retired, true, { cost });
+    if (def.upgradeOf && typeof GameBuildings !== 'undefined' && !gs.creativeMode) {
+      if (!GameBuildings.upgradeHosts(def).length) {
+        const host = BuildDefs[def.upgradeOf]?.name || 'building';
+        return blocked(`needs a finished ${host} with no upgrade`, false, { cost });
+      }
+    }
+    if (def.isResourceGen && typeof ContentExpansion !== 'undefined') {
+      if (ContentExpansion.economySitesFull?.()) {
+        return blocked('all 6 income sites in use', false, { cost });
+      }
+    }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }

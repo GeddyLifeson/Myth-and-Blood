@@ -893,7 +893,7 @@ const UX = (() => {
     else if (gs.selectedAbility)
       hint = `Strike: ${Abilities[gs.selectedAbility]?.name || gs.selectedAbility} - click target · Esc/Cancel`;
     else if (gs.selectedDemolish)
-      hint = 'Demolish - click your structure (50% TP refund) · Esc/Cancel';
+      hint = 'Demolish - click your structure (up to 50% TP back, less if damaged) · Esc/Cancel';
     else if (gs.selectedMoveBuilding)
       hint = gs.moveBuildingType
         ? `Move ${BuildDefs[gs.moveBuildingType]?.name || 'structure'} - click destination · Esc/Cancel`

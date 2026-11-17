@@ -243,14 +243,56 @@
                 <button class="build-btn" data-build="wall">
                   <span>Wall</span><span class="cost">5</span>
                 </button>
+                <button
+                  class="build-btn"
+                  data-build="wall_rampart"
+                  title="Wall upgrade (either this or Snare Line): Soldiers behind it take 65% less damage instead of 45%, and it gains 150 HP."
+                >
+                  <span>&rarr; Rampart</span><span class="cost">6</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="wall_snare"
+                  title="Wall upgrade (either this or Rampart): Holds 6 line-breakers a wave instead of 3."
+                >
+                  <span>&rarr; Snare Line</span><span class="cost">6</span>
+                </button>
                 <button class="build-btn" data-build="castle">
                   <span>Castle</span><span class="cost">50</span>
                 </button>
                 <button class="build-btn" data-build="medical_tent">
                   <span>Med Tent</span><span class="cost">5</span>
                 </button>
+                <button
+                  class="build-btn"
+                  data-build="medical_tent_surgery"
+                  title="Medical Tent upgrade (either this or Triage): Soldiers resting here heal 2.5 times as fast."
+                >
+                  <span>&rarr; Surgery</span><span class="cost">7</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="medical_tent_triage"
+                  title="Medical Tent upgrade (either this or Surgery): Carries in 2 struck-down soldiers a wave instead of 1."
+                >
+                  <span>&rarr; Triage</span><span class="cost">7</span>
+                </button>
                 <button class="build-btn" data-build="mess_hall">
                   <span>Mess Hall</span><span class="cost">5</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="mess_hall_tavern"
+                  title="Mess Hall upgrade (either this or Kitchens): Its morale aura is twice as strong."
+                >
+                  <span>&rarr; Tavern</span><span class="cost">6</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="mess_hall_kitchens"
+                  title="Mess Hall upgrade (either this or Tavern): Feeds 4 more soldiers before the recruit surcharge starts."
+                >
+                  <span>&rarr; Kitchens</span><span class="cost">6</span>
                 </button>
                 <button class="build-btn" data-build="research_lab">
                   <span>Research Lab</span><span class="cost">18</span>
@@ -258,13 +300,49 @@
                 <button class="build-btn" data-build="watchtower">
                   <span>Watchtower</span><span class="cost">4</span>
                 </button>
+                <button
+                  class="build-btn"
+                  data-build="watchtower_beacon"
+                  title="Watchtower upgrade (either this or Spotter&#x27;s Perch): Sees 330 instead of 200: hidden foes are revealed and lose aim over a wider ring."
+                >
+                  <span>&rarr; Beacon</span><span class="cost">5</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="watchtower_spotter"
+                  title="Watchtower upgrade (either this or Beacon): Foes in sight lose 16 accuracy instead of 8."
+                >
+                  <span>&rarr; Spotter&#x27;s Perch</span><span class="cost">5</span>
+                </button>
                 <button class="build-btn" data-build="spike_trap">
                   <span>Spike Trap</span><span class="cost">3</span>
                 </button>
-                <button class="build-btn" data-build="quarry">
+                <button
+                  class="build-btn"
+                  data-build="spike_trap_barbed"
+                  title="Spike Trap upgrade (either this or Hair Trigger): Springs for 110 damage, but resets in 150 ticks instead of 90."
+                >
+                  <span>&rarr; Barbed Pit</span><span class="cost">4</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="spike_trap_hair"
+                  title="Spike Trap upgrade (either this or Barbed Pit): Resets in 35 ticks instead of 90. Same 45 damage."
+                >
+                  <span>&rarr; Hair Trigger</span><span class="cost">4</span>
+                </button>
+                <button
+                  class="build-btn"
+                  data-build="quarry"
+                  title="Pays 3 TP after each wave in which no enemy came within 110 of it."
+                >
                   <span>Quarry</span><span class="cost">14</span>
                 </button>
-                <button class="build-btn" data-build="trade_outpost">
+                <button
+                  class="build-btn"
+                  data-build="trade_outpost"
+                  title="Cheaper, pays 2 TP and lifts morale, but caravans draw raiders: any enemy within 160 in a wave stops its pay."
+                >
                   <span>Trade Post</span><span class="cost">10</span>
                 </button>
               </div>
@@ -358,20 +436,8 @@
                 <button class="build-btn perk-btn" data-build="perk_speed_cola">
                   <span>Swiftstep Tonic</span><span class="cost">9</span>
                 </button>
-                <button class="build-btn perk-btn" data-build="perk_stamin_up">
-                  <span>Endurance Draft</span><span class="cost">9</span>
-                </button>
-                <button class="build-btn perk-btn" data-build="perk_deadshot_daiquiri">
-                  <span>Deadeye Elixir</span><span class="cost">11</span>
-                </button>
                 <button class="build-btn perk-btn" data-build="perk_elemental_pop">
                   <span>Storm Fizz</span><span class="cost">12</span>
-                </button>
-                <button class="build-btn perk-btn" data-build="perk_phd_flopper">
-                  <span>Impact Ward</span><span class="cost">11</span>
-                </button>
-                <button class="build-btn perk-btn" data-build="perk_melee_macchiato">
-                  <span>Brawler's Brew</span><span class="cost">10</span>
                 </button>
                 <button class="build-btn perk-btn" data-build="perk_vulture_aid">
                   <span>Scavenger's Tonic</span><span class="cost">10</span>
@@ -379,17 +445,9 @@
                 <button class="build-btn perk-btn" data-build="perk_tombstone">
                   <span>Last Stand</span><span class="cost">14</span>
                 </button>
-                <button class="build-btn perk-btn" data-build="perk_double_tap">
-                  <span>Twinshot Brew</span><span class="cost">11</span>
-                </button>
-                <button class="build-btn perk-btn" data-build="perk_mule_kick">
-                  <span>Packmule Tonic</span><span class="cost">10</span>
-                </button>
-                <button class="build-btn perk-btn" data-build="perk_sleight">
-                  <span>Quickhands</span><span class="cost">10</span>
-                </button>
                 <p class="panel-hint">
-                  Heroes collect tonics at night (four at most). Last Stand is for the General only.
+                  Heroes collect tonics at night (four at most). Every tonic has a cost. Last Stand
+                  is for the General only.
                 </p>
               </div>
             </div>

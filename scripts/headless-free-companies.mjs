@@ -597,7 +597,7 @@ function testResearchEncyclopedia(Research) {
     return;
   }
   const entries = Research.getEncyclopediaEntries();
-  const nodeCount = Research.ALL_NODES?.length || 0;
+  const nodeCount = Research.ALL_NODES?.filter((n) => !n.retired).length || 0;
   const nodeEntries = entries.filter(
     (e) => e.name === 'Veteran Doctrine' || e.name === 'Hellgate Containment'
   );

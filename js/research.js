@@ -30,6 +30,7 @@ const Research = (() => {
     'hall_of_veterans',
     'watchtower',
     'trade_outpost',
+    'quarry',
     'enemy_hamlet',
     'enemy_merchant_guild',
     'enemy_trade_outpost',
@@ -263,6 +264,8 @@ const Research = (() => {
       prereq: ['field_engineering'],
       desc: 'Quarries: +3 TP at dawn each.',
       build: ['quarry'],
+      // The Quarry is a starter building now; the id stays for old saves and prereqs.
+      retired: true,
     },
     {
       id: 'academy_charter',
@@ -916,6 +919,9 @@ const Research = (() => {
     if (BuildDefs[type]?.isWweAcademy) {
       return isFactionUnlocked('champions', opts);
     }
+    // A building upgrade opens with the building it goes on (Outpost ones keep their node).
+    const up = BuildDefs[type];
+    if (up?.upgradeOf && !up.isOutpostUpgrade) return isBuildUnlocked(up.upgradeOf, opts);
     if (BuildDefs[type]?.isPerkMachine) {
       return completed.has('perk_science') || !!opts.perksMetaUnlocked;
     }

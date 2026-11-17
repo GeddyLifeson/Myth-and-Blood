@@ -31,7 +31,7 @@ const GameDayNight = (() => {
   const { ETERNAL_CRUSADE_MIN_FORTS, triggerMoraleBreak } = GameMorale;
   const { findPlayerGeneral } = GameCombat;
   const { addHighlight, applyPlayerStatMods, notifyVetStarEvent, spawnUnit } = GameArmy;
-  const { getTpPerRound } = GameBuildings;
+  const { getPayingIncomeSites, getTpPerRound, incomeSiteTp } = GameBuildings;
   const {
     planHostFor,
     planWaveSectors,
@@ -508,12 +508,8 @@ const GameDayNight = (() => {
     const out = { tp: 0, science: 0, mustered: 0 };
     if (GS.creativeMode && GS.creativeSettings.freeResources) return out;
     const ft = svc('FloatingText');
-    const gens = GS.buildings
-      .filter((b) => b.owner === 'player' && b.complete && b.hp > 0 && b.isResourceGen)
-      .sort((a, b) => String(a.id).localeCompare(String(b.id)))
-      .slice(0, 6);
-    for (const b of gens) {
-      const tp = BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0;
+    for (const b of getPayingIncomeSites()) {
+      const tp = incomeSiteTp(b);
       if (tp <= 0) continue;
       out.tp += tp;
       ft?.status?.(b.x, b.y - 22, `+${tp} TP`, '#80ffa0');
