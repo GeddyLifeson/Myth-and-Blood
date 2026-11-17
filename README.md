@@ -6,7 +6,7 @@ The game runs in a browser, on a laptop or a phone, and as a desktop app. Everyt
 
 This file is the player manual, followed by notes for developers. Each system has its own short section so it can be changed without touching the rest.
 
-**Contents:** [Quick start](#quick-start) · [How a run goes](#how-a-run-goes) · [Controls](#controls) · [Tactical Points](#tactical-points-tp) · [Recruiting and army upkeep](#recruiting-and-army-upkeep) · [Troops](#troops) · [Posts, Hunt and Hold](#posts-hunt-and-hold) · [The med tent](#the-med-tent) · [Buildings](#buildings) · [Research](#research) · [The enemy](#the-enemy) · [Breaches and line-breakers](#breaches-and-line-breakers) · [Wave preview](#wave-preview-and-the-watchtower) · [Counters](#counters-and-rear-attacks) · [The Sapper](#the-sapper) · [The General's orders](#the-generals-orders) · [Spells](#spells) · [Spy and courier](#spy-and-courier) · [Spoils and edicts](#spoils-and-edicts) · [Supply crates](#supply-crates) · [Veterans and morale](#veterans-and-morale) · [Ribbons](#ribbons) · [Run score](#run-score) · [Difficulty](#difficulty) · [Modes](#modes) · [Champions](#champions-and-companies) · [The late siege](#the-late-siege) · [Saving](#saving) · [Cheats](#cheats) · [Encyclopedia and achievements](#encyclopedia-and-achievements) · [Developer notes](#developer-notes)
+**Contents:** [Quick start](#quick-start) · [How a run goes](#how-a-run-goes) · [Controls](#controls) · [Tactical Points](#tactical-points-tp) · [Recruiting and army upkeep](#recruiting-and-army-upkeep) · [Troops](#troops) · [Posts, Hunt and Hold](#posts-hunt-and-hold) · [The med tent](#the-med-tent) · [Buildings](#buildings) · [Doctrines and charters](#doctrines-and-charters) · [The enemy](#the-enemy) · [Breaches and line-breakers](#breaches-and-line-breakers) · [Wave preview](#wave-preview-and-the-watchtower) · [Counters](#counters-and-rear-attacks) · [The Sapper](#the-sapper) · [The General's orders](#the-generals-orders) · [Spells](#spells) · [Spy and courier](#spy-and-courier) · [Spoils and edicts](#spoils-and-edicts) · [Supply crates](#supply-crates) · [Veterans and morale](#veterans-and-morale) · [Ribbons](#ribbons) · [Run score](#run-score) · [Difficulty](#difficulty) · [Modes](#modes) · [Champions](#champions-and-companies) · [The late siege](#the-late-siege) · [Saving](#saving) · [Cheats](#cheats) · [Encyclopedia and achievements](#encyclopedia-and-achievements) · [Developer notes](#developer-notes)
 
 ---
 
@@ -26,7 +26,7 @@ Your first five minutes:
 1. Press `1`, click the field a few times to place Footmen in a row above the bottom edge. Press `2` and put Archers behind them.
 2. Press `D` to start the day. Your soldiers fight on their own and walk back to where you put them.
 3. After the wave, place a Builder, then a Wall (`L`) and a Medical Tent (`N`).
-4. On wave 3 or 4 build a Research Lab from the Build tab and start Iron Weapons.
+4. Every troop is open from the first wave. After wave 10 open DOCTRINES on the Build tab and take one of the two on offer.
 5. After wave 5 you are offered spoils. Take one.
 
 Press `?` at any time for the keys that work on the screen in front of you.
@@ -36,7 +36,7 @@ Press `?` at any time for the keys that work on the screen in front of you.
 ## How a run goes
 
 - **One field for the whole run.** The field does not reset and does not change size. What you build stays until it is destroyed.
-- **Night.** You have about a minute to recruit, build, research and place soldiers. The top of the screen shows what the next wave is likely to bring, and markers on the top edge show where it will enter. Press `D` to sound the horn early: it pays 1 TP for every 10 seconds left, up to 5.
+- **Night.** You have about a minute to recruit, build, choose a doctrine and place soldiers. The top of the screen shows what the next wave is likely to bring, and markers on the top edge show where it will enter. Press `D` to sound the horn early: it pays 1 TP for every 10 seconds left, up to 5.
 - **Day.** The wave enters from the top edge in up to three sectors (left, centre, right), forms up, and advances. Your soldiers fight from their posts. The day ends when the last enemy is dead.
 - **Pay.** Clearing a wave pays TP. Buildings that earn pay at dawn.
 - **Every 5th wave** is a horde: more enemies, arriving faster. After it you choose one of three **spoils**.
@@ -103,6 +103,8 @@ The tables below are generated from the key maps. To regenerate them: `node scri
 | Shift+H             | Hold here                                                                        |
 | [                   | War Cry (General)                                                                |
 | ]                   | Hold the Line (General)                                                          |
+| .                   | Advance (General)                                                                |
+| ,                   | Fall Back (General)                                                              |
 | Z                   | Balanced loadout                                                                 |
 | D                   | Begin the day (night only)                                                       |
 | ↑ ↓ ← →             | Pan the map                                                                      |
@@ -258,7 +260,7 @@ Every building needs a Builder on the field. One Builder runs two projects at a 
 | Spike Trap    | 3   | 45 damage to the first enemy crossing, every 1.5 seconds                           | Field Engineering |
 | Medical Tent  | 5   | Heals the wounded (see above)                                                      |                   |
 | Mess Hall     | 5   | Soldiers near it keep their morale                                                 |                   |
-| Research Lab  | 18  | 6 science at every dawn (first two labs count), and a little from kills            |                   |
+| Research Lab  | 18  | Each doctrine choice comes 5 waves sooner while it stands                          |                   |
 | Trade Outpost | 10  | +2 TP at dawn                                                                      |                   |
 | Quarry        | 14  | +3 TP at dawn                                                                      | Prospecting       |
 | Castle        | 46  | A full compound: walls, outposts, a keep, a med tent and a mess hall               | Fortification     |
@@ -267,23 +269,33 @@ An Outpost becomes a Barracks **or** a Granary. The choice is final for that Out
 
 ---
 
-## Research
+## Doctrines and charters
 
-A Research Lab pays science at each dawn. Open the Research panel and pick a project; one runs at a time. Seven troops are open from the start (Footman, Archer, Mage, Cavalry, Healer, Builder, Courier). The rest are researched.
+**Troops.** All fifteen troops can be recruited from the first wave. The price is the only gate.
 
-| Research          | Science | From wave | Opens                          | After             |
-| ----------------- | ------- | --------- | ------------------------------ | ----------------- |
-| Iron Weapons      | 20      | 3         | Knight, Sapper, Crossbowman    |                   |
-| Field Engineering | 18      | 3         | Spike Trap, Barracks, Granary  |                   |
-| Morale Arts       | 18      | 4         | Bard                           |                   |
-| Command Theory    | 30      | 6         | General                        | Iron Weapons      |
-| Fortification     | 30      | 6         | Castle                         |                   |
-| Advanced Infantry | 26      | 7         | Scout, Pikeman                 | Iron Weapons      |
-| Prospecting       | 30      | 8         | Quarry                         | Field Engineering |
-| Siege Engineering | 34      | 9         | Ballista                       | Iron Weapons      |
-| Veteran Doctrine  | 34      | 10        | Paying TP to promote a veteran | Iron Weapons      |
+**Doctrines.** After every tenth wave you are offered two doctrines and take one. It lasts for the rest of the siege, and the one you pass over is closed. Soldiers on the field change at once and later recruits arrive with it. A standing Research Lab brings each choice forward by five waves, so the first comes after wave 5. Raids, sorties and omens pay science points (SP): every 3 SP bring the next choice one wave sooner, and they are spent when you choose. Open DOCTRINES on the Build tab to choose; a choice you have not made waits for you.
 
-A lab built on wave 3 or 4 finishes Iron Weapons around wave 6. Later projects open academies, settlements and the champions' halls; the Research tab of the encyclopedia lists all of them.
+| After wave | Either                                             | Or                                                          |
+| ---------- | -------------------------------------------------- | ----------------------------------------------------------- |
+| 10         | Pike and Shot: Pikemen and Crossbowmen +15% damage | Heavy Horse: Cavalry and Knights +15% health                |
+| 20         | Field Works: Builders work 50% faster              | Flying Column: every soldier moves 12% faster               |
+| 30         | Massed Bows: Archers +18% damage                   | War Magic: Mages +18% damage, Mages and Healers +15% health |
+| 40         | Shield Wall: Footmen and Pikemen +20% health       | Siege Train: Sappers and Ballistas +15% damage              |
+| 50         | Crown Levy: +15% dawn income                       | Blooded Ranks: every soldier +6% damage                     |
+
+Five more pairs follow, one every ten waves to wave 100. The Research tab of the encyclopedia lists them all.
+
+**Charters.** Buildings beyond the starters open by charter. A charter is granted when its wave arrives; there is nothing to pay.
+
+| Charter           | Wave | Opens                          |
+| ----------------- | ---- | ------------------------------ |
+| Field Engineering | 3    | Spike Trap, Barracks, Granary  |
+| Fortification     | 6    | Castle                         |
+| Prospecting       | 8    | Quarry                         |
+| Siege Engineering | 9    | Sapper and Ballista Academies  |
+| Veteran Doctrine  | 10   | Paying TP to promote a veteran |
+
+Later charters open academies, settlements and the companies' barracks.
 
 ---
 
@@ -348,7 +360,7 @@ Enemy riders hit archers, mages, healers and bards harder, and pikemen take less
 
 ## The Sapper
 
-The Sapper is a field engineer and needs Iron Weapons.
+The Sapper is a field engineer.
 
 - **At night** he buries 2 mines in front of his post, up to 4 live at once. A mine deals 80 damage to enemies within 46, and 25% more to line-breakers. With a Sapper selected at night, Shift+click re-sites a mine.
 - **By day** he lobs a satchel charge up to 110 away every 5 seconds. It deals 46 damage within 40.
@@ -360,12 +372,22 @@ The Sapper is a field engineer and needs Iron Weapons.
 
 ## The General's orders
 
-The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy on the field goes for him. With him on the field, by day:
+The General needs Command Theory, costs 12 TP and is one of a kind. Every enemy on the field goes for him. Move him like any soldier; his reach is drawn around him as a dashed ring. The order bar sits in the strip at the top of the field:
 
-| Order         | Key | Effect on soldiers within 190 of him               | Ready again |
-| ------------- | --- | -------------------------------------------------- | ----------- |
-| War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 seconds  |
-| Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 seconds  |
+| Order         | Key | Effect on soldiers in his reach                    | Ready again (from the rear) |
+| ------------- | --- | -------------------------------------------------- | --------------------------- |
+| War Cry       | `[` | Strike 20% harder for 8 seconds, and regain morale | 45 s (27 s)                 |
+| Hold the Line | `]` | Take 40% less damage for 7 seconds                 | 60 s (36 s)                 |
+| Advance       | `.` | Step forward one rank                              | 20 s (12 s)                 |
+| Fall Back     | `,` | Withdraw to the muster line, healers first         | 20 s (12 s)                 |
+
+War Cry and Hold the Line are given by day; Advance and Fall Back at any time.
+
+**Stance.** _Command from the rear_ (the default): orders recharge 40% faster. _Lead from the front_: his reach grows from 190 to 247 and the enemy goes for him even harder. The ring turns red.
+
+**If he falls**, the army takes a morale shock and the bar greys out. When a veteran footman (a rank star or a name) stands on the field, _Promote a veteran_ makes him the new General and the bar comes back.
+
+The kingdom doctrines of older builds (Outpost Stand, Royal Muster and the rest) are these orders now.
 
 He also walks to soldiers whose nerve has broken and steadies them. Stationed in a Castle keep, he fills the castle walls with footmen.
 
@@ -396,31 +418,25 @@ Three more spells belong to one of the champion companies and appear when it is 
 
 Both are introduced on wave 8, in the right-hand panel. An action on cooldown shows the waves left in place of its price.
 
-**Spy** (acts on the next wave):
+**Spy** (acts on the next wave; one action a wave). Each one shows on the field:
 
-| Action               | TP                  | Effect                                                             | Limit              |
-| -------------------- | ------------------- | ------------------------------------------------------------------ | ------------------ |
-| Scout Report         | 2                   | The night preview lists the next wave by type and number           |                    |
-| Deep Infiltration    | 3                   | The first 30% of the next wave arrive at 60% health                |                    |
-| Forge Maps           | 3                   | A marked crate lands at dawn: never bait, always TP                |                    |
-| Raid War Chest       | 4                   | +6 TP now; 2 more enemies next wave                                | once every 3 waves |
-| Steal War Chest      | 4                   | +4 TP; 2 fewer enemies next wave                                   |                    |
-| Poison Caches        | 4                   | Next wave has 20% less health                                      |                    |
-| Disrupt Supply Lines | 5, +1 every 6 waves | 25% fewer enemies, but 12% tougher and 15% faster                  | once every 3 waves |
-| Sabotage Siege       | 5                   | No siege towers or engineers next wave; the host arrives 10 s late |                    |
-| Assassinate Captain  | 6                   | No elites next wave (a warlord still comes)                        |                    |
+| Action             | TP                   | Effect                                                                                      | Limit              |
+| ------------------ | -------------------- | ------------------------------------------------------------------------------------------- | ------------------ |
+| Scout Report       | 2                    | Night only. The preview lists the next wave by type; head counts are pinned on the top edge |                    |
+| Ambush on the Road | 3                    | A marked ambush; the first 30% of the next wave arrive at 60% health, tagged AMBUSHED       |                    |
+| Mark the Warlord   | 6, +1 every 10 waves | The boss or strongest elite is outlined in blood and takes 25% more damage                  | once every 2 waves |
+| Turncoats          | 5                    | 3 to 5 of the next wave's common soldiers change sides at your line and fight as footmen    | once every 2 waves |
+| Raid the War Camp  | 6, +1 every 10 waves | Raiders ride for the weakest war camp                                                       | once every 2 waves |
 
-**Courier** (needs a Courier on the field):
+**Courier** (needs a Courier on the field). He rides off the bottom edge and back, about 20 seconds; the order lands when he returns, and is lost if he falls on the road:
 
-| Message                | TP                       | Effect                                                | Limit              |
-| ---------------------- | ------------------------ | ----------------------------------------------------- | ------------------ |
-| Tax Levy               | 1                        | +5 TP at the next wave clear; every soldier −2 morale | once every 3 waves |
-| Open War Chest         | 2                        | +4 TP now                                             | once every 3 waves |
-| Royal Decree           | 2                        | +5 morale for every soldier                           |                    |
-| Supply Train           | 3                        | Heals every soldier 25                                |                    |
-| Request Reinforcements | 4 × upkeep               | 2 Footmen at the next dawn                            | once every 2 waves |
-| Medical Evac           | 4                        | The wounded fall back to the med tents                |                    |
-| Call the Banner        | 6, +2 per call, × upkeep | 1 Knight at once; needs Iron Weapons                  | once every 4 waves |
+| Order          | TP         | Effect                                                          | Limit              |
+| -------------- | ---------- | --------------------------------------------------------------- | ------------------ |
+| Reinforcements | 4 × upkeep | Two footmen and an archer march in at the muster line           | once every 2 waves |
+| Field Surgeons | 3          | The wounded at the muster line heal half their health over 15 s | once every 2 waves |
+| Fresh Arrows   | 3          | Ranged soldiers shoot 35% faster for 20 seconds                 | once every 2 waves |
+
+No spy or courier action pays TP any more.
 
 Prices and cooldowns live in `data/strikes.json`, `js/units.js` and `js/economy-rules.js`.
 

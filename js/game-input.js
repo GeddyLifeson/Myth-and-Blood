@@ -520,14 +520,7 @@ const GameInput = (() => {
         svc('Research') &&
         !svc('Research').isDeployUnlocked(GS.selectedDeploy, getResearchOpts())
       ) {
-        const need =
-          GS.selectedDeploy === 'ballista'
-            ? 'Research Siege Engineering (Military tree, after Iron Weapons) first!'
-            : GS.selectedDeploy === 'bard'
-              ? 'Research Morale Arts first!'
-              : GS.selectedDeploy === 'scout' || GS.selectedDeploy === 'pikeman'
-                ? 'Research Advanced Infantry first!'
-                : 'Research this unit at the Research Lab first!';
+        const need = `Locked: ${svc('Research').getLockReason('deploy', GS.selectedDeploy) || 'not available in this siege'}.`;
         showMessage(need, 280);
         return false;
       }

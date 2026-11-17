@@ -196,6 +196,7 @@ const Game = (() => {
     sendCourierMessage,
     startBranchTech,
     startResearch,
+    tickOrders,
     useAbility,
   } = GameCommands;
   const {
@@ -396,6 +397,8 @@ const Game = (() => {
   GS.pendingReinforce = [];
   GS.pendingLevy = 0;
   GS.courierCooldown = 0;
+  GS.courierRide = null;
+  GS.sortie = null;
   GS.courierMessagesUsedThisWave = 0;
   GS.spyUsedThisWave = false;
   GS.doctrineUsedThisWave = false;
@@ -1186,10 +1189,6 @@ const Game = (() => {
       courierMessagesUsedThisWave: GS.courierMessagesUsedThisWave,
       courierMessagesPerWave: getCourierMessagesPerWave(),
       courierUsedThisWave: GS.courierMessagesUsedThisWave >= getCourierMessagesPerWave(),
-      unlockedDoctrineCount:
-        typeof getUnlockedKingdomDoctrines === 'function'
-          ? getUnlockedKingdomDoctrines(GS.wave).length
-          : 0,
       spyNetwork: GS.spyNetwork,
       hasCourier: unitCounts.hasCourier,
     };
@@ -1351,6 +1350,7 @@ const Game = (() => {
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
     if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.resetRun();
     if (typeof Ground !== 'undefined') Ground.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
@@ -2180,6 +2180,7 @@ const Game = (() => {
         }
       }
     }
+    tickOrders();
 
     if (GS.updateTick % 3 === 0) {
       for (const b of GS.buildings) {
@@ -2653,7 +2654,12 @@ const Game = (() => {
     }
     markUpdatePhase('update-end', `syncPaths=${GS.syncPathfindsThisTick}`);
     if (svc('Research')) {
-      svc('Research').tick({ buildings: GS.buildings, isNight: isNightPhase(), showMessage });
+      svc('Research').tick({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        isNight: isNightPhase(),
+        showMessage,
+      });
       if (svc('UX')) svc('UX').onResearchTick?.();
     }
     checkPlayerElimination();
@@ -2710,7 +2716,7 @@ const Game = (() => {
       svc('Research').isBuildUnlocked(type, researchOpts);
     let reason = getAcademyBuildBlockReason(type, GS.wave, GS.units);
     if (!reason && !researchOk) {
-      reason = 'Research the matching academy node (e.g. Academy Charter) at the Research Lab.';
+      reason = `Not open yet: ${svc('Research').getLockReason('build', type) || 'its charter has not arrived'}.`;
     }
     // Best on-field progress toward mentor for tooltips
     let mentorProgress = 0;

@@ -681,7 +681,7 @@ const GameBuildings = (() => {
     }
     if (svc('Research') && !svc('Research').isBuildUnlocked(type, getResearchOpts())) {
       showMessage(
-        'Research this at the Research Lab first — click RESEARCH in the build panel.',
+        `Not open yet: ${svc('Research').getLockReason('build', type) || 'its charter has not arrived'}.`,
         280
       );
       return false;
@@ -722,7 +722,10 @@ const GameBuildings = (() => {
         (svc('Research') &&
           svc('Research').isFactionUnlocked(def.crossoverFaction, getResearchOpts()));
       if (!factionOk) {
-        showMessage(`Research ${def.name} at the Research Lab (or use a faction cheat code).`, 300);
+        showMessage(
+          `${def.name} is not open yet: its company charter arrives in a later wave.`,
+          300
+        );
         return false;
       }
       if (svc('FactionDepth')) {
@@ -740,7 +743,7 @@ const GameBuildings = (() => {
       !svc('Perks').perkMachinesUnlocked() &&
       !(svc('Research') && svc('Research').isBuildUnlocked(type, getResearchOpts()))
     ) {
-      showMessage('Research Tonic Stations Science at the Research Lab first!');
+      showMessage('Tonic stations open with the Tonic Stations Science charter at wave 55.');
       return false;
     }
     if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
@@ -915,7 +918,10 @@ const GameBuildings = (() => {
         svc('MetaProgress').isCompanyUnlocked(bdef.crossoverFaction) ||
         (research && research.isFactionUnlocked(bdef.crossoverFaction, getResearchOpts()));
       if (!factionOk) {
-        showMessage(`Research ${bdef.name} at the Research Lab first.`, 300);
+        showMessage(
+          `${bdef.name} is not open yet: its company charter arrives in a later wave.`,
+          300
+        );
         return false;
       }
       if (svc('FactionDepth')) {
@@ -933,7 +939,7 @@ const GameBuildings = (() => {
       !svc('Perks').perkMachinesUnlocked() &&
       !(research && research.isBuildUnlocked(type, getResearchOpts()))
     ) {
-      showMessage('Research Tonic Stations Science at the Research Lab first!');
+      showMessage('Tonic stations open with the Tonic Stations Science charter at wave 55.');
       return false;
     }
     if (type === 'hall_of_veterans' && !GS.creativeMode && Veterans.hallBuildBlock()) {
@@ -1029,10 +1035,7 @@ const GameBuildings = (() => {
     }
     if (b.isResearchLab) {
       syncInteractionState({ refreshCounts: true });
-      showMessage(
-        'Research Lab online — open RESEARCH to unlock new troops, buildings, and evolved barracks.',
-        320
-      );
+      showMessage('Research Lab online. Each doctrine choice now comes five waves sooner.', 320);
       svc('FloatingText').status(b.x, b.y - 20, 'SCIENCE', '#80c0ff');
     }
     if (svc('ContentExpansion')) svc('ContentExpansion').onBuildingComplete(b);

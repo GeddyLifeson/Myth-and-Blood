@@ -1091,6 +1091,14 @@ const UI = (() => {
       });
     });
 
+    document.getElementById('gameover-setup-btn')?.addEventListener('click', () => {
+      if (restartInFlight) return;
+      AudioEngine.SFX.click?.();
+      hideGameOverScreen();
+      Game.quitToMenu?.();
+      document.getElementById('menu-setup-btn')?.click();
+    });
+
     document.getElementById('gameover-menu-btn')?.addEventListener('click', () => {
       if (restartInFlight) return;
       AudioEngine.SFX.click?.();
@@ -1554,7 +1562,7 @@ const UI = (() => {
                   Math.max(minForce, selCount || minForce),
                   (wave || 0) + 1
                 );
-                return ` · ~${preview.tp} TP / ${preview.science} SP loot`;
+                return ` · ~${preview.science} SP loot`;
               })()
             : '';
         return (
@@ -2382,27 +2390,13 @@ const UI = (() => {
         waveFill.classList.toggle('night-fill', gs.timeOfDay === 'night');
       }
     }
-    // SP / research progress: update the RESEARCH button without full deploy-bar rebuild.
     const researchBtn = hudEls['research-open'];
     if (researchBtn) {
-      const active = gs.researchActive;
-      const killSci = gs.scienceKillStatus;
-      const spLabel = (gs.sciencePoints ?? 0).toFixed(1);
-      const researchKey = [
-        active?.pct ?? '',
-        spLabel,
-        killSci?.labs ?? 0,
-        killSci?.earned ?? 0,
-        killSci?.cap ?? 0,
-        gs.researchCompleted ?? 0,
-      ].join('|');
-      if (researchKey !== lastResearchBtnKey) {
-        lastResearchBtnKey = researchKey;
-        researchBtn.textContent = active
-          ? `RESEARCH ${active.pct}%`
-          : killSci?.labs > 0
-            ? `RESEARCH ${spLabel} SP (${killSci.earned}/${killSci.cap})`
-            : `RESEARCH (${spLabel} SP)`;
+      const ready = !!gs.researchActive;
+      if (ready !== lastResearchBtnKey) {
+        lastResearchBtnKey = ready;
+        researchBtn.textContent = ready ? 'DOCTRINE READY' : 'DOCTRINES';
+        researchBtn.classList.toggle('doctrine-ready', ready);
       }
     }
     const asym = gs.asymmetricWarfare;

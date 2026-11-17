@@ -436,6 +436,8 @@ const GameCombat = (() => {
     if (unit.rallyTimer > 0) mitigation -= 0.1;
     if ((unit.doctrineMitTimer || 0) > 0) mitigation -= unit.doctrineMitigation || 0.15;
     if (isEliteEnemy(unit) && unit.team === 'enemy') mitigation -= 0.08;
+    // Mark the Warlord (spy): every blow on him bites deeper.
+    if (unit.warlordMarked) mitigation += 0.25;
     const biomeMods = getBiomeModifiersAt(unit.x, unit.y);
     let actual = amount * Math.max(0.12, mitigation) * (biomeMods.damageTakenMult || 1);
     if (unit.team === 'player' && svc('DynamicMapEvents')) {
