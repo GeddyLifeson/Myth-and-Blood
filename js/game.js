@@ -2655,7 +2655,12 @@ const Game = (() => {
     }
     markUpdatePhase('update-end', `syncPaths=${GS.syncPathfindsThisTick}`);
     if (svc('Research')) {
-      svc('Research').tick({ buildings: GS.buildings, isNight: isNightPhase(), showMessage });
+      svc('Research').tick({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        isNight: isNightPhase(),
+        showMessage,
+      });
       if (svc('UX')) svc('UX').onResearchTick?.();
     }
     checkPlayerElimination();
@@ -2712,7 +2717,7 @@ const Game = (() => {
       svc('Research').isBuildUnlocked(type, researchOpts);
     let reason = getAcademyBuildBlockReason(type, GS.wave, GS.units);
     if (!reason && !researchOk) {
-      reason = 'Research the matching academy node (e.g. Academy Charter) at the Research Lab.';
+      reason = `Not open yet: ${svc('Research').getLockReason('build', type) || 'its charter has not arrived'}.`;
     }
     // Best on-field progress toward mentor for tooltips
     let mentorProgress = 0;

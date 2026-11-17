@@ -323,7 +323,6 @@ const SiegeLoop = (() => {
   const countTroops = (ctx, type) => troops(ctx).filter((u) => !type || u.type === type).length;
   const works = (ctx, type) =>
     (ctx.buildings || []).filter((b) => b && b.owner === 'player' && b.hp > 0 && b.type === type);
-  const standing = (ctx, type) => works(ctx, type).filter((b) => b.complete).length;
   const def = (table, type) => (typeof table !== 'undefined' && table ? table[type] : null);
   const unitDef = (type) => (typeof UnitDefs !== 'undefined' ? def(UnitDefs, type) : null);
   const buildDef = (type) => (typeof BuildDefs !== 'undefined' ? def(BuildDefs, type) : null);
@@ -336,7 +335,6 @@ const SiegeLoop = (() => {
   const canPay = (ctx, cost) => ctx.tp == null || ctx.tp >= cost;
   const recruitOpen = (type) =>
     typeof Research === 'undefined' || !!Research.isDeployUnlocked(type);
-  const researched = (id) => typeof Research !== 'undefined' && !!Research.isResearched(id);
   const liveCrates = () => run.crates.filter((c) => !c.spent);
   const firstHunter = (ctx) => troops(ctx).find((u) => u.canHunt && !u.isGeneral) || null;
   const armyForUpkeep = (ctx) => ctx.upkeepArmy ?? ctx.army ?? 0;
@@ -473,25 +471,19 @@ const SiegeLoop = (() => {
       ready: (ctx) => countTroops(ctx, 'builder') > 0 && canPay(ctx, buildCost('research_lab')),
       moot: (ctx) => works(ctx, 'research_lab').length > 0,
       text: () =>
-        `Build a Research Lab (${buildCost('research_lab')} TP) from the Build tab. It earns science at every dawn. Science opens new troops.`,
+        `Build a Research Lab (${buildCost('research_lab')} TP) from the Build tab. While it stands, each doctrine choice comes five waves sooner.`,
       target: () => ({ dom: [btnBuild('research_lab'), TAB_BUILD] }),
       done: (ctx) => works(ctx, 'research_lab').length > 0,
     },
     {
       id: 'research',
       wave: 4,
-      ready: (ctx) =>
-        standing(ctx, 'research_lab') > 0 &&
-        typeof Research !== 'undefined' &&
-        !Research.getActiveInfo() &&
-        (ctx.wave || 0) >= 3,
-      moot: () => researched('iron_weapons'),
+      ready: () => typeof Research !== 'undefined' && !!Research.getActiveInfo(),
+      moot: () => typeof Research === 'undefined' || Research.doctrineCount > 0,
       text: () =>
-        'Your lab stands. Open RESEARCH and start Iron Weapons. It opens the Knight, the Sapper and the Crossbowman.',
+        'A doctrine is ready. Open DOCTRINES and choose one of the two. The other is closed for this siege.',
       target: () => ({ dom: ['#research-open', TAB_BUILD] }),
-      done: () =>
-        researched('iron_weapons') ||
-        (typeof Research !== 'undefined' && !!Research.getActiveInfo()),
+      done: () => typeof Research !== 'undefined' && Research.doctrineCount > 0,
     },
     {
       id: 'strikes',
@@ -569,7 +561,7 @@ const SiegeLoop = (() => {
         recruitOpen('sapper') &&
         canPay(ctx, recruitCost(ctx, 'sapper')),
       text: () =>
-        `The Sapper can be hired now${inBrackets(recruitKeyName('sapper'))}. At night he buries mines in front of his post. By day he throws satchel charges into packed enemies.`,
+        `Hire a Sapper${inBrackets(recruitKeyName('sapper'))}. At night he buries mines in front of his post. By day he throws satchel charges into packed enemies.`,
       target: () => ({ dom: [btnTroop('sapper')] }),
       done: (ctx) => countTroops(ctx, 'sapper') > 0,
     },

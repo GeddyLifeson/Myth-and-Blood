@@ -5112,3 +5112,10 @@ body.ui-v2 .creative-modal .creative-btn:disabled {
   color: var(--text-muted, #a69a86);
   font-style: italic;
 }
+
+/* A doctrine waiting for a choice: the button that opens it stands out. */
+body.ui-v2 .research-btn.doctrine-ready {
+  border-color: var(--blood-500);
+  color: var(--bone);
+  box-shadow: inset 0 0 0 1px var(--blood-500);
+}

@@ -61,7 +61,7 @@ const UX = (() => {
     {
       maxWave: 5,
       title: 'Build & Defend',
-      body: 'Deploy a Builder (<kbd>7</kbd>), select BUILD, click the map. Build a <strong>Research Lab</strong> (45 TP) to unlock advanced troops and evolved barracks over time.',
+      body: 'Deploy a Builder (<kbd>7</kbd>), select BUILD, click the map. A <strong>Research Lab</strong> brings each doctrine choice five waves sooner.',
       highlight: 'left-panel',
     },
     {
@@ -111,9 +111,9 @@ const UX = (() => {
     {
       minWave: 10,
       maxWave: 60,
-      when: (gs) => gs.hasResearchLab || (gs.sciencePoints ?? 0) > 0,
-      title: 'Science & Research',
-      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks - each node gates new power.',
+      when: (gs) => !!gs.researchActive,
+      title: 'Doctrines',
+      body: 'After every tenth wave you take one of two <strong>doctrines</strong> for the rest of the siege. Open <strong>DOCTRINES</strong> to choose. The one you pass over is closed.',
       highlight: 'research-open',
     },
     {

@@ -50,15 +50,13 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   const { Game, GameState: GS, Availability, UnitDefs, BuildDefs, Abilities } = start(7);
   ok(toNight(Game, GS), 'reached the first night');
 
-  // Locked by research.
+  // Every troop is open from the first wave; buildings wait for their charter.
   let r = Availability.check('deploy', 'knight');
-  ok(!r.ok && r.locked && r.reason === 'needs Iron Weapons', `Knight: ${r.reason}`);
-  r = Availability.trySelect('deploy', 'knight');
-  ok(!r.ok && GS.selectedDeploy == null, 'a locked troop is not selected');
+  ok(!r.locked, `Knight is not locked: ${r.reason}`);
   r = Availability.check('deploy', 'general');
-  ok(!r.ok && r.reason === 'needs Command Theory', `General: ${r.reason}`);
+  ok(!r.locked, `General is not locked: ${r.reason}`);
   r = Availability.check('build', 'castle');
-  ok(!r.ok && r.reason === 'needs Fortification', `Castle: ${r.reason}`);
+  ok(!r.ok && r.locked && r.reason === 'arrives at wave 6 (Fortification)', `Castle: ${r.reason}`);
   r = Availability.trySelect('build', 'castle');
   ok(!r.ok && GS.selectedBuild == null, 'a locked building is not selected');
   r = Availability.check('build', 'academy_footman');
@@ -454,14 +452,13 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   const find = (list, id) => list.find((r) => r.id === id);
   ok(has(lay.troops.open, 'footman') && has(lay.troops.open, 'archer'), 'starting troops are open');
   ok(
-    find(lay.troops.locked, 'knight')?.reason === 'needs Iron Weapons',
-    `Knight is in the Troops locked group: ${find(lay.troops.locked, 'knight')?.reason}`
+    has(lay.troops.open, 'knight') && !has(lay.troops.locked, 'knight'),
+    'the Knight is in the open list from the first wave'
   );
-  ok(!has(lay.troops.open, 'knight'), 'and not in the open list');
   ok(has(lay.build.open, 'wall') && has(lay.build.open, 'outpost'), 'starting buildings are open');
   ok(
-    find(lay.build.locked, 'castle')?.reason === 'needs Fortification',
-    'Castle is in the Build locked group with its research'
+    find(lay.build.locked, 'castle')?.reason === 'arrives at wave 6 (Fortification)',
+    'Castle is in the Build locked group with the wave its charter arrives'
   );
   const late = items.filter((it) => PanelModel.isLate(it.kind, it.id));
   ok(
@@ -496,13 +493,13 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
     'a troop that is only too dear stays in the open list'
   );
   GS.tactical = 500;
-  // Research moves an item out of the Locked group.
-  const node = Research.ALL_NODES.find((n) => n.name === 'Iron Weapons');
+  // A charter moves an item out of the Locked group.
+  const node = Research.ALL_NODES.find((n) => n.name === 'Fortification');
   Research.completeResearch(node.id, () => {});
   lay = PanelModel.layout(items, Game.getState());
   ok(
-    has(lay.troops.open, 'knight') && !has(lay.troops.locked, 'knight'),
-    'researching Iron Weapons moves the Knight to the open list'
+    has(lay.build.open, 'castle') && !has(lay.build.locked, 'castle'),
+    'the Fortification charter moves the Castle to the open list'
   );
   // A late item joins its own tab once it is usable.
   ok(

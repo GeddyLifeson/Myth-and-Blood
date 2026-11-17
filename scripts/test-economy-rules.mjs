@@ -172,16 +172,12 @@ function addUnit(api, type) {
     'a lab costs 18 TP and one builder'
   );
   ok(
-    node('iron_weapons').cost === 20 && node('iron_weapons').wave === 3,
-    'Iron Weapons: 20 SP from wave 3'
+    node('field_engineering').wave === 3 && node('fortification').wave === 6,
+    'Field Engineering comes at wave 3 and Fortification at wave 6'
   );
   ok(
-    node('command_theory').cost === 30 && node('command_theory').wave === 6,
-    'Command Theory: 30 SP from wave 6'
-  );
-  ok(
-    node('advanced_infantry').wave === 7 && node('siege_engineering').wave === 9,
-    'later tiers open a few waves apart'
+    node('siege_engineering').wave === 9 && node('veteran_doctrine').wave === 10,
+    'later charters come a few waves apart'
   );
   ok(
     Research.isBuildUnlocked('watchtower') && Research.isBuildUnlocked('trade_outpost'),
@@ -195,19 +191,15 @@ function addUnit(api, type) {
   run(Game, 20);
   place(api, 'research_lab', 300, 420);
   GS.wave = 3;
+  run(Game, 2);
   ok(
-    Research.startResearch('iron_weapons', 3, GS.buildings, () => {}),
-    'Iron Weapons can start on wave 3'
+    Research.isBuildUnlocked('outpost_barracks'),
+    'Field Engineering is granted when wave 3 comes, with nothing to pay'
   );
-  let waves = 0;
-  while (!Research.isResearched('iron_weapons') && waves < 10) {
-    waves++;
-    Research.onWaveCleared({ wave: 3 + waves, buildings: GS.buildings });
-  }
-  ok(
-    waves <= 4,
-    `dawn science alone finishes Iron Weapons in ${waves} waves (kills make it faster)`
-  );
+  GS.wave = 5;
+  GS.timeOfDay = 'night';
+  run(Game, 2);
+  ok(!!Research.getActiveInfo(), 'with a lab standing the first doctrine is ready after wave 5');
   ok(
     Research.isDeployUnlocked('knight') && Research.isDeployUnlocked('crossbowman'),
     'knights and crossbowmen are open'

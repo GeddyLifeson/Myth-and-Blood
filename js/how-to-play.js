@@ -107,7 +107,7 @@ const HowToPlay = (() => {
           'Hire a <b>Builder</b> first. Then pick a building on the Build tab and click the field. Builders work faster at night.',
           `<b>Wall</b>${withKey(key('build', 'wall'))}, ${tp('wall', 5)}: cover for your soldiers, and it stops ${r.wallHolds} line-breakers each wave.`,
           `<b>Medical Tent</b>${withKey(key('build', 'medical_tent'))}, ${tp('medical_tent', 5)}: a wounded soldier walks to it before anything else, heals and returns to his post. In a fight he stays until he is below half health. It treats four at a time.`,
-          `<b>Watchtower</b>${withKey(key('build', 'watchtower'))}, ${tp('watchtower', 4)}: a head count of the next wave. <b>Research Lab</b>, ${tp('research_lab', 18)}: science.`,
+          `<b>Watchtower</b>${withKey(key('build', 'watchtower'))}, ${tp('watchtower', 4)}: a head count of the next wave. <b>Research Lab</b>, ${tp('research_lab', 18)}: doctrines come sooner.`,
         ];
       },
       art: drawBuildingsArt,
@@ -118,9 +118,9 @@ const HowToPlay = (() => {
       words: () => {
         const r = rules();
         return [
-          `A standing <b>Research Lab</b> earns ${r.labScience} science at every dawn, and a little from each kill. Only the first two labs count.`,
-          'Open RESEARCH on the Build tab and pick a project. One runs at a time.',
-          'Start with <b>Iron Weapons</b> (20 science, from wave 3). It opens the Knight, the Crossbowman and the Sapper.',
+          'Every troop can be recruited from the first wave. The price is the only gate.',
+          'After every tenth wave, open DOCTRINES on the Build tab and take one of two doctrines. It lasts the whole siege and the other is closed.',
+          'A standing <b>Research Lab</b> brings each doctrine choice five waves sooner.',
           'The <b>Sapper</b> buries mines in front of his post each night and throws satchel charges by day. His blasts go through armour and shields. He cannot reach flyers, and he is weak up close.',
         ];
       },
@@ -517,7 +517,7 @@ const HowToPlay = (() => {
     ground(ctx);
     building(ctx, 'research_lab', 96, 84, 1.7);
     label(ctx, 'Research Lab', 96, 146, { size: 13 });
-    label(ctx, `+${rules().labScience} science each dawn`, 96, 163, {
+    label(ctx, 'Doctrines 5 waves sooner', 96, 163, {
       size: 11,
       color: '#ff8a7a',
       bold: false,

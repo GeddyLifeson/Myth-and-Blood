@@ -41,9 +41,8 @@ const Availability = (() => {
 
   /** Name of the research node that unlocks a troop ("deploy") or a building ("build"). */
   function researchNeed(field, id) {
-    if (typeof Research === 'undefined' || !Array.isArray(Research.ALL_NODES)) return '';
-    const node = Research.ALL_NODES.find((n) => Array.isArray(n[field]) && n[field].includes(id));
-    return node ? node.name : '';
+    if (typeof Research === 'undefined') return '';
+    return Research.getLockReason ? Research.getLockReason(field, id) : '';
   }
 
   // ---- prices (what is charged) ---------------------------------------------------------
@@ -162,7 +161,7 @@ const Availability = (() => {
       });
     if (!unlocked) {
       const need = researchNeed('deploy', type);
-      return blocked(need ? `needs ${need}` : 'needs research', true, { cost, research: true });
+      return blocked(need || 'not available in this siege', true, { cost, research: true });
     }
     if (type === 'general' && gs.hasGeneral) {
       return blocked('a General is already on the field', false, { cost });
@@ -221,11 +220,9 @@ const Availability = (() => {
     }
     if (!mentorOk) return blocked(mentorReason, true, { cost, mentor: true, research: !unlocked });
     if (!unlocked) {
-      const perkNode = def.isPerkMachine
-        ? Research.ALL_NODES?.find((n) => n.id === 'perk_science')?.name
-        : '';
+      const perkNode = def.isPerkMachine ? 'arrives at wave 55 (Tonic Stations Science)' : '';
       const need = perkNode || researchNeed('build', type);
-      return blocked(need ? `needs ${need}` : 'needs research', true, {
+      return blocked(need || 'its charter has not arrived', true, {
         cost,
         research: true,
         mentorReady: isAcademy,

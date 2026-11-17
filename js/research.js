@@ -1,6 +1,7 @@
 /**
- * Technological progression — Research Lab accumulates Science Points (SP)
- * to unlock units, buildings, and evolved factions (cost scaled by roster power).
+ * Doctrines and charters. After every tenth wave the player takes one of two doctrines for
+ * the rest of the run; buildings beyond the starters open by charter when their wave comes.
+ * Every troop can be recruited from wave 1.
  */
 const Research = (() => {
   const STARTER_DEPLOY = new Set([
@@ -11,6 +12,14 @@ const Research = (() => {
     'healer',
     'builder',
     'courier',
+    'crossbowman',
+    'knight',
+    'sapper',
+    'scout',
+    'pikeman',
+    'bard',
+    'ballista',
+    'general',
   ]);
   const STARTER_BUILD = new Set([
     'outpost',
@@ -174,7 +183,7 @@ const Research = (() => {
       cost: 20,
       wave: 3,
       category: 'military',
-      desc: 'Sappers, knights and crossbowmen. Unlocks Siege Engineering (ballista) and Advanced Infantry (scout/pikeman).',
+      desc: 'Sappers, knights and crossbowmen.',
       deploy: ['sapper', 'knight', 'crossbowman'],
     },
     {
@@ -241,7 +250,7 @@ const Research = (() => {
       wave: 9,
       category: 'military',
       prereq: ['iron_weapons'],
-      desc: 'Deploy ballistas (6 TP) and found Sapper/Ballista Academies.',
+      desc: 'Sapper and Ballista Academies.',
       deploy: ['ballista'],
       build: ['academy_sapper', 'academy_ballista'],
     },
@@ -292,7 +301,7 @@ const Research = (() => {
       wave: 28,
       category: 'academy',
       prereq: ['advanced_infantry', 'morale_arts', 'siege_engineering'],
-      desc: 'Scout, bard, and pikeman academies (ballista academy via Siege Engineering).',
+      desc: 'Scout, bard, and pikeman academies.',
       build: ['academy_scout', 'academy_bard', 'academy_pikeman'],
     },
     {
@@ -404,13 +413,218 @@ const Research = (() => {
   const ALL_NODES = [...CORE_TREE, ...COMPANY_RESEARCH];
   const BY_ID = Object.fromEntries(ALL_NODES.map((n) => [n.id, n]));
 
-  let sciencePoints = 0;
-  /** SP earned while no project was active — auto-applied when a project starts. */
-  let reserveScience = 0;
-  let killScienceThisWave = 0;
+  /** Company charters carry a tier, not a wave: one tier arrives every ten waves. */
+  const charterWave = (node) => (node.tier ? node.tier * 10 : node.wave || 0);
+
+  const DOCTRINE_STEP = 10;
+  /** A standing Research Lab brings every doctrine choice forward by this many waves. */
+  const LAB_HEAD_START = 5;
+  /** Science points (SP) from raids, sorties and omens: this many bring the next choice a wave sooner. */
+  const STUDY_PER_WAVE = 3;
+
+  // One pair per boss wave. Taking one side closes the other for the run.
+  // `types` limits the change to those troops (absent: every soldier); hp, dmg, speed,
+  // build and siege multiply a soldier's stats; tp multiplies dawn income.
+  const DOCTRINES = [
+    [
+      {
+        id: 'pike_and_shot',
+        name: 'Pike and Shot',
+        path: 'tech',
+        desc: 'Pikemen and crossbowmen deal 15% more damage.',
+        types: ['pikeman', 'crossbowman'],
+        dmg: 1.15,
+      },
+      {
+        id: 'heavy_horse',
+        name: 'Heavy Horse',
+        path: 'martial',
+        desc: 'Cavalry and knights have 15% more health.',
+        types: ['cavalry', 'knight'],
+        hp: 1.15,
+      },
+    ],
+    [
+      {
+        id: 'field_works',
+        name: 'Field Works',
+        path: 'tech',
+        desc: 'Builders raise everything 50% faster.',
+        types: ['builder'],
+        build: 1.5,
+      },
+      {
+        id: 'flying_column',
+        name: 'Flying Column',
+        path: 'martial',
+        desc: 'Every soldier moves 12% faster.',
+        speed: 1.12,
+      },
+    ],
+    [
+      {
+        id: 'massed_bows',
+        name: 'Massed Bows',
+        path: 'martial',
+        desc: 'Archers deal 18% more damage.',
+        types: ['archer'],
+        dmg: 1.18,
+      },
+      {
+        id: 'war_magic',
+        name: 'War Magic',
+        path: 'arcane',
+        desc: 'Mages deal 18% more damage. Mages and healers have 15% more health.',
+        types: ['mage', 'healer'],
+        hp: 1.15,
+        dmgTypes: ['mage'],
+        dmg: 1.18,
+      },
+    ],
+    [
+      {
+        id: 'shield_wall',
+        name: 'Shield Wall',
+        path: 'martial',
+        desc: 'Footmen and pikemen have 20% more health.',
+        types: ['footman', 'pikeman'],
+        hp: 1.2,
+      },
+      {
+        id: 'siege_train',
+        name: 'Siege Train',
+        path: 'tech',
+        desc: 'Sappers and ballistas deal 15% more damage, and 25% more against buildings.',
+        types: ['sapper', 'ballista'],
+        dmg: 1.15,
+        siege: 1.25,
+      },
+    ],
+    [
+      {
+        id: 'crown_levy',
+        name: 'Crown Levy',
+        path: 'tech',
+        desc: 'Dawn income rises by 15%.',
+        types: [],
+        tp: 1.15,
+      },
+      {
+        id: 'blooded_ranks',
+        name: 'Blooded Ranks',
+        path: 'martial',
+        desc: 'Every soldier deals 6% more damage.',
+        dmg: 1.06,
+      },
+    ],
+    [
+      {
+        id: 'iron_discipline',
+        name: 'Iron Discipline',
+        path: 'martial',
+        desc: 'Every soldier has 8% more health.',
+        hp: 1.08,
+      },
+      {
+        id: 'sworn_companies',
+        name: 'Sworn Companies',
+        path: 'mythic',
+        desc: 'Company heroes and champions have 20% more health.',
+        heroes: true,
+        hp: 1.2,
+      },
+    ],
+    [
+      {
+        id: 'forced_march',
+        name: 'Forced March',
+        path: 'martial',
+        desc: 'Scouts, cavalry and couriers move 20% faster.',
+        types: ['scout', 'cavalry', 'courier'],
+        speed: 1.2,
+      },
+      {
+        id: 'chirurgeons',
+        name: 'Chirurgeons',
+        path: 'arcane',
+        desc: 'Healers and bards have 30% more health.',
+        types: ['healer', 'bard'],
+        hp: 1.3,
+      },
+    ],
+    [
+      {
+        id: 'quarry_rights',
+        name: 'Quarry Rights',
+        path: 'tech',
+        desc: 'Dawn income rises by a further 15%.',
+        types: [],
+        tp: 1.15,
+      },
+      {
+        id: 'knightly_orders',
+        name: 'Knightly Orders',
+        path: 'martial',
+        desc: 'Knights and the General deal 20% more damage.',
+        types: ['knight', 'general'],
+        dmg: 1.2,
+      },
+    ],
+    [
+      {
+        id: 'arcane_colleges',
+        name: 'Arcane Colleges',
+        path: 'arcane',
+        desc: 'Mages deal a further 20% more damage.',
+        types: ['mage'],
+        dmg: 1.2,
+      },
+      {
+        id: 'legends_walk',
+        name: 'Legends Walk',
+        path: 'mythic',
+        desc: 'Company heroes and champions deal 15% more damage.',
+        heroes: true,
+        dmg: 1.15,
+      },
+    ],
+    [
+      {
+        id: 'last_muster',
+        name: 'Last Muster',
+        path: 'martial',
+        desc: 'Every soldier has 10% more health and deals 5% more damage.',
+        hp: 1.1,
+        dmg: 1.05,
+      },
+      {
+        id: 'engines_of_war',
+        name: 'Engines of War',
+        path: 'tech',
+        desc: 'Ballistas deal 30% more damage. Builders raise everything 30% faster.',
+        types: ['ballista', 'builder'],
+        dmgTypes: ['ballista'],
+        dmg: 1.3,
+        build: 1.3,
+      },
+    ],
+  ];
+  const DOCTRINE_BY_ID = {};
+  DOCTRINES.forEach((pair, tier) =>
+    pair.forEach((opt) => {
+      opt.tier = tier;
+      DOCTRINE_BY_ID[opt.id] = opt;
+    })
+  );
+
   let completed = new Set();
-  let activeId = null;
-  let activeProgress = 0;
+  /** Doctrine ids taken this run, one per tier, in order. */
+  let picks = [];
+  /** SP gathered toward the next doctrine; spent when one is taken. */
+  let study = 0;
+  let clearedWave = 0;
+  let labsStanding = 0;
+  let lastTickKey = -1;
   let panelOpen = false;
   let lastRenderSig = '';
   let treeDelegated = false;
@@ -435,7 +649,8 @@ const Research = (() => {
   }
 
   function applyNodeUnlocks(node) {
-    if (!node) return;
+    // A retired charter keeps its id so old saves load, and opens nothing.
+    if (!node || node.retired) return;
     const id = node.id;
     (node.deploy || []).forEach((t) => deployUnlocks.set(t, id));
     (node.build || []).forEach((t) => buildUnlocks.set(t, id));
@@ -447,188 +662,48 @@ const Research = (() => {
   }
 
   function resetRun() {
-    sciencePoints = 0;
-    reserveScience = 0;
-    killScienceThisWave = 0;
     completed = new Set();
-    activeId = null;
-    activeProgress = 0;
+    picks = [];
+    study = 0;
+    clearedWave = 0;
+    labsStanding = 0;
+    lastTickKey = -1;
+    lastRenderSig = '';
     rebuildUnlockMaps();
   }
 
-  /**
-   * Feed progress into the active core project. Completes the node if cost is met;
-   * overflow returns to reserve for the next project.
-   * @returns {{ applied: number, completed: boolean, overflow: number }}
-   */
-  function applyProgressToActive(progress, showMessage) {
-    const amount = Math.max(0, Number(progress) || 0);
-    if (!activeId || amount <= 0) return { applied: 0, completed: false, overflow: 0 };
-    const node = BY_ID[activeId];
-    if (!node) {
-      activeId = null;
-      activeProgress = 0;
-      return { applied: 0, completed: false, overflow: amount };
-    }
-    const need = Math.max(0, node.cost - activeProgress);
-    const applied = Math.min(amount, need);
-    const overflow = amount - applied;
-    activeProgress += applied;
-    if (activeProgress + 1e-9 >= node.cost) {
-      const doneId = activeId;
-      activeId = null;
-      activeProgress = 0;
-      completeResearch(doneId, showMessage);
-      if (overflow > 0) reserveScience += overflow;
-      return { applied, completed: true, overflow };
-    }
-    if (overflow > 0) reserveScience += overflow;
-    return { applied, completed: false, overflow };
+  function refreshGame() {
+    lastRenderSig = '';
+    if (typeof UI !== 'undefined') UI.updateHUD?.(true);
+    // Bust the game state cache so deploy and build locks update at once.
+    if (typeof Game !== 'undefined' && Game.syncInteractionState) Game.syncInteractionState();
   }
 
-  /** Dump reserve SP into the current project (start or mid-research catch-up). */
-  function flushReserveToActive(showMessage) {
-    if (!activeId || reserveScience <= 0) return { applied: 0, completed: false };
-    const pool = reserveScience;
-    reserveScience = 0;
-    const result = applyProgressToActive(pool, showMessage);
-    // If project completed with leftover, it is already back in reserveScience.
-    // If project still active but applyProgressToActive returned overflow somehow, keep it.
-    return result;
-  }
-
-  function onWaveStart() {
-    killScienceThisWave = 0;
-  }
-
-  function getWaveKillScienceCap(wave, buildings) {
-    const labs = countLabs(buildings);
-    const base = 4 + Math.floor((wave || 0) / 4);
-    const labBonus = labs * 2;
-    return Math.min(22, base + labBonus);
-  }
-
-  /** Combat threat → SP from a single kill (fractional values accumulate). */
-  function getKillScienceValue(unit) {
-    if (!unit || unit.team !== 'enemy') return 0;
-    const def = typeof EnemyDefs !== 'undefined' ? EnemyDefs[unit.type] : null;
-    const hp = unit.maxHp || def?.hp || 40;
-    const dmg = unit.damage || def?.damage || 10;
-    let sp = 0.1 + Math.sqrt(hp * dmg) / 95;
-
-    const named = typeof isNamedBoss === 'function' && isNamedBoss(unit);
-    const monster = typeof isMonsterEnemy === 'function' && isMonsterEnemy(unit);
-    const elite = typeof isEliteEnemy === 'function' && isEliteEnemy(unit);
-
-    if (named || def?.isNamedBoss) sp = Math.max(sp, 3);
-    else if (monster) sp = Math.max(sp, 1.5);
-    else if (elite) sp = Math.max(sp, 0.75);
-    else if (unit.isEvilOperative || def?.isEvilOperative) sp = Math.max(sp, 0.4);
-    else if (def?.isHordeGrunt) sp = Math.max(sp, 0.18);
-
-    if (unit.isPlanetBoss) sp *= 1.35;
-    if ((unit.spriteScale || 1) >= 1.55) sp *= 1.15;
-    return Math.min(5, Math.round(sp * 100) / 100);
-  }
-
-  function applyScienceGain(amount, ctx = {}) {
-    const n = Math.max(0, Number(amount) || 0);
-    if (n <= 0) return 0;
-    const branchFx =
-      typeof TechTreeBranches !== 'undefined'
-        ? TechTreeBranches.getCombinedEffects(ctx.wave)
-        : null;
-    const gainMult = (ctx.scienceGainMult || 1) * (branchFx?.scienceGainMult || 1);
-    const speedMult = (ctx.researchSpeedMult || 1) * (branchFx?.researchSpeedMult || 1);
-    const granted = n * gainMult;
-    sciencePoints += granted;
-    // Research progress: base amount × speed mult (gain mult already folded into lifetime SP).
-    // Using n*speedMult keeps gain (SP bank) and speed (project fill rate) as separate stats.
-    const researchProgress = n * speedMult;
-    const branchActive =
-      typeof TechTreeBranches !== 'undefined' &&
-      TechTreeBranches.getNodesForUI?.(ctx.wave || 0)?.activeInfo;
-    if (branchActive && !activeId) {
-      TechTreeBranches.applyScienceProgress(researchProgress, { ...ctx, wave: ctx.wave });
-    } else if (activeId) {
-      // Any leftover reserve from between projects applies first, then this gain.
-      flushReserveToActive(ctx.showMessage);
-      if (activeId) {
-        applyProgressToActive(researchProgress, ctx.showMessage);
-      } else {
-        // Project finished from reserve; bank this kill's progress for the next one.
-        reserveScience += researchProgress;
-      }
-    } else {
-      // No active project — bank as reserve for the next research start.
-      reserveScience += researchProgress;
-    }
-    // Soft HUD only — completeResearch already forces full button refresh on unlock.
-    // Forcing updateHUD(true) every kill rebuilt every deploy/build button mid-combat.
-    if (typeof UI !== 'undefined') UI.updateHUD?.(false);
-    if (panelOpen && typeof Game !== 'undefined') {
-      const blds =
-        typeof Game.getBuildingsForResearch === 'function'
-          ? Game.getBuildingsForResearch()
-          : Game.getBuildingsSnapshot?.() || [];
-      renderPanel(Game.getState?.()?.wave ?? ctx.wave ?? 0, blds);
-    }
-    return granted;
-  }
-
-  function onEnemySlain(unit, ctx = {}) {
-    const labs = countLabs(ctx.buildings);
-    if (labs <= 0) return 0;
-
-    const cap = Math.ceil(
-      getWaveKillScienceCap(ctx.wave || 0, ctx.buildings) * (ctx.scienceCapMult || 1)
-    );
-    const room = Math.max(0, cap - killScienceThisWave);
-    if (room <= 0) return 0;
-
-    // Cap uses base kill value; gain/speed mults applied once inside applyScienceGain.
-    // (Previously scienceGainMult was applied here AND again in applyScienceGain.)
-    let amount = getKillScienceValue(unit);
-    amount = Math.min(amount, room);
-    if (amount <= 0) return 0;
-
-    killScienceThisWave += amount;
-    const granted = applyScienceGain(amount, ctx);
-    if (granted > 0 && ctx.floatingText) {
-      const label = granted >= 1 ? `+${granted.toFixed(1)} SP` : `+${granted.toFixed(2)} SP`;
-      ctx.floatingText(unit.x, unit.y - 14, label, '#80c0ff');
-    }
-    return granted;
-  }
-
-  /**
-   * Study at dawn: every standing lab (the first two count) pays science when a wave is
-   * cleared, on top of what the kills earned. This is what makes the first tier reachable
-   * two or three waves after the lab stands; kills alone gave about 4 SP a wave early on.
-   */
-  function onWaveCleared(ctx = {}) {
-    const labs = countLabs(ctx.buildings);
-    if (labs <= 0 || typeof EconomyRules === 'undefined') return 0;
-    const amount = EconomyRules.dawnScience(labs);
-    if (amount <= 0) return 0;
-    return applyScienceGain(amount, ctx);
-  }
-
-  /** Auto-complete core research through a wave (Academy Era bootstrap). */
-  function grantBootstrapUnlocks(wave) {
-    for (const node of CORE_TREE) {
-      if ((node.wave || 0) > wave) continue;
-      if (completed.has(node.id)) continue;
+  /** Grant every charter whose wave has come. @returns {object[]} the charters just granted */
+  function grantChartersThrough(wave, nodes = ALL_NODES) {
+    const fresh = [];
+    for (const node of nodes) {
+      if (node.retired || charterWave(node) > wave || completed.has(node.id)) continue;
       completed.add(node.id);
       applyNodeUnlocks(node);
+      fresh.push(node);
+      if (typeof FoundationalMedievalLayer !== 'undefined') {
+        FoundationalMedievalLayer.recordResearch?.(node.id, wave);
+      }
     }
+    return fresh;
+  }
+
+  /** Auto-complete core charters through a wave (Academy Era bootstrap). */
+  function grantBootstrapUnlocks(wave) {
+    grantChartersThrough(wave, CORE_TREE);
   }
 
   function isLabBuilding(b) {
-    if (!b || b.hp <= 0) return false;
-    if (b.owner && b.owner !== 'player') return false;
-    if (b.complete === false) return false;
-    return !!(b.isResearchLab || b.type === 'research_lab');
+    if (!b || b.owner !== 'player' || !b.complete || b.hp <= 0) return false;
+    if (b.isResearchLab) return true;
+    if (b.type === 'research_lab') return true;
+    return !!(typeof BuildDefs !== 'undefined' && BuildDefs[b.type]?.isResearchLab);
   }
 
   function countLabs(buildings) {
@@ -654,21 +729,139 @@ const Research = (() => {
       .replace(/>/g, '&gt;');
   }
 
-  function grantSciencePoints(amount, ctx = {}) {
-    return applyScienceGain(amount, ctx);
+  // ---- doctrines ----------------------------------------------------------------------
+  function doctrinesDue() {
+    return Math.min(
+      DOCTRINES.length,
+      Math.floor((clearedWave + headStart(picks.length)) / DOCTRINE_STEP)
+    );
   }
 
-  function tick() {
-    /* Science is earned from combat analysis (enemy kills) and bonus loot — not passive lab ticks. */
+  /** Waves by which tier `tier` comes early: the lab, and study for the next choice only. */
+  function headStart(tier) {
+    const lab = labsStanding > 0 ? LAB_HEAD_START : 0;
+    return lab + (tier === picks.length ? Math.floor(study / STUDY_PER_WAVE) : 0);
   }
 
-  function getKillScienceStatus(wave, buildings) {
-    const cap = getWaveKillScienceCap(wave, buildings);
-    return {
-      earned: Math.round(killScienceThisWave * 10) / 10,
-      cap,
-      labs: countLabs(buildings),
-    };
+  /** The pair waiting for a choice, or null. */
+  function pendingDoctrine() {
+    return picks.length < doctrinesDue() ? DOCTRINES[picks.length] : null;
+  }
+
+  /** The wave after which tier `tier` (0-based) is offered. */
+  function doctrineWave(tier) {
+    return Math.max(0, (tier + 1) * DOCTRINE_STEP - headStart(tier));
+  }
+
+  function isHero(u) {
+    return (
+      (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(u.type)) ||
+      (typeof isChampionUnit === 'function' && isChampionUnit(u.type)) ||
+      u.type === 'doomslayer_hero'
+    );
+  }
+
+  function applyOption(u, opt) {
+    if (opt.heroes ? !isHero(u) : opt.types && !opt.types.includes(u.type)) return;
+    if (opt.hp) {
+      u.maxHp = Math.floor(u.maxHp * opt.hp);
+      u.hp = Math.min(u.maxHp, Math.ceil(u.hp * opt.hp));
+      // Veterancy recomputes from the base figure, so the base has to move too.
+      if (u.baseMaxHp != null) u.baseMaxHp = Math.floor(u.baseMaxHp * opt.hp);
+    }
+    if (opt.dmg && u.damage && (!opt.dmgTypes || opt.dmgTypes.includes(u.type))) {
+      u.damage = Math.floor(u.damage * opt.dmg);
+      if (u.baseDamage != null) u.baseDamage = Math.floor(u.baseDamage * opt.dmg);
+    }
+    if (opt.speed && u.speed) u.speed = Math.round(u.speed * opt.speed * 100) / 100;
+    if (opt.build && u.type === 'builder') u.buildSpeedMult = (u.buildSpeedMult || 1) * opt.build;
+    if (opt.siege) u.siegeMult = (u.siegeMult || 1) * opt.siege;
+  }
+
+  /** A new recruit takes every doctrine held. Soldiers already serving got theirs at the pick. */
+  function applyDoctrines(u) {
+    for (const id of picks) applyOption(u, DOCTRINE_BY_ID[id]);
+  }
+
+  function getDoctrineEffects() {
+    let tpIncomeMult = 1;
+    for (const id of picks) tpIncomeMult *= DOCTRINE_BY_ID[id].tp || 1;
+    return { tpIncomeMult };
+  }
+
+  /** The path most doctrines belong to; the earliest pick wins a tie. */
+  function getDoctrinePath() {
+    const n = {};
+    let best = null;
+    for (const id of picks) {
+      const p = DOCTRINE_BY_ID[id].path;
+      n[p] = (n[p] || 0) + 1;
+      if (!best || n[p] > n[best]) best = p;
+    }
+    return best;
+  }
+
+  /**
+   * Take one side of the waiting pair.
+   * @param {object[]} [units] living units; the player's soldiers among them change at once
+   */
+  function pickDoctrine(id, units, showMessage) {
+    const pair = pendingDoctrine();
+    const opt = pair && pair.find((o) => o.id === id);
+    if (!opt) return false;
+    picks.push(opt.id);
+    study = 0;
+    for (const u of units || []) {
+      if (u && u.team === 'player' && u.hp > 0) applyOption(u, opt);
+    }
+    if (typeof showMessage === 'function') {
+      showMessage(`Doctrine adopted: ${opt.name}. ${opt.desc}`, 280);
+      AudioEngine?.SFX?.deploy?.();
+    }
+    refreshGame();
+    return true;
+  }
+
+  /** Raids, sorties and omens pay SP. It is study: it brings the next doctrine sooner. */
+  function grantSciencePoints(amount) {
+    const n = Math.max(0, Number(amount) || 0);
+    if (!n) return 0;
+    study += n;
+    refreshGame();
+    return n;
+  }
+
+  /** Kept under its old name: the panel and Game.startResearch call it with a doctrine id. */
+  function startResearch(id, _wave, buildings, showMessage, units) {
+    if (buildings) labsStanding = countLabs(buildings);
+    return pickDoctrine(id, units, showMessage);
+  }
+
+  /**
+   * Called every update. Work happens only when the wave or the phase changes: charters
+   * whose wave has come are granted and a doctrine that has fallen due is announced.
+   */
+  function tick(ctx = {}) {
+    if (ctx.wave == null) return;
+    const key = ctx.wave * 2 + (ctx.isNight ? 1 : 0);
+    if (key === lastTickKey) return;
+    // The first pass after a start or a load catches up without announcing anything.
+    const quiet = lastTickKey < 0;
+    lastTickKey = key;
+    const wasPending = !!pendingDoctrine();
+    clearedWave = ctx.isNight ? ctx.wave : ctx.wave - 1;
+    labsStanding = countLabs(ctx.buildings);
+    const fresh = grantChartersThrough(ctx.wave);
+    const say = quiet ? null : ctx.showMessage;
+    if (fresh.length && say) {
+      // Charters that only ever opened troops grant nothing now and are not announced.
+      const named = fresh.filter(formatUnlocksLine).map((n) => n.name);
+      if (named.length) say(`Charter granted: ${named.join(', ')}.`, 260);
+    }
+    if (!wasPending && pendingDoctrine() && say) {
+      say('A doctrine is ready. Open DOCTRINES and choose one of the two.', 320);
+    }
+    if (fresh.length || wasPending !== !!pendingDoctrine()) refreshGame();
   }
 
   function completeResearch(id, showMessage) {
@@ -677,108 +870,18 @@ const Research = (() => {
     if (!node) return false;
     completed.add(id);
     applyNodeUnlocks(node);
-    lastRenderSig = '';
     if (typeof showMessage === 'function') {
-      showMessage(`Research complete: ${node.name}!`, 280);
+      showMessage(`Charter granted: ${node.name}.`, 280);
       AudioEngine?.SFX?.deploy?.();
-    }
-    if (typeof UI !== 'undefined') UI.updateHUD(true);
-    if (panelOpen && typeof Game !== 'undefined') {
-      renderPanel(Game.getState?.()?.wave ?? 0, Game.getBuildingsSnapshot?.() || []);
     }
     if (typeof FoundationalMedievalLayer !== 'undefined') {
       const w = typeof Game !== 'undefined' ? Game.getState?.()?.wave || 0 : 0;
       FoundationalMedievalLayer.recordResearch(id, w);
     }
-    // Bust game state cache so deploy/build unlocks update immediately.
-    if (typeof Game !== 'undefined' && Game.syncInteractionState) {
-      Game.syncInteractionState();
-    }
-    return true;
-  }
-
-  function prereqsMet(node, wave) {
-    if ((node.wave || 0) > (wave || 0)) return false;
-    for (const p of node.prereq || []) {
-      if (!completed.has(p)) return false;
-    }
-    return true;
-  }
-
-  function canStart(id, wave) {
-    if (completed.has(id)) return false;
-    if (activeId && activeId !== id) return false;
-    const node = BY_ID[id];
-    if (!node || !prereqsMet(node, wave)) return false;
-    return true;
-  }
-
-  function startResearch(id, wave, buildings, showMessage) {
-    if (completed.has(id)) {
-      showMessage?.('Already researched.', 160);
-      return false;
-    }
-    if (countLabs(buildings) <= 0) {
-      showMessage?.('Complete a Research Lab on the field first!', 220);
-      return false;
-    }
-    const node = BY_ID[id];
-    if (!node) return false;
-    if (!prereqsMet(node, wave)) {
-      const reason = getLockReason(node, wave) || 'Prerequisites or wave requirement not met.';
-      showMessage?.(reason, 220);
-      return false;
-    }
-    if (activeId === id) return true;
-    if (activeId && activeId !== id) {
-      showMessage?.('Cancel the current project first (or finish it).', 200);
-      return false;
-    }
-    if (
-      typeof TechTreeBranches !== 'undefined' &&
-      TechTreeBranches.getNodesForUI?.(wave)?.activeInfo
-    ) {
-      showMessage?.('Finish branch tech before starting core research.', 220);
-      return false;
-    }
-    activeId = id;
-    activeProgress = 0;
-    lastRenderSig = ''; // force panel refresh
-    const flush = flushReserveToActive(showMessage);
-    AudioEngine?.SFX?.click?.();
-    if (!activeId) {
-      // Reserve finished the project immediately — completeResearch already announced.
-    } else if (flush.applied > 0) {
-      const pct = Math.min(100, Math.round((activeProgress / node.cost) * 100));
-      showMessage?.(
-        `Research started: ${node.name} — applied ${flush.applied.toFixed(1)} reserve SP (${pct}%, ${activeProgress.toFixed(1)}/${node.cost}).`,
-        280
-      );
-    } else {
-      showMessage?.(`Research started: ${node.name} (${node.cost} SP)`, 240);
-    }
-    if (panelOpen) {
-      renderPanel(wave, buildings);
-    }
-    if (typeof UI !== 'undefined') UI.updateHUD(true);
-    return true;
-  }
-
-  function cancelResearch(showMessage) {
-    if (!activeId) return false;
-    const name = BY_ID[activeId]?.name || 'Research';
-    // Return partial progress to reserve so it applies to the next project.
-    if (activeProgress > 0) reserveScience += activeProgress;
-    activeId = null;
-    activeProgress = 0;
-    lastRenderSig = '';
-    const reserveNote =
-      reserveScience > 0 ? ` (${reserveScience.toFixed(1)} SP held in reserve)` : '';
-    showMessage?.(`Cancelled: ${name}${reserveNote}`, 160);
+    refreshGame();
     if (panelOpen && typeof Game !== 'undefined') {
       renderPanel(Game.getState?.()?.wave ?? 0, Game.getBuildingsSnapshot?.() || []);
     }
-    if (typeof UI !== 'undefined') UI.updateHUD(true);
     return true;
   }
 
@@ -840,17 +943,19 @@ const Research = (() => {
     return tpVeteranUpgradeUnlocked;
   }
 
+  /** Non-null while a doctrine waits for a choice; the HUD button and the teacher read it. */
   function getActiveInfo() {
-    if (!activeId) return null;
-    const node = BY_ID[activeId];
-    if (!node) return null;
-    return {
-      id: activeId,
-      name: node.name,
-      progress: activeProgress,
-      cost: node.cost,
-      pct: Math.min(100, Math.round((activeProgress / node.cost) * 100)),
-    };
+    const pair = pendingDoctrine();
+    if (!pair) return null;
+    return { id: pair[0].id, name: 'Doctrine ready', progress: 0, cost: 0, pct: 100, ready: true };
+  }
+
+  /** Why a troop ("deploy") or building ("build") is still closed, for a greyed button. */
+  function getLockReason(field, id) {
+    const node = ALL_NODES.find(
+      (n) => !n.retired && Array.isArray(n[field]) && n[field].includes(id)
+    );
+    return node ? `arrives at wave ${charterWave(node)} (${node.name})` : '';
   }
 
   const CAT_LABELS = {
@@ -859,190 +964,117 @@ const Research = (() => {
     support: 'Support',
     economy: 'Economy',
     academy: 'Academies',
-    crossover: 'Evolved Allies',
+    crossover: 'Companies',
     secret: 'Secret',
     other: 'Other',
   };
-
-  const nameById = Object.fromEntries(ALL_NODES.map((n) => [n.id, n.name]));
 
   function nodeCategory(node) {
     return node.category || (node.faction ? 'crossover' : 'other');
   }
 
-  function formatDeployUnlocks(node) {
-    if (!node.deploy?.length) return '';
-    const names = node.deploy.map(
-      (t) => (typeof getPlayerUnitDef === 'function' ? getPlayerUnitDef(t)?.name : null) || t
-    );
-    return `Deploy: ${names.join(', ')}`;
+  function unitName(t) {
+    return (typeof getPlayerUnitDef === 'function' ? getPlayerUnitDef(t)?.name : null) || t;
   }
 
-  function formatBuildUnlocks(node) {
-    if (!node.build?.length) return '';
-    const names = node.build.map(
-      (t) => (typeof BuildDefs !== 'undefined' ? BuildDefs[t]?.name : null) || t
-    );
-    return `Build: ${names.join(', ')}`;
-  }
-
-  function formatFeatureUnlocks(node) {
-    if (node.feature === 'tp_veteran_upgrade' || node.id === 'veteran_doctrine') {
-      return 'Enables TP veteran promotions on core troops';
-    }
-    if (node.faction) {
-      const label =
-        node.faction === 'champions'
-          ? 'Champions’ Hall'
-          : `${(typeof FreeCompanies !== 'undefined' && FreeCompanies[node.faction]?.label) || 'Faction'} barracks`;
-      return `Unlocks ${label} construction`;
-    }
-    if (node.id === 'doom_protocol') return 'Unlocks Hellbane deployment (with meta unlock)';
-    return '';
+  function buildName(t) {
+    return (typeof BuildDefs !== 'undefined' ? BuildDefs[t]?.name : null) || t;
   }
 
   function formatUnlocksLine(node) {
-    return [formatDeployUnlocks(node), formatBuildUnlocks(node), formatFeatureUnlocks(node)]
-      .filter(Boolean)
-      .join(' · ');
-  }
-
-  function formatPrereqLine(node, wave) {
-    const parts = [];
-    if (node.wave) parts.push(`Wave ${node.wave}+`);
-    for (const pid of node.prereq || []) {
-      const done = completed.has(pid);
-      const label = nameById[pid] || pid;
-      parts.push(done ? `✓ ${label}` : `○ ${label}`);
-    }
-    if (!parts.length) return 'No prerequisites';
-    const waveBlocked = (node.wave || 0) > (wave || 0);
-    if (waveBlocked && node.prereq?.length) {
-      return `${parts.join(' · ')} (wave locked)`;
-    }
-    if (waveBlocked) return `Wave ${node.wave}+ required`;
-    return parts.join(' · ');
-  }
-
-  function getLockReason(node, wave) {
-    if (completed.has(node.id)) return null;
-    if ((node.wave || 0) > (wave || 0)) return `Unlocks at wave ${node.wave}`;
-    for (const pid of node.prereq || []) {
-      if (!completed.has(pid)) return `Requires ${nameById[pid] || pid}`;
-    }
-    return null;
+    if (node.retired) return '';
+    const bits = [];
+    // A building that has since become a starter is no longer this charter's to open.
+    const builds = (node.build || []).filter((t) => !STARTER_BUILD.has(t));
+    if (builds.length) bits.push(builds.map(buildName).join(', '));
+    if (node.faction) bits.push('company barracks');
+    if (node.feature === 'tp_veteran_upgrade') bits.push('TP veteran promotions');
+    if (node.id === 'doom_protocol') bits.push('Hellbane');
+    return bits.join(' · ');
   }
 
   function sortNodes(a, b) {
-    const waveDiff = (a.wave || 0) - (b.wave || 0);
-    if (waveDiff !== 0) return waveDiff;
-    return (a.name || '').localeCompare(b.name || '');
+    return charterWave(a) - charterWave(b) || String(a.name).localeCompare(String(b.name));
   }
 
   function getNodesForUI(wave) {
-    return ALL_NODES.map((node) => ({
-      ...node,
-      done: completed.has(node.id),
-      active: activeId === node.id,
-      locked: !prereqsMet(node, wave) && !completed.has(node.id),
-      canStart: canStart(node.id, wave) && !activeId,
-      progress: activeId === node.id ? activeProgress : 0,
-      category: nodeCategory(node),
-      unlocksLine: formatUnlocksLine(node),
-      prereqLine: formatPrereqLine(node, wave),
-      lockReason: getLockReason(node, wave),
-    }));
+    return ALL_NODES.map((node) => {
+      const done = completed.has(node.id);
+      return {
+        ...node,
+        wave: charterWave(node),
+        done,
+        active: false,
+        locked: !done,
+        canStart: false,
+        progress: 0,
+        category: nodeCategory(node),
+        unlocksLine: formatUnlocksLine(node),
+        prereqLine: done ? 'Granted' : `Arrives at wave ${charterWave(node)}`,
+        lockReason: done || charterWave(node) <= wave ? '' : `Arrives at wave ${charterWave(node)}`,
+      };
+    });
   }
 
-  function buildCategoryPathway(cat, nodes, intro) {
-    const sorted = [...nodes].sort(sortNodes);
-    const chain = sorted
-      .map((n) => {
-        const prereq = n.prereq?.length
-          ? ` ← ${n.prereq.map((id) => nameById[id] || id).join(', ')}`
-          : '';
-        return `W${n.wave || '?'} ${n.name} (${n.cost} SP)${prereq}`;
-      })
-      .join('\n');
-    return { cat, intro, chain, sorted };
+  /** The ten pairs with their state: taken, passed over, waiting for a choice, or still ahead. */
+  function getDoctrinesForUI() {
+    const pending = pendingDoctrine();
+    return DOCTRINES.map((pair, tier) => ({
+      tier,
+      wave: doctrineWave(tier),
+      pending: pair === pending,
+      options: pair.map((opt) => ({
+        ...opt,
+        taken: picks[tier] === opt.id,
+        passed: tier < picks.length && picks[tier] !== opt.id,
+      })),
+    }));
   }
 
   function getEncyclopediaEntries() {
     const entries = [
       {
         cat: 'research',
-        name: 'Research Lab & Science Points',
-        body: 'Build a Research Lab (starter building, no research required) to field-analyze fallen foes. Each enemy slain grants Science Points (SP) scaled to its threat — grunts ~0.2 SP, elites ~0.75 SP, monsters ~1.5 SP, named bosses ~3 SP. SP gain from kills is capped each wave (base cap rises with wave count; +2 SP cap per extra lab). Raid loot and events can grant bonus SP beyond the cap. One project at a time — progress carries if you cancel. Completed research permanently unlocks deploys, buildings, evolved barracks, veteran promotions, and perk machines for the run.',
+        name: 'Doctrines',
+        body: `After every tenth wave you choose one of two doctrines. The one you take lasts for the rest of the siege and the other is closed. Soldiers already on the field change at once, and every later recruit arrives with it. A standing Research Lab brings each choice forward by ${LAB_HEAD_START} waves, so the first comes after wave ${DOCTRINE_STEP - LAB_HEAD_START}. Raids, sorties and omens pay science points (SP): every ${STUDY_PER_WAVE} bring the next choice one wave sooner, and they are spent when you choose. Open DOCTRINES to choose; a choice not yet made waits for you.`,
       },
       {
         cat: 'research',
-        name: 'Starter Unlocks (No Research)',
-        body: `Deploy without research: ${[...STARTER_DEPLOY].map((t) => (typeof getPlayerUnitDef === 'function' ? getPlayerUnitDef(t)?.name : null) || t).join(', ')}.\n\nBuild without research: ${[
+        name: 'Charters',
+        body: `Every troop can be recruited from the first wave; the price is the only gate. Buildings beyond the starters come by charter, and a charter is granted when its wave arrives. There is nothing to research and nothing to pay.\n\nBuild from the start: ${[
           ...STARTER_BUILD,
         ]
           .filter((t) => !t.startsWith('enemy_'))
-          .map((t) => (typeof BuildDefs !== 'undefined' ? BuildDefs[t]?.name : null) || t)
+          .map(buildName)
           .join(', ')}.`,
-      },
-      {
-        cat: 'research',
-        name: 'Full Research Tree Overview',
-        body: 'Projects gate at minimum wave thresholds and prerequisite research. Military opens sappers, knights, officers, and siege. Defense opens castles, towers, and traps. Economy runs quarry → hamlet → village → town → city → metropolis. Academies train free troops each round after Academy Charter. Evolved allies research is available from wave 1 (or instantly if the faction is meta-unlocked). SP costs scale with roster power. Secret paths: Tonic Stations Science (wave 55) and Hellgate Containment (wave 100, requires Marrow Choir + Emberblood research).',
       },
     ];
 
-    const byCat = {};
-    for (const node of ALL_NODES) {
-      const cat = nodeCategory(node);
-      if (!byCat[cat]) byCat[cat] = [];
-      byCat[cat].push(node);
-    }
-
-    const pathways = {
-      military:
-        'Iron Weapons anchors the combat branch — sappers, knights, generals, scouts, pikemen, ballistas, and Veteran Doctrine (TP promotions).',
-      defense:
-        'Field Engineering and Fortification open watchtowers, spike traps, castle compounds, and fortress upgrades on settlements.',
-      support:
-        'Morale Arts unlocks bards — required alongside infantry and siege nodes for Expansion Training academies.',
-      economy:
-        'Prospecting unlocks quarries and trade posts; Settlement Charter begins the hamlet ladder to Imperial Metropolis.',
-      academy:
-        'Academy Charter trains core troops free each round; Support Corps and Knight Order branch into specialist and officer halls.',
-      crossover:
-        'Meta-unlocked factions can build barracks from wave 1. Research is an alternate in-run path (wave 1+). Hellbane still needs Hellgate Containment.',
-      secret:
-        'Tonic Stations Science unlocks all perk machines. Hellgate Containment is the ultimate evolved-allies capstone.',
-    };
-
-    for (const [cat, nodes] of Object.entries(byCat)) {
-      const { intro, chain } = buildCategoryPathway(cat, nodes, pathways[cat]);
+    DOCTRINES.forEach((pair, tier) => {
       entries.push({
         cat: 'research',
-        name: `${CAT_LABELS[cat] || cat} — Research Path`,
-        body: `${intro || ''}\n\n${chain}`.trim(),
+        name: `${pair[0].name} or ${pair[1].name}`,
+        body: `Doctrine choice after wave ${(tier + 1) * DOCTRINE_STEP}. ${pair
+          .map((o) => `${o.name}: ${o.desc}`)
+          .join(' ')}`,
+        campaignWave: (tier + 1) * DOCTRINE_STEP,
       });
-    }
+    });
 
     for (const node of [...ALL_NODES].sort(sortNodes)) {
-      const cat = CAT_LABELS[nodeCategory(node)] || 'Other';
       const unlocks = formatUnlocksLine(node);
-      const prereqNames = node.prereq?.length
-        ? node.prereq.map((id) => nameById[id] || id).join(', ')
-        : 'None';
-      const tier = node.tier ? `Crossover tier ${node.tier}. ` : '';
+      if (!unlocks) continue;
       entries.push({
         cat: 'research',
         name: node.name,
         body: [
           node.desc || '',
-          `Category: ${cat}. ${tier}Cost: ${node.cost} SP. Minimum wave: ${node.wave || 0}.`,
-          unlocks ? `Unlocks: ${unlocks}.` : '',
-          `Prerequisites: ${prereqNames}.`,
+          `${CAT_LABELS[nodeCategory(node)] || 'Other'} charter, granted at wave ${charterWave(node)}.`,
+          unlocks ? `Opens: ${unlocks}.` : '',
         ]
           .filter(Boolean)
           .join(' '),
-        campaignWave: node.wave || undefined,
+        campaignWave: charterWave(node) || undefined,
       });
     }
 
@@ -1056,120 +1088,107 @@ const Research = (() => {
     treeDelegated = true;
     tree.addEventListener('click', (e) => {
       const btn = e.target?.closest?.('[data-research]');
-      if (
-        !btn ||
-        btn.disabled ||
-        btn.classList.contains('done') ||
-        btn.classList.contains('locked')
-      )
-        return;
+      if (!btn || btn.disabled) return;
       e.preventDefault();
       e.stopPropagation();
-      const id = btn.dataset.research;
-      if (!id) return;
-      if (typeof Game !== 'undefined' && Game.startResearch) {
-        const ok = Game.startResearch(id);
-        if (ok) {
-          // startResearch already re-renders when panel is open
-        }
-      }
+      if (typeof Game !== 'undefined' && Game.startResearch)
+        Game.startResearch(btn.dataset.research);
     });
+  }
+
+  function doctrineRowHtml(row) {
+    const state = row.pending
+      ? 'Choose one'
+      : row.options.some((o) => o.taken)
+        ? 'Chosen'
+        : `After wave ${row.wave}`;
+    const cards = row.options
+      .map((o) => {
+        const cls = ['research-node', 'doctrine-card'];
+        if (o.taken) cls.push('done');
+        else if (row.pending) cls.push('can-start');
+        else cls.push('locked');
+        const why = o.taken
+          ? 'Adopted'
+          : o.passed
+            ? 'Passed over'
+            : row.pending
+              ? 'Click to adopt'
+              : `Offered after wave ${row.wave}`;
+        return `
+            <button type="button" class="${cls.join(' ')}" data-research="${escAttr(o.id)}"
+              title="${escAttr(why)}" ${row.pending ? '' : 'disabled'}>
+              <span class="research-node-name">${escHtml(o.name)}</span>
+              <span class="research-node-cost">${o.taken ? '✓' : ''}</span>
+              <span class="research-node-desc">${escHtml(o.desc)}</span>
+              <span class="research-node-prereq ${o.passed ? 'blocked' : ''}">${escHtml(why)}</span>
+            </button>`;
+      })
+      .join('');
+    return `
+        <div class="research-cat doctrine-row${row.pending ? ' pending' : ''}">
+          <div class="research-cat-title">Doctrine ${row.tier + 1} · ${escHtml(state)}</div>
+          ${cards}
+        </div>`;
+  }
+
+  function charterHtml(n) {
+    const cls = ['research-node', 'charter', n.done ? 'done' : 'locked'].join(' ');
+    return `
+            <div class="${cls}" title="${escAttr(n.prereqLine)}">
+              <span class="research-node-name">${escHtml(n.name)}</span>
+              <span class="research-node-cost">${n.done ? '✓' : `Wave ${n.wave}`}</span>
+              <span class="research-node-desc">${escHtml(n.desc || '')}</span>
+              <span class="research-node-unlocks">${escHtml(n.unlocksLine || '')}</span>
+            </div>`;
   }
 
   function renderPanel(wave, buildings, opts = {}) {
     const tree = document.getElementById('research-tree');
-    const spEl = document.getElementById('research-sp-text');
-    const activeEl = document.getElementById('research-active-text');
+    const headEl = document.getElementById('research-sp-text');
+    const hintEl = document.getElementById('research-active-text');
     if (!tree) return;
     ensureTreeDelegation();
+    if (buildings) labsStanding = countLabs(buildings);
 
-    const labs = countLabs(buildings);
-    const killStatus = getKillScienceStatus(wave, buildings);
-    const active = getActiveInfo();
-    const branchActive =
-      typeof TechTreeBranches !== 'undefined'
-        ? TechTreeBranches.getNodesForUI?.(wave)?.activeInfo
-        : null;
+    const pending = pendingDoctrine();
+    const sig = [wave, labsStanding, picks.length, completed.size, pending ? 1 : 0, study].join(
+      '|'
+    );
+    if (!opts.force && sig === lastRenderSig && tree.childElementCount > 0) return;
+    lastRenderSig = sig;
 
-    const reserveLabel = reserveScience > 0.05 ? ` · Reserve ${reserveScience.toFixed(1)} SP` : '';
-    // Tree rebuild only when structure changes (nodes/locks/active id). SP ticks only touch headers.
-    const treeSig = [
-      wave,
-      labs,
-      activeId || '',
-      completed.size,
-      branchActive?.id || '',
-      opts.force ? 'f' : '',
-    ].join('|');
-    const updateResearchHeaders = () => {
-      if (spEl) {
-        spEl.textContent =
-          labs > 0
-            ? `Science: ${sciencePoints.toFixed(1)} SP${reserveLabel} · Wave analysis ${killStatus.earned}/${killStatus.cap}`
-            : `Science: ${sciencePoints.toFixed(1)} SP${reserveLabel} · Build a Research Lab to analyze kills`;
-      }
-      if (activeEl) {
-        if (active) {
-          activeEl.textContent = `Researching: ${active.name} — ${active.pct}% (${active.progress.toFixed(1)}/${active.cost} SP)`;
-        } else if (branchActive) {
-          activeEl.textContent = `Branch: ${branchActive.name} — ${branchActive.pct}% (${branchActive.progress.toFixed(1)}/${branchActive.cost} SP)`;
-        } else if (labs > 0) {
-          activeEl.textContent =
-            reserveScience > 0.05
-              ? `Kill foes for SP (wave cap). ${reserveScience.toFixed(1)} reserve SP applies when you start a project.`
-              : 'Kill foes to earn SP — stronger enemies yield more (wave cap applies). Click a node to begin.';
-        } else {
-          activeEl.textContent = 'Build & complete a Research Lab first, then start a project.';
-        }
-      }
-    };
-    if (!opts.force && treeSig === lastRenderSig && tree.childElementCount > 0) {
-      updateResearchHeaders();
-      return;
+    if (headEl) {
+      headEl.textContent = `Doctrines adopted: ${picks.length} of ${DOCTRINES.length} · Study ${study} SP`;
     }
-    lastRenderSig = treeSig;
-
-    updateResearchHeaders();
+    if (hintEl) {
+      hintEl.textContent = pending
+        ? 'A doctrine is ready. Choose one of the two; the other is closed for this siege.'
+        : picks.length >= DOCTRINES.length
+          ? 'Every doctrine is chosen.'
+          : `The next choice comes after wave ${doctrineWave(picks.length)}.${
+              labsStanding > 0
+                ? ''
+                : ` A Research Lab would bring it ${LAB_HEAD_START} waves sooner.`
+            } Every ${STUDY_PER_WAVE} SP from raids, sorties and omens brings it one wave sooner.`;
+    }
 
     const scrollTop = tree.scrollTop;
     const nodes = getNodesForUI(wave);
     const cats = ['military', 'defense', 'support', 'economy', 'academy', 'crossover', 'secret'];
-    tree.innerHTML = cats
-      .map((cat) => {
-        const items = nodes.filter((n) => n.category === cat).sort(sortNodes);
-        if (!items.length) return '';
-        return `
+    tree.innerHTML =
+      getDoctrinesForUI().map(doctrineRowHtml).join('') +
+      cats
+        .map((cat) => {
+          const items = nodes.filter((n) => n.category === cat && n.unlocksLine).sort(sortNodes);
+          if (!items.length) return '';
+          return `
         <div class="research-cat">
-          <div class="research-cat-title">${escHtml(CAT_LABELS[cat] || cat)}</div>
-          ${items
-            .map((n) => {
-              const tip = escAttr(n.lockReason || n.desc || '');
-              const disabled = n.done || n.locked || (activeId && !n.active) ? 'disabled' : '';
-              const cls = [
-                'research-node',
-                n.done ? 'done' : '',
-                n.active ? 'active' : '',
-                n.locked ? 'locked' : '',
-                n.canStart ? 'can-start' : '',
-              ]
-                .filter(Boolean)
-                .join(' ');
-              return `
-            <button type="button" class="${cls}"
-              data-research="${escAttr(n.id)}" title="${tip}"
-              ${disabled}>
-              <span class="research-node-name">${escHtml(n.name)}</span>
-              <span class="research-node-cost">${n.done ? '✓' : `${n.cost} SP`}</span>
-              <span class="research-node-desc">${escHtml(n.desc || '')}</span>
-              <span class="research-node-unlocks">${escHtml(n.unlocksLine || '')}</span>
-              <span class="research-node-prereq ${n.locked ? 'blocked' : ''}">${escHtml(n.prereqLine)}</span>
-            </button>`;
-            })
-            .join('')}
+          <div class="research-cat-title">${escHtml(CAT_LABELS[cat] || cat)} charters</div>
+          ${items.map(charterHtml).join('')}
         </div>`;
-      })
-      .join('');
-    // Restore scroll so the panel doesn't jump every SP tick.
+        })
+        .join('');
     tree.scrollTop = scrollTop;
 
     if (typeof TechTreeBranches !== 'undefined') {
@@ -1224,14 +1243,6 @@ const Research = (() => {
       e.preventDefault();
       closePanel();
     });
-    document.getElementById('research-cancel')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof Game !== 'undefined') Game.cancelResearch?.();
-    });
-    document.getElementById('branch-cancel')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      if (typeof Game !== 'undefined') Game.cancelBranchTech?.();
-    });
     // Click backdrop to close
     document.getElementById('research-panel')?.addEventListener('click', (e) => {
       if (e.target?.id === 'research-panel') closePanel();
@@ -1245,32 +1256,23 @@ const Research = (() => {
   }
 
   function getSnapshot() {
-    return {
-      sciencePoints,
-      reserveScience,
-      killScienceThisWave,
-      completed: [...completed],
-      activeId,
-      activeProgress,
-    };
+    return { completed: [...completed], doctrines: [...picks], study };
   }
 
+  // Saves from before doctrines carry science points and an active project; both are
+  // dropped. Their completed list is kept, and doctrines owed for waves already cleared
+  // are offered one a night from the first tick.
   function restoreSnapshot(snap) {
     if (!snap) return;
-    sciencePoints = snap.sciencePoints ?? 0;
-    reserveScience = snap.reserveScience ?? 0;
-    killScienceThisWave = snap.killScienceThisWave ?? 0;
-    completed = new Set(snap.completed || []);
-    activeId = snap.activeId ?? null;
-    activeProgress = snap.activeProgress ?? 0;
-    rebuildUnlockMaps();
-    // Old saves: no reserve field — catch up if a project is active and lifetime SP
-    // exceeds progress (best-effort; new runs track reserve explicitly).
-    if (snap.reserveScience == null && activeId && sciencePoints > activeProgress) {
-      // Don't invent reserve from lifetime totals (would double-count past projects).
-    } else if (activeId && reserveScience > 0) {
-      flushReserveToActive(null);
+    completed = new Set((snap.completed || []).filter((id) => BY_ID[id]));
+    picks = [];
+    for (const id of snap.doctrines || []) {
+      if (DOCTRINE_BY_ID[id]?.tier === picks.length) picks.push(id);
     }
+    study = Math.max(0, Number(snap.study) || 0);
+    lastTickKey = -1;
+    lastRenderSig = '';
+    rebuildUnlockMaps();
   }
 
   function init() {
@@ -1281,14 +1283,15 @@ const Research = (() => {
   return {
     init,
     resetRun,
-    onWaveStart,
-    onEnemySlain,
-    onWaveCleared,
     grantBootstrapUnlocks,
-    grantSciencePoints,
     tick,
     startResearch,
-    cancelResearch,
+    pickDoctrine,
+    grantSciencePoints,
+    applyDoctrines,
+    getDoctrineEffects,
+    getDoctrinePath,
+    getDoctrinesForUI,
     completeResearch,
     isDeployUnlocked,
     isBuildUnlocked,
@@ -1299,8 +1302,8 @@ const Research = (() => {
     isDoomResearchUnlocked,
     isTpVeteranUpgradeUnlocked,
     countLabs,
-    getKillScienceStatus,
     getActiveInfo,
+    getLockReason,
     getNodesForUI,
     renderPanel,
     openPanel,
@@ -1312,16 +1315,24 @@ const Research = (() => {
     getEncyclopediaEntries,
     ALL_NODES,
     COMPANY_RESEARCH,
+    DOCTRINES,
     STARTER_DEPLOY,
     STARTER_BUILD,
+    // Science points are gone; these stay so older callers read zero instead of failing.
+    cancelResearch: () => false,
+    onWaveStart: () => {},
+    onEnemySlain: () => 0,
+    onWaveCleared: () => 0,
+    getKillScienceStatus: () => ({ earned: 0, cap: 0, labs: labsStanding }),
     get sciencePoints() {
-      return sciencePoints;
+      return study;
     },
-    get reserveScience() {
-      return reserveScience;
-    },
+    reserveScience: 0,
     get completedCount() {
       return completed.size;
+    },
+    get doctrineCount() {
+      return picks.length;
     },
   };
 })();

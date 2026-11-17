@@ -606,17 +606,11 @@ function testResearchEncyclopedia(Research) {
     'encyclopedia should list all nodes plus overview/path entries'
   );
   const vet = entries.find((e) => e.name === 'Veteran Doctrine');
-  assert(
-    vet?.body?.includes('Iron Weapons'),
-    'Veteran Doctrine should cite Iron Weapons prerequisite'
-  );
+  assert(vet?.body?.includes('wave 10'), 'Veteran Doctrine should say the wave it is granted');
   const doom = entries.find((e) => e.name === 'Hellgate Containment');
-  assert(
-    doom?.body?.includes('Stand Arrow') || doom?.body?.includes('Ki Manipulation'),
-    'Doom research should cite prerequisites'
-  );
-  const milPath = entries.find((e) => e.name?.includes('Military') && e.name.includes('Path'));
-  assert(milPath?.body?.includes('Iron Weapons'), 'Military path should list iron weapons');
+  assert(doom?.body?.includes('wave 60'), 'Hellgate Containment should say the wave it is granted');
+  const pair = entries.find((e) => e.name === 'Pike and Shot or Heavy Horse');
+  assert(pair?.body?.includes('wave 10'), 'the first doctrine pair should be listed with its wave');
 }
 
 function testResearchGates(Research, BuildDefs) {
