@@ -63,7 +63,7 @@ const meta = new Proxy({}, { get: () => () => {} });
 globalThis.MetaProgress = meta;
 globalThis.getHeroDef = (t) => (t.startsWith('xo_') ? { faction: t.slice(3) } : null);
 globalThis.Research = {
-  getSnapshot: () => ({ completed: Array.from({ length: 40 }, (_, i) => `r${i}`) }),
+  getSnapshot: () => ({ doctrines: Array.from({ length: 40 }, (_, i) => `r${i}`) }),
 };
 globalThis.SiegeLoop = { lastScore: () => ({ total: 30000 }) };
 globalThis.isChampionUnit = (t) => t === 'wwe_star';

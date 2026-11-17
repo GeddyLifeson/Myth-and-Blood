@@ -61,7 +61,7 @@ const UX = (() => {
     {
       maxWave: 5,
       title: 'Build & Defend',
-      body: 'Deploy a Builder (<kbd>7</kbd>), select BUILD, click the map. Build a <strong>Research Lab</strong> (45 TP) to unlock advanced troops and evolved barracks over time.',
+      body: 'Deploy a Builder (<kbd>7</kbd>), select BUILD, click the map. A <strong>Research Lab</strong> brings each doctrine choice five waves sooner.',
       highlight: 'left-panel',
     },
     {
@@ -111,9 +111,9 @@ const UX = (() => {
     {
       minWave: 10,
       maxWave: 60,
-      when: (gs) => gs.hasResearchLab || (gs.sciencePoints ?? 0) > 0,
-      title: 'Science & Research',
-      body: 'Your Research Lab analyzes fallen foes for <strong>Science Points</strong>. Open <strong>RESEARCH</strong> to unlock settlements, academies, and evolved barracks - each node gates new power.',
+      when: (gs) => !!gs.researchActive,
+      title: 'Doctrines',
+      body: 'After every tenth wave you take one of two <strong>doctrines</strong> for the rest of the siege. Open <strong>DOCTRINES</strong> to choose. The one you pass over is closed.',
       highlight: 'research-open',
     },
     {
@@ -276,16 +276,46 @@ const UX = (() => {
     }
   }
 
+  // The log keeps more than it shows: the filter picks what the player reads.
+  const LOG_FILTERS = [
+    { id: 'all', label: 'All' },
+    { id: 'alert', label: 'Alerts' },
+    { id: 'supply', label: 'Supplies' },
+    { id: 'event', label: 'Events' },
+    { id: 'system', label: 'System' },
+  ];
+  let logFilter = 'all';
+
+  function classifyMessage(text, source) {
+    if (source === 'system') return 'system';
+    if (/breach|has fallen|realm falls|line is broken|warlord|boss|wiped out/i.test(text)) {
+      return 'alert';
+    }
+    if (/\bgold\b|\bTP\b|spoils|crate|upkeep|recruit|trained|built|forged|cost/i.test(text)) {
+      return 'supply';
+    }
+    return 'event';
+  }
+
   function onMessage(text, source = 'game') {
     if (!text) return;
-    const entry = {
-      text,
-      source,
-      time: Date.now(),
-      wave: Game.isPlaying?.() ? Game.getState().wave : 0,
-    };
-    messageLog.unshift(entry);
-    if (messageLog.length > MESSAGE_LOG_MAX) messageLog.length = MESSAGE_LOG_MAX;
+    const wave = Game.isPlaying?.() ? Game.getState().wave : 0;
+    const last = messageLog.slice(0, 8).find((m) => m.text === text && m.wave === wave);
+    // The same line again in the same wave folds into one row with a count.
+    if (last) {
+      last.count = (last.count || 1) + 1;
+      last.time = Date.now();
+    } else {
+      messageLog.unshift({
+        text,
+        source,
+        kind: classifyMessage(text, source),
+        time: Date.now(),
+        wave,
+        count: 1,
+      });
+      if (messageLog.length > MESSAGE_LOG_MAX) messageLog.length = MESSAGE_LOG_MAX;
+    }
     renderMessageLog();
     announce(text);
   }
@@ -295,22 +325,38 @@ const UX = (() => {
     return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
   }
 
+  function setLogFilter(id) {
+    if (!LOG_FILTERS.some((f) => f.id === id)) return;
+    logFilter = id;
+    renderMessageLog();
+  }
+
   function renderMessageLog() {
     const list = document.getElementById('message-log-list');
     if (!list) return;
+    const tabs = document.getElementById('message-log-filters');
+    if (tabs) {
+      tabs.innerHTML = LOG_FILTERS.map((f) => {
+        const n =
+          f.id === 'all' ? messageLog.length : messageLog.filter((m) => m.kind === f.id).length;
+        return `<button type="button" class="msg-log-filter${f.id === logFilter ? ' on' : ''}" data-filter="${f.id}" aria-pressed="${f.id === logFilter}">${f.label} ${n}</button>`;
+      }).join('');
+    }
+    const shown = messageLog.filter((m) => logFilter === 'all' || m.kind === logFilter);
     list.innerHTML =
-      messageLog
-        .slice(0, 40)
+      shown
+        .slice(0, 60)
         .map(
           (m) => `
-      <div class="msg-log-entry">
+      <div class="msg-log-entry msg-log-${m.kind}">
         <span class="msg-log-wave">W${m.wave}</span>
         <span class="msg-log-time">${formatLogTime(m.time)}</span>
-        <span class="msg-log-text">${escapeHtml(m.text)}</span>
+        <span class="msg-log-text">${escapeHtml(m.text)}${m.count > 1 ? ` <b class="msg-log-count">×${m.count}</b>` : ''}</span>
       </div>
     `
         )
-        .join('') || '<p class="msg-log-empty">No messages yet.</p>';
+        .join('') ||
+      `<p class="msg-log-empty">${messageLog.length ? 'Nothing in this filter.' : 'No messages yet.'}</p>`;
   }
 
   function escapeHtml(s) {
@@ -593,6 +639,12 @@ const UX = (() => {
           : '',
         u.roster
           ? `<div class="unit-info-row roster-row">${escapeHtml(u.roster.trait)}</div><div class="unit-info-row roster-weak">Weakness: ${escapeHtml(u.roster.weak)}</div>`
+          : '',
+        u.line
+          ? `<div class="unit-info-row roster-row">${escapeHtml(u.line.job)}</div>${u.line.beats ? `<div class="unit-info-row roster-row">Strong against: ${escapeHtml(u.line.beats)}</div>` : ''}${u.line.stars ? `<div class="unit-info-row roster-row">${escapeHtml(u.line.stars)}</div>` : ''}`
+          : '',
+        u.formation
+          ? `<div class="unit-info-row roster-row">${escapeHtml(u.formation.label)} formation: ${escapeHtml(u.formation.desc)}</div>`
           : '',
         formatTraits(u),
         `<div class="unit-info-row perks-row"><span>Perks</span> ${formatPerks(u)}</div>`,
@@ -1361,16 +1413,13 @@ const UX = (() => {
       subtitle.textContent += ' · Cheats used - run not recorded';
     }
 
-    const losses = gs.playerDeaths ?? gs.misses ?? 0;
     const ach = gs.achievements || { unlocked: 0, total: 316 };
     const fb = gs.feedback || {};
     stats.innerHTML = `
       <div class="result-stat-card"><span>Waves held</span><strong>${Math.max(0, gs.wave - 1)}</strong></div>
       <div class="result-stat-card"><span>Kills</span><strong>${gs.kills ?? 0}</strong></div>
-      <div class="result-stat-card"><span>Soldiers lost</span><strong>${losses}</strong></div>
       <div class="result-stat-card"><span>Best streak</span><strong>${fb.bestStreak || 0}</strong></div>
       <div class="result-stat-card"><span>Clean waves</span><strong>${fb.cleanSweeps || 0}</strong></div>
-      <div class="result-stat-card"><span>Difficulty</span><strong>${escapeHtml(gs.difficultyLabel ?? 'Normal')}</strong></div>
       <div class="result-stat-card wide"><span>Achievements</span><strong>${ach.unlocked} / ${ach.total}</strong></div>
     `;
 
@@ -1419,6 +1468,10 @@ const UX = (() => {
     bindPauseMenu();
     bindMinimap();
     bindTutorial();
+    document.getElementById('message-log-filters')?.addEventListener('click', (e) => {
+      const b = e.target.closest?.('[data-filter]');
+      if (b) setLogFilter(b.dataset.filter);
+    });
     document.getElementById('message-log-close')?.addEventListener('click', () => {
       document.getElementById('message-log-panel')?.classList.remove('open');
     });
@@ -1429,6 +1482,8 @@ const UX = (() => {
     onGameUpdate,
     onPauseChanged,
     onMessage,
+    setLogFilter,
+    getMessageLog: () => messageLog,
     updatePauseMenu,
     openPauseMenu,
     closePauseMenu,

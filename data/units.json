@@ -11,7 +11,14 @@
     "type": "melee",
     "morale": 15,
     "experience": 5,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Holds the line so the shooters behind him can work.",
+    "beats": {
+      "goblin": 1.25,
+      "plague_rat": 1.25,
+      "goblin_burrower": 1.25
+    },
+    "stars": "Each star: health, damage and morale. A veteran footman is the last man to break."
   },
   "archer": {
     "name": "Archer",
@@ -26,7 +33,15 @@
     "projectile": "arrow",
     "morale": 12,
     "experience": 8,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Kills light enemies before they arrive.",
+    "beats": {
+      "harpy": 1.3,
+      "goblin_sapper": 1.3,
+      "goblin_firebrand": 1.3,
+      "wailing_wraith": 1.3
+    },
+    "stars": "Each star: damage, aim and a little morale."
   },
   "crossbowman": {
     "name": "Crossbowman",
@@ -42,7 +57,10 @@
     "morale": 12,
     "experience": 7,
     "canHunt": true,
-    "reloadMult": 1.8
+    "reloadMult": 1.8,
+    "job": "Punches through plate and shields.",
+    "starGrow": "reload",
+    "stars": "Each star: damage, aim and a faster reload."
   },
   "mage": {
     "name": "Mage",
@@ -57,7 +75,14 @@
     "projectile": "bolt",
     "morale": 10,
     "experience": 10,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Burns down packs and big armoured targets.",
+    "beats": {
+      "dark_knight": 1.3,
+      "troll": 1.3,
+      "orc_shieldbearer": 1.3
+    },
+    "stars": "Each star: damage, aim and a little morale."
   },
   "cavalry": {
     "name": "Cavalry",
@@ -71,7 +96,18 @@
     "type": "melee",
     "morale": 18,
     "experience": 6,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Rides down shooters, casters and anything that runs.",
+    "beats": {
+      "orc_archer": 1.3,
+      "dark_mage": 1.3,
+      "necromancer": 1.3,
+      "bone_summoner": 1.3,
+      "shaman": 1.3,
+      "goblin_firebrand": 1.3
+    },
+    "ridesDown": true,
+    "stars": "Each star: speed, damage and aim."
   },
   "healer": {
     "name": "Healer",
@@ -86,7 +122,9 @@
     "healAmount": 20,
     "morale": 14,
     "experience": 7,
-    "canHunt": false
+    "canHunt": false,
+    "job": "Keeps wounded soldiers on the field.",
+    "stars": "Each star: stronger healing and morale."
   },
   "builder": {
     "name": "Builder",
@@ -101,7 +139,9 @@
     "morale": 12,
     "experience": 4,
     "canHunt": false,
-    "buildRange": 90
+    "buildRange": 90,
+    "job": "Raises and repairs your works.",
+    "stars": "Each star: faster building and a longer reach."
   },
   "courier": {
     "name": "Courier",
@@ -115,22 +155,32 @@
     "type": "courier",
     "morale": 10,
     "experience": 3,
-    "canHunt": false
+    "canHunt": false,
+    "job": "Carries orders, so strikes and decrees come back sooner.",
+    "stars": "Each star: speed and shorter cooldowns."
   },
   "scout": {
     "name": "Scout",
     "cost": 4,
     "hp": 55,
     "accuracy": 32,
-    "damage": 22,
+    "damage": 18,
     "range": 28,
     "meleeRange": 24,
-    "speed": 1.55,
+    "speed": 1.45,
     "type": "melee",
     "morale": 11,
     "experience": 6,
     "canHunt": true,
-    "revealsStealth": true
+    "revealsStealth": true,
+    "job": "Spots for the shooters and catches runners.",
+    "beats": {
+      "goblin_burrower": 1.3,
+      "assassin": 1.3
+    },
+    "ridesDown": true,
+    "starGrow": "speed",
+    "stars": "Each star: speed, damage and morale."
   },
   "bard": {
     "name": "Bard",
@@ -146,40 +196,57 @@
     "morale": 16,
     "experience": 7,
     "canHunt": false,
-    "moraleAuraUnit": 3
+    "moraleAuraUnit": 3,
+    "job": "Keeps morale up where the line is wavering.",
+    "starGrow": "song",
+    "stars": "Each star: a stronger song."
   },
   "ballista": {
     "name": "Ballista",
     "cost": 6,
     "hp": 75,
     "accuracy": 38,
-    "damage": 50,
-    "range": 240,
+    "damage": 42,
+    "range": 220,
     "meleeRange": 24,
-    "speed": 0.65,
+    "speed": 0.75,
     "type": "ranged",
     "projectile": "arrow",
     "morale": 12,
     "experience": 7,
     "canHunt": true,
     "antiAir": true,
-    "siegeMult": 2.2
+    "siegeMult": 2.2,
+    "job": "Kills the biggest thing on the field, and anything that flies.",
+    "beats": {
+      "troll": 1.25,
+      "behemoth": 1.25,
+      "iron_colossus": 1.25
+    },
+    "stars": "Each star: more damage to engines and structures."
   },
   "pikeman": {
     "name": "Pikeman",
     "cost": 4,
-    "hp": 95,
+    "hp": 90,
     "accuracy": 30,
     "damage": 22,
-    "range": 36,
-    "meleeRange": 36,
+    "range": 32,
+    "meleeRange": 32,
     "speed": 0.95,
     "type": "melee",
     "morale": 14,
     "experience": 5,
     "canHunt": true,
     "antiCavalry": true,
-    "antiAir": true
+    "antiAir": true,
+    "job": "Stops riders and beasts.",
+    "beats": {
+      "dark_knight": 1.3,
+      "nightmare_strider": 1.3,
+      "behemoth": 1.3
+    },
+    "stars": "Each star: damage, reach and morale."
   },
   "sapper": {
     "name": "Sapper",
@@ -195,7 +262,9 @@
     "experience": 6,
     "canHunt": true,
     "reloadMult": 0.4,
-    "siegeMult": 2
+    "siegeMult": 2,
+    "job": "Mines the approach and blows up engines and shield walls.",
+    "stars": "Each star: bigger blasts against engines. A veteran buries one more mine."
   },
   "knight": {
     "name": "Knight",
@@ -205,11 +274,18 @@
     "damage": 40,
     "range": 26,
     "meleeRange": 26,
-    "speed": 1.0,
+    "speed": 1,
     "type": "melee",
     "morale": 20,
     "experience": 8,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Wins the melee against orcs and their champions.",
+    "beats": {
+      "orc": 1.25,
+      "berserker": 1.25,
+      "war_chief": 1.25
+    },
+    "stars": "Each star: damage, aim and morale."
   },
   "general": {
     "name": "General",
@@ -223,7 +299,9 @@
     "type": "general",
     "morale": 28,
     "experience": 15,
-    "canHunt": true
+    "canHunt": true,
+    "job": "Makes everyone near him fight better.",
+    "stars": "Each star: morale, damage and aim."
   },
   "doomslayer_hero": {
     "name": "The Hellbreaker",

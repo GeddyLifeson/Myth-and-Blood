@@ -197,6 +197,7 @@ const Game = (() => {
     sendCourierMessage,
     startBranchTech,
     startResearch,
+    tickOrders,
     useAbility,
   } = GameCommands;
   const {
@@ -397,6 +398,8 @@ const Game = (() => {
   GS.pendingReinforce = [];
   GS.pendingLevy = 0;
   GS.courierCooldown = 0;
+  GS.courierRide = null;
+  GS.sortie = null;
   GS.courierMessagesUsedThisWave = 0;
   GS.spyUsedThisWave = false;
   GS.doctrineUsedThisWave = false;
@@ -738,6 +741,7 @@ const Game = (() => {
       const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: 'north' });
       u.huntMode = true;
       u.mustered = true;
+      GameCombat.scaleMidWaveSpawn(u);
       GS.units.push(u);
       return u;
     },
@@ -1186,10 +1190,6 @@ const Game = (() => {
       courierMessagesUsedThisWave: GS.courierMessagesUsedThisWave,
       courierMessagesPerWave: getCourierMessagesPerWave(),
       courierUsedThisWave: GS.courierMessagesUsedThisWave >= getCourierMessagesPerWave(),
-      unlockedDoctrineCount:
-        typeof getUnlockedKingdomDoctrines === 'function'
-          ? getUnlockedKingdomDoctrines(GS.wave).length
-          : 0,
       spyNetwork: GS.spyNetwork,
       hasCourier: unitCounts.hasCourier,
     };
@@ -1351,6 +1351,7 @@ const Game = (() => {
     // (EconomyRules.START_TP_BONUS_CAP); each still grants its own share, first come first served.
     if (typeof EconomyRules !== 'undefined') EconomyRules.resetRun();
     if (typeof WarCamps !== 'undefined') WarCamps.resetRun();
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.resetRun();
     if (typeof Ground !== 'undefined') Ground.resetRun();
     const ribbonStartTp = SiegeLoop.startRun(siegeCtx);
     GS.tactical =
@@ -2180,6 +2181,7 @@ const Game = (() => {
         }
       }
     }
+    tickOrders();
 
     if (GS.updateTick % 3 === 0) {
       for (const b of GS.buildings) {
@@ -2340,6 +2342,10 @@ const Game = (() => {
       // Hit flash and honor glow count down here, once per tick, not in draw().
       if (unit.hitFlash > 0) unit.hitFlash--;
       if (unit.honorGlowTimer > 0) unit.honorGlowTimer--;
+      if (unit.pinned) {
+        unit.pinTimer = (unit.pinTimer || 0) - 1;
+        if (unit.pinTimer <= 0) unit.pinned = false;
+      }
       const tier = throttleCtx ? svc('UpdateThrottle').getUnitTier(unit, throttleCtx) : 'full';
       const throttle = svc('UpdateThrottle');
       if (throttle?.shouldRunUnitAIMinimal(unit, tier, GS.updateTick)) {
@@ -2375,10 +2381,6 @@ const Game = (() => {
         }
         if (unit.combatTargetId) updateUnitCombat(unit);
         continue;
-      }
-      if (unit.pinned) {
-        unit.pinTimer = (unit.pinTimer || 0) - 1;
-        if (unit.pinTimer <= 0) unit.pinned = false;
       }
       if (unit.attackAnimTimer > 0) {
         unit.attackAnimTimer--;
@@ -2543,10 +2545,8 @@ const Game = (() => {
                     combatType: 'ranged',
                     projectile: p.type || 'arrow',
                   };
-            // Snapshot projectile damage at fire time when shooter still lives.
-            const dmgSrc =
-              shooter && shooter.hp > 0 ? { ...shooter, damage: p.damage ?? shooter.damage } : src;
-            const dmg = calcDamage(dmgSrc, hit, 8);
+            // The live shooter, so traits that count his hits or mark him see this one.
+            const dmg = calcDamage(src, hit, 8, p.damage ?? src.damage);
             takeDamage(hit, dmg, { attackerTeam: p.team, attacker: shooter || null });
             if (shooter && shooter.hp > 0) {
               applyChampionOnHit(shooter, hit, dmg);
@@ -2656,7 +2656,12 @@ const Game = (() => {
     }
     markUpdatePhase('update-end', `syncPaths=${GS.syncPathfindsThisTick}`);
     if (svc('Research')) {
-      svc('Research').tick({ buildings: GS.buildings, isNight: isNightPhase(), showMessage });
+      svc('Research').tick({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        isNight: isNightPhase(),
+        showMessage,
+      });
       if (svc('UX')) svc('UX').onResearchTick?.();
     }
     checkPlayerElimination();
@@ -2713,7 +2718,7 @@ const Game = (() => {
       svc('Research').isBuildUnlocked(type, researchOpts);
     let reason = getAcademyBuildBlockReason(type, GS.wave, GS.units);
     if (!reason && !researchOk) {
-      reason = 'Research the matching academy node (e.g. Academy Charter) at the Research Lab.';
+      reason = `Not open yet: ${svc('Research').getLockReason('build', type) || 'its charter has not arrived'}.`;
     }
     // Best on-field progress toward mentor for tooltips
     let mentorProgress = 0;

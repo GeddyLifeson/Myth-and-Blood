@@ -323,7 +323,6 @@ const SiegeLoop = (() => {
   const countTroops = (ctx, type) => troops(ctx).filter((u) => !type || u.type === type).length;
   const works = (ctx, type) =>
     (ctx.buildings || []).filter((b) => b && b.owner === 'player' && b.hp > 0 && b.type === type);
-  const standing = (ctx, type) => works(ctx, type).filter((b) => b.complete).length;
   const def = (table, type) => (typeof table !== 'undefined' && table ? table[type] : null);
   const unitDef = (type) => (typeof UnitDefs !== 'undefined' ? def(UnitDefs, type) : null);
   const buildDef = (type) => (typeof BuildDefs !== 'undefined' ? def(BuildDefs, type) : null);
@@ -336,7 +335,6 @@ const SiegeLoop = (() => {
   const canPay = (ctx, cost) => ctx.tp == null || ctx.tp >= cost;
   const recruitOpen = (type) =>
     typeof Research === 'undefined' || !!Research.isDeployUnlocked(type);
-  const researched = (id) => typeof Research !== 'undefined' && !!Research.isResearched(id);
   const liveCrates = () => run.crates.filter((c) => !c.spent);
   const firstHunter = (ctx) => troops(ctx).find((u) => u.canHunt && !u.isGeneral) || null;
   const armyForUpkeep = (ctx) => ctx.upkeepArmy ?? ctx.army ?? 0;
@@ -473,25 +471,19 @@ const SiegeLoop = (() => {
       ready: (ctx) => countTroops(ctx, 'builder') > 0 && canPay(ctx, buildCost('research_lab')),
       moot: (ctx) => works(ctx, 'research_lab').length > 0,
       text: () =>
-        `Build a Research Lab (${buildCost('research_lab')} TP) from the Build tab. It earns science at every dawn. Science opens new troops.`,
+        `Build a Research Lab (${buildCost('research_lab')} TP) from the Build tab. While it stands, each doctrine choice comes five waves sooner.`,
       target: () => ({ dom: [btnBuild('research_lab'), TAB_BUILD] }),
       done: (ctx) => works(ctx, 'research_lab').length > 0,
     },
     {
       id: 'research',
       wave: 4,
-      ready: (ctx) =>
-        standing(ctx, 'research_lab') > 0 &&
-        typeof Research !== 'undefined' &&
-        !Research.getActiveInfo() &&
-        (ctx.wave || 0) >= 3,
-      moot: () => researched('iron_weapons'),
+      ready: () => typeof Research !== 'undefined' && !!Research.getActiveInfo(),
+      moot: () => typeof Research === 'undefined' || Research.doctrineCount > 0,
       text: () =>
-        'Your lab stands. Open RESEARCH and start Iron Weapons. It opens the Knight, the Sapper and the Crossbowman.',
+        'A doctrine is ready. Open DOCTRINES and choose one of the two. The other is closed for this siege.',
       target: () => ({ dom: ['#research-open', TAB_BUILD] }),
-      done: () =>
-        researched('iron_weapons') ||
-        (typeof Research !== 'undefined' && !!Research.getActiveInfo()),
+      done: () => typeof Research !== 'undefined' && Research.doctrineCount > 0,
     },
     {
       id: 'strikes',
@@ -569,7 +561,7 @@ const SiegeLoop = (() => {
         recruitOpen('sapper') &&
         canPay(ctx, recruitCost(ctx, 'sapper')),
       text: () =>
-        `The Sapper can be hired now${inBrackets(recruitKeyName('sapper'))}. At night he buries mines in front of his post. By day he throws satchel charges into packed enemies.`,
+        `Hire a Sapper${inBrackets(recruitKeyName('sapper'))}. At night he buries mines in front of his post. By day he throws satchel charges into packed enemies.`,
       target: () => ({ dom: [btnTroop('sapper')] }),
       done: (ctx) => countTroops(ctx, 'sapper') > 0,
     },
@@ -861,6 +853,8 @@ const SiegeLoop = (() => {
   }
 
   // ------------------------------------------------------------- run state
+  // The game-over screen names the dead; the cap keeps a long run's save small.
+  const FALLEN_CAP = 40;
   const freshRun = () => ({
     active: false,
     counted: true,
@@ -1198,6 +1192,7 @@ const SiegeLoop = (() => {
     unit.hp = 0;
     unit.breachedLine = true;
     run.breaches++;
+    run.lastBreacher = ctx.unitName ? ctx.unitName(unit) : 'A line-breaker';
     run.waveBreaches = (run.waveBreaches || 0) + 1;
     run.lastBreachAt = { x: unit.x, y: unit.y };
     run.cleanStreak = 0;
@@ -1776,17 +1771,17 @@ const SiegeLoop = (() => {
     if (unit.team !== 'player' || unit.isGeneral || unit.isDoomslayer) return;
     const kills = unit.kills || 0;
     const waves = unit.wavesSurvived || 0;
-    if (kills >= 8 || waves >= 5 || unit.honorName) {
-      const name = veteranLabel(unit, ctx);
-      run.fallen.push({ name, kills, waves, wave: ctx.wave });
-      if (run.fallen.length > 12) run.fallen.shift();
-      ctx.ach?.('tally', { k: 'fallenVets' });
-      ctx.playSfx('veteranFallen');
-      ctx.showMessage(
-        `${name} has fallen — ${kills} kill${kills === 1 ? '' : 's'} across ${waves} wave${waves === 1 ? '' : 's'}.`,
-        260
-      );
-    }
+    const vet = kills >= 8 || waves >= 5 || !!unit.honorName;
+    const name = vet ? veteranLabel(unit, ctx) : ctx.unitName(unit);
+    run.fallen.push({ name, kills, waves, wave: ctx.wave, vet });
+    if (run.fallen.length > FALLEN_CAP) run.fallen.shift();
+    if (!vet) return;
+    ctx.ach?.('tally', { k: 'fallenVets' });
+    ctx.playSfx('veteranFallen');
+    ctx.showMessage(
+      `${name} has fallen — ${kills} kill${kills === 1 ? '' : 's'} across ${waves} wave${waves === 1 ? '' : 's'}.`,
+      260
+    );
   }
 
   // ---------------------------------------------------------- general orders
@@ -1803,12 +1798,16 @@ const SiegeLoop = (() => {
       ctx.showMessage(`Not ready — ${Math.ceil((readyAt - tick) / 60)}s.`, 120);
       return false;
     }
+    // The General's stance (js/general-orders.js) widens his reach or speeds the recharge.
+    const go = typeof GeneralOrders !== 'undefined' ? GeneralOrders : null;
+    const radius = go ? go.orderRadius(ORDER_RADIUS) : ORDER_RADIUS;
+    const cdMult = go ? go.cooldownMult() : 1;
     let reached = 0;
     for (const u of ctx.units) {
       if (u.team !== 'player' || u.hp <= 0) continue;
       const dx = u.x - general.x;
       const dy = u.y - general.y;
-      if (dx * dx + dy * dy > ORDER_RADIUS * ORDER_RADIUS) continue;
+      if (dx * dx + dy * dy > radius * radius) continue;
       reached++;
       if (kind === 'warCry') {
         u.warCryUntil = tick + 8 * 60;
@@ -1819,24 +1818,24 @@ const SiegeLoop = (() => {
     }
     ctx.ach?.('tally', { k: kind === 'warCry' ? 'warCry' : 'holdLine' });
     if (kind === 'warCry') {
-      run.warCryReady = tick + WAR_CRY_COOLDOWN;
+      run.warCryReady = tick + Math.round(WAR_CRY_COOLDOWN * cdMult);
       ctx.float(general.x, general.y - 30, 'WAR CRY', '#ffb060');
       ctx.playSfx('warCry');
       run.rings.push({
         x: general.x,
         y: general.y,
-        max: ORDER_RADIUS,
+        max: radius,
         age: 0,
         color: '255,150,60',
       });
     } else {
-      run.holdLineReady = tick + HOLD_LINE_COOLDOWN;
+      run.holdLineReady = tick + Math.round(HOLD_LINE_COOLDOWN * cdMult);
       ctx.float(general.x, general.y - 30, 'HOLD THE LINE', '#c0d8ff');
       ctx.playSfx('holdLine');
       run.rings.push({
         x: general.x,
         y: general.y,
-        max: ORDER_RADIUS,
+        max: radius,
         age: 0,
         color: '170,200,255',
       });
@@ -2114,68 +2113,85 @@ const SiegeLoop = (() => {
     syncHud(ctx);
   }
 
-  /** The after-action report on the game-over screen: what this run was made of. */
+  /** What ended a lost run, in one sentence; '' for a win. */
+  function causeOfLoss(ctx) {
+    const outcome = ctx && ctx.outcome ? ctx.outcome : globalThis.GameState?.state;
+    if (outcome !== 'defeat') return '';
+    const limit = ctx ? breachLimit(ctx) : 0;
+    if (ctx && run.breaches > limit) {
+      return `${run.lastBreacher || 'A line-breaker'} crossed the line on wave ${ctx.wave}: breach ${run.breaches}, ${limit} allowed.`;
+    }
+    return `Every soldier and training hall was lost on wave ${ctx ? ctx.wave : '?'}.`;
+  }
+
+  /** The after-action report on the game-over screen: why it ended, the score, the dead by name. */
   function renderAfterAction(ctx) {
     const host = el('result-siege');
     if (!host) return;
     const esc = (t) => String(t).replace(/[<>&]/g, '');
     const t = run.tally;
-    const lines = [];
-    if (ctx) lines.push(`Breaches: ${run.breaches} of ${breachLimit(ctx)} allowed`);
-    lines.push(`Line-breakers cut down: ${t.runners}`);
-    if (t.bosses) lines.push(`Warlords slain: ${t.bosses}`);
-    lines.push(`Crates recovered: ${t.crates} · Waves called early: ${t.earlyCalls}`);
-    if (run.edicts.length) {
-      lines.push(`Spoils: ${run.edicts.map((id) => EDICTS[id].name).join(', ')}`);
-    }
-    if (t.bestVeteran) {
-      lines.push(`Deadliest soldier: ${esc(t.bestVeteran.name)} — ${t.bestVeteran.kills} kills`);
-    }
+    const n = (v) => v.toLocaleString('en-US');
     let html = '';
     // A cheat voids the run: no score, no ribbon progress, no achievements.
     if (ctx && ctx.cheatsUsed) {
       html += '<div class="result-cheats" id="result-cheats">Cheats used — run not recorded</div>';
     }
+    const cause = causeOfLoss(ctx);
+    if (cause) html += `<div class="result-cause" id="result-cause">${esc(cause)}</div>`;
     const score = run.score;
     if (score) {
-      const n = (v) => v.toLocaleString('en-US');
       const rows = [
         `Waves cleared: ${score.waves} × ${SCORE_PER_WAVE} = +${n(score.wavePoints)}`,
         `Kills: ${score.kills} × ${SCORE_PER_KILL} = +${n(score.killPoints)}`,
-        `Breaches conceded: ${score.breaches} × ${SCORE_PER_BREACH} = −${n(score.breachPenalty)}`,
+        `Breaches: ${score.breaches} × ${SCORE_PER_BREACH} = −${n(score.breachPenalty)}`,
         `Soldiers lost: ${score.lost} × ${SCORE_PER_LOSS} = −${n(score.lossPenalty)}`,
         `${SCORE_LABELS[score.difficulty]} difficulty: ×${score.difficultyMult}`,
       ];
       for (const m of score.modifiers) rows.push(`${m.label}: ×${m.mult.toFixed(2)}`);
       if (score.endless) rows.push('Endless run: played on past the wave 100 victory');
       html +=
-        `<h3>Score: ${n(score.total)}${run.scoreIsBest ? ' — new best' : ''}</h3>` +
+        `<h3>Score: ${n(score.total)}</h3>` +
+        (run.scoreIsBest ? '<div class="result-cause">New best on this difficulty</div>' : '') +
         rows.map((l) => `<div>${esc(l)}</div>`).join('') +
         (run.scoreIsBest || !run.scoreBest
           ? ''
           : `<div>Best on ${SCORE_LABELS[score.difficulty]}: ${n(run.scoreBest)}</div>`);
     }
-    html += '<h3>The siege in brief</h3>' + lines.map((l) => `<div>${esc(l)}</div>`).join('');
-    if (run.fallen.length) {
-      html +=
-        '<h3>The fallen</h3>' +
-        run.fallen
-          .slice(-6)
-          .map(
-            (f) =>
-              `<div>${esc(f.name)} — wave ${f.wave}, ${f.kills} kill${f.kills === 1 ? '' : 's'}, ${f.waves} wave${f.waves === 1 ? '' : 's'} served</div>`
-          )
-          .join('');
+    const brief = [];
+    if (t.runners) brief.push(`${t.runners} line-breakers cut down`);
+    if (t.bosses) brief.push(`${t.bosses} warlord${t.bosses === 1 ? '' : 's'} slain`);
+    if (t.crates) brief.push(`${t.crates} crates recovered`);
+    if (t.earlyCalls) brief.push(`${t.earlyCalls} waves called early`);
+    if (run.edicts.length)
+      brief.push(`Spoils: ${run.edicts.map((id) => EDICTS[id].name).join(', ')}`);
+    if (t.bestVeteran) {
+      brief.push(`Deadliest: ${t.bestVeteran.name}, ${t.bestVeteran.kills} kills`);
     }
+    if (brief.length) html += `<h3>The siege in brief</h3><div>${esc(brief.join(' · '))}</div>`;
     if (t.ribbons.length) {
-      html += '<h3>Ribbons earned</h3>' + t.ribbons.map((n) => `<div>${esc(n)}</div>`).join('');
+      html += '<h3>Ribbons earned</h3>' + t.ribbons.map((r) => `<div>${esc(r)}</div>`).join('');
     }
     host.innerHTML = html;
+
+    const dead = el('result-fallen');
+    if (dead) {
+      const rows = run.fallen
+        .slice()
+        .reverse()
+        .map(
+          (f) =>
+            `<li class="${f.vet === false ? '' : 'vet'}"><b>${esc(f.name)}</b> wave ${f.wave}${f.vet === false ? '' : `, ${f.kills} kill${f.kills === 1 ? '' : 's'}`}</li>`
+        );
+      dead.innerHTML = rows.length
+        ? `<h3>The fallen (${rows.length})</h3><ul>${rows.join('')}</ul>`
+        : '<h3>The fallen</h3><p>No soldier died.</p>';
+    }
   }
 
   function endRun(ctx) {
     if (ctx && ctx.ambience) ctx.ambience('off');
     if (run.active) {
+      run.cause = causeOfLoss(ctx);
       run.score = scoreRun(ctx);
       if (run.score) {
         run.scoreBest = getBestScores()[run.score.difficulty] || 0;
@@ -2337,11 +2353,16 @@ const SiegeLoop = (() => {
       // The tooltip names the key bound right now.
       const key = keyName('order', order);
       btn.title = `${label}${key ? ` (${key})` : ''}: ${what}`;
-      btn.hidden = !hasGeneral || !intro.unlocked.orders;
+      // Greyed with the reason when the General is gone, not hidden.
+      btn.hidden = !intro.unlocked.orders;
       const wait = Math.ceil((readyAt - ctx.tick) / 60);
-      btn.disabled = wait > 0 || ctx.isNight;
-      btn.textContent = wait > 0 ? `${label} ${wait}s` : label;
+      btn.disabled = !hasGeneral || wait > 0 || ctx.isNight;
+      btn.textContent = wait > 0 && hasGeneral ? `${label} ${wait}s` : label;
+      if (!hasGeneral && typeof GeneralOrders !== 'undefined')
+        btn.title = GeneralOrders.lostReason();
+      else if (ctx.isNight) btn.title += ' (by day only)';
     }
+    if (typeof GeneralOrders !== 'undefined') GeneralOrders.syncBar(ctx, !intro.unlocked.orders);
     const up = el('siege-upkeep');
     if (up && typeof EconomyRules !== 'undefined') {
       const wages = dawnWages(ctx);
@@ -2748,6 +2769,11 @@ const SiegeLoop = (() => {
     recordScore,
     renderBestScores,
     lastScore: () => run.score || null,
+    lastResult: () => ({
+      cause: run.cause || '',
+      fallen: run.fallen.slice(),
+      score: run.score || null,
+    }),
     skipIntroduction,
     forceIntroduction,
     dismissPrompt,

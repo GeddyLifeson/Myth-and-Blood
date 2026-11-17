@@ -99,7 +99,7 @@ const ACTIONS = {
   build: () => hire('builder'),
   wall: () => build('wall'),
   lab: () => build('research_lab'),
-  research: () => Research.startResearch('iron_weapons', GS.wave, GS.buildings) !== false,
+  research: () => Research.startResearch('heavy_horse', GS.wave, GS.buildings) !== false,
   medtent: () => build('medical_tent'),
   sapper: () => hire('sapper'),
 };

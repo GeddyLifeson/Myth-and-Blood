@@ -602,7 +602,9 @@ const GameDayNight = (() => {
     const works = payDawnWorks();
     const levyPaid = GS.pendingLevy;
     GS.pendingLevy = 0;
-    const income = Math.floor(getTpPerRound() * techTpMult);
+    const doctrineTpMult =
+      svc('Research') && !GS.creativeMode ? svc('Research').getDoctrineEffects().tpIncomeMult : 1;
+    const income = Math.floor(getTpPerRound() * techTpMult * doctrineTpMult);
     const ledger = EconomyRules.buildLedger([
       { label: 'crown', tp: Math.max(0, income - eco - works.tp) },
       { label: 'settlements', tp: eco },

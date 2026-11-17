@@ -219,7 +219,7 @@
               aria-labelledby="tab-build"
               hidden
             >
-              <button id="research-open" class="meta-btn research-btn">RESEARCH</button>
+              <button id="research-open" class="meta-btn research-btn">DOCTRINES</button>
               <div class="pane-section" data-section="works">
                 <div class="panel-header">BUILD</div>
                 <div id="mod-build-section" class="mod-hud-section" hidden></div>
@@ -554,44 +554,6 @@
                 </button>
               </div>
               <div
-                id="doctrine-section"
-                class="doctrine-section pane-section"
-                data-section="doctrines"
-              >
-                <div class="panel-header">KINGDOM DOCTRINES</div>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="outpost_stand"
-                  data-kingdom-stage="1"
-                >
-                  <span>Outpost Stand</span><span class="cost">4</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="royal_muster"
-                  data-kingdom-stage="2"
-                >
-                  <span>Royal Muster</span><span class="cost">5</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="imperial_march"
-                  data-kingdom-stage="3"
-                >
-                  <span>Imperial March</span><span class="cost">8</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="hellforge_decree"
-                  data-kingdom-stage="4"
-                >
-                  <span>Hellforge Decree</span><span class="cost">10</span>
-                </button>
-                <p class="panel-hint">
-                  One kingdom doctrine a wave. More open as the kingdom grows.
-                </p>
-              </div>
-              <div
                 id="counter-doctrine-section"
                 class="counter-doctrine-section pane-section"
                 data-section="counter"
@@ -816,48 +778,24 @@
                 <div class="panel-header">
                   SPY NETWORK <span id="spy-uses" class="uses-badge"></span>
                 </div>
-                <button class="spy-btn" data-spy="steal">
-                  <span>Steal Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="disrupt">
-                  <span>Disrupt Lines</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="assassin">
-                  <span>Assassinate</span><span class="cost">6</span>
-                </button>
                 <button class="spy-btn" data-spy="scout">
                   <span>Scout Report</span><span class="cost">2</span>
                 </button>
-                <button class="spy-btn" data-spy="poison">
-                  <span>Poison Caches</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="sabotage">
-                  <span>Sabotage</span><span class="cost">5</span>
-                </button>
                 <button class="spy-btn" data-spy="infiltrate">
-                  <span>Infiltrate</span><span class="cost">3</span>
+                  <span>Ambush</span><span class="cost">3</span>
                 </button>
-                <button class="spy-btn" data-spy="bribery">
-                  <span>Bribe</span><span class="cost">6</span>
+                <button class="spy-btn" data-spy="assassin">
+                  <span>Mark Warlord</span><span class="cost">6</span>
                 </button>
-                <button class="spy-btn" data-spy="muster">
-                  <span>Muster</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="war_chest">
-                  <span>War Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="forge_maps">
-                  <span>Forge Maps</span><span class="cost">3</span>
-                </button>
-                <button class="spy-btn" data-spy="tunnel">
-                  <span>Tunnel</span><span class="cost">5</span>
+                <button class="spy-btn" data-spy="turncoats">
+                  <span>Turncoats</span><span class="cost">5</span>
                 </button>
                 <button class="spy-btn" data-spy="settlement_raid">
                   <span>Raid War Camp</span><span class="cost">6</span>
                 </button>
                 <p class="panel-hint">
-                  One spy action a wave. Scout Report and Infiltrate show the exact roster of the
-                  next wave.
+                  One spy action a wave. Each one shows on the field: pinned head counts, a marked
+                  ambush, a warlord outlined in blood, raiders riding for a camp.
                 </p>
               </div>
               <div id="raid-section" class="raid-section" style="display: none">
@@ -878,7 +816,8 @@
                 <p id="counter-summary-text" class="counter-summary-text">Unlocks wave 25</p>
                 <div id="expedition-list" class="expedition-list"></div>
                 <p class="panel-hint">
-                  Night only - select 1–4 hunters, dispatch off-map. Returns next wave.
+                  Night only: select 1 to 4 hunters. They march to the top, fight the vanguard and
+                  walk back.
                 </p>
               </div>
             </div>
@@ -896,47 +835,17 @@
                   COURIER MSGS <span id="courier-uses" class="uses-badge"></span>
                 </div>
                 <button class="courier-btn" data-courier="reinforce">
-                  <span>Reinforce</span><span class="cost">4</span>
+                  <span>Reinforcements</span><span class="cost">4</span>
                 </button>
-                <button class="courier-btn" data-courier="decree">
-                  <span>Decree</span><span class="cost">2</span>
+                <button class="courier-btn" data-courier="surgeons">
+                  <span>Field Surgeons</span><span class="cost">3</span>
                 </button>
-                <button class="courier-btn" data-courier="levy">
-                  <span>Tax Levy</span><span class="cost">1</span>
-                </button>
-                <button class="courier-btn" data-courier="banner">
-                  <span>Call Banner</span><span class="cost">6</span>
-                </button>
-                <button class="courier-btn" data-courier="supplies">
-                  <span>Supplies</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="truce">
-                  <span>Truce</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="hunt_pact">
-                  <span>Hunt Pact</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="evacuate">
-                  <span>Med Evac</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="herald">
-                  <span>Herald</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="muster">
-                  <span>Emergency</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="war_chest">
-                  <span>War Chest</span><span class="cost">2</span>
-                </button>
-                <button
-                  class="courier-btn kingdom-stage-btn"
-                  data-courier="counter_hold"
-                  data-kingdom-stage="4"
-                >
-                  <span>Counter-Hold</span><span class="cost">5</span>
+                <button class="courier-btn" data-courier="arrows">
+                  <span>Fresh Arrows</span><span class="cost">3</span>
                 </button>
                 <p class="panel-hint">
-                  One message a wave, and a Courier must be alive on the field.
+                  The Courier rides off the bottom edge and back, about 20 seconds. The order lands
+                  when he returns; if he falls on the road, it is lost.
                 </p>
               </div>
               <div id="loadout-section" class="loadout-section" style="display: none">
@@ -1691,6 +1600,7 @@
             <span>MESSAGE LOG</span
             ><button id="message-log-close" class="message-log-close" aria-label="Close">✕</button>
           </div>
+          <div id="message-log-filters" class="message-log-filters"></div>
           <div id="message-log-list" class="message-log-list"></div>
         </div>
         <div
@@ -1888,6 +1798,10 @@
                   soldiers cost. Harder settings multiply the total.
                 </p>
                 <div id="best-score-list" class="ribbon-list"></div>
+              </details>
+              <details class="menu-section">
+                <summary>Run history</summary>
+                <div id="records-run-stats" class="analytics-insights"></div>
               </details>
               <details class="menu-section">
                 <summary>Ribbons <span id="ribbon-count" class="ribbon-count"></span></summary>
@@ -2276,15 +2190,13 @@
 
           <div class="settings-tab-panel" data-tab="privacy">
             <div class="settings-group">
-              <div class="settings-group-head">ANONYMOUS ANALYTICS</div>
+              <div class="settings-group-head">RUN STATS</div>
               <p class="analytics-intro">
-                Help balance the game by sharing anonymous strategy trends and where runs end. No
-                account, names, or save files - only loadouts, formations, wave counts, and
-                outcomes. Off by default.
+                Keeps loadouts, formations, wave counts and outcomes of your runs in this browser,
+                for the Records sheet. Nothing is sent anywhere. Off by default.
               </p>
               <label class="settings-row check"
-                ><input type="checkbox" id="set-analytics-optin" /> Share anonymous run analytics
-                (opt-in)</label
+                ><input type="checkbox" id="set-analytics-optin" /> Keep local run stats</label
               >
               <div class="settings-row analytics-actions">
                 <button type="button" id="analytics-export-btn" class="menu-btn small-btn">
@@ -2450,22 +2362,40 @@
         </div>
       </div>
 
-      <div id="cheats-screen" class="screen">
-        <div class="menu-content cheats-panel">
-          <h2 class="cheat-title">CHEAT CODES</h2>
-          <p class="cheat-subtitle">
-            Type a code you heard somewhere. Unlocks persist between runs.
-          </p>
-          <input
-            id="cheat-input"
-            class="cheat-input"
-            type="text"
-            placeholder="Enter cheat code"
-            autocomplete="off"
-          />
-          <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
-          <p id="cheat-result" class="cheat-result"></p>
-          <button id="cheats-close" class="menu-btn">CLOSE</button>
+      <div
+        id="cheats-screen"
+        class="screen"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cheats-title"
+      >
+        <div class="modal-box cheats-panel">
+          <div class="modal-head">
+            <h2 id="cheats-title" class="modal-title">CHEAT CODES</h2>
+            <button type="button" id="cheats-close" class="modal-close" aria-label="Close">
+              Close
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="cheat-subtitle">
+              Type a code you heard somewhere. Unlocks persist between runs.
+            </p>
+            <p id="cheat-void-warning" class="cheat-void-warning">
+              Any code voids the run: no score, ribbons or achievements are recorded for it.
+            </p>
+            <input
+              id="cheat-input"
+              class="cheat-input"
+              type="text"
+              placeholder="Enter cheat code"
+              autocomplete="off"
+              aria-label="Cheat code"
+            />
+            <p id="cheat-result" class="cheat-result" aria-live="polite"></p>
+          </div>
+          <div class="modal-actions">
+            <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
+          </div>
         </div>
       </div>
 
@@ -2529,18 +2459,14 @@
 
       <div id="research-panel" class="research-panel">
         <div class="research-panel-inner">
-          <h2 class="research-title">RESEARCH LAB</h2>
-          <p id="research-sp-text" class="research-sp">Science: 0 SP</p>
-          <p id="research-active-text" class="research-active">Build a Research Lab to begin</p>
+          <h2 class="research-title">DOCTRINES</h2>
+          <p id="research-sp-text" class="research-sp">Doctrines adopted: 0 of 10</p>
+          <p id="research-active-text" class="research-active">
+            The first choice comes after wave 10.
+          </p>
           <div id="tech-branch-tree" class="tech-branch-tree"></div>
           <div id="research-tree" class="research-tree"></div>
           <div class="research-panel-actions">
-            <button id="research-cancel" class="menu-btn small-btn" type="button">
-              Cancel Project
-            </button>
-            <button id="branch-cancel" class="menu-btn small-btn" type="button">
-              Cancel Branch
-            </button>
             <button id="research-close" class="menu-btn" type="button">CLOSE</button>
           </div>
         </div>
@@ -2567,6 +2493,7 @@
             <div id="result-siege" class="result-siege"></div>
             <div class="gameover-side">
               <div id="result-stats" class="result-stats-grid"></div>
+              <div id="result-fallen" class="result-fallen"></div>
               <details class="result-more">
                 <summary>Key moments</summary>
                 <div id="result-highlights" class="result-highlights"></div>
@@ -2575,6 +2502,7 @@
           </div>
           <div class="gameover-actions">
             <button id="restart-btn" class="menu-btn primary gameover-btn">FIGHT AGAIN</button>
+            <button id="gameover-setup-btn" class="menu-btn gameover-btn">CHANGE SETUP</button>
             <button id="gameover-menu-btn" class="menu-btn gameover-btn">MAIN MENU</button>
           </div>
         </div>
@@ -2775,6 +2703,7 @@
     <script src="js/game-daynight.js"></script>
     <script src="js/game-campaign.js"></script>
     <script src="js/game-commands.js"></script>
+    <script src="js/general-orders.js"></script>
     <script src="js/game-creative.js"></script>
     <script src="js/game-render.js"></script>
     <script src="js/game-roster-ui.js"></script>

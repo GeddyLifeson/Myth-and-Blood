@@ -351,10 +351,7 @@ const Encyclopedia = (() => {
     mess_hall: () => 'Soldiers near it keep their morale.',
     hall_of_veterans: () =>
       'Keeps the roll of veterans who reached rank 6. Raises one fallen name a wave for TP; the veteran returns at rank 5 with a tenth less health for each death.',
-    research_lab: () => {
-      const r = G('EconomyRules')?.BUILDINGS?.research_lab;
-      return `Pays science at every dawn${r ? ` (${r.dawnScience} per lab, first ${r.maxCounted} labs)` : ''}, and a little from kills. Science buys research.`;
-    },
+    research_lab: () => 'While it stands, every doctrine choice comes five waves sooner.',
     trade_outpost: () => {
       const d = G('BuildDefs')?.trade_outpost;
       return `Pays ${d?.tpPerRound ?? 2} TP at dawn.`;
@@ -484,23 +481,24 @@ const Encyclopedia = (() => {
   // ----------------------------------------------------------------- research
   function buildResearchEntries() {
     const Rs = G('Research');
-    const out = [
-      entry(
-        'research',
-        'How research works',
-        `Build a ${buildName('research_lab')}. It pays science at every dawn, and kills add a little. Open the Research panel and choose a project; one runs at a time. A lab built early brings the first iron-armed troops around wave 6.`
-      ),
-    ];
     const nodes = (Rs?.ALL_NODES || []).filter((n) => !n.faction && !n.crossover);
+    // The rules pages and the doctrine pairs are written by Research; charters are listed here.
+    const charterNames = new Set((Rs?.ALL_NODES || []).map((n) => n.name));
+    const out = (Rs?.getEncyclopediaEntries?.() || [])
+      .filter((e) => !charterNames.has(e.name))
+      .map((e) => entry('research', e.name, e.body));
     for (const n of nodes) {
-      const opens = [...(n.deploy || []).map(unitName), ...(n.build || []).map(buildName)];
+      const builds = (n.build || []).filter((t) => !Rs.STARTER_BUILD.has(t));
+      // A charter that only ever opened troops, or is retired, has nothing to say.
+      if (n.retired || (!builds.length && !n.feature)) continue;
+      const opens = builds.map(buildName);
       out.push(
         entry('research', n.name, n.desc || '', {
           researchId: n.id,
-          refs: { units: n.deploy || [], builds: n.build || [] },
+          refs: { units: [], builds },
           tags: [
-            { k: 'role', v: `${n.cost} science` },
-            n.wave ? { k: 'weak', v: `from wave ${n.wave}` } : null,
+            { k: 'role', v: 'charter' },
+            n.wave ? { k: 'weak', v: `granted at wave ${n.wave}` } : null,
             opens.length ? { k: 'counter', v: `opens ${opens.join(', ')}` } : null,
           ].filter(Boolean),
         })
