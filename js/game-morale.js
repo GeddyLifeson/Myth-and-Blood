@@ -9,6 +9,7 @@ const GameMorale = (() => {
     isDragonThemedUnit,
     isHeroUnit,
     isMajorBossUnit,
+    isMeleeCombat,
     isMoraleCombatUnit,
     isValidCombatFoe,
     moraleBreakThreshold,
@@ -227,6 +228,7 @@ const GameMorale = (() => {
   const HUNT_LEASH_RANGED = 140; // ranged step forward only far enough to shoot
   const HUNT_LEASH_RUNNER_MULT = 1.5; // line-breakers are chased further
   const HUNT_LEASH_KEEP_MULT = 1.2; // a target already engaged is kept a little longer
+  const HUNT_LEASH_KITER_MULT = 0.5; // foot soldiers do not follow an enemy that backs away
   const HUNT_LEASH_STRUCTURE_MULT = 2; // enemy buildings do not run away
   const HUNT_HEAR_DIST = 130; // this close, an enemy is noticed without a clear line of sight
 
@@ -363,6 +365,15 @@ const GameMorale = (() => {
     if (!isLeashed(unit) || isSweeping(unit)) return true;
     let mult = foe.lineBreaker ? HUNT_LEASH_RUNNER_MULT : 1;
     if (foe.id === unit.combatTargetId) mult *= HUNT_LEASH_KEEP_MULT;
+    // A footman who chases a skirmisher ends up alone under its arrows. Riders do that job.
+    if (
+      isMeleeCombat(unit) &&
+      !foe.lineBreaker &&
+      Roster.kiteDistance(foe) > 0 &&
+      !getPlayerUnitDef(unit.type)?.ridesDown
+    ) {
+      mult *= HUNT_LEASH_KITER_MULT;
+    }
     return pointInHuntLeash(unit, foe.x, foe.y, mult) || inAttackRange(unit, foe);
   }
 
