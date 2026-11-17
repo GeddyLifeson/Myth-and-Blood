@@ -32,6 +32,7 @@ const GameTargeting = (() => {
     SURROUND_SLOTS_MELEE,
     SURROUND_SLOTS_RANGED,
     foeInHuntLeash,
+    canRideDown,
     foeIsPastPost,
     isCrowdedOut,
     isLeashed,
@@ -249,12 +250,12 @@ const GameTargeting = (() => {
       svc('Spatial').queryFoesInto(unit.x, unit.y, runnerSeek, unit.team, svc('Spatial')._scratch);
       foeList = trimFoeListToNearest(unit, svc('Spatial')._scratch);
     } else {
-      foeList = GS.units.filter((u) => u.team !== unit.team && u.hp > 0 && !u.fleeing);
+      foeList = GS.units.filter((u) => u.team !== unit.team && u.hp > 0);
       if (foeList.length > tacticalFoeCap) trimFoeListToNearest(unit, foeList);
     }
 
     for (const foe of foeList) {
-      if (foe.team === unit.team || !isValidCombatFoe(foe)) continue;
+      if (foe.team === unit.team || !(isValidCombatFoe(foe) || canRideDown(unit, foe))) continue;
       if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
       if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;
       const dist = unitDistance(unit, foe);
@@ -287,6 +288,8 @@ const GameTargeting = (() => {
       if (unit.team === 'enemy' && foe.isGeneral) {
         score -= unit.type === 'assassin' ? 1200 : 800;
         if (foe.stationedKeep && unit.type !== 'assassin') score += 400;
+        // Lead from the front (js/general-orders.js): he draws the enemy to him.
+        if (foe.leadsFromFront) score -= 300;
       }
       if (sameTypeEngaging(foe, unit)) score += 200;
       score += engagers.filter((u) => u.type === unit.type).length * 90;
@@ -303,7 +306,7 @@ const GameTargeting = (() => {
 
     if (options.length === 0) {
       for (const foe of foeList) {
-        if (foe.team === unit.team || !isValidCombatFoe(foe)) continue;
+        if (foe.team === unit.team || !(isValidCombatFoe(foe) || canRideDown(unit, foe))) continue;
         // Same fog gate as primary pass — otherwise units snipe invisible enemies as a fallback.
         if (unit.team === 'player' && isEnemyHiddenByFog(foe)) continue;
         if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, foe)) continue;

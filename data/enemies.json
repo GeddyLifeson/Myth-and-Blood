@@ -10,7 +10,8 @@
     "type": "melee",
     "reward": 0,
     "morale": 8,
-    "isHordeGrunt": true
+    "isHordeGrunt": true,
+    "job": "Swarm. Cheap bodies that gang up on one soldier."
   },
   "orc": {
     "name": "Orc",
@@ -23,7 +24,8 @@
     "type": "melee",
     "reward": 0,
     "morale": 12,
-    "isHordeGrunt": true
+    "isHordeGrunt": true,
+    "job": "Line infantry. Ties up your front rank while the rest get through."
   },
   "orc_archer": {
     "name": "Orc Archer",
@@ -37,7 +39,11 @@
     "projectile": "arrow",
     "reward": 0,
     "morale": 10,
-    "isHordeGrunt": true
+    "isHordeGrunt": true,
+    "job": "Skirmisher. Shoots your pikemen from behind the orcs.",
+    "beats": {
+      "pikeman": 1.3
+    }
   },
   "dark_knight": {
     "name": "Dark Knight",
@@ -51,7 +57,11 @@
     "reward": 0,
     "morale": 20,
     "isEvilOperative": true,
-    "evilRole": "fel_knight"
+    "evilRole": "fel_knight",
+    "job": "Armoured rider. Walks through arrows to reach your shooters.",
+    "beats": {
+      "archer": 1.25
+    }
   },
   "warg_rider": {
     "name": "Warg Rider",
@@ -60,12 +70,17 @@
     "damage": 28,
     "range": 26,
     "meleeRange": 26,
-    "speed": 1.0,
+    "speed": 1,
     "type": "melee",
     "reward": 0,
     "morale": 14,
     "isEvilOperative": true,
-    "evilRole": "raider"
+    "evilRole": "raider",
+    "job": "Raider. Goes round the line for mages and healers.",
+    "beats": {
+      "mage": 1.25,
+      "healer": 1.25
+    }
   },
   "dark_mage": {
     "name": "Dark Mage",
@@ -80,7 +95,12 @@
     "reward": 0,
     "morale": 10,
     "isEvilOperative": true,
-    "evilRole": "hex_caster"
+    "evilRole": "hex_caster",
+    "job": "Hexer. Weakens soldiers and cuts through armour.",
+    "beats": {
+      "knight": 1.4,
+      "pikeman": 1.25
+    }
   },
   "troll": {
     "name": "Troll",
@@ -94,7 +114,11 @@
     "reward": 0,
     "morale": 18,
     "isEvilOperative": true,
-    "evilRole": "brute"
+    "evilRole": "brute",
+    "job": "Wall breaker. Heads for buildings and swats riders.",
+    "beats": {
+      "cavalry": 1.4
+    }
   },
   "goblin_sapper": {
     "name": "Goblin Sapper",
@@ -107,7 +131,8 @@
     "type": "melee",
     "reward": 0,
     "morale": 6,
-    "isHordeGrunt": true
+    "isHordeGrunt": true,
+    "job": "Bomber. Runs at a building and blows up."
   },
   "necromancer": {
     "name": "Necromancer",
@@ -122,7 +147,8 @@
     "reward": 0,
     "morale": 15,
     "isEvilOperative": true,
-    "evilRole": "summoner"
+    "evilRole": "summoner",
+    "job": "Summoner. Keeps the field full until it dies."
   },
   "berserker": {
     "name": "Berserker",
@@ -136,7 +162,11 @@
     "reward": 0,
     "morale": 25,
     "isEvilOperative": true,
-    "evilRole": "shock"
+    "evilRole": "shock",
+    "job": "Shock trooper. Breaks a shield line and never runs.",
+    "beats": {
+      "footman": 1.25
+    }
   },
   "assassin": {
     "name": "Assassin",
@@ -150,7 +180,11 @@
     "reward": 0,
     "morale": 12,
     "isEvilOperative": true,
-    "evilRole": "stalker"
+    "evilRole": "stalker",
+    "job": "General hunter. Ignores the line to reach him.",
+    "beats": {
+      "general": 1.3
+    }
   },
   "shaman": {
     "name": "Shaman",
@@ -165,7 +199,8 @@
     "reward": 0,
     "morale": 14,
     "isEvilOperative": true,
-    "evilRole": "corruptor"
+    "evilRole": "corruptor",
+    "job": "Healer. Undoes your damage until it is killed."
   },
   "siege_tower": {
     "name": "Siege Tower",
@@ -180,7 +215,8 @@
     "reward": 0,
     "morale": 30,
     "isEvilOperative": true,
-    "evilRole": "siege"
+    "evilRole": "siege",
+    "job": "Siege engine. Batters walls from behind its own armour."
   },
   "goblin_engineer": {
     "name": "Goblin Engineer",
@@ -194,7 +230,8 @@
     "reward": 0,
     "morale": 8,
     "isEvilOperative": true,
-    "evilRole": "sabotage"
+    "evilRole": "sabotage",
+    "job": "Wrecker. Pulls your buildings down while the host fights."
   },
   "war_chief": {
     "name": "War Chief",
@@ -208,6 +245,7 @@
     "reward": 0,
     "morale": 25,
     "isEvilOperative": true,
-    "evilRole": "commander"
+    "evilRole": "commander",
+    "job": "Commander. Everything near him hits harder."
   }
 }

@@ -131,6 +131,7 @@ const GameInput = (() => {
             x: liveUnits.length > 1 ? (i % 3) * 14 - 14 : 0,
             y: liveUnits.length > 1 ? Math.floor(i / 3) * 12 : 0,
           }));
+    if (typeof Formations !== 'undefined') Formations.assign(liveUnits, formationId);
     liveUnits.forEach((unit, i) => {
       const off = offsets[i] || { x: 0, y: 0 };
       unit.attackOrderId = null;
@@ -524,14 +525,7 @@ const GameInput = (() => {
         svc('Research') &&
         !svc('Research').isDeployUnlocked(GS.selectedDeploy, getResearchOpts())
       ) {
-        const need =
-          GS.selectedDeploy === 'ballista'
-            ? 'Research Siege Engineering (Military tree, after Iron Weapons) first!'
-            : GS.selectedDeploy === 'bard'
-              ? 'Research Morale Arts first!'
-              : GS.selectedDeploy === 'scout' || GS.selectedDeploy === 'pikeman'
-                ? 'Research Advanced Infantry first!'
-                : 'Research this unit at the Research Lab first!';
+        const need = `Locked: ${svc('Research').getLockReason('deploy', GS.selectedDeploy) || 'not available in this siege'}.`;
         showMessage(need, 280);
         return false;
       }

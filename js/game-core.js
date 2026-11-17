@@ -765,8 +765,23 @@ const GameCore = (() => {
     return unitCounts.player;
   }
 
+  /** The cheapest soldier TP can deploy. */
+  function cheapestTroopCost() {
+    let min = Infinity;
+    for (const type in UnitDefs) {
+      const cost = UnitDefs[type].cost;
+      if (cost > 0 && cost < min) min = cost;
+    }
+    return min;
+  }
+
+  // TP in the bank can still put a soldier on the field, so the run is not over.
   function isPlayerEliminated() {
-    return unitCounts.player === 0 && unitCounts.unitProducers === 0;
+    return (
+      unitCounts.player === 0 &&
+      unitCounts.unitProducers === 0 &&
+      !(GameState.tactical >= cheapestTroopCost())
+    );
   }
 
   function announceRtsEra() {
@@ -833,8 +848,10 @@ const GameCore = (() => {
     return unitCounts.hasCourier;
   }
 
+  // Half the price at full health, less as it is damaged: a falling wall is not worth selling.
   function getBuildingRefund(b) {
-    return Math.floor((BuildDefs[b.type]?.cost ?? 0) * 0.5);
+    const health = b.maxHp > 0 ? Math.max(0, Math.min(1, b.hp / b.maxHp)) : 1;
+    return Math.floor((BuildDefs[b.type]?.cost ?? 0) * 0.5 * health);
   }
 
   function manualMoveReached(unit) {
@@ -1040,7 +1057,7 @@ const GameCore = (() => {
   }
 
   function isEnemySiegeAttacker(unit) {
-    if (unit.type === 'goblin_sapper') return true;
+    if (unit.type === 'goblin_sapper' || unit.type === 'goblin_engineer') return true;
     if (unit.type === 'siege_tower' && unit.siegeDeployed) return true;
     if (unit.type === 'iron_colossus' || unit.type === 'boss_karg' || unit.type === 'boss_volk')
       return true;

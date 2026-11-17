@@ -114,7 +114,11 @@ const ContentExpansion = (() => {
   }
 
   function registerDefs() {
-    Object.assign(UnitDefs, {
+    // data/units.json is the source of truth; this table only fills in a troop it lacks.
+    const fillMissingUnitDefs = (src) => {
+      for (const k in src) if (!UnitDefs[k]) UnitDefs[k] = src[k];
+    };
+    fillMissingUnitDefs({
       scout: {
         name: 'Scout',
         cost: 4,
@@ -844,40 +848,12 @@ const ContentExpansion = (() => {
     });
 
     Object.assign(SpyActions, {
-      muster: { name: 'Muster Deserters', cost: 5, desc: 'Next wave -2 foes; reveals flanks' },
-      war_chest: { name: 'Raid War Chest', cost: 4, desc: '+6 TP now; next wave +2 enemies' },
-      forge_maps: {
-        name: 'Forge Maps',
-        cost: 3,
-        desc: 'A supply crate lands at dawn, marked on the field: no ambush, always TP.',
-      },
-      tunnel: {
-        name: 'Tunnel Network',
-        cost: 5,
-        desc: 'Burrowers surfaced; -25% burrower HP next wave',
-      },
       settlement_raid: {
         // EconomyRules.patchCampActions fills in the full text; the gate must be right from the start.
         name: 'Raid the War Camp',
         cost: 7,
         desc: 'Raiders ride for the weakest war camp. Refused at no cost when no camp stands.',
         waveMin: 5,
-      },
-    });
-
-    Object.assign(CourierMessages, {
-      herald: { name: 'Royal Herald', cost: 3, desc: '+4 morale all; preview next wave event' },
-      muster: { name: 'Emergency Muster', cost: 4, desc: 'Spawn 1 footman now; -2 morale all' },
-      war_chest: {
-        name: 'Open War Chest',
-        cost: 2,
-        desc: '+4 TP; courier rides faster next dispatch',
-      },
-      counter_hold: {
-        name: 'Counter-Hold',
-        cost: 5,
-        desc: 'Wave 200+ — raise northern outpost + scout; 2 footmen next round (Dominion only)',
-        kingdomStage: 4,
       },
     });
 
@@ -914,15 +890,6 @@ const ContentExpansion = (() => {
           },
         },
       });
-      let perkBuildReady = false;
-      try {
-        perkBuildReady = typeof PerkBuildTypes !== 'undefined';
-      } catch (_) {
-        /* TDZ when scripts are bundled */
-      }
-      if (perkBuildReady) {
-        PerkBuildTypes.push('perk_double_tap', 'perk_mule_kick', 'perk_sleight');
-      }
     }
 
     HONOR_PREFIX_BY_TYPE.scout = ['Ranger', 'Syr', 'Pathfinder'];
@@ -1199,7 +1166,7 @@ const ContentExpansion = (() => {
     for (const b of ctx.buildings) {
       if (!b.complete || !b.isWatchtower || b.hp <= 0 || b.owner !== 'player') continue;
       const vr = (b.visionRadius || 200) * visionMult;
-      if (Math.hypot(enemy.x - b.x, enemy.y - b.y) < vr) pen += 8;
+      if (Math.hypot(enemy.x - b.x, enemy.y - b.y) < vr) pen += b.intelPenalty || 8;
     }
     return Math.min(24, pen);
   }
@@ -1244,7 +1211,7 @@ const ContentExpansion = (() => {
         if (Math.hypot(u.x - b.x, u.y - b.y) > b.radius + 8) continue;
         const dmg = b.trapDamage || 45;
         ctx.takeDamage(u, dmg);
-        b.trapCooldown = BuildDefs.spike_trap?.trapCooldown || 90;
+        b.trapCooldown = b.trapReset || BuildDefs.spike_trap?.trapCooldown || 90;
         Particles?.explosion(b.x, b.y);
         FloatingText?.status(b.x, b.y, 'TRAP!', '#ff6040');
         break;
@@ -1307,6 +1274,7 @@ const ContentExpansion = (() => {
           const sy = u.y + 20;
           const minion = ctx.createUnit(st, sx, sy, 'enemy');
           if (minion) {
+            if (typeof GameCombat !== 'undefined') GameCombat.scaleMidWaveSpawn(minion);
             minion.maxHp = Math.floor(minion.maxHp * 0.7);
             minion.hp = minion.maxHp;
             minion.summoned = true;
@@ -1479,125 +1447,6 @@ const ContentExpansion = (() => {
     return false;
   }
 
-  function handleSpyAction(action) {
-    if (!ctx) return false;
-    const def = SpyActions[action];
-    if (!def) return false;
-
-    if (action === 'muster') {
-      ctx.pendingWaveMods.stealReduction = (ctx.pendingWaveMods.stealReduction || 0) + 2;
-      ctx.pendingWaveMods.revealed = true;
-      ctx.showMessage('Deserters mustered — next wave lighter; flanks revealed.');
-      return true;
-    }
-    if (action === 'war_chest') {
-      ctx.tactical += 6;
-      ctx.pendingWaveMods.stealReduction = (ctx.pendingWaveMods.stealReduction || 0) - 2;
-      ctx.showMessage('War chest raided! +6 TP — expect reprisal (+2 foes).');
-      return true;
-    }
-    if (action === 'forge_maps') {
-      ctx.mapsRevealed = true;
-      for (const d of ctx.decorations) {
-        if (d.type === 'supply_crate' || d.type === 'oil_barrel') d.revealed = true;
-      }
-      if (typeof SiegeLoop !== 'undefined' && SiegeLoop.forgeMaps) SiegeLoop.forgeMaps();
-      ctx.showMessage('Maps forged — a marked supply crate will land at dawn. No ambush.');
-      return true;
-    }
-    if (action === 'tunnel') {
-      ctx.pendingWaveMods.hpMult = (ctx.pendingWaveMods.hpMult || 1) * 0.75;
-      for (const u of ctx.units) {
-        if (u.burrower) u.burrowed = false;
-      }
-      ctx.showMessage('Tunnel network collapsed — burrowers flushed; next wave burrowers weaker.');
-      return true;
-    }
-    if (action === 'settlement_raid') {
-      const targets = (ctx.buildings || []).filter((b) => ctx.isAttackableEnemyStructure?.(b));
-      if (!targets.length) {
-        ctx.showMessage('No enemy settlements to raid — hunt their northern holds on the map.');
-        // false so executeSpyAction can refund TP / not burn the wave spy charge.
-        return false;
-      }
-      let best = targets[0];
-      let bestRatio = best.hp / Math.max(1, best.maxHp || 1);
-      for (const b of targets) {
-        const r = b.hp / Math.max(1, b.maxHp || 1);
-        if (r < bestRatio) {
-          bestRatio = r;
-          best = b;
-        }
-      }
-      const dmg = Math.max(1, Math.floor((best.maxHp || best.hp) * 0.45));
-      ctx.damageBuilding?.(best, dmg);
-      const name = typeof BuildDefs !== 'undefined' ? BuildDefs[best.type]?.name : 'hold';
-      ctx.showMessage(`Raid party hits enemy ${name || 'settlement'}! ${dmg} siege damage.`, 320);
-      FloatingText?.status(best.x, best.y, 'RAID', '#ff8060');
-      return true;
-    }
-    return false;
-  }
-
-  function handleCourierMessage(msg) {
-    if (!ctx) return false;
-    if (msg === 'herald') {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0) {
-          u.morale = Math.min(u.maxMorale, u.morale + 4);
-        }
-      }
-      const news = heraldNews(ctx.wave + 1);
-      if (news) ctx.showMessage(`Herald proclaims: the next wave brings ${news}!`, 300);
-      else ctx.showMessage('Royal herald spreads courage across the ranks!');
-      return true;
-    }
-    if (msg === 'muster') {
-      const u = ctx.createUnit('footman', ctx.worldW / 2, ctx.deployY, 'player');
-      if (u) {
-        u.targetY = ctx.rallyY;
-        ctx.units.push(u);
-        applyLoadoutToUnit(u);
-      }
-      for (const ally of ctx.units) {
-        if (ally.team === 'player' && ally.hp > 0) ally.morale = Math.max(0, ally.morale - 2);
-      }
-      ctx.showMessage('Emergency muster — footman deployed; troops grumble (-2 morale).');
-      return true;
-    }
-    if (msg === 'war_chest') {
-      ctx.tactical += 4;
-      const courier = ctx.units.find((u) => u.type === 'courier' && u.hp > 0);
-      if (courier) courier.courierCooldownMult = (courier.courierCooldownMult || 1) * 0.7;
-      ctx.showMessage('War chest opened! +4 TP; courier rides swift next dispatch.');
-      return true;
-    }
-    if (msg === 'counter_hold') {
-      const nx = Math.floor(ctx.worldW * 0.68);
-      const ny = Math.floor(ctx.worldH * 0.24);
-      const placed = ctx.placeCompleteBuilding?.('outpost', nx, ny, 'player');
-      if (placed) {
-        ctx.placeCompleteBuilding?.('watchtower', nx + 36, ny - 20, 'player');
-        ctx.queueReinforce?.('footman', 'footman');
-        const scout = ctx.createUnit?.('scout', nx - 24, ny + 12, 'player');
-        if (scout) {
-          scout.targetY = ctx.rallyY;
-          applyLoadoutToUnit(scout);
-          ctx.units.push(scout);
-        }
-        ctx.showMessage(
-          'Counter-hold raised in the north — outpost, watchtower, and scout deployed. Reinforcements ride at dawn.',
-          360
-        );
-        FloatingText?.status(nx, ny, 'COUNTER-HOLD', '#80ffa0');
-      } else {
-        ctx.showMessage('Could not raise counter-hold — clear northern ground near the frontier.');
-      }
-      return true;
-    }
-    return false;
-  }
-
   function onBuildingComplete(b) {
     if (!ctx || !b) return;
     if (b.type === 'fortress_upgrade' || b.isFortressUpgrade) {
@@ -1647,7 +1496,7 @@ const ContentExpansion = (() => {
       const tp = b.tpPerRound || 1;
       if (active <= ECONOMY_GEN_TP_CAP) {
         ctx.showMessage(
-          `${BuildDefs[b.type]?.name} operational — +${tp} TP/round (${active}/${ECONOMY_GEN_TP_CAP} economy sites).`,
+          `${BuildDefs[b.type]?.name} operational: +${tp} TP after any wave no enemy reaches it (${active}/${ECONOMY_GEN_TP_CAP} income sites).`,
           260
         );
       } else {
@@ -1830,7 +1679,7 @@ const ContentExpansion = (() => {
       {
         cat: 'orders',
         name: 'Wave Events',
-        body: 'Rotating wave events scale with campaign era — highest-priority match each wave. Early: Blood Moon (÷13), Caravan (÷17), Siege Push (÷23). Mid: Gold Rush, Aerial Swarm, Necromancer Conclave, Veteran Muster. Late (100+): Mirror Assault, Siege Breach, Dominion Surge (+spawn pressure). Hellscape Whisper (480+): void elites. Herald courier previews the next event.',
+        body: 'Rotating wave events scale with campaign era — highest-priority match each wave. Early: Blood Moon (÷13), Caravan (÷17), Siege Push (÷23). Mid: Gold Rush, Aerial Swarm, Necromancer Conclave, Veteran Muster. Late (100+): Mirror Assault, Siege Breach, Dominion Surge (+spawn pressure). Hellscape Whisper (480+): void elites.',
       },
       {
         cat: 'orders',
@@ -1839,18 +1688,18 @@ const ContentExpansion = (() => {
       },
       {
         cat: 'orders',
-        name: 'Spy: Muster / War Chest / Maps / Tunnel',
-        body: 'New spy actions with trade-offs: lighter waves, TP now vs reprisal, cache reveal, flush burrowers.',
+        name: 'Spy network',
+        body: 'Four actions, one a wave, each seen on the field. Scout Report (night): the next host by type, with head counts pinned to the top edge. Ambush on the Road: a marked ambush; the first 30% of the host arrive at 60% health. Mark the Warlord: the strongest foe is outlined and takes 25% more damage. Raid the War Camp: raiders ride for the weakest camp.',
       },
       {
         cat: 'orders',
-        name: 'Courier: Herald / Muster / War Chest',
-        body: 'Morale + event preview; emergency footman at morale cost; TP + faster courier.',
+        name: 'Courier orders',
+        body: 'The Courier rides off the bottom edge and back, about 20 seconds. The order lands when he returns; if he falls on the road it is lost. Reinforcements: two footmen and an archer march in at the muster line. Field Surgeons: the wounded at the muster line heal over 15 seconds. Fresh Arrows: ranged troops shoot 35% faster for 20 seconds.',
       },
       {
         cat: 'orders',
         name: 'Strike Raids (Wave 6+)',
-        body: 'Every standing war camp is a mission on the STRIKE RAIDS panel. Select 2+ hunters and dispatch them: they march on the camp, and razing it pays TP and science on top of the bounty. A dug-in camp pays more. The spy can also send raiders at the weakest camp (Raid the War Camp). Counter-Hold (courier, wave 200+): northern outpost, watchtower, scout, and 2 footmen next round.',
+        body: 'Every standing war camp is a mission on the STRIKE RAIDS panel. Select 2+ hunters and dispatch them: they march on the camp, and razing it pays TP and science on top of the bounty. A dug-in camp pays more. The spy can also send raiders at the weakest camp (Raid the War Camp).',
       },
       {
         cat: 'perks',
@@ -1902,8 +1751,6 @@ const ContentExpansion = (() => {
     updatePerTick,
     updateEnemyAI,
     useAbility,
-    handleSpyAction,
-    handleCourierMessage,
     onBuildingComplete,
     getAbilityCost,
     getSpyCost,

@@ -193,23 +193,23 @@ const STRATS = [
     },
   ],
   [
-    'levy_spam',
+    'courier_reinforce',
     (Gm) => {
       const s = Gm.getState();
-      if (s.hasCourier && !s.courierUsedThisWave) Gm.sendCourierMessage('levy');
+      if (s.hasCourier && !s.courierUsedThisWave) Gm.sendCourierMessage('reinforce');
     },
   ],
   [
-    'decree_spam',
+    'courier_surgeons',
     (Gm) => {
       const s = Gm.getState();
-      if (s.hasCourier && !s.courierUsedThisWave) Gm.sendCourierMessage('decree');
+      if (s.hasCourier && !s.courierUsedThisWave) Gm.sendCourierMessage('surgeons');
     },
   ],
   [
-    'spy_steal',
+    'spy_turncoats',
     (Gm) => {
-      if (!Gm.getState().spyUsedThisWave) Gm.executeSpyAction('steal');
+      if (!Gm.getState().spyUsedThisWave) Gm.executeSpyAction('turncoats');
     },
   ],
   [

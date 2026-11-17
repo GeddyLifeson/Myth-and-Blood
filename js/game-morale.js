@@ -214,6 +214,7 @@ const GameMorale = (() => {
   function clearPursuersOf(unit) {
     for (const u of GS.units) {
       if (u.combatTargetId === unit.id || u.pathTargetId === unit.id) {
+        if (unit.hp > 0 && canRideDown(u, unit)) continue;
         releaseCombatPursuit(u, { keepManual: u.manualOrder });
       }
     }
@@ -345,9 +346,11 @@ const GameMorale = (() => {
 
   /** How far from the post he may stand while fighting. */
   function huntLeashOf(unit) {
-    return unit.combatType === 'ranged' || unit.combatType === 'siege'
-      ? HUNT_LEASH_RANGED
-      : HUNT_LEASH_MELEE;
+    const base =
+      unit.combatType === 'ranged' || unit.combatType === 'siege'
+        ? HUNT_LEASH_RANGED
+        : HUNT_LEASH_MELEE;
+    return base * Formations.leashMult(unit);
   }
 
   /** Can he strike this point without standing further than `mult` leashes from his post? */
@@ -394,8 +397,20 @@ const GameMorale = (() => {
     return false;
   }
 
+  /** Cavalry and scouts (`ridesDown` in data/units.json) may strike an enemy that has routed. */
+  function canRideDown(unit, foe) {
+    return (
+      unit.team === 'player' &&
+      foe.team === 'enemy' &&
+      foe.hp > 0 &&
+      !!foe.fleeing &&
+      !!getPlayerUnitDef(unit.type)?.ridesDown
+    );
+  }
+
   function isPursuableFoe(unit, foe) {
-    if (!foe || foe.team === unit.team || !isValidCombatFoe(foe)) return false;
+    if (!foe || foe.team === unit.team) return false;
+    if (!isValidCombatFoe(foe) && !canRideDown(unit, foe)) return false;
     if (!foeInHuntLeash(unit, foe)) return false;
     // Player units cannot chase/fire on fog-hidden host troops (matches render + minimap).
     if (unit.team === 'player' && foe.team === 'enemy' && isEnemyHiddenByFog(foe)) return false;
@@ -551,6 +566,10 @@ const GameMorale = (() => {
       unit.fledBattle = true;
       clearPursuersOf(unit);
       if (unit.team === 'player') {
+        // He never went through takeDamage, so the run's losses are counted here.
+        unit.deathCause = 'deserted';
+        GS.runPlayerDeaths++;
+        GS.playerCasualtiesThisWave++;
         const troopName = unit.honorName || getPlayerUnitDef(unit.type)?.name || 'A soldier';
         showMessage(`${troopName} deserted the field!`, 160);
       }
@@ -677,6 +696,7 @@ const GameMorale = (() => {
     SURROUND_SLOTS_MELEE,
     SURROUND_SLOTS_RANGED,
     applyWitnessDeath,
+    canRideDown,
     checkDragonThemedBossKill,
     checkSoloHeroNamedBossKill,
     decayMoraleWitnesses,

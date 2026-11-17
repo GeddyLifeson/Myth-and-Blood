@@ -467,56 +467,6 @@ function isKingdomRaidsUnlocked(waveNum) {
   return getKingdomStageBuffs(waveNum).raidsUnlocked;
 }
 
-/** Army doctrines unlocked at each kingdom evolution stage (one activation per wave). */
-const KINGDOM_DOCTRINES = {
-  outpost_stand: {
-    id: 'outpost_stand',
-    name: 'Outpost Stand',
-    cost: 4,
-    kingdomStage: 1,
-    desc: 'The line holds — all allies take 15% less damage for 6 minutes.',
-    duration: 360,
-    mitigation: 0.15,
-  },
-  royal_muster: {
-    id: 'royal_muster',
-    name: 'Royal Muster',
-    cost: 5,
-    kingdomStage: 2,
-    desc: 'Crown levy — +5 TP now and +4 morale to every ally on the field.',
-    tpGrant: 5,
-    moraleBoost: 4,
-  },
-  imperial_march: {
-    id: 'imperial_march',
-    name: 'Imperial March',
-    cost: 8,
-    kingdomStage: 3,
-    desc: 'Map-wide rally — +12 morale, clears routing, +15% damage for 7 minutes.',
-    global: true,
-    duration: 420,
-    moraleBoost: 12,
-    damageMult: 1.15,
-  },
-  hellforge_decree: {
-    id: 'hellforge_decree',
-    name: 'Hellforge Decree',
-    cost: 10,
-    kingdomStage: 4,
-    desc: 'Hell-forged wrath — map-wide +10 morale, +20% damage, +12% speed for 6 minutes.',
-    global: true,
-    duration: 360,
-    moraleBoost: 10,
-    damageMult: 1.2,
-    speedMult: 1.12,
-  },
-};
-
-function getUnlockedKingdomDoctrines(waveNum) {
-  const stage = getKingdomStageBuffs(waveNum).stage;
-  return Object.values(KINGDOM_DOCTRINES).filter((d) => stage >= d.kingdomStage);
-}
-
 /**
  * Content tier — hazards / biomes / wildlife unlock cadence (independent of map size).
  */
@@ -852,31 +802,23 @@ const KEEP_GENERAL_SLOT_DY = -38;
 const BUILDER_MAX_PROJECTS = 2;
 const RETREAT_HP_RATIO = 0.25;
 
+/** The Courier rides off the bottom edge and back; the order lands when he returns alive. */
 const CourierMessages = {
   reinforce: {
-    name: 'Request Reinforcements',
+    name: 'Reinforcements',
     cost: 4,
-    desc: 'King sends 2 footmen next round. The army surcharge applies to the price.',
+    desc: 'Two footmen and an archer march in at the muster line when he returns. The army surcharge applies to the price.',
   },
-  decree: { name: 'Royal Decree', cost: 2, desc: '+5 morale to all troops' },
-  levy: {
-    name: 'Tax Levy',
-    cost: 1,
-    desc: '+5 TP at the next wave clear; every soldier loses 2 morale.',
-  },
-  banner: {
-    name: 'Call the Banner',
-    cost: 6,
-    desc: 'Summon 1 knight immediately. Needs Iron Weapons; +2 TP per earlier call, and the army surcharge applies.',
-  },
-  supplies: { name: 'Supply Train', cost: 3, desc: 'Heal all allies 25 HP' },
-  truce: { name: 'Offer Truce', cost: 4, desc: 'Delay spawns; +8 morale all troops' },
-  hunt_pact: {
-    name: 'Hunt Pact',
+  surgeons: {
+    name: 'Field Surgeons',
     cost: 3,
-    desc: 'Seal wildlife pact — +rep, allied beasts (wave 8+)',
+    desc: 'The wounded at the muster line heal over 15 seconds, half their health in all.',
   },
-  evacuate: { name: 'Medical Evac', cost: 4, desc: 'Wounded allies retreat to med tents' },
+  arrows: {
+    name: 'Fresh Arrows',
+    cost: 3,
+    desc: 'Every archer, crossbowman and other ranged soldier shoots 35% faster for 20 seconds.',
+  },
 };
 
 /** Abilities / SpyActions — loaded from data/strikes.json via GameData. */
@@ -1115,6 +1057,17 @@ function applyVeteranStarBump(unit, starTier) {
       if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * s.secondary);
       bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
       break;
+  }
+  // Shooters, riders and crews used to keep recruit morale for the whole run.
+  if (role === 'ranged' || role === 'siege' || role === 'cavalry') {
+    bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
+  }
+  // The one stat a line grows that its role does not: `starGrow` in data/units.json.
+  const grow = getPlayerUnitDef(unit.type)?.starGrow;
+  if (grow === 'reload') unit.reloadMult = Math.max(1, (unit.reloadMult || 1) / s.primary);
+  else if (grow === 'speed') unit.speed = Math.round(unit.speed * s.primary * 100) / 100;
+  else if (grow === 'song') {
+    unit.moraleAuraUnit = bumpScaledStat(unit.moraleAuraUnit || 3, s.primary);
   }
 }
 
@@ -1992,7 +1945,8 @@ function createBuilding(type, x, y, owner, opts = {}) {
   b.tpPerRound = def.tpPerRound || 0;
   b.isFortressUpgrade = def.isFortressUpgrade || false;
   // Outpost upgrade (Barracks / Granary) and per-wave job counters; pooled records must reset.
-  b.isOutpostUpgrade = def.isOutpostUpgrade || false;
+  // Scaffolding of any building upgrade (Outpost, Wall, Med Tent and the rest).
+  b.isOutpostUpgrade = def.isOutpostUpgrade || !!def.upgradeOf;
   b.upgrade = null;
   b.upgradeName = null;
   b.upgradePending = false;

@@ -153,7 +153,7 @@ const GameArmy = (() => {
       (GS.creativeMode && GS.creativeSettings.unlockAll) ||
       (svc('Research') && svc('Research').isTpVeteranUpgradeUnlocked(opts));
     if (!researchOk) {
-      showMessage('Research Veteran Doctrine at your Research Lab to promote core troops.');
+      showMessage('Promotions open with the Veteran Doctrine charter at wave 10.');
       return false;
     }
     const cost = getVeteranUpgradeCost(u);
@@ -315,6 +315,7 @@ const GameArmy = (() => {
         u.buildSpeedMult = (u.buildSpeedMult || 1) * fx.buildSpeedMult;
       }
     }
+    if (svc('Research') && !GS.creativeMode) svc('Research').applyDoctrines(u);
     if (typeof syncVeteranStatsToTier === 'function') syncVeteranStatsToTier(u);
     return u;
   }

@@ -41,9 +41,8 @@ const Availability = (() => {
 
   /** Name of the research node that unlocks a troop ("deploy") or a building ("build"). */
   function researchNeed(field, id) {
-    if (typeof Research === 'undefined' || !Array.isArray(Research.ALL_NODES)) return '';
-    const node = Research.ALL_NODES.find((n) => Array.isArray(n[field]) && n[field].includes(id));
-    return node ? node.name : '';
+    if (typeof Research === 'undefined') return '';
+    return Research.getLockReason ? Research.getLockReason(field, id) : '';
   }
 
   // ---- prices (what is charged) ---------------------------------------------------------
@@ -162,7 +161,7 @@ const Availability = (() => {
       });
     if (!unlocked) {
       const need = researchNeed('deploy', type);
-      return blocked(need ? `needs ${need}` : 'needs research', true, { cost, research: true });
+      return blocked(need || 'not available in this siege', true, { cost, research: true });
     }
     if (type === 'general' && gs.hasGeneral) {
       return blocked('a General is already on the field', false, { cost });
@@ -219,11 +218,9 @@ const Availability = (() => {
     }
     if (!mentorOk) return blocked(mentorReason, true, { cost, mentor: true, research: !unlocked });
     if (!unlocked) {
-      const perkNode = def.isPerkMachine
-        ? Research.ALL_NODES?.find((n) => n.id === 'perk_science')?.name
-        : '';
+      const perkNode = def.isPerkMachine ? 'arrives at wave 55 (Tonic Stations Science)' : '';
       const need = perkNode || researchNeed('build', type);
-      return blocked(need ? `needs ${need}` : 'needs research', true, {
+      return blocked(need || 'its charter has not arrived', true, {
         cost,
         research: true,
         mentorReady: isAcademy,
@@ -236,6 +233,20 @@ const Availability = (() => {
     ) {
       const n = def.requiresBuilders;
       return blocked(`needs ${n} living Builder${n === 1 ? '' : 's'}`, false, { cost });
+    }
+    const retired =
+      typeof GameBuildings !== 'undefined' ? GameBuildings.retiredBuildReason(type) : null;
+    if (retired) return blocked(retired, true, { cost });
+    if (def.upgradeOf && typeof GameBuildings !== 'undefined' && !gs.creativeMode) {
+      if (!GameBuildings.upgradeHosts(def).length) {
+        const host = BuildDefs[def.upgradeOf]?.name || 'building';
+        return blocked(`needs a finished ${host} with no upgrade`, false, { cost });
+      }
+    }
+    if (def.isResourceGen && typeof ContentExpansion !== 'undefined') {
+      if (ContentExpansion.economySitesFull?.()) {
+        return blocked('all 6 income sites in use', false, { cost });
+      }
     }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
@@ -264,6 +275,9 @@ const Availability = (() => {
     if (gs.spyUsedThisWave) {
       return blocked('the spy network was already used this wave', false, { cost, wait: 1 });
     }
+    if (def.nightOnly && gs.timeOfDay && gs.timeOfDay !== 'night') {
+      return blocked('scouts ride out at night', false, { cost });
+    }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }
@@ -278,12 +292,12 @@ const Availability = (() => {
     }
     const wait = cooldownLeft('courier', id, gs);
     if (wait > 0) return blocked(waitReason(wait), false, { cost, wait });
-    if (!gs.hasCourier) return blocked('needs a living Courier', false, { cost });
     const cap = Math.max(1, gs.courierMessagesPerWave || 1);
     if ((gs.courierMessagesUsedThisWave || 0) >= cap) {
       return blocked('the Courier has already ridden this wave', false, { cost, wait: 1 });
     }
     if (gs.courierCooldown > 0) return blocked('the Courier is still riding', false, { cost });
+    if (!gs.hasCourier) return blocked('needs a living Courier', false, { cost });
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };
   }

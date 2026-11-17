@@ -240,7 +240,7 @@ function loadGame() {
       getUnlockedAttackSides, canSpendTpVeteranUpgrade, getVeteranUpgradeCost, upgradeVeteranUnit,
       isEnemyHordeGruntType, getUnlockedEvilHeroes, EVIL_HERO_WAVES,
       getKingdomEvolutionStage, getKingdomStageBuffs, isKingdomRaidsUnlocked, isKingdomLoadoutsUnlocked,
-      KINGDOM_DOCTRINES, getUnlockedKingdomDoctrines, getTerritoryTier, getWorldSize,
+      getTerritoryTier, getWorldSize,
       BASE_FIELD_W, BASE_FIELD_H, isEliteEnemy
     })`,
     vm.createContext(sb)
@@ -597,26 +597,23 @@ function testResearchEncyclopedia(Research) {
     return;
   }
   const entries = Research.getEncyclopediaEntries();
-  const nodeCount = Research.ALL_NODES?.length || 0;
-  const nodeEntries = entries.filter(
-    (e) => e.name === 'Veteran Doctrine' || e.name === 'Hellgate Containment'
-  );
+  // Charters that only open troops have no entry of their own; every other live one must.
+  const opens = (n) =>
+    (n.build || []).some((t) => !Research.STARTER_BUILD.has(t)) || n.faction || n.feature;
+  const missing = (Research.ALL_NODES || [])
+    .filter((n) => !n.retired && opens(n))
+    .filter((n) => !entries.some((e) => e.name === n.name));
   assert(
-    entries.length >= nodeCount + 8,
-    'encyclopedia should list all nodes plus overview/path entries'
+    missing.length === 0,
+    `encyclopedia should list every charter that opens something (${missing.map((n) => n.id)})`
   );
+  assert(entries.length >= 8, 'encyclopedia should carry the overview and path entries');
   const vet = entries.find((e) => e.name === 'Veteran Doctrine');
-  assert(
-    vet?.body?.includes('Iron Weapons'),
-    'Veteran Doctrine should cite Iron Weapons prerequisite'
-  );
+  assert(vet?.body?.includes('wave 10'), 'Veteran Doctrine should say the wave it is granted');
   const doom = entries.find((e) => e.name === 'Hellgate Containment');
-  assert(
-    doom?.body?.includes('Stand Arrow') || doom?.body?.includes('Ki Manipulation'),
-    'Doom research should cite prerequisites'
-  );
-  const milPath = entries.find((e) => e.name?.includes('Military') && e.name.includes('Path'));
-  assert(milPath?.body?.includes('Iron Weapons'), 'Military path should list iron weapons');
+  assert(doom?.body?.includes('wave 60'), 'Hellgate Containment should say the wave it is granted');
+  const pair = entries.find((e) => e.name === 'Pike and Shot or Heavy Horse');
+  assert(pair?.body?.includes('wave 10'), 'the first doctrine pair should be listed with its wave');
 }
 
 function testResearchGates(Research, BuildDefs) {
@@ -1722,7 +1719,6 @@ function testKingdomEvolution(exp) {
     isKingdomLoadoutsUnlocked,
     Game,
     ColonyValue,
-    KINGDOM_DOCTRINES,
   } = exp;
   assert(typeof getKingdomEvolutionStage === 'function', 'getKingdomEvolutionStage should exist');
   assert(getKingdomEvolutionStage(1).stage === 1, 'wave 1 should be Outpost stage');
@@ -1744,8 +1740,8 @@ function testKingdomEvolution(exp) {
   assert(gs.kingdomStage === 1, 'creative start should expose kingdomStage');
   assert(gs.kingdomEvolution?.shortName, 'getState should expose kingdomEvolution');
   assert(gs.kingdomEvolutionMeter?.fill >= 0, 'getState should expose evolution meter fill');
-  assert(gs.kingdomDoctrines?.imperial_march, 'imperial march doctrine should exist');
-  assert(Array.isArray(gs.unlockedKingdomDoctrines), 'unlocked doctrines list exposed');
+  // Kingdom doctrines became the General's orders (js/general-orders.js).
+  assert(!('kingdomDoctrines' in gs), 'kingdom doctrines are folded into the General order bar');
   if (ColonyValue?.computeEvolutionMeter) {
     const meter = ColonyValue.computeEvolutionMeter({
       wave: 100,

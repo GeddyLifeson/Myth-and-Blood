@@ -150,10 +150,10 @@ const clearFoes = (GS) => {
   const close = Roster.modifyDamage(xbow, { ...far('goblin'), y: -30 }, 100, ctx);
   ok(close === 60, `and he is weak with an enemy in his face (${close})`);
   ok(
-    Research.isDeployUnlocked('crossbowman', { wave: 1 }) === false ||
-      Research.isDeployUnlocked('sapper', { wave: 1 }) ===
-        Research.isDeployUnlocked('crossbowman', { wave: 1 }),
-    'he unlocks with Iron Weapons, like the sapper and the knight'
+    Research.isDeployUnlocked('crossbowman', { wave: 1 }) &&
+      Research.isDeployUnlocked('sapper', { wave: 1 }) &&
+      Research.isDeployUnlocked('knight', { wave: 1 }),
+    'he can be recruited from wave 1, like the sapper and the knight'
   );
 }
 
@@ -167,7 +167,7 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   return SiegeLoop.introductionStatus().prompt;
 };
 {
-  const { Game, SiegeLoop, GameState: GS, sb } = start(9);
+  const { Game, SiegeLoop, Research, GameState: GS, sb } = start(9);
   Game.updatePresentation?.();
   let fs = Game.getState().siegeLoop.firstSteps;
   ok(fs.active, 'a first run is staged');
@@ -309,11 +309,13 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
       status('lab', at(4, true)) === 'waiting',
     'lab: needs a Builder and 18 TP'
   );
+  const waitingForDoctrine = status('research', at(4, true));
+  Research.tick({ wave: 10, isNight: true, buildings: [] });
   ok(
-    status('research', at(4, true, { buildings: [work('research_lab', false)] })) === 'waiting' &&
-      status('research', at(4, true, { buildings: [work('research_lab')] })) === 'ready',
-    'research: only once the lab is finished'
+    waitingForDoctrine === 'waiting' && status('research', at(10, true)) === 'ready',
+    'doctrine: only once a doctrine is waiting for a choice'
   );
+  Research.resetRun();
   ok(
     status('medtent', at(6, true)) === 'waiting' &&
       status('medtent', at(6, true, { units: [soldier('builder')] })) === 'ready',
@@ -325,7 +327,7 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
       status('upkeep', at(3, true, { army: 13, freeArmyBonus: 3 })) === 'waiting',
     'upkeep: opens one soldier short of the surcharge (granaries move the mark)'
   );
-  ok(status('sapper', at(5, true)) === 'waiting', 'sapper: not while Iron Weapons is unresearched');
+  ok(status('sapper', at(5, true)) === 'ready', 'sapper: open as soon as he can be paid for');
   ok(
     status('preview', at(5, false)) === 'early' || status('preview', at(6, false)) === 'waiting',
     'preview: only at night, when the note is on screen'
@@ -725,6 +727,8 @@ const untilPrompt = (Game, SiegeLoop, max = 600) => {
   // End a real run and check the stored best.
   GS.wave = 4;
   GS.kills = 30;
+  // TP in the bank would let the player deploy again, so the run only ends without it.
+  GS.tactical = 0;
   for (const u of mine(GS)) Game.takeDamage(u, 99999);
   run(Game, 5);
   ok(!Game.isPlaying(), 'the run ended');

@@ -53,36 +53,23 @@ function addUnit(api, type) {
 {
   const { EconomyRules: R } = start(3);
   R.resetRun();
-  ok(R.getCost('courier:levy', { wave: 1 }) === 1, 'Tax Levy costs 1 TP (was free)');
-  ok(R.rule('courier:levy').pay === 5, 'Tax Levy pays 5 TP (was 6)');
-  ok(R.canUse('courier:levy', { wave: 4 }).ok, 'an unused action is ready');
-  R.markUsed('courier:levy', 4);
-  ok(!R.canUse('courier:levy', { wave: 5 }).ok, 'Tax Levy is on cooldown the wave after');
-  ok(R.cooldownLeft('courier:levy', 6) === 1, 'cooldown counts down in waves');
-  ok(R.canUse('courier:levy', { wave: 7 }).ok, 'Tax Levy is ready again three waves later');
-
-  ok(R.getCost('courier:banner', { wave: 5 }) === 6, 'Call the Banner starts at 6 TP');
   ok(
-    R.getCost('courier:banner', { wave: 5, upkeepMult: 1.5 }) === 9,
-    'the army surcharge applies to the banner price'
+    !R.rule('courier:levy') && !R.rule('spy:disrupt'),
+    'Tax Levy and Disrupt have no price any more'
   );
-  R.markUsed('courier:banner', 5);
-  ok(R.getCost('courier:banner', { wave: 9 }) === 8, 'each earlier call adds 2 TP');
+  ok(R.getCost('courier:reinforce', { wave: 1 }) === 4, 'Reinforcements cost 4 TP');
   ok(
-    !R.canUse('courier:banner', { wave: 20, isDeployUnlocked: () => false }).ok,
-    'no banner knight before knights are researched'
+    R.getCost('courier:reinforce', { wave: 5, upkeepMult: 1.5 }) === 6,
+    'the army surcharge applies to Reinforcements'
   );
+  ok(R.canUse('courier:surgeons', { wave: 4 }).ok, 'an unused action is ready');
+  R.markUsed('courier:surgeons', 4);
+  ok(!R.canUse('courier:surgeons', { wave: 5 }).ok, 'Field Surgeons is on cooldown the wave after');
+  ok(R.cooldownLeft('courier:surgeons', 5) === 1, 'cooldown counts down in waves');
+  ok(R.canUse('courier:surgeons', { wave: 6 }).ok, 'ready again two waves later');
   ok(
-    R.canUse('courier:banner', { wave: 20, isDeployUnlocked: () => true }).ok,
-    'the banner answers once Iron Weapons is done'
-  );
-
-  ok(R.getCost('spy:disrupt', { wave: 3 }) === 5, 'Disrupt costs 5 TP early');
-  ok(R.getCost('spy:disrupt', { wave: 18 }) === 8, 'Disrupt costs 1 TP more every 6 waves');
-  const d = R.rule('spy:disrupt');
-  ok(
-    d.countMult === 0.75 && d.hpMult > 1 && d.speedMult > 1,
-    'Disrupt trades numbers for a tougher, faster host'
+    R.getCost('spy:assassin', { wave: 3 }) === 6 && R.getCost('spy:assassin', { wave: 20 }) === 8,
+    'Mark the Warlord costs 6 TP, 1 more every 10 waves'
   );
 
   R.resetRun();
@@ -123,81 +110,31 @@ function addUnit(api, type) {
   ok(R.dawnScience(1) === 6 && R.dawnScience(5) === 12, 'labs pay 6 SP at dawn, first two count');
 }
 
-// --- 2. courier: levy, banner ------------------------------------------------------------------
+// --- 2. courier: three orders, no TP buttons ----------------------------------------------------
 {
   const api = start(11);
   const { Game, GameState: GS, CourierMessages } = api;
   run(Game, 20);
   ok(
-    CourierMessages.levy.cost === 1 && CourierMessages.banner.cost === 6,
-    'message table carries the new prices'
+    Object.keys(CourierMessages).sort().join() === 'arrows,reinforce,surgeons',
+    'the Courier carries three orders: Reinforcements, Field Surgeons, Fresh Arrows'
   );
-  const courier = addUnit(api, 'courier');
-  ok(!!courier, 'a courier is on the field');
-  courier.courierReady = true;
-  run(Game, 5);
-  GS.courierCooldown = 0;
+  ok(!CourierMessages.levy && !CourierMessages.banner, 'Tax Levy and Call the Banner are gone');
   GS.tactical = 20;
-  const moraleBefore = mine(GS).find((u) => u.type === 'footman').morale;
-  ok(Game.sendCourierMessage('levy') === true, 'Tax Levy is sent');
-  ok(GS.tactical === 19, 'it cost 1 TP');
-  ok(GS.pendingLevy === 5, '5 TP are due at the next wave clear');
   ok(
-    mine(GS).find((u) => u.type === 'footman').morale === moraleBefore - 2,
-    'every soldier lost 2 morale'
-  );
-  GS.courierCooldown = 0;
-  GS.courierMessagesUsedThisWave = 0;
-  ok(
-    Game.sendCourierMessage('levy') === false,
-    'a second levy in the same wave is refused (cooldown)'
-  );
-  ok(GS.tactical === 19, 'and costs nothing');
-  ok(/Ready again/.test(CourierMessages.levy.desc), 'the button text says when it is ready again');
-
-  GS.courierCooldown = 0;
-  GS.courierMessagesUsedThisWave = 0;
-  const knightsBefore = mine(GS).filter((u) => u.type === 'knight').length;
-  ok(
-    Game.sendCourierMessage('banner') === false,
-    'Call the Banner is refused without Iron Weapons'
-  );
-  ok(mine(GS).filter((u) => u.type === 'knight').length === knightsBefore, 'no knight arrived');
-  api.Research.completeResearch('iron_weapons');
-  GS.tactical = 20;
-  ok(Game.sendCourierMessage('banner') === true, 'with Iron Weapons the banner is answered');
-  ok(
-    mine(GS).filter((u) => u.type === 'knight').length === knightsBefore + 1,
-    'one knight arrived'
-  );
-  ok(GS.tactical === 14, 'for 6 TP while the army is small');
-  GS.courierCooldown = 0;
-  GS.courierMessagesUsedThisWave = 0;
-  ok(
-    Game.sendCourierMessage('banner') === false,
-    'the banner cannot be called again for four waves'
+    Game.sendCourierMessage('levy') === false && GS.tactical === 20,
+    'a cut message is refused free'
   );
 }
 
-// --- 3. spy: disrupt, sabotage, infiltrate, scout ----------------------------------------------
+// --- 3. spy: infiltrate (ambush), scout, the cut actions ----------------------------------------------
 {
   const api = start(12);
   const { Game, GameState: GS, EconomyRules: R } = api;
   run(Game, 20);
   GS.tactical = 30;
-  ok(Game.executeSpyAction('disrupt') === true, 'Disrupt is bought');
-  ok(GS.pendingWaveMods.countMult === 0.75, 'next wave has 25% fewer enemies (was 35%)');
-  ok(GS.pendingWaveMods.hpMult > 1.1, 'who are tougher');
-  ok(GS.pendingWaveMods.speedMult > 1.1, 'and faster');
-  GS.spyUsedThisWave = false;
-  ok(Game.executeSpyAction('disrupt') === false, 'Disrupt cannot be repeated for three waves');
-
-  GS.spyUsedThisWave = false;
-  ok(Game.executeSpyAction('sabotage') === true, 'Sabotage is bought');
-  ok(
-    GS.pendingWaveMods.noSiege === true && GS.spawnDelayBonus >= 600,
-    'no siege engines and a 10 second delay'
-  );
+  ok(Game.executeSpyAction('disrupt') === false && GS.tactical === 30, 'Disrupt is cut, free');
+  ok(Game.executeSpyAction('steal') === false && GS.tactical === 30, 'Steal is cut: no TP button');
 
   GS.spyUsedThisWave = false;
   ok(Game.executeSpyAction('infiltrate') === true, 'Deep Infiltration is bought');
@@ -210,9 +147,10 @@ function addUnit(api, type) {
     'the first arrivals come in at 60% health'
   );
   ok(labels[0] === 'AMBUSHED' && labels[2] === null, 'and are labelled on the field');
-  ok(Math.abs(foes[2].speed - 1.15) < 1e-9, 'a disrupted host marches 15% faster');
 
   GS.spyUsedThisWave = false;
+  GS.timeOfDay = 'day';
+  ok(Game.executeSpyAction('scout') === false, 'by day the scouts do not ride (no report at dawn)');
   GS.timeOfDay = 'night';
   ok(api.SiegeLoop.getPreview()?.makeup == null, 'without a tower or a scout the preview is rough');
   ok(Game.executeSpyAction('scout') === true, 'Scout Report is bought');
@@ -234,16 +172,12 @@ function addUnit(api, type) {
     'a lab costs 18 TP and one builder'
   );
   ok(
-    node('iron_weapons').cost === 20 && node('iron_weapons').wave === 3,
-    'Iron Weapons: 20 SP from wave 3'
+    node('field_engineering').wave === 3 && node('fortification').wave === 6,
+    'Field Engineering comes at wave 3 and Fortification at wave 6'
   );
   ok(
-    node('command_theory').cost === 30 && node('command_theory').wave === 6,
-    'Command Theory: 30 SP from wave 6'
-  );
-  ok(
-    node('advanced_infantry').wave === 7 && node('siege_engineering').wave === 9,
-    'later tiers open a few waves apart'
+    node('siege_engineering').wave === 9 && node('veteran_doctrine').wave === 10,
+    'later charters come a few waves apart'
   );
   ok(
     Research.isBuildUnlocked('watchtower') && Research.isBuildUnlocked('trade_outpost'),
@@ -257,19 +191,15 @@ function addUnit(api, type) {
   run(Game, 20);
   place(api, 'research_lab', 300, 420);
   GS.wave = 3;
+  run(Game, 2);
   ok(
-    Research.startResearch('iron_weapons', 3, GS.buildings, () => {}),
-    'Iron Weapons can start on wave 3'
+    Research.isBuildUnlocked('outpost_barracks'),
+    'Field Engineering is granted when wave 3 comes, with nothing to pay'
   );
-  let waves = 0;
-  while (!Research.isResearched('iron_weapons') && waves < 10) {
-    waves++;
-    Research.onWaveCleared({ wave: 3 + waves, buildings: GS.buildings });
-  }
-  ok(
-    waves <= 4,
-    `dawn science alone finishes Iron Weapons in ${waves} waves (kills make it faster)`
-  );
+  GS.wave = 5;
+  GS.timeOfDay = 'night';
+  run(Game, 2);
+  ok(!!Research.getActiveInfo(), 'with a lab standing the first doctrine is ready after wave 5');
   ok(
     Research.isDeployUnlocked('knight') && Research.isDeployUnlocked('crossbowman'),
     'knights and crossbowmen are open'
@@ -284,7 +214,7 @@ function addUnit(api, type) {
   );
 }
 
-// --- 5. expeditions return the same soldiers -------------------------------------------------
+// --- 5. expeditions from old saves return the same soldiers -------------------------------------------------
 {
   const api = start(14);
   const { Game, GameState: GS, PlayerCounterEvolution: PCE, EnemyFactions } = api;
@@ -302,7 +232,17 @@ function addUnit(api, type) {
   const ids = vets.map((u) => u.id);
   GS.selectedUnitIds = [...ids];
   const faction = EnemyFactions.getActiveFactions(25)[0];
-  ok(Game.dispatchExpedition(faction.id) === true, 'two soldiers march off on expedition');
+  // Expeditions are fought on the field now (test-orders.mjs). Saves from before still hold
+  // soldiers who marched off it; this dispatches the old way to keep that path covered.
+  const legacyDispatch = (unitIds) => {
+    const r = PCE.dispatchExpedition(faction.id, unitIds, GS.wave, { units: GS.units });
+    for (const id of unitIds) {
+      const i = GS.units.findIndex((u) => u.id === id);
+      if (i >= 0) GS.units.splice(i, 1);
+    }
+    return r.ok;
+  };
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'two soldiers march off on expedition');
   ok(!GS.units.includes(vets[0]) && !GS.units.includes(vets[1]), 'they are off the field');
   ok(
     vets[0].honorName === 'Aldric the Unbroken' && vets[0].kills === 41,
@@ -336,7 +276,7 @@ function addUnit(api, type) {
   GS.wave = 27;
   GS.expeditionUsedThisWave = false;
   GS.selectedUnitIds = [ids[1]];
-  ok(Game.dispatchExpedition(faction.id) === true, 'a second expedition leaves');
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'a second expedition leaves');
   const res2 = PCE.resolveExpeditions(28, {
     units: GS.units,
     rng: () => 0.999,
@@ -355,7 +295,7 @@ function addUnit(api, type) {
   GS.wave = 29;
   GS.expeditionUsedThisWave = false;
   GS.selectedUnitIds = [ids[0]];
-  ok(Game.dispatchExpedition(faction.id) === true, 'the veteran marches a second time');
+  ok(legacyDispatch(GS.selectedUnitIds) === true, 'the veteran marches a second time');
   ok(PCE.getAwayUnits().includes(vets[0]), 'the expedition holds his record while he is away');
   const snap = Game.exportGameState();
   const saved = (snap.expeditionAway || []).find((u) => u.id === ids[0]);

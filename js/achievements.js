@@ -509,9 +509,9 @@ const Achievements = (() => {
     for (const [f, n] of Object.entries(seenFactions)) if (n >= 5) add(`faction.${f}`);
     wave.killedTypes = {};
 
-    // Research is counted from the research tree at dawn.
+    // Doctrines taken this run, read at dawn.
     try {
-      const done = globalThis.Research?.getSnapshot?.().completed || [];
+      const done = globalThis.Research?.getSnapshot?.().doctrines || [];
       best('research', done.length);
       for (const id of done) member('researchKinds', id);
     } catch (_) {
