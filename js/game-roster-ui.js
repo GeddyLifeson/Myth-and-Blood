@@ -276,6 +276,8 @@ const GameRosterUi = (() => {
           wavesSurvived: u.wavesSurvived || 0,
           counterNote: SiegeLoop.COUNTER_NOTES[u.type] || '',
           roster: Roster.describe(u),
+          line: GameCombat.describeLine(u),
+          formation: u.formation ? Formations.getFormation(u.formation) : null,
           hp: u.hp,
           maxHp: u.maxHp,
           morale: u.morale,

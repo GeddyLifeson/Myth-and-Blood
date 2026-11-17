@@ -6,6 +6,8 @@
  * Usage: node scripts/sim-honest-play.mjs            (all difficulties, 3 seeds each)
  *        HONEST_TICKS=40000 HONEST_SEEDS=1 node scripts/sim-honest-play.mjs
  *        HONEST_TENT=1 ...   the bot also fields a Builder and a Medical Tent behind its line
+ *        HONEST_TG=line|post  at wave 10 one footman is made rank 2; 'post' also builds a
+ *                             Training Ground and posts him there, 'line' keeps him fighting
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -19,6 +21,7 @@ const STALL_TICKS = Number(process.env.HONEST_STALL_TICKS || 8000);
 const DIFFS = (process.env.HONEST_DIFFS || 'baby,normal,chad,doomslayer').split(',');
 // With HONEST_TENT the bot buys a Builder and a Medical Tent as soon as it can afford both.
 const WITH_TENT = !!process.env.HONEST_TENT;
+const TG = process.env.HONEST_TG || '';
 // HONEST_PATH=martial|arcane|mythic: the bot picks that run path as soon as it opens.
 const PATH = process.env.HONEST_PATH || '';
 // Deploy order the bot cycles through; it buys the next one it can afford.
@@ -38,8 +41,8 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 
 function playOne(diff, seed) {
   const { sb, cvs } = boot(seed);
-  const { Game, SpriteGen, UnitDefs, RunPath } = vm.runInContext(
-    `${code}\n({ Game, SpriteGen, UnitDefs, RunPath })`,
+  const { Game, SpriteGen, UnitDefs, RunPath, GameState, syncVeteranStatsToTier } = vm.runInContext(
+    `${code}\n({ Game, SpriteGen, UnitDefs, RunPath, GameState, syncVeteranStatsToTier })`,
     vm.createContext(sb)
   );
   SpriteGen.prewarmCache = () => {};
@@ -59,6 +62,11 @@ function playOne(diff, seed) {
   let lastWave = -1;
   let lastWaveTick = 0;
   let stalledAt = null;
+  // While saving for the ground the bot buys no troops.
+  // Training Ground A/B: 0 waiting, 1 mentor made, 2 builder placed, 3 ground placed, 4 done.
+  let tgStep = TG ? 0 : 4;
+  let tgTries = 0;
+  let mentor = null;
   let firstDeathWave = null;
   for (; t < MAX_TICKS; t++) {
     // getState() is cached per presented frame, so ask the game directly whether it ended.
@@ -102,6 +110,30 @@ function playOne(diff, seed) {
       break;
     }
     try {
+      if (tgStep < 4 && s.timeOfDay === 'night' && s.wave >= 10) {
+        if (tgStep === 0) {
+          mentor = GameState.units.find((u) => u.team === 'player' && u.type === 'footman');
+          if (mentor) {
+            mentor.vetTier = Math.max(2, mentor.vetTier || 0);
+            syncVeteranStatsToTier(mentor);
+          }
+          tgStep = TG === 'post' && mentor ? 1 : 4;
+        } else if (tgStep === 1 && s.tactical >= (UnitDefs.builder?.cost ?? 99)) {
+          Game.selectDeploy('builder');
+          Game.handleClick(640, 600);
+          tgStep = 2;
+        } else if (tgStep === 2 && s.tactical >= 30) {
+          Game.selectBuild('training_ground');
+          Game.handleClick(700 + (tgTries % 6) * 16, 600 - (tgTries % 3) * 14);
+          const g = GameState.buildings.find((b) => b.type === 'training_ground');
+          if (g && mentor.hp > 0) {
+            Game.selectUnit(mentor.id);
+            Game.moveSelectionToWorld(g.x, g.y);
+            Game.clearSelection?.();
+            tgStep = 3;
+          } else if (g || ++tgTries >= 40) tgStep = 4;
+        }
+      }
       if (s.timeOfDay === 'night') {
         const type = ROSTER[next % ROSTER.length];
         const cost = UnitDefs[type]?.cost ?? 99;
@@ -120,7 +152,7 @@ function playOne(diff, seed) {
           } else if (t % 20 === 0) {
             Game.beginDayPhase(true);
           }
-        } else if (s.canDeploy && s.tactical >= cost) {
+        } else if (s.canDeploy && s.tactical >= cost && !(tgStep >= 1 && tgStep < 3)) {
           const before = s.army ?? 0;
           Game.selectDeploy(type);
           Game.handleClick(480 + ((deployed * 37) % 320), 520 + ((deployed * 53) % 90));
@@ -189,6 +221,13 @@ function playOne(diff, seed) {
     breachLimit: fin.siegeLoop?.breachLimit ?? null,
     spoils: fin.siegeLoop?.edicts?.length ?? 0,
     campaignWon: !!fin.campaignWon,
+    tg: TG
+      ? {
+          mentorAlive: !!mentor && mentor.hp > 0,
+          posted: tgStep === 3,
+          recruits: mentor?.recruitsTrained || 0,
+        }
+      : undefined,
     threw,
   };
 }
@@ -199,7 +238,7 @@ for (const diff of DIFFS) {
     const r = playOne(diff, Number(process.env.HONEST_SEED0 || 4000) + i * 131);
     results.push(r);
     console.log(
-      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} (first w${r.firstDeathWave}) · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.threw ? ' · ' + r.threw : ''}`
+      `${diff.padEnd(10)} seed ${r.seed}: wave ${String(r.wave).padStart(3)} · ${r.outcome} · ${r.deployed} deployed · peak army ${r.maxArmy} · lost ${r.lost} (first w${r.firstDeathWave}) · wounded ${r.woundedPct}% · avg foes on field ${r.avgEnemies} · breaches ${r.breaches}/${r.breachLimit} · spoils ${r.spoils}${r.tg ? ' · tg ' + JSON.stringify(r.tg) : ''}${r.threw ? ' · ' + r.threw : ''}`
     );
   }
 }
@@ -214,7 +253,15 @@ for (const d of DIFFS) {
 }
 console.log('\nBy difficulty:', JSON.stringify(byDiff));
 writeFileSync(
-  join(ROOT, 'scripts', WITH_TENT ? 'sim-honest-report-tent.json' : 'sim-honest-report.json'),
+  join(
+    ROOT,
+    'scripts',
+    TG
+      ? `sim-honest-report-tg-${TG}.json`
+      : WITH_TENT
+        ? 'sim-honest-report-tent.json'
+        : 'sim-honest-report.json'
+  ),
   JSON.stringify({ maxTicks: MAX_TICKS, byDiff, results }, null, 2)
 );
 process.exit(results.some((r) => r.threw || r.stalled) ? 1 : 0);

@@ -706,19 +706,19 @@ function buildAchievementList() {
     'works',
     'wrk_research',
     ['Scholar', 'Learned', 'Nothing Left to Read'],
-    (n) => `Complete ${n} research projects in one run.`,
+    (n) => `Adopt ${n} ${n === 1 ? 'doctrine' : 'doctrines'} in one run.`,
     'r',
     'research',
-    [3, 8, 15]
+    [1, 3, 6]
   );
   one(
     'works',
     'wrk_research_all',
     'The Whole Library',
-    'Complete 30 different research projects, across all runs.',
+    'Adopt 15 different doctrines, across all runs.',
     'l',
     'researchKinds',
-    30,
+    15,
     { tier: 'gold', reward: title('Loremaster') }
   );
 

@@ -195,22 +195,24 @@ function getSpecialistLateAbilityInfo(unit) {
   };
 }
 
-const ACADEMY_BUILD_TYPES = [
-  'academy_footman',
-  'academy_archer',
-  'academy_mage',
-  'academy_cavalry',
-  'academy_knight',
-  'academy_sapper',
-  'academy_healer',
-  'academy_builder',
-  'academy_courier',
-  'academy_general',
-  'academy_scout',
-  'academy_bard',
-  'academy_ballista',
-  'academy_pikeman',
-];
+const ACADEMY_BUILD_TYPES = ['training_ground'];
+/** Rank a soldier needs before he can drill recruits at the Training Ground. */
+const TRAINING_MENTOR_TIER = 2;
+/** Troops a Training Ground can raise; specialists who are kept to one, and heroes, are not. */
+const TRAINABLE_TYPES = new Set([
+  'footman',
+  'archer',
+  'crossbowman',
+  'mage',
+  'cavalry',
+  'healer',
+  'scout',
+  'bard',
+  'ballista',
+  'pikeman',
+  'sapper',
+  'knight',
+]);
 const DEPLOY_Y = BASE_FIELD_H - 20;
 const DEFAULT_RALLY_Y = BASE_FIELD_H - 100;
 
@@ -714,13 +716,6 @@ function isMaxLevelVeteran(unit) {
   return !!unit && unit.team === 'player' && unit.hp > 0 && (unit.vetTier || 0) >= MAX_VETERAN_TIER;
 }
 
-function getAcademyMentorUnitType(academyType) {
-  const def = BuildDefs[academyType];
-  if (!def?.isAcademy) return null;
-  if (def.requiresPromotableFootman || academyType === 'academy_general') return 'footman';
-  return def.academyUnit || academyType.replace('academy_', '');
-}
-
 function getMaxVeteranRankName(unitType) {
   const specRanks = SPECIALIST_RANKS[unitType];
   const combatRanks = ['', 'Veteran', 'Elite', 'Champion', 'Legend', 'Mythic', 'Immortal'];
@@ -728,53 +723,36 @@ function getMaxVeteranRankName(unitType) {
   return ranks[Math.min(MAX_VETERAN_TIER, ranks.length - 1)] || `V${MAX_VETERAN_TIER}`;
 }
 
-function hasAcademyMentorOnField(academyType, units) {
-  const mentorType = getAcademyMentorUnitType(academyType);
-  // Missing academy def is NOT "mentor ready" — require a real mentor type.
-  if (!mentorType) return false;
-  return units.some(
-    (u) =>
-      u &&
-      u.team === 'player' &&
-      u.hp > 0 &&
-      !u._pooled &&
-      u.type === mentorType &&
-      isMaxLevelVeteran(u)
+/** A living soldier of a trainable type and rank 2 or more: he can be posted to drill recruits. */
+function isTrainingMentor(u) {
+  return (
+    !!u &&
+    u.team === 'player' &&
+    u.hp > 0 &&
+    !u._pooled &&
+    !u.isGeneral &&
+    TRAINABLE_TYPES.has(u.type) &&
+    (u.vetTier || 0) >= TRAINING_MENTOR_TIER
   );
 }
 
-function getAcademyBuildBlockReason(type, waveNum, units) {
+/** Why a Training Ground cannot be founded now, or null. */
+function getAcademyBuildBlockReason(type, waveNum, buildings) {
   const def = BuildDefs[type];
   if (!def?.isAcademy) return 'Unknown academy type.';
-  if (def.academyWaveInterval && waveNum % def.academyWaveInterval !== 0) {
-    return `This academy can only be founded on waves divisible by ${def.academyWaveInterval}.`;
-  }
-  if (!hasAcademyMentorOnField(type, units)) {
-    const mentorType = getAcademyMentorUnitType(type);
-    const name = getPlayerUnitDef(mentorType)?.name || formatUnitTypeName(mentorType || 'unit');
-    const rank = getMaxVeteranRankName(mentorType);
-    const need = MAX_VETERAN_TIER;
-    return `Need an on-field ${name} at ${rank} (V${need}). Earn gold-star cycles, research Veteran Doctrine, then Promote (U) until Immortal.`;
-  }
-  if (def.requiresPromotableFootman) {
-    if (units.some((u) => u.team === 'player' && u.isGeneral && u.hp > 0)) {
-      return 'Cannot found General Academy while a General is on the field.';
-    }
-    if (!units.some(footmanEligibleForGeneral)) {
-      return 'Need a veteran Footman eligible for promotion (completed a gold-star cycle).';
-    }
+  if (def.waveMin && waveNum < def.waveMin) return `Opens at wave ${def.waveMin}.`;
+  if (
+    def.maxCount &&
+    (buildings || []).filter((b) => b.type === type && b.owner === 'player' && b.hp > 0).length >=
+      def.maxCount
+  ) {
+    return `Only ${def.maxCount} ${def.name} on the field.`;
   }
   return null;
 }
 
-function canBuildAcademyType(type, waveNum, units) {
-  return !getAcademyBuildBlockReason(type, waveNum, units);
-}
-
-/** Academies this unit type unlocks as mentor once Immortal. */
-function getAcademiesUnlockedByMentorType(unitType) {
-  if (!unitType || typeof ACADEMY_BUILD_TYPES === 'undefined') return [];
-  return ACADEMY_BUILD_TYPES.filter((t) => getAcademyMentorUnitType(t) === unitType);
+function canBuildAcademyType(type, waveNum, buildings) {
+  return !getAcademyBuildBlockReason(type, waveNum, buildings);
 }
 
 /** Footman completed a full gold-star cycle (honor granted); vetGold resets after that. */
@@ -1079,6 +1057,17 @@ function applyVeteranStarBump(unit, starTier) {
       if (unit.meleeRange) unit.meleeRange = Math.floor(unit.meleeRange * s.secondary);
       bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
       break;
+  }
+  // Shooters, riders and crews used to keep recruit morale for the whole run.
+  if (role === 'ranged' || role === 'siege' || role === 'cavalry') {
+    bumpUnitMorale(unit, starTier === 'gold' ? 2 : 1);
+  }
+  // The one stat a line grows that its role does not: `starGrow` in data/units.json.
+  const grow = getPlayerUnitDef(unit.type)?.starGrow;
+  if (grow === 'reload') unit.reloadMult = Math.max(1, (unit.reloadMult || 1) / s.primary);
+  else if (grow === 'speed') unit.speed = Math.round(unit.speed * s.primary * 100) / 100;
+  else if (grow === 'song') {
+    unit.moraleAuraUnit = bumpScaledStat(unit.moraleAuraUnit || 3, s.primary);
   }
 }
 
@@ -1956,7 +1945,8 @@ function createBuilding(type, x, y, owner, opts = {}) {
   b.tpPerRound = def.tpPerRound || 0;
   b.isFortressUpgrade = def.isFortressUpgrade || false;
   // Outpost upgrade (Barracks / Granary) and per-wave job counters; pooled records must reset.
-  b.isOutpostUpgrade = def.isOutpostUpgrade || false;
+  // Scaffolding of any building upgrade (Outpost, Wall, Med Tent and the rest).
+  b.isOutpostUpgrade = def.isOutpostUpgrade || !!def.upgradeOf;
   b.upgrade = null;
   b.upgradeName = null;
   b.upgradePending = false;

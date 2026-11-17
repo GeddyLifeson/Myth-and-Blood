@@ -33,6 +33,7 @@ const GameCombat = (() => {
   } = GameField;
   const {
     applyWitnessDeath,
+    canRideDown,
     checkDragonThemedBossKill,
     checkSoloHeroNamedBossKill,
     isPursuableFoe,
@@ -45,6 +46,7 @@ const GameCombat = (() => {
     findTacticalTarget,
     floatStatus,
     getBuildingPursuitTarget,
+    getDifficulty,
     getEffectiveRange,
     getEnemyStructureSeekDist,
     getSightPenaltyForUnit,
@@ -73,6 +75,7 @@ const GameCombat = (() => {
       findTacticalTarget,
       floatStatus,
       getBuildingPursuitTarget,
+      getDifficulty,
       getEffectiveRange,
       getEnemyStructureSeekDist,
       getSightPenaltyForUnit,
@@ -184,8 +187,56 @@ const GameCombat = (() => {
     }
   }
 
-  function calcDamage(unit, target, baseRand = 10) {
-    let dmg = unit.damage + Math.floor((globalThis.simRandom || Math.random)() * baseRand);
+  // A pin set by a blow lasts this many ticks; the main loop is the only place it counts down.
+  const PIN_TICKS = 25;
+  // Poison or a death burst credits whoever last struck the enemy, if it was this recent.
+  const KILL_CREDIT_TICKS = 300;
+
+  function defOf(unit) {
+    return unit.team === 'player' ? getPlayerUnitDef(unit.type) : EnemyDefs[unit.type];
+  }
+
+  /** The matchup bonus from the `beats` table in data/units.json and data/enemies.json. */
+  function counterMult(attacker, target) {
+    if (!attacker || !target || attacker.team === target.team) return 1;
+    return defOf(attacker)?.beats?.[target.type] || 1;
+  }
+
+  /** Who a line beats. The crossbowman's table is his Roster trait, which applies its own bonus. */
+  function beatsOf(unit) {
+    return defOf(unit)?.beats || Roster.TROOPS[unit.type]?.vsType || null;
+  }
+
+  function isCounter(attacker, target) {
+    return !!attacker && attacker.team !== target.team && !!beatsOf(attacker)?.[target.type];
+  }
+
+  /** Job, matchups and star growth for the unit card. */
+  function describeLine(unit) {
+    const def = defOf(unit);
+    if (!def?.job) return null;
+    const names = Object.keys(beatsOf(unit) || {})
+      .map((t) => (unit.team === 'player' ? EnemyDefs[t] : getPlayerUnitDef(t))?.name)
+      .filter(Boolean);
+    return { job: def.job, beats: names.join(', '), stars: def.stars || '' };
+  }
+
+  /** Summons, boss adds and ambushes get the same scaling as an enemy spawned with the wave. */
+  function scaleMidWaveSpawn(unit) {
+    if (!unit || unit.team !== 'enemy' || GS.creativeMode) return unit;
+    svc('GameDepth')?.applyEnemySpawnScaling(unit, GS.wave, {
+      cfg: GS.currentWaveConfig || getWaveConfig(GS.wave),
+      diff: getDifficulty(),
+      waveModifiers: GS.waveModifiers,
+      colonyThreat: GS.colonyThreatMods,
+    });
+    Roster.onSpawn(unit, GS.wave);
+    return unit;
+  }
+
+  /** `baseDamage` is a missile's damage as it left the bow; the live shooter supplies the rest. */
+  function calcDamage(unit, target, baseRand = 10, baseDamage = unit.damage) {
+    let dmg = baseDamage + Math.floor((globalThis.simRandom || Math.random)() * baseRand);
     dmg += getExperienceDamageBonus(unit.experience);
     dmg += (unit.vetTier || 0) * DIFFICULTY_TUNING.tierFlatDamage;
     if (unit.team === 'player' && !unit.isGeneral && isInGeneralAura(unit)) {
@@ -208,6 +259,7 @@ const GameCombat = (() => {
       dmg = Math.round(dmg * 1.35);
     }
     if (target) {
+      dmg *= counterMult(unit, target) * Formations.dealtMult(unit);
       dmg = SiegeLoop.modifyDamage(unit, target, dmg, GS.updateTick);
       dmg = Roster.modifyDamage(unit, target, dmg, siegeCtx);
     }
@@ -301,7 +353,7 @@ const GameCombat = (() => {
       foes = GS.units;
     }
     for (const f of foes) {
-      if (f.team === unit.team || !isValidCombatFoe(f)) continue;
+      if (f.team === unit.team || !(isValidCombatFoe(f) || canRideDown(unit, f))) continue;
       // Adjacent engagement was bypassing fog (combat while unit is invisible).
       if (unit.team === 'player' && isEnemyHiddenByFog(f)) continue;
       if (svc('ContentExpansion') && !svc('ContentExpansion').canTargetUnit(unit, f)) continue;
@@ -394,6 +446,7 @@ const GameCombat = (() => {
     }
     if (unit.team === 'player') actual = SiegeLoop.modifyDamageTaken(unit, actual, GS.updateTick);
     actual = Roster.modifyDamageTaken(unit, actual, opts, siegeCtx);
+    actual *= Formations.takenMult(unit, opts);
     actual *= Veterans.damageMult(opts.attacker, unit);
     if (!(actual > 0)) return 0;
     // Only blood drawn from the enemy counts as a fight in progress. An archer sniping
@@ -434,7 +487,12 @@ const GameCombat = (() => {
     if ((unit.phdFlopperCd || 0) > 0) unit.phdFlopperCd--;
     if (!Number.isFinite(actual) || actual <= 0) return 0;
     unit.hp -= actual;
-    const crit = opts.crit || amount >= 45;
+    if (opts.attacker?.team === 'player' && unit.team === 'enemy') {
+      unit.lastHitBy = opts.attacker.id;
+      unit.lastHitTick = GS.updateTick;
+    }
+    // A crit is a telling blow: a direct hit from a unit whose line beats this one.
+    const crit = !!opts.crit || (!opts.splash && isCounter(opts.attacker, unit));
     const willDie = unit.hp <= 0;
     // Hit flash + micro knock for readability
     unit.hitFlash = Math.max(unit.hitFlash || 0, crit ? 10 : willDie ? 8 : actual >= 25 ? 7 : 5);
@@ -518,7 +576,7 @@ const GameCombat = (() => {
       (globalThis.simRandom || Math.random)() * 100 > unit.morale + (unit.rallyTimer > 0 ? 15 : 0)
     ) {
       unit.pinned = true;
-      unit.pinTimer = 50;
+      unit.pinTimer = PIN_TICKS;
       // A volley can stop an enemy once; massed archers can no longer hold it in place forever.
       if (unit.team === 'enemy') unit.pinImmuneUntil = GS.updateTick + 290;
     }
@@ -561,8 +619,8 @@ const GameCombat = (() => {
         }
       } else if (unit.team === 'enemy') {
         GS.kills++;
-        // Prefer the unit that landed the killing blow (melee/ranged/projectile).
-        // Fall back to whoever still has this foe locked as combat target.
+        // The unit that landed the killing blow. With no attacker (poison, a death burst)
+        // the kill goes to the soldier who last struck it, never to a bystander.
         let killer =
           opts.attacker &&
           opts.attacker.team === 'player' &&
@@ -570,10 +628,9 @@ const GameCombat = (() => {
           !opts.attacker.isNeutral
             ? opts.attacker
             : null;
-        if (!killer) {
-          killer = GS.units.find(
-            (u) => u.combatTargetId === unit.id && u.team === 'player' && u.hp > 0
-          );
+        if (!killer && GS.updateTick - (unit.lastHitTick ?? -Infinity) <= KILL_CREDIT_TICKS) {
+          const last = getUnitById(unit.lastHitBy);
+          if (last && last.team === 'player' && last.hp > 0) killer = last;
         }
         if (typeof GameFeedback !== 'undefined') {
           const streakInfo = GameFeedback.onEnemyKilled(unit, {
@@ -842,6 +899,7 @@ const GameCombat = (() => {
       hit += getGeneralAura().accuracy;
     }
     if (unit.isGeneral && (unit.w2wBuffTimer || 0) > 0) hit += 22;
+    hit += Formations.aimBonus(unit);
     if (unit.synergyAcc) hit += unit.synergyAcc;
     if (unit.skillAcc) hit += unit.skillAcc;
     if (unit.team === 'enemy') {
@@ -948,7 +1006,10 @@ const GameCombat = (() => {
     applyGeneralAura,
     applyChampionOnHit,
     calcDamage,
+    counterMult,
     damageInRadius,
+    describeLine,
+    scaleMidWaveSpawn,
     findCombatTarget,
     findNearestFoeInRange,
     findPlayerGeneral,

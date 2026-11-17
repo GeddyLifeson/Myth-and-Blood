@@ -139,6 +139,7 @@ const Game = (() => {
     spawnHamletFortressWalls,
     updateEnemySiege,
     updateEnemyWallAttack,
+    updateIncomeSiteThreat,
     updatePlayerStructureAttack,
   } = GameBuildings;
   const {
@@ -740,6 +741,7 @@ const Game = (() => {
       const u = spawnUnit(type, pos.x, pos.y, 'enemy', { spawnSide: 'north' });
       u.huntMode = true;
       u.mustered = true;
+      GameCombat.scaleMidWaveSpawn(u);
       GS.units.push(u);
       return u;
     },
@@ -2314,6 +2316,7 @@ const Game = (() => {
 
     markUpdatePhase('garrisons');
     updateOutposts();
+    updateIncomeSiteThreat();
     updateCastleKeeps();
     updateWallGarrison();
     updateMedicalRetreats();
@@ -2340,6 +2343,10 @@ const Game = (() => {
       // Hit flash and honor glow count down here, once per tick, not in draw().
       if (unit.hitFlash > 0) unit.hitFlash--;
       if (unit.honorGlowTimer > 0) unit.honorGlowTimer--;
+      if (unit.pinned) {
+        unit.pinTimer = (unit.pinTimer || 0) - 1;
+        if (unit.pinTimer <= 0) unit.pinned = false;
+      }
       const tier = throttleCtx ? svc('UpdateThrottle').getUnitTier(unit, throttleCtx) : 'full';
       const throttle = svc('UpdateThrottle');
       if (throttle?.shouldRunUnitAIMinimal(unit, tier, GS.updateTick)) {
@@ -2375,10 +2382,6 @@ const Game = (() => {
         }
         if (unit.combatTargetId) updateUnitCombat(unit);
         continue;
-      }
-      if (unit.pinned) {
-        unit.pinTimer = (unit.pinTimer || 0) - 1;
-        if (unit.pinTimer <= 0) unit.pinned = false;
       }
       if (unit.attackAnimTimer > 0) {
         unit.attackAnimTimer--;
@@ -2543,10 +2546,8 @@ const Game = (() => {
                     combatType: 'ranged',
                     projectile: p.type || 'arrow',
                   };
-            // Snapshot projectile damage at fire time when shooter still lives.
-            const dmgSrc =
-              shooter && shooter.hp > 0 ? { ...shooter, damage: p.damage ?? shooter.damage } : src;
-            const dmg = calcDamage(dmgSrc, hit, 8);
+            // The live shooter, so traits that count his hits or mark him see this one.
+            const dmg = calcDamage(src, hit, 8, p.damage ?? src.damage);
             takeDamage(hit, dmg, { attackerTeam: p.team, attacker: shooter || null });
             if (shooter && shooter.hp > 0) {
               applyChampionOnHit(shooter, hit, dmg);
@@ -2656,7 +2657,12 @@ const Game = (() => {
     }
     markUpdatePhase('update-end', `syncPaths=${GS.syncPathfindsThisTick}`);
     if (svc('Research')) {
-      svc('Research').tick({ buildings: GS.buildings, isNight: isNightPhase(), showMessage });
+      svc('Research').tick({
+        wave: GS.wave,
+        buildings: GS.buildings,
+        isNight: isNightPhase(),
+        showMessage,
+      });
       if (svc('UX')) svc('UX').onResearchTick?.();
     }
     checkPlayerElimination();
@@ -2699,42 +2705,9 @@ const Game = (() => {
   }
 
   function getAcademyBuildStatus(type) {
-    const mentorType = getAcademyMentorUnitType(type);
-    const mentorName = mentorType
-      ? getPlayerUnitDef(mentorType)?.name || formatUnitTypeName(mentorType)
-      : '';
-    const mentorRank = mentorType ? getMaxVeteranRankName(mentorType) : '';
-    const hasMentor = hasAcademyMentorOnField(type, GS.units);
-    const mentorOk = canBuildAcademyType(type, GS.wave, GS.units);
-    const researchOpts = getResearchOpts();
-    const researchOk =
-      (GS.creativeMode && GS.creativeSettings.unlockAll) ||
-      !svc('Research') ||
-      svc('Research').isBuildUnlocked(type, researchOpts);
-    let reason = getAcademyBuildBlockReason(type, GS.wave, GS.units);
-    if (!reason && !researchOk) {
-      reason = 'Research the matching academy node (e.g. Academy Charter) at the Research Lab.';
-    }
-    // Best on-field progress toward mentor for tooltips
-    let mentorProgress = 0;
-    if (mentorType) {
-      for (const u of GS.units) {
-        if (u.team !== 'player' || u.hp <= 0 || u.type !== mentorType) continue;
-        mentorProgress = Math.max(mentorProgress, u.vetTier || 0);
-      }
-    }
-    return {
-      canBuild: mentorOk && researchOk,
-      hasMentor,
-      mentorOk,
-      researchOk,
-      reason,
-      mentorType,
-      mentorName,
-      mentorRank,
-      mentorProgress,
-      mentorNeed: MAX_VETERAN_TIER,
-    };
+    const reason = getAcademyBuildBlockReason(type, GS.wave, GS.buildings);
+    const mentors = GS.units.filter(isTrainingMentor).length;
+    return { canBuild: !reason, mentorOk: !reason, researchOk: true, reason, mentors };
   }
 
   // Split modules call back into this file and each other through these names.

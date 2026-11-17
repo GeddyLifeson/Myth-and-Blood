@@ -34,6 +34,7 @@ const GameInput = (() => {
     maxAttackRange,
     orderMove,
     placeBuilding,
+    postToTrainingGround,
     refreshUnitCounts,
     relocateBuilding,
     rotateWall,
@@ -71,6 +72,7 @@ const GameInput = (() => {
       maxAttackRange,
       orderMove,
       placeBuilding,
+      postToTrainingGround,
       refreshUnitCounts,
       relocateBuilding,
       rotateWall,
@@ -129,6 +131,7 @@ const GameInput = (() => {
             x: liveUnits.length > 1 ? (i % 3) * 14 - 14 : 0,
             y: liveUnits.length > 1 ? Math.floor(i / 3) * 12 : 0,
           }));
+    if (typeof Formations !== 'undefined') Formations.assign(liveUnits, formationId);
     liveUnits.forEach((unit, i) => {
       const off = offsets[i] || { x: 0, y: 0 };
       unit.attackOrderId = null;
@@ -138,6 +141,9 @@ const GameInput = (() => {
     const camp =
       typeof WarCamps !== 'undefined' ? WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx) : null;
     if (camp) GS.attackMarks.push({ x: camp.x, y: camp.y, r: 30, life: 90 });
+    // One soldier moved onto the Training Ground is posted there and holds at its front edge.
+    const ground = liveUnits.length === 1 && postToTrainingGround(liveUnits[0], tx, ty);
+    if (ground) orderMove(liveUnits[0], ground.x - 18, ground.y + 30, true, { hold: true });
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }
@@ -520,14 +526,7 @@ const GameInput = (() => {
         svc('Research') &&
         !svc('Research').isDeployUnlocked(GS.selectedDeploy, getResearchOpts())
       ) {
-        const need =
-          GS.selectedDeploy === 'ballista'
-            ? 'Research Siege Engineering (Military tree, after Iron Weapons) first!'
-            : GS.selectedDeploy === 'bard'
-              ? 'Research Morale Arts first!'
-              : GS.selectedDeploy === 'scout' || GS.selectedDeploy === 'pikeman'
-                ? 'Research Advanced Infantry first!'
-                : 'Research this unit at the Research Lab first!';
+        const need = `Locked: ${svc('Research').getLockReason('deploy', GS.selectedDeploy) || 'not available in this siege'}.`;
         showMessage(need, 280);
         return false;
       }

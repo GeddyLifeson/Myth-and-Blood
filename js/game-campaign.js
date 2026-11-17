@@ -11,7 +11,6 @@ const GameCampaign = (() => {
     playSfx,
     releaseUnitRecord,
     svc,
-    unitCounts,
   } = GameCore;
   const GS = GameState;
   const {
@@ -25,14 +24,7 @@ const GameCampaign = (() => {
     sanitizeTactical,
   } = GameField;
   const { resetCamera } = GameCamera;
-  const { findPlayerGeneral } = GameCombat;
-  const {
-    addHighlight,
-    applyPlayerStatMods,
-    findLivePlayerOfType,
-    recordFootmanCommandElevation,
-    spawnUnit,
-  } = GameArmy;
+  const { addHighlight, applyPlayerStatMods, spawnUnit } = GameArmy;
   const {
     countLiveEnemyEconomyBuildings,
     countLiveNorthernHolds,
@@ -40,7 +32,6 @@ const GameCampaign = (() => {
     noteEnemyEconomyPresence,
     onBuildingComplete,
   } = GameBuildings;
-  const { releaseFromGarrison, releaseFromWallGarrison } = GameGarrison;
   const { isNightPhase } = GameDayNight;
   let TP_SANITY_CAP,
     ach,
@@ -107,9 +98,9 @@ const GameCampaign = (() => {
     if (GS.wave !== ACADEMY_ERA_WAVE) return;
     // The era module announces wave 100 itself; one banner is enough.
     if (typeof ProgressionRestarts !== 'undefined' && !GS.creativeMode) return;
-    addHighlight('era', 'Academy Era begins — train through Academies');
+    addHighlight('era', 'Academy Era begins');
     showMessage(
-      'Wave 100 — Academy Era! Train free troops each round, grow your line, and weather heavier northern assaults.',
+      'Wave 100: Academy Era! Grow your line and weather heavier northern assaults.',
       380
     );
     svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2, 'ACADEMY ERA', '#c0a040');
@@ -220,15 +211,7 @@ const GameCampaign = (() => {
     bootstrapPlaceComplete('hamlet', cx - 130, wy - 90);
     bootstrapPlaceComplete('hamlet', cx + 130, wy - 90);
     if (tw >= ACADEMY_ERA_WAVE + 10) bootstrapPlaceComplete('merchant_guild', cx, wy - 120);
-    [
-      'academy_footman',
-      'academy_archer',
-      'academy_knight',
-      'academy_mage',
-      'academy_builder',
-    ].forEach((t, i) => {
-      bootstrapPlaceComplete(t, cx - 100 + i * 50, wy - 25);
-    });
+    bootstrapPlaceComplete('training_ground', cx, wy - 25);
 
     bootstrapSpawnArmy([
       { type: 'knight', count: 5 },
@@ -251,11 +234,14 @@ const GameCampaign = (() => {
     GS.nightTimer = Math.floor(
       NIGHT_PREP_TICKS * (svc('GameModes') ? svc('GameModes').getNightPrepMult() : 1)
     );
-    addHighlight('era', `Academy Era — wave ${tw}`);
+    addHighlight('era', `Academy Era, wave ${tw}`);
     if (tw === ACADEMY_ERA_WAVE) {
       announceAcademyEra();
     } else {
-      showMessage(`Academy Era — wave ${tw}. Train via academies and hold the one field.`, 380);
+      showMessage(
+        `Academy Era, wave ${tw}. Post ranked veterans at the Training Ground and hold the one field.`,
+        380
+      );
       svc('FloatingText').status(GS.worldW / 2, GS.worldH / 2, 'ACADEMY ERA', '#c0a040');
     }
     refreshUnitCounts();
@@ -678,93 +664,98 @@ const GameCampaign = (() => {
     if (anyCompleted) invalidateObstacles();
   }
 
-  function spawnAcademyUnit(academy, unitType) {
-    const sx = academy.slotX ?? academy.x;
-    const sy = (academy.slotY ?? academy.y) + 16;
-    const u = spawnUnit(unitType, sx, sy, 'player');
-    if (!u) {
-      showMessage(`Academy failed to train ${unitType} — unit definition missing.`, 280);
+  /** The mentor posted at a Training Ground, if alive and standing at the post. */
+  function getPostedMentor(b) {
+    if (!b?.mentorId) return null;
+    const u = GS.units.find((x) => x.id === b.mentorId);
+    if (!u || u.hp <= 0 || u.team !== 'player') return null;
+    const reach = (b.radius || 24) + 24;
+    return Math.hypot(u.x - b.x, u.y - b.y) <= reach ? u : null;
+  }
+
+  function findTrainingGroundAt(x, y) {
+    return GS.buildings.find(
+      (b) =>
+        b.type === 'training_ground' &&
+        b.owner === 'player' &&
+        b.hp > 0 &&
+        Math.hypot(x - b.x, y - b.y) <= (b.radius || 24) + 6
+    );
+  }
+
+  /** A single soldier moved onto a Training Ground is posted there; returns the ground. */
+  function postToTrainingGround(u, x, y) {
+    const b = findTrainingGroundAt(x, y);
+    if (!b || !u) return null;
+    if (!isTrainingMentor(u)) {
+      const why = !TRAINABLE_TYPES.has(u.type)
+        ? `${getUnitDisplayName(u)} cannot drill recruits.`
+        : `${getUnitDisplayName(u)} needs rank ${TRAINING_MENTOR_TIER} to drill recruits.`;
+      showMessage(why, 200);
       return null;
     }
+    b.mentorId = u.id;
+    const where = b.complete ? 'From the next dawn' : 'Once it is built';
+    showMessage(
+      `${getUnitDisplayName(u)} posted to the Training Ground. ${where} they raise a recruit each dawn.`,
+      260
+    );
+    return b;
+  }
+
+  function spawnAcademyUnit(academy, unitType) {
+    // Beside the mentor's drill spot at the ground's front edge.
+    const sx = academy.x + 18;
+    const sy = academy.y + 30;
+    const u = spawnUnit(unitType, sx, sy, 'player');
+    if (!u) return null;
     applyPlayerStatMods(u);
     u.targetY = GS.rallyY;
     u.huntMode = GS.globalHunt && u.canHunt;
-    if (u.canHunt && !u.huntMode) {
-      u.manualOrder = true;
-      u.holdX = u.x;
-      u.holdY = u.y;
-      u.targetX = u.x;
-      u.targetY = u.y;
-      u.pathTargetId = 'hold';
-    }
     if (svc('ContentExpansion')) svc('ContentExpansion').applyLoadoutToUnit(u);
     GS.units.push(u);
     svc('Particles').dust(sx, sy);
     return u;
   }
 
+  /** Recruits arrive one rank up, two with Academy Charter, and never above their mentor. */
+  function recruitRank(mentor) {
+    const charter = !!svc('Research')?.isResearched?.('academy_charter');
+    return Math.min(mentor.vetTier || 0, charter ? 2 : 1);
+  }
+
+  /** At dawn every Training Ground with its mentor at his post raises one ranked recruit. */
   function processAcademyTraining() {
-    // Live roster must be fresh — requiresAbsentUnit academies (builder/courier) otherwise
-    // can all fire in one pass off a stale livePlayerByType map.
+    // startNextWave relies on this dawn pass to refresh the live counts.
     refreshUnitCounts();
     let trained = 0;
+    let idle = 0;
     for (const b of GS.buildings) {
-      if (!b.complete || !b.isAcademy || b.hp <= 0) continue;
-      const def = BuildDefs[b.type];
-      const unitType = b.academyUnit || def?.academyUnit;
-      if (!unitType) continue;
-
-      if (def?.requiresAbsentUnit) {
-        const need = def.requiresAbsentUnit;
-        const liveCount = unitCounts.livePlayerByType[need] || 0;
-        if (liveCount > 1) continue;
-        if (liveCount === 1) {
-          const lone = findLivePlayerOfType(need);
-          if (lone && !isMaxLevelVeteran(lone)) continue;
-        }
-      }
-
-      if (b.type === 'academy_general') {
-        if (findPlayerGeneral()) continue;
-        const footman = findPromotableFootman(GS.units);
-        if (!footman) continue;
-        releaseFromWallGarrison(footman);
-        releaseFromGarrison(footman);
-        promoteFootmanToGeneral(footman);
-        recordFootmanCommandElevation(footman, true);
-        footman.x = b.slotX ?? b.x;
-        footman.y = (b.slotY ?? b.y) + 12;
-        const honor = footman.honorName ? `${footman.honorName} ` : '';
-        showMessage(
-          `${honor}promoted to General — stats retained, stars reset for command aura!`,
-          300
-        );
-        if (footman.honorName)
-          svc('FloatingText').status(footman.x, footman.y - 14, footman.honorName, '#ffd700');
-        trained++;
-        // General promotes footman — counts change for any later requiresAbsent checks.
-        refreshUnitCounts();
-        svc('Particles').heal(footman.x, footman.y);
+      if (b.type !== 'training_ground' || b.owner !== 'player' || !b.complete || b.hp <= 0) {
         continue;
       }
-
-      if (unitType === 'general') continue;
-
-      const spawned = spawnAcademyUnit(b, unitType);
-      if (!spawned) continue;
+      const mentor = getPostedMentor(b);
+      if (!mentor || !isTrainingMentor(mentor)) {
+        if (b.mentorId) idle++;
+        continue;
+      }
+      const u = spawnAcademyUnit(b, mentor.type);
+      if (!u) continue;
+      u.vetTier = recruitRank(mentor);
+      syncVeteranStatsToTier(u);
       trained++;
-      // Keep livePlayerByType accurate for subsequent builder/courier academies this dawn.
-      unitCounts.livePlayerByType[unitType] = (unitCounts.livePlayerByType[unitType] || 0) + 1;
-      unitCounts.player++;
-      // Keep the upkeep count in step at once, so the next recruit in the same tick is priced right.
-      if (unitType !== 'builder' && unitType !== 'courier' && unitCounts.upkeepArmy != null)
-        unitCounts.upkeepArmy++;
+      mentor.recruitsTrained = (mentor.recruitsTrained || 0) + 1;
+      showMessage(
+        `${getUnitDisplayName(mentor)} raised a ${getVeteranLabel(u)} at the Training Ground.`,
+        240
+      );
     }
+    if (idle > 0) showMessage('The Training Ground stood idle: its mentor left their post.', 220);
     if (trained > 0) {
       refreshUnitCounts();
-      showMessage(`Academies trained ${trained} unit${trained > 1 ? 's' : ''} this round.`, 200);
       playSfx('academyTrained');
     }
+    return trained;
   }
 
   return {
@@ -784,6 +775,8 @@ const GameCampaign = (() => {
     isKingdomActionUnlocked,
     maybeCampaignNarrative,
     onNamedBossSlain,
+    getPostedMentor,
+    postToTrainingGround,
     processAcademyTraining,
     tickSettlementWaveProgress,
     wireGameEventBus,

@@ -7,26 +7,30 @@ const PerkDefs = {
   jugger_nog: {
     name: 'Ironbrew',
     tags: ['melee', 'support'],
-    desc: '+35% max HP',
+    desc: '+35% max HP, but -15% move speed',
     apply(u) {
       u.maxHp = Math.floor(u.maxHp * 1.35);
       u.hp = Math.min(u.hp, u.maxHp);
+      u.speed *= 0.85;
     },
   },
   quick_revive: {
     name: 'Field Revival',
     tags: ['support'],
-    desc: 'Self-revive once per wave at 40% HP',
+    desc: 'Self-revive once per wave at 40% HP, but -20% max HP',
     apply(u) {
       u.hasQuickRevive = true;
+      u.maxHp = Math.floor(u.maxHp * 0.8);
+      u.hp = Math.min(u.hp, u.maxHp);
     },
   },
   speed_cola: {
     name: 'Swiftstep Tonic',
     tags: ['melee', 'ranged'],
-    desc: '+30% attack speed',
+    desc: '+30% attack speed, but -10 accuracy',
     apply(u) {
       u.attackSpeedMult = (u.attackSpeedMult || 1) * 1.3;
+      u.accuracy = Math.max(5, u.accuracy - 10);
     },
   },
   stamin_up: {
@@ -48,9 +52,10 @@ const PerkDefs = {
   elemental_pop: {
     name: 'Storm Fizz',
     tags: ['ranged', 'melee'],
-    desc: 'Attacks splash nearby foes',
+    desc: 'Attacks splash nearby foes, but -15% damage',
     apply(u) {
       u.hasElementalPop = true;
+      u.damage = Math.floor(u.damage * 0.85);
     },
   },
   phd_flopper: {
@@ -72,34 +77,49 @@ const PerkDefs = {
   vulture_aid: {
     name: 'Scavenger’s Tonic',
     tags: ['ranged', 'support'],
-    desc: 'Kills may grant +1 TP',
+    desc: 'Kills may grant +1 TP, but -15% damage',
     apply(u) {
       u.hasVultureAid = true;
+      u.damage = Math.floor(u.damage * 0.85);
     },
   },
   tombstone: {
     name: 'Last Stand',
     tags: ['support'],
-    desc: 'General only — resurrect fallen troops per wave',
+    desc: 'General only: raises fallen troops each wave, but the General loses 25% max HP',
     generalOnly: true,
     apply(u) {
       u.hasTombstone = true;
+      u.maxHp = Math.floor(u.maxHp * 0.75);
+      u.hp = Math.min(u.hp, u.maxHp);
     },
   },
 };
 
+/** The six stations still brewed. Each tonic costs the hero something. */
 const PerkBuildTypes = [
   'perk_jugger_nog',
   'perk_quick_revive',
   'perk_speed_cola',
-  'perk_stamin_up',
-  'perk_deadshot_daiquiri',
   'perk_elemental_pop',
-  'perk_phd_flopper',
-  'perk_melee_macchiato',
   'perk_vulture_aid',
   'perk_tombstone',
 ];
+
+/** No longer built; stations already standing in old saves keep working. */
+const RETIRED_STATIONS = new Set([
+  'perk_stamin_up',
+  'perk_deadshot_daiquiri',
+  'perk_phd_flopper',
+  'perk_melee_macchiato',
+  'perk_double_tap',
+  'perk_mule_kick',
+  'perk_sleight',
+]);
+
+function isRetiredStation(type) {
+  return RETIRED_STATIONS.has(type);
+}
 
 function perkMachinesUnlocked() {
   if (typeof MetaProgress === 'undefined') return false;
@@ -137,19 +157,25 @@ function unitHasPerk(unit, perkId) {
   return (unit.perks || []).includes(perkId);
 }
 
+// A General's own tag matched no tonic, so Last Stand could never be drunk; he drinks as support.
+function perkTag(unit) {
+  const tag = getHeroCombatTag(unit);
+  return tag === 'general' ? 'support' : tag;
+}
+
 function perkMatchesUnit(perkId, unit) {
   const def = PerkDefs[perkId];
   if (!def) return false;
   if (def.generalOnly && !unit.isGeneral) return false;
   if (perkId === 'tombstone' && !unit.isGeneral) return false;
-  const tag = getHeroCombatTag(unit);
+  const tag = perkTag(unit);
   return def.tags.includes(tag);
 }
 
 function scorePerkForUnit(perkId, unit) {
   if (!perkMatchesUnit(perkId, unit)) return -1;
   const def = PerkDefs[perkId];
-  const tag = getHeroCombatTag(unit);
+  const tag = perkTag(unit);
   let score = 1;
   if (tag === 'melee' && perkId === 'melee_macchiato') score += 5;
   if (tag === 'melee' && perkId === 'jugger_nog') score += 3;
@@ -220,6 +246,7 @@ const Perks = {
   perkMatchesUnit,
   PerkDefs,
   PerkBuildTypes,
+  isRetiredStation,
 };
 
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a
