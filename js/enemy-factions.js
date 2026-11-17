@@ -656,7 +656,7 @@ const EnemyFactions = (() => {
       band: (w) => (w < 30 ? 3 : 2),
       roster: [
         { type: 'orc', from: 1, w: 5, core: true, aux: true },
-        { type: 'orc_archer', from: 2, w: 2.2, aux: true },
+        { type: 'orc_archer', from: 3, w: 2.2, aux: true },
         { type: 'orc_shieldbearer', from: 7, w: 2.6, key: true, front: true, max: 0.3 },
         { type: 'berserker', from: 7, w: 1.3, heavy: true, max: 0.25 },
         { type: 'shaman', from: 9, w: 0.5, cap: 3 },

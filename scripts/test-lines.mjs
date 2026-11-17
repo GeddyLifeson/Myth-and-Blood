@@ -12,7 +12,7 @@ const code = HEADLESS_FILES.map((f) => readFileSync(join(JS, f), 'utf8')).join('
 const { sb, cvs } = boot(4000);
 const api = vm.runInContext(
   `${code}\n({ Game, SpriteGen, GameState, GameCore, GameCombat, GameMorale, Formations,
-    createUnit, addVetStar, UnitDefs, EnemyDefs })`,
+    createUnit, addVetStar, UnitDefs, EnemyDefs, getWaveConfig })`,
   vm.createContext(sb)
 );
 const { Game, GameState: GS, GameCore, GameCombat, GameMorale, Formations } = api;
@@ -193,6 +193,28 @@ ok(Formations.blockedReason(1) !== '' && Formations.blockedReason(2) === '', 'ne
   skirmisher.y = 300;
   ok(GameMorale.foeInHuntLeash(footP, skirmisher), 'a footman still fights an archer close by');
   for (const u of [footP, cavP, skirmisher, brawler]) u.hp = 0;
+}
+// ---------------------------------------------------------------- the opening waves
+{
+  const spawnAt = (wave) => {
+    GS.wave = wave;
+    return GameCombat.scaleMidWaveSpawn(api.createUnit('orc', 10, 10, 'enemy'));
+  };
+  const [w2, w3, w4] = [spawnAt(2), spawnAt(3), spawnAt(4)];
+  GS.wave = 1;
+  ok(
+    w2.damage < EnemyDefs.orc.damage && w3.damage < EnemyDefs.orc.damage,
+    `before the first-death window an orc hits softer (${w2.damage} against ${EnemyDefs.orc.damage})`
+  );
+  ok(
+    w4.damage >= EnemyDefs.orc.damage,
+    `from wave 4 it hits at full weight or more (${w4.damage})`
+  );
+  ok(
+    !api.getWaveConfig(1).pool.includes('orc_archer') &&
+      !api.getWaveConfig(2).pool.includes('orc_archer'),
+    'no orc archers in the pool before wave 3'
+  );
 }
 // ---------------------------------------------------------------- elimination
 GameCore.unitCounts.player = 0;

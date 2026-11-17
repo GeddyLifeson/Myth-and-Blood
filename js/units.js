@@ -1430,7 +1430,8 @@ function getUnlockedEvilHeroes(waveNum) {
 
 const Waves = [
   { count: 4, pool: ['goblin', 'goblin', 'orc'], interval: 110 },
-  { count: 6, pool: ['goblin', 'orc', 'orc_archer'], interval: 95 },
+  // No shooters before wave 3: two orc archers outshoot a recruit archer.
+  { count: 6, pool: ['goblin', 'orc', 'goblin'], interval: 95 },
   { count: 7, pool: ['orc', 'goblin', 'warg_rider'], interval: 90 },
   { count: 8, pool: ['orc', 'orc_archer', 'goblin_sapper'], interval: 85 },
   { count: 9, pool: ['orc', 'dark_mage', 'goblin'], interval: 80 },
@@ -1467,6 +1468,14 @@ const EARLY_DMG_PER_WAVE = 0;
 // A few waves bite harder so the first soldier falls there; the window is per difficulty.
 const FIRST_BLOOD_COUNT = 8;
 const FIRST_BLOOD_DMG = 0.6;
+// Before that window the host hits softer: a recruit caught by two orcs in wave 2 should live.
+const OPENING_GRACE_DMG = 0.25;
+
+function isOpeningGraceWave(waveNum) {
+  const id = typeof GameState !== 'undefined' ? GameState.difficultyId : 'normal';
+  const span = getDifficultyDef(id).firstBloodWaves;
+  return !!span && waveNum < span[0];
+}
 
 function isFirstBloodWave(waveNum) {
   const id = typeof GameState !== 'undefined' ? GameState.difficultyId : 'normal';

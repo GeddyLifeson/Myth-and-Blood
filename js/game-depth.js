@@ -592,6 +592,10 @@ class GameDepthSystem {
     }
 
     unit.accuracy = Math.min(65, unit.accuracy + Math.floor(accProg * 18) + Math.floor(post * 6));
+    // Applied here because the wave scale above is a floor and cannot go below 1.
+    if (typeof isOpeningGraceWave === 'function' && isOpeningGraceWave(wave)) {
+      unit.damage = Math.max(1, Math.floor(unit.damage * (1 - OPENING_GRACE_DMG)));
+    }
 
     if (horde) {
       unit.maxHp = Math.floor(unit.maxHp * (horde.hpMult || 1));
