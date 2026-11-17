@@ -4,10 +4,10 @@
  * cannot drift from the game.
  *
  *   node scripts/gen-readme-keys.mjs           print the tables
- *   node scripts/gen-readme-keys.mjs --write   replace the block in README.md
- *   node scripts/gen-readme-keys.mjs --check   exit 1 if README.md is out of date
+ *   node scripts/gen-readme-keys.mjs --write   replace the block in MANUAL.md
+ *   node scripts/gen-readme-keys.mjs --check   exit 1 if MANUAL.md is out of date
  *
- * The block in README.md sits between the two marker comments below.
+ * The block in MANUAL.md sits between the two marker comments below.
  */
 import { readFileSync, writeFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -131,25 +131,25 @@ export const normalize = (s) =>
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   const text = generate();
-  const file = join(ROOT, 'README.md');
+  const file = join(ROOT, 'MANUAL.md');
   if (process.argv.includes('--write') || process.argv.includes('--check')) {
     const readme = readFileSync(file, 'utf8');
     const block = readBlock(readme);
     if (block == null) {
-      console.error('README.md has no key block markers');
+      console.error('MANUAL.md has no key block markers');
       process.exit(1);
     }
     if (process.argv.includes('--check')) {
       if (normalize(block) !== normalize(text)) {
-        console.error('README.md key tables are out of date: run with --write');
+        console.error('MANUAL.md key tables are out of date: run with --write');
         process.exit(1);
       }
-      console.log('README.md key tables are up to date');
+      console.log('MANUAL.md key tables are up to date');
     } else {
       const a = readme.indexOf(START) + START.length;
       const b = readme.indexOf(END);
       writeFileSync(file, `${readme.slice(0, a)}\n\n${text}\n\n${readme.slice(b)}`);
-      console.log('README.md key tables written');
+      console.log('MANUAL.md key tables written');
     }
   } else {
     console.log(text);

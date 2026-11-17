@@ -246,6 +246,7 @@ ok(
     'js/story-lore.js',
     'js/narrative-thread.js',
     'README.md',
+    'MANUAL.md',
   ];
   const src = Object.fromEntries(OWNED.map((f) => [f, readFileSync(join(ROOT, f), 'utf8')]));
   const REMOVED = [
@@ -336,9 +337,11 @@ ok(
   );
 }
 
-// --- README ------------------------------------------------------------------------------
+// --- README and MANUAL -----------------------------------------------------------------------
 {
-  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  const readme = ['README.md', 'MANUAL.md']
+    .map((f) => readFileSync(join(ROOT, f), 'utf8'))
+    .join('\n');
   const block = readBlock(readme);
   ok(block != null, 'README has the generated key block');
   ok(

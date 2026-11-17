@@ -6,7 +6,7 @@ Browser fantasy tactical defense game (Electron desktop build too). Public repo:
 
 | Path                             | What it holds                                   |
 | -------------------------------- | ----------------------------------------------- |
-| `README.md`                      | game manual and Quick Start; read it first      |
+| `README.md`, `MANUAL.md`         | Quick Start and dev notes; the player manual    |
 | `index.html`                     | loads `js/` modules by `<script>` tag, in order |
 | `js/`, `css/`                    | the game                                        |
 | `data/`                          | JSON content                                    |

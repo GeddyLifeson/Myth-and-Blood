@@ -923,7 +923,13 @@ for (const f of readdirSync(JS).filter((n) => n.endsWith('.js') && n !== 'game-d
       if (PLACES.test(line) && !/OLD_CODES = /.test(line)) placeHits.push(`${f}:${i + 1}`);
     });
 }
-for (const f of ['index.html', 'data/buildings.json', 'data/synergies.json', 'README.md']) {
+for (const f of [
+  'index.html',
+  'data/buildings.json',
+  'data/synergies.json',
+  'README.md',
+  'MANUAL.md',
+]) {
   if (PLACES.test(readFileSync(join(root, f), 'utf8'))) placeHits.push(f);
 }
 ok(placeHits.length === 0, `no old place name left ${placeHits.slice(0, 8).join(' ')}`);
