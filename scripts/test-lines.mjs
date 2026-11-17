@@ -177,6 +177,23 @@ Formations.assign([xbow, archer], 'line');
 ok(Formations.aimBonus(archer) === 8, 'shooters in a line aim better');
 ok(Formations.blockedReason(1) !== '' && Formations.blockedReason(2) === '', 'needs two soldiers');
 
+// ---------------------------------------------------------------- foot soldiers and skirmishers
+{
+  const post = { postX: 300, postY: 400 };
+  const footP = unit('footman', 'player', 300, 400, post);
+  const cavP = unit('cavalry', 'player', 300, 400, post);
+  const skirmisher = dummy('orc_archer', 300, 200);
+  const brawler = dummy('orc', 300, 200);
+  ok(GameMorale.foeInHuntLeash(footP, brawler), 'a footman goes 200 paces out for an orc');
+  ok(
+    !GameMorale.foeInHuntLeash(footP, skirmisher),
+    'but not for an archer that backs away from him'
+  );
+  ok(GameMorale.foeInHuntLeash(cavP, skirmisher), 'cavalry still rides the archer down');
+  skirmisher.y = 300;
+  ok(GameMorale.foeInHuntLeash(footP, skirmisher), 'a footman still fights an archer close by');
+  for (const u of [footP, cavP, skirmisher, brawler]) u.hp = 0;
+}
 // ---------------------------------------------------------------- elimination
 GameCore.unitCounts.player = 0;
 GameCore.unitCounts.unitProducers = 0;
