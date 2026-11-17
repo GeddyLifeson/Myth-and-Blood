@@ -55,6 +55,7 @@
     <link rel="stylesheet" href="css/settings.css" />
     <link rel="stylesheet" href="css/teach.css" />
     <link rel="stylesheet" href="css/achievements.css" />
+    <link rel="stylesheet" href="css/muster.css" />
     <link rel="stylesheet" href="css/mobile.css" />
     <script src="js/touch-input.js"></script>
   </head>
@@ -62,6 +63,15 @@
     <div id="app">
       <canvas id="game-canvas"></canvas>
       <div id="ui-overlay">
+        <div id="omen-card" class="omen-card" hidden aria-live="polite">
+          <div class="omen-card-head">
+            <span id="omen-card-title" class="omen-card-title">Omen</span>
+            <span id="omen-card-weather" class="omen-card-weather"></span>
+          </div>
+          <p id="planet-event-summary" class="planet-event-summary"></p>
+          <div id="planet-event-choices" class="planet-event-choices"></div>
+          <p id="omen-card-default" class="omen-card-default"></p>
+        </div>
         <div id="left-panel" class="side-panel">
           <nav class="side-panel-tabs" role="tablist" aria-label="Recruit, build and cast">
             <button
@@ -486,44 +496,6 @@
                 </button>
               </div>
               <div
-                id="doctrine-section"
-                class="doctrine-section pane-section"
-                data-section="doctrines"
-              >
-                <div class="panel-header">KINGDOM DOCTRINES</div>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="outpost_stand"
-                  data-kingdom-stage="1"
-                >
-                  <span>Outpost Stand</span><span class="cost">4</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="royal_muster"
-                  data-kingdom-stage="2"
-                >
-                  <span>Royal Muster</span><span class="cost">5</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="imperial_march"
-                  data-kingdom-stage="3"
-                >
-                  <span>Imperial March</span><span class="cost">8</span>
-                </button>
-                <button
-                  class="doctrine-btn kingdom-stage-btn"
-                  data-doctrine="hellforge_decree"
-                  data-kingdom-stage="4"
-                >
-                  <span>Hellforge Decree</span><span class="cost">10</span>
-                </button>
-                <p class="panel-hint">
-                  One kingdom doctrine a wave. More open as the kingdom grows.
-                </p>
-              </div>
-              <div
                 id="counter-doctrine-section"
                 class="counter-doctrine-section pane-section"
                 data-section="counter"
@@ -610,6 +582,10 @@
               </div>
               <div class="pane-section" data-section="halls">
                 <div class="panel-header">HALLS</div>
+                <button class="build-btn" data-build="hall_of_veterans">
+                  <span>Hall of Veterans</span><span class="cost">60</span>
+                </button>
+                <div id="hall-roll"></div>
                 <button
                   id="champions-hall-open"
                   class="meta-btn secret-panel-btn"
@@ -744,56 +720,33 @@
                 <div class="panel-header">
                   SPY NETWORK <span id="spy-uses" class="uses-badge"></span>
                 </div>
-                <button class="spy-btn" data-spy="steal">
-                  <span>Steal Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="disrupt">
-                  <span>Disrupt Lines</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="assassin">
-                  <span>Assassinate</span><span class="cost">6</span>
-                </button>
                 <button class="spy-btn" data-spy="scout">
                   <span>Scout Report</span><span class="cost">2</span>
                 </button>
-                <button class="spy-btn" data-spy="poison">
-                  <span>Poison Caches</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="sabotage">
-                  <span>Sabotage</span><span class="cost">5</span>
-                </button>
                 <button class="spy-btn" data-spy="infiltrate">
-                  <span>Infiltrate</span><span class="cost">3</span>
+                  <span>Ambush</span><span class="cost">3</span>
                 </button>
-                <button class="spy-btn" data-spy="bribery">
-                  <span>Bribe</span><span class="cost">6</span>
+                <button class="spy-btn" data-spy="assassin">
+                  <span>Mark Warlord</span><span class="cost">6</span>
                 </button>
-                <button class="spy-btn" data-spy="muster">
-                  <span>Muster</span><span class="cost">5</span>
-                </button>
-                <button class="spy-btn" data-spy="war_chest">
-                  <span>War Chest</span><span class="cost">4</span>
-                </button>
-                <button class="spy-btn" data-spy="forge_maps">
-                  <span>Forge Maps</span><span class="cost">3</span>
-                </button>
-                <button class="spy-btn" data-spy="tunnel">
-                  <span>Tunnel</span><span class="cost">5</span>
+                <button class="spy-btn" data-spy="turncoats">
+                  <span>Turncoats</span><span class="cost">5</span>
                 </button>
                 <button class="spy-btn" data-spy="settlement_raid">
                   <span>Raid War Camp</span><span class="cost">6</span>
                 </button>
                 <p class="panel-hint">
-                  One spy action a wave. Scout Report and Infiltrate show the exact roster of the
-                  next wave.
+                  One spy action a wave. Each one shows on the field: pinned head counts, a marked
+                  ambush, a warlord outlined in blood, raiders riding for a camp.
                 </p>
               </div>
               <div id="raid-section" class="raid-section" style="display: none">
-                <div class="panel-header">SETTLEMENT RAIDS</div>
+                <div class="panel-header">STRIKE RAIDS</div>
                 <p id="raid-summary-text" class="raid-summary-text">Unlocks wave 150</p>
                 <div id="raid-mission-list" class="raid-mission-list"></div>
                 <p class="panel-hint">
-                  Select 2+ hunters, then dispatch. Big TP + science on raze.
+                  Select 2+ hunters, then dispatch them at a war camp. Razing it pays loot on top of
+                  the bounty.
                 </p>
               </div>
               <div
@@ -805,7 +758,8 @@
                 <p id="counter-summary-text" class="counter-summary-text">Unlocks wave 25</p>
                 <div id="expedition-list" class="expedition-list"></div>
                 <p class="panel-hint">
-                  Night only - select 1–4 hunters, dispatch off-map. Returns next wave.
+                  Night only: select 1 to 4 hunters. They march to the top, fight the vanguard and
+                  walk back.
                 </p>
               </div>
             </div>
@@ -823,47 +777,17 @@
                   COURIER MSGS <span id="courier-uses" class="uses-badge"></span>
                 </div>
                 <button class="courier-btn" data-courier="reinforce">
-                  <span>Reinforce</span><span class="cost">4</span>
+                  <span>Reinforcements</span><span class="cost">4</span>
                 </button>
-                <button class="courier-btn" data-courier="decree">
-                  <span>Decree</span><span class="cost">2</span>
+                <button class="courier-btn" data-courier="surgeons">
+                  <span>Field Surgeons</span><span class="cost">3</span>
                 </button>
-                <button class="courier-btn" data-courier="levy">
-                  <span>Tax Levy</span><span class="cost">1</span>
-                </button>
-                <button class="courier-btn" data-courier="banner">
-                  <span>Call Banner</span><span class="cost">6</span>
-                </button>
-                <button class="courier-btn" data-courier="supplies">
-                  <span>Supplies</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="truce">
-                  <span>Truce</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="hunt_pact">
-                  <span>Hunt Pact</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="evacuate">
-                  <span>Med Evac</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="herald">
-                  <span>Herald</span><span class="cost">3</span>
-                </button>
-                <button class="courier-btn" data-courier="muster">
-                  <span>Emergency</span><span class="cost">4</span>
-                </button>
-                <button class="courier-btn" data-courier="war_chest">
-                  <span>War Chest</span><span class="cost">2</span>
-                </button>
-                <button
-                  class="courier-btn kingdom-stage-btn"
-                  data-courier="counter_hold"
-                  data-kingdom-stage="4"
-                >
-                  <span>Counter-Hold</span><span class="cost">5</span>
+                <button class="courier-btn" data-courier="arrows">
+                  <span>Fresh Arrows</span><span class="cost">3</span>
                 </button>
                 <p class="panel-hint">
-                  One message a wave, and a Courier must be alive on the field.
+                  The Courier rides off the bottom edge and back, about 20 seconds. The order lands
+                  when he returns; if he falls on the road, it is lost.
                 </p>
               </div>
               <div id="loadout-section" class="loadout-section" style="display: none">
@@ -950,15 +874,6 @@
                     <span id="progression-restart-text" class="stat-value progression-restart-value"
                       >-</span
                     >
-                  </div>
-                  <div
-                    class="stat-group epf-hud"
-                    id="epf-hud"
-                    style="display: none"
-                    title="Eternal Paths - Martial, Arcane, Tech, Mythic across all layers"
-                  >
-                    <span class="stat-label">PATH</span>
-                    <span id="epf-text" class="stat-value epf-value">-</span>
                   </div>
                   <div
                     class="stat-group foundational-medieval-hud"
@@ -1109,14 +1024,6 @@
                   </div>
                 </div>
               </div>
-              <div id="planet-event-section" class="planet-event-section" style="display: none">
-                <div class="panel-header">PLANET EVENT</div>
-                <p id="planet-event-summary" class="planet-event-summary">Unlocks wave 12</p>
-                <div id="planet-event-choices" class="planet-event-choices"></div>
-                <p class="panel-hint">
-                  Night only - the planet fights back. Your choice helps or hurts dawn.
-                </p>
-              </div>
               <div id="faction-intel-section" class="faction-intel-section" style="display: none">
                 <div class="panel-header">FACTION INTEL</div>
                 <p id="faction-intel-compact-summary" class="faction-intel-compact-summary">
@@ -1205,6 +1112,15 @@
               <span class="stat-label">BREACHES</span>
               <span id="breach-pips" class="breach-pips" aria-hidden="true"></span>
               <span id="breach-text" class="stat-value">0/10</span>
+            </div>
+            <div
+              class="stat-group epf-hud"
+              id="epf-hud"
+              style="display: none"
+              title="Your path for this run"
+            >
+              <span class="stat-label">PATH</span>
+              <span id="epf-text" class="stat-value epf-value">-</span>
             </div>
             <div class="stat-group hud-title" id="title-hud" hidden>
               <span class="stat-label">TITLE</span>
@@ -1610,8 +1526,8 @@
         </div>
         <div id="hint-bar">
           <span class="hint-text"
-            >Drag to pan · Shift+drag select · Right-click deselect · Night = prep (+35% build) · D
-            skip dawn · Tab next soldier · Space pause · ? keys</span
+            >Drag to pan · Shift+drag select · Click an enemy to attack · Right-click deselect ·
+            Night = prep (+35% build) · D skip dawn · Tab next soldier · Space pause · ? keys</span
           ><button
             id="hint-log-btn"
             class="hint-log-btn"
@@ -1626,6 +1542,7 @@
             <span>MESSAGE LOG</span
             ><button id="message-log-close" class="message-log-close" aria-label="Close">✕</button>
           </div>
+          <div id="message-log-filters" class="message-log-filters"></div>
           <div id="message-log-list" class="message-log-list"></div>
         </div>
         <div
@@ -1738,6 +1655,7 @@
             </button>
           </p>
           <nav class="menu-links" aria-label="Menu">
+            <button id="menu-muster-btn" class="menu-link" type="button">Muster</button>
             <button id="menu-records-btn" class="menu-link" type="button" aria-haspopup="dialog">
               Records
             </button>
@@ -1779,7 +1697,7 @@
                 </p>
                 <p id="advanced-diff-pct" class="diff-pct-display">Effective: 100%</p>
                 <button id="advanced-diff-btn" class="menu-btn small-btn">
-                  ADVANCED DIFFICULTY
+                  MUSTER: PERKS &amp; HANDICAPS
                 </button>
               </div>
               <div id="game-modes-picker" class="game-modes-picker"></div>
@@ -1824,41 +1742,22 @@
                 <div id="best-score-list" class="ribbon-list"></div>
               </details>
               <details class="menu-section">
+                <summary>Run history</summary>
+                <div id="records-run-stats" class="analytics-insights"></div>
+              </details>
+              <details class="menu-section">
                 <summary>Ribbons <span id="ribbon-count" class="ribbon-count"></span></summary>
                 <p class="ribbon-intro">
-                  Earned across all your runs. Each one gives a small bonus on every run after.
+                  Earned across all your runs. Each one unlocks a perk you can slot at the Muster.
                 </p>
                 <div id="ribbon-list" class="ribbon-list"></div>
               </details>
               <details class="menu-section">
                 <summary>Legacies &amp; carry-over perks</summary>
-                <div id="crown-legacies-section" class="crown-legacies-section">
-                  <div class="diff-header">CROWN LEGACIES</div>
-                  <p id="crown-legacies-summary" class="crown-legacies-summary">
-                    Complete runs to unlock perks
-                  </p>
-                  <div id="crown-legacies-list" class="crown-legacies-list"></div>
-                  <div id="crown-heirs-block" class="crown-heirs-block" style="display: none">
-                    <div class="crown-heirs-label">HONOR HEIRS</div>
-                    <div id="crown-heirs-list" class="crown-heirs-list"></div>
-                  </div>
-                  <p class="panel-hint crown-legacies-hint">
-                    Equip up to 3 passive legacies · 2 honor heirs carry into new runs
-                  </p>
-                </div>
-                <div id="eternal-legacy-section" class="eternal-legacy-section">
-                  <div class="diff-header">CROWN OF AGES</div>
-                  <p class="eternal-legacy-subtitle">Echoes of the Past</p>
-                  <p id="eternal-legacy-summary" class="eternal-legacy-summary">
-                    Invest Echo Shards to strengthen your paths across runs
-                  </p>
-                  <div id="eternal-legacy-branches" class="eternal-legacy-branches"></div>
-                  <div id="eternal-legacy-tree" class="eternal-legacy-tree"></div>
-                  <p class="panel-hint eternal-legacy-hint">
-                    Early units ascend - archers, heroes, and evolved troops stay powerful through
-                    every era
-                  </p>
-                </div>
+                <p class="ribbon-intro">
+                  Crown Legacies, ribbons, the Crown of Ages and honor heirs are chosen at the
+                  Muster before each run.
+                </p>
               </details>
               <details class="menu-section">
                 <summary>Share codes: co-op, duels &amp; seeds</summary>
@@ -2233,15 +2132,13 @@
 
           <div class="settings-tab-panel" data-tab="privacy">
             <div class="settings-group">
-              <div class="settings-group-head">ANONYMOUS ANALYTICS</div>
+              <div class="settings-group-head">RUN STATS</div>
               <p class="analytics-intro">
-                Help balance the game by sharing anonymous strategy trends and where runs end. No
-                account, names, or save files - only loadouts, formations, wave counts, and
-                outcomes. Off by default.
+                Keeps loadouts, formations, wave counts and outcomes of your runs in this browser,
+                for the Records sheet. Nothing is sent anywhere. Off by default.
               </p>
               <label class="settings-row check"
-                ><input type="checkbox" id="set-analytics-optin" /> Share anonymous run analytics
-                (opt-in)</label
+                ><input type="checkbox" id="set-analytics-optin" /> Keep local run stats</label
               >
               <div class="settings-row analytics-actions">
                 <button type="button" id="analytics-export-btn" class="menu-btn small-btn">
@@ -2381,37 +2278,66 @@
       </div>
 
       <div id="advanced-diff-screen" class="screen">
-        <div class="menu-content advanced-diff-panel">
-          <h2 class="adv-title">ADVANCED DIFFICULTY</h2>
+        <div class="menu-content advanced-diff-panel muster-panel">
+          <h2 class="adv-title">THE MUSTER</h2>
           <p class="adv-subtitle">
-            Stack modifiers on your base difficulty. Baby 50% · Normal 100% · Chad 150% · Hellbane
-            200%. Includes Fog of War, Resource Scarcity, and era presets.
+            Choose what marches with you. Perks help; handicaps make the siege harder and multiply
+            your score.
           </p>
-          <p id="advanced-diff-pct-panel" class="diff-pct-display">Effective: 100%</p>
-          <div id="scaling-breakdown" class="scaling-breakdown"></div>
-          <div class="adv-presets-header">PRESETS</div>
-          <div id="advanced-diff-presets" class="advanced-diff-presets"></div>
-          <div id="advanced-diff-grid" class="advanced-diff-grid"></div>
-          <button id="advanced-diff-close" class="menu-btn primary">CLOSE</button>
+          <div class="muster-columns">
+            <section class="muster-col" aria-label="Perks">
+              <div id="muster-perks" class="muster-perks"></div>
+            </section>
+            <section class="muster-col" aria-label="Handicaps">
+              <div class="muster-head">HANDICAPS</div>
+              <p id="advanced-diff-pct-panel" class="diff-pct-display">Effective: 100%</p>
+              <div id="scaling-breakdown" class="scaling-breakdown"></div>
+              <div class="adv-presets-header">PRESETS</div>
+              <div id="advanced-diff-presets" class="advanced-diff-presets"></div>
+              <div id="advanced-diff-grid" class="advanced-diff-grid"></div>
+            </section>
+          </div>
+          <div class="muster-actions">
+            <button id="advanced-diff-close" class="menu-btn">CLOSE</button>
+            <button id="muster-start" class="menu-btn primary">BEGIN DEFENSE</button>
+          </div>
         </div>
       </div>
 
-      <div id="cheats-screen" class="screen">
-        <div class="menu-content cheats-panel">
-          <h2 class="cheat-title">CHEAT CODES</h2>
-          <p class="cheat-subtitle">
-            Type a code you heard somewhere. Unlocks persist between runs.
-          </p>
-          <input
-            id="cheat-input"
-            class="cheat-input"
-            type="text"
-            placeholder="Enter cheat code"
-            autocomplete="off"
-          />
-          <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
-          <p id="cheat-result" class="cheat-result"></p>
-          <button id="cheats-close" class="menu-btn">CLOSE</button>
+      <div
+        id="cheats-screen"
+        class="screen"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cheats-title"
+      >
+        <div class="modal-box cheats-panel">
+          <div class="modal-head">
+            <h2 id="cheats-title" class="modal-title">CHEAT CODES</h2>
+            <button type="button" id="cheats-close" class="modal-close" aria-label="Close">
+              Close
+            </button>
+          </div>
+          <div class="modal-body">
+            <p class="cheat-subtitle">
+              Type a code you heard somewhere. Unlocks persist between runs.
+            </p>
+            <p id="cheat-void-warning" class="cheat-void-warning">
+              Any code voids the run: no score, ribbons or achievements are recorded for it.
+            </p>
+            <input
+              id="cheat-input"
+              class="cheat-input"
+              type="text"
+              placeholder="Enter cheat code"
+              autocomplete="off"
+              aria-label="Cheat code"
+            />
+            <p id="cheat-result" class="cheat-result" aria-live="polite"></p>
+          </div>
+          <div class="modal-actions">
+            <button id="cheat-submit" class="menu-btn primary">SUBMIT</button>
+          </div>
         </div>
       </div>
 
@@ -2513,6 +2439,7 @@
             <div id="result-siege" class="result-siege"></div>
             <div class="gameover-side">
               <div id="result-stats" class="result-stats-grid"></div>
+              <div id="result-fallen" class="result-fallen"></div>
               <details class="result-more">
                 <summary>Key moments</summary>
                 <div id="result-highlights" class="result-highlights"></div>
@@ -2521,6 +2448,7 @@
           </div>
           <div class="gameover-actions">
             <button id="restart-btn" class="menu-btn primary gameover-btn">FIGHT AGAIN</button>
+            <button id="gameover-setup-btn" class="menu-btn gameover-btn">CHANGE SETUP</button>
             <button id="gameover-menu-btn" class="menu-btn gameover-btn">MAIN MENU</button>
           </div>
         </div>
@@ -2628,6 +2556,7 @@
     <script src="js/strike-fx.js"></script>
     <script src="js/projectile-art.js"></script>
     <script src="js/banner-art.js"></script>
+    <script src="js/soldier-names.js"></script>
     <script src="js/units.js"></script>
     <script src="js/content-expansion.js"></script>
     <script src="js/meta-progress.js"></script>
@@ -2653,6 +2582,7 @@
     <script src="js/narrative-thread.js"></script>
     <script src="js/tech-tree-branches.js"></script>
     <script src="js/chronicles.js"></script>
+    <script src="js/new-game-plus.js"></script>
     <script src="js/story-lore.js"></script>
     <script src="js/lore-data.js"></script>
     <script src="js/encyclopedia.js"></script>
@@ -2697,6 +2627,7 @@
     <script src="js/roster.js"></script>
     <script src="js/sapper-kit.js"></script>
     <script src="js/war-camps.js"></script>
+    <script src="js/ground.js"></script>
     <script src="js/game-core.js"></script>
     <script src="js/game-state.js"></script>
     <script src="js/procgen-obstacles.js"></script>
@@ -2708,6 +2639,7 @@
     <script src="js/game-combat.js"></script>
     <script src="js/game-targeting.js"></script>
     <script src="js/game-movement.js"></script>
+    <script src="js/veterans.js"></script>
     <script src="js/game-army.js"></script>
     <script src="js/game-buildings.js"></script>
     <script src="js/game-garrison.js"></script>
@@ -2717,6 +2649,7 @@
     <script src="js/game-daynight.js"></script>
     <script src="js/game-campaign.js"></script>
     <script src="js/game-commands.js"></script>
+    <script src="js/general-orders.js"></script>
     <script src="js/game-creative.js"></script>
     <script src="js/game-render.js"></script>
     <script src="js/game-roster-ui.js"></script>

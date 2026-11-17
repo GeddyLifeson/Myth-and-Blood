@@ -196,12 +196,14 @@ function toNight(api, wave) {
   GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
   W.resetRun();
   Game.warCampHooks.raise({ kind: 'forge' });
+  // Follow this one camp by id: a later night may raise another forge by chance.
+  const lone = camps(GS, W).find((b) => W.kindOf(b) === 'forge')?.id;
   let stood = 0;
-  for (let i = 0; i < 6 && camps(GS, W).some((b) => W.kindOf(b) === 'forge'); i++) {
+  for (let i = 0; i < 6 && camps(GS, W).some((b) => b.id === lone); i++) {
     Game.beginDayPhase(true);
     stood++;
     toNight(api);
-    for (const b of camps(GS, W)) if (W.kindOf(b) !== 'forge') b.hp = 0;
+    for (const b of camps(GS, W)) if (b.id !== lone) b.hp = 0;
   }
   ok(
     stood === W.LIFE_WAVES,
@@ -366,6 +368,232 @@ function toNight(api, wave) {
   );
 }
 
+// --- 6. camps behave: a first night, digging in, raiders, the sortie --------------------
+{
+  let certain = 0;
+  let early = 0;
+  let warned = 0;
+  for (const seed of [3, 14, 27, 31, 40]) {
+    const api = start(seed);
+    const { Game, GameState: GS, WarCamps: W, sb } = api;
+    const said = [];
+    const show = sb.UI?.showMessage;
+    run(Game, 10);
+    const ctx = Game.warCampHooks.ctx();
+    const base = Object.getPrototypeOf(ctx);
+    const orig = base.showMessage;
+    base.showMessage = (t, d, o) => {
+      said.push(String(t));
+      return orig(t, d, o);
+    };
+    toNight(api, 4);
+    if (camps(GS, W).length) early++;
+    if (said.some((t) => /axes in the north/.test(t))) warned++;
+    GS.timeOfDay = 'day';
+    toNight(api, 5);
+    if (camps(GS, W).length === 1 && said.some((t) => /The enemy digs in/.test(t))) certain++;
+    base.showMessage = orig;
+    void show;
+  }
+  ok(early === 0 && warned === 5, 'the night before, scouts warn that camps are coming');
+  ok(
+    certain === 5,
+    `the first camp always rises on the first eligible night, announced (${certain}/5)`
+  );
+
+  const api = start(17);
+  const { Game, GameState: GS, WarCamps: W } = api;
+  run(Game, 10);
+  toNight(api, 8);
+  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
+  W.resetRun();
+  const forge = Game.warCampHooks.raise({ kind: 'forge', sector: 'centre' });
+  const fb = GS.buildings.find((b) => b.id === forge.id);
+  const hp1 = fb.maxHp;
+  const snap1 = W.getSnapshot({ buildings: GS.buildings, wave: GS.wave }).camps[0];
+  ok(snap1.level === 1 && snap1.name === 'Forge', 'a new camp is level I');
+  Game.beginDayPhase(true);
+  ok(
+    GS.units.every((u) => !u.isCounterRaid),
+    'a level I camp sends no raiders'
+  );
+  toNight(api);
+  for (const b of camps(GS, W)) if (b.id !== forge.id) b.hp = 0;
+  GS.buildings = GS.buildings.filter((b) => b.hp > 0);
+  const snap2 = W.getSnapshot({ buildings: GS.buildings, wave: GS.wave }).camps[0];
+  ok(
+    snap2.level === 2 && snap2.name === 'Forge II' && fb.maxHp === Math.round(hp1 * 1.25),
+    `left standing a night it digs in: ${snap2.name}, ${hp1} -> ${fb.maxHp} health`
+  );
+  ok(fb.hp === fb.maxHp, 'the new palisade comes at full strength');
+  ok(/20% tougher/.test(snap2.line), `its bonus grows (${snap2.line})`);
+  ok(snap2.guards > snap1.guards, `and so does its garrison (${snap1.guards} -> ${snap2.guards})`);
+
+  // Dawn with a building of the player's on the field: raiders are sent at it.
+  const hut = {
+    id: 'hut-test',
+    type: 'hamlet',
+    owner: 'player',
+    complete: true,
+    hp: 100,
+    x: 500,
+    y: 500,
+  };
+  const queue = ['orc', 'orc', 'orc', 'orc', 'orc', 'orc'];
+  const ctx = Object.create(Game.warCampHooks.ctx(), {
+    buildings: { value: [...GS.buildings, hut] },
+    spawnQueue: { value: queue },
+  });
+  W.onWaveStart(ctx);
+  ok(queue.length === 8, `a level II camp adds two raiders to the wave (${queue.length - 6})`);
+  const raiderType = queue[4];
+  const foe = { team: 'enemy', hp: 100, maxHp: 100, speed: 1, type: raiderType };
+  const tag = W.onEnemySpawn(foe);
+  ok(foe.maxHp === 120, 'Forge II: an enemy enters 20% tougher');
+  ok(
+    tag === 'CAMP RAIDERS' && foe.isCounterRaid === true && foe.raidTargetId === 'hut-test',
+    'a raider is sent straight at the building'
+  );
+  W.onEnemySpawn({ team: 'enemy', hp: 1, maxHp: 1, speed: 1, type: raiderType });
+  const third = { team: 'enemy', hp: 1, maxHp: 1, speed: 1, type: raiderType };
+  W.onEnemySpawn(third);
+  ok(!third.isCounterRaid, 'only as many raiders as the camp sent');
+  const noHut = ['orc', 'orc', 'orc', 'orc', 'orc', 'orc'];
+  W.onWaveStart(
+    Object.create(Game.warCampHooks.ctx(), {
+      buildings: { value: GS.buildings.filter((b) => b.owner !== 'player') },
+      spawnQueue: { value: noHut },
+    })
+  );
+  ok(noHut.length === 6, 'with nothing of yours to raid, no raiders come');
+
+  // Level III is the top; the save keeps the level.
+  W.fortify(forge, Game.warCampHooks.ctx());
+  W.fortify(forge, Game.warCampHooks.ctx());
+  ok(forge.level === W.MAX_LEVEL, `a camp digs in no further than level ${W.MAX_LEVEL}`);
+  const saved = JSON.parse(JSON.stringify(Game.exportGameState()));
+  ok(saved.warCamps.camps[0].level === 3 && saved.warCamps.begun === true, 'the level is saved');
+  GS.buildings = GS.buildings.filter((x) => !W.isCamp(x));
+  W.resetRun();
+  ok(Game.importGameState(saved) !== false, 'the save loads');
+  ok(
+    W.getSnapshot({ buildings: GS.buildings, wave: GS.wave }).camps[0]?.name === 'Forge III',
+    'and the camp comes back dug in'
+  );
+  const old = JSON.parse(JSON.stringify(saved));
+  delete old.warCamps.begun;
+  for (const c of old.warCamps.camps) {
+    delete c.level;
+    delete c.sallied;
+  }
+  ok(Game.importGameState(api.SaveFormat.seal(old)) !== false, 'a save from before levels loads');
+  const oldSnap = W.getSnapshot({ buildings: GS.buildings, wave: GS.wave });
+  ok(
+    oldSnap.camps[0]?.level === 1 && oldSnap.begun === true,
+    'its camp is level I and the camp war is not announced again'
+  );
+}
+
+// --- 7. the garrison comes out when soldiers strike the camp ----------------------------
+{
+  const api = start(23);
+  const { Game, GameState: GS, WarCamps: W } = api;
+  run(Game, 10);
+  toNight(api, 8);
+  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
+  W.resetRun();
+  const camp = Game.warCampHooks.raise({ kind: 'drums', sector: 'centre' });
+  const b = GS.buildings.find((x) => x.id === camp.id);
+  GS.nightTimer = -100000;
+  const foes = () => GS.units.filter((u) => u.team === 'enemy' && u.hp > 0);
+  Game.warCampHooks.hit(b, 20);
+  run(Game, 10);
+  ok(foes().length === 0 && !camp.sallied, 'a strike with no soldier near draws nobody out');
+  const men = [];
+  for (let i = 0; i < 6; i++) men.push(deploy(api, 'footman', 470 + i * 26, 540));
+  GS.selectedUnitIds = men.map((u) => u.id);
+  Game.moveSelectionToWorld(b.x, b.y);
+  let out = 0;
+  for (let i = 0; i < 3000 && !out; i++) {
+    Game.update();
+    out = foes().filter((u) => u.campDefender).length;
+  }
+  ok(
+    out === 2 && camp.sallied,
+    `struck by soldiers, the garrison comes out as real enemies (${out})`
+  );
+  ok(
+    W.getSnapshot({ buildings: GS.buildings, wave: GS.wave }).camps[0]?.guards === 0,
+    'nobody is left on the palisade to throw'
+  );
+  for (let i = 0; i < 4000 && GS.buildings.includes(b); i++) Game.update();
+  ok(foes().filter((u) => u.campDefender).length <= out, 'it sallies once a night');
+  ok(!GS.buildings.includes(b), 'the soldiers beat the garrison and burn the camp');
+}
+// --- 8. strike raids: every war camp is a mission, and razing it pays loot --------------
+{
+  const api = start(29);
+  const { Game, GameState: GS, WarCamps: W, sb } = api;
+  const Raids = vm.runInContext('SettlementRaids', sb);
+  // The HUD's copy of this is throttled; read the module the way the game does.
+  const raidSnap = () => Raids.getStateSnapshot(GS.wave, GS.buildings, {});
+  run(Game, 10);
+  toNight(api, 8);
+  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
+  W.resetRun();
+  GS.nightTimer = -100000;
+  const snap0 = raidSnap();
+  ok(
+    snap0 && snap0.active && snap0.missions.length === 0 && /No war camp/.test(snap0.summary),
+    `strike raids are open from wave ${snap0?.waveMin}, with nothing to raid yet (${snap0?.summary})`
+  );
+  const camp = Game.warCampHooks.raise({ kind: 'forge', sector: 'centre' });
+  const b = GS.buildings.find((x) => x.id === camp.id);
+  run(Game, 2);
+  const snap1 = raidSnap();
+  const m = snap1.missions[0];
+  ok(
+    snap1.missions.length === 1 && m.buildingId === b.id && m.label === 'Forge' && m.rewardTp > 0,
+    `a standing camp is a mission (${m?.label}, +${m?.rewardTp} TP)`
+  );
+  W.fortify(camp, Game.warCampHooks.ctx());
+  run(Game, 2);
+  const m2 = raidSnap().missions[0];
+  ok(m2.rewardTp > m.rewardTp, `a dug-in camp pays more (${m.rewardTp} -> ${m2.rewardTp} TP)`);
+
+  const men = [];
+  for (let i = 0; i < 6; i++) men.push(deploy(api, 'footman', 470 + i * 26, 540));
+  GS.selectedUnitIds = men.slice(0, 1).map((u) => u.id);
+  ok(Game.dispatchRaidStrike(m2.id) === false, 'one hunter is not a strike force');
+  GS.selectedUnitIds = men.map((u) => u.id);
+  ok(Game.dispatchRaidStrike(m2.id) !== false, 'six hunters are dispatched');
+  ok(
+    men.every((u) => u.raidTargetId === b.id),
+    'they are sent at the camp'
+  );
+  const tp0 = GS.tactical;
+  for (let i = 0; i < 6000 && GS.buildings.includes(b); i++) Game.update();
+  ok(!GS.buildings.includes(b), 'the strike force crosses the field and razes the camp');
+  ok(
+    GS.tactical - tp0 === W.bounty(camp) + m2.rewardTp,
+    `it pays the bounty and the loot (+${GS.tactical - tp0} TP = ${W.bounty(camp)} + ${m2.rewardTp})`
+  );
+  ok(
+    men.every((u) => !u.raidTargetId && !u.raidMissionId),
+    'and the mission ends'
+  );
+
+  // A camp burned without a strike force pays the bounty only.
+  const camp2 = Game.warCampHooks.raise({ kind: 'drums', sector: 'left' });
+  const b2 = GS.buildings.find((x) => x.id === camp2.id);
+  run(Game, 2);
+  const tp1 = GS.tactical;
+  Game.warCampHooks.hit(b2, b2.hp + 5);
+  ok(
+    GS.tactical - tp1 === W.bounty(camp2),
+    'a camp burned without a strike force pays the bounty only'
+  );
+}
 // --- 5. the spy raid --------------------------------------------------------------------
 {
   const api = start(21);
@@ -447,7 +675,7 @@ function toNight(api, wave) {
   );
   void c;
 
-  // Sabotage spikes a camp.
+  // Sabotage used to spike a camp; the orders rework cut it.
   toNight(api);
   GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
   W.resetRun();
@@ -455,15 +683,9 @@ function toNight(api, wave) {
   Game.warCampHooks.raise({ kind: 'siege' });
   GS.tactical = 40;
   GS.spyUsedThisWave = false;
-  ok(Game.executeSpyAction('sabotage') === true, 'Sabotage is bought');
   ok(
-    W.pendingBonuses({ buildings: GS.buildings }).length === 0,
-    'the Siege yard gives no bonus that wave'
-  );
-  Game.beginDayPhase(true);
-  ok(
-    !GS.spawnQueue.includes('siege_tower') && W.activeBonuses().length === 0,
-    'and no siege engine comes'
+    Game.executeSpyAction('sabotage') === false && GS.tactical === 40,
+    'Sabotage is cut from the spy network and charges nothing'
   );
 }
 
@@ -478,37 +700,18 @@ function toNight(api, wave) {
     'of 10 foes cut from a host of 40, 5 catch up as a late squad'
   );
   ok(R.rejoinSquad(['orc'], 1) === 0, 'an undisrupted host has no stragglers');
-  run(Game, 10);
-  toNight(api, 12);
-  GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
-  W.resetRun();
-  const sizes = { plain: [], disrupt: [] };
-  for (let i = 0; i < 6; i++) {
-    for (const mode of ['plain', 'disrupt']) {
-      GS.timeOfDay = 'day';
-      toNight(api, 12);
-      GS.buildings = GS.buildings.filter((b) => !W.isCamp(b));
-      W.resetRun();
-      R.resetRun();
-      GS.tactical = 40;
-      GS.spyUsedThisWave = false;
-      if (mode === 'disrupt') Game.executeSpyAction('disrupt');
-      Game.beginDayPhase(true);
-      sizes[mode].push(GS.spawnQueue.length);
-    }
-  }
-  const avg = (a) => a.reduce((x, y) => x + y, 0) / a.length;
-  const ratio = avg(sizes.disrupt) / avg(sizes.plain);
+  GS.tactical = 40;
   ok(
-    ratio > 0.8 && ratio < 0.95,
-    `a disrupted wave fields about 87% of the bodies, not 75% (${ratio.toFixed(2)})`
+    Game.executeSpyAction('disrupt') === false && GS.tactical === 40,
+    'Disrupt is cut from the spy network; the late squad rule stays for the wave code'
   );
+  void W;
 }
 
 // --- 8. events: about one wave in four ------------------------------------------------------
 {
   const { DynamicMapEvents: D, ContentExpansion: C, NeutralWildlife: N } = start(11);
-  const seen = { planet: 0, field: 0, wildlife: 0, hazard: 0 };
+  const seen = { planet: 0, field: 0, wildlife: 0, hazard: 0, scouts: 0 };
   let heraldMissed = 0;
   let evWaves = 0;
   let total = 0;
@@ -519,17 +722,18 @@ function toNight(api, wave) {
     D.resetRun(`seed-${seed}`);
     let last = 0;
     for (let wave = 1; wave <= 300; wave++) {
-      const hits = [
-        D.pickEvent(wave) && 'planet',
-        C.pickWaveEvent(wave) && 'field',
-        N.pickWaveEvent(wave) && 'wildlife',
-        D.eventSlot(wave) === 'hazard' && 'hazard',
-      ].filter(Boolean);
+      // Scouts with nothing to counter fall back to field news; wildlife lives in the deck.
+      const kind = D.pickEvent(wave)?.kind;
+      const slot = D.eventSlot(wave);
+      const hits = kind ? [kind] : [];
+      if (N.pickWaveEvent(wave)) hits.push('wildlife-old');
+      if (!!C.pickWaveEvent(wave) !== (kind === 'field')) hits.push('field-mismatch');
       if (!C.heraldNews(wave) !== !hits.length) heraldMissed++;
       total++;
       if (
         hits.length > 1 ||
-        (hits.length === 1) !== (D.eventSlot(wave) !== null && hits[0] === D.eventSlot(wave))
+        (hits.length === 1) !==
+          (slot !== null && (hits[0] === slot || (slot === 'scouts' && hits[0] === 'field')))
       )
         mismatched++;
       if (hits.length) {
@@ -557,11 +761,11 @@ function toNight(api, wave) {
     heraldMissed === 0,
     `the herald names the deck's event on every event wave, and only then (${heraldMissed} off)`
   );
-  const planet = Object.values(D.EVENTS).every((e) => e.choices.length >= 2);
-  ok(planet, 'every planet event offers a real choice');
+  const two = Object.values(D.OMENS).every((e) => e.options.length === 2);
+  ok(two, 'every omen offers two options');
 }
 
-// --- 9. faction hazards change only on the deck's hazard waves -------------------------------
+// --- 9. faction hazards change only when the trap omen is left to stand -------------------------------
 {
   const api = start(13);
   const { Game, GameState: GS, DynamicMapEvents: D } = api;
@@ -575,7 +779,7 @@ function toNight(api, wave) {
     const before = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
     Game.beginDayPhase(true);
     const after = JSON.stringify(GS.hazards.map((h) => [h.id, Math.round(h.radius * 100)]));
-    const due = D.eventSlot(GS.wave) === 'hazard';
+    const due = D.hazardsLaid(GS.wave);
     if (due) hazardWaves++;
     if (before !== after) {
       changed++;

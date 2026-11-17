@@ -2606,6 +2606,9 @@ body.ui-v2 #begin-day-btn .bd-time::before {
   content: 'night ends in ';
   font-weight: 400;
 }
+body.ui-v2 #begin-day-btn:disabled .bd-time::before {
+  content: 'horn ready in ';
+}
 body.ui-v2 #begin-day-btn .bd-key {
   grid-column: 2;
   grid-row: 1 / span 2;
@@ -3369,6 +3372,7 @@ body.ui-v2 .inpage-dialog,
 }
 /* Frame */
 body.ui-v2 .screen:not(#menu-screen) > .menu-content,
+body.ui-v2 .screen:not(#menu-screen) > .modal-box,
 body.ui-v2 .research-panel-inner,
 body.ui-v2 .faction-intel-panel-inner,
 body.ui-v2 .menu-sheet > .modal-box,
@@ -4246,8 +4250,7 @@ body.ui-v2 .result-siege {
   max-width: none;
   margin: 0;
   padding: 10px 14px;
-  columns: 2 240px;
-  column-gap: 22px;
+  columns: 1;
   font-family: var(--font-body);
   font-size: var(--fs-2);
   line-height: 1.45;
@@ -4962,4 +4965,150 @@ body.ui-v2 .intel-faction-card.intel-card-dormant {
 }
 body.ui-v2 .intel-faction-stage {
   color: var(--bone-dim) !important;
+}
+
+/* Game over: the cause line and the named dead. */
+body.ui-v2 .result-siege .result-cause {
+  margin: 0 0 8px;
+  color: #fff;
+  font-weight: 700;
+  column-span: all;
+}
+body.ui-v2 .result-fallen {
+  min-height: 0;
+  max-height: 190px;
+  overflow-y: auto;
+  padding: 8px 12px;
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  font-size: var(--fs-1);
+  color: var(--bone-dim);
+}
+body.ui-v2 .result-fallen h3 {
+  margin: 0 0 4px;
+  font-family: var(--font-head);
+  font-size: var(--fs-2);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #fff;
+}
+body.ui-v2 .result-fallen ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+body.ui-v2 .result-fallen li.vet b {
+  color: var(--blood);
+}
+body.ui-v2 .result-fallen p {
+  margin: 0;
+}
+
+body.ui-v2 .cheat-void-warning {
+  margin: 0 0 12px;
+  padding: 6px 10px;
+  color: #fff;
+  background: #1a0806;
+  border: 1px solid #c0241c;
+  font-weight: 700;
+}
+
+/* Message log: a side sheet above every other overlay. */
+body.ui-v2 .message-log-panel {
+  position: fixed;
+  top: 56px;
+  right: 12px;
+  bottom: calc(var(--hint-bar-h, 40px) + 12px);
+  left: auto;
+  width: min(380px, calc(100vw - 24px));
+  max-height: none;
+  transform: none;
+  z-index: 3000;
+}
+body.ui-v2 .message-log-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  font-size: var(--fs-1);
+}
+body.ui-v2 .message-log-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+}
+body.ui-v2 .msg-log-filter {
+  padding: 2px 8px;
+  font-size: var(--fs-1);
+  color: var(--bone-dim);
+  background: none;
+  border: 1px solid var(--line);
+  cursor: pointer;
+}
+body.ui-v2 .msg-log-filter.on {
+  color: #fff;
+  border-color: #c8202a;
+  background: #1a0806;
+}
+body.ui-v2 .msg-log-alert .msg-log-text {
+  color: var(--blood);
+}
+body.ui-v2 .msg-log-count {
+  color: var(--bone);
+}
+
+/* Creative Lab and level editor: the one modal look (ink, red frame, square corners). */
+body.ui-v2 .creative-panel.creative-modal {
+  color: var(--bone);
+  background: var(--ink);
+  border: 2px solid #c8202a;
+  border-radius: 0;
+  box-shadow: 6px 6px 0 #000;
+  backdrop-filter: none;
+}
+body.ui-v2 .creative-modal .creative-panel-title.modal-title {
+  margin: 0;
+  font-size: var(--fs-4);
+}
+body.ui-v2 .creative-modal .creative-panel-sub,
+body.ui-v2 .creative-modal .creative-hint,
+body.ui-v2 .creative-modal .creative-label {
+  color: var(--text-secondary);
+}
+body.ui-v2 .creative-modal .creative-section {
+  background: var(--ink-2);
+  border: 1px solid var(--line);
+  border-radius: 0;
+}
+body.ui-v2 .creative-modal .creative-section-head {
+  font-family: var(--font-head);
+  color: var(--blood);
+}
+body.ui-v2 .creative-modal .creative-btn,
+body.ui-v2 .creative-modal .creative-select,
+body.ui-v2 .creative-modal .creative-input,
+body.ui-v2 .creative-modal .creative-textarea {
+  color: var(--bone);
+  background: var(--ink-3);
+  border: 1px solid var(--bone-mute);
+  border-radius: 0;
+}
+body.ui-v2 .creative-modal .creative-btn:hover:not(:disabled) {
+  background: #3a1216;
+  border-color: var(--blood);
+}
+body.ui-v2 .creative-modal .creative-btn.primary,
+body.ui-v2 .creative-modal .creative-btn.active {
+  color: #fff;
+  background: var(--blood-deep);
+  border-color: #c8202a;
+}
+body.ui-v2 .creative-modal .creative-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.lb-cheated,
+.online-cheated {
+  color: var(--text-muted, #a69a86);
+  font-style: italic;
 }

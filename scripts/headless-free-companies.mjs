@@ -240,7 +240,7 @@ function loadGame() {
       getUnlockedAttackSides, canSpendTpVeteranUpgrade, getVeteranUpgradeCost, upgradeVeteranUnit,
       isEnemyHordeGruntType, getUnlockedEvilHeroes, EVIL_HERO_WAVES,
       getKingdomEvolutionStage, getKingdomStageBuffs, isKingdomRaidsUnlocked, isKingdomLoadoutsUnlocked,
-      KINGDOM_DOCTRINES, getUnlockedKingdomDoctrines, getTerritoryTier, getWorldSize,
+      getTerritoryTier, getWorldSize,
       BASE_FIELD_W, BASE_FIELD_H, isEliteEnemy
     })`,
     vm.createContext(sb)
@@ -860,7 +860,10 @@ function testAsymmetricWarfare(exp) {
   const push = AsymmetricWarfare.onHostStructureDestroyed();
   assert(push.delta <= 0, 'structure raze should reduce threat xp');
   const hostMods = AsymmetricWarfare.getAsymmetricMods(28, 22);
-  assert(hostMods.enemyCountMult > 1, 'high threat vs low authority should boost enemy count');
+  assert(
+    hostMods.enemyCountMult === 1 && hostMods.eliteSlotBonus === 0,
+    'host level never grows the enemy in secret'
+  );
   const cmdMods = AsymmetricWarfare.getAsymmetricMods(90, 15);
   assert(cmdMods.commanderNightPrepMult >= 1.06, 'high authority should lengthen nights');
   const snap = AsymmetricWarfare.getStateSnapshot({
@@ -984,23 +987,25 @@ function testNeutralWildlife(exp) {
   const { NeutralWildlife } = exp;
   assert(NeutralWildlife, 'NeutralWildlife module should exist');
   NeutralWildlife.resetRun();
-  assert(NeutralWildlife.pickWaveEvent(7) === null, 'inactive before wave 8');
-  const evtWave = eventWave(
-    exp,
-    'wildlife',
-    (w) => NeutralWildlife.pickWaveEvent(w)?.id === 'beast_migration'
-  );
-  assert(evtWave > 0, 'the event deck reaches a beast migration');
+  const D = exp.DynamicMapEvents;
+  const evtWave = eventWave(exp, 'wildlife', (w) => D.pickEvent(w)?.id === 'beast_migration');
+  assert(evtWave > 0, 'the omen deck reaches a beast migration');
+  assert(NeutralWildlife.pickWaveEvent(evtWave) === null, 'wildlife waves come only as omens');
   const spawned = [];
-  NeutralWildlife.onWaveStart(evtWave, {
+  D.prepareNextEvent(evtWave, { worldW: 500, rallyY: 720, hooks: {} });
+  D.respond('drive', { tactical: 5, spendTp: () => {} });
+  D.applyForWave(evtWave, {
     worldW: 500,
-    worldH: 820,
     rallyY: 720,
     territoryTier: 2,
     spawnUnit: (u) => spawned.push(u),
     hooks: {},
   });
   assert(spawned.length >= 2, 'beast migration should spawn wildlife');
+  assert(
+    spawned.every((u) => u.y < 100),
+    'driven at the host, the herd comes out among the enemy'
+  );
   assert(
     spawned.every((u) => u.team === 'neutral'),
     'spawns should be neutral'
@@ -1240,7 +1245,11 @@ function testDynamicMapEvents(exp) {
   const { DynamicMapEvents } = exp;
   assert(DynamicMapEvents, 'DynamicMapEvents module should exist');
   DynamicMapEvents.resetRun(5);
-  assert(DynamicMapEvents.pickEvent(10) === null, 'inactive before wave 12');
+  assert(DynamicMapEvents.pickEvent(2) === null, 'no omens before wave 3');
+  for (const o of Object.values(DynamicMapEvents.OMENS)) {
+    assert(o.options.length === 2, `${o.id} offers exactly two options`);
+    assert(o.options.filter((x) => x.cost > 0).length <= 1, `${o.id} has at most one paid option`);
+  }
   const planetWave = (id) =>
     eventWave(exp, 'planet', (w) => DynamicMapEvents.pickEvent(w)?.id === id);
   const geoWave = planetWave('geothermal_surge');
@@ -1253,31 +1262,31 @@ function testDynamicMapEvents(exp) {
   });
   assert(pending?.eventId === 'geothermal_surge', 'should prepare geothermal event');
   assert(pending.site?.x > 0, 'should place event site on map');
+  assert(pending.choices.length === 2, 'the card offers two options');
+  assert(!DynamicMapEvents.respond('ignore', { tactical: 10 }).ok, 'no free third option');
 
-  const evac = DynamicMapEvents.respond('vent', { tactical: 10, spendTp: () => {} });
-  assert(evac.ok, 'should accept vent choice');
+  const vent = DynamicMapEvents.respond('vent', { tactical: 10, spendTp: () => {} });
+  assert(vent.ok, 'should accept vent choice');
+  DynamicMapEvents.applyForWave(geoWave, { worldW: 500, rallyY: 720, units: [], hooks: {} });
+  const q = DynamicMapEvents.applyToQueue(geoWave, new Array(20).fill('goblin'));
+  assert(q.length === 18, `vent turns back a tenth of the host (got ${q.length})`);
+  assert(DynamicMapEvents.getActiveMods().surgeTeam === 'player', 'vent scalds your own line');
 
-  const waveMods = { countMult: 1, hpMult: 1, noElites: false, stealReduction: 0 };
-  DynamicMapEvents.applyForWave(geoWave, {
-    worldW: 500,
-    rallyY: 720,
-    territoryTier: 2,
-    units: [],
-    pendingWaveMods: waveMods,
-    hooks: {},
-  });
-  assert(waveMods.countMult === 0.9, 'vent should reduce enemy spawns');
-
+  let tp = 0;
+  let science = 0;
+  const grants = {
+    grantTp: (n) => {
+      tp += n;
+    },
+    grantScience: (n) => {
+      science += n;
+    },
+  };
   DynamicMapEvents.resetRun(5);
   DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('evacuate', { tactical: 10, spendTp: () => {} });
-  const volcano = DynamicMapEvents.applyForWave(volcanoWave, {
-    worldW: 500,
-    rallyY: 720,
-    units: [{ team: 'player', hp: 100, maxHp: 100, morale: 50, maxMorale: 100 }],
-    hooks: {},
-  });
-  assert(volcano?.mods.playerDamageTakenMult === 0.95, 'evacuate should reduce damage taken');
+  DynamicMapEvents.applyForWave(volcanoWave, { ...grants, hooks: {} });
+  assert(tp === 6 && science === 0, 'capping the vents sells the sulphur');
 
   DynamicMapEvents.resetRun(5);
   DynamicMapEvents.prepareNextEvent(geoWave, { worldW: 500, rallyY: 720, hooks: {} });
@@ -1287,21 +1296,12 @@ function testDynamicMapEvents(exp) {
     'tap should boost night build immediately'
   );
 
-  let tp = 0;
-  let science = 0;
+  tp = 0;
   DynamicMapEvents.resetRun(5);
   DynamicMapEvents.prepareNextEvent(volcanoWave, { worldW: 500, rallyY: 720, hooks: {} });
   DynamicMapEvents.respond('harness', { tactical: 10, spendTp: () => {} });
-  DynamicMapEvents.applyForWave(volcanoWave, {
-    grantTp: (n) => {
-      tp += n;
-    },
-    grantScience: (n) => {
-      science += n;
-    },
-    hooks: {},
-  });
-  assert(tp >= 6 && science >= 2, 'harness should grant TP and science');
+  const volcano = DynamicMapEvents.applyForWave(volcanoWave, { ...grants, hooks: {} });
+  assert(science >= 2 && volcano.mods.eruptionPulse, 'stoking the vents erupts and grants SP');
 
   const snap = DynamicMapEvents.getStateSnapshot(volcanoWave, 20, false);
   assert(snap.activeSummary, 'snapshot should expose active summary after apply');
@@ -1423,8 +1423,10 @@ function testSettlementRaids(exp) {
   }
   const { SettlementRaids, isKingdomRaidsUnlocked } = exp;
   assert(SettlementRaids, 'SettlementRaids module should exist');
-  assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 150, 'raid wave min should be 150');
-  assert(!SettlementRaids.isActive(149), 'inactive before wave 150');
+  // Strike raids open with the camp war, not with the old wave-150 settlements.
+  assert(SettlementRaids.SETTLEMENT_RAID_WAVE_MIN === 6, 'raid wave min should be 6');
+  assert(!SettlementRaids.isActive(5), 'inactive before wave 6');
+  assert(SettlementRaids.isActive(6), 'active from wave 6');
   assert(SettlementRaids.isActive(160), 'active at wave 160');
   SettlementRaids.resetRun();
   const mockBld = {
@@ -1720,7 +1722,6 @@ function testKingdomEvolution(exp) {
     isKingdomLoadoutsUnlocked,
     Game,
     ColonyValue,
-    KINGDOM_DOCTRINES,
   } = exp;
   assert(typeof getKingdomEvolutionStage === 'function', 'getKingdomEvolutionStage should exist');
   assert(getKingdomEvolutionStage(1).stage === 1, 'wave 1 should be Outpost stage');
@@ -1742,8 +1743,8 @@ function testKingdomEvolution(exp) {
   assert(gs.kingdomStage === 1, 'creative start should expose kingdomStage');
   assert(gs.kingdomEvolution?.shortName, 'getState should expose kingdomEvolution');
   assert(gs.kingdomEvolutionMeter?.fill >= 0, 'getState should expose evolution meter fill');
-  assert(gs.kingdomDoctrines?.imperial_march, 'imperial march doctrine should exist');
-  assert(Array.isArray(gs.unlockedKingdomDoctrines), 'unlocked doctrines list exposed');
+  // Kingdom doctrines became the General's orders (js/general-orders.js).
+  assert(!('kingdomDoctrines' in gs), 'kingdom doctrines are folded into the General order bar');
   if (ColonyValue?.computeEvolutionMeter) {
     const meter = ColonyValue.computeEvolutionMeter({
       wave: 100,

@@ -1,5 +1,5 @@
 /**
- * Smoke tests for late-game wave events, map hazards, and expedition loot.
+ * Smoke tests for late-game wave events, map hazards, and expedition loot (science, no TP).
  */
 import { readFileSync } from 'fs';
 import { join } from 'path';
@@ -28,31 +28,7 @@ sb.window = sb;
 sb.globalThis = sb;
 const ctx = vm.createContext(sb);
 
-const waveBlock = content.match(/const WAVE_EVENTS = \{[\s\S]*?\n  \};/);
-ok(!!waveBlock, 'WAVE_EVENTS registry present in content-expansion');
-if (waveBlock) {
-  const pickWaveEvent = vm.runInContext(
-    `${waveBlock[0]}
-     function pickWaveEvent(wave) {
-       let best = null;
-       let bestPri = -1;
-       for (const evt of Object.values(WAVE_EVENTS)) {
-         if (evt.waveMin && wave < evt.waveMin) continue;
-         if (evt.waveMod && wave % evt.waveMod !== 0) continue;
-         const pri = evt.priority ?? 0;
-         if (pri > bestPri) { bestPri = pri; best = evt.id; }
-       }
-       return best;
-     }
-     pickWaveEvent`,
-    ctx
-  );
-  ok(pickWaveEvent(100) === 'mirror_assault', 'wave 100 triggers mirror assault');
-  ok(pickWaveEvent(200) === 'dominion_surge', 'wave 200 triggers dominion surge');
-  ok(pickWaveEvent(13) === 'blood_moon', 'wave 13 triggers blood moon');
-  ok(waveBlock[0].includes('hellscape_whisper'), 'registry includes hellscape whisper');
-  ok(waveBlock[0].includes('veteran_muster'), 'registry includes veteran muster');
-}
+ok(!/const WAVE_EVENTS/.test(content), 'field news lives in the omen deck, not content-expansion');
 
 vm.runInContext(
   `const ContentExpansion = { pickWaveEvent(wave) {
@@ -84,6 +60,9 @@ ok(lateWave('dominion_storm') > 0, 'the event deck can pick dominion storm after
   ok(DME.pickEvent(100)?.id !== 'dominion_storm', 'dominion storm waits for wave 175');
 }
 ok(!!DME.EVENTS.worldheart_pulse, 'worldheart pulse event exists');
+ok(DME.OMENS.hellscape_whisper?.kind === 'field', 'the deck holds hellscape whisper');
+ok(DME.OMENS.veteran_muster?.kind === 'field', 'the deck holds veteran muster');
+ok(lateWave('mirror_assault') >= 95, 'mirror assault waits for wave 95');
 
 const FH = vm.runInContext(`${hazards}\nFactionHazards`, ctx);
 ok(!!FH.HAZARD_TYPES.undead_miasma, 'undead miasma hazard defined');
@@ -92,7 +71,7 @@ ok(FH.HAZARD_TYPES.void_corruption.waveMin === 32, 'void corruption has waveMin'
 
 const PCE = vm.runInContext(`${counter}\nPlayerCounterEvolution`, ctx);
 const loot = PCE.computeExpeditionLoot({ targetStage: 3, unitIds: ['a', 'b', 'c'] }, 2, 150);
-ok(loot.tp >= 10, 'expedition returns meaningful TP loot');
+ok(loot.tp === 0, 'expedition loot is not TP (the money button is gone)');
 ok(loot.science >= 1, 'expedition returns science loot');
 ok(PCE.getExpeditionLootScale(200) > PCE.getExpeditionLootScale(50), 'loot scales into RTS era');
 

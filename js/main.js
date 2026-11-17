@@ -740,6 +740,8 @@
       ['#pause-report-bug-btn', 'bugReport', null, 'pause'],
       ['#siege-warcry', 'order', 'warCry'],
       ['#siege-holdline', 'order', 'holdLine'],
+      ['#go-advance', 'order', 'advance'],
+      ['#go-fallback', 'order', 'fall_back'],
       ...['line', 'column', 'wedge', 'box', 'spread'].map((f) => [
         `.formation-btn[data-formation="${f}"]`,
         'formation',
@@ -889,7 +891,8 @@
       moveBuilding: () => Game.selectMoveBuilding?.(),
       hunt: () => Game.orderHunt(),
       holdHere: () => Game.orderHoldHere(),
-      order: (id) => SiegeLoop.order(id),
+      // War Cry and Hold the Line go through the General's bar like the other orders.
+      order: (id) => Game.executeDoctrine(id),
       loadout: (id, gs) => {
         if (!(gs.kingdomLoadoutsUnlocked || gs.wave >= 100)) return false;
         Game.setLoadout?.(id);
@@ -897,7 +900,7 @@
       },
       beginDay: (_arg, gs) => {
         if (gs.timeOfDay !== 'night') return false;
-        Game.beginDayPhase(true);
+        Game.soundHorn();
         return true;
       },
       ability: (id) => selectByKey('ability', id),

@@ -301,53 +301,11 @@ const GameArmy = (() => {
     if (typeof EternalLegacyTree !== 'undefined' && !GS.creativeMode) {
       EternalLegacyTree.applyUnitBonuses(u, GS.wave);
     }
-    if (typeof FoundationalMedievalLayer !== 'undefined' && !GS.creativeMode) {
-      const fmods = FoundationalMedievalLayer.getRunModifiers(GS.wave);
-      if (fmods.footmanHpMult > 1 && (u.type === 'footman' || u.type === 'pikeman')) {
-        u.maxHp = Math.floor(u.maxHp * fmods.footmanHpMult);
-        u.hp = Math.min(u.hp, u.maxHp);
-      }
-      if (fmods.mythicMorale > 0 && u.team === 'player') {
-        const mythic =
-          (typeof isCompanyHeroUnit === 'function' && isCompanyHeroUnit(u.type)) ||
-          (typeof isChampionUnit === 'function' && isChampionUnit(u.type)) ||
-          u.type === 'doomslayer_hero';
-        if (mythic) u.morale = Math.min(u.maxMorale, u.morale + fmods.mythicMorale);
-      }
-      u.foundationalDnaApplied = true;
-    }
-    if (typeof AscensionSystem !== 'undefined' && !GS.creativeMode) {
-      AscensionSystem.applySpawnBonusesFromBuildings(u, GS.buildings);
-      AscensionSystem.reapplyAscensionBonuses(u);
-    }
-    if (typeof ThematicEraSynergies !== 'undefined' && !GS.creativeMode) {
-      ThematicEraSynergies.applyThematicUnitBonuses(u, GS.wave);
-    }
-    if (typeof HybridPowerFantasy !== 'undefined' && !GS.creativeMode) {
-      HybridPowerFantasy.applyUnitFantasy(u, GS.wave);
-    }
     if (typeof NarrativeThread !== 'undefined' && !GS.creativeMode) {
       NarrativeThread.applyLegendBonuses(u, GS.wave);
     }
-    if (typeof EternalPathFramework !== 'undefined' && !GS.creativeMode) {
-      EternalPathFramework.applyPathUnitBonuses(u, GS.wave);
-    }
-    if (typeof MartialPathEvolution !== 'undefined' && !GS.creativeMode) {
-      MartialPathEvolution.captureGeneFather(u, GS.wave);
-      MartialPathEvolution.applyLegionUnitBonuses(u, GS.wave);
-    }
-    if (typeof ArcanePathEvolution !== 'undefined' && !GS.creativeMode) {
-      ArcanePathEvolution.captureFoundingMage(u, GS.wave);
-      ArcanePathEvolution.applyWeaverUnitBonuses(u, GS.wave);
-    }
-    if (typeof TechPathEvolution !== 'undefined' && !GS.creativeMode) {
-      TechPathEvolution.captureFoundingBuilder(u, GS.wave);
-      TechPathEvolution.applyFoundryUnitBonuses(u, GS.wave);
-    }
-    if (typeof MythicPathEvolution !== 'undefined' && !GS.creativeMode) {
-      MythicPathEvolution.captureFirstChampion(u, GS.wave);
-      MythicPathEvolution.applyChampionUnitBonuses(u, GS.wave);
-    }
+    if (typeof RunPath !== 'undefined' && !GS.creativeMode) RunPath.applyUnit(u);
+    if (typeof Honours !== 'undefined' && !GS.creativeMode) Honours.onRecruit(u);
     if (typeof TechTreeBranches !== 'undefined' && !GS.creativeMode) {
       const fx = TechTreeBranches.getCombinedEffects(GS.wave);
       // These four were shown on the tree ("Dmg ×1.xx") but never applied.
@@ -402,17 +360,105 @@ const GameArmy = (() => {
     return u;
   }
 
-  function ascendSelectedUnit() {
-    if (GS.creativeMode || typeof AscensionSystem === 'undefined') return false;
+  function notifyTraits(unit, ids) {
+    for (const id of ids || []) {
+      const t = Veterans.TRAITS[id];
+      svc('FloatingText')?.status?.(
+        unit.x,
+        unit.y - 18,
+        t.name.toUpperCase(),
+        VET_STAR_COLORS.gold
+      );
+      showMessage(`${getUnitDisplayName(unit)} earned ${t.name}: ${t.gain}, ${t.cost}.`, 260);
+    }
+  }
+
+  function notifyHallDeath(unit, entry) {
+    if (!entry) return;
+    showMessage(
+      `${entry.name} has fallen. The name stays on the Hall of Veterans roll and can be raised there.`,
+      300
+    );
+  }
+
+  function forgetSelectedTrait(id) {
+    const u = getSelectedUnit();
+    if (!u || !Veterans.TRAITS[id]) return false;
+    const before = [...(u.traits || [])];
+    if (!Veterans.forgetTrait(u, id, GS.wave)) return false;
+    showMessage(`${getUnitDisplayName(u)} gave up ${Veterans.TRAITS[id].name}.`, 200);
+    notifyTraits(
+      u,
+      u.traits.filter((t) => !before.includes(t))
+    );
+    return true;
+  }
+
+  function standingHall() {
+    return (
+      GS.buildings.find(
+        (b) => b.owner === 'player' && b.type === 'hall_of_veterans' && b.complete && b.hp > 0
+      ) || null
+    );
+  }
+
+  function raiseBlock(entry) {
+    if (!entry.fallen) return 'still on the field';
+    if (!standingHall()) return 'needs a standing Hall of Veterans';
+    if (GS.hallRaisedWave === GS.wave) return 'the Hall raises one veteran a wave';
+    const cost = Veterans.raiseCost(entry);
+    if (GS.tactical < cost) return `needs ${cost} TP`;
+    return null;
+  }
+
+  function getHallRoll() {
+    return Veterans.getHall().map((e) => ({
+      id: e.id,
+      name: e.name,
+      type: e.type,
+      fallen: !!e.fallen,
+      deaths: e.deaths || 0,
+      fellWave: e.fellWave,
+      traits: (e.traits || []).map((id) => Veterans.TRAITS[id]?.name).filter(Boolean),
+      cost: Veterans.raiseCost(e),
+      block: raiseBlock(e),
+    }));
+  }
+
+  function raiseVeteran(id) {
+    const entry = Veterans.getHall().find((e) => e.id === id);
+    if (!entry) return false;
+    const block = raiseBlock(entry);
+    if (block) {
+      showMessage(`Cannot raise ${entry.name}: ${block}.`, 200);
+      return false;
+    }
+    const hall = standingHall();
+    const u = spawnUnit(entry.type, hall.x, hall.y + (hall.radius || 24) + 14, 'player');
+    if (!u) return false;
+    GS.tactical -= Veterans.raiseCost(entry);
+    GS.hallRaisedWave = GS.wave;
+    Veterans.restore(u, entry);
+    GS.units.push(u);
+    svc('FloatingText')?.status?.(u.x, u.y - 18, 'RAISED', VET_STAR_COLORS.gold);
+    showMessage(
+      `${entry.name} walks out of the Hall at rank ${Veterans.RAISED_TIER}, weaker for the grave.`,
+      280
+    );
+    return true;
+  }
+
+  function ascendSelectedUnit(honourId) {
+    if (GS.creativeMode || typeof Honours === 'undefined') return false;
     const id = GS.selectedUnitId || GS.selectedUnitIds[0];
     const u = id ? getUnitById(id) : null;
     if (!u || u.hp <= 0) {
-      showMessage('Select a veteran to ascend.', 180);
+      showMessage('Select a veteran to honour.', 180);
       return false;
     }
-    const result = AscensionSystem.tryAscendUnit(u, GS.wave, { showMessage, addHighlight });
+    const result = Honours.give(u, honourId, { showMessage, addHighlight });
     if (!result.ok) {
-      showMessage(result.msg || 'Cannot ascend.', 220);
+      showMessage(result.msg || 'Cannot honour him.', 220);
       return false;
     }
     svc('UI').updateHUD(true);
@@ -555,7 +601,12 @@ const GameArmy = (() => {
     findLivePlayerOfType,
     hasCompanyHall,
     hasChampionsHall,
+    forgetSelectedTrait,
+    getHallRoll,
+    notifyHallDeath,
+    notifyTraits,
     notifyVetStarEvent,
+    raiseVeteran,
     recordFootmanCommandElevation,
     recruitSelectedEcho,
     spawnUnit,

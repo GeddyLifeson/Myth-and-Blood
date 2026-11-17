@@ -376,10 +376,7 @@ const GameMovement = (() => {
 
     const doctrineSpd = (unit.doctrineSpeedTimer || 0) > 0 ? unit.doctrineSpeedMult || 1 : 1;
     const biomeSpd = getBiomeModifiersAt(unit.x, unit.y).speedMult || 1;
-    let mapEvtSpd = 1;
-    if (unit.team === 'player' && svc('DynamicMapEvents')) {
-      mapEvtSpd = svc('DynamicMapEvents').getActiveMods().playerSpeedMult || 1;
-    }
+    const mapEvtSpd = svc('DynamicMapEvents') ? svc('DynamicMapEvents').speedMult(unit) : 1;
     const speed =
       unit.speed *
       (unit.hazardSlow || 1) *
@@ -492,8 +489,8 @@ const GameMovement = (() => {
           if (dist < 0.01) {
             // Never jitter units planted on a hold post.
             if (aHold || bHold) continue;
-            a.x += (Math.random() - 0.5) * 8;
-            a.y += (Math.random() - 0.5) * 8;
+            a.x += ((globalThis.simRandom || Math.random)() - 0.5) * 8;
+            a.y += ((globalThis.simRandom || Math.random)() - 0.5) * 8;
             continue;
           }
           const sameTeam = a.team === b.team;

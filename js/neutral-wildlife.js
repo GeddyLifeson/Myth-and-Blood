@@ -202,7 +202,7 @@ const NeutralWildlife = (() => {
       frameTimer: 0,
       animState: 'idle',
       attackAnimTimer: 0,
-      actionTimer: Math.floor(Math.random() * 40),
+      actionTimer: Math.floor((globalThis.simRandom || Math.random)() * 40),
       pinned: false,
       fleeing: false,
       demoralized: false,
@@ -210,8 +210,8 @@ const NeutralWildlife = (() => {
       chargeTimer: 0,
       rallyTimer: 0,
       spawnWave: wave,
-      wanderAngle: Math.random() * Math.PI * 2,
-      wanderTimer: 40 + Math.floor(Math.random() * 60),
+      wanderAngle: (globalThis.simRandom || Math.random)() * Math.PI * 2,
+      wanderTimer: 40 + Math.floor((globalThis.simRandom || Math.random)() * 60),
       eventId: opts.eventId || null,
     };
   }
@@ -247,18 +247,9 @@ const NeutralWildlife = (() => {
     return spawned;
   }
 
-  function pickWaveEvent(wave) {
-    if (wave < WAVE_MIN) return null;
-    if (
-      typeof DynamicMapEvents === 'undefined' ||
-      DynamicMapEvents.eventSlot(wave) !== 'wildlife'
-    ) {
-      return null;
-    }
-    const live = Object.values(EVENTS).filter(
-      (e) => !e.deathTriggered && !e.denTriggered && wave >= e.waveMin
-    );
-    return DynamicMapEvents.deckPick(live, wave, 37);
+  /** Wildlife waves are omen cards now (js/dynamic-map-events.js); only dens and carrion fire here. */
+  function pickWaveEvent() {
+    return null;
   }
 
   function runEvent(evt, wave, ctx) {
@@ -322,16 +313,14 @@ const NeutralWildlife = (() => {
     if (wave < WAVE_MIN) return { spawned: [], event: null };
     waveDeaths = 0;
     carrionTriggered = false;
-    const evt = pickWaveEvent(wave);
-    const spawned = evt ? runEvent(evt, wave, ctx) : [];
     if (!announced && wave === WAVE_MIN) {
       announced = true;
       ctx.hooks?.showMessage?.(
-        'Neutral wildlife roams the wilds — beasts attack both armies; slay them for TP and morale.',
+        'Wild beasts roam the field. They attack both armies; slay them for TP.',
         400
       );
     }
-    return { spawned, event: activeEvent };
+    return { spawned: [], event: null };
   }
 
   function onCombatDeath(wave, ctx = {}) {
@@ -364,51 +353,6 @@ const NeutralWildlife = (() => {
             });
           }
         }
-      }
-    }
-
-    if (updateTick % 120 === 0 && wave >= WAVE_MIN) {
-      let spawnChance = 0.08;
-      if (typeof NeutralRelations !== 'undefined') {
-        spawnChance *= NeutralRelations.getWildlifeSpawnMult(wave);
-      }
-      if (typeof BiomeSpawn !== 'undefined') {
-        const prof = BiomeSpawn.getDominantProfile({
-          worldW: ctx.worldW,
-          worldH: ctx.worldH,
-          rallyY: ctx.rallyY,
-          territoryTier: ctx.territoryTier,
-          wave,
-        });
-        spawnChance *= prof.wildlifeMult || 1;
-      }
-      const neutrals = (units || []).filter((u) => u.team === 'neutral' && u.hp > 0).length;
-      if (
-        (ctx.rng || Math.random)() < spawnChance &&
-        neutrals < 2 &&
-        (units || []).filter((u) => u.team === 'enemy' && u.hp > 0).length >= 3
-      ) {
-        let type = wave >= 40 ? 'wild_stalker' : 'wild_boar';
-        if (typeof BiomeSpawn !== 'undefined') {
-          const pick = BiomeSpawn.pickWildlifeType(
-            wave,
-            {
-              worldW: ctx.worldW,
-              worldH: ctx.worldH,
-              rallyY: ctx.rallyY,
-              territoryTier: ctx.territoryTier,
-              wave,
-            },
-            ctx.rng || Math.random
-          );
-          type = pick.type;
-        }
-        const spot = pickSpawnPoint(ctx.worldW, ctx.worldH, ctx.rallyY, ctx.rng || Math.random, {
-          territoryTier: ctx.territoryTier,
-          wave,
-        });
-        const u = createUnit(type, spot.x, spot.y, wave, { territoryTier: ctx.territoryTier });
-        if (u) ctx.spawnUnit?.(u);
       }
     }
   }
@@ -478,8 +422,8 @@ const NeutralWildlife = (() => {
 
     unit.combatTargetId = null;
     if (unit.wanderTimer <= 0) {
-      unit.wanderAngle += (Math.random() - 0.5) * 1.2;
-      unit.wanderTimer = 50 + Math.floor(Math.random() * 40);
+      unit.wanderAngle += ((globalThis.simRandom || Math.random)() - 0.5) * 1.2;
+      unit.wanderTimer = 50 + Math.floor((globalThis.simRandom || Math.random)() * 40);
     }
     const wx = unit.x + Math.cos(unit.wanderAngle) * unit.speed * 0.6;
     const wy = unit.y + Math.sin(unit.wanderAngle) * unit.speed * 0.6;

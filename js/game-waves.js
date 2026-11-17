@@ -25,11 +25,11 @@ const GameWaves = (() => {
     syncTerritory,
   } = GameField;
   const { addHighlight, applyPlayerStatMods, spawnUnit } = GameArmy;
-  const { isAttackableEnemyStructure } = GameBuildings;
+  const { isTargetableEnemyStructure } = GameBuildings;
   let TP_SANITY_CAP,
     announceAcademyEra,
     announceAttackSides,
-    announceEnemyRtsEra,
+    announceHostGrowth,
     announceHooks,
     announceKingdomEvolution,
     applyChampionWaveStartPulse,
@@ -53,7 +53,7 @@ const GameWaves = (() => {
       TP_SANITY_CAP,
       announceAcademyEra,
       announceAttackSides,
-      announceEnemyRtsEra,
+      announceHostGrowth,
       announceHooks,
       announceKingdomEvolution,
       applyChampionWaveStartPulse,
@@ -82,9 +82,9 @@ const GameWaves = (() => {
     let pos = {
       x:
         mf && mf.isSector(sector)
-          ? mf.spawnX(sector, GS.worldW, Math.random)
-          : m + Math.random() * (GS.worldW - m * 2),
-      y: 8 + Math.random() * 20,
+          ? mf.spawnX(sector, GS.worldW, globalThis.simRandom || Math.random)
+          : m + (globalThis.simRandom || Math.random)() * (GS.worldW - m * 2),
+      y: 8 + (globalThis.simRandom || Math.random)() * 20,
     };
     if (svc('BiomeSpawn')) {
       pos = svc('BiomeSpawn').biasSpawnPosition(
@@ -323,14 +323,6 @@ const GameWaves = (() => {
             (colonyPressure?.countMult || 1)
         )
       );
-      if (isRtsEra(waveNum)) {
-        const rtsProg = typeof postAcademyEase === 'function' ? postAcademyEase(waveNum) : 0;
-        count = Math.floor(count * (1.22 + rtsProg * 0.28));
-      }
-      if (isEnemyRtsEra(waveNum)) {
-        const enemyRts = typeof rtsMapBlend === 'function' ? rtsMapBlend(waveNum) : 0;
-        count = Math.floor(count * (1.1 + enemyRts * 0.18));
-      }
       count += getEnemyEconomySpawnBonus();
       count = Math.max(1, Math.floor(count * (asym.enemyCountMult || 1)));
       if (mods.stealReduction) count = Math.max(1, count - mods.stealReduction);
@@ -509,10 +501,6 @@ const GameWaves = (() => {
       const prNote = ProgressionRestarts.formatIntelNote({ wave: GS.wave });
       if (prNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${prNote}` : prNote;
     }
-    if (typeof PacingTools !== 'undefined') {
-      const ptNote = PacingTools.formatIntelNote({ gameSpeed: GS.gameSpeed });
-      if (ptNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${ptNote}` : ptNote;
-    }
     if (typeof EternalLegacyTree !== 'undefined') {
       const elNote = EternalLegacyTree.formatIntelNote({ wave: GS.wave });
       if (elNote) GS.nextWaveIntel = GS.nextWaveIntel ? `${GS.nextWaveIntel} · ${elNote}` : elNote;
@@ -688,6 +676,7 @@ const GameWaves = (() => {
     if (!isHorde && svc('ContentExpansion')) {
       GS.spawnQueue = svc('ContentExpansion').applyWaveEvent(GS.wave, GS.spawnQueue);
     }
+    if (svc('ModLoader')) GS.spawnQueue = svc('ModLoader').applyModWaves(GS.wave, GS.spawnQueue);
     GS.spawnQueue = stripStrayNamedBosses(GS.spawnQueue, GS.wave);
     if (GS.currentHordeWave) GS.currentHordeWave.queue = GS.spawnQueue;
     GS.waveEnemyTotal = GS.spawnQueue.length;
@@ -823,7 +812,7 @@ const GameWaves = (() => {
     GS.spawnSectors = [];
     announceAcademyEra();
     announceRtsEra();
-    announceEnemyRtsEra();
+    announceHostGrowth();
     announceKingdomEvolution();
     if (svc('PlayerCounterEvolution') && svc('EnemyFactions')) {
       svc('PlayerCounterEvolution').checkWaveAnnouncement(GS.wave, announceHooks());
@@ -835,7 +824,7 @@ const GameWaves = (() => {
       svc('SettlementRaids').checkWaveAnnouncement(GS.wave, announceHooks());
       if (svc('SettlementRaids').isActive(GS.wave)) {
         svc('SettlementRaids').refreshMissions(GS.buildings, GS.wave, {
-          isAttackable: isAttackableEnemyStructure,
+          isAttackable: isTargetableEnemyStructure,
         });
       }
     }
@@ -992,7 +981,12 @@ const GameWaves = (() => {
     GS.spawnDelayBonus = 0;
 
     for (const t of GS.pendingReinforce) {
-      const u = spawnUnit(t, 60 + Math.random() * (GS.worldW - 120), GS.deployY - 10, 'player');
+      const u = spawnUnit(
+        t,
+        60 + (globalThis.simRandom || Math.random)() * (GS.worldW - 120),
+        GS.deployY - 10,
+        'player'
+      );
       if (!u) continue;
       applyPlayerStatMods(u);
       if (svc('ContentExpansion')) svc('ContentExpansion').applyLoadoutToUnit(u);

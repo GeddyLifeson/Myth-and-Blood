@@ -70,7 +70,7 @@ const GameTargeting = (() => {
       const op = GS.buildings.find((b) => b.id === unit.garrisoned && b.complete);
       if (op) r += op.rangeBonus || BuildDefs.outpost.rangeBonus;
     }
-    return r;
+    return svc('DynamicMapEvents') ? r * svc('DynamicMapEvents').rangeMult(unit) : r;
   }
 
   function maxAttackRange(unit) {
@@ -287,11 +287,15 @@ const GameTargeting = (() => {
       if (unit.team === 'enemy' && foe.isGeneral) {
         score -= unit.type === 'assassin' ? 1200 : 800;
         if (foe.stationedKeep && unit.type !== 'assassin') score += 400;
+        // Lead from the front (js/general-orders.js): he draws the enemy to him.
+        if (foe.leadsFromFront) score -= 300;
       }
       if (sameTypeEngaging(foe, unit)) score += 200;
       score += engagers.filter((u) => u.type === unit.type).length * 90;
       score += engagers.length * 18;
       if (foe.id === unit.combatTargetId && isPursuableFoe(unit, foe)) score -= 28;
+      // An attack order outweighs everything else he can see.
+      if (foe.id === unit.attackOrderId) score -= 2000;
       if (svc('StrategyCounterplay')) {
         score += svc('StrategyCounterplay').getTargetScoreBias(unit, foe);
       }
@@ -456,7 +460,7 @@ const GameTargeting = (() => {
     ) {
       return { kind: 'unit', target: general };
     }
-    if (general && (!general.stationedKeep || Math.random() < 0.55)) {
+    if (general && (!general.stationedKeep || (globalThis.simRandom || Math.random)() < 0.55)) {
       return { kind: 'unit', target: general };
     }
     const settlement = findNearestPlayerSettlement(unit);
@@ -469,7 +473,7 @@ const GameTargeting = (() => {
       : isRtsEra(GS.wave)
         ? 0.72
         : 0.35;
-    if (settlement && Math.random() < raidChance) {
+    if (settlement && (globalThis.simRandom || Math.random)() < raidChance) {
       return { kind: 'building', target: settlement };
     }
     const want = Roster.preference(unit);

@@ -80,8 +80,8 @@ const GameField = (() => {
   function pickDecorationSpot(type, placed, maxAttempts = 50) {
     const radius = type === 'tree' ? 14 : 10;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const x = 50 + Math.random() * (GS.worldW - 100);
-      const y = 80 + Math.random() * (GS.worldH - 160);
+      const x = 50 + (globalThis.simRandom || Math.random)() * (GS.worldW - 100);
+      const y = 80 + (globalThis.simRandom || Math.random)() * (GS.worldH - 160);
       if (isDecorationSpotClear(x, y, radius, placed)) return { x, y, radius };
     }
     return null;
@@ -107,8 +107,8 @@ const GameField = (() => {
     const top = 70;
     const bottom = Math.max(top + 60, GS.rallyY - 130);
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      const x = 40 + Math.random() * (GS.worldW - 80);
-      const y = top + Math.random() * (bottom - top);
+      const x = 40 + (globalThis.simRandom || Math.random)() * (GS.worldW - 80);
+      const y = top + (globalThis.simRandom || Math.random)() * (bottom - top);
       if (isDecorationSpotClear(x, y, radius, placed)) return { x, y, radius };
     }
     return null;
@@ -277,7 +277,7 @@ const GameField = (() => {
     const decoCount = 8 + GS.territoryTier * 3;
 
     for (let i = 0; i < decoCount; i++) {
-      const t = types[Math.floor(Math.random() * types.length)];
+      const t = types[Math.floor((globalThis.simRandom || Math.random)() * types.length)];
       const spot = pickDecorationSpot(t, placed);
       if (!spot) continue;
 
@@ -286,7 +286,10 @@ const GameField = (() => {
         id: 'deco_' + i,
         x: spot.x,
         y: spot.y,
-        size: t === 'tree' ? 18 + Math.random() * 10 : 12 + Math.random() * 6,
+        size:
+          t === 'tree'
+            ? 18 + (globalThis.simRandom || Math.random)() * 10
+            : 12 + (globalThis.simRandom || Math.random)() * 6,
         hp: 999,
         blocksMove: true,
         blocksLOS: true,
@@ -295,6 +298,18 @@ const GameField = (() => {
       };
       GS.decorations.push(deco);
       placed.push(deco);
+    }
+
+    if (typeof ProcGenObstacles !== 'undefined') {
+      const session = svc('GameModes') ? svc('GameModes').getSession() : null;
+      const rocks = ProcGenObstacles.fieldOutcrops({
+        worldW: GS.worldW,
+        rallyY: GS.rallyY,
+        seed: session?.seed ?? Math.floor((globalThis.simRandom || Math.random)() * 1e9),
+        placed,
+      });
+      GS.decorations.push(...rocks);
+      placed.push(...rocks);
     }
 
     if (svc('GameDepth')) {

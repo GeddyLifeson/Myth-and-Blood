@@ -780,8 +780,70 @@ body.window-borderless .window-drag-handle {
 .expedition-btn .expedition-stage + .expedition-status {
   margin-left: 2px;
 }
-.planet-event-section {
-  margin-top: 4px;
+.omen-card {
+  position: absolute;
+  top: 52px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(380px, calc(100vw - 32px));
+  padding: 8px 10px;
+  background: rgba(14, 10, 8, 0.92);
+  border: 1px solid rgba(180, 40, 30, 0.7);
+  border-left-width: 4px;
+  color: #e8dcc8;
+  pointer-events: auto;
+  z-index: 30;
+}
+.omen-card[hidden] {
+  display: none;
+}
+.omen-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.omen-card-title {
+  font-weight: bold;
+}
+.omen-card-weather {
+  color: #b8c4cc;
+}
+.omen-card .planet-event-summary {
+  font-size: 11px;
+  color: #e8dcc8;
+}
+.omen-card .planet-event-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.omen-card .planet-event-btn {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-content: start;
+  font-size: 11px;
+  border-left-width: 1px;
+}
+.omen-card .planet-event-btn > span:first-child {
+  order: 0;
+  font-weight: bold;
+}
+.omen-card .planet-event-btn .planet-event-cost {
+  order: 1;
+}
+.omen-card .planet-event-btn .planet-event-hint {
+  order: 2;
+}
+.omen-card .planet-event-btn .planet-event-hint {
+  font-size: 10px;
+}
+.omen-card-default {
+  margin: 6px 0 0;
+  font-size: 10px;
+  color: rgba(200, 180, 150, 0.8);
 }
 .planet-event-summary {
   font-size: 9px;
@@ -1092,6 +1154,27 @@ body.window-borderless .window-drag-handle {
 }
 .ascension-btn:hover {
   background: rgba(80, 64, 24, 0.85) !important;
+}
+.ascension-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.epf-hud.run-path-locked {
+  opacity: 0.5;
+}
+.epf-hud.run-path-pending {
+  border-color: #c8202a !important;
+  animation: runPathPulse 1.6s ease-in-out infinite;
+}
+@keyframes runPathPulse {
+  50% {
+    box-shadow: 0 0 6px #c8202a;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .epf-hud.run-path-pending {
+    animation: none;
+  }
 }
 .ascension-badge {
   color: #e8c870;
@@ -1404,6 +1487,14 @@ body.window-borderless .window-drag-handle {
 }
 .cycle-btn:hover {
   background: linear-gradient(180deg, #6070b0, #405080);
+}
+.cycle-btn:disabled {
+  opacity: 0.55;
+  filter: grayscale(0.7);
+  cursor: not-allowed;
+}
+#begin-day-btn:disabled .bd-time::before {
+  content: 'horn in ';
 }
 .cycle-btn .night-prep-bar {
   position: absolute;
@@ -3012,6 +3103,25 @@ body.menu-dismissed #menu-screen,
 .company-empty {
   font-size: 11px;
   color: #807060;
+}
+.hero-synergy {
+  font-size: 9px;
+  color: #a89880;
+  margin-top: 4px;
+}
+.hero-synergy-on {
+  color: #d04030;
+  font-weight: bold;
+}
+.mercenary-camp {
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #4a3020;
+}
+.camp-hire {
+  margin-top: 6px;
+  width: 100%;
+  font-size: 10px;
 }
 .company-weakness {
   display: block;
@@ -5622,6 +5732,7 @@ body.game-playing #night-prep-card:not([hidden]) {
 .inpage-dialog-message {
   font-size: 15px;
   line-height: 1.45;
+  white-space: pre-line;
 }
 .inpage-dialog-input {
   display: block;
@@ -5666,4 +5777,18 @@ body.game-playing #night-prep-card:not([hidden]) {
 .inpage-dialog-input:focus-visible {
   outline: 2px solid #c0241c;
   outline-offset: 2px;
+}
+
+.hall-row {
+  font-size: calc(10px * var(--ui-scale) * var(--font-scale));
+  line-height: 1.35;
+  padding: 3px 2px;
+  border-top: 1px solid rgba(160, 130, 90, 0.25);
+}
+.hall-row.fallen {
+  color: #b05848;
+}
+.hall-row .hall-raise-btn {
+  display: block;
+  margin-top: 3px;
 }

@@ -5,60 +5,67 @@ const GameModes = (() => {
   const STORAGE_KEY = 'myth-and-blood-modes-v1';
   const LEADERBOARD_MAX = 25;
 
+  // `rule` is the one line shown on the button: what makes the mode play differently.
   const MODES = [
     {
       id: 'campaign',
       label: 'Campaign',
-      subtitle: 'Wave defense',
-      desc: 'Defend a growing realm. Land expands on all sides every 10 waves; hold flanks while waves get denser. Build, train, survive.',
+      rule: 'The whole war: eras, war camps and spoils. No leaderboard.',
+      desc: 'Defend a growing realm. The field widens every 10 waves; hold every sector as the host grows. Build, train, survive.',
     },
     {
       id: 'survival',
-      label: 'Survival Endless',
-      subtitle: 'Endless defense',
-      desc: 'Score-focused endless run. Later eras still unlock by wave. Leaderboard: wave × difficulty% + kills.',
+      label: 'Survival',
+      rule: '15% less TP; your run score goes on the leaderboard.',
+      desc: 'A lean endless run for the board. Every wave pays 15% less TP, so each soldier counts. Breaches and losses cost score.',
     },
     {
       id: 'roguelike',
       label: 'Roguelike',
-      desc: 'Random advanced modifiers rolled each run — no manual tweaking mid-campaign.',
+      rule: 'Four random modifiers, rolled and locked for the run.',
+      desc: 'Each run rolls four advanced modifiers that never clash. You cannot change them once the siege begins.',
     },
     {
       id: 'warband',
       label: 'Warband',
-      subtitle: 'Small squad',
+      rule: 'Soldiers cost double but are far tougher.',
       desc: 'Soldiers cost double, and each one is far tougher and hits harder. A small squad where every death hurts.',
     },
     {
       id: 'timed',
       label: 'Timed Blitz',
-      desc: 'Shorter night prep (50% time). Race the clock to higher waves.',
+      rule: 'Night is half as long: less time to build.',
+      desc: 'Night preparation lasts half as long. Build fast, then hold.',
     },
     {
       id: 'seed',
       label: 'Seed Run',
-      desc: 'Deterministic spawns from a shared seed — compare runs with friends.',
+      rule: 'Same seed, same waves: race a friend on equal terms.',
+      desc: 'Enemy waves, spawn points and field rolls come from the seed, so two players with one seed face the same siege.',
     },
     {
       id: 'academy_era',
       label: 'Academy Era',
-      subtitle: 'Jump to wave 100+',
-      desc: 'Start at wave 100–200 on the grown late-game map — academies, hamlets, and heavier northern assaults.',
-    },
-    {
-      id: 'async_coop',
-      label: 'Async Co-op',
-      desc: 'Shared kingdom with a friend — take turns via handoff codes. Create a room in Online Multiplayer.',
-    },
-    {
-      id: 'pvp_endless',
-      label: 'PvP Endless',
-      desc: 'Async duel — same seed, highest endless score wins. Share a PVP: match code.',
+      rule: 'Start late, at wave 100, 105 or 200.',
+      desc: 'Start at wave 100 to 200 on the grown late-game field, with academies, hamlets and heavier assaults.',
     },
     {
       id: 'pve_horde',
-      label: 'PvE Horde',
-      desc: 'Every wave is a horde assault. Survival scoring — hold the line as long as you can.',
+      label: 'Horde',
+      rule: 'Every wave is a horde, 35% larger.',
+      desc: 'Every wave is a horde assault, a third larger than usual. Hold the line as long as you can.',
+    },
+    {
+      id: 'async_coop',
+      label: 'Co-op by Code',
+      rule: 'Share one realm; pass it by copied code. No live link.',
+      desc: 'Two players take turns on one realm. Play, hand off from the pause menu, and send the code yourself. Nothing is sent over the internet.',
+    },
+    {
+      id: 'pvp_endless',
+      label: 'Duel by Code',
+      rule: 'Same seed, best run score wins; swap codes. No live link.',
+      desc: 'Both players run the same seed, then swap result codes. The higher run score wins. Cheated runs are marked. Nothing is sent over the internet.',
     },
   ];
 
@@ -359,7 +366,7 @@ const GameModes = (() => {
       elapsedMs: 0,
       survivalScore: 0,
       timedNightMult: modeId === 'timed' || rules.includes('night_short') ? 0.5 : 1,
-      tpTight: rules.includes('tp_tight'),
+      tpTight: rules.includes('tp_tight') || (!challenge && menu.modeId === 'survival'),
       noReinforceStrike: rules.includes('no_reinforce_strike'),
       forceHorde: menu.modeId === 'pve_horde',
       hordeCountMult: menu.modeId === 'pve_horde' ? 1.35 : 1,
@@ -452,23 +459,35 @@ const GameModes = (() => {
     session.elapsedMs += ms;
   }
 
+  /** Fallback when the siege loop has no score (it voids cheated runs): waves and kills only. */
   function computeScore(wave, kills, difficultyPercent) {
-    const base = wave * difficultyPercent + kills * 2;
-    const timeBonus = session ? Math.max(0, 120000 - session.elapsedMs) / 1000 : 0;
-    return Math.floor(base + timeBonus + (session?.scoreBonus || 0));
+    return Math.floor(wave * difficultyPercent + kills * 2 + (session?.scoreBonus || 0));
+  }
+
+  /** The run score from the game-over screen, plus a challenge bonus. */
+  function runScore(wave, kills, difficultyPercent) {
+    const s = typeof SiegeLoop !== 'undefined' ? SiegeLoop.lastScore?.() : null;
+    if (s && Number.isFinite(s.total)) return Math.floor(s.total + (session?.scoreBonus || 0));
+    return computeScore(wave, kills, difficultyPercent);
+  }
+
+  function isCheatedRun() {
+    return typeof Game !== 'undefined' && !!Game.cheatsUsed?.();
   }
 
   function recordResult(wave, kills, victory, difficultyPercent) {
     if (!session || (session.modeId === 'campaign' && !session.challengeId && !session.onlineCoop))
       return;
-    const score = computeScore(wave, kills, difficultyPercent);
+    const score = runScore(wave, kills, difficultyPercent);
+    const cheated = isCheatedRun();
     if (session.onlinePvp && typeof OnlineMultiplayer !== 'undefined') {
-      OnlineMultiplayer.onRunEnded(wave, kills, victory, score);
+      OnlineMultiplayer.onRunEnded(wave, kills, victory, score, cheated);
     }
     const entry = {
       wave,
       kills,
       score,
+      cheated,
       victory: !!victory,
       timeMs: session.elapsedMs,
       difficulty: session.difficulty,
@@ -491,7 +510,7 @@ const GameModes = (() => {
 
     const bestKey = `${boardKey}-best`;
     const prev = store.personalBests[bestKey];
-    if (!prev || score > prev.score) store.personalBests[bestKey] = entry;
+    if (!cheated && (!prev || score > prev.score)) store.personalBests[bestKey] = entry;
 
     store.challengeHistory.unshift({ ...entry, label: session.challengeLabel });
     store.challengeHistory = store.challengeHistory.slice(0, 40);
@@ -532,7 +551,8 @@ const GameModes = (() => {
       );
     else if (wave < 200)
       tips.push('Waves 100–200: academy economy — hamlets behind walls, protect guilds.');
-    else tips.push('Waves 200+: enemy RTS — hunt engineers, siege enemy settlements first.');
+    else
+      tips.push('Waves 200+: late war. Burn war camps before they dig in and guard your guilds.');
 
     if (difficultyId === 'doomslayer')
       tips.push('Hellbane base: expect faster spawns — protect academies and barracks.');
@@ -598,23 +618,19 @@ const GameModes = (() => {
     const weeklyBest = getPersonalBest(weekly.id);
 
     const selectedMode = MODES.find((m) => m.id === menu.modeId);
-    const modeSubtitle = selectedMode?.subtitle
-      ? `<p class="mode-subtitle">${selectedMode.subtitle}</p>`
-      : '';
     picker.innerHTML = `
       <div class="modes-header">GAME MODE</div>
       <div class="modes-grid">
         ${MODES.map(
           (m) => `
-          <button type="button" class="mode-btn ${menu.modeId === m.id ? 'selected' : ''} ${m.future ? 'future' : ''}"
-            data-mode="${m.id}" ${m.future ? 'disabled' : ''} title="${m.desc}">
-            ${m.label}${m.subtitle ? `<span class="mode-btn-sub">${m.subtitle}</span>` : ''}${m.future ? ' · Soon' : ''}
+          <button type="button" class="mode-btn ${menu.modeId === m.id ? 'selected' : ''}"
+            data-mode="${m.id}" title="${m.desc}">
+            ${m.label}<span class="mode-btn-sub">${m.rule}</span>
           </button>
         `
         ).join('')}
       </div>
-      ${modeSubtitle}
-      <p id="mode-desc" class="mode-desc">${selectedMode?.desc || ''}</p>
+      <p id="mode-desc" class="mode-desc">${menu.challengeType ? 'Challenge rules replace the mode for this run.' : selectedMode?.desc || ''}</p>
       <div class="modes-options">
         <label class="mode-check ${menu.ironman ? 'on' : ''}">
           <input type="checkbox" id="mode-ironman" ${menu.ironman ? 'checked' : ''}>
@@ -661,11 +677,11 @@ const GameModes = (() => {
           <div class="challenge-best">${weeklyBest ? `Your best: wave ${weeklyBest.wave} (score ${weeklyBest.score})` : 'No entry yet'}</div>
         </div>
       </div>
-      <p class="modes-hint">Daily/weekly use fixed rules for everyone today. Seed runs sync spawns — paste a MYTH: share code to replay community challenges.</p>
+      <p class="modes-hint">Daily and weekly runs use the same rules and seed for everyone. A MYTH: share code replays someone's Seed Run.</p>
       <div id="modes-leaderboard" class="modes-leaderboard"></div>
     `;
 
-    picker.querySelectorAll('.mode-btn:not(.future)').forEach((btn) => {
+    picker.querySelectorAll('.mode-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
         menu.modeId = btn.dataset.mode;
         menu.challengeType = null;
@@ -753,7 +769,10 @@ const GameModes = (() => {
     const rows = getLeaderboard(key, 5);
     el.innerHTML = rows.length
       ? `<div class="lb-title">Leaderboard — ${key}</div><ol class="lb-list">${rows
-          .map((r) => `<li>W${r.wave} · score ${r.score} · ${Math.round(r.timeMs / 1000)}s</li>`)
+          .map(
+            (r) =>
+              `<li${r.cheated ? ' class="lb-cheated"' : ''}>W${r.wave} · score ${r.score} · ${Math.round(r.timeMs / 1000)}s${r.cheated ? ' · cheats used' : ''}</li>`
+          )
           .join('')}</ol>`
       : '<div class="lb-title">Leaderboard empty — be the first entry!</div>';
   }
@@ -831,3 +850,6 @@ const GameModes = (() => {
 // Published for GameServices.registerFromGlobals(): a top-level `const` in a
 // classic script is not a property of globalThis, so it must be exported explicitly.
 globalThis.GameModes = GameModes;
+// Every simulation roll goes through this, so Seed Run, daily and weekly replay the same siege.
+// Looks and ids keep Math.random so drawing never moves the seeded stream.
+globalThis.simRandom = GameModes.random;

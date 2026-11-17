@@ -1,6 +1,6 @@
 /**
- * Opt-in anonymous analytics — popular strategies and drop-off waves.
- * No account, no names, no save data. Aggregates locally; optional beacon upload.
+ * Opt-in local run stats: popular strategies and drop-off waves.
+ * Kept in this browser only, never sent anywhere. Feeds the records sheet and Settings.
  */
 const Analytics = (() => {
   const STORAGE_KEY = 'myth-and-blood-analytics-v1';
@@ -17,7 +17,6 @@ const Analytics = (() => {
   ];
 
   let store = {
-    cohortId: null,
     runs: 0,
     outcomes: { victory: 0, defeat: 0, quit: 0 },
     dropOff: {},
@@ -26,8 +25,6 @@ const Analytics = (() => {
     formations: {},
     kingdomDoctrines: {},
     counterDoctrines: {},
-    pendingEvents: [],
-    lastFlushAt: 0,
   };
 
   let session = null;
@@ -40,9 +37,10 @@ const Analytics = (() => {
     } catch (_) {
       /* ignore */
     }
-    if (!store.cohortId) {
-      store.cohortId = `anon-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
-    }
+    // Fields that only the removed upload used: dropped from older stores.
+    delete store.cohortId;
+    delete store.pendingEvents;
+    delete store.lastFlushAt;
     ensureBuckets();
     save();
   }
@@ -78,13 +76,6 @@ const Analytics = (() => {
     return 'w500+';
   }
 
-  function getEndpoint() {
-    if (typeof window !== 'undefined' && window.MB_ANALYTICS_ENDPOINT) {
-      return String(window.MB_ANALYTICS_ENDPOINT);
-    }
-    return '';
-  }
-
   function isEnabled() {
     return enabled;
   }
@@ -98,6 +89,7 @@ const Analytics = (() => {
   function init() {
     load();
     syncEnabled();
+    renderSettings();
   }
 
   function setEnabled(on) {
@@ -127,11 +119,6 @@ const Analytics = (() => {
   function onRunStart(ctx = {}) {
     if (!enabled) return;
     beginSession(ctx);
-    queueEvent('run_start', {
-      modeId: ctx.modeId,
-      difficulty: ctx.difficulty,
-      difficultyPct: ctx.difficultyPct,
-    });
   }
 
   function onWaveReached(wave) {
@@ -203,22 +190,9 @@ const Analytics = (() => {
     for (const id of session.kingdomDoctrines) bump(store.kingdomDoctrines, id);
     for (const id of session.counterDoctrines) bump(store.counterDoctrines, id);
 
-    queueEvent('run_end', {
-      reason,
-      wave,
-      modeId: session.modeId,
-      difficulty: session.difficulty,
-      difficultyPct: session.difficultyPct,
-      loadout: topLoadout,
-      formation: topFormation,
-      kingdomDoctrines: session.kingdomDoctrines,
-      counterDoctrines: session.counterDoctrines,
-      victoryReason: payload.victoryReason || null,
-    });
-
     session = null;
     save();
-    maybeFlush();
+    renderSettings();
   }
 
   function onRunEnd(stats = {}) {
@@ -236,63 +210,8 @@ const Analytics = (() => {
     finalizeRun({ wave, reason: 'quit' });
   }
 
-  function queueEvent(type, data) {
-    store.pendingEvents.push({ type, at: Date.now(), ...data });
-    if (store.pendingEvents.length > 80) store.pendingEvents = store.pendingEvents.slice(-80);
-    save();
-  }
-
-  function maybeFlush() {
-    const endpoint = getEndpoint();
-    if (!endpoint || !enabled || !store.pendingEvents.length) return;
-    const now = Date.now();
-    if (now - (store.lastFlushAt || 0) < 15000) return;
-    flush();
-  }
-
-  function flush() {
-    const endpoint = getEndpoint();
-    if (!endpoint || !enabled || !store.pendingEvents.length) return false;
-    const batch = {
-      v: VERSION,
-      cohortId: store.cohortId,
-      aggregates: {
-        runs: store.runs,
-        outcomes: store.outcomes,
-        dropOff: store.dropOff,
-        loadouts: store.loadouts,
-        formations: store.formations,
-      },
-      events: store.pendingEvents.splice(0, 40),
-    };
-    const body = JSON.stringify(batch);
-    let sent = false;
-    try {
-      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
-        sent = navigator.sendBeacon(endpoint, body);
-      } else if (typeof fetch !== 'undefined') {
-        fetch(endpoint, {
-          method: 'POST',
-          body,
-          headers: { 'Content-Type': 'application/json' },
-          keepalive: true,
-        }).catch(() => {});
-        sent = true;
-      }
-    } catch (_) {
-      /* ignore */
-    }
-    if (sent) {
-      store.lastFlushAt = Date.now();
-      save();
-    }
-    return sent;
-  }
-
   function clearLocal() {
-    const cohortId = store.cohortId;
     store = {
-      cohortId,
       runs: 0,
       outcomes: { victory: 0, defeat: 0, quit: 0 },
       dropOff: {},
@@ -301,8 +220,6 @@ const Analytics = (() => {
       formations: {},
       kingdomDoctrines: {},
       counterDoctrines: {},
-      pendingEvents: [],
-      lastFlushAt: 0,
     };
     ensureBuckets();
     session = null;
@@ -356,23 +273,24 @@ const Analytics = (() => {
       })),
       kingdomDoctrines: topEntries(store.kingdomDoctrines, 4),
       counterDoctrines: topEntries(store.counterDoctrines, 4),
-      hasEndpoint: !!getEndpoint(),
     };
   }
 
   function renderSettings() {
-    const root = document.getElementById('analytics-insights');
-    if (!root) return;
+    if (typeof document === 'undefined') return;
+    for (const id of ['analytics-insights', 'records-run-stats']) {
+      const root = document.getElementById(id);
+      if (root) root.innerHTML = insightsHtml();
+    }
+  }
+
+  function insightsHtml() {
     if (!enabled) {
-      root.innerHTML =
-        '<p class="analytics-muted">Enable anonymous analytics above to contribute strategy and drop-off trends. No personal data is collected.</p>';
-      return;
+      return '<p class="analytics-muted">Turn on run stats in Settings, Privacy, to build local strategy and drop-off trends. They stay on this device.</p>';
     }
     const ins = getInsights();
     if (!ins.runs) {
-      root.innerHTML =
-        '<p class="analytics-muted">No runs recorded yet — finish or abandon a campaign to populate local trends.</p>';
-      return;
+      return '<p class="analytics-muted">No runs recorded yet — finish or abandon a campaign to populate local trends.</p>';
     }
     const bar = (pct) => {
       const w = Math.max(4, Math.min(100, pct));
@@ -397,13 +315,12 @@ const Analytics = (() => {
           `<div class="analytics-row"><span class="analytics-label">Wave ${f.wave}+</span><span class="analytics-bar-wrap">${bar(f.pct)}</span><span class="analytics-val">${f.pct}%</span></div>`
       )
       .join('');
-    root.innerHTML = `
-      <p class="analytics-summary">${ins.runs} anonymous run${ins.runs === 1 ? '' : 's'} · ${ins.outcomes.victory} wins · ${ins.outcomes.defeat} defeats · ${ins.outcomes.quit} quits</p>
+    return `
+      <p class="analytics-summary">${ins.runs} run${ins.runs === 1 ? '' : 's'} · ${ins.outcomes.victory} wins · ${ins.outcomes.defeat} defeats · ${ins.outcomes.quit} quits</p>
       <div class="analytics-section"><div class="analytics-section-head">Drop-off waves</div>${dropRows || '<p class="analytics-muted">No drop-offs yet.</p>'}</div>
       <div class="analytics-section"><div class="analytics-section-head">Survival funnel</div>${funnelRows}</div>
       <div class="analytics-section"><div class="analytics-section-head">Popular loadouts</div><ul class="analytics-list">${loadoutRows || '<li>—</li>'}</ul></div>
       <div class="analytics-section"><div class="analytics-section-head">Popular formations</div><ul class="analytics-list">${formationRows || '<li>—</li>'}</ul></div>
-      ${ins.hasEndpoint ? '<p class="analytics-muted">Aggregates may sync anonymously when online.</p>' : ''}
     `;
   }
 
@@ -415,7 +332,7 @@ const Analytics = (() => {
     });
     document.getElementById('analytics-export-btn')?.addEventListener('click', () => {
       AudioEngine?.SFX?.click?.();
-      const payload = { v: VERSION, cohortId: store.cohortId, ...getInsights(), store };
+      const payload = { v: VERSION, ...getInsights(), store };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -443,6 +360,5 @@ const Analytics = (() => {
     renderSettings,
     bindSettings,
     clearLocal,
-    flush,
   };
 })();

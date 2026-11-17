@@ -892,40 +892,12 @@ const ContentExpansion = (() => {
     });
 
     Object.assign(SpyActions, {
-      muster: { name: 'Muster Deserters', cost: 5, desc: 'Next wave -2 foes; reveals flanks' },
-      war_chest: { name: 'Raid War Chest', cost: 4, desc: '+6 TP now; next wave +2 enemies' },
-      forge_maps: {
-        name: 'Forge Maps',
-        cost: 3,
-        desc: 'A supply crate lands at dawn, marked on the field: no ambush, always TP.',
-      },
-      tunnel: {
-        name: 'Tunnel Network',
-        cost: 5,
-        desc: 'Burrowers surfaced; -25% burrower HP next wave',
-      },
       settlement_raid: {
-        name: 'Settlement Raid',
+        // EconomyRules.patchCampActions fills in the full text; the gate must be right from the start.
+        name: 'Raid the War Camp',
         cost: 7,
-        desc: 'Wave 150+ — strike an enemy hold for 45% of its health. No holds stand yet, so this is refused and costs nothing.',
-        kingdomStage: 3,
-        waveMin: 150,
-      },
-    });
-
-    Object.assign(CourierMessages, {
-      herald: { name: 'Royal Herald', cost: 3, desc: '+4 morale all; preview next wave event' },
-      muster: { name: 'Emergency Muster', cost: 4, desc: 'Spawn 1 footman now; -2 morale all' },
-      war_chest: {
-        name: 'Open War Chest',
-        cost: 2,
-        desc: '+4 TP; courier rides faster next dispatch',
-      },
-      counter_hold: {
-        name: 'Counter-Hold',
-        cost: 5,
-        desc: 'Wave 200+ — raise northern outpost + scout; 2 footmen next round (Dominion only)',
-        kingdomStage: 4,
+        desc: 'Raiders ride for the weakest war camp. Refused at no cost when no camp stands.',
+        waveMin: 5,
       },
     });
 
@@ -1147,229 +1119,23 @@ const ContentExpansion = (() => {
       .reduce((s, b) => s + (BuildDefs[b.type]?.tpPerRound || b.tpPerRound || 0), 0);
   }
 
-  const WAVE_EVENTS = {
-    hellscape_whisper: {
-      id: 'hellscape_whisper',
-      waveMin: 480,
-      waveMod: 37,
-      priority: 100,
-      label: 'Hellscape Whisper',
-      float: 'HELLSCAPE',
-      color: '#8040a0',
-      message: 'Hellscape whispers — void stalkers and abominations breach the line!',
-      spawns: ['void_stalker', 'abomination', 'necromancer'],
-      moralePenalty: 6,
-    },
-    dominion_surge: {
-      id: 'dominion_surge',
-      waveMin: 175,
-      waveMod: 40,
-      priority: 90,
-      label: 'Dominion Surge',
-      float: 'DOMINION',
-      color: '#e06040',
-      message: 'Dominion Surge — the host doubles down with elites and siege!',
-      spawns: ['war_chief', 'dark_knight', 'siege_tower', 'goblin_sapper'],
-      countMult: 1.14,
-    },
-    mirror_assault: {
-      id: 'mirror_assault',
-      waveMin: 95,
-      waveMod: 25,
-      priority: 80,
-      label: 'Mirror Assault',
-      float: 'MIRROR',
-      color: '#80a0c0',
-      message: 'Mirror Assault — assassins and dark knights echo your own tactics!',
-      spawns: ['assassin', 'dark_knight', 'berserker', 'assassin'],
-    },
-    siege_breach: {
-      id: 'siege_breach',
-      waveMin: 75,
-      waveMod: 35,
-      priority: 70,
-      label: 'Siege Breach',
-      float: 'BREACH',
-      color: '#c08050',
-      message: 'Siege Breach — burrowers and engineers target your walls!',
-      spawns: ['goblin_burrower', 'goblin_engineer', 'goblin_sapper', 'siege_tower'],
-    },
-    necromancer_conclave: {
-      id: 'necromancer_conclave',
-      waveMin: 40,
-      waveMod: 27,
-      priority: 65,
-      label: 'Necromancer Conclave',
-      float: 'CONCLAVE',
-      color: '#7040a0',
-      message: 'Necromancer Conclave — undead casters swell the host!',
-      spawns: ['necromancer', 'dark_mage', 'shaman'],
-    },
-    aerial_swarm: {
-      id: 'aerial_swarm',
-      waveMin: 35,
-      waveMod: 26,
-      priority: 60,
-      label: 'Aerial Swarm',
-      float: 'AERIAL',
-      color: '#60a0d0',
-      message: 'Aerial Swarm — harpies and drakes darken the sky!',
-      spawns: ['harpy', 'sky_drake', 'harpy', 'warg_rider'],
-    },
-    morale_crisis: {
-      id: 'morale_crisis',
-      waveMin: 60,
-      waveMod: 33,
-      priority: 55,
-      label: 'Morale Crisis',
-      float: 'CRISIS',
-      color: '#a06060',
-      message: 'Morale Crisis — whispers of defeat; assassins probe your line!',
-      spawns: ['assassin', 'assassin'],
-      moralePenalty: 8,
-    },
-    veteran_muster: {
-      id: 'veteran_muster',
-      waveMin: 50,
-      waveMod: 19,
-      priority: 50,
-      label: 'Veteran Muster',
-      float: 'MUSTER',
-      color: '#c0a040',
-      message: 'Veteran Muster — reserves arrive with coin and courage!',
-      grantTp: 6,
-      moraleBonus: 6,
-    },
-    gold_rush: {
-      id: 'gold_rush',
-      waveMin: 30,
-      waveMod: 21,
-      priority: 45,
-      label: 'Gold Rush',
-      float: 'GOLD RUSH',
-      color: '#e0c040',
-      message: 'Northern gold rush — merchants pay tribute! +8 TP',
-      grantTp: 8,
-    },
-    siege_push: {
-      id: 'siege_push',
-      waveMin: 23,
-      waveMod: 23,
-      priority: 40,
-      label: 'Siege Push',
-      float: 'SIEGE PUSH',
-      color: '#ff8040',
-      message: 'Siege Push — extra towers and sappers!',
-      spawns: ['siege_tower', 'goblin_sapper', 'siege_tower'],
-    },
-    blood_moon: {
-      id: 'blood_moon',
-      waveMin: 13,
-      waveMod: 13,
-      priority: 35,
-      label: 'Blood Moon',
-      float: 'BLOOD MOON',
-      color: '#c04080',
-      message: 'Blood Moon rises — flying predators join the hunt!',
-      spawns: ['harpy', 'sky_drake', 'berserker'],
-    },
-    // Early-war events: small swings from the first few waves so no two runs open alike.
-    night_raid: {
-      id: 'night_raid',
-      waveMin: 4,
-      waveMod: 4,
-      priority: 20,
-      label: 'Night Raid',
-      float: 'RAIDERS',
-      color: '#ff7050',
-      message: 'Raiders slipped in with the host — wargs and goblins on the flank!',
-      spawns: ['goblin', 'goblin', 'warg_rider'],
-    },
-    village_tithe: {
-      id: 'village_tithe',
-      waveMin: 3,
-      waveMod: 7,
-      priority: 25,
-      label: 'Village Tithe',
-      float: 'TITHE',
-      color: '#80c060',
-      message: 'A village sends its tithe. +3 TP',
-      grantTp: 3,
-    },
-    supply_caravan: {
-      id: 'supply_caravan',
-      waveMin: 17,
-      waveMod: 17,
-      priority: 30,
-      label: 'Supply Caravan',
-      float: 'CARAVAN',
-      color: '#80c060',
-      message: 'Supply caravan arrived! +5 TP',
-      grantTp: 5,
-    },
-  };
-
+  /** Field news now lives in the omen deck (js/dynamic-map-events.js); this is its "field" draw. */
   function pickWaveEvent(wave) {
-    if (typeof DynamicMapEvents === 'undefined' || DynamicMapEvents.eventSlot(wave) !== 'field') {
-      return null;
-    }
-    const live = Object.values(WAVE_EVENTS).filter((e) => !e.waveMin || wave >= e.waveMin);
-    return DynamicMapEvents.deckPick(live, wave, 23)?.id ?? null;
-  }
-
-  /** What the event deck holds for a wave, by name, whichever system speaks. */
-  function heraldNews(wave) {
     if (typeof DynamicMapEvents === 'undefined') return null;
-    const slot = DynamicMapEvents.eventSlot(wave);
-    if (slot === 'field') return WAVE_EVENTS[pickWaveEvent(wave)]?.label || null;
-    if (slot === 'planet') return DynamicMapEvents.pickEvent(wave)?.name || null;
-    if (slot === 'wildlife') {
-      return typeof NeutralWildlife !== 'undefined'
-        ? NeutralWildlife.pickWaveEvent(wave)?.label || null
-        : null;
-    }
-    return slot === 'hazard' ? 'enemy hazards laid on the field' : null;
+    const evt = DynamicMapEvents.pickEvent(wave);
+    return evt?.kind === 'field' ? evt.id : null;
   }
 
+  /** What the omen deck holds for a wave, by name. */
+  function heraldNews(wave) {
+    return typeof DynamicMapEvents !== 'undefined' ? DynamicMapEvents.heraldNews(wave) : null;
+  }
+
+  /** Dawn: the omen card's answer adds or turns back foes in the built host. */
   function applyWaveEvent(wave, spawnQueue) {
     waveEventId = pickWaveEvent(wave);
-    if (!waveEventId || !ctx) return spawnQueue;
-    const evt = WAVE_EVENTS[waveEventId];
-    if (!evt) return spawnQueue;
-    const q = [...spawnQueue];
-    if (evt.spawns?.length) {
-      for (const t of evt.spawns) {
-        if (typeof EnemyDefs !== 'undefined' && !EnemyDefs[t]) continue;
-        q.push(t);
-      }
-    }
-    if (evt.grantTp) {
-      ctx.tactical = Math.min(
-        typeof TP_SANITY_CAP !== 'undefined' ? TP_SANITY_CAP : 9999,
-        (ctx.tactical || 0) + evt.grantTp
-      );
-    }
-    if (evt.grantScience && ctx.grantScience) ctx.grantScience(evt.grantScience);
-    if (evt.countMult && ctx.pendingWaveMods) {
-      ctx.pendingWaveMods.countMult *= evt.countMult;
-    }
-    if (evt.moraleBonus && ctx.units) {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0 && u.morale != null) {
-          u.morale = Math.min(u.maxMorale, u.morale + evt.moraleBonus);
-        }
-      }
-    }
-    if (evt.moralePenalty && ctx.units) {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0 && u.morale != null) {
-          u.morale = Math.max(0, u.morale - evt.moralePenalty);
-        }
-      }
-    }
-    ctx.showMessage?.(evt.message, 320);
-    FloatingText?.status(ctx.worldW / 2, 56, evt.float || evt.label.toUpperCase(), evt.color);
-    return q;
+    if (typeof DynamicMapEvents === 'undefined') return spawnQueue;
+    return DynamicMapEvents.applyToQueue(wave, spawnQueue);
   }
 
   function spawnDestructibles(decorations, worldW, worldH, rallyY, tier) {
@@ -1381,8 +1147,8 @@ const ContentExpansion = (() => {
       decorations.push({
         type: t,
         id: `dest_${i}_${Date.now()}`,
-        x: 70 + Math.random() * (worldW - 140),
-        y: rallyY - 100 + Math.random() * (worldH - rallyY - 100),
+        x: 70 + (globalThis.simRandom || Math.random)() * (worldW - 140),
+        y: rallyY - 100 + (globalThis.simRandom || Math.random)() * (worldH - rallyY - 100),
         size: t === 'supply_crate' ? 16 : 14,
         hp: t === 'supply_crate' ? 40 : 30,
         maxHp: t === 'supply_crate' ? 40 : 30,
@@ -1539,7 +1305,12 @@ const ContentExpansion = (() => {
         const nearPlayer = units.some(
           (p) => p.team === 'player' && p.hp > 0 && Math.hypot(p.x - u.x, p.y - u.y) < 90
         );
-        if (!u.burrowed && u.burrowTimer > 120 && !nearPlayer && Math.random() < 0.02) {
+        if (
+          !u.burrowed &&
+          u.burrowTimer > 120 &&
+          !nearPlayer &&
+          (globalThis.simRandom || Math.random)() < 0.02
+        ) {
           u.burrowed = true;
           u.speed *= 0.35;
         } else if (u.burrowed && nearPlayer) {
@@ -1559,7 +1330,7 @@ const ContentExpansion = (() => {
         if (u.summonTimer <= 0) {
           u.summonTimer = u.summonCooldown || 280;
           const st = u.summonType || 'goblin';
-          const sx = u.x + (Math.random() - 0.5) * 40;
+          const sx = u.x + ((globalThis.simRandom || Math.random)() - 0.5) * 40;
           const sy = u.y + 20;
           const minion = ctx.createUnit(st, sx, sy, 'enemy');
           if (minion) {
@@ -1730,125 +1501,6 @@ const ContentExpansion = (() => {
       StrikeFX?.play?.('fortify', wx, wy, ab.radius);
       FloatingText?.status(wx, wy, 'FORTIFY', '#80a0c0');
       ctx.showMessage('Fortify zone established — allies take less damage!');
-      return true;
-    }
-    return false;
-  }
-
-  function handleSpyAction(action) {
-    if (!ctx) return false;
-    const def = SpyActions[action];
-    if (!def) return false;
-
-    if (action === 'muster') {
-      ctx.pendingWaveMods.stealReduction = (ctx.pendingWaveMods.stealReduction || 0) + 2;
-      ctx.pendingWaveMods.revealed = true;
-      ctx.showMessage('Deserters mustered — next wave lighter; flanks revealed.');
-      return true;
-    }
-    if (action === 'war_chest') {
-      ctx.tactical += 6;
-      ctx.pendingWaveMods.stealReduction = (ctx.pendingWaveMods.stealReduction || 0) - 2;
-      ctx.showMessage('War chest raided! +6 TP — expect reprisal (+2 foes).');
-      return true;
-    }
-    if (action === 'forge_maps') {
-      ctx.mapsRevealed = true;
-      for (const d of ctx.decorations) {
-        if (d.type === 'supply_crate' || d.type === 'oil_barrel') d.revealed = true;
-      }
-      if (typeof SiegeLoop !== 'undefined' && SiegeLoop.forgeMaps) SiegeLoop.forgeMaps();
-      ctx.showMessage('Maps forged — a marked supply crate will land at dawn. No ambush.');
-      return true;
-    }
-    if (action === 'tunnel') {
-      ctx.pendingWaveMods.hpMult = (ctx.pendingWaveMods.hpMult || 1) * 0.75;
-      for (const u of ctx.units) {
-        if (u.burrower) u.burrowed = false;
-      }
-      ctx.showMessage('Tunnel network collapsed — burrowers flushed; next wave burrowers weaker.');
-      return true;
-    }
-    if (action === 'settlement_raid') {
-      const targets = (ctx.buildings || []).filter((b) => ctx.isAttackableEnemyStructure?.(b));
-      if (!targets.length) {
-        ctx.showMessage('No enemy settlements to raid — hunt their northern holds on the map.');
-        // false so executeSpyAction can refund TP / not burn the wave spy charge.
-        return false;
-      }
-      let best = targets[0];
-      let bestRatio = best.hp / Math.max(1, best.maxHp || 1);
-      for (const b of targets) {
-        const r = b.hp / Math.max(1, b.maxHp || 1);
-        if (r < bestRatio) {
-          bestRatio = r;
-          best = b;
-        }
-      }
-      const dmg = Math.max(1, Math.floor((best.maxHp || best.hp) * 0.45));
-      ctx.damageBuilding?.(best, dmg);
-      const name = typeof BuildDefs !== 'undefined' ? BuildDefs[best.type]?.name : 'hold';
-      ctx.showMessage(`Raid party hits enemy ${name || 'settlement'}! ${dmg} siege damage.`, 320);
-      FloatingText?.status(best.x, best.y, 'RAID', '#ff8060');
-      return true;
-    }
-    return false;
-  }
-
-  function handleCourierMessage(msg) {
-    if (!ctx) return false;
-    if (msg === 'herald') {
-      for (const u of ctx.units) {
-        if (u.team === 'player' && u.hp > 0) {
-          u.morale = Math.min(u.maxMorale, u.morale + 4);
-        }
-      }
-      const news = heraldNews(ctx.wave + 1);
-      if (news) ctx.showMessage(`Herald proclaims: the next wave brings ${news}!`, 300);
-      else ctx.showMessage('Royal herald spreads courage across the ranks!');
-      return true;
-    }
-    if (msg === 'muster') {
-      const u = ctx.createUnit('footman', ctx.worldW / 2, ctx.deployY, 'player');
-      if (u) {
-        u.targetY = ctx.rallyY;
-        ctx.units.push(u);
-        applyLoadoutToUnit(u);
-      }
-      for (const ally of ctx.units) {
-        if (ally.team === 'player' && ally.hp > 0) ally.morale = Math.max(0, ally.morale - 2);
-      }
-      ctx.showMessage('Emergency muster — footman deployed; troops grumble (-2 morale).');
-      return true;
-    }
-    if (msg === 'war_chest') {
-      ctx.tactical += 4;
-      const courier = ctx.units.find((u) => u.type === 'courier' && u.hp > 0);
-      if (courier) courier.courierCooldownMult = (courier.courierCooldownMult || 1) * 0.7;
-      ctx.showMessage('War chest opened! +4 TP; courier rides swift next dispatch.');
-      return true;
-    }
-    if (msg === 'counter_hold') {
-      const nx = Math.floor(ctx.worldW * 0.68);
-      const ny = Math.floor(ctx.worldH * 0.24);
-      const placed = ctx.placeCompleteBuilding?.('outpost', nx, ny, 'player');
-      if (placed) {
-        ctx.placeCompleteBuilding?.('watchtower', nx + 36, ny - 20, 'player');
-        ctx.queueReinforce?.('footman', 'footman');
-        const scout = ctx.createUnit?.('scout', nx - 24, ny + 12, 'player');
-        if (scout) {
-          scout.targetY = ctx.rallyY;
-          applyLoadoutToUnit(scout);
-          ctx.units.push(scout);
-        }
-        ctx.showMessage(
-          'Counter-hold raised in the north — outpost, watchtower, and scout deployed. Reinforcements ride at dawn.',
-          360
-        );
-        FloatingText?.status(nx, ny, 'COUNTER-HOLD', '#80ffa0');
-      } else {
-        ctx.showMessage('Could not raise counter-hold — clear northern ground near the frontier.');
-      }
       return true;
     }
     return false;
@@ -2086,7 +1738,7 @@ const ContentExpansion = (() => {
       {
         cat: 'orders',
         name: 'Wave Events',
-        body: 'Rotating wave events scale with campaign era — highest-priority match each wave. Early: Blood Moon (÷13), Caravan (÷17), Siege Push (÷23). Mid: Gold Rush, Aerial Swarm, Necromancer Conclave, Veteran Muster. Late (100+): Mirror Assault, Siege Breach, Dominion Surge (+spawn pressure). Hellscape Whisper (480+): void elites. Herald courier previews the next event.',
+        body: 'Rotating wave events scale with campaign era — highest-priority match each wave. Early: Blood Moon (÷13), Caravan (÷17), Siege Push (÷23). Mid: Gold Rush, Aerial Swarm, Necromancer Conclave, Veteran Muster. Late (100+): Mirror Assault, Siege Breach, Dominion Surge (+spawn pressure). Hellscape Whisper (480+): void elites.',
       },
       {
         cat: 'orders',
@@ -2095,18 +1747,18 @@ const ContentExpansion = (() => {
       },
       {
         cat: 'orders',
-        name: 'Spy: Muster / War Chest / Maps / Tunnel',
-        body: 'New spy actions with trade-offs: lighter waves, TP now vs reprisal, cache reveal, flush burrowers.',
+        name: 'Spy network',
+        body: 'Four actions, one a wave, each seen on the field. Scout Report (night): the next host by type, with head counts pinned to the top edge. Ambush on the Road: a marked ambush; the first 30% of the host arrive at 60% health. Mark the Warlord: the strongest foe is outlined and takes 25% more damage. Raid the War Camp: raiders ride for the weakest camp.',
       },
       {
         cat: 'orders',
-        name: 'Courier: Herald / Muster / War Chest',
-        body: 'Morale + event preview; emergency footman at morale cost; TP + faster courier.',
+        name: 'Courier orders',
+        body: 'The Courier rides off the bottom edge and back, about 20 seconds. The order lands when he returns; if he falls on the road it is lost. Reinforcements: two footmen and an archer march in at the muster line. Field Surgeons: the wounded at the muster line heal over 15 seconds. Fresh Arrows: ranged troops shoot 35% faster for 20 seconds.',
       },
       {
         cat: 'orders',
-        name: 'Settlement Raids (Wave 150+)',
-        body: 'Strike missions — select 2+ hunters and dispatch from the SETTLEMENT RAIDS panel; full TP + science loot when the hold is razed. Settlement Raid (spy, wave 150+) — 45% max HP sabotage on the weakest enemy hold. Counter-Hold (courier, wave 200+) — northern outpost, watchtower, scout, and 2 footmen next round.',
+        name: 'Strike Raids (Wave 6+)',
+        body: 'Every standing war camp is a mission on the STRIKE RAIDS panel. Select 2+ hunters and dispatch them: they march on the camp, and razing it pays TP and science on top of the bounty. A dug-in camp pays more. The spy can also send raiders at the weakest camp (Raid the War Camp).',
       },
       {
         cat: 'perks',
@@ -2158,8 +1810,6 @@ const ContentExpansion = (() => {
     updatePerTick,
     updateEnemyAI,
     useAbility,
-    handleSpyAction,
-    handleCourierMessage,
     onBuildingComplete,
     getAbilityCost,
     getSpyCost,

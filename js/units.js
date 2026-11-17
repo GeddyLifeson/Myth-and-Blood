@@ -12,7 +12,9 @@ const MAP_EXPAND_H = 110;
 const ACADEMY_ERA_WAVE = 100;
 const RTS_ERA_WAVE = 200;
 const NIGHT_TICKS_PER_SECOND = 60;
-const NIGHT_PREP_SECONDS = 60;
+const NIGHT_PREP_SECONDS = 75;
+// The horn stays quiet this long into each night, so every wave gets a real planning window.
+const HORN_LOCK_SECONDS = 25;
 const NIGHT_PREP_TICKS = NIGHT_TICKS_PER_SECOND * NIGHT_PREP_SECONDS;
 const NIGHT_BUILD_MULT = 1.35;
 const ACADEMY_HYBRID_WAVES = 5;
@@ -463,56 +465,6 @@ function isKingdomRaidsUnlocked(waveNum) {
   return getKingdomStageBuffs(waveNum).raidsUnlocked;
 }
 
-/** Army doctrines unlocked at each kingdom evolution stage (one activation per wave). */
-const KINGDOM_DOCTRINES = {
-  outpost_stand: {
-    id: 'outpost_stand',
-    name: 'Outpost Stand',
-    cost: 4,
-    kingdomStage: 1,
-    desc: 'The line holds — all allies take 15% less damage for 6 minutes.',
-    duration: 360,
-    mitigation: 0.15,
-  },
-  royal_muster: {
-    id: 'royal_muster',
-    name: 'Royal Muster',
-    cost: 5,
-    kingdomStage: 2,
-    desc: 'Crown levy — +5 TP now and +4 morale to every ally on the field.',
-    tpGrant: 5,
-    moraleBoost: 4,
-  },
-  imperial_march: {
-    id: 'imperial_march',
-    name: 'Imperial March',
-    cost: 8,
-    kingdomStage: 3,
-    desc: 'Map-wide rally — +12 morale, clears routing, +15% damage for 7 minutes.',
-    global: true,
-    duration: 420,
-    moraleBoost: 12,
-    damageMult: 1.15,
-  },
-  hellforge_decree: {
-    id: 'hellforge_decree',
-    name: 'Hellforge Decree',
-    cost: 10,
-    kingdomStage: 4,
-    desc: 'Hell-forged wrath — map-wide +10 morale, +20% damage, +12% speed for 6 minutes.',
-    global: true,
-    duration: 360,
-    moraleBoost: 10,
-    damageMult: 1.2,
-    speedMult: 1.12,
-  },
-};
-
-function getUnlockedKingdomDoctrines(waveNum) {
-  const stage = getKingdomStageBuffs(waveNum).stage;
-  return Object.values(KINGDOM_DOCTRINES).filter((d) => stage >= d.kingdomStage);
-}
-
 /**
  * Content tier — hazards / biomes / wildlife unlock cadence (independent of map size).
  */
@@ -872,31 +824,23 @@ const KEEP_GENERAL_SLOT_DY = -38;
 const BUILDER_MAX_PROJECTS = 2;
 const RETREAT_HP_RATIO = 0.25;
 
+/** The Courier rides off the bottom edge and back; the order lands when he returns alive. */
 const CourierMessages = {
   reinforce: {
-    name: 'Request Reinforcements',
+    name: 'Reinforcements',
     cost: 4,
-    desc: 'King sends 2 footmen next round. The army surcharge applies to the price.',
+    desc: 'Two footmen and an archer march in at the muster line when he returns. The army surcharge applies to the price.',
   },
-  decree: { name: 'Royal Decree', cost: 2, desc: '+5 morale to all troops' },
-  levy: {
-    name: 'Tax Levy',
-    cost: 1,
-    desc: '+5 TP at the next wave clear; every soldier loses 2 morale.',
-  },
-  banner: {
-    name: 'Call the Banner',
-    cost: 6,
-    desc: 'Summon 1 knight immediately. Needs Iron Weapons; +2 TP per earlier call, and the army surcharge applies.',
-  },
-  supplies: { name: 'Supply Train', cost: 3, desc: 'Heal all allies 25 HP' },
-  truce: { name: 'Offer Truce', cost: 4, desc: 'Delay spawns; +8 morale all troops' },
-  hunt_pact: {
-    name: 'Hunt Pact',
+  surgeons: {
+    name: 'Field Surgeons',
     cost: 3,
-    desc: 'Seal wildlife pact — +rep, allied beasts (wave 8+)',
+    desc: 'The wounded at the muster line heal over 15 seconds, half their health in all.',
   },
-  evacuate: { name: 'Medical Evac', cost: 4, desc: 'Wounded allies retreat to med tents' },
+  arrows: {
+    name: 'Fresh Arrows',
+    cost: 3,
+    desc: 'Every archer, crossbowman and other ranged soldier shoots 35% faster for 20 seconds.',
+  },
 };
 
 /** Abilities / SpyActions — loaded from data/strikes.json via GameData. */
@@ -1006,7 +950,7 @@ function rollHonorName(unit) {
   const h = hashUnitId(unit.id);
   const prefixes = HONOR_PREFIX_BY_TYPE[unit.type] || HONOR_PREFIX_BY_TYPE.footman;
   const prefix = prefixes[h % prefixes.length];
-  const given = HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
+  const given = unit.soldierName || HONOR_NAME_POOL[honorPoolIndex(h, HONOR_NAME_POOL.length)];
   return `${prefix} ${given}`;
 }
 
@@ -1360,6 +1304,13 @@ function upgradeVeteranUnit(unit) {
   applyVeteranTierStep(unit, unit.vetTier);
   unit.vetStatTierApplied = unit.vetTier;
   unit.experience = (unit.experience || 0) + 5;
+  // A new rank can open a trait slot for a deed already done.
+  if (typeof Veterans !== 'undefined' && typeof GameArmy !== 'undefined') {
+    GameArmy.notifyTraits(
+      unit,
+      Veterans.check(unit, typeof GameState !== 'undefined' ? GameState.wave : 0)
+    );
+  }
   return unit;
 }
 
@@ -1415,9 +1366,14 @@ function getUnitDisplayName(unit) {
   }
   if (unit.honorName) {
     if (!isValidHonorName(unit.honorName)) repairHonorName(unit);
-    if (isValidHonorName(unit.honorName)) return unit.honorName;
+    if (isValidHonorName(unit.honorName)) return withEpithet(unit, unit.honorName);
   }
-  return getUnitTypeName(unit);
+  return withEpithet(unit, getUnitTypeName(unit));
+}
+
+function withEpithet(unit, name) {
+  const e = typeof Veterans !== 'undefined' ? Veterans.epithet(unit) : '';
+  return e ? `${name} ${e}` : name;
 }
 
 function unitDisplayName(unit) {
@@ -1508,15 +1464,28 @@ function isFirstBloodWave(waveNum) {
 }
 
 /** Health and damage scale every enemy type gets at this wave; getWaveConfig and spawning share it. */
+/** Waves past 200: the 100-200 ramp has finished, so the endless host keeps growing linearly. */
+function endlessWaves(waveNum) {
+  return Math.max(0, (waveNum | 0) - RTS_ERA_WAVE);
+}
+
 function getEnemyWaveScale(waveNum) {
   const eased = academyEase(waveNum);
   const post = postAcademyEase(waveNum);
   const early = Math.min(40, Math.max(0, waveNum - 2));
   const surge = Math.min(MID_PRESSURE_UNTIL, early);
+  const endless = endlessWaves(waveNum);
   return {
-    hp: 1 + eased * 3.15 + post * 1.85 + early * EARLY_HP_PER_WAVE + surge * EARLY_HP_EXTRA,
+    hp:
+      1 +
+      eased * 3.15 +
+      post * 1.85 +
+      early * EARLY_HP_PER_WAVE +
+      surge * EARLY_HP_EXTRA +
+      endless * 0.04,
     dmg:
       1 +
+      endless * 0.02 +
       eased * 1.95 +
       post * 1.15 +
       early * EARLY_DMG_PER_WAVE +
@@ -1552,8 +1521,12 @@ function getWaveConfig(waveNum) {
       ? Math.min(90, 4 + waveNum * MID_COUNT_PER_WAVE + pressureWaves * MID_PRESSURE_EXTRA)
       : 0;
   const firstBlood = isFirstBloodWave(waveNum) ? FIRST_BLOOD_COUNT : 0;
+  // ponytail: +40 cap on endless headcount keeps the field drawable; stats carry the rest.
   const count = Math.floor(
-    Math.max(templateCount, academyCount, midCount) + post * 38 + firstBlood
+    Math.max(templateCount, academyCount, midCount) +
+      post * 70 +
+      firstBlood +
+      Math.min(40, endlessWaves(waveNum) * 0.4)
   );
 
   const interval = Math.max(32, base.interval - Math.floor(eased * 38));
@@ -1715,6 +1688,10 @@ function createUnit(type, x, y, team, opts = {}) {
 
   const u = allocUnitObject();
   u.id = Math.random().toString(36).slice(2, 9);
+  u.soldierName =
+    team === 'player' && !(typeof HeroCast !== 'undefined' && HeroCast.isHero(type))
+      ? SoldierNames.roll()
+      : null;
   u.type = type;
   u.spriteType = spriteType;
   u.team = team;
@@ -1792,7 +1769,7 @@ function createUnit(type, x, y, team, opts = {}) {
   u.frameTimer = 0;
   u.animState = 'idle';
   u.attackAnimTimer = 0;
-  u.actionTimer = Math.floor(Math.random() * 50);
+  u.actionTimer = Math.floor((globalThis.simRandom || Math.random)() * 50);
   u.pinned = false;
   u.fleeing = false;
   u.demoralized = false;
@@ -1817,6 +1794,11 @@ function createUnit(type, x, y, team, opts = {}) {
   u.vetTier = 0;
   u.vetStatTierApplied = 0;
   u.vetUpgradeEligible = false;
+  u.traits = [];
+  u.forgot = [];
+  u.deeds = null;
+  u.hallId = null;
+  u.timesRaised = 0;
   u.baseMaxHp = null;
   u.baseDamage = null;
   u.ipScaleWave = 0;

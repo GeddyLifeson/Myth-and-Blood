@@ -5,10 +5,22 @@
       "powderhorn",
       "pale_vigil"
     ],
-    "name": "Residue Paradox",
-    "desc": "Powderhorn + Pale Vigil on field: +12% ability proc damage.",
+    "name": "Powder and Candle",
+    "desc": "Powderhorn + Pale Vigil: +12% ability damage.",
     "bonus": {
       "abilityDmg": 0.12
+    }
+  },
+  {
+    "id": "aether_unsc",
+    "factions": [
+      "pale_vigil",
+      "greywatch"
+    ],
+    "name": "Watch and Vigil",
+    "desc": "Pale Vigil + Greywatch: +3 morale for every soldier when a wave starts.",
+    "bonus": {
+      "moraleRegen": 3
     }
   },
   {
@@ -18,45 +30,57 @@
       "sawtooth"
     ],
     "name": "Trench Vanguard",
-    "desc": "Greywatch + Sawtooth: +10 accuracy to ranged evolved operatives.",
+    "desc": "Greywatch + Sawtooth: +10 accuracy for archers and other ranged soldiers.",
     "bonus": {
       "rangedAcc": 10
     }
   },
   {
-    "id": "last_alliance",
+    "id": "fellowship_gears",
+    "factions": [
+      "sawtooth",
+      "thornroad"
+    ],
+    "name": "March of War",
+    "desc": "Sawtooth + Thornroad: +10% melee damage.",
+    "bonus": {
+      "meleeDmg": 0.1
+    }
+  },
+  {
+    "id": "prophecy_fellowship",
     "factions": [
       "thornroad",
-      "greywatch"
+      "rimehowl"
     ],
-    "name": "March Vanguard",
-    "desc": "Thornroad + Greywatch: +4 morale/round to all allies.",
+    "name": "Frost Road",
+    "desc": "Thornroad + Rimehowl: +10% ability damage.",
     "bonus": {
-      "moraleRegen": 4
+      "abilityDmg": 0.1
     }
   },
   {
-    "id": "martial_worlds",
+    "id": "thuum_aether",
     "factions": [
-      "knucklebone",
-      "quiet_hand"
+      "rimehowl",
+      "saltglass"
     ],
-    "name": "Martial Worlds",
-    "desc": "Knucklebone + Quiet Hand: +15% melee evolved ally damage.",
+    "name": "Frost and Salt",
+    "desc": "Rimehowl + Saltglass: +8 accuracy for archers and other ranged soldiers.",
     "bonus": {
-      "meleeDmg": 0.15
+      "rangedAcc": 8
     }
   },
   {
-    "id": "bizarre_martial",
+    "id": "aether_legion",
     "factions": [
-      "marrow_choir",
-      "knucklebone"
+      "saltglass",
+      "emberblood"
     ],
-    "name": "Spiritual Martial Arts",
-    "desc": "Marrow Choir + Knucklebone: +8% crit chance on melee finishers.",
+    "name": "Salt and Ember",
+    "desc": "Saltglass + Emberblood: each kill by a hired hero heals the nearest ally 6 HP.",
     "bonus": {
-      "critChance": 0.08
+      "killHeal": 6
     }
   },
   {
@@ -65,122 +89,46 @@
       "emberblood",
       "marrow_choir"
     ],
-    "name": "Emberblood Spirit",
-    "desc": "Emberblood + Marrow Choir: evolved ally kills heal nearest ally 8 HP.",
+    "name": "Ember Hymn",
+    "desc": "Emberblood + Marrow Choir: +3 morale for every soldier when a wave starts.",
     "bonus": {
-      "killHeal": 8
+      "moraleRegen": 3
     }
   },
   {
-    "id": "fellowship_gears",
+    "id": "bizarre_martial",
     "factions": [
-      "thornroad",
-      "sawtooth"
+      "marrow_choir",
+      "knucklebone"
     ],
-    "name": "March of War",
-    "desc": "Thornroad + Sawtooth: +20% siege damage from evolved units.",
+    "name": "Choir of Fists",
+    "desc": "Marrow Choir + Knucklebone: +8% critical hit chance in melee.",
     "bonus": {
-      "siegeDmg": 0.2
+      "critChance": 0.08
     }
   },
   {
-    "id": "guest_star",
+    "id": "martial_worlds",
     "factions": [
-      "champions"
+      "knucklebone",
+      "quiet_hand"
     ],
-    "name": "Bloodsand Guest",
-    "desc": "Any Champions’ Hall + second faction: +6 morale on wave start.",
+    "name": "Bare Hands",
+    "desc": "Knucklebone + Quiet Hand: +15% melee damage.",
     "bonus": {
-      "waveMorale": 6
-    },
-    "requiresOtherFaction": true
-  },
-  {
-    "id": "aether_unsc",
-    "factions": [
-      "pale_vigil",
-      "greywatch"
-    ],
-    "name": "Circle Vanguard",
-    "desc": "Pale Vigil + Greywatch: +6 accuracy to ranged evolved operatives.",
-    "bonus": {
-      "rangedAcc": 6
+      "meleeDmg": 0.15
     }
   },
   {
     "id": "ki_pressure",
     "factions": [
       "quiet_hand",
-      "emberblood"
+      "iron_psalm"
     ],
-    "name": "Ascetic Pressure",
-    "desc": "Quiet Hand + Emberblood: +10% melee evolved ally damage.",
+    "name": "Silent Psalm",
+    "desc": "Quiet Hand + Iron Psalm: hired heroes deal +6% damage.",
     "bonus": {
-      "meleeDmg": 0.1
-    }
-  },
-  {
-    "id": "ppv_siege",
-    "factions": [
-      "champions",
-      "sawtooth"
-    ],
-    "name": "Arena Siege",
-    "desc": "Champions’ Hall + Sawtooth: +12% siege damage from evolved units.",
-    "bonus": {
-      "siegeDmg": 0.12
-    },
-    "requiresWwe": true
-  },
-  {
-    "id": "multiversal_4",
-    "factions": [
-      "powderhorn",
-      "greywatch",
-      "thornroad",
-      "marrow_choir"
-    ],
-    "name": "Four Worlds",
-    "desc": "Four distinct evolved factions: +5% all evolved ally damage.",
-    "bonus": {
-      "crossoverDmg": 0.05
-    },
-    "minFactions": 4
-  },
-  {
-    "id": "grim_alliance",
-    "factions": [
-      "iron_psalm",
-      "greywatch"
-    ],
-    "name": "Grim Alliance",
-    "desc": "Iron Psalm + Greywatch: +8 accuracy to ranged evolved operatives.",
-    "bonus": {
-      "rangedAcc": 8
-    }
-  },
-  {
-    "id": "crystal_fellowship",
-    "factions": [
-      "saltglass",
-      "thornroad"
-    ],
-    "name": "Crystal March",
-    "desc": "Saltglass Guild + Thornroad: +3 morale/round to all allies.",
-    "bonus": {
-      "moraleRegen": 3
-    }
-  },
-  {
-    "id": "warp_paradox",
-    "factions": [
-      "open_wound",
-      "pale_vigil"
-    ],
-    "name": "Rift Paradox",
-    "desc": "Cult of the Open Wound + Pale Vigil: +10% ability proc damage.",
-    "bonus": {
-      "abilityDmg": 0.1
+      "crossoverDmg": 0.06
     }
   },
   {
@@ -190,45 +138,55 @@
       "open_wound"
     ],
     "name": "Eternal War",
-    "desc": "Iron Psalm + Cult of the Open Wound: +12% melee evolved ally damage.",
+    "desc": "Iron Psalm + Open Wound: +12% melee damage.",
     "bonus": {
       "meleeDmg": 0.12
     }
   },
   {
-    "id": "aether_legion",
+    "id": "warp_paradox",
     "factions": [
-      "saltglass",
-      "emberblood"
+      "open_wound",
+      "powderhorn"
     ],
-    "name": "Saltglass Emberblood",
-    "desc": "Saltglass Guild + Emberblood: evolved ally kills heal nearest ally 6 HP.",
-    "bonus": {
-      "killHeal": 6
-    }
-  },
-  {
-    "id": "prophecy_fellowship",
-    "factions": [
-      "rimehowl",
-      "thornroad"
-    ],
-    "name": "Prophecy March",
-    "desc": "Rimehowl + Thornroad: +4 morale/round to all allies.",
-    "bonus": {
-      "moraleRegen": 4
-    }
-  },
-  {
-    "id": "thuum_aether",
-    "factions": [
-      "rimehowl",
-      "saltglass"
-    ],
-    "name": "Voice & Crystal",
-    "desc": "Rimehowl + Saltglass Guild: +10% ability proc damage.",
+    "name": "Wound Powder",
+    "desc": "Open Wound + Powderhorn: +10% ability damage.",
     "bonus": {
       "abilityDmg": 0.1
     }
+  },
+  {
+    "id": "ppv_siege",
+    "factions": [
+      "champions",
+      "saltglass"
+    ],
+    "name": "Bloodsand Contract",
+    "desc": "Champions + Saltglass: hired heroes deal +8% damage.",
+    "bonus": {
+      "crossoverDmg": 0.08
+    }
+  },
+  {
+    "id": "guest_star",
+    "factions": [
+      "champions"
+    ],
+    "name": "Bloodsand Guest",
+    "desc": "A champion + any free company: +6 morale for every soldier when a wave starts.",
+    "bonus": {
+      "waveMorale": 6
+    },
+    "requiresOtherFaction": true
+  },
+  {
+    "id": "multiversal_4",
+    "factions": [],
+    "name": "Four Banners",
+    "desc": "Heroes from any four companies on the field: hired heroes deal +5% damage.",
+    "bonus": {
+      "crossoverDmg": 0.05
+    },
+    "minFactions": 4
   }
 ]

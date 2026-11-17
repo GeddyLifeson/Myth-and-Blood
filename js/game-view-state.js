@@ -8,7 +8,7 @@ const GameViewState = (() => {
   const GS = GameState;
   const { getLivingPlanetCtx } = GameField;
   const { getGeneralAura, getGeneralBuffStrength } = GameCombat;
-  const { getTpPerRound, isAttackableEnemyStructure } = GameBuildings;
+  const { getTpPerRound, isTargetableEnemyStructure } = GameBuildings;
   const { getWaveAttackSides } = GameWaves;
   const { getDayLightLevel, getNightSecondsRemaining, isNightPhase } = GameDayNight;
   const {
@@ -129,7 +129,16 @@ const GameViewState = (() => {
       creativeSettings: { ...GS.creativeSettings },
       creativeSettingsSig: getCreativeSettingsSig(),
       difficulty: GS.difficultyId,
-      difficultyLabel: getDifficulty().label,
+      // NG+ tier and the post-victory endless run ride on the label every HUD line already shows.
+      difficultyLabel: [
+        getDifficulty().label,
+        svc('NewGamePlus')?.label(GS.ngPlusTier),
+        GS.postVictoryEndless ? 'Endless' : '',
+      ]
+        .filter(Boolean)
+        .join(' · '),
+      ngPlusTier: GS.ngPlusTier || 0,
+      postVictoryEndless: !!GS.postVictoryEndless,
       difficultyPercent: getDifficultyPercent(),
       gameMode: svc('GameModes') ? svc('GameModes').getSession() : null,
       scalingTips: cachedSnap('scalingTips', () =>
@@ -173,12 +182,6 @@ const GameViewState = (() => {
       doctrineUsedThisWave: GS.doctrineUsedThisWave,
       counterDoctrineUsedThisWave: GS.counterDoctrineUsedThisWave,
       expeditionUsedThisWave: GS.expeditionUsedThisWave,
-      kingdomDoctrines: typeof KINGDOM_DOCTRINES !== 'undefined' ? KINGDOM_DOCTRINES : {},
-      unlockedKingdomDoctrines: cachedSnap('unlockedKingdomDoctrines', () =>
-        typeof getUnlockedKingdomDoctrines === 'function'
-          ? getUnlockedKingdomDoctrines(GS.wave)
-          : []
-      ),
       kingdomEvolutionMeter: getLiveEvolutionMeter(),
       army,
       enemyCount: unitCounts.enemy,
@@ -312,12 +315,15 @@ const GameViewState = (() => {
         () => null
       ),
       asymmetricWarfare: getAsymmetricSnapshot(),
-      settlementRaids: pathSnap('settlementRaids', 150, () =>
-        svc('SettlementRaids')
-          ? svc('SettlementRaids').getStateSnapshot(GS.wave, GS.buildings, {
-              isAttackable: isAttackableEnemyStructure,
-            })
-          : null
+      settlementRaids: pathSnap(
+        'settlementRaids',
+        svc('SettlementRaids')?.SETTLEMENT_RAID_WAVE_MIN || 6,
+        () =>
+          svc('SettlementRaids')
+            ? svc('SettlementRaids').getStateSnapshot(GS.wave, GS.buildings, {
+                isAttackable: isTargetableEnemyStructure,
+              })
+            : null
       ),
       multiFrontSiege: cachedSnap('multiFrontSiege', () =>
         svc('MultiFrontSiege') && svc('EnemyFactions')
@@ -407,6 +413,7 @@ const GameViewState = (() => {
       nightProgress: isNightPhase() ? GS.nightTimer / getNightPrepTicks() : 0,
       nightPrepTicks: getNightPrepTicks(),
       nightSecondsLeft: getNightSecondsRemaining(),
+      hornLockSeconds: GameDayNight.getHornLockSecondsLeft(),
       nightPrepSeconds: typeof NIGHT_PREP_SECONDS !== 'undefined' ? NIGHT_PREP_SECONDS : 60,
       worldW: GS.worldW,
       worldH: GS.worldH,
@@ -424,6 +431,8 @@ const GameViewState = (() => {
             }
           : null
       ),
+      hallRoll: GameArmy.getHallRoll(),
+      hallBuildBlock: Veterans.hallBuildBlock(),
       buildableAcademies: cachedSnap('buildableAcademies', () =>
         ACADEMY_BUILD_TYPES.filter((t) => canBuildAcademyType(t, GS.wave, GS.units))
       ),

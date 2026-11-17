@@ -14,6 +14,10 @@
  *   - Each camp has a few guards. They do not leave the camp; they throw at any soldier of
  *     yours within reach, and they fall as the camp is torn down.
  *   - At most two camps stand at once. A camp that is left alone packs up after a few waves.
+ *   - A camp is not passive. Each night it is left standing it digs in (I, II, III): more
+ *     health, more guards, a stronger bonus, and from II it sends raiders at one of the
+ *     player's buildings. Struck by soldiers, its garrison comes out as real enemies.
+ *   - The first camp always rises on the first eligible night, with a warning the night before.
  *
  * Hooked from Game: enterNightPhase, beginDayPhase (after the spawn queue is built), the
  * enemy spawn loop, moveSelectionToWorld, damageInRadius, finalizeBuildingDestroyed, the
@@ -42,6 +46,13 @@ const WarCamps = (() => {
   const STRIKE_MULT = 2;
   const CRATE_CHANCE = 0.35;
   const RAID_TICKS = 240;
+  const MAX_LEVEL = 3;
+  const LEVEL_MARK = ['', 'I', 'II', 'III'];
+  /** Each level past the first adds this much to the Forge and Drum pit bonus. */
+  const LEVEL_STEP = 0.05;
+  const FORTIFY_HP = 1.25;
+  /** A soldier this close when the camp is struck brings the garrison out. */
+  const SALLY_REACH = 150;
 
   const SECTORS = ['left', 'centre', 'right'];
   const SECTOR_LABEL = { left: 'left', centre: 'centre', right: 'right' };
@@ -92,6 +103,35 @@ const WarCamps = (() => {
   const TYPE_TO_KIND = {};
   for (const id of KIND_IDS) TYPE_TO_KIND[KINDS[id].type] = id;
 
+  function levelOf(camp) {
+    return Math.max(1, Math.min(MAX_LEVEL, (camp && camp.level) | 0 || 1));
+  }
+
+  function bonusMult(level) {
+    return 1.15 + LEVEL_STEP * (Math.max(1, level) - 1);
+  }
+
+  /** The bonus text at a level; level I is the kind's own line. */
+  function lineOf(kind, level = 1) {
+    const pct = Math.round((bonusMult(level) - 1) * 100);
+    if (level <= 1) return KINDS[kind].line;
+    if (kind === 'forge') return `enemies are ${pct}% tougher`;
+    if (kind === 'drums') return `the host marches ${pct}% faster`;
+    if (kind === 'kennels') return 'a larger pack of runners joins';
+    return KINDS[kind].line;
+  }
+
+  function titleOf(camp) {
+    const lv = levelOf(camp);
+    return lv > 1 ? `${KINDS[camp.kind].name} ${LEVEL_MARK[lv]}` : KINDS[camp.kind].name;
+  }
+
+  /** Who mans a sortie or a raiding party: light troops that grow with the war. */
+  function partyType(wave) {
+    const want = wave >= 30 ? 'berserker' : wave >= 12 ? 'orc' : 'goblin';
+    return typeof EnemyDefs !== 'undefined' && EnemyDefs[want] ? want : 'goblin';
+  }
+
   let state = fresh();
 
   function fresh() {
@@ -109,6 +149,11 @@ const WarCamps = (() => {
       /** Short-lived drawings: guard javelins, raid torches, burn marks. */
       fx: [],
       razed: 0,
+      /** The camp war has been announced (the first camp rose). */
+      begun: false,
+      /** Buildings the raiders still to enter this wave are sent at, one id per raider. */
+      raiders: [],
+      raiderType: null,
     };
   }
 
@@ -280,6 +325,11 @@ const WarCamps = (() => {
       let pool = (planned || SECTORS).filter((s) => !used.has(s));
       if (!pool.length) pool = SECTORS.filter((s) => !used.has(s));
       if (!pool.length) pool = SECTORS;
+      // Among the sectors it may use, the host camps on a top plot the player has taken.
+      if (typeof Ground !== 'undefined') {
+        const contested = pool.filter((s) => Ground.isHeld(`${s}_front`));
+        if (contested.length) pool = contested;
+      }
       sector = pool[Math.floor(ctx.rng() * pool.length)];
     }
     const site =
@@ -297,10 +347,15 @@ const WarCamps = (() => {
       x: b.x,
       y: b.y,
       sabotaged: false,
+      level: 1,
+      sallied: false,
     };
     state.camps.push(camp);
+    const first = !state.begun;
+    state.begun = true;
     if (!opts.silent) {
       const k = KINDS[kind];
+      if (first) announceStart(ctx);
       ctx.showMessage(
         `The enemy raises a ${k.name} on the ${SECTOR_LABEL[sector]} of the top edge. Unless it burns before dawn, ${k.line}.`,
         340
@@ -311,11 +366,50 @@ const WarCamps = (() => {
     return camp;
   }
 
+  /** Said once, when the first camp rises: what a camp is and the three ways to burn one. */
+  function announceStart(ctx) {
+    ctx.showMessage(
+      'The enemy digs in. From tonight the host raises war camps on the top edge, and a camp strengthens every wave it stands for.',
+      520,
+      { priority: 'high' }
+    );
+    ctx.showMessage(
+      "Burn a camp before dawn: select soldiers and click it, land a strike on it, or send the spy's raid. Its garrison will come out to fight. Left standing it digs in deeper and sends raiders at your buildings.",
+      480
+    );
+    ctx.float(ctx.worldW / 2, 96, 'THE ENEMY DIGS IN', '#ff8060');
+  }
+
+  /** A night survived: more health, another guard, a stronger bonus, raiders from II. */
+  function fortify(camp, ctx) {
+    if (levelOf(camp) >= MAX_LEVEL) return false;
+    camp.level = levelOf(camp) + 1;
+    const b = buildingOf(camp, ctx);
+    if (b) {
+      const grown = Math.round(b.maxHp * FORTIFY_HP);
+      b.hp += grown - b.maxHp;
+      b.maxHp = grown;
+      ctx.float(b.x, b.y - 30, `DUG IN ${LEVEL_MARK[camp.level]}`, '#ff8060');
+    }
+    ctx.showMessage(
+      `The ${KINDS[camp.kind].name} digs in (${LEVEL_MARK[camp.level]}): ${lineOf(camp.kind, camp.level)}, and its raiders will go for your buildings.`,
+      300
+    );
+    return true;
+  }
+
   function onNightBegin(ctx) {
     if (!ctx) return null;
     state.active = [];
     state.runnersLeft = 0;
+    state.raiders = [];
     prune(ctx);
+    if (!state.begun && !ctx.creative && (ctx.wave || 0) + 2 === FROM_WAVE) {
+      ctx.showMessage(
+        'Scouts hear axes in the north. The enemy means to dig in: expect a war camp on the top edge tomorrow night.',
+        360
+      );
+    }
     // A camp left alone for long enough packs up.
     for (const c of state.camps.slice()) {
       if ((ctx.wave || 0) + 1 - c.raisedWave >= LIFE_WAVES) {
@@ -323,14 +417,20 @@ const WarCamps = (() => {
         if (b && ctx.removeCamp) ctx.removeCamp(b);
         state.camps = state.camps.filter((x) => x !== c);
         ctx.showMessage(`The ${KINDS[c.kind].name} strikes its tents and moves on.`, 220);
-      } else c.sabotaged = false;
+      } else {
+        c.sabotaged = false;
+        // A fresh garrison marches in with the night.
+        c.sallied = false;
+        fortify(c, ctx);
+      }
     }
     if (state.raid && !state.raid.resolved && state.raid.at == null) {
       // A raid ordered by day rides at nightfall.
       state.raid.at = (ctx.tick || 0) + RAID_TICKS;
     }
     if (!canRaise(ctx)) return null;
-    if (ctx.rng() >= RAISE_CHANCE) return null;
+    // The first camp is certain, so the camp war has a clear first night.
+    if (state.begun && ctx.rng() >= RAISE_CHANCE) return null;
     return raiseCamp(ctx);
   }
 
@@ -342,8 +442,9 @@ const WarCamps = (() => {
       .filter((c) => !c.sabotaged)
       .map((c) => ({
         kind: c.kind,
-        name: KINDS[c.kind].name,
-        line: KINDS[c.kind].line,
+        name: titleOf(c),
+        line: lineOf(c.kind, levelOf(c)),
+        level: levelOf(c),
         sector: c.sector,
       }));
   }
@@ -363,16 +464,46 @@ const WarCamps = (() => {
    * Dawn. Lock in the bonuses of the camps still standing and add their extra bodies to the
    * queue. Called after the spawn queue is built and before Sabotage strips siege engines.
    */
+  /** The player's building nearest a camp that raiders can be sent at, or null. */
+  function raidTargetFor(camp, ctx) {
+    let best = null;
+    let bestD = Infinity;
+    for (const b of ctx.buildings || []) {
+      if (b.owner !== 'player' || !(b.hp > 0) || b.complete === false || b.type === 'wall')
+        continue;
+      const d = (b.x - camp.x) ** 2 + (b.y - camp.y) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = b;
+      }
+    }
+    return best;
+  }
+
   function onWaveStart(ctx) {
     state.active = [];
     state.runnersLeft = 0;
+    state.raiders = [];
     if (!ctx || ctx.creative) return state.active;
     prune(ctx);
     const queue = ctx.spawnQueue;
     for (const c of state.camps) {
       if (c.sabotaged) continue;
       const k = KINDS[c.kind];
-      state.active.push({ kind: c.kind, name: k.name, line: k.line });
+      const lv = levelOf(c);
+      state.active.push({ kind: c.kind, name: titleOf(c), line: lineOf(c.kind, lv), level: lv });
+      const prey = lv >= 2 && queue ? raidTargetFor(c, ctx) : null;
+      if (prey) {
+        state.raiderType = partyType(ctx.wave);
+        for (let i = 0; i < lv; i++) {
+          queue.splice(Math.min(queue.length, 4 + i), 0, state.raiderType);
+          state.raiders.push(prey.id);
+        }
+        const what =
+          (typeof BuildDefs !== 'undefined' && BuildDefs[prey.type]?.name) || 'buildings';
+        ctx.showMessage(`Raiders from the ${k.name} make for your ${what}.`, 300);
+        ctx.float(prey.x, prey.y - 30, 'RAIDERS COMING', '#ff8060');
+      }
       if (k.engine && queue) {
         queue.splice(Math.min(queue.length, 2), 0, k.engine);
       }
@@ -381,7 +512,7 @@ const WarCamps = (() => {
           typeof EnemyDefs !== 'undefined' && EnemyDefs[k.runnerType]
             ? k.runnerType
             : k.runnerFallback;
-        const n = runnerCount(ctx.wave);
+        const n = runnerCount(ctx.wave) + lv - 1;
         for (let i = 0; i < n; i++) queue.splice(Math.min(queue.length, 3 + i * 2), 0, type);
         state.runnersLeft += n;
         state.runnerType = type;
@@ -405,9 +536,10 @@ const WarCamps = (() => {
     return state.active;
   }
 
+  /** The level of the active bonus of a kind, or 0 when no such camp marched with the wave. */
   function has(kind) {
-    for (const a of state.active) if (a.kind === kind) return true;
-    return false;
+    for (const a of state.active) if (a.kind === kind) return a.level || 1;
+    return 0;
   }
 
   /** Applied to each enemy as it enters the field, after runners have been tagged. */
@@ -415,10 +547,11 @@ const WarCamps = (() => {
     if (!unit || unit.team !== 'enemy' || !state.active.length) return null;
     let label = null;
     if (has('forge') && !unit.isNamedBoss) {
-      unit.maxHp = Math.round(unit.maxHp * KINDS.forge.hpMult);
-      unit.hp = Math.round(unit.hp * KINDS.forge.hpMult);
+      const m = bonusMult(has('forge'));
+      unit.maxHp = Math.round(unit.maxHp * m);
+      unit.hp = Math.round(unit.hp * m);
     }
-    if (has('drums') && unit.speed) unit.speed *= KINDS.drums.speedMult;
+    if (has('drums') && unit.speed) unit.speed *= bonusMult(has('drums'));
     if (has('shrine')) unit.fightToDeath = true;
     if (state.runnersLeft > 0 && unit.type === state.runnerType && !unit.lineBreaker) {
       state.runnersLeft--;
@@ -426,6 +559,11 @@ const WarCamps = (() => {
       unit.stormLine = true;
       unit.speed *= 1.3;
       label = 'KENNEL PACK';
+    } else if (state.raiders.length && unit.type === state.raiderType && !unit.lineBreaker) {
+      // The enemy move code sends a counter-raider straight at its building.
+      unit.raidTargetId = state.raiders.shift();
+      unit.isCounterRaid = true;
+      label = 'CAMP RAIDERS';
     }
     return label;
   }
@@ -452,8 +590,30 @@ const WarCamps = (() => {
     return camp && sent ? camp : null;
   }
 
+  /** The garrison leaves the palisade as real enemies; the camp gets a new one at nightfall. */
+  function sally(camp, b, ctx) {
+    camp.sallied = true;
+    if (!ctx.spawnDefender) return 0;
+    const type = partyType(ctx.wave || 1);
+    let out = 0;
+    for (let i = 0; i <= levelOf(camp); i++) {
+      const p = guardSpot(b, i);
+      const u = ctx.spawnDefender(type, p.x, p.y + 10);
+      if (!u) continue;
+      u.campDefender = true;
+      out++;
+    }
+    if (out) {
+      ctx.showMessage(`The ${KINDS[camp.kind].name}'s garrison comes out to fight.`, 220);
+      ctx.float(b.x, b.y - 30, 'THE GARRISON SALLIES', '#ff6040');
+      ctx.playSfx('musterDrums');
+    }
+    return out;
+  }
+
   function guardCount(camp, b) {
-    const max = 2 + Math.min(2, Math.floor(camp.raisedWave / 12));
+    if (camp.sallied) return 0;
+    const max = 2 + Math.min(2, Math.floor(camp.raisedWave / 12)) + levelOf(camp) - 1;
     return Math.max(0, Math.ceil(max * Math.min(1, b.hp / Math.max(1, b.maxHp))));
   }
 
@@ -485,6 +645,17 @@ const WarCamps = (() => {
     // The garrison throws at whoever comes close.
     for (const [c, b] of live) {
       if (b.hp <= 0) continue;
+      // Struck with soldiers at the palisade: strikes and the spy's raid do not draw it out.
+      if (!c.sallied && c.lastHp != null && b.hp < c.lastHp) {
+        for (let i = 0; i < units.length; i++) {
+          const u = units[i];
+          if (u.team !== 'player' || u.hp <= 0) continue;
+          if ((u.x - b.x) ** 2 + (u.y - b.y) ** 2 > SALLY_REACH * SALLY_REACH) continue;
+          sally(c, b, ctx);
+          break;
+        }
+      }
+      c.lastHp = b.hp;
       c.guardCd = (c.guardCd || 0) - 2;
       if (c.guardCd > 0) continue;
       c.guardCd = GUARD_EVERY;
@@ -557,7 +728,7 @@ const WarCamps = (() => {
       for (const u of ctx.units) if (u.campOrderId === b.id) u.campOrderId = null;
       const lost = wasActive
         ? ' Too late for today: the host already marched with its help.'
-        : ` The next wave loses its bonus (${k.line}).`;
+        : ` The next wave loses its bonus (${lineOf(camp.kind, levelOf(camp))}).`;
       ctx.showMessage(
         `${k.name} destroyed!${tp ? ` +${tp} TP.` : ''}${lost}${crate ? ' Its stores were carried off: a marked crate lands at dawn.' : ''}`,
         320
@@ -778,7 +949,7 @@ const WarCamps = (() => {
         const p = guardSpot(b, i);
         drawGuard(g, p.x, p.y, 1, tick, i + c.x);
       }
-      const kd = KINDS[c.kind];
+      const kd = { name: titleOf(c), line: lineOf(c.kind, levelOf(c)) };
       const live = state.active.some((a) => a.kind === c.kind);
       const sub = c.sabotaged
         ? 'sabotaged: no bonus this wave'
@@ -1030,11 +1201,17 @@ const WarCamps = (() => {
           x: c.x,
           y: c.y,
           sabotaged: !!c.sabotaged,
+          level: levelOf(c),
+          sallied: !!c.sallied,
           hp: b ? b.hp : 0,
           maxHp: b ? b.maxHp : 0,
         };
       }),
+      begun: state.begun,
+      raiders: state.raiders.slice(),
+      raiderType: state.raiderType,
       active: state.active.map((a) => a.kind),
+      activeLevels: state.active.map((a) => a.level || 1),
       runnersLeft: state.runnersLeft,
       runnerType: state.runnerType || null,
       reprisal: state.reprisal,
@@ -1070,11 +1247,20 @@ const WarCamps = (() => {
         x: b.x,
         y: b.y,
         sabotaged: !!s.sabotaged,
+        level: levelOf(s),
+        sallied: !!s.sallied,
       });
     }
-    for (const kind of Array.isArray(snap.active) ? snap.active : []) {
-      if (KINDS[kind]) state.active.push({ kind, name: KINDS[kind].name, line: KINDS[kind].line });
-    }
+    // Saves from before camps had a first night: past the first wave, the war has begun.
+    state.begun = snap.begun ?? (state.camps.length > 0 || (ctx.wave || 0) >= FROM_WAVE);
+    state.raiders = Array.isArray(snap.raiders) ? snap.raiders.slice(0, 12) : [];
+    state.raiderType = snap.raiderType || null;
+    (Array.isArray(snap.active) ? snap.active : []).forEach((kind, i) => {
+      if (!KINDS[kind]) return;
+      const level = levelOf({ level: snap.activeLevels?.[i] });
+      const name = level > 1 ? `${KINDS[kind].name} ${LEVEL_MARK[level]}` : KINDS[kind].name;
+      state.active.push({ kind, name, line: lineOf(kind, level), level });
+    });
     state.runnersLeft = Math.max(0, Number(snap.runnersLeft) || 0);
     state.runnerType = snap.runnerType || null;
     state.reprisal = Math.max(0, Number(snap.reprisal) || 0);
@@ -1099,12 +1285,15 @@ const WarCamps = (() => {
       fromWave: FROM_WAVE,
       max: MAX_CAMPS,
       razed: state.razed,
+      begun: state.begun,
       camps: state.camps.map((c) => {
         const b = buildingOf(c, ctx);
         return {
           kind: c.kind,
-          name: KINDS[c.kind].name,
-          line: KINDS[c.kind].line,
+          name: titleOf(c),
+          line: lineOf(c.kind, levelOf(c)),
+          level: levelOf(c),
+          sallied: !!c.sallied,
           sector: c.sector,
           x: c.x,
           y: c.y,
@@ -1131,6 +1320,9 @@ const WarCamps = (() => {
     LIFE_WAVES,
     RAISE_CHANCE,
     CRATE_CHANCE,
+    MAX_LEVEL,
+    lineOf,
+    fortify,
     KINDS,
     SECTORS,
     resetRun,

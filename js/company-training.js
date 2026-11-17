@@ -1,9 +1,12 @@
 /**
  * Company training: a small tree of nodes for the champions and for each free company,
- * bought with skill points earned during a run. Tree keys and node ids are save-file ids.
+ * bought with skill points earned during a run. Purchases and points both last one run.
+ * The two second-tier nodes of a tree are an either/or pick; the capstone needs either.
+ * Tree keys and node ids are save-file ids.
  */
 const CompanyTraining = (() => {
-  const STORAGE_KEY = 'myth-and-blood-operative-skills-v1';
+  // Old builds kept purchases here forever while points reset; cleared on every run start.
+  const LEGACY_STORAGE_KEY = 'myth-and-blood-operative-skills-v1';
 
   /** Names come from the cast data (js/free-companies.js) so the trees can never drift from it. */
   function treeLabel(fid) {
@@ -320,6 +323,42 @@ const CompanyTraining = (() => {
     },
   };
 
+  /** Companies without a tree of their own share this one. */
+  const DRILL_YARD_NODES = {
+    drilled: {
+      id: 'drilled',
+      name: 'Drilled',
+      cost: 1,
+      desc: '+5 accuracy',
+      bonus: { acc: 5 },
+    },
+    shield_wall: {
+      id: 'shield_wall',
+      name: 'Shield Wall',
+      cost: 2,
+      requires: ['drilled'],
+      desc: '+15 max HP',
+      bonus: { flatHp: 15 },
+    },
+    blood_price: {
+      id: 'blood_price',
+      name: 'Blood Price',
+      cost: 2,
+      requires: ['drilled'],
+      desc: '+10% melee damage',
+      bonus: { meleeDmg: 0.1 },
+    },
+    old_hands: {
+      id: 'old_hands',
+      name: 'Old Hands',
+      cost: 3,
+      requires: ['shield_wall', 'blood_price'],
+      desc: '+8% ability, +3 morale',
+      bonus: { abilityDmg: 0.08, maxMorale: 3 },
+    },
+  };
+  const drillYards = {};
+
   let purchased = {};
   let runPoints = {};
   let lastWaveGrant = {};
@@ -328,28 +367,16 @@ const CompanyTraining = (() => {
     purchased = {};
     runPoints = {};
     lastWaveGrant = {};
-    loadPersistent();
-  }
-
-  function loadPersistent() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-      if (data.purchased && typeof data.purchased === 'object') {
-        purchased = data.purchased;
-      }
+      localStorage.removeItem(LEGACY_STORAGE_KEY);
     } catch (_) {
-      /* ignore */
+      /* storage blocked: nothing was kept there either */
     }
   }
 
-  function savePersistent() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ purchased }));
-    } catch (_) {
-      /* ignore */
-    }
+  function treeIds() {
+    const companies = typeof FreeCompanies !== 'undefined' ? Object.keys(FreeCompanies) : [];
+    return [...new Set([...Object.keys(FACTION_TREES), ...companies])];
   }
 
   function getFactionForUnit(unit) {
@@ -370,7 +397,21 @@ const CompanyTraining = (() => {
   }
 
   function getTree(faction) {
-    return FACTION_TREES[faction] || null;
+    if (FACTION_TREES[faction]) return FACTION_TREES[faction];
+    if (typeof FreeCompanies === 'undefined' || !FreeCompanies[faction]) return null;
+    drillYards[faction] ||= { label: treeLabel(faction), nodes: DRILL_YARD_NODES };
+    return drillYards[faction];
+  }
+
+  /** The other node that shares this node's parent: owning one closes the other. */
+  function rivalOf(tree, node) {
+    const parent = (node.requires || []).join(',');
+    if (!parent || node.requires.length > 1) return null;
+    return (
+      Object.values(tree.nodes).find(
+        (n) => n.id !== node.id && (n.requires || []).join(',') === parent
+      ) || null
+    );
   }
 
   function getPurchasedNodes(faction) {
@@ -397,10 +438,15 @@ const CompanyTraining = (() => {
     const node = tree?.nodes?.[nodeId];
     if (!node) return { ok: false, reason: 'Unknown node' };
     if (getPurchasedNodes(faction).includes(nodeId)) return { ok: false, reason: 'Already owned' };
-    for (const req of node.requires || []) {
-      if (!getPurchasedNodes(faction).includes(req)) {
-        return { ok: false, reason: `Requires ${tree.nodes[req]?.name || 'an earlier node'}` };
-      }
+    const owned = getPurchasedNodes(faction);
+    const reqs = node.requires || [];
+    if (reqs.length && !reqs.some((r) => owned.includes(r))) {
+      const names = reqs.map((r) => tree.nodes[r]?.name || 'an earlier node').join(' or ');
+      return { ok: false, reason: `Requires ${names}` };
+    }
+    const rival = rivalOf(tree, node);
+    if (rival && owned.includes(rival.id)) {
+      return { ok: false, reason: `Took ${rival.name} instead` };
     }
     if (getAvailablePoints(faction) < node.cost) {
       return { ok: false, reason: `Need ${node.cost} skill point(s)` };
@@ -413,7 +459,6 @@ const CompanyTraining = (() => {
     if (!check.ok) return check;
     if (!purchased[faction]) purchased[faction] = [];
     purchased[faction].push(nodeId);
-    savePersistent();
     return { ok: true, nodeId, faction };
   }
 
@@ -425,14 +470,14 @@ const CompanyTraining = (() => {
 
   function onRecruit(unit) {
     const faction = getFactionForUnit(unit);
-    if (!faction || !FACTION_TREES[faction]) return null;
+    if (!faction || !getTree(faction)) return null;
     const pts = grantSkillPoint(faction, 1);
     return { faction, points: pts };
   }
 
   function onWaveStart(wave, units) {
     const granted = [];
-    for (const faction of Object.keys(FACTION_TREES)) {
+    for (const faction of treeIds()) {
       const onField = (units || []).some(
         (u) => u.team === 'player' && u.hp > 0 && getFactionForUnit(u) === faction
       );
@@ -548,7 +593,8 @@ const CompanyTraining = (() => {
 
   function getSnapshot(wave, units) {
     const factions = [];
-    for (const [fid, tree] of Object.entries(FACTION_TREES)) {
+    for (const fid of treeIds()) {
+      const tree = getTree(fid);
       const nodes = getPurchasedNodes(fid);
       const onField = (units || []).filter(
         (u) => u.team === 'player' && u.hp > 0 && getFactionForUnit(u) === fid
@@ -576,7 +622,7 @@ const CompanyTraining = (() => {
       active: factions.some((f) => f.purchased.length || f.onField),
       factions,
       summary: summary || null,
-      treeCount: Object.keys(FACTION_TREES).length,
+      treeCount: treeIds().length,
     };
   }
 
@@ -613,7 +659,7 @@ const CompanyTraining = (() => {
                   ${n.owned || !n.canBuy ? 'disabled' : ''} title="${esc(why)}">
                   <span class="skill-node-name">${esc(n.name)}</span>
                   <span class="skill-node-desc">${esc(n.desc)}</span>
-                  <span class="skill-node-cost">${n.owned ? '✓ owned' : `${n.cost} pt`}</span>
+                  <span class="skill-node-cost">${n.owned ? '✓ owned' : n.canBuy ? `${n.cost} pt` : `${n.cost} pt · ${esc(why)}`}</span>
                 </button>`;
               })
               .join('')}
@@ -623,7 +669,7 @@ const CompanyTraining = (() => {
           .join('')
       : '<p class="panel-hint">Hire a hero to open that company’s training. Points come from hires, waves survived and company mastery.</p>';
     hosts.forEach((host) => {
-      host.innerHTML = `<div class="skill-tree-title">COMPANY TRAINING</div>${html}`;
+      host.innerHTML = `<div class="skill-tree-title">COMPANY TRAINING</div><p class="panel-hint">Training lasts this run. The two middle nodes of a tree are either/or.</p>${html}`;
       if (host.dataset.skillBound) return;
       host.dataset.skillBound = '1';
       host.addEventListener('click', (e) => {
@@ -639,10 +685,14 @@ const CompanyTraining = (() => {
   // Run state in saves: see js/save-registry.js.
   if (typeof SaveRegistry !== 'undefined') {
     SaveRegistry.register('OperativeSkillTrees', {
-      save: () => ({ runPoints, lastWaveGrant }),
+      version: 2,
+      save: () => ({ runPoints, lastWaveGrant, purchased }),
+      // v1 saved points only; its purchases lived in localStorage and are not carried over.
+      migrate: (data) => ({ ...data, purchased: {} }),
       load(data) {
         resetRun();
         if (!data) return;
+        if (data.purchased && typeof data.purchased === 'object') purchased = data.purchased;
         if (data.runPoints && typeof data.runPoints === 'object') runPoints = data.runPoints;
         if (data.lastWaveGrant && typeof data.lastWaveGrant === 'object')
           lastWaveGrant = data.lastWaveGrant;
@@ -655,6 +705,7 @@ const CompanyTraining = (() => {
     renderPanel,
     resetRun,
     getAvailablePoints,
+    canPurchase,
     purchaseNode,
     grantSkillPoint,
     onRecruit,

@@ -99,9 +99,9 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
     !Availability.trySelect('build', 'outpost').ok && GS.selectedBuild == null,
     'an unaffordable building is not selected'
   );
-  ok(!Availability.check('spy', 'steal').ok, 'an unaffordable spy action is refused');
+  ok(!Availability.check('spy', 'assassin').ok, 'an unaffordable spy action is refused');
   const tpBefore = GS.tactical;
-  Availability.trySelect('spy', 'steal');
+  Availability.trySelect('spy', 'assassin');
   ok(GS.tactical === tpBefore && !GS.spyUsedThisWave, 'and nothing was spent or used');
 
   // Other reasons.
@@ -115,8 +115,11 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   ok(builders < BuildDefs.research_lab.requiresBuilders, 'the run starts without two Builders');
   ok(!r.ok && r.reason === 'needs 1 living Builder', `Research Lab: ${r.reason}`);
   if (!GS.units.some((u) => u.type === 'courier' && u.hp > 0)) {
-    r = Availability.check('courier', 'levy');
-    ok(!r.ok && r.reason === 'needs a living Courier', `Tax Levy without a Courier: ${r.reason}`);
+    r = Availability.check('courier', 'surgeons');
+    ok(
+      !r.ok && r.reason === 'needs a living Courier',
+      `Field Surgeons without a Courier: ${r.reason}`
+    );
   }
 
   // Available: selected, and pressing it again puts it away even when it is now too dear.
@@ -181,14 +184,14 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   ok(GS.tactical === before - BuildDefs.outpost.cost, 'building spent its price');
   same('building');
   before = GS.tactical;
-  Game.executeSpyAction('disrupt');
+  Game.executeSpyAction('assassin');
   ok(GS.tactical < before, `spy action spent TP (${before} → ${GS.tactical})`);
   same('spy action');
   Game.selectDeploy('courier');
   Game.handleClick(620, 600);
   Game.update();
-  ok(Game.sendCourierMessage('levy'), 'Tax Levy sent');
-  same('courier: Tax Levy (cost)');
+  ok(Game.sendCourierMessage('surgeons'), 'Field Surgeons sent');
+  same('courier: Field Surgeons (cost)');
   // While paused nothing ticks, and the HUD must still follow the purse.
   Game.togglePause();
   Cheats.submit('war chest');
@@ -201,7 +204,7 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   ok(GS.tactical >= before, 'the horn was sounded early');
   same('early-call bonus');
   ok(toNight(Game, GS), 'reached the second night');
-  same('wave reward with the levy');
+  same('wave reward after the courier rode');
   // Spoils with instant TP.
   SiegeLoop.setSpoilsModalForTest(false);
   for (let w = 0; w < 6 && !Game.getState().siegeLoop.pendingSpoils; w++) toNight(Game, GS);
@@ -271,39 +274,33 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
     ok(GS.selectedDeploy === 'footman', `soldier ${i + 1}: Footman is still armed`);
   }
   {
+    // A big army pays wages at dawn; the price tag stays at the list price.
     const p = Availability.deployPrice('footman', (Game.beginPresentationFrame(), Game.getState()));
     ok(
-      p.raised &&
+      !p.raised &&
         p.base === UnitDefs.footman.cost &&
         p.total === Game.getDeployCost('footman') &&
-        p.upkeepPct > 0,
+        p.upkeepPct === 0,
       `price breakdown: ${Availability.deployPriceText('footman', Game.getState())}`
     );
-    ok(
-      Math.ceil(p.base * (1 + p.upkeepPct / 100)) === p.total,
-      'base price plus the upkeep percentage shown gives the price charged'
-    );
-    GS.tactical = p.total - 1;
+    GS.tactical = UnitDefs.archer.cost - 1;
     const r = Availability.check('deploy', 'archer', Game.getState());
     const archer = Game.getDeployCost('archer');
     ok(
-      archer > UnitDefs.archer.cost &&
-        (GS.tactical >= archer ? r.ok : r.reason === `needs ${archer} TP, you have ${GS.tactical}`),
-      `affordability uses the charged price: Archer ${archer} TP (base ${UnitDefs.archer.cost}), ${r.ok ? 'affordable' : r.reason}`
+      archer === UnitDefs.archer.cost && r.reason === `needs ${archer} TP, you have ${GS.tactical}`,
+      `affordability uses the charged price: Archer ${archer} TP, ${r.ok ? 'affordable' : r.reason}`
     );
     GS.tactical = UnitDefs.footman.cost;
     const f = Availability.check('deploy', 'footman', Game.getState());
-    ok(
-      !f.ok && f.reason === `needs ${p.total} TP, you have ${UnitDefs.footman.cost}`,
-      `holding only the base price: ${f.reason}`
-    );
+    ok(f.ok, `holding the list price is enough: ${f.reason || 'ok'}`);
     GS.tactical = 1000 - paid.reduce((a, b) => a + b, 0);
   }
   ok(
     paid.join() === due.join(),
     `three Shift-clicks charged ${paid.join(', ')} (due ${due.join(', ')})`
   );
-  ok(new Set(paid).size > 1, 'the price rose from one soldier to the next (upkeep)');
+  ok(new Set(paid).size === 1, 'the price does not rise from one soldier to the next');
+  ok(Game.getState().siegeLoop.wages > 0, 'the big army owes wages at dawn instead');
   ok(
     GS.tactical === 1000 - paid.reduce((a, b) => a + b, 0),
     'the purse is down by exactly the three prices'
@@ -521,48 +518,51 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   const { Game, GameState: GS, PanelModel, Availability, EconomyRules } = start(31);
   ok(toNight(Game, GS), 'reached the first night');
   GS.tactical = 500;
-  let a = PanelModel.action('spy', 'disrupt', Game.getState());
-  ok(a.ok && a.state === 'ready' && a.wait === 0 && a.waitText === '', 'Disrupt Lines is ready');
+  let a = PanelModel.action('spy', 'assassin', Game.getState());
+  ok(a.ok && a.state === 'ready' && a.wait === 0 && a.waitText === '', 'Mark the Warlord is ready');
   ok(
-    a.cost === EconomyRules.getCost('spy:disrupt', { wave: GS.wave }) &&
+    a.cost === EconomyRules.getCost('spy:assassin', { wave: GS.wave }) &&
       a.costText === `${a.cost} TP`,
     `its button shows the price the rules charge (${a.costText})`
   );
   const before = GS.tactical;
-  ok(Availability.trySelect('spy', 'disrupt').ok, 'it is used');
+  ok(Availability.trySelect('spy', 'assassin').ok, 'it is used');
   ok(before - GS.tactical === a.cost, `and ${a.cost} TP is what was charged`);
-  a = PanelModel.action('spy', 'disrupt', Game.getState());
-  const cd = EconomyRules.ACTIONS['spy:disrupt'].cooldown;
+  a = PanelModel.action('spy', 'assassin', Game.getState());
+  const cd = EconomyRules.ACTIONS['spy:assassin'].cooldown;
   ok(
-    !a.ok && a.state === 'cooldown' && a.wait === cd && a.waitText === `${cd} waves left`,
+    !a.ok && a.state === 'cooldown' && a.wait === cd && a.waitText === PanelModel.waitLabel(cd),
     `on cooldown: ${a.waitText}`
   );
   ok(a.reason === `ready again in ${cd} waves`, `and the reason says so: ${a.reason}`);
   ok(a.costText === `${a.cost} TP`, 'the price stays on the button while it waits');
-  let other = PanelModel.action('spy', 'steal', Game.getState());
+  let other = PanelModel.action('spy', 'infiltrate', Game.getState());
   ok(
     !other.ok && other.state === 'cooldown' && other.waitText === '1 wave left',
     `the rest of the spy network waits for the next wave: ${other.waitText}`
   );
   ok(PanelModel.usesLeft('spy', Game.getState()) === 0, 'no spy action left this wave');
-  ok(!Availability.trySelect('spy', 'disrupt').ok, 'an action on cooldown is refused');
+  ok(!Availability.trySelect('spy', 'assassin').ok, 'an action on cooldown is refused');
   ok(toNight(Game, GS), 'next night');
   GS.tactical = 500;
-  a = PanelModel.action('spy', 'disrupt', Game.getState());
-  ok(a.wait === cd - 1 && a.waitText === `${cd - 1} waves left`, `a wave later: ${a.waitText}`);
-  other = PanelModel.action('spy', 'steal', Game.getState());
+  a = PanelModel.action('spy', 'assassin', Game.getState());
+  ok(
+    a.wait === cd - 1 && a.waitText === PanelModel.waitLabel(cd - 1),
+    `a wave later: ${a.waitText}`
+  );
+  other = PanelModel.action('spy', 'infiltrate', Game.getState());
   ok(
     other.ok && other.wait === 0 && PanelModel.usesLeft('spy', Game.getState()) === 1,
     'the others are ready again'
   );
   // A message needs a Courier; the button still shows what it would cost.
-  const m = PanelModel.action('courier', 'banner', Game.getState());
+  const m = PanelModel.action('courier', 'reinforce', Game.getState());
   ok(
-    m.cost >= EconomyRules.ACTIONS['courier:banner'].cost && /TP$/.test(m.costText),
-    `Call Banner: ${m.costText}`
+    m.cost >= EconomyRules.ACTIONS['courier:reinforce'].cost && /TP$/.test(m.costText),
+    `Reinforcements: ${m.costText}`
   );
   const d = PanelModel.check('doctrine', 'royal_muster', Game.getState());
-  ok(!d.ok && d.locked && /^opens in /.test(d.reason), `a later doctrine is locked: ${d.reason}`);
+  ok(!d.ok && d.locked, `a cut doctrine (now the General's orders) is not offered: ${d.reason}`);
   ok(PanelModel.waitLabel(0) === '' && PanelModel.waitLabel(1) === '1 wave left', 'wait labels');
 }
 
