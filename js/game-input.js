@@ -34,6 +34,7 @@ const GameInput = (() => {
     maxAttackRange,
     orderMove,
     placeBuilding,
+    postToTrainingGround,
     refreshUnitCounts,
     relocateBuilding,
     rotateWall,
@@ -71,6 +72,7 @@ const GameInput = (() => {
       maxAttackRange,
       orderMove,
       placeBuilding,
+      postToTrainingGround,
       refreshUnitCounts,
       relocateBuilding,
       rotateWall,
@@ -139,6 +141,9 @@ const GameInput = (() => {
     const camp =
       typeof WarCamps !== 'undefined' ? WarCamps.onMoveOrder(liveUnits, tx, ty, warCampCtx) : null;
     if (camp) GS.attackMarks.push({ x: camp.x, y: camp.y, r: 30, life: 90 });
+    // One soldier moved onto the Training Ground is posted there and holds at its front edge.
+    const ground = liveUnits.length === 1 && postToTrainingGround(liveUnits[0], tx, ty);
+    if (ground) orderMove(liveUnits[0], ground.x - 18, ground.y + 30, true, { hold: true });
     if (opts.hold === true && liveUnits.some((u) => u.holding)) {
       showMessage('Go there and hold. A plain move or H releases.', 150);
     }

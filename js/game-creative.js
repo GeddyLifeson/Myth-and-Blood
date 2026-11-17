@@ -157,7 +157,7 @@ const GameCreative = (() => {
     if (
       isVanillaAcademyType(type) &&
       !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-      !canBuildAcademyType(type, GS.wave, GS.units)
+      !canBuildAcademyType(type, GS.wave, GS.buildings)
     )
       return false;
     let buildX = wx;
@@ -174,10 +174,10 @@ const GameCreative = (() => {
       excludeBuildId = site.hamlet.id;
     }
     let upgradeHost = null;
-    if (def.isOutpostUpgrade) {
+    if (def.isOutpostUpgrade || def.upgradeOf) {
       const site = resolveOutpostUpgradeSite(wx, wy, def);
       if (!site) {
-        showMessage('Place this on a finished Outpost that has no upgrade yet (one per Outpost).');
+        showMessage('Place this on a finished building of its kind that has no upgrade yet.');
         return false;
       }
       buildX = site.x;

@@ -115,54 +115,21 @@ const GameArmy = (() => {
     );
   }
 
+  /** Tell the player once when a soldier first ranks high enough to drill recruits. */
   function refreshAcademyMentorUnlocks(unit, opts = {}) {
-    if (!unit || unit.team !== 'player' || unit.hp <= 0) return [];
+    if (!unit || unit.team !== 'player' || unit.hp <= 0) return false;
     syncInteractionState();
-    if (!isMaxLevelVeteran(unit)) {
-      if (opts.announcePartial) {
-        const need = MAX_VETERAN_TIER;
-        const left = need - (unit.vetTier || 0);
-        if (left > 0 && left <= need) {
-          showMessage(
-            `${getUnitDisplayName(unit)} is V${unit.vetTier || 0}/${need} — ${left} more promote${left > 1 ? 's' : ''} to unlock their academy mentor.`,
-            280
-          );
-        }
-      }
-      return [];
+    if (!isTrainingMentor(unit) || unit.mentorAnnounced) return isTrainingMentor(unit);
+    unit.mentorAnnounced = true;
+    if (opts.announce !== false) {
+      const where =
+        GS.wave >= (BuildDefs.training_ground?.waveMin || 0)
+          ? 'Move them onto a Training Ground'
+          : `From wave ${BuildDefs.training_ground?.waveMin} move them onto a Training Ground`;
+      showMessage(`${getUnitDisplayName(unit)} can now drill recruits. ${where}.`, 300);
+      svc('FloatingText').status(unit.x, unit.y - 16, 'CAN DRILL', '#80ffc0');
     }
-    const opened =
-      typeof getAcademiesUnlockedByMentorType === 'function'
-        ? getAcademiesUnlockedByMentorType(unit.type)
-        : [];
-    const mentorReady = opened.filter((t) => canBuildAcademyType(t, GS.wave, GS.units));
-    if (opts.announce !== false && mentorReady.length) {
-      const names = mentorReady
-        .map((t) => BuildDefs[t]?.name || t)
-        .slice(0, 3)
-        .join(', ');
-      const researchOpts = getResearchOpts();
-      const needResearch = mentorReady.filter(
-        (t) =>
-          !(GS.creativeMode && GS.creativeSettings.unlockAll) &&
-          svc('Research') &&
-          !svc('Research').isBuildUnlocked(t, researchOpts)
-      );
-      if (needResearch.length) {
-        showMessage(
-          `${getUnitDisplayName(unit)} is Immortal — mentor ready for ${names}. Research the academy charter/node to place it.`,
-          360
-        );
-      } else {
-        showMessage(
-          `${getUnitDisplayName(unit)} is Immortal — ${names} unlocked for building!`,
-          320
-        );
-      }
-      svc('FloatingText').status(unit.x, unit.y - 16, 'ACADEMY MENTOR', '#80ffc0');
-    }
-    svc('UI')?.updateHUD?.(true);
-    return mentorReady;
+    return true;
   }
 
   function upgradeSelectedVeteran() {
@@ -173,10 +140,7 @@ const GameArmy = (() => {
     }
     if (!canSpendTpVeteranUpgrade(u)) {
       if ((u.vetTier || 0) >= MAX_VETERAN_TIER) {
-        showMessage(
-          `${getUnitDisplayName(u)} is already Immortal — their academy mentor is active if research allows.`
-        );
-        refreshAcademyMentorUnlocks(u, { announce: true });
+        showMessage(`${getUnitDisplayName(u)} is already Immortal.`);
         return false;
       }
       showMessage(
@@ -199,9 +163,7 @@ const GameArmy = (() => {
     }
     if (!(GS.creativeMode && GS.creativeSettings.freeResources)) GS.tactical -= cost;
     u.vetUpgradeEligible = false;
-    const prevTier = u.vetTier || 0;
     upgradeVeteranUnit(u);
-    // notify handles FX; we own academy unlock messaging to avoid double toasts.
     if (u.honorName) {
       if (svc('VisualPolish')) svc('VisualPolish').honorFx(u);
     } else if (svc('VisualPolish')) {
@@ -227,10 +189,7 @@ const GameArmy = (() => {
       ach('vet_event', { event: 'honored', unitType: u.type, honorName: u.honorName });
     }
     recordPathImmortalIfEligible(u);
-    refreshAcademyMentorUnlocks(u, {
-      announce: (u.vetTier || 0) >= MAX_VETERAN_TIER && prevTier < MAX_VETERAN_TIER,
-      announcePartial: (u.vetTier || 0) < MAX_VETERAN_TIER,
-    });
+    refreshAcademyMentorUnlocks(u);
     return true;
   }
 
@@ -552,13 +511,9 @@ const GameArmy = (() => {
       showMessage(`${label} — ${bonus}`);
       svc('Particles').heal(unit.x, unit.y);
       playSfx('reinforce');
-      // Specialist auto-ranks and combat promotions — refresh academy mentor gate.
-      refreshAcademyMentorUnlocks(unit, {
-        announce: isMaxLevelVeteran(unit),
-        announcePartial: !isMaxLevelVeteran(unit) && isSpecialistUnit(unit),
-      });
+      refreshAcademyMentorUnlocks(unit);
     } else if (event === 'max_rank' || event === 'honored_max') {
-      refreshAcademyMentorUnlocks(unit, { announce: true });
+      refreshAcademyMentorUnlocks(unit);
     } else if (event === 'upgrade_eligible' || event === 'honored_eligible') {
       const cost = getVeteranUpgradeCost(unit);
       const name = getUnitDisplayName(unit);

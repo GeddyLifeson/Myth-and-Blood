@@ -11,21 +11,23 @@ const Tooltips = (() => {
   const FADE_MS = 400;
 
   const BUILD_NOTES = {
-    outpost: 'Forward cover with one garrison slot. Archers inside gain +55 range.',
-    wall: 'Blocks movement. Two footman slots per segment when a General commands the Keep. Castle walls face N/E/S/W. Press R while placing to set facing; ROTATE tool turns completed walls.',
+    outpost:
+      'Forward cover with one garrison slot. Archers inside gain +55 range. Takes one upgrade: Barracks or Granary.',
+    wall: 'Blocks movement. Two footman slots per segment when a General commands the Keep. Castle walls face N/E/S/W. Press R while placing to set facing; ROTATE tool turns completed walls. Takes one upgrade: Rampart or Snare Line.',
     castle:
       'Compound: 4 walls, 4 outposts, Keep, med tent, and mess hall - requires Fortification research.',
     medical_tent:
-      'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside.',
-    mess_hall: 'Morale aura for nearby troops - stacks with bards and rallies.',
+      'Once it stands, every soldier below full health walks here before anything else, heals to full and returns to his post. In a fight he stays while above 50% health. 4 beds; the rest queue outside. Takes one upgrade: Surgery or Triage.',
+    mess_hall:
+      'Morale aura for nearby troops - stacks with bards and rallies. Takes one upgrade: Tavern or Kitchens.',
     watchtower:
-      '5 TP. Reveals stealth and burrowers; enemies nearby suffer accuracy penalties. Archers gain +35 range. Requires Field Engineering.',
+      'Reveals stealth and burrowers; enemies in sight lose accuracy. Takes one upgrade: Beacon or Spotter’s Perch.',
     spike_trap:
-      '3 TP. Hidden spikes - first enemy crossing each cooldown takes heavy damage. Requires Field Engineering.',
+      'Hidden spikes: the first enemy across it each reset takes heavy damage. Takes one upgrade: Barbed Pit or Hair Trigger. Requires Field Engineering.',
     quarry:
-      '14 TP, 2 Builders. +1 TP/round (shared 6-site cap with trade posts). Blocks movement. Requires Prospecting.',
+      'Pays at the end of each wave in which no enemy came within 110 of it. Blocks movement. Shares the 6-site income cap.',
     trade_outpost:
-      '16 TP, 2 Builders. +1 TP/round plus morale aura. Counts toward the 6-site economy cap. Requires Prospecting.',
+      'Pays at the end of each wave in which no enemy came within 160 of it; lifts morale nearby. Shares the 6-site income cap.',
     hall_of_veterans:
       '60 TP, 1 Builder. Can be built once a veteran has reached rank 6. Keeps the roll of top-rank veterans and raises one fallen name a wave for TP. The raised veteran returns at rank 5 with 10% less health for each death.',
     research_lab: 'Needs 1 Builder. While it stands, every doctrine choice comes 5 waves sooner.',
@@ -56,9 +58,9 @@ const Tooltips = (() => {
     sapper:
       'Field engineer. Buries mines at night (Shift+click re-sites one) and lobs satchel charges by day. Blasts ignore armour and shields. A knife up close - keep him behind the line.',
     scout: 'Fast skirmisher with stealth detection. Pair with watchtowers.',
-    bard: '5 TP morale aura support. A Bard Academy needs an Immortal bard mentor.',
+    bard: '5 TP morale aura support. A ranked bard can raise more at the Training Ground.',
     ballista:
-      '6 TP long-range siege crew. Bonus vs flyers and structures. Click Ballista and place it on the map (Shift-click to place more). Academy needs an Immortal ballista mentor.',
+      '6 TP long-range siege crew. Bonus vs flyers and structures. Click Ballista and place it on the map (Shift-click to place more).',
     pikeman: '4 TP anti-cavalry and anti-air line.',
     builder: 'Erects structures within build range. Auto-repair toggle in meta panel.',
     courier: 'Dispatches one royal message per wave. Must be alive on the field.',
@@ -67,7 +69,7 @@ const Tooltips = (() => {
   };
 
   const ACADEMY_NOTE =
-    'Find an Immortal veteran first - each academy needs a max-rank mentor of that unit type alive on the field before you can found it. Once complete, trains one free unit each round (Builder/Courier academies train while only the mentor is on the field).';
+    'Opens at wave 10, one per field. Select one soldier of rank 2 or higher and move them onto the Training Ground to post them there. Each dawn they stay at their post they raise one recruit of their own type who arrives with a rank. They are off the line while they drill, and they are badly hurt if the ground falls.';
 
   function esc(s) {
     return String(s ?? '')
@@ -169,31 +171,15 @@ const Tooltips = (() => {
         typeof Game !== 'undefined' && Game.getAcademyBuildStatus
           ? Game.getAcademyBuildStatus(type)
           : null;
-      const mentor =
-        status?.mentorType ||
-        (typeof getAcademyMentorUnitType === 'function'
-          ? getAcademyMentorUnitType(type)
-          : def.academyUnit || type.replace('academy_', ''));
-      const mentorName = status?.mentorName || getPlayerUnitDef(mentor)?.name || mentor;
-      const rank =
-        status?.mentorRank ||
-        (typeof getMaxVeteranRankName === 'function' ? getMaxVeteranRankName(mentor) : 'Immortal');
-      const trains = def.academyUnit || mentor;
-      body = `${ACADEMY_NOTE} This hall trains ${trains} - requires an on-field ${mentorName} at ${rank} (V${status?.mentorNeed || 6}).`;
-      if (status?.hasMentor) {
-        body += ` Mentor ready: Immortal ${mentorName} is on the field.`;
-        if (status.researchOk === false) {
-          body += ' Still need the matching research node to place this academy.';
-        } else {
-          body += ' You can found this academy now.';
-        }
-      } else if (status?.mentorProgress > 0) {
-        body += ` Progress: V${status.mentorProgress}/${status.mentorNeed || 6} on field - keep promoting after each gold-star cycle.`;
-      } else if (status?.reason) {
-        body += ` ${status.reason}`;
+      body = ACADEMY_NOTE;
+      if (status?.mentors) {
+        body += ` ${status.mentors} soldier${status.mentors > 1 ? 's' : ''} on the field can drill recruits now.`;
       }
     } else if (!body && def?.isAcademy) {
       body = ACADEMY_NOTE;
+    } else if (!body && def?.upgradeNote) {
+      const host = BuildDefs[def.upgradeOf]?.name || 'building';
+      body = `${host} upgrade, one per ${host}: ${def.upgradeNote}`;
     } else if (!body && def?.isPerkMachine) {
       const perk = PerkDefs?.[def.perkId];
       body = perk
@@ -205,7 +191,7 @@ const Tooltips = (() => {
         : 'Field structure - place with a Builder.';
     }
     if (def?.requiresBuilders) body += ` Requires ${def.requiresBuilders} live Builders.`;
-    if (def?.tpPerRound) body += ` +${def.tpPerRound} TP/round.`;
+    if (def?.tpPerRound) body += ` +${def.tpPerRound} TP a wave.`;
     if (def?.isWatchtower) body += ` Vision ${def.visionRadius || 200}.`;
     if (def?.isTrap) body += ` Trap damage ${def.trapDamage || 45}.`;
     let footer = fmtCost(def?.cost ?? 0, freeTp);
@@ -214,14 +200,8 @@ const Tooltips = (() => {
         typeof Game !== 'undefined' && Game.getAcademyBuildStatus
           ? Game.getAcademyBuildStatus(type)
           : null;
-      if (status?.canBuild) footer += ` · Ready to build`;
-      else if (status?.hasMentor && status.researchOk === false)
-        footer += ` · Mentor OK · need research`;
-      else if (status?.hasMentor) footer += ` · Mentor on field`;
-      else if (status?.mentorProgress > 0)
-        footer += ` · Mentor V${status.mentorProgress}/${status.mentorNeed || 6}`;
-      else if (status?.reason) footer = status.reason;
-      else footer += ' · Find an Immortal veteran first';
+      if (status?.reason) footer = status.reason;
+      else footer += ' · Ready to build';
     }
     footer += keyNote('build', type);
     if (def && !def.isAcademy) footer += whyNot('build', type, gs);
@@ -328,7 +308,7 @@ const Tooltips = (() => {
     const tips = {
       'demolish-btn': {
         title: 'Demolish',
-        body: 'Remove a completed player structure. Refunds 50% of its build cost in TP.',
+        body: 'Remove a completed player structure. Refunds up to 50% of its build cost in TP, scaled by its remaining health.',
         footer: 'Click structure · Esc to cancel',
       },
       'move-building-btn': {
@@ -842,9 +822,9 @@ const Tooltips = (() => {
         footer: 'Click build, then click map',
       },
       ACADEMIES: {
-        title: 'Academies',
-        body: 'Find an Immortal veteran first - you cannot found an academy until a max-rank mentor of that unit type is alive on the field. Promote troops via Veteran Doctrine, deploy the mentor, then build. Each complete academy trains one free unit per round.',
-        footer: 'Hover each academy button for mentor requirements',
+        title: 'Training Ground',
+        body: 'Post a soldier of rank 2 or higher on the Training Ground and they raise one ranked recruit of their type each dawn, at the cost of fighting without them.',
+        footer: 'Opens at wave 10',
       },
       STRIKES: {
         title: 'Strikes',

@@ -205,15 +205,13 @@ const Availability = (() => {
     let mentorOk = true;
     let mentorReason = '';
     if (!gs.creativeMode && isAcademy) {
-      if (typeof Game !== 'undefined' && Game.getAcademyBuildStatus) {
-        const st = Game.getAcademyBuildStatus(type);
-        mentorOk = !!st?.mentorOk;
-        const who = st?.mentorName || def.academyUnit || 'veteran';
-        mentorReason = `needs an Immortal ${who} on the field`;
-      } else if (gs.buildableAcademies) {
-        mentorOk = gs.buildableAcademies.includes(type);
-        mentorReason = 'needs an Immortal veteran of that troop on the field';
-      }
+      const reason =
+        typeof Game !== 'undefined' && Game.getAcademyBuildStatus
+          ? Game.getAcademyBuildStatus(type)?.reason
+          : null;
+      mentorOk = !reason;
+      // Panel reasons read as lower-case phrases: "opens at wave 10".
+      mentorReason = reason ? reason[0].toLowerCase() + reason.slice(1).replace(/\.$/, '') : '';
     }
     if (type === 'hall_of_veterans' && !gs.creativeMode && gs.hallBuildBlock) {
       return blocked(gs.hallBuildBlock, true, { cost });
@@ -235,6 +233,20 @@ const Availability = (() => {
     ) {
       const n = def.requiresBuilders;
       return blocked(`needs ${n} living Builder${n === 1 ? '' : 's'}`, false, { cost });
+    }
+    const retired =
+      typeof GameBuildings !== 'undefined' ? GameBuildings.retiredBuildReason(type) : null;
+    if (retired) return blocked(retired, true, { cost });
+    if (def.upgradeOf && typeof GameBuildings !== 'undefined' && !gs.creativeMode) {
+      if (!GameBuildings.upgradeHosts(def).length) {
+        const host = BuildDefs[def.upgradeOf]?.name || 'building';
+        return blocked(`needs a finished ${host} with no upgrade`, false, { cost });
+      }
+    }
+    if (def.isResourceGen && typeof ContentExpansion !== 'undefined') {
+      if (ContentExpansion.economySitesFull?.()) {
+        return blocked('all 6 income sites in use', false, { cost });
+      }
     }
     if (tp(gs) < cost) return blocked(costReason(cost, gs), false, { cost, tp: true });
     return { ...OK, cost };

@@ -59,8 +59,8 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   ok(!r.ok && r.locked && r.reason === 'arrives at wave 6 (Fortification)', `Castle: ${r.reason}`);
   r = Availability.trySelect('build', 'castle');
   ok(!r.ok && GS.selectedBuild == null, 'a locked building is not selected');
-  r = Availability.check('build', 'academy_footman');
-  ok(!r.ok && /^needs an Immortal /.test(r.reason), `Footman Academy: ${r.reason}`);
+  r = Availability.check('build', 'training_ground');
+  ok(!r.ok && r.reason === 'opens at wave 10', `Training Ground: ${r.reason}`);
   r = Availability.check('ability', 'fus_ro_dah');
   ok(!r.ok && r.locked && r.reason === 'needs the Rimehowl Pact', `Voice Shout: ${r.reason}`);
   ok(
@@ -462,16 +462,16 @@ const armyOf = (GS) => GS.units.filter((u) => u.team === 'player' && u.hp > 0).l
   );
   const late = items.filter((it) => PanelModel.isLate(it.kind, it.id));
   ok(
-    late.length >= 20,
-    `academies, settlements and tonic stations are late items (${late.length})`
+    late.length >= 15,
+    `the Training Ground, settlements and tonic stations are late items (${late.length})`
   );
   ok(
     late.every((it) => has(lay.cmd.locked, it.id) && !has(lay.build.open, it.id)),
     'every late item still locked waits under More, not in Build'
   );
   ok(
-    /^needs an Immortal /.test(find(lay.cmd.locked, 'academy_footman')?.reason || ''),
-    'a locked academy names the veteran it needs'
+    find(lay.cmd.locked, 'training_ground')?.reason === 'opens at wave 10',
+    'the locked Training Ground says when it opens'
   );
   const lockedRows = Object.values(lay).flatMap((g) => g.locked);
   ok(lockedRows.length > 20, `locked rows exist (${lockedRows.length})`);

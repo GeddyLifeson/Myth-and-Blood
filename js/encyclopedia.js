@@ -392,6 +392,19 @@ const Encyclopedia = (() => {
         })
       );
     }
+    // Building upgrades describe themselves in the data.
+    for (const [id, def] of Object.entries(defs)) {
+      if (!def.upgradeOf || BUILDING_JOBS[id]) continue;
+      const host = defs[def.upgradeOf]?.name || 'building';
+      out.push(
+        entry(
+          'buildings',
+          def.name,
+          `${host} upgrade. ${def.upgradeNote} The choice is final for that ${host}.`,
+          { buildId: id, tags: [{ k: 'role', v: `${def.cost} TP` }] }
+        )
+      );
+    }
     const group = (name, intro, pick) => {
       const members = Object.entries(defs).filter(([id, d]) => pick(id, d));
       if (!members.length) return;
@@ -405,9 +418,9 @@ const Encyclopedia = (() => {
       );
     };
     group(
-      'Academies',
-      'Late works, opened by research. An academy trains one kind of soldier each round while a veteran of that kind is on the field to teach.',
-      (id, d) => d.isAcademy && /^academy_/.test(id)
+      'Training Ground',
+      'Opens at wave 10, one per field. Move one soldier of rank 2 or higher onto it and each dawn they raise a recruit of their type who arrives with a rank, while they stand off the line. If the ground falls with them on it, they are badly hurt.',
+      (id) => id === 'training_ground'
     );
     group(
       'Settlements',

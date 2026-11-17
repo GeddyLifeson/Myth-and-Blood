@@ -30,6 +30,8 @@ const Research = (() => {
     'hall_of_veterans',
     'watchtower',
     'trade_outpost',
+    'quarry',
+    'training_ground',
     'enemy_hamlet',
     'enemy_merchant_guild',
     'enemy_trade_outpost',
@@ -250,9 +252,8 @@ const Research = (() => {
       wave: 9,
       category: 'military',
       prereq: ['iron_weapons'],
-      desc: 'Sapper and Ballista Academies.',
+      desc: 'Ballistas.',
       deploy: ['ballista'],
-      build: ['academy_sapper', 'academy_ballista'],
     },
     {
       id: 'prospecting',
@@ -263,6 +264,8 @@ const Research = (() => {
       prereq: ['field_engineering'],
       desc: 'Quarries: +3 TP at dawn each.',
       build: ['quarry'],
+      // The Quarry is a starter building now; the id stays for old saves and prereqs.
+      retired: true,
     },
     {
       id: 'academy_charter',
@@ -271,8 +274,8 @@ const Research = (() => {
       wave: 20,
       category: 'academy',
       prereq: ['iron_weapons'],
-      desc: 'Train core troops each round.',
-      build: ['academy_footman', 'academy_archer', 'academy_mage', 'academy_cavalry'],
+      desc: 'Training Ground recruits arrive at rank 2 instead of 1.',
+      feature: 'academy_rank',
     },
     {
       id: 'knight_order',
@@ -282,7 +285,8 @@ const Research = (() => {
       category: 'academy',
       prereq: ['academy_charter'],
       desc: 'Elite knight training halls.',
-      build: ['academy_knight'],
+      // The fourteen academies became one Training Ground; the id stays for old saves.
+      retired: true,
     },
     {
       id: 'support_corps',
@@ -292,7 +296,8 @@ const Research = (() => {
       category: 'academy',
       prereq: ['academy_charter'],
       desc: 'Healer, builder, and courier academies.',
-      build: ['academy_healer', 'academy_builder', 'academy_courier'],
+      // The fourteen academies became one Training Ground; the id stays for old saves.
+      retired: true,
     },
     {
       id: 'expansion_training',
@@ -302,7 +307,8 @@ const Research = (() => {
       category: 'academy',
       prereq: ['advanced_infantry', 'morale_arts', 'siege_engineering'],
       desc: 'Scout, bard, and pikeman academies.',
-      build: ['academy_scout', 'academy_bard', 'academy_pikeman'],
+      // The fourteen academies became one Training Ground; the id stays for old saves.
+      retired: true,
     },
     {
       id: 'officer_training',
@@ -312,7 +318,8 @@ const Research = (() => {
       category: 'academy',
       prereq: ['command_theory', 'knight_order'],
       desc: 'Promote generals from immortal footmen.',
-      build: ['academy_general'],
+      // The fourteen academies became one Training Ground; the id stays for old saves.
+      retired: true,
     },
     {
       id: 'settlement_charter',
@@ -916,6 +923,9 @@ const Research = (() => {
     if (BuildDefs[type]?.isWweAcademy) {
       return isFactionUnlocked('champions', opts);
     }
+    // A building upgrade opens with the building it goes on (Outpost ones keep their node).
+    const up = BuildDefs[type];
+    if (up?.upgradeOf && !up.isOutpostUpgrade) return isBuildUnlocked(up.upgradeOf, opts);
     if (BuildDefs[type]?.isPerkMachine) {
       return completed.has('perk_science') || !!opts.perksMetaUnlocked;
     }
@@ -989,6 +999,7 @@ const Research = (() => {
     if (builds.length) bits.push(builds.map(buildName).join(', '));
     if (node.faction) bits.push('company barracks');
     if (node.feature === 'tp_veteran_upgrade') bits.push('TP veteran promotions');
+    if (node.feature === 'academy_rank') bits.push('rank 2 Training Ground recruits');
     if (node.id === 'doom_protocol') bits.push('Hellbane');
     return bits.join(' · ');
   }
