@@ -694,9 +694,11 @@ ok(ev({ key: '1', code: 'Digit1', ctrlKey: true }) === 'ctrl+1', 'Ctrl+1');
   );
 }
 
-// --- README ------------------------------------------------------------------------------------------
+// --- README and MANUAL -------------------------------------------------------------------------------
 {
-  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  const readme = ['README.md', 'MANUAL.md']
+    .map((f) => readFileSync(join(ROOT, f), 'utf8'))
+    .join('\n');
   ok(!/Cycle game speed/.test(readme), 'README no longer lists a speed key');
   ok(
     /War Cry/.test(readme) && /Hold the Line/.test(readme),

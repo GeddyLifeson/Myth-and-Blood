@@ -394,8 +394,8 @@ function addUnit(api, type) {
   ok(BuildDefs.quarry.tpPerRound === 3, 'Quarry: +3 at dawn');
   ok(BuildDefs.hamlet.tpBonusPerHamlet === 5, 'a hamlet pays 5 TP a round, as the manual now says');
   ok(
-    /\+5 TP\/round/.test(readFileSync(join(ROOT, 'README.md'), 'utf8')),
-    'README agrees on hamlet income'
+    /\+5 TP\/round/.test(readFileSync(join(ROOT, 'MANUAL.md'), 'utf8')),
+    'the manual agrees on hamlet income'
   );
 
   // Income at dawn.
