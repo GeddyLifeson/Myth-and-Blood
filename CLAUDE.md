@@ -28,3 +28,4 @@ Browser fantasy tactical defense game (Electron desktop build too). Public repo:
 
 - A new `js/*.js` module needs a `<script>` tag in `index.html` at the right point, then `npm run gen:eslint-globals`.
 - `RESUME.md` holds local paths and is gitignored; it must never be published.
+- Triple-check everything (Marlon 11-17, 11-19: "for everything"). Every diagnosis, fix and "done" is confirmed three independent ways before it is reported: the log or test, a direct measurement or record (the file, data or build it changed), and the output itself as the player sees it (a screenshot of the game, the rendered PDF page). One source agreeing is not proof, and reading the code is not a check. Report each check with its command and result.
