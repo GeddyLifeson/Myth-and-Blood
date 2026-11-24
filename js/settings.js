@@ -28,6 +28,7 @@ const Settings = (() => {
     sfxVolume: 0.55,
     muted: false,
     cameraZoomSpeed: 1,
+    leftDragPan: false,
     colorBlind: 'none',
     highContrast: false,
     fontScale: 1,
@@ -306,6 +307,7 @@ const Settings = (() => {
     setCheck('set-reduced-motion', settings.reducedMotion);
     setCheck('set-screen-reader', settings.screenReader);
     setCheck('set-large-hitboxes', settings.largerHitboxes);
+    setCheck('set-left-drag-pan', settings.leftDragPan);
 
     setCheck('set-show-minimap', settings.showMinimap);
     setCheck('set-show-hint-bar', settings.showHintBar);
@@ -448,6 +450,9 @@ const Settings = (() => {
         ErrorReporting.onSettingsReady();
       }
     });
+    document
+      .getElementById('set-left-drag-pan')
+      ?.addEventListener('change', (e) => set('leftDragPan', e.target.checked));
     document.getElementById('set-camera-zoom')?.addEventListener('input', (e) => {
       set('cameraZoomSpeed', parseFloat(e.target.value) || 1);
       document.getElementById('set-camera-zoom-val').textContent =

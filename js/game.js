@@ -298,6 +298,7 @@ const Game = (() => {
   GS.isPanning = false;
   GS.dragMoved = false;
   GS.panAnchor = null;
+  GS.panLocked = false;
 
   GS.sortedUnitsCache = [];
   GS.sortedUnitsFrame = -1;
