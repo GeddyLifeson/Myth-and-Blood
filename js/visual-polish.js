@@ -105,14 +105,15 @@ const VisualPolish = (() => {
   function pickWeather(wave, tick) {
     if (wave >= 1001) return { type: 'ash', intensity: 0.35 };
     if (wave >= 200) return { type: 'mist', intensity: 0.2 };
-    // Original system only ever showed clear or rain below wave 200 — most of a
-    // run. Snow fills that gap as a rarer, offset cycle so it doesn't fight rain
-    // for the same window; every third rain window intensifies into a storm.
+    // Winter trades rain for snow; snow never falls in the other seasons.
+    const winter = typeof Seasons !== 'undefined' && Seasons.forDay(wave).id === 'winter';
+    if (winter)
+      return tick % 1800 < 900 ? { type: 'snow', intensity: 0.3 } : { type: 'clear', intensity: 0 };
+    // Every third rain window intensifies into a storm.
     if (tick % 2400 < 400) {
       const storm = Math.floor(tick / 2400) % 3 === 0;
       return storm ? { type: 'storm', intensity: 0.4 } : { type: 'rain', intensity: 0.25 };
     }
-    if (tick % 5400 < 450) return { type: 'snow', intensity: 0.22 };
     return { type: 'clear', intensity: 0 };
   }
 
@@ -1417,6 +1418,7 @@ const VisualPolish = (() => {
     drawHordeIntensity,
     drawTitleArt,
     updateAudioMix,
+    pickWeather,
   };
 })();
 

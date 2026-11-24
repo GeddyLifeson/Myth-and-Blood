@@ -235,6 +235,7 @@ export const browserScriptGlobals = Object.fromEntries(
   "SaveManager",
   "SaveRegistry",
   "SaveThumbnail",
+  "Seasons",
   "Settings",
   "SettlementRaids",
   "SiegeLoop",
