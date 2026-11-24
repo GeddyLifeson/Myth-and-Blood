@@ -245,12 +245,11 @@ const GameInput = (() => {
       const world = screenToWorld(sx, sy);
       const onPlayerUnit = !!getUnitAt(world.x, world.y, 'player');
       const hasSelection = getSelectedUnitIds().length > 0;
+      // A pan press (middle button, one finger) never starts a box.
       const wantBox =
         !!opts.boxSelect ||
-        (opts.emptyDragSelect !== false &&
-          !onPlayerUnit &&
-          !opts.forcePan &&
-          !(hasSelection && !opts.boxSelect));
+        (!opts.pan &&
+          (!leftDragPans() || (opts.emptyDragSelect !== false && !onPlayerUnit && !hasSelection)));
       if (wantBox && !opts.forcePan) {
         GS.boxSelect = {
           startSx: sx,
@@ -269,6 +268,13 @@ const GameInput = (() => {
     GS.isPanning = true;
     GS.dragMoved = false;
     GS.panAnchor = { sx, sy, cx: GS.cameraWorldX, cy: GS.cameraWorldY };
+    // A plain left press still has to register as a click, but must not drag the view.
+    GS.panLocked = !opts.pan && !leftDragPans();
+  }
+
+  /** Options > Left drag pans the map. Off by default: middle drag, arrows and touch pan. */
+  function leftDragPans() {
+    return typeof Settings !== 'undefined' && !!Settings.get('leftDragPan');
   }
 
   function trackPointer(sx, sy) {
@@ -285,7 +291,7 @@ const GameInput = (() => {
         !!attackableFoeAt(w.x, w.y) ||
         (typeof WarCamps !== 'undefined' && !!WarCamps.campAt(w.x, w.y, warCampCtx));
     }
-    const want = aim ? 'crosshair' : 'grab';
+    const want = aim ? 'crosshair' : leftDragPans() ? 'grab' : 'default';
     if (GS.canvas.style.cursor !== want) GS.canvas.style.cursor = want;
   }
 
@@ -314,9 +320,9 @@ const GameInput = (() => {
       (Math.abs(dx) > GS.activeDragThreshold || Math.abs(dy) > GS.activeDragThreshold)
     ) {
       GS.dragMoved = true;
-      GS.canvas.style.cursor = 'grabbing';
+      if (!GS.panLocked) GS.canvas.style.cursor = 'grabbing';
     }
-    if (!GS.dragMoved) return;
+    if (!GS.dragMoved || GS.panLocked) return;
     GS.cameraWorldX = GS.panAnchor.cx - dx / GS.viewScale;
     GS.cameraWorldY = GS.panAnchor.cy - dy / GS.viewScale;
     applyCamera();
