@@ -2753,17 +2753,19 @@ const UI = (() => {
     const cycleText = hudEls['cycle-text'];
     const beginDayBtn = hudEls['begin-day-btn'];
     if (cycleText) {
+      const season = typeof Seasons !== 'undefined' ? Seasons.forDay(gs.wave) : null;
+      const seasonTag = season ? ` · ${season.name} ${Seasons.dayOfSeason(gs.wave)}` : '';
       if (gs.timeOfDay === 'night') {
         const sec = gs.nightSecondsLeft ?? 0;
         const m = Math.floor(sec / 60);
         const s = String(sec % 60).padStart(2, '0');
-        cycleText.textContent = `Night ${m}:${s}`;
+        cycleText.textContent = `Night ${m}:${s}${seasonTag}`;
         cycleText.className = 'stat-value cycle-night' + (sec <= 15 ? ' cycle-urgent' : '');
         cycleText.title =
           'Night prep - no enemy spawns, +35% build speed. Press D to begin day early.';
       } else {
         const light = gs.dayLight ?? 1;
-        cycleText.textContent = light < 0.72 ? 'Dusk' : 'Day';
+        cycleText.textContent = (light < 0.72 ? 'Dusk' : 'Day') + seasonTag;
         cycleText.className = light < 0.72 ? 'stat-value cycle-dusk' : 'stat-value cycle-day';
       }
     }

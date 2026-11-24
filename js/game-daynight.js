@@ -605,11 +605,21 @@ const GameDayNight = (() => {
     const doctrineTpMult =
       svc('Research') && !GS.creativeMode ? svc('Research').getDoctrineEffects().tpIncomeMult : 1;
     const income = Math.floor(getTpPerRound() * techTpMult * doctrineTpMult);
+    const season =
+      typeof Seasons !== 'undefined' && !GS.creativeMode ? Seasons.forDay(GS.wave) : null;
+    if (season?.dawnHeal) {
+      for (const u of GS.units) {
+        if (u.team === 'player' && u.hp > 0 && u.maxHp > 0) {
+          u.hp = Math.min(u.maxHp, u.hp + u.maxHp * season.dawnHeal);
+        }
+      }
+    }
     const ledger = EconomyRules.buildLedger([
       { label: 'crown', tp: Math.max(0, income - eco - works.tp) },
       { label: 'settlements', tp: eco },
       { label: 'works', tp: works.tp },
       { label: 'levy', tp: levyPaid },
+      { label: season?.id || 'season', tp: season ? income * (season.tpMult - 1) : 0 },
       ...siegeEntries,
     ]);
     SiegeLoop.noteLedger(ledger);

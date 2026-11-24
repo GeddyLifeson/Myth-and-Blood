@@ -1452,8 +1452,10 @@ const FieldArt = (() => {
   function weatherAt(wave, tick) {
     if (wave >= 1001) return 'ash';
     if (wave >= 200) return 'mist';
+    if (typeof Seasons !== 'undefined' && Seasons.forDay(wave).id === 'winter') {
+      return tick % 1800 < 900 ? 'snow' : 'clear';
+    }
     if (tick % 2400 < 400) return Math.floor(tick / 2400) % 3 === 0 ? 'storm' : 'rain';
-    if (tick % 5400 < 450) return 'snow';
     return 'clear';
   }
 

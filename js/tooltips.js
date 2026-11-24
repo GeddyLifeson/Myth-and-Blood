@@ -457,7 +457,9 @@ const Tooltips = (() => {
     if (label === 'WAVE') {
       return {
         title: 'Wave',
-        body: 'Assault wave counter. The map expands every 10 waves on all sides; pressure rises with wave number.',
+        body:
+          'Assault wave counter; each wave is one day and the season turns every 25 days. The map expands every 10 waves on all sides; pressure rises with wave number.' +
+          (typeof Seasons !== 'undefined' ? ` ${Seasons.describe(gs?.wave ?? 1)}` : ''),
         footer:
           gs?.timeOfDay === 'night'
             ? 'Night prep - press D or BEGIN DAY'

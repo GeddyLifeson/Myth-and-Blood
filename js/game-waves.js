@@ -817,6 +817,10 @@ const GameWaves = (() => {
     if (svc('PlayerCounterEvolution') && svc('EnemyFactions')) {
       svc('PlayerCounterEvolution').checkWaveAnnouncement(GS.wave, announceHooks());
     }
+    if (typeof Seasons !== 'undefined' && Seasons.isTurnDay(GS.wave)) {
+      const s = Seasons.forDay(GS.wave);
+      showMessage(`${s.name} comes. ${s.effects.join('. ')}.`, 360);
+    }
     if (svc('LivingPlanet')) {
       svc('LivingPlanet').checkWaveAnnouncement(GS.wave, announceHooks());
     }

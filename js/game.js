@@ -1261,9 +1261,10 @@ const Game = (() => {
     const adv = getAdvancedMods();
     const modeMult = svc('GameModes') ? svc('GameModes').getNightPrepMult() : 1;
     const cmdMult = getAsymmetricMods().commanderNightPrepMult || 1;
+    const seasonMult = typeof Seasons !== 'undefined' ? Seasons.forDay(GS.wave).nightPrepMult : 1;
     return Math.max(
       120,
-      Math.floor(NIGHT_PREP_TICKS * (adv.nightPrepMult || 1) * modeMult * cmdMult)
+      Math.floor(NIGHT_PREP_TICKS * (adv.nightPrepMult || 1) * modeMult * cmdMult * seasonMult)
     );
   }
 

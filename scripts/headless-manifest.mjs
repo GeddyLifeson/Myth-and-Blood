@@ -87,6 +87,7 @@ export const HEADLESS_FILES = [
   'mythic-path-evolution.js',
   'faction-intel.js',
   'living-planet.js',
+  'seasons.js',
   'asymmetric-warfare.js',
   'settlement-raids.js',
   'progression-restarts.js',
