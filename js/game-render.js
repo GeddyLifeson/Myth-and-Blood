@@ -227,13 +227,15 @@ const GameRender = (() => {
         }
       }
 
-      // The line enemies must not cross, then rubble, then the standing buildings.
+      // The line enemies must not cross, then rubble and the dead, then the standing buildings.
       if (fieldArt) {
         fieldArt.drawLine(GS.ctx, GS.worldW, GS.worldH, GS.updateTick, {
           dark: fieldArt.darkness(),
         });
       }
       if (buildingArt) buildingArt.drawRubble(GS.ctx, GS.updateTick);
+      if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
+        svc('VisualPolish').drawDeathCorpses(GS.ctx);
       const artEnv = buildingArt
         ? {
             dark: fieldArt ? fieldArt.darkness() : 0,
@@ -667,8 +669,6 @@ const GameRender = (() => {
           (globalThis.ProjectileArt || svc('SpriteGen')).drawProjectile(GS.ctx, p, GS.updateTick);
       }
       globalThis.ProjectileArt?.drawOver?.(GS.ctx, vBounds, GS.updateTick);
-      if (svc('VisualPolish') && gfxQ?.drawCorpses !== false)
-        svc('VisualPolish').drawDeathCorpses(GS.ctx);
       SiegeLoop.drawWorld(GS.ctx, GS.units, GS.updateTick);
       if (typeof WarCamps !== 'undefined') WarCamps.draw(GS.ctx, warCampCtx, GS.updateTick);
       if (typeof Ground !== 'undefined')
