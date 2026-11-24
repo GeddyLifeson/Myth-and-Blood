@@ -1505,16 +1505,19 @@ const FieldArt = (() => {
       const slant = storm ? -0.42 : -0.22;
       const speed = storm ? 11 : 8;
       ctx.lineCap = 'round';
+      // Streaks wrap across a band one streak wider than the field each side, so the slant
+      // drifts them sideways without leaving a dry wedge at the top.
+      const pad = len * 1.35;
+      const span = w + pad * 2;
       // Each streak is an ink stroke with a bone one laid over it, so it shows on pale
       // ground as well as dark; a third of them are nearer and heavier.
       const path = (from, step) => {
         ctx.beginPath();
         for (let i = from; i < n; i += step) {
           const near = i % 3 === 0 ? 1.35 : 1;
-          const sx = frac(i * 0.6180339 + 0.13) * (w + 80);
           const ph = frac(i * 0.7548776);
           const y = frac(ph + (tick * speed * near * (0.8 + ph * 0.4)) / (h + 40)) * (h + 40) - 20;
-          const x = sx + (y - h) * slant - 20;
+          const x = frac(i * 0.6180339 + 0.13 + ((y - h) * slant) / span) * span - pad;
           seg(ctx, x, y, x + len * near * slant, y + len * near);
         }
       };
